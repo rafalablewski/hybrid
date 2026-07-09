@@ -11,6 +11,7 @@ import type { User } from "@supabase/supabase-js";
 import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { resetPersona } from "@/lib/persona";
+import { resetPlanMaxes } from "@/lib/plan-maxes";
 
 // Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN). Aliased to the
 // shared core AuthRole so web and mobile normalize identical access-control input.
@@ -26,6 +27,7 @@ const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announ
  *  singletons) so nothing carries across a logout or user switch. */
 function clearClientState() {
   resetPersona();
+  resetPlanMaxes();
   try {
     const drop: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {

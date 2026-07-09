@@ -60,6 +60,14 @@ model User {
   // one account — prevents replay / cross-account sharing of one purchase.
   appleOriginalTransactionId String? @unique
 
+  // The athlete's training maxes (1RMs) the discipline-shaped plans derive
+  // working loads from — a flat { liftKey: 1RM } map keyed by ProgramInput.key
+  // (e.g. {"snatch":100,"backSquat":200}). Read/written via /api/plan-maxes and
+  // mirrored on each device so "Your plan today" shows working kg everywhere.
+  // Soft-guarded (raw queries) so the app runs before the column is migrated
+  // (reference/sql-plan-maxes.sql).
+  planMaxes Json @default("{}")
+
   sessions      Session[]
   macrocycles   Macrocycle[]
   biometrics    Biometric[]
@@ -102,31 +110,6 @@ model User {
 
   // Admin lists order/filter users by recency (admin/users, admin/stats growth).
   @@index([createdAt])
-}
-
-// Admin-granted per-user feature access (nav ids) beyond the user's persona.
-// Deliberately its OWN table (not a column on User) so the hot-path user lookup
-// never depends on it — every read is soft-guarded, so the app runs fine before
-// this migration is applied (the feature just no-ops). Layered into /api/flags.
-model FeatureGrant {
-  userId    String   @id
-  navIds    String[] @default([])
-  updatedAt DateTime @default(now()) @updatedAt
-}
-
-// A user's request for access to a feature beyond their persona. Admin approves
-// → the navId is added to the user's FeatureGrant.navIds.
-model AccessRequest {
-  id        String    @id @default(cuid())
-  userId    String
-  userEmail String
-  navId     String
-  status    String    @default("pending") // pending | approved | denied
-  createdAt DateTime  @default(now())
-  decidedAt DateTime?
-
-  @@unique([userId, navId])
-  @@index([status])
 }
 
 // A user's application to become a COACH. Admin approves → the user's role is

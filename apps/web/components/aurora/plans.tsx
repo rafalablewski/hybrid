@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
 import ProgramDays from "../program-days";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -133,10 +134,19 @@ function Info({ label, value }: { label: string; value: string }) {
 function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNode; plan: GoalPlan; program: PlanProgram; back: () => void; onEnrolled?: () => void }) {
   const { t } = useLang();
   const [week, setWeek] = useState(1);
+  // The athlete's maxes persist on-device (shared with Today) — seed each input
+  // from the store; the transient `vals` holds only the text being typed.
+  const storedMaxes = usePlanMaxes();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const inputValue = (key: string) => vals[key] ?? (storedMaxes[key] != null ? String(storedMaxes[key]) : "");
+  const onMaxChange = (key: string, text: string) => {
+    setVals((v) => ({ ...v, [key]: text }));
+    const n = parseFloat(text);
+    setPlanMax(key, Number.isFinite(n) && n > 0 ? n : null);
+  };
   const maxes: Record<string, number> = {};
-  for (const i of program.inputs) { if (i.kind !== "number") continue; const n = parseFloat(vals[i.key] ?? ""); if (Number.isFinite(n) && n > 0) maxes[i.key] = n; }
+  for (const i of program.inputs) { if (i.kind !== "number") continue; const n = parseFloat(inputValue(i.key)); if (Number.isFinite(n) && n > 0) maxes[i.key] = n; }
   const view = planProgramView(program, { week, maxes });
   const enroll = async () => {
     setState("busy");
@@ -155,7 +165,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
           {view.inputs.map((inp) => (
             <label key={inp.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{inp.label}</span>
-              <input type={inp.kind === "number" ? "number" : "text"} inputMode={inp.kind === "number" ? "numeric" : undefined} placeholder={inp.placeholder ?? ""} value={vals[inp.key] ?? ""} onChange={(e) => setVals((v) => ({ ...v, [inp.key]: e.target.value }))} style={{ fontFamily: "var(--font-mono)", width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
+              <input type={inp.kind === "number" ? "number" : "text"} inputMode={inp.kind === "number" ? "numeric" : undefined} placeholder={inp.placeholder ?? ""} value={inputValue(inp.key)} onChange={(e) => (inp.kind === "number" ? onMaxChange(inp.key, e.target.value) : setVals((v) => ({ ...v, [inp.key]: e.target.value })))} style={{ fontFamily: "var(--font-mono)", width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
             </label>
           ))}
         </div>

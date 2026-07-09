@@ -12,6 +12,7 @@ import { supabase } from "./supabase";
 import { flushGuestSessions } from "./guest";
 import { claimCoachInvite } from "./api";
 import { resetPersona } from "./persona";
+import { resetPlanMaxes } from "./plan-maxes";
 
 // Device-level prefs that may safely survive a sign-out (everything else under
 // the `hybrid.` namespace is user-scoped and is wiped so a shared device never
@@ -22,6 +23,7 @@ const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announ
  *  singletons) so nothing carries across a sign-out or user switch. */
 async function clearClientState() {
   resetPersona();
+  resetPlanMaxes();
   try {
     const keys = await AsyncStorage.getAllKeys();
     const drop = keys.filter((k) => k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k));

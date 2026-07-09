@@ -10,7 +10,7 @@
   --color-line: #242724;
   /* AURORA SPECTRUM accents (mirror packages/core/src/theme/tokens.ts):
      chartreuse / teal / sand / terracotta over the unchanged dark surfaces. */
-  --color-lime: #c7ef00;
+  --color-lime: #c6f84f;
   --color-chalk: #f3f4ef;
   --color-ash: #8b8f86;
   --color-blue: #3c787e;
@@ -134,56 +134,57 @@ html {
      (LIME/BLUE/… in lib/ui) stay for backgrounds/borders/chart strokes.
      SPECTRUM: teal/terracotta lifted to clear AA on the card (mirror
      packages/core/src/theme/palette.ts THEMES.dark.accentText). */
-  --lime-text: #c7ef00;
+  --lime-text: #c6f84f;
   --blue-text: #6cb6bd;
   --violet-text: #c9a9f0;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
   /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
      bare `r, g, b` triple so it drops into rgba(). Theme-aware: chartreuse on
-     dark, clay on the Japandi light theme (overridden below) — so the glows
-     follow the accent instead of staying lime-green on warm paper. */
-  --glass-glow-rgb: 199, 239, 0;
+     both themes now (overridden below only for surface values) — the glow
+     follows the accent. */
+  --glass-glow-rgb: 198, 248, 79;
 }
 
 [data-theme="light"] {
-  /* JAPANDI — the warm light theme. Oat-paper surfaces, clay/sage foreground
-     accents; the bright fills (lime/…) still stay put. These values MIRROR
-     packages/core/src/theme/palette.ts (THEMES.light), which the contrast test
-     guards at WCAG AA — keep the two in lockstep. */
-  --color-ink: #efe9df;
-  --color-ink2: #f6f1e8;
-  --color-card: #fcfaf4;
-  --color-line: #e4dccd;
-  --color-chalk: #2f2a22;
-  --color-ash: #6b6456;
-  /* JAPANDI accent = warm CLAY/terracotta (reference concept 04). The `lime`
-     token drives every accent fill, so it becomes clay here; bright acid-lime
-     would break the calm warm palette. #a5573c = the concept's #b06a4f darkened
-     to clear AA under light on-accent text. Aurora (dark) keeps raw lime. */
-  --color-lime: #a5573c;
+  /* MIST — a cool, minimal light theme (replaces the warm Japandi oat/clay one).
+     A faint green-grey page → pure-white cards; the brand CHARTREUSE stays the
+     accent (dark-green #47630a as text). These values MIRROR
+     packages/core/src/theme/palette.ts (THEMES.light), guarded at WCAG AA by the
+     contrast test — keep the two in lockstep. The bright fills (lime/teal/…) stay
+     put; only surfaces, text and the accent-as-text darken. */
+  --color-ink: #eef1ec;
+  --color-ink2: #f6f9f3;
+  --color-card: #ffffff;
+  --color-line: #d2d6d0;
+  --color-chalk: #12170f;
+  --color-ash: #576058;
+  /* Chartreuse stays the accent fill in light too (the bright lime is fine on the
+     white card with dark on-accent text) — no more clay swap. */
+  --color-lime: #c6f84f;
 
-  --glass-base: 252, 250, 244;
-  --glass-rgb: 252, 250, 244;
-  --text-rgb: 47, 42, 34;
-  --rim-hi: rgba(255, 255, 255, 0.9);
-  --rim-lo: rgba(120, 105, 80, 0.08);
-  --inner-hi: rgba(255, 255, 255, 0.65);
-  --inner-lo: rgba(80, 65, 45, 0.12);
-  --drop: rgba(80, 65, 45, 0.2);
-  --lg-bright: 0.98;
+  --glass-base: 255, 255, 255;
+  --glass-rgb: 255, 255, 255;
+  --text-rgb: 18, 23, 15;
+  --rim-hi: rgba(255, 255, 255, 0.95);
+  --rim-lo: rgba(24, 34, 22, 0.06);
+  --inner-hi: rgba(255, 255, 255, 0.7);
+  --inner-lo: rgba(24, 34, 22, 0.1);
+  --drop: rgba(24, 34, 22, 0.16);
+  --lg-bright: 0.99;
   --grain-blend: multiply;
-  --grain-opacity: 0.04;
-  --accent-text: #a5573c; /* clay — matches the accent fill, AA on warm paper */
-  --on-accent: #faf8f3; /* light text on the clay accent fill (Japandi) */
-  --font-heading: "Fraunces", Georgia, "Times New Roman", serif; /* serif display */
-  /* warm, darkened accents that pass AA on the Japandi card surface */
-  --lime-text: #a5573c;
+  --grain-opacity: 0.03;
+  --accent-text: #47630a; /* dark-green chartreuse — AA on the white card */
+  --on-accent: #0a0c0b; /* dark text on the bright lime fill (both themes) */
+  --font-heading: "Archivo", system-ui, sans-serif; /* cool minimal — no serif */
+  /* darkened accents that clear AA on the Mist card surface (blue/amber/red keep
+     the Spectrum teal/sand/terracotta hues so accent-text matches the fills) */
+  --lime-text: #47630a;
   --blue-text: #2c5d6c;
   --violet-text: #6a4885;
   --amber-text: #875427;
   --red-text: #973a30;
-  --glass-glow-rgb: 165, 87, 60; /* clay #a5573c — matches the Japandi accent fill */
+  --glass-glow-rgb: 198, 248, 79; /* chartreuse — matches the accent fill */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -403,6 +404,14 @@ html {
 @keyframes skelPulse { 0%, 100% { opacity: .6; } 50% { opacity: .25; } }
 .skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: .45; } }
+
+/* Inline busy spinner — a ring that spins next to an in-flight action label
+   (e.g. the admin "Deleting…" button), so a working button reads as active
+   rather than stalled. Honours reduced-motion by slowing rather than freezing
+   so it still signals "in progress". */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .7s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 1.6s; } }
 
 .cmd-scrim {
   position: fixed;

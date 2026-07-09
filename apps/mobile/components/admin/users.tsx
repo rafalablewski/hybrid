@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
-import { NAV_ITEMS } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
+import AdminAnon from "./anon";
 
 // Paginated, searchable user directory + per-user management drawer. Mirrors
 // apps/web/components/admin/users.tsx and /api/admin/users[/:id]. Each user is a
-// tappable Card that expands into an inline detail (role / language / feature
-// grants editor + activity counts), with a danger-zone delete behind an Alert.
-
-// Features worth granting a single user beyond their persona.
-const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
+// tappable Card that expands into an inline detail (role / language editor +
+// activity counts), with a danger-zone delete behind an Alert. The section also
+// hosts the guest (pre-account) workouts as a second sub-tab (moved here from
+// Governance so all people/usage records live under Users).
 
 type Row = {
   id: string;
@@ -30,7 +29,6 @@ type Detail = {
   name: string | null;
   role: string;
   language: string;
-  featureGrants: string[];
   createdAt: string;
   linkedAuth: boolean;
   orgs: { id: string; name: string; role: string }[];
@@ -40,10 +38,30 @@ type Detail = {
 
 type RoleVal = "CLIENT" | "COACH" | "ADMIN";
 type LangVal = "en" | "pl" | "de";
+type UsersTab = "accounts" | "guests";
 
 const fmt = (d: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : "—");
 
+// The Users section: an Accounts directory + the Guest workouts list, switched by
+// a segmented control (mirrors the web sub-tabs).
 export default function AdminUsers() {
+  const [tab, setTab] = useState<UsersTab>("accounts");
+  return (
+    <View>
+      <Segmented<UsersTab>
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "accounts", label: "Accounts" },
+          { value: "guests", label: "Guest workouts" },
+        ]}
+      />
+      {tab === "accounts" ? <AccountsTab /> : <AdminAnon />}
+    </View>
+  );
+}
+
+function AccountsTab() {
   const { palette } = useTheme();
   const roleColor: Record<string, string> = { ADMIN: palette.amber, COACH: palette.violet, CLIENT: palette.lime };
 
@@ -156,7 +174,6 @@ function UserDetail({
   const [d, setD] = useState<Detail | null>(null);
   const [role, setRole] = useState<RoleVal>("CLIENT");
   const [language, setLanguage] = useState<LangVal>("en");
-  const [grants, setGrants] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -168,24 +185,20 @@ function UserDetail({
         setD(det);
         setRole((det.role as RoleVal) ?? "CLIENT");
         setLanguage((det.language as LangVal) ?? "en");
-        setGrants(det.featureGrants ?? []);
       } else {
         setD(null);
       }
     });
   }, [id]);
 
-  const grantsKey = (g: string[]) => [...g].sort().join(",");
-  const dirty = d && (role !== d.role || language !== d.language || grantsKey(grants) !== grantsKey(d.featureGrants ?? []));
-  const toggleGrant = (navId: string) =>
-    setGrants((g) => (g.includes(navId) ? g.filter((x) => x !== navId) : [...g, navId]));
+  const dirty = d && (role !== d.role || language !== d.language);
 
   const save = async () => {
     setSaving(true);
     setMsg(null);
-    const res = await adminSend<Detail>("PATCH", `/api/admin/users/${id}`, { role, language, featureGrants: grants });
+    const res = await adminSend<Detail>("PATCH", `/api/admin/users/${id}`, { role, language });
     if (res.ok) {
-      setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
+      setD((prev) => (prev ? { ...prev, role, language } : prev));
       setMsg({ ok: true, text: "Saved · recorded in the audit log." });
       onSaved();
     } else {
@@ -298,34 +311,6 @@ function UserDetail({
           onChange={setLanguage}
         />
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 4, marginBottom: 8, lineHeight: 16 }}>
-          Feature access — unlock individual features beyond this user&apos;s persona.
-        </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 14 }}>
-          {GRANTABLE.map((item) => {
-            const on = grants.includes(item.id);
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => toggleGrant(item.id)}
-                style={{
-                  borderWidth: 1,
-                  borderColor: on ? palette.lime : palette.line,
-                  backgroundColor: on ? `${palette.lime}1a` : "transparent",
-                  borderRadius: 999,
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(palette, on ? palette.lime : palette.ash) }}>
-                  {on ? "✓ " : "+ "}
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         {msg ? (
           <View accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"}>
             <Mono color={msg.ok ? palette.lime : palette.red} style={{ marginBottom: 10 }}>
@@ -357,6 +342,7 @@ function UserDetail({
           color={palette.red}
           outline
           disabled={deleting}
+          busy={deleting}
         />
       </View>
     </Card>

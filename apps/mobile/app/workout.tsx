@@ -11,8 +11,7 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
-  planToday,
-  planDayToBlocks,
+  planProgramToday,
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
@@ -60,6 +59,7 @@ import {
   DEFAULT_STORY_STYLE,
   type StoryStyleId,
   exercisesByCategory,
+  FUNNEL,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
@@ -72,6 +72,9 @@ import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
+import { usePersona } from "../lib/persona";
+import { readPlanMaxes } from "../lib/plan-maxes";
+import { track } from "../lib/track";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Card } from "../lib/ui";
@@ -188,6 +191,16 @@ export default function Workout() {
   const revalidate = useRevalidate();
   const { catalog, aliases, categoryByName } = useExercises();
   const guest = !session;
+  // AI-prescribed sessions are a premium (paid) feature. A casual/free user or a
+  // guest can't generate one — they're funnelled instead: guests to register,
+  // free users to the upgrade paywall.
+  const isAthlete = usePersona() !== "casual";
+  const gateAI = (from: string): boolean => {
+    if (isAthlete) return true;
+    track(FUNNEL.upgradeEntryClick, { client: "mobile", source: from });
+    router.replace(guest ? "/login?mode=signup" : "/upgrade");
+    return false;
+  };
   const prefs = useLoggerPrefs();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
@@ -369,6 +382,9 @@ export default function Workout() {
         }
       } else if (source === "ai") {
         await clearDraft();
+        // AI prescription is premium — bounce a guest/free user to the funnel
+        // instead of fabricating a session for them.
+        if (!gateAI("workout-ai")) return;
         const log = toTrainingLog(sessions);
         const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
         setReadiness(rx.readiness);
@@ -382,13 +398,13 @@ export default function Workout() {
           setExercises(blocksToExercises(routine.blocks));
         }
       } else if (source === "plan") {
-        // The enrolled named plan's exact day prefills the session.
+        // The enrolled discipline-shaped program's exact day prefills the session.
         await clearDraft();
         const m = await fetchMacrocycle();
-        const today = planToday(m?.planId, sessions.length);
+        const today = planProgramToday(m?.planId, sessions.length, readPlanMaxes());
         if (today) {
           setTitle(`${today.planName} · ${today.day}`);
-          setExercises(blocksToExercises(planDayToBlocks(today.items)));
+          setExercises(blocksToExercises(today.blocks));
         }
       } else if (source === "sport" && sport) {
         // Manual sport session from the Sport tab — seed a cardio activity
@@ -439,6 +455,7 @@ export default function Workout() {
   // AI-prescribed session, or load one of your saved routines, without leaving
   // the live screen.
   const loadPrescribed = () => {
+    if (!gateAI("workout-ai")) return;
     const log = toTrainingLog(prior.current);
     const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current) });
     setReadiness(rx.readiness);
@@ -1120,7 +1137,7 @@ export default function Workout() {
               style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")} · AI</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{!isAthlete ? t("train.premium") : recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
             </Pressable>
             {routines.length > 0 && (
               <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>

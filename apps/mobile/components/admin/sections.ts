@@ -21,7 +21,6 @@ export type AdminSectionId =
   | "access"
   | "security"
   | "audit"
-  | "anon"
   | "system"
   | "guidance";
 
@@ -44,7 +43,6 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { id: "access", label: "Access control", icon: "lock", group: "Governance" },
   { id: "security", label: "Security", icon: "verified", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "search", group: "Governance" },
-  { id: "anon", label: "Guest workouts", icon: "user-circle", group: "Governance" },
   { id: "system", label: "System", icon: "settings", group: "Governance" },
   { id: "guidance", label: "Guidance", icon: "calendar-event", group: "Governance" },
 ];

@@ -503,27 +503,27 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
   }
 }
 
-// A user's own feature-access requests + the ask. Admin approval adds the
-// feature to their grants (which then flows back through the access map).
-export type MyAccessRequest = { id: string; navId: string; status: string };
-
-export async function fetchMyAccessRequests(): Promise<MyAccessRequest[]> {
+// The athlete's training maxes (1RMs) stored on the account, so the plan card
+// shows the same working kg on every device (mirrors the on-device store). Both
+// soft-degrade to a no-op (empty / false) when signed out or the column isn't
+// migrated (reference/sql-plan-maxes.sql).
+export async function fetchPlanMaxes(): Promise<Record<string, number>> {
   try {
-    const res = await fetch(`${API_URL}/api/access-requests`, { headers: await authHeaders() });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { requests?: MyAccessRequest[] };
-    return data.requests ?? [];
+    const res = await fetch(`${API_URL}/api/plan-maxes`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { maxes?: Record<string, number> };
+    return data.maxes && typeof data.maxes === "object" ? data.maxes : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-export async function requestAccess(navId: string): Promise<boolean> {
+export async function savePlanMaxes(maxes: Record<string, number>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/access-requests`, {
-      method: "POST",
+    const res = await fetch(`${API_URL}/api/plan-maxes`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ navId }),
+      body: JSON.stringify({ maxes }),
     });
     return res.ok;
   } catch {

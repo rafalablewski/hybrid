@@ -20,7 +20,7 @@ const COL = {
   ink: "#0c0d0c",
   ink2: "#141614",
   line: "#26271f",
-  lime: "#c7ef00",
+  lime: "#c6f84f",
   chalk: "#f3f4ef",
   ash: "#8b8f86",
 };
@@ -59,8 +59,8 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
   ctx.fillStyle = COL.ink;
   ctx.fillRect(0, 0, W, H);
   const glow = ctx.createRadialGradient(W * 0.78, H * 0.16, 0, W * 0.78, H * 0.16, 620);
-  glow.addColorStop(0, "rgba(199,239,0,0.20)");
-  glow.addColorStop(1, "rgba(199,239,0,0)");
+  glow.addColorStop(0, "rgba(198,248,79,0.20)");
+  glow.addColorStop(1, "rgba(198,248,79,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
 

@@ -22,6 +22,7 @@ import { fs, space,
   txt,
   disp,
   cond,
+  mono,
   Mono,
   Select,
   GlassField,
@@ -137,10 +138,18 @@ export default function AppShell() {
   // console shell (components/admin/panel.tsx).
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Concept-4 parity: on the mobile drawer the nav DRILLS one area at a time (the
+  // same category hub as the mobile app's More tab) instead of one long grouped
+  // scroll; the desktop rail keeps every group expanded (it has the room).
+  const [drillGroup, setDrillGroup] = useState<string | null>(null);
   const railCollapsed = collapsed && !isMobile;
   useEffect(() => {
     if (!isMobile) setDrawerOpen(false);
   }, [isMobile]);
+  // Reopen the drawer at the hub, never mid-drill.
+  useEffect(() => {
+    if (!drawerOpen) setDrillGroup(null);
+  }, [drawerOpen]);
   useEffect(() => {
     if (!isMobile || !drawerOpen) return;
     const prev = document.body.style.overflow;
@@ -311,59 +320,121 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav aria-label={t("nav.primary")} style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {groupedNav(navForPersona(persona, undefined, navAccess)).map(({ group, items }) => {
-            const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
-            if (visible.length === 0) return null;
-            return (
+          {(() => {
+            const groupLabel = (g: string) => (t(`nav.group.${g}`) === `nav.group.${g}` ? g : t(`nav.group.${g}`));
+            const navGroups = groupedNav(navForPersona(persona, undefined, navAccess))
+              .map(({ group, items }) => ({ group, items: items.filter((it) => isEnabled(`nav.${it.id}`)) }))
+              .filter((g) => g.items.length > 0);
+
+            // One nav destination button — reused by the desktop groups AND the
+            // mobile drill list.
+            const itemBtn = ({ id, label: fallback, icon: ic }: { id: string; label: string; icon: string }) => {
+              const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
+              const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
+              return (
+                <button
+                  key={id}
+                  data-tour={`nav-${id}`}
+                  onClick={() => { setPendingBlocks(undefined); setScreen(id); setDrawerOpen(false); }}
+                  title={railCollapsed ? label : undefined}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: railCollapsed ? "center" : "flex-start",
+                    gap: railCollapsed ? 0 : 12,
+                    padding: railCollapsed ? "10px 0" : "10px 12px",
+                    marginBottom: 2,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    border: "none",
+                    background: screen === id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
+                    color: txt(screen === id ? LIME : ASH),
+                    ...disp,
+                    fontSize: fs.bodyLg,
+                    fontWeight: 600,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18 }}>
+                    {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
+                  </span>
+                  {!railCollapsed && label}
+                </button>
+              );
+            };
+
+            // MOBILE DRAWER — concept-4 category hub (drill one area at a time).
+            if (isMobile) {
+              const area = drillGroup ? navGroups.find((g) => g.group === drillGroup) : null;
+              if (area) {
+                return (
+                  <div>
+                    <button
+                      onClick={() => setDrillGroup(null)}
+                      style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", color: LIME_T, ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em", padding: "4px 8px 12px" }}
+                    >
+                      ‹ {t("nav.more") === "nav.more" ? "Menu" : t("nav.more")}
+                    </button>
+                    <div style={{ ...disp, fontWeight: 800, fontSize: 20, padding: "0 10px 12px" }}>{groupLabel(area.group)}</div>
+                    {area.items.map(itemBtn)}
+                  </div>
+                );
+              }
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {navGroups.map(({ group, items }) => {
+                    const gi = aurora ? AURORA_NAV_ICONS[items[0]!.id] : undefined;
+                    return (
+                    <button
+                      key={group}
+                      onClick={() => setDrillGroup(group)}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "13px 13px",
+                        borderRadius: 14,
+                        cursor: "pointer",
+                        border: `1px solid var(--color-line)`,
+                        background: "var(--color-card)",
+                        color: "var(--color-chalk)",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ width: 34, height: 34, borderRadius: 11, display: "grid", placeItems: "center", background: "var(--color-ink2)", flexShrink: 0 }}>
+                        {gi ? <AuroraIcon name={gi} size={18} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle }}>{items[0]!.icon}</span>}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, display: "block" }}>{groupLabel(group)}</span>
+                        <Mono s={{ fontSize: 10, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }} c={ASH}>
+                          {items.slice(0, 3).map((i) => (t(`nav.${i.id}`) === `nav.${i.id}` ? i.label : t(`nav.${i.id}`))).join(" · ")}{items.length > 3 ? ` · +${items.length - 3}` : ""}
+                        </Mono>
+                      </span>
+                      <Mono s={{ fontSize: fs.body }} c={ASH}>{items.length} ›</Mono>
+                    </button>
+                    );
+                  })}
+                </div>
+              );
+            }
+
+            // DESKTOP RAIL — every group expanded (there's room).
+            return navGroups.map(({ group, items }) => (
               <div key={group} style={{ marginBottom: 14 }}>
                 {!railCollapsed && (
                   <Mono
                     s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
                     c={ASH}
                   >
-                    {t(`nav.group.${group}`) === `nav.group.${group}` ? group : t(`nav.group.${group}`)}
+                    {groupLabel(group)}
                   </Mono>
                 )}
-                {visible.map(({ id, label: fallback, icon: ic }) => {
-                  const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
-                  // Aurora: use the uploaded design-kit line icon where one maps;
-                  // fitness-specific items (no kit glyph) keep their unicode glyph.
-                  const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
-                  return (
-                    <button
-                      key={id}
-                      data-tour={`nav-${id}`}
-                      onClick={() => { setPendingBlocks(undefined); setScreen(id); setDrawerOpen(false); }}
-                      title={railCollapsed ? label : undefined}
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: railCollapsed ? "center" : "flex-start",
-                        gap: railCollapsed ? 0 : 12,
-                        padding: railCollapsed ? "10px 0" : "10px 12px",
-                        marginBottom: 2,
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        border: "none",
-                        background: screen === id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
-                        color: txt(screen === id ? LIME : ASH),
-                        ...disp,
-                        fontSize: fs.bodyLg,
-                        fontWeight: 600,
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18 }}>
-                        {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
-                      </span>
-                      {!railCollapsed && label}
-                    </button>
-                  );
-                })}
+                {items.map(itemBtn)}
               </div>
-            );
-          })}
+            ));
+          })()}
 
           {/* ONE upgrade entry — value-labeled, not a feature tab. Casual only;
               opens the single Full bundle page. Keeps the nav clean (no locks). */}

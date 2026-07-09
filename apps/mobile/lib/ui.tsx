@@ -113,10 +113,10 @@ export const F = {
   serifBold: "Fraunces_700Bold",
 } as const;
 
-/** Heading face: the Fraunces serif in Japandi (light), else the given Archivo
- *  weight — the mobile twin of web's --font-heading. Body/labels stay sans/mono. */
-export const serifIf = (scheme: "dark" | "light", archivo: string = F.black): string =>
-  scheme === "light" ? F.serifBold : archivo;
+/** Heading face — the mobile twin of web's --font-heading. Both themes now use the
+ *  Archivo sans (the cool Mist light theme dropped the old Japandi serif display);
+ *  kept as a helper so every hero heading has one switch point. */
+export const serifIf = (_scheme: "dark" | "light", archivo: string = F.black): string => archivo;
 
 // Concentric rings fake a radial falloff — RN has no CSS blur or radial
 // gradient (and we add no native gradient dep), so we stack a few low-opacity

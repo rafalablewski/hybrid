@@ -9,9 +9,7 @@ import { fs, space,
   trainingDaysPerWeek,
   buildActivityFeed,
   currentPhase,
-  planToday,
-  planDayToBlocks,
-  srSingleReps,
+  planProgramToday,
   toTrainingLog,
   velocityProfiles,
   ROLE_COLOR,
@@ -26,6 +24,7 @@ import { fs, space,
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
+import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
@@ -98,7 +97,8 @@ export default function AuroraToday({
   // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
   const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: 3 })), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
-  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
+  const planMaxes = usePlanMaxes();
+  const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
 
   const initials = useMemo(
@@ -196,7 +196,7 @@ export default function AuroraToday({
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
-                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : hasData || phase ? (rx.blocks as SessionBlock[]) : undefined)}
+                onClick={() => onStart(plan ? plan.blocks : isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
                 style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {t("w.home.today.start")}
@@ -207,13 +207,13 @@ export default function AuroraToday({
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 10 }}>
-                {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
+                {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
-                {plan.items.map((it, i) => (
+                {plan.rows.map((r, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{it.name}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</span>
+                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> · {r.note}</span> : null}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
                   </div>
                 ))}
               </div>
@@ -227,7 +227,10 @@ export default function AuroraToday({
                 </button>
               )}
             </>
-          ) : hasData || phase ? (
+          ) : isAthlete && (hasData || phase) ? (
+            // PREMIUM only — the real readiness-driven AI prescription. Casual
+            // users fall through to the encouraging chooser (no fabricated
+            // session presented as their plan).
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}

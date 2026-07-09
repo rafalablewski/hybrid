@@ -14,8 +14,7 @@ import {
   computeAccountability,
   weekAdherence,
   buildActivityFeed,
-  planToday,
-  srSingleReps,
+  planProgramToday,
   FUNNEL,
   toTrainingLog,
   toBiometrics,
@@ -33,6 +32,7 @@ import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignm
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
+import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
@@ -139,7 +139,8 @@ export default function AuroraHome() {
   // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
   const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 })), [sessions, prefDays]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
-  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
+  const planMaxes = usePlanMaxes();
+  const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -214,10 +215,10 @@ export default function AuroraHome() {
 
   const planReadiness = hasData || plan || phase;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
-  // named plan's day), falls back to the AI-prescribed session, then to an empty
-  // start — each lands in the live workout with the timer running.
+  // named plan's day), then the AI-prescribed session for PREMIUM athletes, then
+  // an empty start. AI is paid-only, so casual/guests never get source=ai here.
   const startPrescribed = () =>
-    router.push(plan ? "/workout?source=plan" : hasData || phase ? "/workout?source=ai" : "/workout?source=empty");
+    router.push(plan ? "/workout?source=plan" : isAthlete && (hasData || phase) ? "/workout?source=ai" : "/workout?source=empty");
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,
@@ -341,12 +342,12 @@ export default function AuroraHome() {
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
-                  {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
+                  {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
                 </Text>
-                {plan.items.map((it, i) => (
-                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Text>
+                {plan.rows.map((r, i) => (
+                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> · {r.note}</Text> : null}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
                   </View>
                 ))}
                 {!isAthlete && (
@@ -359,7 +360,10 @@ export default function AuroraHome() {
                   </Pressable>
                 )}
               </>
-            ) : hasData || phase ? (
+            ) : isAthlete && (hasData || phase) ? (
+              /* PREMIUM only — the real readiness-driven AI prescription. Casual
+                 and guests fall through to the encouraging chooser below (no
+                 fabricated Back-Squat/Assault-Bike session presented as theirs). */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
@@ -372,8 +376,8 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>
             ) : (
-              /* Brand-new and not enrolled — first-session chooser (#3):
-                 follow a plan (free), build your own (Full), or log a one-off. */
+              /* Not following a plan (or not premium) — an encouraging chooser:
+                 enroll in a plan (free), build your own, or log a one-off. */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>

@@ -1,7 +1,7 @@
 -- HYBRID — schema verification (READ-ONLY). Run in the Supabase SQL editor.
 -- Lists every table/function the app expects and marks ✓ present / ✗ MISSING.
--- The three objects this session needs are tagged [session]; app_user_id()
--- (from rls-policies.sql) is the prerequisite for the access-requests RLS.
+-- Objects this session needs are tagged [session]; app_user_id()
+-- (from rls-policies.sql) is the prerequisite for the RLS policies.
 
 with expected(obj, kind, note) as (values
   -- core
@@ -21,10 +21,7 @@ with expected(obj, kind, note) as (values
   ('AdminAudit','table',''),('Announcement','table',''),('Exercise','table',''),
   ('MediaAsset','table',''),('Translation','table',''),('Report','table',''),
   ('FeatureFlag','table','[session] sql-feature-flags.sql'),
-  -- THIS SESSION
-  ('FeatureGrant','table','[session] sql-user-feature-grants.sql'),
-  ('AccessRequest','table','[session] sql-access-requests.sql'),
-  -- RLS helper (prerequisite for AccessRequest policy)
+  -- RLS helper (prerequisite for the RLS policies)
   ('app_user_id','function','rls-policies.sql')
 )
 select

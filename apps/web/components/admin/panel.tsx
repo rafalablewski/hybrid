@@ -21,7 +21,6 @@ import AdminTranslations from "./translations";
 import AdminFlags from "./flags";
 import AdminContent from "./content";
 import AdminAuditLog from "./audit";
-import AdminAnonSessions from "./anon-sessions";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
 import AdminAccess from "./access";
@@ -32,7 +31,7 @@ import AdminEmail from "./email";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
@@ -53,7 +52,6 @@ const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: Aurora
   { id: "access", label: "Access control", icon: "⚿", auroraIcon: "lock", group: "Governance" },
   { id: "security", label: "Security", icon: "🛡", auroraIcon: "verified", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", auroraIcon: "search", group: "Governance" },
-  { id: "anon", label: "Guest workouts", icon: "👤", auroraIcon: "user-circle", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", auroraIcon: "settings", group: "Governance" },
   { id: "guidance", label: "Guidance", icon: "📖", auroraIcon: "calendar-event", group: "Governance" },
 ];
@@ -328,7 +326,6 @@ export default function AdminPanel() {
         {section === "access" && <><CoachApplications /><AdminAccess /></>}
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}
-        {section === "anon" && <AdminAnonSessions />}
         {section === "system" && <AdminSystem />}
         {section === "guidance" && <AdminGuidance />}
       </main>

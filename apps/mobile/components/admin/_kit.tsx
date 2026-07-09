@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, type ViewStyle } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, type ViewStyle } from "react-native";
 import { fs, space, F, Card, Mono } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
@@ -106,20 +106,28 @@ export function PillBtn({
   color,
   outline,
   disabled,
+  busy,
 }: {
   label: string;
   onPress: () => void;
   color?: string;
   outline?: boolean;
   disabled?: boolean;
+  /** Show a live spinner beside the label — an in-flight action reads as active
+   *  rather than stalled (e.g. the "Deleting…" button). */
+  busy?: boolean;
 }) {
   const { palette } = useTheme();
   const c = color ?? palette.lime;
+  const fg = outline ? txt(palette, c) : palette.onAccent;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 7,
         backgroundColor: outline ? "transparent" : c,
         borderWidth: 1,
         borderColor: c,
@@ -130,7 +138,8 @@ export function PillBtn({
         alignSelf: "flex-start",
       }}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: outline ? txt(palette, c) : palette.onAccent }}>{label}</Text>
+      {busy ? <ActivityIndicator size="small" color={fg} /> : null}
+      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: fg }}>{label}</Text>
     </Pressable>
   );
 }
