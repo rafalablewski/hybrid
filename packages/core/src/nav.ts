@@ -173,7 +173,10 @@ export function resolvePersona(
 ): Persona {
   if (role === "admin") return "admin";
   if (role === "coach") return "coach";
-  if (clientChoice === "athlete" && entitlement === "paid") return "athlete";
+  // A paid client gets the Full (athlete) surface by DEFAULT — paying for Full
+  // shouldn't require flipping a separate mode toggle (that Simple/Full switch is
+  // retired). They only fall back to casual if they've EXPLICITLY chosen Simple.
+  if (entitlement === "paid" && clientChoice !== "casual") return "athlete";
   return "casual";
 }
 

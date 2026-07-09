@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, CARD, LINE, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 
@@ -205,8 +205,8 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
           <div style={{ height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: ASH, fontSize: fs.caption }} stroke={LINE} />
+                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: ASH, fontSize: fs.caption }} stroke={LINE_HEX} />
                 <Tooltip
                   cursor={{ fill: `${AMBER}14` }}
                   contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }}
@@ -637,9 +637,9 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
             <div style={{ height: 150 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series} margin={{ top: 6, right: 8, left: -22, bottom: 0 }}>
-                  <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="t" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
-                  <YAxis tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} width={40} />
+                  <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="t" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} />
+                  <YAxis tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} width={40} />
                   <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }} />
                   {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: fs.micro, position: "insideTopRight" }} />}
                   <Line type="monotone" dataKey="value" stroke={LIME_HEX} strokeWidth={2} dot={{ r: 3, fill: LIME_HEX }} />

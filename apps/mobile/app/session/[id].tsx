@@ -21,6 +21,10 @@ import {
   paceClock,
   formatCardioPr,
   cardioPrsForSession,
+  sessionShape,
+  sessionCardioTotals,
+  formatSportDistance,
+  headlineRunMove,
   type LoggedSession,
   type PrHit,
   type CardioPrHit,
@@ -79,12 +83,17 @@ export default function SessionDetail() {
   const prSet = new Set(prs.map((p) => p.lift));
   const cardioPrMoves = new Set(cardioPrs.map((p) => p.move));
   const ssLabels = supersetLabels(session.blocks);
-  const strength = session.blocks.filter((b) => b.kind === "strength");
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const minutes =
     session.completedAt
       ? Math.max(1, Math.round((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 60000))
       : null;
+  // Sport-adaptive headline: a run/match has no "volume", so cardio sessions read
+  // as Duration · Distance · Pace; a lift keeps Minutes · Sets · Volume; a mixed
+  // session shows both. (#4 — per-session, sport-specific stats.)
+  const shape = sessionShape(session);
+  const cardio = sessionCardioTotals(session.blocks);
+  const cardioMin = cardio.minutes || minutes || 0;
 
   const bestMap = new Map<string, number>();
   for (const b of session.blocks)
@@ -116,9 +125,19 @@ export default function SessionDetail() {
       </Mono>
 
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-        <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
-        <Metric label={t("summary.sets")} value={String(sets)} />
-        <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
+        {shape === "cardio" ? (
+          <>
+            <Metric label={t("session.duration")} value={cardioMin ? `${cardioMin}` : "—"} />
+            <Metric label={t("session.distance")} value={cardio.distanceKm > 0 ? formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "") : "—"} />
+            <Metric label={t("session.pace")} value={cardio.secPerKm ? `${paceClock(cardio.secPerKm)}` : "—"} />
+          </>
+        ) : (
+          <>
+            <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
+            <Metric label={t("summary.sets")} value={String(sets)} />
+            <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
+          </>
+        )}
       </View>
 
       {prs.length > 0 && (
@@ -201,20 +220,19 @@ export default function SessionDetail() {
         ))}
       </View>
 
-      {/* Shareable card — relive (and re-share) an old win */}
-      {strength.length > 0 && (
-        <>
-          <View style={{ marginTop: 6 }}>
-            <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
-          </View>
-          <Pressable
-            onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
-            style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
-          >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.share")}</Text>
-          </Pressable>
-        </>
-      )}
+      {/* Shareable card — relive (and re-share) ANY session, like the finished
+          workout (P5), not just strength ones. */}
+      <>
+        <View style={{ marginTop: 6 }}>
+          <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? cardioMin ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
+        </View>
+        <Pressable
+          onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
+          style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
+        >
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.share")}</Text>
+        </Pressable>
+      </>
     </>,
   );
 }

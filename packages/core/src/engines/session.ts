@@ -358,6 +358,64 @@ export function blockSummary(b: SessionBlock): string {
 }
 
 /**
+ * Sessions whose START falls on the same calendar day as `now` (local time),
+ * newest first. Drives the "done today" acknowledgement on Today — a quick sport
+ * log or a finished prescribed session both surface here the moment they're
+ * saved, so the athlete gets confirmation the workout counted. Shared by web +
+ * mobile so the two Today screens can't drift.
+ */
+export function sessionsOnDay(sessions: LoggedSession[], now = Date.now()): LoggedSession[] {
+  const day = new Date(now).toDateString();
+  return sessions
+    .filter((s) => new Date(s.startedAt).toDateString() === day)
+    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
+}
+
+/** Whether the athlete has logged at least one session today. */
+export function trainedToday(sessions: LoggedSession[], now = Date.now()): boolean {
+  return sessionsOnDay(sessions, now).length > 0;
+}
+
+/**
+ * Shape of a logged session, for choosing how to summarise it: STRENGTH (gym —
+ * sets & tonnage), CARDIO (distance/pace, no strength blocks), or MIXED (both).
+ * An empty session reads as strength.
+ */
+export function sessionShape(session: LoggedSession): "strength" | "cardio" | "mixed" {
+  let strength = 0;
+  let other = 0;
+  for (const b of session.blocks) b.kind === "strength" ? strength++ : other++;
+  if (strength && other) return "mixed";
+  if (other && !strength) return "cardio";
+  return "strength";
+}
+
+/**
+ * Totals across a session's CARDIO blocks — distance (km), minutes, and a
+ * derived overall pace (sec/km, distance-weighted). Powers the non-gym session
+ * headline (Duration · Distance · Pace) so cardio/sport logs get their own
+ * summary instead of the gym Sets/Volume framing.
+ */
+export function sessionCardioTotals(blocks: SessionBlock[]): {
+  distanceKm: number;
+  minutes: number;
+  secPerKm: number | null;
+  count: number;
+} {
+  let distanceKm = 0;
+  let minutes = 0;
+  let count = 0;
+  for (const b of blocks)
+    if (isCardio(b)) {
+      count++;
+      if (b.distance) distanceKm += b.distance;
+      if (b.minutes) minutes += b.minutes;
+    }
+  const secPerKm = distanceKm > 0 && minutes > 0 ? Math.round((minutes * 60) / distanceKm) : null;
+  return { distanceKm, minutes, secPerKm, count };
+}
+
+/**
  * The most recent prior strength performance of EACH lift (newest session
  * first), keyed by lift name. One pass over a single sort, so the live logger
  * can show a "last time" reference per exercise without re-sorting history on

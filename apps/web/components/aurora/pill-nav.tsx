@@ -17,14 +17,14 @@ import { AuroraIcon } from "./icons";
  * gates to Aurora (renders null in Classic). Glyphs are the uploaded design-kit
  * line icons only. "More" opens a sheet with the full persona-filtered nav.
  */
-// PRIMARY pills sit to the LEFT of the elevated center Train action; History ·
-// More sit to the right. The bar reads Today · Plans · [Train] · History · More.
-// Profile (You) left the bar — it's now in the Today header + the More sheet's
-// Account group — so Plans (the core "follow a program" loop) takes a slot;
-// Cockpit stays in the More sheet.
+// PRIMARY pills sit to the LEFT of the elevated center Train action; More ·
+// Profile sit to the right. The bar reads Today · Explore · [Train] · More ·
+// Profile. Explore opens the social/discovery surface (the Feed screen); Profile
+// returns to the bar (it also lives in the Today header). Plans/History/Cockpit
+// stay reachable from the More sheet.
 const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
   { id: "today", icon: "village", label: "Today" },
-  { id: "plans", icon: "bookmark", label: "Plans" },
+  { id: "feed", icon: "globe", label: "Explore" },
 ];
 
 const C = (v: string) => `var(--color-${v})`;
@@ -45,11 +45,11 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
   const tabs = PRIMARY;
   // "More" lights only when the active screen isn't one of the bar slots
-  // (Today, Plans, Train/log, History) and the sheet isn't explicitly open.
-  // History sits outside `tabs` (it's the standalone pill right of Train), so
-  // add it explicitly. Profile is no longer a bar slot (it's in the Today header
-  // + the More sheet's Account group), so landing on it lights "More".
-  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "history"]);
+  // (Today, Explore/feed, Train/log, Profile) and the sheet isn't explicitly
+  // open. Profile is now a bar slot (right of More); everything else (Plans,
+  // History, Cockpit, …) lives in the More sheet, so landing on those lights
+  // "More".
+  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "profile"]);
   const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
   const groups = groupedNav(navForPersona(persona, undefined, access))
     .map((g) => ({ ...g, items: g.items.filter((it) => isEnabled(`nav.${it.id}`)) }))
@@ -108,13 +108,13 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             than the classic .liquid-glass (translucent tint + a top rim highlight,
             no grain/sheen). */}
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
-          {/* Today · Plans | [Train] | History · More */}
+          {/* Today · Explore | [Train] | More · Profile */}
           {tabs.map((tab) => (
-            <PillButton key={tab.id} icon={tab.icon} label={label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
+            <PillButton key={tab.id} icon={tab.icon} label={tab.id === "feed" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
-          <PillButton icon="copy" label={label("history", "History")} active={activeId === "history"} onClick={() => go("history")} />
           <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>
     </>

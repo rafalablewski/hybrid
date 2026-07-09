@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { fs, space, LINE, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Stats = {
@@ -60,7 +60,7 @@ export default function AdminOverview() {
       <ChartFrame span={4} title="Growth" kicker="Last 12 weeks · signups vs sessions" c={LIME}>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={s.growth}>
-            <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+            <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
             <XAxis dataKey="week" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
             <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
             <Tooltip contentStyle={tip} />
@@ -74,7 +74,7 @@ export default function AdminOverview() {
         <ChartFrame span={2} title="Plans enrolled" kicker="By goal" c={LIME}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={s.planPopularity}>
-              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
               <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
               <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
               <Tooltip contentStyle={tip} />

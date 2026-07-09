@@ -40,9 +40,9 @@ export type ThemeName = "dark" | "light";
  * - `dark`  = AURORA — a true neutral charcoal ramp; lime is the single accent,
  *             red is kept strictly for risk. (The old multi-accent rainbow is
  *             retired in the surfaces here and in the Today/Cockpit chrome.)
- * - `light` = MIST — a cool green-grey minimal paper; chartreuse stays the accent
- *             (dark-green as text), calm high contrast. (Replaces the old warm
- *             Japandi oat/clay light theme.)
+ * - `light` = JAPANDI — a warm oat-paper theme (soft warm hairlines, never pure
+ *             white); chartreuse stays the accent (mossy dark-green as text),
+ *             calm soft contrast. Mirrors reference/.../04-japandi.html.
  * `accentText` stays per-theme so any accent rendered as TEXT clears AA on the
  * theme's card (guarded by palette.test.ts).
  */
@@ -58,18 +58,21 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; violet unchanged.
     accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
   },
-  // MIST — a cool, minimal light theme (a faint green-grey paper, not the old warm
-  // Japandi oat). Surfaces run from a soft off-white page to pure-white cards; the
-  // brand chartreuse STAYS the accent (as a dark-green text variant #47630a on the
-  // light card). blue/amber/red accent-text keep the darkened Spectrum hues (teal/
-  // sand/terracotta) so accent TEXT matches the fixed brand FILLS.
+  // JAPANDI — a warm, tactile light theme (oat paper, never pure white), matching
+  // reference/today-cockpit-design-concepts/04-japandi.html. Surfaces run from an
+  // oat-paper page → a soft surface → a warm off-white card, with a SOFT WARM
+  // hairline (#e2d9c9) that reads as a quiet separation, not a hard black box. The
+  // brand chartreuse STAYS the accent (as a mossy dark-green text variant #47630a);
+  // blue/amber/red accent-text keep the darkened Spectrum hues so accent TEXT
+  // matches the fixed brand FILLS. Text/muted are warm-neutral and clear WCAG AA
+  // (guarded by palette.test.ts).
   light: {
-    ink: "#eef1ec",
-    ink2: "#f6f9f3",
-    card: "#ffffff",
-    line: "#d2d6d0",
-    chalk: "#12170f",
-    ash: "#576058",
+    ink: "#efe9df",
+    ink2: "#f5f0e6",
+    card: "#fcfaf4",
+    line: "#e2d9c9",
+    chalk: "#3a352c",
+    ash: "#6d665a",
     accentText: { lime: "#47630a", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

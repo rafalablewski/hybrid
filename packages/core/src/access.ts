@@ -43,3 +43,12 @@ export function canScanFoodLabel(persona: Persona): boolean {
 export function canSaveMealsAndProducts(persona: Persona): boolean {
   return isFullAccess(persona);
 }
+
+/** Free users CAN log and build a one-off workout, but saving it as a REUSABLE
+ *  routine (load-and-go template) is a Full feature. The API mirrors this on
+ *  POST /api/templates (403 upgrade_required for a free client), so the clients
+ *  gate the CTA on this predicate and show an upgrade prompt instead of an
+ *  error. */
+export function canSaveRoutine(persona: Persona): boolean {
+  return isFullAccess(persona);
+}

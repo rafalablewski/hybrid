@@ -6,7 +6,7 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, LIME_HEX, ASH, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 
@@ -83,9 +83,9 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         <div style={{ marginTop: 10 }}>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
-              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis type="number" dataKey="load" name="Load" unit="kg" domain={[0, "dataMax + 10"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
-              <YAxis type="number" dataKey="velocity" name="Velocity" unit=" m/s" domain={[0, "dataMax + 0.2"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
+              <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+              <XAxis type="number" dataKey="load" name="Load" unit="kg" domain={[0, "dataMax + 10"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} />
+              <YAxis type="number" dataKey="velocity" name="Velocity" unit=" m/s" domain={[0, "dataMax + 0.2"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} />
               <ZAxis range={[70, 70]} />
               <Tooltip contentStyle={tip} formatter={(v, n) => [`${Number(v).toFixed(2)}${n === "Velocity" ? " m/s" : " kg"}`, n]} cursor={{ stroke: LINE }} />
               {fitLine.length === 2 && <Line data={fitLine} dataKey="velocity" stroke={ASH} strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" />}

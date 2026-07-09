@@ -22,7 +22,10 @@ describe("persona resolution", () => {
     expect(resolvePersona("client", "athlete")).toBe("casual");
     expect(resolvePersona("client", "athlete", "free")).toBe("casual");
     expect(resolvePersona("client", "athlete", "paid")).toBe("athlete");
-    // A paid entitlement alone doesn't force Full — the client still chooses it.
+    // A paid client is Full (athlete) BY DEFAULT — paying shouldn't require
+    // flipping a separate mode toggle (the Simple/Full switch is retired).
+    expect(resolvePersona("client", undefined, "paid")).toBe("athlete");
+    // …unless they've EXPLICITLY chosen Simple.
     expect(resolvePersona("client", "casual", "paid")).toBe("casual");
   });
 
@@ -40,9 +43,10 @@ describe("persona resolution", () => {
     // role outranks entitlement
     expect(resolvePersona("coach", "casual", "free")).toBe("coach");
     expect(resolvePersona("admin", "casual", "free")).toBe("admin");
-    // a client can no longer self-select the coach surface at all
+    // a client can no longer self-select the coach surface at all — an invalid
+    // choice on a paid account resolves to Full (athlete), never coach.
     // @ts-expect-error "coach" is no longer a valid ClientPersona
-    expect(resolvePersona("client", "coach", "paid")).toBe("casual");
+    expect(resolvePersona("client", "coach", "paid")).toBe("athlete");
   });
 });
 

@@ -5,7 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import {
   runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock, type LoggedSession,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
 import { useLang } from "@/lib/i18n";
 
@@ -58,11 +58,11 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
         <div style={card}>{head("blue", t("w.train.running.weeklyMileage"))}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {paceData.length > 1 && (
           <div style={card}>{head("blue", `${active} · ${t("w.train.running.paceLowerFaster")}`)}
-            <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
           </div>
         )}
       </div>

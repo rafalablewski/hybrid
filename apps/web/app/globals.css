@@ -147,18 +147,20 @@ html {
 }
 
 [data-theme="light"] {
-  /* MIST — a cool, minimal light theme (replaces the warm Japandi oat/clay one).
-     A faint green-grey page → pure-white cards; the brand CHARTREUSE stays the
-     accent (dark-green #47630a as text). These values MIRROR
+  /* JAPANDI — a warm, tactile light theme (oat paper, never pure white), matching
+     reference/today-cockpit-design-concepts/04-japandi.html. Oat-paper page → a
+     warm off-white card, with a SOFT WARM hairline (#e2d9c9) that reads as quiet
+     separation, not a hard black box. The brand CHARTREUSE stays the accent
+     (mossy dark-green #47630a as text). These values MIRROR
      packages/core/src/theme/palette.ts (THEMES.light), guarded at WCAG AA by the
      contrast test — keep the two in lockstep. The bright fills (lime/teal/…) stay
-     put; only surfaces, text and the accent-as-text darken. */
-  --color-ink: #eef1ec;
-  --color-ink2: #f6f9f3;
-  --color-card: #ffffff;
-  --color-line: #d2d6d0;
-  --color-chalk: #12170f;
-  --color-ash: #576058;
+     put; only surfaces, text and the accent-as-text warm/darken. */
+  --color-ink: #efe9df;
+  --color-ink2: #f5f0e6;
+  --color-card: #fcfaf4;
+  --color-line: #e2d9c9;
+  --color-chalk: #3a352c;
+  --color-ash: #6d665a;
   /* Chartreuse stays the accent fill in light too (the bright lime is fine on the
      white card with dark on-accent text) — no more clay swap. */
   --color-lime: #c6f84f;

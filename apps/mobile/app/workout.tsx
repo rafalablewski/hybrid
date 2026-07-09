@@ -60,6 +60,7 @@ import {
   type StoryStyleId,
   exercisesByCategory,
   FUNNEL,
+  canSaveRoutine,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
@@ -1568,15 +1569,35 @@ function Summary({
 
 // Save the just-finished workout as a reusable routine (WorkoutTemplate) so it
 // can be loaded and started next time. Non-guest only (routines need an account).
+// Saving a routine is a FULL feature (canSaveRoutine) — free users get an upsell
+// here instead of a "sign in and try again" error; logging/building one-offs
+// stays free.
 function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
   const C = useTheme().palette;
   const R = auroraRadii(useTemplate().template === "aurora");
+  const router = useRouter();
+  const allowed = canSaveRoutine(usePersona());
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(title || "Routine");
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
 
   if (state === "saved")
     return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("summary.routineSaved")}</Mono>;
+
+  // Free user → upsell card (routines are Full; logging/building stays free).
+  if (!allowed)
+    return (
+      <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
+        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 1 }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Mono>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
+        <Pressable
+          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
+          style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
+        >
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.routineUnlock")}</Text>
+        </Pressable>
+      </View>
+    );
 
   if (!open)
     return (

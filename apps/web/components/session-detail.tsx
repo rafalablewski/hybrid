@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   LineChart,
   Line,
@@ -9,9 +10,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useLang } from "@/lib/i18n";
+import { shareWorkoutStory, type ShareStats } from "@/lib/workout-share";
 import { fs, space,
   INK2,
-  LINE,
+  LINE, LINE_HEX,
   LIME, LIME_HEX,
   CHALK,
   ASH,
@@ -44,6 +47,9 @@ import {
   paceClock,
   formatCardioPr,
   cardioPrsForSession,
+  sessionShape,
+  sessionCardioTotals,
+  formatSportDistance,
   type CardioPrHit,
   type LoggedSession,
 } from "@hybrid/core";
@@ -73,6 +79,7 @@ export function SessionDetail({
   onBack: () => void;
   onOpenExercise?: (name: string) => void;
 }) {
+  const { t } = useLang();
   const units = useLoggerPrefs().units;
   const isMobile = useIsMobile();
   const prs = prsForSession(all, session.id);
@@ -85,6 +92,40 @@ export function SessionDetail({
   const minutes = session.completedAt
     ? Math.max(1, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60000))
     : null;
+  // Sport-adaptive headline: a run/match has no "volume", so cardio sessions read
+  // as Duration · Distance · Pace; a lift keeps Minutes · Sets · Volume; a mixed
+  // session shows both. (#4 — per-session, sport-specific stats.)
+  const shape = sessionShape(session);
+  const cardio = sessionCardioTotals(session.blocks);
+  const cardioMin = cardio.minutes || minutes || 0;
+
+  // Share this session like a finished workout (P5) — same branded story card.
+  const [sharing, setSharing] = useState(false);
+  const [shareMsg, setShareMsg] = useState("");
+  const share = async () => {
+    setSharing(true);
+    setShareMsg("");
+    const bests = session.blocks
+      .flatMap((b) => (b.kind === "strength" ? [{ name: b.name, e1rm: blockBestE1rm(b), pr: prSet.has(b.name) }] : []))
+      .filter((b) => b.e1rm > 0)
+      .sort((a, b) => b.e1rm - a.e1rm)
+      .slice(0, 3);
+    const stats: ShareStats = {
+      title: session.title,
+      minutes: minutes ?? cardio.minutes ?? 0,
+      sets,
+      volume: sessionVolume(session.blocks),
+      bests,
+      firstEver: false,
+    };
+    try {
+      const how = await shareWorkoutStory(stats, units, t);
+      setShareMsg(how && how !== "cancelled" ? t("w.train.logger.shared") : "");
+    } catch {
+      setShareMsg("");
+    }
+    setSharing(false);
+  };
 
   // The session's heaviest lift → its e1RM trend across all history.
   const topLift = session.blocks
@@ -112,19 +153,38 @@ export function SessionDetail({
         ← History
       </button>
 
-      <div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: fs.display }}>{session.title}</div>
-        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
-          {fmtDate(session.startedAt)}
-          {typeof session.readiness === "number" ? ` · readiness ${session.readiness}` : ""}
-        </Mono>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.display }}>{session.title}</div>
+          <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
+            {fmtDate(session.startedAt)}
+            {typeof session.readiness === "number" ? ` · readiness ${session.readiness}` : ""}
+          </Mono>
+        </div>
+        {/* Share this session — same branded story card as the finished workout. */}
+        <button
+          onClick={share}
+          disabled={sharing}
+          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 45%, transparent)`, borderRadius: 999, padding: "9px 18px", cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1, whiteSpace: "nowrap" }}
+        >
+          {shareMsg || (sharing ? "…" : `↗ ${t("w.train.logger.share")}`)}
+        </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
-        <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
-        <Stat label="Sets" value={sets} />
-        <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
-      </div>
+      {shape === "cardio" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
+          <Stat label="Duration" value={cardioMin ? `${cardioMin} min` : "—"} />
+          <Stat label="Distance" value={cardio.distanceKm > 0 ? formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "") : "—"} c={BLUE} />
+          <Stat label="Pace" value={cardio.secPerKm ? `${paceClock(cardio.secPerKm)} /km` : "—"} c={BLUE} />
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
+          <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
+          <Stat label="Sets" value={sets} />
+          <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
+          {shape === "mixed" && cardio.distanceKm > 0 && <Stat label="Distance" value={formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "")} c={BLUE} />}
+        </div>
+      )}
 
       {prs.length > 0 && (
         <Card style={{ borderColor: LIME }}>
@@ -179,7 +239,7 @@ export function SessionDetail({
           <ChartFrame title={`${topLift} · e1RM`} kicker="Trend across your logs">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={series}>
-                <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
                 <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
                 <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={tip} />
@@ -194,7 +254,7 @@ export function SessionDetail({
         <ChartFrame title={`${runMove} · pace`} kicker="Lower is faster · across your logs">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={paceData}>
-              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
               <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
               <YAxis
                 stroke={ASH}

@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Alert, Animated, PanResponder } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionVolume, prsForSession, blockSummary, type LoggedSession, type AuroraIconName } from "@hybrid/core";
+import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, type LoggedSession, type AuroraIconName } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -77,7 +77,11 @@ export default function AuroraHistory() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
                 </View>
                 <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                  {chip(C.ash, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
+                  {/* Sport-aware headline chip — a run/match has no tonnage, so
+                      cardio sessions read distance·time, not "0 kg" (#4). */}
+                  {sessionShape(s) === "cardio"
+                    ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" · ") || t("history.block")); })()
+                    : chip(C.ash, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
                   {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
                   {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
                 </View>

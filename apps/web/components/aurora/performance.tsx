@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { fs, space, LINE, ASH, LIME, LIME_HEX, BLUE, tip, mono, roleHex } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, ASH, LIME, LIME_HEX, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
   ROLE_COLOR, hpiRole, riskRole,
@@ -34,11 +34,11 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
   return (
     <div style={{ textAlign: "center" }}>
       <svg viewBox="0 0 120 200" style={{ width: 130, height: 216 }}>
-        <circle cx={60} cy={16} r={11} fill={SVG_INK2} stroke={LINE} />
+        <circle cx={60} cy={16} r={11} fill={SVG_INK2} stroke={LINE_HEX} />
         {regions.map((r, i) => {
           const t = byTissue[r.tissue];
           const fill = t && t.risk > 0 ? `${bandHex(t.band)}55` : SVG_INK2;
-          const stroke = t && t.risk > 0 ? bandHex(t.band) : LINE;
+          const stroke = t && t.risk > 0 ? bandHex(t.band) : LINE_HEX;
           return <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={5} fill={fill} stroke={stroke} strokeWidth={1}><title>{r.tissue}: {t ? `${t.risk}/100 (${t.band})` : "—"}</title></rect>;
         })}
       </svg>
@@ -97,7 +97,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
           <div style={{ height: 240, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={traj}>
-                <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
                 <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <Tooltip contentStyle={tip} />
