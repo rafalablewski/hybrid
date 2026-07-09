@@ -65,9 +65,10 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           </Pressable>
         ))}
       </View>
-      {/* Other — opens the searchable picker for any sport */}
-      <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 12, alignSelf: "flex-start" }} hitSlop={6}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>＋ {t("w.home.quickSport.other")} →</Text>
+      {/* Other — a full-width tile that opens the searchable picker for any sport */}
+      <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>＋</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
       </Pressable>
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}

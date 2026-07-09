@@ -353,6 +353,24 @@ export async function createSignal(kind: string, value: number, unit?: string): 
   }
 }
 
+export type ScannedMacros = { name: string | null; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null };
+
+/** Send a nutrition-label photo (base64) to the AI scan endpoint (Full-only).
+ *  Returns the parsed per-serving macros, or a status for the caller to message. */
+export async function scanNutritionLabel(image: string, mediaType: string): Promise<{ ok: boolean; status: number; data?: ScannedMacros }> {
+  try {
+    const res = await fetch(`${API_URL}/api/nutrition/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ image, mediaType }),
+    });
+    if (!res.ok) return { ok: false, status: res.status };
+    return { ok: true, status: 200, data: (await res.json()) as ScannedMacros };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+
 // ---- daily check-ins ----
 export type Checkin = {
   id: string;

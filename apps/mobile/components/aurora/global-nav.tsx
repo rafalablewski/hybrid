@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
@@ -8,10 +8,9 @@ import { usePersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
 import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { F, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
 // The bottom nav: Today · Explore · [Train FAB] · More · Profile. Train is the
@@ -94,17 +93,14 @@ export default function AuroraGlobalNav() {
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={label}
-        hitSlop={6}
-        style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
+        hitSlop={8}
+        style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
-        {/* A bare icon left "More" reading as a Settings cog. The label under
-            every glyph names the destination so the bar is self-explanatory. */}
-        <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-          <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
+        {/* Icon-only bar — the accessibilityLabel names the destination for
+            screen readers; the active pill (chalk) marks the current tab. */}
+        <View style={{ width: 46, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
+          <AuroraIcon name={tab.glyph} size={23} color={focused ? C.ink : C.ash} />
         </View>
-        <Text numberOfLines={1} maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
-          {label}
-        </Text>
       </Pressable>
     );
   };
@@ -186,7 +182,6 @@ export default function AuroraGlobalNav() {
               <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
             </View>
           </View>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>{t("nav.train")}</Text>
         </Pressable>
       </View>
       </View>

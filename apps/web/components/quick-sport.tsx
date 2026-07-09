@@ -60,8 +60,11 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           <SportCard key={name} icon={olympicSport(name)?.icon ?? "🏃"} label={shortSport(name)} hint={t("w.home.today.w.tapLog")} onClick={() => setSheetSport(name)} />
         ))}
       </div>
-      {/* Other — opens the searchable picker for any sport */}
-      <button onClick={() => setPickerOpen(true)} style={{ ...mono, marginTop: 12, background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--lime-text)", fontSize: fs.caption }}>＋ {t("w.home.quickSport.other")} →</button>
+      {/* Other — a full-width tile that opens the searchable picker for any sport */}
+      <button onClick={() => setPickerOpen(true)} style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: 15, cursor: "pointer", color: CHALK }}>
+        <span style={{ ...disp, fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}>＋</span>
+        <span style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{t("w.home.quickSport.other")}</span>
+      </button>
 
       {pickerOpen && (
         <SportPicker
