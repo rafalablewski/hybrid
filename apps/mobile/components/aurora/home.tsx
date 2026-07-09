@@ -32,6 +32,7 @@ import {
   type Macrocycle,
   type Experience,
   type Equipment,
+  type AuroraIconName,
 } from "@hybrid/core";
 import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
@@ -311,9 +312,6 @@ export default function AuroraHome() {
           </View>
         </View>
 
-        {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
-        <Stories name={name} youLabel={t("w.home.today.storyYou")} onOpen={() => router.push("/feed")} />
-
         {/* GREETING — the streak moved up to the header row, so this line breathes */}
         <View style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
@@ -323,21 +321,8 @@ export default function AuroraHome() {
         {/* ───── TRAIN ───── */}
         <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C[SECTION_COLOR.train]} />
 
-        {/* PLAN TODAY ⇄ AI COACH — horizontal snapping pager + dots */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={cardW + 12}
-          decelerationRate="fast"
-          onMomentumScrollEnd={onPagerScroll}
-          // align top so a shorter card (e.g. Plan today) keeps its NATURAL
-          // height instead of stretching to match the taller AI-coach card —
-          // otherwise the plan card renders mostly-empty tall whitespace.
-          contentContainerStyle={{ gap: space.md, alignItems: "flex-start" }}
-          style={{ marginTop: 14, marginHorizontal: -2 }}
-        >
-          {/* card 1 — plan today */}
-          <ACard style={{ width: cardW }}>
+        {/* PLAN TODAY — the single focused hero (your one job today) */}
+        <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash, flex: 1 }}>
                 {t("w.home.today.yourPlan")}{plan && !(isAthlete && planReadiness) ? t("w.home.today.asWritten") : ""}
@@ -408,36 +393,6 @@ export default function AuroraHome() {
             )}
           </ACard>
 
-          {/* card 2 — AI coach */}
-          <ACard style={{ width: cardW }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.today.aiCoach")}</Text>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.askCoach")}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
-              {t("w.home.today.aiCoachBlurb")}
-            </Text>
-            {/* Paid intelligence — casual sees the pitch + one upgrade tap.
-                Athletes get the coach note INLINE (embedded — no nested screen
-                /header/card, which previously double-wrapped this card). */}
-            {isAthlete ? (
-              <AuroraAiCoach embedded />
-            ) : (
-              <Pressable
-                onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }}
-                style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}
-              >
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.home.today.unlockFullBtn")}</Text>
-              </Pressable>
-            )}
-          </ACard>
-        </ScrollView>
-
-        {/* pager dots */}
-        <View style={{ flexDirection: "row", justifyContent: "center", gap: 7, marginTop: 10 }}>
-          {[0, 1].map((i) => (
-            <View key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, backgroundColor: activeCard === i ? C.lime : C.line }} />
-          ))}
-        </View>
-
         {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
             Quick Log takes the day-streak's old slot (the streak lives in the header
             now); it opens the sport-log carousel, Readiness opens the daily check-in,
@@ -457,142 +412,24 @@ export default function AuroraHome() {
           </Pressable>
         </View>
 
-        {/* QUICK ACCESS — Cockpit (the command center, straight from Today) +
-            Sport. Free users get an upgrade nudge in the SAME place (P1/P3): the
-            Cockpit is Full-only, and sport-specific prescriptions unlock with Full
-            (logging any sport stays free via the carousel below). */}
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
+        {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: txt(C, C.violet), marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          ✦ {t("w.home.today.goFull")}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 12 }}>
           <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* Assigned by your coach */}
-        {upcoming.length > 0 && (
-          <View style={{ marginTop: 22 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{t("w.home.today.assignedByCoach")}</Text>
-            {upcoming.map((a) => (
-              <ACard key={a.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, marginBottom: 12 }}>
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.assigned")} · {new Date(a.date).toLocaleDateString()}</Text>
-                </View>
-                <View style={{ flexDirection: "row", gap: space.sm }}>
-                  <Pressable onPress={() => markDone(a.id)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.done")}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => router.push("/workout?source=empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("common.start")}</Text>
-                  </Pressable>
-                </View>
-              </ACard>
-            ))}
-          </View>
-        )}
-
-        {/* FOLLOW A PLAN — free users can enroll in a pre-built plan & follow it */}
-        {!isAthlete && !plan && (
-          <Pressable
-            onPress={() => router.push("/(tabs)/plans")}
-            style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: RADIUS.card, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}12` }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.home.today.followPlanFree")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.followPlanBlurb")}</Text>
-            </View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
-          </Pressable>
-        )}
-
-        {/* (Quick Log now lives in the Tier-2 glance strip above — it opens the
-            sport-log carousel in a modal, so it isn't duplicated as a section here.) */}
-
-        {/* ───── RECOVER · FEEL ───── */}
-        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C[SECTION_COLOR.feel]} />
-
-        {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
-        <View style={{ marginTop: 12 }}>
-          <TodayWidgets />
+        {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          {t("w.home.today.recoverMore")}
+        </Text>
+        <View style={{ gap: 10 }}>
+          <DeferRow C={C} icon="heart" tint={C.blue} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => router.push("/nutrition")} />
+          <DeferRow C={C} icon="user" tint={C.violet} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => router.push("/coaches")} />
         </View>
 
-        {/* ───── PLAN ───── (with a direct link to the full month Calendar) */}
-        <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} action={{ label: t("w.home.today.calOpen"), onPress: () => router.push("/calendar") }} />
-        {/* WEEK ADHERENCE + CALENDAR — a swipeable pair: the glanceable Mon→Sun
-            done-strip, then a calendar widget for easy day-by-day access (P2). */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardW + 12} decelerationRate="fast" contentContainerStyle={{ gap: space.md }} style={{ marginTop: 0, marginHorizontal: -2 }}>
-          <View style={{ width: cardW }}>
-            <WeekStrip
-              C={C}
-              title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
-              doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
-              days={adherence.days}
-              open={weekOpen}
-              onToggle={() => setWeekOpen((o) => !o)}
-            />
-          </View>
-          <View style={{ width: cardW }}>
-            <CalendarCard C={C} sessions={sessions} onOpen={() => router.push("/calendar")} openLabel={t("w.home.today.calOpen")} title={t("w.home.today.calTitle")} sub={t("w.home.today.calSub")} />
-          </View>
-        </ScrollView>
-        {/* THIS WEEK — reconciled plan (always shown); coached read-only */}
-        {(isAthlete || coached) && macro && reconciledView && (
-          <ACard style={{ marginTop: 18 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
-                {t("w.home.recweek.thisWeek")} {reconciledView.phase.label} · {t("w.home.recweek.week")} {reconciledView.phase.week}
-              </Text>
-              <View style={{ backgroundColor: `${reconciledView.phase.kind === "recovery" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, reconciledView.phase.kind === "recovery" ? C.amber : C.lime) }}>
-                  {reconciledView.phase.kind === "recovery" ? t("w.home.recweek.deload") : t("w.home.recweek.load")}
-                </Text>
-              </View>
-            </View>
-            {readOnlyPlan ? (
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.recweek.assignedByCoach")}</Text>
-              </View>
-            ) : (
-              <>
-                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}</Text>
-                </Pressable>
-                {scheduled && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{scheduled}</Text>}
-              </>
-            )}
-            <View style={{ flexDirection: "row", gap: 18, marginTop: 14 }}>
-              <Metric label={t("w.home.recweek.intensity")} value={`${reconciledView.intensity}`} color={C.chalk} C={C} />
-              <Metric label={t("w.home.recweek.volume")} value={`${reconciledView.volume}`} color={C.chalk} C={C} />
-              <Metric label={t("w.home.recweek.loadX")} value={reconciledView.loadFactor.toFixed(2)} color={C.chalk} C={C} />
-              <Metric label={t("w.home.recweek.volumeX")} value={reconciledView.volumeFactor.toFixed(2)} color={C.chalk} C={C} />
-            </View>
-            <View style={{ marginTop: 12 }}>
-              {reconciledView.blocks.map((b, i) => (
-                <View key={`${b.name}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.5, color: b.source === "sport" ? txt(C, C.amber) : C.ash }}>
-                      {b.source === "sport" ? `${t("w.home.recweek.sport")} ${b.demand ?? ""}` : b.kind === "conditioning" ? t("w.home.recweek.conditioning") : t("w.home.recweek.primaryLift")}
-                    </Text>
-                  </View>
-                  <View style={{ backgroundColor: `${b.source === "sport" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, b.source === "sport" ? C.amber : C.lime) }}>{b.scheme}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginTop: 12 }}>{reconciledView.why}</Text>
-          </ACard>
-        )}
-
-
-        {/* ───── CONNECT ───── — two labelled left/right sliders (Feed cards,
-            then Coaches), each a horizontal rail, with an Explore action. */}
-        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C[SECTION_COLOR.connect]} />
-
-        <SubRail C={C} label={t("w.home.today.connectFeed")} actionLabel={t("w.home.today.connectExplore")} onAction={() => router.push("/feed")} />
-        <FeedPreview horizontal onOpen={() => router.push("/feed")} />
-
-        <SubRail C={C} label={t("w.home.today.connectCoaches")} actionLabel={t("w.home.today.connectExplore")} onAction={() => router.push("/coaches")} />
-        <CoachRail onOpen={() => router.push("/coaches")} />
         </Animated.View>
       </ScrollView>
 
@@ -737,6 +574,25 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
   const vol = sessionVolume(s.blocks);
   const names = s.blocks.map((b) => b.name).join(" · ");
   return vol > 0 ? `${fmtTonnage(vol, units)} · ${names}` : names;
+}
+
+// A deferred row (Tier 3) — a slim tap-through to a secondary surface
+// (Nutrition, Coaches), with a tinted glyph, title + sub, and a chevron.
+function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIconName; tint: string; title: string; sub: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+        <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: `${tint}26`, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name={icon} size={15} color={txt(C, tint)} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{title}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>{sub}</Text>
+        </View>
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
+    </Pressable>
+  );
 }
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
@@ -31,18 +31,11 @@ import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { track } from "@/lib/track";
-import { usePersona, useHasActiveCoach } from "@/lib/persona";
+import { usePersona } from "@/lib/persona";
 import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
-import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
-import TodayWidgets from "./today-quick";
-import CoachRail from "./coach-rail";
-import FeedPreview from "./feed-preview";
-import Stories from "./stories";
 import { AuroraIcon } from "./icons";
-import AuroraAskCoach from "./ai-coach";
-import { useCollapsible } from "@/lib/use-collapsible";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -90,8 +83,6 @@ export default function AuroraToday({
   const { session } = useSession();
   const name = session?.name ?? "Athlete";
   const isAthlete = usePersona() !== "casual";
-  // Coached (free) client: read-only view of the coach-assigned plan.
-  const coached = useHasActiveCoach();
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -106,8 +97,6 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
-  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: 3 })), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
@@ -134,18 +123,6 @@ export default function AuroraToday({
     setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening"));
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, [t]);
-
-  // Plan today ⇄ AI coach pager — track the active card so the dots signal the swipe.
-  const pagerRef = useRef<HTMLDivElement>(null);
-  const [activeCard, setActiveCard] = useState(0);
-  const onPagerScroll = () => {
-    const el = pagerRef.current;
-    if (!el) return;
-    setActiveCard(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
-  };
-
-  // THIS WEEK collapse state — persisted so the choice sticks across visits.
-  const week = useCollapsible("hybrid.today.week");
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
@@ -189,9 +166,6 @@ export default function AuroraToday({
         </div>
       </div>
 
-      {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
-      <Stories you={initials} youLabel={t("w.home.today.storyYou")} onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
-
       {/* GREETING — the streak moved up to the header row, so this line breathes */}
       <div style={{ margin: "16px 2px 2px" }}>
         <div>
@@ -203,14 +177,8 @@ export default function AuroraToday({
       {/* ───── TRAIN ───── */}
       <Kicker k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C(SECTION_COLOR.train)} />
 
-      {/* PLAN TODAY ⇄ AI COACH — horizontal, scroll-snapping pager */}
-      <div
-        ref={pagerRef}
-        onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 2 }}
-      >
-        {/* card 1 — Your plan today */}
-        <div data-tour="today-plan" style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
+      {/* PLAN TODAY — the single focused hero (your one job today) */}
+      <div data-tour="today-plan" style={{ ...card }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
               {t("w.home.today.yourPlan")}{!(isAthlete && (hasData || plan || phase)) && plan ? t("w.home.today.asWritten") : ""}
@@ -284,33 +252,6 @@ export default function AuroraToday({
           )}
         </div>
 
-        {/* card 2 — AI coach */}
-        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.today.aiCoach")}</span>
-          <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.askCoach")}</div>
-          <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
-            {t("w.home.today.aiCoachBlurb")}
-          </div>
-          {isAthlete ? (
-            <AuroraAskCoach />
-          ) : (
-            <button
-              onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-              style={{ marginTop: 6, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}
-            >
-              {t("w.home.today.unlockFullBtn")}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* pager dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 7, marginTop: 10 }}>
-        {[0, 1].map((i) => (
-          <span key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, background: activeCard === i ? C("lime") : C("line"), transition: "width .2s" }} />
-        ))}
-      </div>
-
       {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
           Quick Log takes the day-streak's old slot (the streak lives in the header
           now); it opens the sport-log carousel, Readiness opens the daily check-in,
@@ -330,11 +271,9 @@ export default function AuroraToday({
         </button>
       </div>
 
-      {/* QUICK ACCESS — Cockpit (the command center, reachable straight from Today)
-          + Sport. Free users get an upgrade nudge in the SAME place (P1/P3): the
-          Cockpit is Full-only, and sport-specific prescriptions unlock with Full
-          (logging any sport stays free via the carousel below). */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+      {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
+      <div style={{ margin: "26px 2px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--violet-text)" }}>✦ {t("w.home.today.goFull")}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <AccessCard
           title={t("w.home.today.cockpitTitle")}
           sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")}
@@ -349,60 +288,12 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* (Quick Log now lives in the Tier-2 glance strip above — it opens the
-          sport-log carousel in a modal, so it isn't duplicated as a section here.) */}
-
-      {/* ───── RECOVER · FEEL ───── */}
-      <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C(SECTION_COLOR.feel)} />
-
-      {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
-      <TodayWidgets onNavigate={onNavigate} />
-
-      {/* ───── PLAN ───── (with a direct link to the full month Calendar) */}
-      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} action={{ label: t("w.home.today.calOpen"), onClick: () => (onNavigate ? onNavigate("calendar") : router.push("/calendar")) }} />
-
-      {/* WEEK ADHERENCE + CALENDAR — a swipeable pair: the glanceable Mon→Sun
-          done-strip, then a calendar widget for easy day-by-day access (P2). */}
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 2 }}>
-        <div style={{ scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
-          <WeekStrip
-            title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
-            doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
-            days={adherence.days}
-            open={!week.collapsed}
-            onToggle={week.toggle}
-          />
-        </div>
-        <div style={{ scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
-          <CalendarCard sessions={sessions} onOpen={() => (onNavigate ? onNavigate("calendar") : router.push("/calendar"))} openLabel={t("w.home.today.calOpen")} title={t("w.home.today.calTitle")} sub={t("w.home.today.calSub")} />
-        </div>
+      {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
+      <div style={{ margin: "26px 2px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</div>
+      <div style={{ display: "grid", gap: 10 }}>
+        <DeferRow glyph="◍" tint="blue" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => (onNavigate ? onNavigate("nutrition") : router.push("/nutrition"))} />
+        <DeferRow glyph="★" tint="violet" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
       </div>
-
-      {/* THIS WEEK — shared reconciled plan (always shown); coached read-only */}
-      {(isAthlete || coached) && macro ? (
-        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} readOnly={!isAthlete} />
-      ) : (
-        <button
-          onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))}
-          style={{ ...card, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, cursor: "pointer", textAlign: "left", color: C("chalk") }}
-        >
-          <span>
-            <span style={{ fontWeight: 800, fontSize: 17, display: "block" }}>{t("w.home.today.followPlanFree")}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.home.today.followPlanBlurb")}</span>
-          </span>
-          <span style={{ fontWeight: 800, fontSize: fs.heading, color: C("lime") }}>→</span>
-        </button>
-      )}
-
-      {/* ───── CONNECT ───── — two labelled left/right sliders (Feed cards, then
-          Coaches), each a horizontal rail, with a button through to Explore. */}
-      <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C(SECTION_COLOR.connect)} />
-
-      <SubRail label={t("w.home.today.connectFeed")} actionLabel={t("w.home.today.connectExplore")} onAction={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
-      <FeedPreview horizontal onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
-
-      <SubRail label={t("w.home.today.connectCoaches")} actionLabel={t("w.home.today.connectExplore")} onAction={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
-      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
 
       {/* QUICK LOG modal — the sport-log carousel, opened from the glance strip. */}
       {quickOpen && (
@@ -553,6 +444,23 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.
+// A deferred row (Tier 3) — a slim tap-through to a secondary surface
+// (Nutrition, Coaches), with a tinted glyph, title + sub, and a chevron.
+function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: string; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 15px", cursor: "pointer", color: C("chalk") }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: `var(--${tint}-text)`, fontSize: 14 }}>{glyph}</span>
+        <span>
+          <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{title}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{sub}</span>
+        </span>
+      </span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
+    </button>
+  );
+}
+
 function AccessCard({ title, sub, locked, onClick }: { title: string; sub: string; locked: boolean; onClick: () => void }) {
   return (
     <button
