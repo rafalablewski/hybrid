@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchPlanMaxes, savePlanMaxes } from "./api";
 
 // The athlete's training maxes (1RMs) a discipline-shaped plan derives working
 // loads from (e.g. { snatch: 100, backSquat: 200 }). Entered on the Plans "fill
@@ -32,13 +33,44 @@ AsyncStorage.getItem(KEY)
   })
   .catch(() => {});
 
-/** Set (or clear, with a null/≤0 value) one max and persist it. */
+// Cross-device sync: the maxes also live on the account (User.planMaxes). We
+// hydrate once on first use — merging the server's values over the local ones so
+// a second device sees them — and write the whole map back on every change. Both
+// soft-degrade (a signed-out user / un-migrated column keeps the on-device copy).
+let hydrated = false;
+function hydrateFromServer() {
+  if (hydrated) return;
+  hydrated = true;
+  fetchPlanMaxes()
+    .then((server) => {
+      if (!server || typeof server !== "object" || !Object.keys(server).length) return;
+      const next = { ...maxes, ...server };
+      if (JSON.stringify(next) === JSON.stringify(maxes)) return;
+      maxes = next;
+      AsyncStorage.setItem(KEY, JSON.stringify(maxes)).catch(() => {});
+      emit();
+    })
+    .catch(() => {});
+}
+
+/** Reset the store on sign-out / user switch so the next account on this device
+ *  doesn't inherit the previous athlete's maxes or the one-shot hydrate guard. */
+export function resetPlanMaxes(): void {
+  maxes = {};
+  hydrated = false;
+  AsyncStorage.removeItem(KEY).catch(() => {});
+  emit();
+}
+
+/** Set (or clear, with a null/≤0 value) one max — persisted on-device and pushed
+ *  to the account (best-effort). */
 export function setPlanMax(key: string, value: number | null): void {
   const next = { ...maxes };
   if (value == null || !Number.isFinite(value) || value <= 0) delete next[key];
   else next[key] = value;
   maxes = next;
   AsyncStorage.setItem(KEY, JSON.stringify(maxes)).catch(() => {});
+  void savePlanMaxes(maxes);
   emit();
 }
 
@@ -49,6 +81,7 @@ export function readPlanMaxes(): Record<string, number> {
 
 function subscribe(l: () => void): () => void {
   listeners.add(l);
+  hydrateFromServer(); // one-time account hydrate on first use
   return () => listeners.delete(l);
 }
 

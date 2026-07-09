@@ -31,22 +31,73 @@ let maxes: Record<string, number> = readInitial();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-/** Set (or clear, with a null/≤0 value) one max and persist it. */
-export function setPlanMax(key: string, value: number | null): void {
-  const next = { ...maxes };
-  if (value == null || !Number.isFinite(value) || value <= 0) delete next[key];
-  else next[key] = value;
-  maxes = next;
+function persistLocal() {
   try {
     localStorage.setItem(KEY, JSON.stringify(maxes));
   } catch {
     /* ignore (private mode) */
   }
+}
+
+// Cross-device sync: the maxes also live on the account (User.planMaxes, via
+// /api/plan-maxes). We hydrate once on first use — merging the server's values
+// over the local ones (server wins per key) so a second device sees them — and
+// write the whole map back on every change. Both soft-degrade: a signed-out user
+// or an un-migrated column just keeps the on-device copy.
+let hydrated = false;
+function hydrateFromServer() {
+  if (hydrated) return;
+  hydrated = true;
+  fetch("/api/plan-maxes")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d: { maxes?: Record<string, number> } | null) => {
+      const server = d?.maxes;
+      if (!server || typeof server !== "object") return;
+      const next = { ...maxes, ...server };
+      if (JSON.stringify(next) === JSON.stringify(maxes)) return;
+      maxes = next;
+      persistLocal();
+      emit();
+    })
+    .catch(() => {});
+}
+
+function pushToServer() {
+  fetch("/api/plan-maxes", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ maxes }),
+  }).catch(() => {});
+}
+
+/** Reset the store on sign-out / user switch so the next account on this device
+ *  doesn't inherit the previous athlete's maxes or the one-shot hydrate guard. */
+export function resetPlanMaxes(): void {
+  maxes = {};
+  hydrated = false;
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* ignore */
+  }
+  emit();
+}
+
+/** Set (or clear, with a null/≤0 value) one max — persisted on-device and pushed
+ *  to the account (best-effort). */
+export function setPlanMax(key: string, value: number | null): void {
+  const next = { ...maxes };
+  if (value == null || !Number.isFinite(value) || value <= 0) delete next[key];
+  else next[key] = value;
+  maxes = next;
+  persistLocal();
+  pushToServer();
   emit();
 }
 
 function subscribe(l: () => void): () => void {
   listeners.add(l);
+  hydrateFromServer(); // one-time account hydrate on first use
   return () => listeners.delete(l);
 }
 

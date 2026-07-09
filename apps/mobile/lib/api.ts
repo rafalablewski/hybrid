@@ -503,6 +503,34 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
   }
 }
 
+// The athlete's training maxes (1RMs) stored on the account, so the plan card
+// shows the same working kg on every device (mirrors the on-device store). Both
+// soft-degrade to a no-op (empty / false) when signed out or the column isn't
+// migrated (reference/sql-plan-maxes.sql).
+export async function fetchPlanMaxes(): Promise<Record<string, number>> {
+  try {
+    const res = await fetch(`${API_URL}/api/plan-maxes`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { maxes?: Record<string, number> };
+    return data.maxes && typeof data.maxes === "object" ? data.maxes : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function savePlanMaxes(maxes: Record<string, number>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/plan-maxes`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ maxes }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // The admin's per-persona nav-access override (which persona sees each feature),
 // read from the feature-flags value. Empty → code defaults.
 export async function fetchPersonaAccess(): Promise<PersonaAccess> {

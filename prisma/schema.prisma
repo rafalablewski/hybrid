@@ -60,6 +60,14 @@ model User {
   // one account — prevents replay / cross-account sharing of one purchase.
   appleOriginalTransactionId String? @unique
 
+  // The athlete's training maxes (1RMs) the discipline-shaped plans derive
+  // working loads from — a flat { liftKey: 1RM } map keyed by ProgramInput.key
+  // (e.g. {"snatch":100,"backSquat":200}). Read/written via /api/plan-maxes and
+  // mirrored on each device so "Your plan today" shows working kg everywhere.
+  // Soft-guarded (raw queries) so the app runs before the column is migrated
+  // (reference/sql-plan-maxes.sql).
+  planMaxes Json @default("{}")
+
   sessions      Session[]
   macrocycles   Macrocycle[]
   biometrics    Biometric[]
