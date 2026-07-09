@@ -335,44 +335,60 @@ export default function AuroraProfile() {
       {/* ACHIEVEMENTS — squared badge tiles */}
       <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${achievements.filter((a) => a.earned).length} ${t("w.account.profile.earned")}`} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.ms }}>
-        {achievements.map((a) => (
-          <View key={a.id} style={{ width: 76, alignItems: "center" }}>
-            <View
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: a.earned ? `${C.lime}73` : C.line,
-                backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: a.earned ? 1 : 0.55,
-                ...(a.earned
-                  ? { shadowColor: C.lime, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 4 }
-                  : {}),
-              }}
-            >
-              <Text style={{ fontSize: 27 }}>{a.earned ? a.icon : "🔒"}</Text>
+        {achievements.map((a) => {
+          const pct = Math.round(a.progress * 100);
+          return (
+            <View key={a.id} style={{ width: 80, alignItems: "center" }}>
+              <View
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: a.earned ? `${C.lime}73` : C.line,
+                  backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...(a.earned
+                    ? { shadowColor: C.lime, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 4 }
+                    : {}),
+                }}
+              >
+                {/* The real badge icon — full when earned, dimmed while locked. A
+                    padlock hid what you're working toward; the bar below shows how
+                    close you are, so a locked badge motivates instead of deadends. */}
+                <Text style={{ fontSize: 27, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
+              </View>
+              <View style={{ width: 60, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 9, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : `${C.lime}99` }} />
+              </View>
+              <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.nano, color: C.ash, marginTop: 7, maxWidth: 80, textAlign: "center" }}>{a.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: a.earned ? lime : C.ash, marginTop: 2 }}>{a.earned ? "✓" : `${pct}%`}</Text>
             </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.nano, color: C.ash, marginTop: 8, maxWidth: 76, textAlign: "center" }}>{a.label}</Text>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* PERSONAL RECORDS — top lifts by e1RM */}
       <SectionHeader C={C} title={t("w.account.profile.personal-records")} action={hasData ? t("w.account.profile.by-e1rm") : ""} />
       {topPrs.length > 0 ? (
         topPrs.map(([lift, e1rm]) => (
-          <View key={lift} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
-              <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
+          <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
+                <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
+                </View>
               </View>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
             </View>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
+            {/* relative-strength bar — each PR against your heaviest lift, so the
+                records read as a quick visual ranking (matches the achievement bars). */}
+            <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 11, overflow: "hidden" }}>
+              <View style={{ width: `${Math.max(8, Math.round((e1rm / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
+            </View>
           </View>
         ))
       ) : (

@@ -358,40 +358,53 @@ export default function AuroraProfile({
       {/* ACHIEVEMENTS — squared badges */}
       {sectionHead(t("w.account.profile.achievements"), `${achievements.filter((a) => a.earned).length} ${t("w.account.profile.earned")} →`)}
       <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none" }}>
-        {achievements.map((a) => (
-          <div key={a.id} style={{ flex: "none", width: 76, textAlign: "center" }}>
-            <div
-              title={a.detail}
-              style={{
-                width: 76, height: 76, borderRadius: 20, display: "grid", placeItems: "center", fontSize: 27,
-                border: `1px solid ${a.earned ? "color-mix(in srgb, var(--color-lime) 45%, transparent)" : C("line")}`,
-                background: a.earned ? "linear-gradient(160deg, color-mix(in srgb, var(--color-lime) 12%, var(--color-ink2)), var(--color-ink))" : C("ink2"),
-                boxShadow: a.earned ? "0 0 22px -10px color-mix(in srgb, var(--color-lime) 60%, transparent)" : "none",
-                color: a.earned ? undefined : C("ash"),
-                opacity: a.earned ? 1 : 0.7,
-                filter: a.earned ? "none" : "grayscale(0.6)",
-              }}
-            >
-              {a.earned ? a.icon : "🔒"}
+        {achievements.map((a) => {
+          const pct = Math.round(a.progress * 100);
+          return (
+            <div key={a.id} style={{ flex: "none", width: 80, textAlign: "center" }}>
+              <div
+                title={a.detail}
+                style={{
+                  width: 76, height: 76, borderRadius: 20, display: "grid", placeItems: "center", fontSize: 27, margin: "0 auto",
+                  border: `1px solid ${a.earned ? "color-mix(in srgb, var(--color-lime) 45%, transparent)" : C("line")}`,
+                  background: a.earned ? "linear-gradient(160deg, color-mix(in srgb, var(--color-lime) 12%, var(--color-ink2)), var(--color-ink))" : C("ink2"),
+                  boxShadow: a.earned ? "0 0 22px -10px color-mix(in srgb, var(--color-lime) 60%, transparent)" : "none",
+                }}
+              >
+                {/* The real badge icon — full when earned, dimmed while locked; the
+                    bar below shows how close you are (a padlock hid the goal). */}
+                <span style={{ opacity: a.earned ? 1 : 0.4, filter: a.earned ? "none" : "grayscale(0.5)" }}>{a.icon}</span>
+              </div>
+              <div style={{ width: 60, height: 4, borderRadius: 2, background: C("line"), margin: "9px auto 0", overflow: "hidden" }}>
+                <div style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, background: a.earned ? C("lime") : "color-mix(in srgb, var(--color-lime) 60%, transparent)" }} />
+              </div>
+              <div style={{ fontSize: fs.nano, color: C("ash"), marginTop: 7, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: a.earned ? "var(--lime-text)" : C("ash"), marginTop: 2 }}>{a.earned ? "✓" : `${pct}%`}</div>
             </div>
-            <div style={{ fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* PERSONAL RECORDS */}
       {sectionHead(t("w.account.profile.personal-records"), prs.length ? `${t("w.account.profile.see-all")} →` : undefined)}
       {prs.length ? (
         prs.map(([lift, e1rm]) => (
-          <div key={lift} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", marginBottom: 9 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <span style={{ fontSize: fs.subtitle }}>🏆</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>e1RM</div>
+          <div key={lift} style={{ ...card, padding: "13px 14px", marginBottom: 9 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                <span style={{ fontSize: fs.subtitle }}>🏆</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>e1RM</div>
+                </div>
               </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(e1rm, units)}</div>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(e1rm, units)}</div>
+            {/* relative-strength bar — each PR against your heaviest lift, so the
+                records read as a quick visual ranking (matches the achievement bars). */}
+            <div style={{ height: 4, borderRadius: 2, background: C("line"), marginTop: 11, overflow: "hidden" }}>
+              <div style={{ width: `${Math.max(8, Math.round((e1rm / prs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, background: C("lime") }} />
+            </div>
           </div>
         ))
       ) : (
