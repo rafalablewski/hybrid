@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
-import { evaluateRoleChange, isValidLanguage, normalizeRole, NAV_ITEMS } from "@hybrid/core";
+import { evaluateRoleChange, isValidLanguage, normalizeRole } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -83,8 +83,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   await wipe("coachDiets", () =>
     prisma.coachDiet.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
   );
-  // Pending requests / applications tied to the account.
-  await wipe("accessRequests", () => prisma.accessRequest.deleteMany({ where: { userId: id } }));
+  // Pending applications tied to the account.
   await wipe("coachApplication", () => prisma.coachApplication.deleteMany({ where: { userId: id } }));
   // Email footprint — enrollments + the deliverability ledger. The EmailSuppression
   // (opt-out) row is DELIBERATELY KEPT: a recorded unsubscribe/bounce must be
@@ -97,7 +96,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       prisma.emailMessage.deleteMany({ where: { OR: [{ userId: id }, { email: target.email.toLowerCase() }] } }),
     );
   }
-  await wipe("featureGrant", () => prisma.featureGrant.deleteMany({ where: { userId: id } }));
 
   // The User row is the PRIMARY action — never swallow its failure (that would
   // return a false success while the account still exists). Their AdminAudit
@@ -205,14 +203,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     req: request,
   });
 
-  // Per-user feature grants live in their own (soft-guarded) table.
-  let featureGrants: string[] = [];
-  try {
-    featureGrants = (await prisma.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
-  } catch {
-    /* FeatureGrant table not migrated yet */
-  }
-
   return NextResponse.json({
     id: user.id,
     email: user.email,
@@ -223,7 +213,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     coachVerified: user.coachVerified,
     subscriptionStatus: user.subscriptionStatus,
     hasStripe: Boolean(user.stripeCustomerId),
-    featureGrants,
     createdAt: user.createdAt,
     linkedAuth: Boolean(user.authId),
     orgs: user.memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role })),
@@ -255,7 +244,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     role?: string;
     language?: string;
     name?: string | null;
-    featureGrants?: unknown;
     entitlement?: string;
     coachVerified?: boolean;
   }>(request, 8 * 1024);
@@ -282,17 +270,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // independently (e.g. pre-verify before promotion); the UI surfaces it on COACHes.
   if (body.coachVerified !== undefined) data.coachVerified = Boolean(body.coachVerified);
 
-  // Per-user feature grants — validated here, persisted to the (soft-guarded)
-  // FeatureGrant table below, separately from the User row.
-  let grants: string[] | undefined;
-  if (body.featureGrants !== undefined) {
-    if (!Array.isArray(body.featureGrants))
-      return NextResponse.json({ error: "featureGrants must be an array" }, { status: 400 });
-    const navIds = new Set(NAV_ITEMS.map((i) => i.id));
-    // Only known nav ids survive (an admin can't grant a feature nothing reads).
-    grants = [...new Set(body.featureGrants.filter((g): g is string => typeof g === "string" && navIds.has(g)))].slice(0, 40);
-  }
-
   if (body.role !== undefined) {
     // The lockout/escalation rule lives in @hybrid/core (pure + unit-tested).
     // Only count admins when we're actually demoting one — avoids the query
@@ -318,25 +295,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body.name !== undefined) data.name = body.name ? String(body.name).slice(0, 120) : null;
 
-  if (Object.keys(data).length === 0 && grants === undefined && nextEntitlement === undefined)
+  if (Object.keys(data).length === 0 && nextEntitlement === undefined)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
-  // Apply the role/name/language change and the grant change together, so a
-  // failure on either rolls back both (no half-applied state, no skipped audit).
   let updated = target;
-  let beforeGrants: string[] | undefined;
-  try {
-    await prisma.$transaction(async (tx) => {
-      if (Object.keys(data).length > 0) updated = await tx.user.update({ where: { id }, data });
-      if (grants !== undefined) {
-        beforeGrants = (await tx.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
-        await tx.featureGrant.upsert({ where: { userId: id }, create: { userId: id, navIds: grants }, update: { navIds: grants } });
-      }
-    });
-  } catch {
-    return grants !== undefined
-      ? NextResponse.json({ error: "Couldn't save — feature grants need reference/sql-user-feature-grants.sql." }, { status: 503 })
-      : NextResponse.json({ error: "Update failed." }, { status: 500 });
+  if (Object.keys(data).length > 0) {
+    try {
+      updated = await prisma.user.update({ where: { id }, data });
+    } catch {
+      return NextResponse.json({ error: "Update failed." }, { status: 500 });
+    }
   }
 
   // Plan change goes through setEntitlement (DB + auth metadata mirror). Done
@@ -354,8 +322,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     targetId: id,
     summary: `Updated ${target.email}`,
     metadata: {
-      before: { role: target.role, language: target.language, name: target.name, entitlement: target.entitlement, coachVerified: target.coachVerified, ...(grants !== undefined ? { featureGrants: beforeGrants } : {}) },
-      after: { role: updated.role, language: updated.language, name: updated.name, entitlement: nextEntitlement ?? target.entitlement, coachVerified: updated.coachVerified, ...(grants !== undefined ? { featureGrants: grants } : {}) },
+      before: { role: target.role, language: target.language, name: target.name, entitlement: target.entitlement, coachVerified: target.coachVerified },
+      after: { role: updated.role, language: updated.language, name: updated.name, entitlement: nextEntitlement ?? target.entitlement, coachVerified: updated.coachVerified },
     },
     req: request,
   });
@@ -368,6 +336,5 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     language: updated.language,
     entitlement: nextEntitlement ?? updated.entitlement,
     coachVerified: updated.coachVerified,
-    ...(grants !== undefined ? { featureGrants: grants } : {}),
   });
 }

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import {
   groupedNav,
-  NAV_ITEMS,
   sanitizePersonaAccess,
   type NavGroup,
   type Persona,
@@ -16,7 +15,7 @@ import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
 // Mobile Access (Governance) — parity with the web "access" section, which
 // renders <CoachApplications/> then <AdminAccess/>. Combined here into ONE body
 // with three tabs:
-//   • Queues   — pending coach applications + access requests (Approve/Deny).
+//   • Queues   — pending coach applications (Approve/Deny).
 //   • Roles    — the read-only RBAC reference (3 roles + permission matrix).
 //   • Personas — the per-nav-item minimum-persona editor (writes access.personaNav).
 // Same endpoints + shapes as web; mutations are optimistic with resync/rollback.
@@ -45,11 +44,9 @@ const GROUP_LABEL: Record<NavGroup, string> = {
   home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", social: "Social", teams: "Teams", account: "Account",
 };
 const FLAG_KEY = "access.personaNav";
-const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;
 
 // ---- API shapes (match the web components / routes) ----
 type CoachApp = { id: string; userEmail: string; credentials: string; status: string; createdAt: string };
-type AccessReq = { id: string; userEmail: string; navId: string; createdAt: string };
 type FlagRow = { key: string; value: unknown };
 type Tab = "queues" | "roles" | "personas";
 
@@ -59,7 +56,6 @@ export default function AdminAccess() {
 
   // queues
   const [apps, setApps] = useState<CoachApp[]>([]);
-  const [requests, setRequests] = useState<AccessReq[]>([]);
 
   // persona editor
   const [overrides, setOverrides] = useState<PersonaAccess>({});
@@ -71,13 +67,11 @@ export default function AdminAccess() {
   const groups = groupedNav();
 
   const load = useCallback(async () => {
-    const [appRes, reqRes, flagRes] = await Promise.all([
+    const [appRes, flagRes] = await Promise.all([
       adminGet<{ applications?: CoachApp[] }>("/api/admin/coach-applications"),
-      adminGet<{ requests?: AccessReq[] }>("/api/admin/access-requests"),
       adminGet<{ flags?: FlagRow[]; unavailable?: boolean }>("/api/admin/flags"),
     ]);
     setApps((appRes.data?.applications ?? []).filter((a) => a.status === "pending"));
-    setRequests(reqRes.data?.requests ?? []);
     setUnavailable(Boolean(flagRes.data?.unavailable));
     setOverrides(sanitizePersonaAccess(flagRes.data?.flags?.find((f) => f.key === FLAG_KEY)?.value));
     setLoading(false);
@@ -96,21 +90,6 @@ export default function AdminAccess() {
     };
     if (action === "deny") {
       Alert.alert("Deny application?", "The applicant won't be promoted to coach.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Deny", style: "destructive", onPress: run },
-      ]);
-    } else run();
-  };
-
-  // --- access request decision (optimistic + resync on failure) ---
-  const decideReq = (id: string, action: "approve" | "deny") => {
-    const run = async () => {
-      setRequests((r) => r.filter((x) => x.id !== id));
-      const res = await adminSend("PATCH", `/api/admin/access-requests/${id}`, { action });
-      if (!res.ok) load();
-    };
-    if (action === "deny") {
-      Alert.alert("Deny request?", "The user won't get this feature.", [
         { text: "Cancel", style: "cancel" },
         { text: "Deny", style: "destructive", onPress: run },
       ]);
@@ -136,7 +115,7 @@ export default function AdminAccess() {
 
   if (loading) return <Loading />;
 
-  const pendingCount = apps.length + requests.length;
+  const pendingCount = apps.length;
   const overrideCount = Object.keys(overrides).length;
 
   return (
@@ -154,8 +133,8 @@ export default function AdminAccess() {
       {tab === "queues" && (
         <View>
           <Intro>
-            Approve or deny pending requests. Coach applications promote a client to the verified
-            COACH role; access requests grant a single feature to a user.
+            Approve or deny pending coach applications — approving promotes a client to the verified
+            COACH role.
           </Intro>
 
           {/* Coach applications */}
@@ -175,29 +154,6 @@ export default function AdminAccess() {
                     <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
                       <PillBtn label="Approve" color={palette.lime} onPress={() => decideApp(a.id, "approve")} />
                       <PillBtn label="Deny" color={palette.ash} outline onPress={() => decideApp(a.id, "deny")} />
-                    </View>
-                  </View>
-                ))
-              )}
-            </View>
-          </Card>
-
-          {/* Access requests */}
-          <Card accent={palette.violet}>
-            <Kicker color={palette.violet}>Pending access requests · {requests.length}</Kicker>
-            <View style={{ marginTop: 10 }}>
-              {requests.length === 0 ? (
-                <Mono style={{ fontSize: fs.body }}>No pending requests.</Mono>
-              ) : (
-                requests.map((r) => (
-                  <View key={r.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{r.userEmail}</Text>
-                    <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>
-                      wants <Text style={{ color: palette.chalk }}>{navLabel(r.navId)}</Text>
-                    </Mono>
-                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
-                      <PillBtn label="Approve" color={palette.lime} onPress={() => decideReq(r.id, "approve")} />
-                      <PillBtn label="Deny" color={palette.ash} outline onPress={() => decideReq(r.id, "deny")} />
                     </View>
                   </View>
                 ))

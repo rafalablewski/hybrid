@@ -13,7 +13,6 @@ import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
-import RequestAccess from "./request-access";
 import { SocialProfileEdit } from "./social-profile";
 import { useIsMobile } from "@/lib/use-media-query";
 
@@ -368,7 +367,6 @@ export default function AccountSettings() {
                 )}
               </div>
             )}
-            <RequestAccess />
           </>
         );
       case "security":

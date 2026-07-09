@@ -1,13 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { NAV_ITEMS } from "@hybrid/core";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
-
-// Features worth granting a single user beyond their persona (everything that
-// isn't visible to a casual user by default).
-const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
+import AdminAnonSessions from "./anon-sessions";
 
 type Row = {
   id: string;
@@ -37,7 +33,6 @@ type Detail = {
   coachVerified: boolean;
   subscriptionStatus: string | null;
   hasStripe: boolean;
-  featureGrants: string[];
   createdAt: string;
   linkedAuth: boolean;
   orgs: { id: string; name: string; role: string }[];
@@ -50,7 +45,68 @@ const planColor = (e: string) => (e === "paid" ? LIME : ASH);
 const planLabel = (e: string) => (e === "paid" ? "Premium" : "Free");
 const fmt = (d: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : "—");
 
+// A small spinning ring for in-flight buttons — makes a working action read as
+// active rather than stalled (see the "Deleting…" button). currentColor so it
+// inherits the button's text colour.
+function Spinner({ size = 14 }: { size?: number }) {
+  return (
+    <span
+      className="spin"
+      aria-hidden
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        border: `2px solid currentColor`,
+        borderTopColor: "transparent",
+        display: "inline-block",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+// The Users section hosts two sub-tabs under Platform: the account directory and
+// the guest (pre-account) workouts — the latter moved here from Governance so all
+// people/usage records live in one place.
+type UsersTab = "accounts" | "guests";
+
 export default function AdminUsers() {
+  const [tab, setTab] = useState<UsersTab>("accounts");
+  return (
+    <div>
+      <div style={{ display: "flex", gap: space.xs, marginBottom: 18, flexWrap: "wrap" }}>
+        <SubTab active={tab === "accounts"} onClick={() => setTab("accounts")}>Accounts</SubTab>
+        <SubTab active={tab === "guests"} onClick={() => setTab("guests")}>Guest workouts</SubTab>
+      </div>
+      {tab === "accounts" ? <AccountsTab /> : <AdminAnonSessions />}
+    </div>
+  );
+}
+
+function SubTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        ...disp,
+        fontWeight: 700,
+        fontSize: fs.body,
+        color: txt(active ? AMBER : ASH),
+        background: active ? `${AMBER}1c` : "transparent",
+        border: `1px solid ${active ? `${AMBER}66` : LINE}`,
+        borderRadius: 999,
+        padding: "8px 18px",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function AccountsTab() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [page, setPage] = useState(1);
@@ -387,10 +443,9 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const [language, setLanguage] = useState("");
   const [entitlement, setEntitlement] = useState("free");
   const [coachVerified, setCoachVerified] = useState(false);
-  const [grants, setGrants] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/users/${id}`)
@@ -401,21 +456,16 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
         setLanguage(det.language);
         setEntitlement(det.entitlement ?? "free");
         setCoachVerified(Boolean(det.coachVerified));
-        setGrants(det.featureGrants ?? []);
       })
       .catch(() => setD(null));
   }, [id]);
 
-  const grantsKey = (g: string[]) => [...g].sort().join(",");
   const dirty =
     d &&
     (role !== d.role ||
       language !== d.language ||
       entitlement !== (d.entitlement ?? "free") ||
-      coachVerified !== Boolean(d.coachVerified) ||
-      grantsKey(grants) !== grantsKey(d.featureGrants ?? []));
-  const toggleGrant = (navId: string) =>
-    setGrants((g) => (g.includes(navId) ? g.filter((x) => x !== navId) : [...g, navId]));
+      coachVerified !== Boolean(d.coachVerified));
 
   const save = async () => {
     setSaving(true);
@@ -424,11 +474,11 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       const res = await fetch(`/api/admin/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, language, entitlement, coachVerified, featureGrants: grants }),
+        body: JSON.stringify({ role, language, entitlement, coachVerified }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) {
-        setD((prev) => (prev ? { ...prev, role, language, entitlement, coachVerified, featureGrants: grants } : prev));
+        setD((prev) => (prev ? { ...prev, role, language, entitlement, coachVerified } : prev));
         setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
         onSaved();
       } else {
@@ -438,36 +488,6 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       setMsg({ ok: false, text: "Network error — try again." });
     } finally {
       setSaving(false);
-    }
-  };
-
-  // Permanently delete the account + all their data. Two-step confirm (the email
-  // must be typed back) since this is irreversible and cascades.
-  const remove = async () => {
-    if (!d) return;
-    const typed = window.prompt(
-      `This permanently deletes ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.\n\nType the email to confirm:`,
-    );
-    if (typed == null) return;
-    if (typed.trim().toLowerCase() !== d.email.toLowerCase()) {
-      setMsg({ ok: false, text: "Email didn't match — nothing deleted." });
-      return;
-    }
-    setDeleting(true);
-    setMsg(null);
-    try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        onSaved();
-        onClose();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setMsg({ ok: false, text: body.error ?? "Delete failed." });
-      }
-    } catch {
-      setMsg({ ok: false, text: "Network error — try again." });
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -582,36 +602,6 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 </label>
               )}
 
-              {/* per-user feature grants — unlock a feature for THIS person on
-                  top of their persona (e.g. give a casual user the analytics). */}
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
-                Feature access — unlock individual features beyond this user&apos;s persona.
-              </Mono>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs, marginBottom: 14 }}>
-                {GRANTABLE.map((item) => {
-                  const on = grants.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => toggleGrant(item.id)}
-                      style={{
-                        ...mono,
-                        fontSize: fs.body,
-                        textAlign: "left",
-                        padding: "10px 10px",
-                        borderRadius: "var(--r-field)",
-                        cursor: "pointer",
-                        border: `1px solid ${on ? LIME : LINE}`,
-                        background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
-                        color: txt(on ? LIME : ASH),
-                      }}
-                    >
-                      {on ? "✓ " : "+ "}{item.label}
-                    </button>
-                  );
-                })}
-              </div>
-
               {msg && (
                 <div role="alert">
                   <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
@@ -650,8 +640,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 memberships. This cannot be undone.
               </Mono>
               <button
-                onClick={remove}
-                disabled={deleting}
+                onClick={() => setConfirming(true)}
                 style={{
                   width: "100%",
                   ...disp,
@@ -662,15 +651,218 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   border: `1px solid ${RED}66`,
                   borderRadius: "var(--r-card)",
                   padding: "11px 0",
-                  cursor: deleting ? "default" : "pointer",
-                  opacity: deleting ? 0.6 : 1,
+                  cursor: "pointer",
                 }}
               >
-                {deleting ? "Deleting…" : "Delete account"}
+                Delete account
               </button>
             </div>
           </>
         )}
+      </div>
+
+      {confirming && d && (
+        <DeleteAccountDialog
+          email={d.email}
+          name={d.name}
+          onClose={() => setConfirming(false)}
+          onDeleted={() => {
+            setConfirming(false);
+            onSaved();
+            onClose();
+          }}
+          doDelete={() => fetch(`/api/admin/users/${id}`, { method: "DELETE" })}
+        />
+      )}
+    </div>
+  );
+}
+
+// Permanently delete the account + all its data. A designed, focused modal (not a
+// bare window.prompt): it names the account, spells out the cascade, and gates
+// the destructive action behind typing the email back. Two-step confirm since
+// this is irreversible. While the request is in flight the button shows a live
+// spinner so it never reads as stalled.
+function DeleteAccountDialog({
+  email,
+  name,
+  onClose,
+  onDeleted,
+  doDelete,
+}: {
+  email: string;
+  name: string | null;
+  onClose: () => void;
+  onDeleted: () => void;
+  doDelete: () => Promise<Response>;
+}) {
+  const [typed, setTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Don't let the backdrop click close mid-delete (the request is committing).
+  const dialogRef = useDialog<HTMLDivElement>(() => {
+    if (!deleting) onClose();
+  });
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 60);
+    return () => clearTimeout(t);
+  }, []);
+
+  const matches = typed.trim().toLowerCase() === email.toLowerCase();
+
+  const confirm = async () => {
+    if (!matches || deleting) return;
+    setDeleting(true);
+    setErr(null);
+    try {
+      const res = await doDelete();
+      if (res.ok) {
+        onDeleted();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setErr(body.error ?? "Delete failed — nothing was removed.");
+        setDeleting(false);
+      }
+    } catch {
+      setErr("Network error — try again.");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: "fixed", inset: 0, background: "#000b", zIndex: 60, display: "flex", justifyContent: "center", alignItems: "center", padding: "6vh 16px", backdropFilter: "blur(2px)" }}
+    >
+      <div
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={`Delete ${email}`}
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && matches && !deleting) confirm();
+        }}
+        style={{
+          width: 440,
+          maxWidth: "94vw",
+          background: CARD,
+          border: `1px solid ${RED}55`,
+          borderRadius: "var(--r-card)",
+          padding: 26,
+          ...disp,
+          boxShadow: `0 30px 80px -24px rgba(0,0,0,.75)`,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <div
+            aria-hidden
+            style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", background: `${RED}18`, border: `1px solid ${RED}55`, display: "grid", placeItems: "center", color: txt(RED), fontSize: 22 }}
+          >
+            ⚠
+          </div>
+          <div>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={RED}>Permanent deletion</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 21, marginTop: 1 }}>Delete this account?</div>
+          </div>
+        </div>
+
+        {/* who — the account being removed */}
+        <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "12px 14px", marginBottom: 14 }}>
+          <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{name || "—"}</div>
+          <Mono s={{ fontSize: fs.body }} c={ASH}>{email}</Mono>
+        </div>
+
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 16 }} c={CHALK}>
+          This permanently erases <b>everything</b> attached to this account — sessions, check-ins,
+          plans, coaching links and memberships — and removes their login. This <b style={{ color: txt(RED) }}>cannot be undone</b>.
+        </Mono>
+
+        <label style={{ display: "block", marginBottom: 16 }}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>
+            Type <b style={{ color: txt(CHALK) }}>{email}</b> to confirm
+          </Mono>
+          <input
+            ref={inputRef}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            disabled={deleting}
+            placeholder={email}
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              ...mono,
+              fontSize: fs.bodyLg,
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "var(--r-field)",
+              background: INK2,
+              color: CHALK,
+              border: `1px solid ${matches ? `${RED}88` : LINE}`,
+              outline: "none",
+            }}
+          />
+        </label>
+
+        {err && (
+          <div role="alert">
+            <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: space.sm }}>
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            style={{
+              flex: 1,
+              ...disp,
+              fontWeight: 700,
+              fontSize: fs.bodyLg,
+              color: txt(CHALK),
+              background: INK2,
+              border: `1px solid ${LINE}`,
+              borderRadius: "var(--r-card)",
+              padding: "11px 0",
+              cursor: deleting ? "default" : "pointer",
+              opacity: deleting ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirm}
+            disabled={!matches || deleting}
+            style={{
+              flex: 1.4,
+              ...disp,
+              fontWeight: 800,
+              fontSize: fs.bodyLg,
+              color: matches ? ON_ACCENT : txt(ASH),
+              background: !matches ? LINE : deleting ? `${RED}cc` : RED,
+              border: "none",
+              borderRadius: "var(--r-card)",
+              padding: "11px 0",
+              cursor: matches && !deleting ? "pointer" : "default",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 9,
+              transition: "background .15s",
+            }}
+          >
+            {deleting ? (
+              <>
+                <Spinner />
+                Deleting…
+              </>
+            ) : (
+              "Delete forever"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

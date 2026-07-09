@@ -98,6 +98,7 @@ export default function AdminAnon() {
                 color={palette.red}
                 outline
                 disabled={busy === s.id}
+                busy={busy === s.id}
               />
             </View>
           </Card>

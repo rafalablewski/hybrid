@@ -20,7 +20,6 @@ import AdminContent from "../../components/admin/content";
 import AdminAccess from "../../components/admin/access";
 import AdminSecurity from "../../components/admin/security";
 import AdminAudit from "../../components/admin/audit";
-import AdminAnon from "../../components/admin/anon";
 import AdminSystem from "../../components/admin/system";
 import AdminGuidance from "../../components/admin/guidance";
 
@@ -44,7 +43,6 @@ const BODIES: Record<AdminSectionId, () => React.JSX.Element> = {
   access: AdminAccess,
   security: AdminSecurity,
   audit: AdminAudit,
-  anon: AdminAnon,
   system: AdminSystem,
   guidance: AdminGuidance,
 };

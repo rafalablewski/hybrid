@@ -1,11 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { groupedNav, NAV_ITEMS, sanitizePersonaAccess, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
+import { groupedNav, sanitizePersonaAccess, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
 import { fs, space, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
-
-const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;
-type AccessReq = { id: string; userEmail: string; navId: string; createdAt: string };
 
 // The role-based data-access model (RBAC) — distinct from the per-feature persona
 // matrix below. Moved here (admin-only Governance) from the old user-facing
@@ -105,7 +102,6 @@ export default function AdminAccess() {
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [requests, setRequests] = useState<AccessReq[]>([]);
   const groups = groupedNav();
 
   const load = useCallback(() => {
@@ -117,26 +113,8 @@ export default function AdminAccess() {
         setOverrides(sanitizePersonaAccess(rows?.find((f) => f.key === KEY)?.value));
       })
       .catch(() => setOverrides({}));
-    fetch("/api/admin/access-requests")
-      .then((r) => (r.ok ? r.json() : { requests: [] }))
-      .then((d) => setRequests(d.requests ?? []))
-      .catch(() => setRequests([]));
   }, []);
   useEffect(load, [load]);
-
-  const decide = async (id: string, action: "approve" | "deny") => {
-    setRequests((r) => r.filter((x) => x.id !== id)); // optimistic
-    try {
-      const res = await fetch(`/api/admin/access-requests/${id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      load(); // re-sync the queue from the server on failure
-    }
-  };
 
   const codeDefault = (item: { minPersona?: Persona }): Persona => item.minPersona ?? "casual";
 
@@ -176,28 +154,6 @@ export default function AdminAccess() {
             <span style={{ color: txt(AMBER) }}>reference/sql-feature-flags.sql</span> in Supabase to make these persist.
             Until then the app runs on the code defaults below.
           </Mono>
-        </Card>
-      )}
-
-      {requests.length > 0 && (
-        <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
-            Pending access requests · {requests.length}
-          </Mono>
-          <div style={{ display: "grid", gap: space.sm }}>
-            {requests.map((r) => (
-              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{r.userEmail}</div>
-                  <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>wants <b style={{ color: txt(CHALK) }}>{navLabel(r.navId)}</b></Mono>
-                </div>
-                <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-                  <button onClick={() => decide(r.id, "approve")} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
-                  <button onClick={() => decide(r.id, "deny")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Deny</button>
-                </div>
-              </div>
-            ))}
-          </div>
         </Card>
       )}
 

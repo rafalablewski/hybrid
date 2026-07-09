@@ -404,6 +404,14 @@ html {
 .skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: .45; } }
 
+/* Inline busy spinner — a ring that spins next to an in-flight action label
+   (e.g. the admin "Deleting…" button), so a working button reads as active
+   rather than stalled. Honours reduced-motion by slowing rather than freezing
+   so it still signals "in progress". */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .7s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 1.6s; } }
+
 .cmd-scrim {
   position: fixed;
   inset: 0;
