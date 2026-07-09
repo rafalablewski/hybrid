@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fs, space, groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
+import { fs, space, groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
 import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
@@ -51,8 +51,10 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   // "More".
   const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "profile"]);
   const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
-  const groups = groupedNav(navForPersona(persona, undefined, access))
-    .map((g) => ({ ...g, items: g.items.filter((it) => isEnabled(`nav.${it.id}`)) }))
+  // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒) here rather
+  // than hidden, so the whole toolkit is visible; a locked tile upsells.
+  const groups = groupedNavWithLocks(persona, access)
+    .map((g) => ({ ...g, items: g.items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
     .filter((g) => g.items.length > 0);
 
   return (
@@ -85,14 +87,16 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 {/* Springboard grid — rounded glyph tiles, one text colour (chalk),
                     matching the mobile More tab. Active tile takes the lime accent. */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: space.xxs }}>
-                  {g.items.map(({ id, label: fb }) => {
+                  {g.items.map(({ item: { id, label: fb }, locked }) => {
                     const on = id === activeId;
+                    const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
                     return (
-                      <button key={id} onClick={() => go(id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
-                        <span style={{ width: 54, height: 54, borderRadius: 18, display: "grid", placeItems: "center", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? "color-mix(in srgb, var(--color-lime) 12%, transparent)" : C("ink") }}>
+                      <button key={id} onClick={openItem} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
+                        <span style={{ position: "relative", width: 54, height: 54, borderRadius: 18, display: "grid", placeItems: "center", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? "color-mix(in srgb, var(--color-lime) 12%, transparent)" : C("ink"), opacity: locked ? 0.75 : 1 }}>
                           <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.6} color={on ? C("lime") : C("chalk")} />
+                          {locked && <span aria-hidden style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: 10, background: C("ink2"), border: `1px solid color-mix(in srgb, var(--color-lime) 55%, transparent)`, display: "grid", placeItems: "center", fontSize: 10 }}>🔒</span>}
                         </span>
-                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: on ? C("lime") : C("chalk"), textAlign: "center", lineHeight: 1.2, maxWidth: 84, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label(id, fb)}</span>
+                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: on ? C("lime") : locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.2, maxWidth: 84, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label(id, fb)}</span>
                       </button>
                     );
                   })}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { groupedNav, navForPersona, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName, type NavGroup } from "@hybrid/core";
+import { groupedNavWithLocks, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName, type NavGroup } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
@@ -81,7 +81,7 @@ const GROUP_META: Record<NavGroup, { icon: AuroraIconName; ck: keyof Palette }> 
   account: { icon: "user-circle", ck: "ash" },
 };
 
-type HubItem = { id: string; label: string; icon: AuroraIconName; href: Href | null };
+type HubItem = { id: string; label: string; icon: AuroraIconName; href: Href | null; locked: boolean };
 
 export default function More() {
   const C = useTheme().palette;
@@ -102,20 +102,25 @@ export default function More() {
   // persona + the admin's access override — the exact set the web sidebar shows.
   // groupedNav already drops groups with no items for this persona, but keep an
   // explicit guard so a card (and its items[0] preview) can never render empty.
-  const areas: { group: NavGroup; items: HubItem[] }[] = groupedNav(navForPersona(persona, undefined, access))
+  // Premium (Full) items a free user hasn't unlocked are shown LOCKED (🔒) here
+  // rather than hidden, so the whole toolkit is visible; tapping one upsells.
+  const areas: { group: NavGroup; items: HubItem[] }[] = groupedNavWithLocks(persona, access)
     .map(({ group, items }) => ({
       group: group as NavGroup,
-      items: items.map((i) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null })),
+      items: items.map(({ item: i, locked }) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null, locked })),
     }))
     .filter((a) => a.items.length > 0);
   // Onboarding is a re-runnable setup FLOW (not a nav item), so inject it into Train.
   const train = areas.find((a) => a.group === "train");
   if (train && !train.items.some((i) => i.id === "onboarding")) {
-    train.items.push({ id: "onboarding", label: navLabel("onboarding", "Get started"), icon: AURORA_NAV_ICONS["onboarding"] ?? "navigation", href: HREF.onboarding });
+    train.items.push({ id: "onboarding", label: navLabel("onboarding", "Get started"), icon: AURORA_NAV_ICONS["onboarding"] ?? "navigation", href: HREF.onboarding, locked: false });
   }
 
   const openWeb = () => Linking.openURL(WEB_APP_URL).catch(() => {});
-  const go = (it: HubItem) => (it.href ? router.push(it.href) : openWeb());
+  const go = (it: HubItem) => {
+    if (it.locked) { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: `more-${it.id}` }); router.push("/upgrade"); return; }
+    it.href ? router.push(it.href) : openWeb();
+  };
 
   // ── DRILL VIEW — one area's screens ──
   const openArea = open ? areas.find((a) => a.group === open) : null;
@@ -140,14 +145,19 @@ export default function More() {
               onPress={() => go(it)}
               style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 13, paddingHorizontal: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
             >
-              <AuroraIcon name={it.icon} size={20} color={C.chalk} />
-              <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{it.label}</Text>
-              {!it.href && (
+              <AuroraIcon name={it.icon} size={20} color={it.locked ? C.ash : C.chalk} />
+              <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: it.locked ? C.ash : C.chalk }}>{it.label}</Text>
+              {it.locked && (
+                <View style={{ backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>🔒 FULL</Text>
+                </View>
+              )}
+              {!it.href && !it.locked && (
                 <View style={{ backgroundColor: `${C.blue}1f`, borderWidth: 1, borderColor: `${C.blue}66`, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.blue) }}>WEB</Text>
                 </View>
               )}
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ash }}>→</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ash }}>{it.locked ? "✦" : "→"}</Text>
             </Pressable>
           ))}
         </View>

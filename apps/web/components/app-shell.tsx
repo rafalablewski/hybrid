@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -322,21 +322,30 @@ export default function AppShell() {
         <nav aria-label={t("nav.primary")} style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {(() => {
             const groupLabel = (g: string) => (t(`nav.group.${g}`) === `nav.group.${g}` ? g : t(`nav.group.${g}`));
-            const navGroups = groupedNav(navForPersona(persona, undefined, navAccess))
-              .map(({ group, items }) => ({ group, items: items.filter((it) => isEnabled(`nav.${it.id}`)) }))
+            // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒)
+            // in the sidebar rather than hidden, so the whole toolkit is visible;
+            // a locked item routes to the upgrade screen.
+            const navGroups = groupedNavWithLocks(persona, navAccess)
+              .map(({ group, items }) => ({ group, items: items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
               .filter((g) => g.items.length > 0);
 
             // One nav destination button — reused by the desktop groups AND the
             // mobile drill list.
-            const itemBtn = ({ id, label: fallback, icon: ic }: { id: string; label: string; icon: string }) => {
+            const itemBtn = ({ item: { id, label: fallback, icon: ic }, locked }: { item: { id: string; label: string; icon: string }; locked: boolean }) => {
               const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
               const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
+              const onClick = () => {
+                setPendingBlocks(undefined);
+                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `sidebar-${id}` }); setScreen("upgrade"); }
+                else setScreen(id);
+                setDrawerOpen(false);
+              };
               return (
                 <button
                   key={id}
                   data-tour={`nav-${id}`}
-                  onClick={() => { setPendingBlocks(undefined); setScreen(id); setDrawerOpen(false); }}
-                  title={railCollapsed ? label : undefined}
+                  onClick={onClick}
+                  title={railCollapsed ? (locked ? `${label} · Full` : label) : undefined}
                   style={{
                     width: "100%",
                     display: "flex",
@@ -356,10 +365,11 @@ export default function AppShell() {
                     textAlign: "left",
                   }}
                 >
-                  <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18 }}>
+                  <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18, opacity: locked ? 0.7 : 1 }}>
                     {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
                   </span>
-                  {!railCollapsed && label}
+                  {!railCollapsed && <span style={{ flex: 1 }}>{label}</span>}
+                  {!railCollapsed && locked && <span aria-hidden title="Full" style={{ fontSize: 11, opacity: 0.8 }}>🔒</span>}
                 </button>
               );
             };
@@ -384,7 +394,7 @@ export default function AppShell() {
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {navGroups.map(({ group, items }) => {
-                    const gi = aurora ? AURORA_NAV_ICONS[items[0]!.id] : undefined;
+                    const gi = aurora ? AURORA_NAV_ICONS[items[0]!.item.id] : undefined;
                     return (
                     <button
                       key={group}
@@ -404,12 +414,12 @@ export default function AppShell() {
                       }}
                     >
                       <span style={{ width: 34, height: 34, borderRadius: 11, display: "grid", placeItems: "center", background: "var(--color-ink2)", flexShrink: 0 }}>
-                        {gi ? <AuroraIcon name={gi} size={18} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle }}>{items[0]!.icon}</span>}
+                        {gi ? <AuroraIcon name={gi} size={18} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle }}>{items[0]!.item.icon}</span>}
                       </span>
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, display: "block" }}>{groupLabel(group)}</span>
                         <Mono s={{ fontSize: 10, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }} c={ASH}>
-                          {items.slice(0, 3).map((i) => (t(`nav.${i.id}`) === `nav.${i.id}` ? i.label : t(`nav.${i.id}`))).join(" · ")}{items.length > 3 ? ` · +${items.length - 3}` : ""}
+                          {items.slice(0, 3).map(({ item: i }) => (t(`nav.${i.id}`) === `nav.${i.id}` ? i.label : t(`nav.${i.id}`))).join(" · ")}{items.length > 3 ? ` · +${items.length - 3}` : ""}
                         </Mono>
                       </span>
                       <Mono s={{ fontSize: fs.body }} c={ASH}>{items.length} ›</Mono>
