@@ -29,8 +29,10 @@ const GOALS: { id: NutritionGoal; labelKey: string }[] = [
 ];
 
 /** AURORA Nutrition — the macro tracker in the rounded Figma layout, reusing the
- *  exact adaptive-targets engine + manual-macro Signal logging as the classic. */
-export default function AuroraNutrition() {
+ *  exact adaptive-targets engine + manual-macro Signal logging as the classic.
+ *  `embedded` drops the screen chrome (AuroraScreen + back header) so it can live
+ *  inside a bottom sheet — the Today "Nutrition" quick action. */
+export default function AuroraNutrition({ embedded = false }: { embedded?: boolean } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -86,16 +88,18 @@ export default function AuroraNutrition() {
     revalidate.recovery();
   };
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
-      </View>
+  const body = (
+    <>
+      {!embedded && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="back" size={20} color={C.chalk} />
+          </Pressable>
+          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
+        </View>
+      )}
 
-      <View style={{ marginTop: 16 }}>
+      <View style={{ marginTop: embedded ? 0 : 16 }}>
         <ASegment options={GOALS.map((g) => ({ id: g.id, label: t(g.labelKey) }))} value={goal} onPick={setGoal} />
       </View>
 
@@ -212,6 +216,13 @@ export default function AuroraNutrition() {
           ))}
         </View>
       </ACard>
+    </>
+  );
+
+  if (embedded) return body;
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {body}
     </AuroraScreen>
   );
 }

@@ -39,6 +39,10 @@ function Shell() {
             sign-out. Disable the back gesture on the shell so swiping inside the
             app (e.g. the Today pager) never escapes to the auth screens. */}
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+        {/* Upgrade is a slide-up BOTTOM SHEET — a transparent modal so the screen
+            behind stays visible through the scrim (the component animates the
+            panel up itself). */}
+        <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
       <AuroraGlobalNav />
     </>

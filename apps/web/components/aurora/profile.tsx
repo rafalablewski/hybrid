@@ -13,6 +13,8 @@ import { fs, space,
   toTrainingLog,
   bestE1rmMap,
   fmtWeight,
+  fmtTonnage,
+  sessionVolume,
   athleteId as makeAthleteId,
   canSeeHPI,
   type Achievement,
@@ -92,6 +94,9 @@ export default function AuroraProfile({
   const weekStreak = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const prCount = useMemo(() => lifetimePrCount(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
+  // Lifetime tonnage — total load × reps across every logged session (kg-domain,
+  // formatted to the athlete's units: tonnes for kg, total lb for lb).
+  const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
 
   // Member-since year — the earliest session, or this year for a fresh account.
   const memberSince = useMemo(() => {
@@ -232,6 +237,20 @@ export default function AuroraProfile({
           { n: prCount > 0 ? String(prCount) : "—", k: "PRs" },
         ].map((c, i) => (
           <div key={c.k} style={{ flex: 1, textAlign: "center", padding: "15px 0", borderRight: i < 2 ? `1px solid ${C("line")}` : "none" }}>
+            <div style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em" }}>{c.n}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginTop: 5 }}>{c.k}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* VOLUME STRIP — total sessions + lifetime tonnage (the two headline
+          "how much have I done" numbers, computed from real logged sessions). */}
+      <div style={{ display: "flex", border: `1px solid ${C("line")}`, borderRadius: 18, background: C("ink2"), marginTop: 12 }}>
+        {[
+          { n: hasData ? String(sessions.length) : "—", k: t("w.account.profile.id-sessions") },
+          { n: hasData && lifetimeTonnage > 0 ? fmtTonnage(lifetimeTonnage, units) : "—", k: t("w.account.profile.spec-tonnage") },
+        ].map((c, i) => (
+          <div key={c.k} style={{ flex: 1, textAlign: "center", padding: "15px 0", borderRight: i < 1 ? `1px solid ${C("line")}` : "none" }}>
             <div style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em" }}>{c.n}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginTop: 5 }}>{c.k}</div>
           </div>

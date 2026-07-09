@@ -35,7 +35,7 @@ const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.
-const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout"]);
+const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade"]);
 
 /**
  * AURORA global navigation — the floating pill bottom bar, rendered once at the

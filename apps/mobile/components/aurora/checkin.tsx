@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { computeCompliance, type LoggedSession } from "@hybrid/core";
+import { computeCompliance } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchBillingStatus, type Checkin } from "../../lib/api";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -18,8 +18,11 @@ const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; labelKey: string
 ];
 
 /** AURORA Check-in — the daily readiness log in the rounded Aurora style,
- *  reusing the exact same form, compliance + createCheckin flow as the classic. */
-export default function AuroraCheckin() {
+ *  reusing the exact same form, compliance + createCheckin flow as the classic.
+ *  `embedded` drops the screen chrome (AuroraScreen + back header) so the form
+ *  can live inside a bottom sheet; `onDone` fires after a successful save so the
+ *  host sheet can close. */
+export default function AuroraCheckin({ embedded = false, onDone }: { embedded?: boolean; onDone?: () => void } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -57,19 +60,22 @@ export default function AuroraCheckin() {
     setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     load();
     revalidate.recovery();
+    onDone?.();
   };
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
-        <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.red)} /></View>
-      </View>
+  const body = (
+    <>
+      {!embedded && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="back" size={20} color={C.chalk} />
+          </Pressable>
+          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
+          <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.red)} /></View>
+        </View>
+      )}
 
-      <ACard style={{ marginTop: 18 }}>
+      <ACard style={{ marginTop: embedded ? 0 : 18 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.checkins.trainingVolumeWeek")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>
           {compliance.completedThisWeek}/{compliance.target} {t("w.recovery.checkins.sessions")} · {compliance.pct}% {t("w.recovery.checkins.ofPlan")} · {compliance.status}
@@ -162,6 +168,13 @@ export default function AuroraCheckin() {
           </ACard>
         ))
       )}
+    </>
+  );
+
+  if (embedded) return body;
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {body}
     </AuroraScreen>
   );
 }

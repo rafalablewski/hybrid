@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, Linking } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, Linking, Animated, Easing, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FUNNEL } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
@@ -8,33 +9,46 @@ import { iapAvailable, purchaseFull } from "../../lib/iap";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
-// The whole Full (athlete) toolkit — sold as one bundle so the upgrade's full
-// value is clear (not "just one screen"). Grouped to stay scannable.
-const BUNDLE: { k: string; c: (C: ReturnType<typeof useTheme>["palette"]) => string; items: string[] }[] = [
-  { k: "Train smarter", c: (C) => C.lime, items: ["Adaptive plans — auto-progression", "Periodize — your season", "Competition — peak on the day"] },
-  { k: "Your performance", c: (C) => C.lime, items: ["Performance State · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
-  { k: "Sport & technique", c: (C) => C.lime, items: ["Sport S&C transfer", "Velocity (VBT)", "Force plate", "Technique video"] },
-  { k: "Endurance & body", c: (C) => C.lime, items: ["Running — pace zones", "Volume · MEV–MRV", "Exercises & trends", "Longevity"] },
+// The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
+const BENEFITS: { t: string; d: string }[] = [
+  { t: "Cockpit — auto-adjusting loads", d: "Every set reshaped to your readiness & fatigue" },
+  { t: "Sport plans", d: "Periodised programs for tennis, running, Hyrox & more" },
+  { t: "Pre-made meals & auto macros", d: "Skip manual entry — tap to log, targets split for you" },
+  { t: "Full plan library", d: "All 5 discipline programs, unlocked" },
 ];
 
-/** AURORA Upgrade — the Full toolkit paywall, reusing the same checkout / IAP
- *  flow and funnel tracking in the rounded Aurora style. */
+/**
+ * AURORA Upgrade — a slide-up BOTTOM SHEET paywall (presented as a transparent
+ * modal so the screen behind shows through the scrim). Reuses the same Stripe
+ * Checkout / Apple IAP flow + funnel tracking. Mirrors the web upgrade sheet.
+ */
 export default function AuroraUpgrade() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t } = useLang();
-  // A free viewer sees each premium feature explicitly LOCKED (🔒); a paid-Simple
-  // viewer sees them as included (✓).
+  const insets = useSafeAreaInsets();
   const paid = useSession().entitlement === "paid";
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => { track(FUNNEL.upgradePageView, { client: "mobile" }); }, []);
+  // Slide-up entrance: 1 = off-screen (down), 0 = resting (up). The scrim fades
+  // in with it, and a dismiss slides it back down before popping the modal.
+  const slide = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    track(FUNNEL.upgradePageView, { client: "mobile" });
+    Animated.timing(slide, { toValue: 0, duration: 340, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [slide]);
+
+  const close = () => {
+    Animated.timing(slide, { toValue: 1, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => router.back());
+  };
+
+  const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [0, 720] });
+  const scrimOpacity = slide.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] });
 
   const subscribe = async () => {
     if (busy) return;
@@ -46,10 +60,9 @@ export default function AuroraUpgrade() {
     if (iapAvailable()) {
       const res = await purchaseFull();
       if (res.ok) {
-        // Pull a fresh session so the mirrored 'paid' entitlement unlocks Full.
         await supabase.auth.refreshSession().catch(() => {});
         setBusy(false);
-        router.back();
+        close();
         return;
       }
       setBusy(false);
@@ -61,87 +74,75 @@ export default function AuroraUpgrade() {
     const res = await startCheckout();
     setBusy(false);
     if (res.ok && res.url) {
-      try {
-        await Linking.openURL(res.url);
-      } catch {
-        setError("Couldn't open the checkout page.");
-      }
+      try { await Linking.openURL(res.url); } catch { setError("Couldn't open the checkout page."); }
     } else {
       setError(res.error ?? "Couldn't start checkout — try again.");
     }
   };
 
   return (
-    <AuroraScreen>
-      <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
+    <View style={{ flex: 1 }}>
+      {/* scrim — tap to dismiss; the screen behind stays visible through it */}
+      <Pressable onPress={close} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t("w.account.upgrade.maybe-later")}>
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime), marginTop: 12 }}>{t("w.account.upgrade.kicker")}</Text>
-      <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>Unlock HYBRID Full</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 21 }}>
-        One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays
-        exactly as it is; the depth simply switches on.
-      </Text>
+      {/* the sheet */}
+      <Animated.View
+        style={{
+          position: "absolute", left: 0, right: 0, bottom: 0,
+          backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          borderWidth: 1, borderColor: C.line, maxHeight: "90%",
+          paddingHorizontal: 22, paddingTop: 12, paddingBottom: insets.bottom + 22,
+          transform: [{ translateY }],
+          shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 24,
+        }}
+      >
+        <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 18 }} />
 
-      <View style={{ alignSelf: "flex-start", marginTop: 12, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>12+ pro tools · one subscription</Text>
-      </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* badge */}
+          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.violet}24`, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 6 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.violet) }}>✦ Full</Text>
+          </View>
 
-      {/* flagship — the Cockpit assembles everything */}
-      <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>The hub — everything in one place</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit{paid ? "" : "  🔒"}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Performance State, sport, velocity &amp; endurance — assembled into one command center.</Text>
-      </ACard>
+          <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk, textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
-      {BUNDLE.map((cat) => (
-        <ACard key={cat.k} style={{ marginTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, cat.c(C)) }}>{cat.k}</Text>
-          <View style={{ marginTop: 12, gap: space.sm }}>
-            {cat.items.map((line) => (
-              <View key={line} style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
-                <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{line}</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: paid ? txt(C, cat.c(C)) : C.ash }}>{paid ? "✓" : "🔒"}</Text>
+          {/* benefits */}
+          <View style={{ marginTop: 18 }}>
+            {BENEFITS.map((b, i) => (
+              <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <Text style={{ fontSize: 15, color: txt(C, C.violet), marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 14.5, color: C.chalk }}>{b.t}</Text>
+                  <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+                </View>
               </View>
             ))}
           </View>
-        </ACard>
-      ))}
 
-      {!!error && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 16, lineHeight: 19 }}>{error}</Text>
-      )}
+          {/* price */}
+          <View style={{ alignItems: "center", marginTop: 18 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
+              $9.99<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.3 }}>{t("w.account.upgrade.trial-note")}</Text>
+          </View>
 
-      <Pressable
-        onPress={subscribe}
-        disabled={busy}
-        style={{
-          backgroundColor: C.lime,
-          borderRadius: RADIUS.pill,
-          paddingVertical: 18,
-          alignItems: "center",
-          marginTop: 16,
-          opacity: busy ? 0.6 : 1,
-        }}
-      >
-        {busy ? (
-          <ActivityIndicator color={C.onAccent} />
-        ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.account.upgrade.subscribe")}</Text>
-        )}
-      </Pressable>
+          {!!error && (
+            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 14, lineHeight: 18, textAlign: "center" }}>{error}</Text>
+          )}
+        </ScrollView>
 
-      {/* iOS completes the purchase through native In-App Purchase; web/Android
-          use hosted Stripe Checkout. */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 18, textAlign: "center" }}>
-        On iOS the purchase completes securely through the App Store. Cancel anytime in your
-        App Store subscriptions.
-      </Text>
-
-      <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.account.upgrade.maybe-later")}</Text>
-      </Pressable>
-    </AuroraScreen>
+        {/* CTA */}
+        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: C.violet, borderRadius: 16, paddingVertical: 17, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+          {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.account.upgrade.start-trial")}</Text>}
+        </Pressable>
+        <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 14, marginTop: 4 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.upgrade.maybe-later")}</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }

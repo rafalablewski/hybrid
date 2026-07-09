@@ -185,6 +185,18 @@ export default function AppShell() {
   const [exerciseFocus, setExerciseFocus] = useState("");
   const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
 
+  // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
+  // over whatever you're on. `navigate` centralises the intercept so any
+  // onNavigate("upgrade") opens the sheet instead of switching to a screen.
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const openUpgrade = () => { setPendingBlocks(undefined); setUpgradeOpen(true); };
+  const navigate = (s: string) => { if (s === "upgrade") { openUpgrade(); return; } setPendingBlocks(undefined); setScreen(s); };
+  // A casual user should never sit on the Full-only Periodize screen; if they
+  // land there, bounce home and pop the upgrade sheet.
+  useEffect(() => {
+    if (screen === "periodize" && persona === "casual") { setScreen("today"); setUpgradeOpen(true); }
+  }, [screen, persona]);
+
   const allowedScopes = useMemo<Scope[]>(
     () => (session ? SCOPES_FOR[session.role] : ["athlete"]),
     [session],
@@ -337,7 +349,7 @@ export default function AppShell() {
               const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
               const onClick = () => {
                 setPendingBlocks(undefined);
-                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `sidebar-${id}` }); setScreen("upgrade"); }
+                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `sidebar-${id}` }); setUpgradeOpen(true); }
                 else setScreen(id);
                 setDrawerOpen(false);
               };
@@ -451,7 +463,7 @@ export default function AppShell() {
               opens the single Full bundle page. Keeps the nav clean (no locks). */}
           {showUpgradeEntry && isEnabled("nav.upgrade") && (
             <button
-              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); setPendingBlocks(undefined); setScreen("upgrade"); setDrawerOpen(false); }}
+              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); setDrawerOpen(false); }}
               title={railCollapsed ? "Unlock Full" : undefined}
               style={{
                 width: "100%",
@@ -723,7 +735,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={navigate} onSaved={refresh} loading={sessionsLoading} />
         )}
 
         {screen === "profile" && (
@@ -732,11 +744,9 @@ export default function AppShell() {
             bio={bio ?? undefined}
             macro={macro}
             currentWeek={currentWeek}
-            onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }}
+            onNavigate={navigate}
           />
         )}
-
-        {screen === "upgrade" && <AuroraUpgrade onUpgraded={() => setScreen("today")} />}
 
         {screen === "cockpit" && (
           <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
@@ -760,7 +770,7 @@ export default function AppShell() {
 
         {screen === "forceplate" && <AuroraForcePlate />}
 
-        {screen === "nutrition" && <AuroraNutrition onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />}
+        {screen === "nutrition" && <AuroraNutrition onNavigate={navigate} />}
 
         {screen === "progress" && <AuroraProgress />}
 
@@ -768,7 +778,7 @@ export default function AppShell() {
 
         {screen === "calendar" && <AuroraCalendar sessions={sessions} />}
 
-        {screen === "builder" && <AuroraBuilder onUpgrade={() => setScreen("upgrade")} />}
+        {screen === "builder" && <AuroraBuilder onUpgrade={openUpgrade} />}
 
         {screen === "squad" && <AuroraTeamMonitor />}
 
@@ -777,10 +787,8 @@ export default function AppShell() {
         {/* Periodization is a Full feature. Free (casual) users never have it in
             nav and aren't redirected here after enrolling (they get the season
             BRIEF on Today instead); if one still lands here, show the upgrade. */}
-        {screen === "periodize" && (
-          persona === "casual"
-            ? <AuroraUpgrade onUpgraded={() => setScreen("today")} />
-            : <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
+        {screen === "periodize" && persona !== "casual" && (
+          <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
 
         {screen === "competition" && <AuroraCompetition />}
 
@@ -817,7 +825,7 @@ export default function AppShell() {
               refresh();
               setScreen("today");
             }}
-            onUpgrade={() => { setPendingBlocks(undefined); setScreen("upgrade"); }}
+            onUpgrade={openUpgrade}
           />
         )}
 
@@ -837,7 +845,7 @@ export default function AppShell() {
 
         {/* Social + coach marketplace — template-aware single components (radii
             soften under Aurora), like the tools below. Everyone (casual+). */}
-        {screen === "explore" && <AuroraExplore onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />}
+        {screen === "explore" && <AuroraExplore onNavigate={navigate} />}
 
         {screen === "feed" && <SocialFeed />}
         {screen === "discover" && <SocialDiscover />}
@@ -854,8 +862,12 @@ export default function AppShell() {
         </div>
       </main>
 
+      {/* Upgrade paywall — a slide-up sheet OVERLAY (renders its own scrim), so it
+          floats over whatever screen is active. */}
+      <AuroraUpgrade open={upgradeOpen} onClose={() => setUpgradeOpen(false)} onUpgraded={() => { setUpgradeOpen(false); setScreen("today"); }} />
+
       {/* The floating pill bottom nav (coexists with the sidebar). */}
-      <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
+      <AuroraPillNav activeId={screen} onSelect={navigate} />
 
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}

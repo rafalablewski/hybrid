@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, Modal } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -41,6 +41,10 @@ import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
+import Sheet from "./sheet";
+import AuroraCheckin from "./checkin";
+import AuroraNutrition from "./nutrition";
+import CoachRail from "./coach-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -78,6 +82,11 @@ export default function AuroraHome() {
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
+  // TIER-3 quick actions, now slide-up sheets (not full-screen routes): the
+  // readiness check-in, the nutrition tracker, and Follow-a-coach.
+  const [readyOpen, setReadyOpen] = useState(false);
+  const [nutritionOpen, setNutritionOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle so
   // the card reads at a glance instead of a wall of percentage schemes.
   const [liftsOpen, setLiftsOpen] = useState(false);
@@ -328,7 +337,7 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>＋ {t("w.home.today.glanceLog")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</Text>
           </Pressable>
-          <Pressable onPress={() => router.push("/checkin")} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
+          <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
             <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.blue) }}>{t("w.home.today.glanceReadinessCta")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</Text>
           </Pressable>
@@ -352,60 +361,65 @@ export default function AuroraHome() {
           {t("w.home.today.recoverMore")}
         </Text>
         <View style={{ gap: 10 }}>
-          <DeferRow C={C} icon="heart" tint={C.blue} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => router.push("/nutrition")} />
-          <DeferRow C={C} icon="user" tint={C.violet} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => router.push("/coaches")} />
+          <DeferRow C={C} icon="heart" tint={C.blue} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
+          <DeferRow C={C} icon="user" tint={C.violet} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 
         </Animated.View>
       </ScrollView>
 
-      {/* QUICK LOG modal — the sport-log carousel, opened from the glance strip. */}
-      <Modal visible={quickOpen} transparent animationType="slide" onRequestClose={() => setQuickOpen(false)}>
-        <Pressable onPress={() => setQuickOpen(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "82%" }}>
-            <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk }}>{t("w.home.quickSport.title")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4, marginBottom: 14 }}>{t("w.home.quickSport.sub")}</Text>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
+      <Sheet visible={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
+        <View style={{ marginTop: 14 }}>
+          <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
+        </View>
+      </Sheet>
 
-      {/* DONE TODAY modal — a pop-up of everything logged today + the full calendar. */}
-      <Modal visible={doneOpen} transparent animationType="slide" onRequestClose={() => setDoneOpen(false)}>
-        <Pressable onPress={() => setDoneOpen(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "80%" }}>
-            <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk }}>{t("w.home.today.doneModalTitle")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4, marginBottom: 12 }}>{dateStr}{acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}</Text>
-            <ScrollView style={{ maxHeight: 340 }}>
-              {doneToday.length === 0 ? (
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t("w.home.today.doneModalEmpty")}</Text>
-              ) : doneToday.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
-                >
-                  <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units)}</Text>
-                  </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>📅 {t("w.home.today.doneCalendar")}</Text>
+      {/* READINESS sheet — the daily check-in, hosted inline (embedded, no chrome). */}
+      <Sheet visible={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.checkins.title")}>
+        <View style={{ marginTop: 14 }}>
+          <AuroraCheckin embedded onDone={() => setReadyOpen(false)} />
+        </View>
+      </Sheet>
+
+      {/* NUTRITION sheet — the macro tracker + premade meals, hosted inline. */}
+      <Sheet visible={nutritionOpen} onClose={() => setNutritionOpen(false)} title={t("w.recovery.nutrition.title")}>
+        <View style={{ marginTop: 14 }}>
+          <AuroraNutrition embedded />
+        </View>
+      </Sheet>
+
+      {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
+      <Sheet visible={coachOpen} onClose={() => setCoachOpen(false)}>
+        <CoachRail onOpen={() => { setCoachOpen(false); router.push("/coaches"); }} />
+      </Sheet>
+
+      {/* DONE TODAY sheet — everything logged today + the full calendar. */}
+      <Sheet visible={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
+        <View style={{ marginTop: 12 }}>
+          {doneToday.length === 0 ? (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t("w.home.today.doneModalEmpty")}</Text>
+          ) : doneToday.map((s) => (
+            <Pressable
+              key={s.id}
+              onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
+            >
+              <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units)}</Text>
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
+          ))}
+          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>📅 {t("w.home.today.doneCalendar")}</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </Sheet>
     </SafeAreaView>
   );
 }

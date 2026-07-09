@@ -1,0 +1,106 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../lib/theme";
+import { F } from "../../lib/ui";
+
+/**
+ * AURORA Sheet (mobile) — a slide-up bottom sheet rendered in a transparent
+ * Modal so the screen behind stays visible through the scrim. A rounded panel
+ * animates up from the bottom (grab handle + optional title/sub) and slides back
+ * down on dismiss before it unmounts. This is the shared modal transition for the
+ * Today quick actions (Quick Log · Readiness · Done · Nutrition · Follow a coach),
+ * mirroring the web Sheet (aurora/sheet.tsx) so both clients feel identical.
+ *
+ * `visible` mounts it; the entrance/exit animation is driven internally and the
+ * node is kept alive through the exit so callers just flip a boolean. Pass
+ * `scroll={false}` when the child owns its own scroll container.
+ */
+export default function Sheet({
+  visible,
+  onClose,
+  title,
+  sub,
+  children,
+  scroll = true,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title?: string;
+  sub?: string;
+  children: ReactNode;
+  scroll?: boolean;
+}) {
+  const { palette: C } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Keep the node alive through the exit animation: `render` stays true until
+  // the slide-down finishes. `slide` drives the panel (0 = down/hidden, 1 = up).
+  const [render, setRender] = useState(visible);
+  const [panelH, setPanelH] = useState(0);
+  const slide = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setRender(true);
+      Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    } else if (render) {
+      Animated.timing(slide, { toValue: 0, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => { if (finished) setRender(false); });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  if (!render) return null;
+
+  const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [panelH || 900, 0] });
+  const scrimOpacity = slide.interpolate({ inputRange: [0, 1], outputRange: [0, 0.6] });
+
+  const header = (
+    <>
+      <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: title || sub ? 16 : 8 }} />
+      {title ? <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{title}</Text> : null}
+      {sub ? <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{sub}</Text> : null}
+    </>
+  );
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <View style={{ flex: 1, justifyContent: "flex-end" }}>
+        <Pressable onPress={onClose} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close">
+          <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
+        </Pressable>
+        <Animated.View
+          onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}
+          style={{
+            backgroundColor: C.ink2,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            borderWidth: 1,
+            borderColor: C.line,
+            maxHeight: "90%",
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: insets.bottom + 20,
+            transform: [{ translateY }],
+            shadowColor: "#000",
+            shadowOpacity: 0.4,
+            shadowRadius: 24,
+            shadowOffset: { width: 0, height: -8 },
+            elevation: 24,
+          }}
+        >
+          {scroll ? (
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 4 }}>
+              {header}
+              {children}
+            </ScrollView>
+          ) : (
+            <>
+              {header}
+              {children}
+            </>
+          )}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}

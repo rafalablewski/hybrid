@@ -13,6 +13,8 @@ import {
   toTrainingLog,
   toBiometrics,
   fmtWeight,
+  fmtTonnage,
+  sessionVolume,
   athleteId,
   canSeeHPI,
   type LoggedSession,
@@ -97,6 +99,9 @@ export default function AuroraProfile() {
   const weekStreakBest = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   const hasData = sessions.length > 0;
+  // Lifetime tonnage — total load × reps across every logged session, formatted
+  // to the athlete's units (tonnes for kg, total lb for lb).
+  const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
 
   const initials = useMemo(() => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -179,6 +184,13 @@ export default function AuroraProfile() {
         <SpecCol C={C} n={showHpi ? `${hpi.score}` : "🔒"} k="HPI" first />
         <SpecCol C={C} n={`${weekStreakBest}w`} k={t("w.account.profile.spec-streak")} />
         <SpecCol C={C} n={`${prCount}`} k="PRs" />
+      </View>
+
+      {/* VOLUME STRIP — total sessions + lifetime tonnage (the two headline
+          "how much have I done" numbers, from real logged sessions). */}
+      <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginTop: 12 }}>
+        <SpecCol C={C} n={hasData ? `${sessions.length}` : "—"} k={t("w.account.profile.id-sessions")} first />
+        <SpecCol C={C} n={hasData && lifetimeTonnage > 0 ? fmtTonnage(lifetimeTonnage, prefs.units) : "—"} k={t("w.account.profile.spec-tonnage")} />
       </View>
 
       {/* ACTIONS */}
