@@ -31,7 +31,9 @@ import { fs, space,
   type CardioPrHit,
   type LoggedSession,
   type SessionBlock,
+  FUNNEL,
 } from "@hybrid/core";
+import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -39,6 +41,8 @@ import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { useLang } from "@/lib/i18n";
+import { usePersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
 // state only and is stripped before save (the saved set keeps `rest`, a real
@@ -83,6 +87,10 @@ export default function AuroraLogger({
   initialBlocks?: SessionBlock[];
 }) {
   const { t } = useLang();
+  const router = useRouter();
+  // AI prescription is a premium (paid) feature — a casual user is sent to the
+  // upgrade paywall instead of getting a fabricated session.
+  const isAthlete = usePersona() !== "casual";
   // The session auto-titles itself (nobody names a workout while logging) — a
   // real name is only entered when saving a routine or via the optional rename
   // on the finish screen. `title` is internal state seeded by the default /
@@ -275,6 +283,11 @@ export default function AuroraLogger({
   }, [sessions]);
 
   const loadPrescribed = () => {
+    if (!isAthlete) {
+      track(FUNNEL.upgradeEntryClick, { client: "web", source: "logger-ai" });
+      router.push("/upgrade");
+      return;
+    }
     setBlocks(
       rx.blocks.map((b) => {
         if (b.kind === "strength") return { uid: uid(), kind: "strength", name: b.name, sets: b.sets };
@@ -494,8 +507,12 @@ export default function AuroraLogger({
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
-          <button onClick={loadPrescribed} style={pill("lime")}>
-            {sessions.length > 0 ? `✦ ${t("w.train.logger.usePrescribed")} · ${rx.readiness}` : `✦ ${t("w.train.logger.startSession")}`}
+          <button onClick={loadPrescribed} style={pill(isAthlete ? "lime" : "violet")}>
+            {!isAthlete
+              ? `✦ ${t("w.home.today.unlockFullBtn")}`
+              : sessions.length > 0
+                ? `✦ ${t("w.train.logger.usePrescribed")} · ${rx.readiness}`
+                : `✦ ${t("w.train.logger.startSession")}`}
           </button>
           {routines.map((r) => (
             <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>

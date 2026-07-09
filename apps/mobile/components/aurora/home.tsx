@@ -214,10 +214,10 @@ export default function AuroraHome() {
 
   const planReadiness = hasData || plan || phase;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
-  // named plan's day), falls back to the AI-prescribed session, then to an empty
-  // start — each lands in the live workout with the timer running.
+  // named plan's day), then the AI-prescribed session for PREMIUM athletes, then
+  // an empty start. AI is paid-only, so casual/guests never get source=ai here.
   const startPrescribed = () =>
-    router.push(plan ? "/workout?source=plan" : hasData || phase ? "/workout?source=ai" : "/workout?source=empty");
+    router.push(plan ? "/workout?source=plan" : isAthlete && (hasData || phase) ? "/workout?source=ai" : "/workout?source=empty");
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,
@@ -359,7 +359,10 @@ export default function AuroraHome() {
                   </Pressable>
                 )}
               </>
-            ) : hasData || phase ? (
+            ) : isAthlete && (hasData || phase) ? (
+              /* PREMIUM only — the real readiness-driven AI prescription. Casual
+                 and guests fall through to the encouraging chooser below (no
+                 fabricated Back-Squat/Assault-Bike session presented as theirs). */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
@@ -372,8 +375,8 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>
             ) : (
-              /* Brand-new and not enrolled — first-session chooser (#3):
-                 follow a plan (free), build your own (Full), or log a one-off. */
+              /* Not following a plan (or not premium) — an encouraging chooser:
+                 enroll in a plan (free), build your own, or log a one-off. */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>

@@ -196,7 +196,7 @@ export default function AuroraToday({
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
-                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : hasData || phase ? (rx.blocks as SessionBlock[]) : undefined)}
+                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
                 style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {t("w.home.today.start")}
@@ -227,7 +227,10 @@ export default function AuroraToday({
                 </button>
               )}
             </>
-          ) : hasData || phase ? (
+          ) : isAthlete && (hasData || phase) ? (
+            // PREMIUM only — the real readiness-driven AI prescription. Casual
+            // users fall through to the encouraging chooser (no fabricated
+            // session presented as their plan).
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}

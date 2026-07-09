@@ -7,10 +7,14 @@ import {
   velocityProfiles,
   type LoggedSession,
 } from "@hybrid/core";
+import { FUNNEL } from "@hybrid/core";
 import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
+import { useSession } from "../../lib/session";
+import { usePersona } from "../../lib/persona";
+import { track } from "../../lib/track";
 import { fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
@@ -23,6 +27,9 @@ export default function AuroraTrain() {
   const { t } = useLang();
   const { draft, discard } = useDraft();
   const { defaultStart } = useLoggerPrefs();
+  const { session } = useSession();
+  // AI-prescribed sessions are premium (paid) only — casual/guest are funnelled.
+  const isAthlete = usePersona() !== "casual";
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
 
@@ -41,6 +48,12 @@ export default function AuroraTrain() {
 
   const last = sessions[0];
   const start = (source: "empty" | "ai" | "last" | "new") => router.push(`/workout?source=${source}`);
+  // Premium gate for the AI-prescribed start: guests register, free users upgrade.
+  const startAI = () => {
+    if (isAthlete) return start("ai");
+    track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "train-ai" });
+    router.push(session ? "/upgrade" : "/login?mode=signup");
+  };
 
   return (
     <AuroraScreen>
@@ -72,18 +85,22 @@ export default function AuroraTrain() {
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("train.emptySub")}</Text>
       </Pressable>
 
-      {/* AI-prescribed start */}
-      <Pressable onPress={() => start("ai")}>
+      {/* AI-prescribed start — a PREMIUM feature. Paid athletes see their real
+          readiness-driven prescription; casual/guests see the pitch + a single
+          upgrade tap (no fabricated numbers). */}
+      <Pressable onPress={startAI}>
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("train.start")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>
+              {!isAthlete ? `AI coach · ${t("train.premium")}` : sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}
+            </Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{!isAthlete ? t("w.home.today.unlockFullBtn") : t("train.start")}</Text>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>
-            {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Smart starter session"}
+            {!isAthlete ? t("train.aiLockedTitle") : sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("train.aiEmptyTitle")}
           </Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-            {sessions.length > 0 ? rx.why : "Log a few sessions and the coach prescribes from your real readiness, fatigue and velocity. For now this is a balanced starter you can edit."}
+            {!isAthlete ? t("train.aiLockedBlurb") : sessions.length > 0 ? rx.why : t("train.aiEmptyBlurb")}
           </Text>
         </ACard>
       </Pressable>
