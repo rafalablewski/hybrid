@@ -393,18 +393,15 @@ export default function AuroraToday({
         </button>
       )}
 
-      {/* ───── CONNECT ───── (feed + coaches as left/right slider tabs, with a
-          button through to the full Explore section) */}
+      {/* ───── CONNECT ───── — two labelled left/right sliders (Feed cards, then
+          Coaches), each a horizontal rail, with a button through to Explore. */}
       <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C(SECTION_COLOR.connect)} />
 
-      <ConnectTabs
-        feedLabel={t("w.home.today.connectFeed")}
-        coachesLabel={t("w.home.today.connectCoaches")}
-        exploreLabel={t("w.home.today.connectExplore")}
-        onFeed={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))}
-        onCoaches={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))}
-        onExplore={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))}
-      />
+      <SubRail label={t("w.home.today.connectFeed")} actionLabel={t("w.home.today.connectExplore")} onAction={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
+      <FeedPreview horizontal onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
+
+      <SubRail label={t("w.home.today.connectCoaches")} actionLabel={t("w.home.today.connectExplore")} onAction={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
+      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
     </div>
   );
 }
@@ -559,30 +556,13 @@ function CalendarCard({ sessions, onOpen, openLabel, title, sub }: { sessions: L
   );
 }
 
-// CONNECT as left/right slider tabs (Feed · Coaches) with a button through to the
-// full Explore section. The tab pills scroll the snapping pager and the pager's
-// scroll position drives the active pill, so tap AND swipe stay in sync.
-function ConnectTabs({ feedLabel, coachesLabel, exploreLabel, onFeed, onCoaches, onExplore }: { feedLabel: string; coachesLabel: string; exploreLabel: string; onFeed: () => void; onCoaches: () => void; onExplore: () => void }) {
-  const [tab, setTab] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const go = (i: number) => { setTab(i); const el = ref.current; if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" }); };
-  const onScroll = () => { const el = ref.current; if (el) setTab(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); };
-  const tabBtn = (i: number, label: string) => (
-    <button key={i} onClick={() => go(i)} style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, padding: "7px 16px", borderRadius: 999, border: "none", cursor: "pointer", background: tab === i ? C("chalk") : "transparent", color: tab === i ? C("ink") : C("ash") }}>{label}</button>
-  );
+// A CONNECT sub-rail label — the small "Feed" / "Coaches" heading above each
+// horizontal slider, with an Explore action link on the right.
+function SubRail({ label, actionLabel, onAction }: { label: string; actionLabel: string; onAction: () => void }) {
   return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
-        <div style={{ display: "inline-flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
-          {tabBtn(0, feedLabel)}
-          {tabBtn(1, coachesLabel)}
-        </div>
-        <button onClick={onExplore} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{exploreLabel}</button>
-      </div>
-      <div ref={ref} onScroll={onScroll} style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", gap: 14 }}>
-        <div style={{ flex: "0 0 100%", scrollSnapAlign: "start", boxSizing: "border-box" }}><FeedPreview onOpen={onFeed} /></div>
-        <div style={{ flex: "0 0 100%", scrollSnapAlign: "start", boxSizing: "border-box" }}><CoachRail onOpen={onCoaches} /></div>
-      </div>
-    </>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "14px 2px 10px" }}>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17, color: C("chalk") }}>{label}</span>
+      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{actionLabel}</button>
+    </div>
   );
 }

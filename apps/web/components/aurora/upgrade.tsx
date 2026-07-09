@@ -122,10 +122,11 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.account.upgrade.hub-kicker")}</div>
         <div style={{ display: "flex", gap: space.ms, alignItems: "flex-start", marginTop: 10 }}>
           <span style={{ fontSize: fs.subtitle, width: 20, textAlign: "center" }}>◈</span>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.account.upgrade.cockpit")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>{t("w.account.upgrade.cockpit-ds")}</div>
           </div>
+          {!paid && <span aria-hidden title={t("w.account.upgrade.locked")} style={{ fontSize: fs.caption, color: C("ash"), flexShrink: 0 }}>🔒</span>}
         </div>
       </div>
 
@@ -137,10 +138,12 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
             {cat.items.map((it, i) => (
               <div key={it.nm} style={{ display: "flex", gap: space.ms, alignItems: "flex-start", padding: "7px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 <span style={{ fontSize: fs.note, width: 20, textAlign: "center", color: C("chalk") }}>{it.ic}</span>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5 }}>{it.nm}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, lineHeight: 1.5, color: C("ash") }}>{it.ds}</div>
                 </div>
+                {/* Free user → each premium feature is explicitly LOCKED. */}
+                {!paid && <span aria-hidden title={t("w.account.upgrade.locked")} style={{ fontSize: fs.caption, color: C("ash"), flexShrink: 0 }}>🔒</span>}
               </div>
             ))}
           </div>

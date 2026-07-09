@@ -1,23 +1,26 @@
-import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, Easing } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { View, Text, Pressable, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
 import { feedCardView } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 
-// The CONNECT feed — full-width post cards (avatar header · prose body · stat
-// pills · kudos/comments/share), the latest few of your circle's activity.
-// Renders nothing when the feed is empty. Mirrors the web feed-preview.
-export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
+// The CONNECT feed — post cards (avatar header · prose body · stat pills ·
+// kudos/comments/share), the latest few of your circle's activity. `horizontal`
+// lays them in a left/right slider (fixed-width cards); otherwise full-width
+// stacked. Renders nothing when the feed is empty. Mirrors the web feed-preview.
+export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
   const C = useTheme().palette;
+  const { width } = useWindowDimensions();
+  const cardW = Math.min(320, width * 0.82);
   const [feed, setFeed] = useState<any[] | null>(null);
   const pulse = useRef(new Animated.Value(0.6)).current;
   useEffect(() => {
     let alive = true;
-    getFeed().then((r: any) => { if (alive) setFeed((r.feed ?? []).slice(0, 4)); }).catch(() => { if (alive) setFeed([]); });
+    getFeed().then((r: any) => { if (alive) setFeed((r.feed ?? []).slice(0, horizontal ? 8 : 4)); }).catch(() => { if (alive) setFeed([]); });
     return () => { alive = false; };
-  }, []);
+  }, [horizontal]);
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -29,12 +32,17 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
     return () => loop.stop();
   }, [pulse]);
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26, padding: 16 } as const;
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26, padding: 16, ...(horizontal ? { width: cardW } : {}) } as const;
+  // Vertical stacks full-width; horizontal is a left/right scroll-snap slider.
+  const Wrap = ({ children }: { children: ReactNode }) =>
+    horizontal
+      ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 2, paddingBottom: 4 }}>{children}</ScrollView>
+      : <View style={{ gap: 16 }}>{children}</View>;
 
   // Loading → pulsing card skeletons that reserve the feed's space.
   if (feed === null) {
     return (
-      <View style={{ gap: 16 }}>
+      <Wrap>
         {[0, 1].map((i) => (
           <View key={i} style={cardStyle}>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
@@ -47,7 +55,7 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
             <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 14 }} />
           </View>
         ))}
-      </View>
+      </Wrap>
     );
   }
 
@@ -55,7 +63,7 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
   if (feed.length === 0) return null;
 
   return (
-    <View style={{ gap: 16 }}>
+    <Wrap>
       {feed.map((it: any) => {
         const v = feedCardView(it);
         return (
@@ -93,6 +101,6 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
           </Pressable>
         );
       })}
-    </View>
+    </Wrap>
   );
 }

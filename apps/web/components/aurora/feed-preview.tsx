@@ -18,20 +18,27 @@ function initials(name?: string | null, handle?: string) {
 
 interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; detail: string; when: string; kudos: number; comments: number; accent: string }
 
-export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
+export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
   const [feed, setFeed] = useState<Item[] | null>(null);
   useEffect(() => {
     let alive = true;
-    fetch("/api/social/feed").then((r) => r.json()).then((d) => { if (alive) setFeed((d.feed ?? []).slice(0, 4)); }).catch(() => { if (alive) setFeed([]); });
+    fetch("/api/social/feed").then((r) => r.json()).then((d) => { if (alive) setFeed((d.feed ?? []).slice(0, horizontal ? 8 : 4)); }).catch(() => { if (alive) setFeed([]); });
     return () => { alive = false; };
-  }, []);
+  }, [horizontal]);
+
+  // A horizontal slider lays the post cards in a left/right scroll-snapping row
+  // (fixed-width cards); vertical stacks them full-width. Shared card body.
+  const wrap = horizontal
+    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollbarWidth: "none" as const, padding: "2px 2px 6px" }
+    : { display: "flex", flexDirection: "column" as const, gap: 16 };
+  const cardWidth = horizontal ? { flex: "0 0 82%", maxWidth: 320, scrollSnapAlign: "start" as const, boxSizing: "border-box" as const } : { width: "100%" };
 
   // Loading → a pulsing card skeleton that reserves the feed's space.
   if (feed === null) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={wrap}>
         {[0, 1].map((i) => (
-          <div key={i} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, padding: 16 }}>
+          <div key={i} style={{ ...cardWidth, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, padding: 16 }}>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <div className="skeleton" style={{ width: 34, height: 34, borderRadius: 999, background: C("line") }} />
               <div style={{ flex: 1 }}>
@@ -50,11 +57,11 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
   if (feed.length === 0) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={wrap}>
       {feed.map((it) => {
         const v = feedCardView(it);
         return (
-          <button key={it.id} onClick={onOpen} style={{ width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, cursor: "pointer", color: C("chalk") }}>
+          <button key={it.id} onClick={onOpen} style={{ ...cardWidth, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, cursor: "pointer", color: C("chalk") }}>
             {/* header — avatar · name · when·context · ··· */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 999, flexShrink: 0, background: "#2c302c", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: C("chalk"), overflow: "hidden" }}>

@@ -6,6 +6,7 @@ import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull } from "../../lib/iap";
 import { supabase } from "../../lib/supabase";
+import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -26,6 +27,9 @@ export default function AuroraUpgrade() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t } = useLang();
+  // A free viewer sees each premium feature explicitly LOCKED (🔒); a paid-Simple
+  // viewer sees them as included (✓).
+  const paid = useSession().entitlement === "paid";
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -87,7 +91,7 @@ export default function AuroraUpgrade() {
       {/* flagship — the Cockpit assembles everything */}
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>The hub — everything in one place</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit{paid ? "" : "  🔒"}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Performance State, sport, velocity &amp; endurance — assembled into one command center.</Text>
       </ACard>
 
@@ -96,9 +100,9 @@ export default function AuroraUpgrade() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, cat.c(C)) }}>{cat.k}</Text>
           <View style={{ marginTop: 12, gap: space.sm }}>
             {cat.items.map((line) => (
-              <View key={line} style={{ flexDirection: "row", gap: space.sm }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, cat.c(C)) }}>✓</Text>
+              <View key={line} style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
                 <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{line}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: paid ? txt(C, cat.c(C)) : C.ash }}>{paid ? "✓" : "🔒"}</Text>
               </View>
             ))}
           </View>

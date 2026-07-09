@@ -589,20 +589,15 @@ export default function AuroraHome() {
         )}
 
 
-        {/* ───── CONNECT ───── (feed + coaches as left/right slider tabs, with a
-            button through to the full Explore section) */}
+        {/* ───── CONNECT ───── — two labelled left/right sliders (Feed cards,
+            then Coaches), each a horizontal rail, with an Explore action. */}
         <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C[SECTION_COLOR.connect]} />
 
-        <ConnectTabs
-          C={C}
-          width={cardW}
-          feedLabel={t("w.home.today.connectFeed")}
-          coachesLabel={t("w.home.today.connectCoaches")}
-          exploreLabel={t("w.home.today.connectExplore")}
-          onFeed={() => router.push("/feed")}
-          onCoaches={() => router.push("/coaches")}
-          onExplore={() => router.push("/feed")}
-        />
+        <SubRail C={C} label={t("w.home.today.connectFeed")} actionLabel={t("w.home.today.connectExplore")} onAction={() => router.push("/feed")} />
+        <FeedPreview horizontal onOpen={() => router.push("/feed")} />
+
+        <SubRail C={C} label={t("w.home.today.connectCoaches")} actionLabel={t("w.home.today.connectExplore")} onAction={() => router.push("/coaches")} />
+        <CoachRail onOpen={() => router.push("/coaches")} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -746,34 +741,16 @@ function CalendarCard({ C, sessions, onOpen, openLabel, title, sub }: { C: P; se
   );
 }
 
-// CONNECT as left/right slider tabs (Feed · Coaches) with a button through to the
-// full Explore section. The tab pills scroll the snapping pager and the pager's
-// scroll drives the active pill, so tap AND swipe stay in sync.
-function ConnectTabs({ C, width, feedLabel, coachesLabel, exploreLabel, onFeed, onCoaches, onExplore }: { C: P; width: number; feedLabel: string; coachesLabel: string; exploreLabel: string; onFeed: () => void; onCoaches: () => void; onExplore: () => void }) {
-  const [tab, setTab] = useState(0);
-  const ref = useRef<ScrollView>(null);
-  const go = (i: number) => { setTab(i); ref.current?.scrollTo({ x: i * width, animated: true }); };
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setTab(Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width)));
-  const tabBtn = (i: number, label: string) => (
-    <Pressable key={i} onPress={() => go(i)} style={{ paddingHorizontal: 16, paddingVertical: 7, borderRadius: 999, backgroundColor: tab === i ? C.chalk : "transparent" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: tab === i ? C.ink : C.ash }}>{label}</Text>
-    </Pressable>
-  );
+// A CONNECT sub-rail label — the small "Feed" / "Coaches" heading above each
+// horizontal slider, with an Explore action link on the right.
+function SubRail({ C, label, actionLabel, onAction }: { C: P; label: string; actionLabel: string; onAction: () => void }) {
+  const { scheme } = useTheme();
   return (
-    <>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 4 }}>
-          {tabBtn(0, feedLabel)}
-          {tabBtn(1, coachesLabel)}
-        </View>
-        <Pressable onPress={onExplore} hitSlop={8}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{exploreLabel}</Text>
-        </Pressable>
-      </View>
-      <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll} style={{ marginHorizontal: -2 }}>
-        <View style={{ width }}><FeedPreview onOpen={onFeed} /></View>
-        <View style={{ width }}><CoachRail onOpen={onCoaches} /></View>
-      </ScrollView>
-    </>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 14, marginBottom: 10, marginHorizontal: 2 }}>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 17, color: C.chalk }}>{label}</Text>
+      <Pressable onPress={onAction} hitSlop={8}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{actionLabel}</Text>
+      </Pressable>
+    </View>
   );
 }
