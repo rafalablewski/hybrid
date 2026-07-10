@@ -5,11 +5,11 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
+  sessionsOnDay,
   type LoggedSession,
 } from "@hybrid/core";
 import { FUNNEL } from "@hybrid/core";
 import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
-import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
@@ -17,7 +17,7 @@ import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { fs, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 
@@ -31,7 +31,6 @@ export default function AuroraTrain() {
   const router = useRouter();
   const { t } = useLang();
   const { draft, discard } = useDraft();
-  const { defaultStart } = useLoggerPrefs();
   const { session } = useSession();
   // AI-prescribed sessions are premium (paid) only — casual/guest are funnelled.
   const isAthlete = usePersona() !== "casual";
@@ -63,9 +62,9 @@ export default function AuroraTrain() {
   const startAI = () => (isAthlete ? start("ai") : upsell("train-ai"));
 
   // "Any session logged today = done" — today's prescribed work is considered
-  // done once anything lands, so the hero steps back to a done marker.
-  const todayStr = new Date().toDateString();
-  const doneToday = sessions.find((s) => new Date(s.startedAt).toDateString() === todayStr);
+  // done once anything lands, so the hero steps back to a done marker. Uses the
+  // shared core helper (same as web Today) so the clients can't drift.
+  const doneToday = sessionsOnDay(sessions)[0];
   const prescribedDone = isAthlete && !!doneToday;
 
   return (
@@ -84,7 +83,7 @@ export default function AuroraTrain() {
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{draft.exercises.length} {t("workout.exercises")} · {t("train.inProgress")}</Text>
-          <Pressable onPress={() => start("new")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
+          <Pressable onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>▶  {t("train.resume")}</Text>
           </Pressable>
         </ACard>
@@ -183,7 +182,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
 function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T }) {
   return (
     <Pressable onPress={onPress} style={{ marginTop: 16 }}>
-      <ACard style={{ borderColor: withAlpha(C.violet, "44") }}>
+      <ACard style={{ borderColor: withAlpha(C.violet, 0.27) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI coach · {t("train.premium")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("w.home.today.unlockFullBtn")}</Text>
@@ -245,7 +244,7 @@ function ListRow({
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
-          <View style={{ borderWidth: 1, borderColor: withAlpha(C.violet, "55"), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
+          <View style={{ borderWidth: 1, borderColor: withAlpha(C.violet, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: txt(C, C.violet) }}>PREMIUM</Text>
           </View>
         )}
@@ -257,9 +256,4 @@ function ListRow({
 
 function Chevron({ C }: { C: Palette }) {
   return <Text style={{ fontFamily: F.reg, fontSize: 18, color: C.ash, opacity: 0.7 }}>›</Text>;
-}
-
-/** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA`. */
-function withAlpha(hex: string, alpha: string): string {
-  return /^#[0-9a-fA-F]{6}$/.test(hex) ? `${hex}${alpha}` : hex;
 }

@@ -36,7 +36,7 @@ export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
 
 /** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA` (passthrough
  *  for anything that isn't a 6-digit hex). */
-function withAlpha(hex: string, alpha: number): string {
+export function withAlpha(hex: string, alpha: number): string {
   if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
   const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
     .toString(16)
