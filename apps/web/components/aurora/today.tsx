@@ -224,10 +224,9 @@ export default function AuroraToday({
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-                  style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("lime")} 55%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("chalk") }}
+                  style={{ marginTop: 12, width: "100%", display: "block", padding: "11px 13px", cursor: "pointer", textAlign: "left", border: `1px dashed color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: "transparent" }}
                 >
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>{t("w.home.today.followingAsWritten1")}<span style={{ color: "var(--lime-text)" }}>{t("w.home.today.unlockFull")}</span>{t("w.home.today.followingAsWritten2")}</span>
-                  <span style={{ fontWeight: 800, fontSize: fs.note, color: "var(--lime-text)" }}>→</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--lime-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
                 </button>
               )}
             </>
