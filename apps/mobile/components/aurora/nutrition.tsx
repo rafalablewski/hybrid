@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -46,6 +46,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
+  // Signal kinds already logged for the meal being entered — survives a partial
+  // failure so a retry doesn't duplicate the kinds that already succeeded.
+  const loggedKinds = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mealMsg, setMealMsg] = useState("");
@@ -71,15 +74,19 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const protein = num(f.protein), carbs = num(f.carbs), fat = num(f.fat);
     const kcal = num(f.kcal) || protein * 4 + carbs * 4 + fat * 9;
-    const jobs: Promise<boolean>[] = [];
-    if (kcal > 0) jobs.push(createSignal("energyIntake", kcal, "kcal"));
-    if (protein > 0) jobs.push(createSignal("protein", protein, "g"));
-    if (carbs > 0) jobs.push(createSignal("carbs", carbs, "g"));
-    if (fat > 0) jobs.push(createSignal("fat", fat, "g"));
+    // Post one signal per macro, remembering which kinds already landed
+    // (loggedKinds) so a retry after a partial failure re-sends ONLY the failed
+    // kinds and never double-logs. Reset once the whole meal is in.
+    const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
+      .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
     if (!jobs.length) { setSaving(false); return; }
-    const results = await Promise.all(jobs);
-    if (results.includes(false)) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
-    else { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); }
+    let failed = false;
+    for (const [kind, value, unit] of jobs) {
+      if (!(await createSignal(kind, value, unit))) { failed = true; break; }
+      loggedKinds.current.add(kind);
+    }
+    if (failed) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
+    else { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); loggedKinds.current = new Set(); }
     setSaving(false);
     revalidate.recovery();
   };

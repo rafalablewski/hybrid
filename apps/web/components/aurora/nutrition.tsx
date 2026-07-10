@@ -34,6 +34,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mealMsg, setMealMsg] = useState("");
+  // Signal kinds already POSTed for the meal being entered — survives a partial
+  // failure so a retry doesn't duplicate the kinds that already succeeded.
+  const loggedKinds = useRef<Set<string>>(new Set());
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
@@ -63,17 +66,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const protein = num(f.protein), carbs = num(f.carbs), fat = num(f.fat);
     const kcal = num(f.kcal) || protein * 4 + carbs * 4 + fat * 9;
-    const entries: [string, number, string][] = [["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]];
+    // Post one signal per macro, remembering which kinds already landed
+    // (loggedKinds) so a retry after a partial network failure re-sends ONLY the
+    // failed kinds and never double-logs. Reset once the whole meal is in.
+    const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
+      .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
+    if (!jobs.length) { setSaving(false); return; }
     try {
-      let any = false;
-      for (const [kind, value, unit] of entries) {
-        if (value <= 0) continue;
-        any = true;
+      for (const [kind, value, unit] of jobs) {
         const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "manual" }) });
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
+        loggedKinds.current.add(kind);
       }
-      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); await load(); revalidate.recovery(); }
+      setF({ kcal: "", protein: "", carbs: "", fat: "" });
+      setMealMsg(`+${Math.round(kcal)} kcal`);
+      loggedKinds.current = new Set();
+      await load(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
   };
