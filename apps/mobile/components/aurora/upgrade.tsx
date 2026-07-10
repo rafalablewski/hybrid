@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Linking, Animated, Easing, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FUNNEL } from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull } from "../../lib/iap";
@@ -13,12 +13,9 @@ import { fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
-const BENEFITS: { t: string; d: string }[] = [
-  { t: "Cockpit — auto-adjusting loads", d: "Every set reshaped to your readiness & fatigue" },
-  { t: "Sport plans", d: "Periodised programs for tennis, running, Hyrox & more" },
-  { t: "Pre-made meals & auto macros", d: "Skip manual entry — tap to log, targets split for you" },
-  { t: "Full plan library", d: "All 5 discipline programs, unlocked" },
-];
+// Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
+// the Subscription settings tab can't drift across clients.
+const BENEFITS = FULL_BENEFITS.map((b) => ({ t: b.title, d: b.desc }));
 
 /**
  * AURORA Upgrade — a slide-up BOTTOM SHEET paywall (presented as a transparent

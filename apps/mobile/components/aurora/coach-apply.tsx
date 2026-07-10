@@ -87,6 +87,17 @@ export default function AuroraCoachApply() {
               applicants and for re-applying after a denial. */}
           {existing?.status !== "pending" && (
             <ACard style={{ marginTop: 16 }}>
+              {/* How it works — the same 3 steps as the web coaching tab. */}
+              <View style={{ marginBottom: 14 }}>
+                {[1, 2, 3].map((n) => (
+                  <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 }}>
+                    <View style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 11, color: C.onAccent }}>{n}</Text>
+                    </View>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.coach-step-${n}`)}</Text>
+                  </View>
+                ))}
+              </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
               <TextInput
                 value={credentials}

@@ -12,7 +12,6 @@ import type { AuroraIconName } from "./theme/icons";
 /** A settings category — one expandable/navigable row in the hub. */
 export type SettingsCategoryId =
   | "account"
-  | "social"
   | "preferences"
   | "logger"
   | "notifications"
@@ -51,7 +50,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "usage",
     label: "General",
     categories: [
-      { id: "account", icon: "user", title: "Account & profile", subtitle: "Name, email, account type", keywords: ["name", "email", "display name", "profile"] },
+      { id: "account", icon: "user", title: "Edit profile", subtitle: "Photo, name, handle, bio, visibility", keywords: ["name", "email", "display name", "profile", "handle", "username", "bio", "avatar", "photo", "picture", "visibility", "public", "followers", "private"] },
       { id: "preferences", icon: "settings", title: "Preferences", subtitle: "Appearance, language, units", keywords: ["theme", "appearance", "dark", "light", "language", "english", "polish", "german", "units", "kg", "lb", "liquid glass"] },
       { id: "logger", icon: "play", title: "Workout logger", subtitle: "Detail, volume, rest timer", keywords: ["warmups", "volume", "fractional", "plate", "rest timer", "rpe", "rir", "haptics", "increment"] },
       { id: "notifications", icon: "bell", title: "Notifications", subtitle: "Recaps, coach, reminders", keywords: ["weekly recap", "coach messages", "check-in reminders", "product updates", "push"] },
@@ -61,7 +60,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "reach",
     label: "Visibility & reach",
     categories: [
-      { id: "social", icon: "user-circle", title: "Public profile", subtitle: "Handle, bio, photo, who can see your results", keywords: ["handle", "bio", "avatar", "photo", "public"] },
       { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics", keywords: ["coach", "discoverable", "talent", "analytics", "opt out"] },
       { id: "coaching", icon: "user-add", title: "Coaching & access", subtitle: "Become a coach, request access", keywords: ["become a coach", "apply", "credentials", "roster"] },
     ],
@@ -70,7 +68,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "login",
     label: "Account & billing",
     categories: [
-      { id: "security", icon: "lock", title: "Security", subtitle: "Password, 2FA, sessions", keywords: ["password", "mfa", "2fa", "two factor", "sign out everywhere", "sessions"] },
+      { id: "security", icon: "lock", title: "Password & security", subtitle: "Password, 2FA, login activity", keywords: ["password", "mfa", "2fa", "two factor", "sign out everywhere", "sessions", "login", "security"] },
       { id: "subscription", icon: "offer", title: "Subscription", subtitle: "Your plan & billing", keywords: ["upgrade", "full", "billing", "manage subscription", "stripe", "plan", "cancel"] },
     ],
   },

@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
-import { useRouter } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
+import { useState, useCallback, type ReactNode } from "react";
+import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
 import { useAccountSettings } from "../../lib/account";
+import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useLiquidGlass } from "../../lib/liquid-glass";
@@ -16,10 +17,12 @@ import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "
 import { AuroraIcon } from "./icons";
 import { LinearGradient } from "expo-linear-gradient";
 
-const APPEARANCE: { id: ThemePref; label: string }[] = [
-  { id: "system", label: "System" },
-  { id: "dark", label: "Aurora" },
-  { id: "light", label: "Japandi" },
+// Theme picker swatches — a mini colour preview per template (shared shape with
+// web's Preferences). system = mixed, Aurora = dark/lime, Japandi = warm/clay.
+const THEME_SWATCHES: { id: ThemePref; label: string; colors: [string, string, string] }[] = [
+  { id: "system", label: "System", colors: ["#0a0b09", "#efeee7", "#8a8f82"] },
+  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
+  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
@@ -29,7 +32,7 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 
 /** Per-category accent — the icon-tile tint, matching the V1 mockup. */
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
-  account: "lime", social: "lime", preferences: "blue", logger: "amber", notifications: "violet",
+  account: "lime", preferences: "blue", logger: "amber", notifications: "violet",
   privacy: "blue", coaching: "violet", security: "blue", subscription: "lime",
   data: "ash", danger: "red",
 };
@@ -45,7 +48,7 @@ export default function AuroraSettings() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t, lang, setLang } = useLang();
-  const { signOut, name, role, entitlement } = useSession();
+  const { signOut, name, entitlement } = useSession();
   const { pref, setPref } = useTheme();
   const lg = useLiquidGlass();
   const acct = useAccountSettings();
@@ -56,6 +59,21 @@ export default function AuroraSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const armed = confirm.trim().toUpperCase() === "RESET";
+  // Public profile — loaded for the header completeness ring + Share action.
+  // Re-fetched on every screen focus so returning from Edit profile (this screen
+  // stays mounted in the stack) reflects the latest handle/bio/photo.
+  const [profile, setProfile] = useState<any>(null);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    getMyProfile().then((d: any) => { if (active && d?.profile) setProfile(d.profile); }).catch(() => {});
+    return () => { active = false; };
+  }, []));
+  const completeness = profileCompleteness({ name, handle: profile?.handle, displayName: profile?.displayName, bio: profile?.bio, avatarUrl: profile?.avatarUrl });
+  const nudge = completeness.complete
+    ? `${t("w.account.settings.cmpl-done")} ✓`
+    : `${t("w.account.settings.cmpl-add")} ${completeness.missing.slice(0, 2).map((m) => t(`w.account.settings.cmpl-${m}`)).join(" & ")}`;
+  const openEditProfile = () => (router.push as (p: string) => void)("/profile-edit");
+  const shareProfile = async () => { if (profile?.handle) { try { await Share.share({ message: `Follow @${profile.handle} on HYBRID` }); } catch { /* dismissed */ } } };
 
   const reset = async () => {
     if (!armed) return;
@@ -76,25 +94,26 @@ export default function AuroraSettings() {
   // listed here navigate instead of expanding.
   const renderBody = (id: SettingsCategoryId): ReactNode => {
     switch (id) {
-      case "account":
-        return (
-      <>
-        <Label color={C.lime}>PROFILE</Label>
-        <AField value={acct.name} onChange={acct.setName} placeholder={t("w.account.settings.your-name-ph")} icon="user" />
-        <AField value={acct.newEmail} onChange={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} keyboard="email-address" icon="mail" />
-        {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginBottom: 10 }}>{acct.profileMsg}</Text>}
-        <View style={{ flexDirection: "row", gap: space.sm }}>
-          <APill label={t("w.account.settings.save-name")} variant="soft" disabled={acct.busy} onPress={acct.saveName} style={{ flex: 1, paddingVertical: 13 }} />
-          <APill label={t("w.account.settings.update-email")} variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} style={{ flex: 1, paddingVertical: 13 }} />
-        </View>
-        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.account.settings.profile-needs-account")}</Text>}
-      </>
-        );
+      // "account" (Edit profile) now navigates to the dedicated /profile-edit
+      // screen (see ROUTES) — the unified avatar + public-profile + name/email
+      // editor — so it has no inline body here.
       case "preferences":
         return (
       <>
         <Label color={C.ash}>APPEARANCE</Label>
-        <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {THEME_SWATCHES.map((s) => {
+            const on = pref === s.id;
+            return (
+              <Pressable key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 11, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+                <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
+                  {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
         <Label color={C.ash} top>LANGUAGE</Label>
         <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         {lg.supported && (
@@ -108,8 +127,11 @@ export default function AuroraSettings() {
         return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.notifications-desc")}</Text>
-        {ACCOUNT_NOTIF_ROWS.map((row) => (
-          <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+        {ACCOUNT_NOTIF_ROWS.map((row, i) => (
+          <View key={row.key}>
+            {(i === 0 || ACCOUNT_NOTIF_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
+            <ToggleRow C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+          </View>
         ))}
       </>
         );
@@ -117,34 +139,68 @@ export default function AuroraSettings() {
         return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.privacy-desc")}</Text>
-        {ACCOUNT_PRIVACY_ROWS.map((row) => (
-          <ToggleRow key={row.key} C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+        {ACCOUNT_PRIVACY_ROWS.map((row, i) => (
+          <View key={row.key}>
+            {(i === 0 || ACCOUNT_PRIVACY_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
+            <ToggleRow C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+          </View>
         ))}
       </>
         );
-      case "security":
+      case "security": {
+        const emailProvider = !acct.provider || acct.provider === "email";
+        const pw = passwordStrength(acct.newPw);
+        const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
         return (
       <>
-        <Label color={C.ash}>PASSWORD</Label>
-        {acct.provider && acct.provider !== "email" ? (
+        {/* GROUP — Login & recovery */}
+        <Label color={txt(C, C.lime) as string}>{t("w.account.settings.sec-login-recovery").toUpperCase()}</Label>
+        <Label color={C.ash}>{t("w.account.settings.change-password").toUpperCase()}</Label>
+        {!emailProvider ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
         ) : (
           <>
             <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
+            {acct.newPw.length > 0 && (
+              <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
+              </View>
+            )}
             <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 13 }} />
             {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
           </>
         )}
-        <Label color={C.ash} top>ACTIVE SESSIONS</Label>
+        <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
+
+        {/* GROUP — Security checks */}
+        <Label color={txt(C, C.lime) as string} top>{t("w.account.settings.sec-checks").toUpperCase()}</Label>
+        <Label color={C.ash}>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
+        </View>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
         <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
       </>
         );
+      }
       case "data":
         return (
       <>
         <Label color={C.ash}>EXPORT</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
+        <View style={{ marginBottom: 12 }}>
+          {[1, 2, 3].map((n) => (
+            <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
+              <Text style={{ color: txt(C, C.lime) as string, fontFamily: F.bold }}>✓</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.data-incl-${n}`)}</Text>
+            </View>
+          ))}
+        </View>
         {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
         {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
       </>
@@ -176,7 +232,7 @@ export default function AuroraSettings() {
 
   // Rows that navigate to a dedicated screen instead of a drill-in sub-view.
   const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
-    social: "/profile-edit",
+    account: "/profile-edit",
     logger: "/logger-settings",
     coaching: "/coach-apply",
     subscription: "/upgrade",
@@ -268,22 +324,41 @@ export default function AuroraSettings() {
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
-      {/* Profile header — shared anatomy with web: a bordered row card with a
-          rounded-square lime-gradient initial avatar, name + email, role/provider
-          pills under the name, and the membership FREE/FULL pill pinned right. */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
-        <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
-        </LinearGradient>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
-          {!!acct.email && <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{acct.email}</Text>}
-          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8, flexWrap: "wrap" }}>
-            <Tag label={role} color={C.violet} upper />
-            {!!acct.provider && <Tag label={`${t("w.account.settings.via")} ${acct.provider}`} color={C.ash} />}
+      {/* Profile header — tappable → Edit profile, with a completeness ring
+          around the avatar (a lime ring + a proportional bar, since RN has no
+          inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
+          and quick-action chips. Shared completeness math with web. */}
+      <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
+        <Pressable onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {profile?.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
+            ) : (
+              <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+              </LinearGradient>
+            )}
           </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? txt(C, C.lime) : C.ash, marginTop: 3 }}>{completeness.percent}% · {nudge}</Text>
+            <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 7, overflow: "hidden" }}>
+              <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
+            </View>
+          </View>
+          <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
+        </Pressable>
+        {/* Quick actions */}
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
+          <Pressable onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
+          </Pressable>
+          {!!profile?.handle && (
+            <Pressable onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>↗ {t("w.account.settings.share-profile")}</Text>
+            </Pressable>
+          )}
         </View>
-        <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
       </View>
 
       {/* Search */}

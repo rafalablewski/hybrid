@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import type { ReactNode } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -22,7 +22,7 @@ type CoachStatus = "pending" | "approved" | "denied";
 // the two clients share the same hues. Uses LIME_HEX (raw hex) not LIME (a CSS
 // var) so the `${accent}24` chip tint + txt(accent) icon colour resolve.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME_HEX, social: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
+  account: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
   privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME_HEX,
   data: ASH, danger: RED,
 };
@@ -35,6 +35,13 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "en", label: "EN" },
   { id: "pl", label: "PL" },
   { id: "de", label: "DE" },
+];
+// Theme picker swatches — a mini colour preview per template, shared shape with
+// mobile so the two Preferences screens read the same. Aurora = dark/lime,
+// Japandi = warm-light/clay.
+const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, string, string] }[] = [
+  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
+  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
 ];
 
 export default function AccountSettings() {
@@ -59,6 +66,24 @@ export default function AccountSettings() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Public profile — loaded for the header completeness ring + Share action.
+  const [socialProfile, setSocialProfile] = useState<{ handle?: string; displayName?: string | null; bio?: string | null; avatarUrl?: string | null } | null>(null);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/social/profile").then((r) => (r.ok ? r.json() : null)).then((d: { profile?: typeof socialProfile }) => { if (live && d?.profile) setSocialProfile(d.profile); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  const shareProfile = async () => {
+    const h = socialProfile?.handle;
+    if (!h) return;
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/@${h}`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) { await navigator.share({ title: "HYBRID", text: `Follow @${h} on HYBRID`, url }); }
+      else { await navigator.clipboard.writeText(url); setShareMsg(`✓ ${t("w.account.settings.share-profile")}: @${h}`); setTimeout(() => setShareMsg(null), 1800); }
+    } catch { /* user dismissed the share sheet */ }
+  };
 
   // Profile editing — uses the user's OWN Supabase auth (no admin/backend route):
   // name lives in user_metadata, email/password are first-class auth fields.
@@ -257,32 +282,32 @@ export default function AccountSettings() {
   const renderBody = (id: SettingsCategoryId): ReactNode => {
     switch (id) {
       case "account":
+        // Unified Edit-profile screen: a live preview, avatar + presets, then a
+        // tap-a-row list (name, username, bio, email, visibility) — each row
+        // opens a focused field editor. One surface; the old separate "Public
+        // profile" category is gone. name/email persist via Supabase auth (passed
+        // in), the rest via the social API.
         return (
           <>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.display-name")}</Mono>
-            <div style={{ display: "flex", gap: space.sm }}>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.settings.your-name-ph")} style={{ ...editInput, flex: 1 }} />
-              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>{t("w.account.settings.save")}</button>
-            </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>{t("w.account.settings.change-email")}</Mono>
-            <div style={{ display: "flex", gap: space.sm }}>
-              <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
-              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>{t("w.account.settings.update")}</button>
-            </div>
-            {profileMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
-            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
+            <SocialProfileEdit
+              embedded
+              account={{ name, setName, saveName, email: session?.email, newEmail, setNewEmail, changeEmail, busy: profileBusy, msg: profileMsg }}
+              onProfileUpdate={(p) => setSocialProfile(p)}
+            />
+            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
         );
-      case "social":
-        return <SocialProfileEdit />;
       case "preferences":
         return (
           <>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
-              {(["dark", "light"] as const).map((m) => (
-                <button key={m} onClick={() => setTheme(m)} title={m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
-                  {m === "dark" ? "Aurora" : "Japandi"}
+              {THEME_SWATCHES.map((s) => (
+                <button key={s.id} onClick={() => setTheme(s.id)} title={s.id === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ flex: 1, textAlign: "left", padding: 12, borderRadius: rCard, cursor: "pointer", background: theme === s.id ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", border: `1px solid ${theme === s.id ? LIME : LINE}` }}>
+                  <div style={{ display: "flex", gap: 5, marginBottom: 8 }}>
+                    {s.colors.map((c, i) => <span key={i} style={{ width: 18, height: 18, borderRadius: 6, background: c, border: `1px solid ${LINE}` }} />)}
+                  </div>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: theme === s.id ? txt(LIME) : txt(CHALK) }}>{s.label}</div>
                 </button>
               ))}
             </div>
@@ -327,8 +352,11 @@ export default function AccountSettings() {
           <>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.notifications-desc")}</Mono>
             <div>
-              {ACCOUNT_NOTIF_ROWS.map(({ key, title, desc }) => (
-                <PrefRow key={key} title={title} desc={desc} on={!!notif[key]} onToggle={() => toggleNotif(key)} disabled={!authOn} />
+              {ACCOUNT_NOTIF_ROWS.map((row, i) => (
+                <Fragment key={row.key}>
+                  {(i === 0 || ACCOUNT_NOTIF_ROWS[i - 1]?.group !== row.group) && <GroupLabel top={i > 0}>{row.group}</GroupLabel>}
+                  <PrefRow title={row.title} desc={row.desc} on={!!notif[row.key]} onToggle={() => toggleNotif(row.key)} disabled={!authOn} />
+                </Fragment>
               ))}
             </div>
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
@@ -339,8 +367,11 @@ export default function AccountSettings() {
           <>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.privacy-desc")}</Mono>
             <div>
-              {ACCOUNT_PRIVACY_ROWS.map(({ key, title, desc }) => (
-                <PrefRow key={key} title={title} desc={desc} on={!!priv[key]} onToggle={() => togglePriv(key)} disabled={!authOn} />
+              {ACCOUNT_PRIVACY_ROWS.map((row, i) => (
+                <Fragment key={row.key}>
+                  {(i === 0 || ACCOUNT_PRIVACY_ROWS[i - 1]?.group !== row.group) && <GroupLabel top={i > 0}>{row.group}</GroupLabel>}
+                  <PrefRow title={row.title} desc={row.desc} on={!!priv[row.key]} onToggle={() => togglePriv(row.key)} disabled={!authOn} />
+                </Fragment>
               ))}
             </div>
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
@@ -361,7 +392,15 @@ export default function AccountSettings() {
                 ) : (
                   <>
                     <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.coach-intro")}</Mono>
-                    <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
+                    <div style={{ marginTop: 12 }}>
+                      {[1, 2, 3].map((n) => (
+                        <div key={n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
+                          <span style={{ ...mono, fontSize: fs.micro, fontWeight: 800, width: 20, height: 20, flex: "none", borderRadius: 6, display: "grid", placeItems: "center", color: ON_ACCENT, background: LIME }}>{n}</span>
+                          <Mono s={{ fontSize: fs.body }} c={CHALK}>{t(`w.account.settings.coach-step-${n}`)}</Mono>
+                        </div>
+                      ))}
+                    </div>
+                    <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 12, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                     {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
                     <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                       {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
@@ -372,31 +411,64 @@ export default function AccountSettings() {
             )}
           </>
         );
-      case "security":
+      case "security": {
+        const emailProvider = !session?.provider || session.provider === "email";
+        const pw = passwordStrength(newPw);
+        const pwColor = pw.score >= 4 ? LIME_HEX : pw.score === 3 ? BLUE : pw.score === 2 ? AMBER : RED;
         return (
           <>
+            {/* GROUP — Login & recovery */}
+            <GroupLabel>{t("w.account.settings.sec-login-recovery")}</GroupLabel>
             <MfaSettings />
             <div style={{ marginTop: 16 }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.change-password")}</Mono>
-              {session?.provider && session.provider !== "email" ? (
+              {!emailProvider ? (
                 <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-                  {t("w.account.settings.signin-with")} {session.provider} {t("w.account.settings.manage-password-there")}
+                  {t("w.account.settings.signin-with")} {session!.provider} {t("w.account.settings.manage-password-there")}
                 </Mono>
               ) : (
-                <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
-                  <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
-                  <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
-                </div>
+                <>
+                  <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
+                    <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
+                    <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
+                  </div>
+                  {newPw.length > 0 && (
+                    <div style={{ marginTop: 10 }} aria-live="polite">
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {[1, 2, 3, 4].map((i) => (
+                          <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i <= pw.score ? pwColor : LINE, transition: "background .15s" }} />
+                        ))}
+                      </div>
+                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={pwColor}>
+                        {t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}
+                      </Mono>
+                    </div>
+                  )}
+                </>
               )}
               {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
             </div>
             <div style={{ marginTop: 16 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.active-sessions")}</Mono>
-              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.active-sessions-desc")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.connected-account")}</Mono>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+                {!emailProvider ? session!.provider : (session?.email || t("w.account.settings.new-password-ph"))}
+              </Mono>
+            </div>
+
+            {/* GROUP — Security checks */}
+            <GroupLabel top>{t("w.account.settings.sec-checks")}</GroupLabel>
+            <div>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.where-logged-in")}</Mono>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: LIME, flex: "none" }} />
+                <Mono s={{ fontSize: fs.body }} c={CHALK}>{t("w.account.settings.this-device")}</Mono>
+              </div>
+              <Mono s={{ fontSize: fs.micro, lineHeight: 1.6, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.active-sessions-desc")}</Mono>
               <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
             </div>
           </>
         );
+      }
       case "subscription":
         return isClient ? (
           <>
@@ -421,6 +493,18 @@ export default function AccountSettings() {
             </div>
             {!paid ? (
               <>
+                <div style={{ marginTop: 16 }}>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.full")}</Mono>
+                  {FULL_BENEFITS.map((b, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0" }}>
+                      <span style={{ color: txt(LIME_HEX), fontWeight: 800, marginTop: 1 }}>✓</span>
+                      <div>
+                        <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: CHALK }}>{b.title}</div>
+                        <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{b.desc}</Mono>
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
                 </button>
@@ -448,6 +532,15 @@ export default function AccountSettings() {
         return (
           <>
             <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>{t("w.account.settings.export-data-desc")}</Mono>
+            <div style={{ marginTop: 14 }}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.data-included")}</Mono>
+              {[1, 2, 3].map((n) => (
+                <div key={n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                  <span style={{ color: txt(LIME_HEX), fontWeight: 800 }}>✓</span>
+                  <Mono s={{ fontSize: fs.body }} c={CHALK}>{t(`w.account.settings.data-incl-${n}`)}</Mono>
+                </div>
+              ))}
+            </div>
             <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>{t("w.account.settings.download-data")}</button>
           </>
         );
@@ -495,6 +588,12 @@ export default function AccountSettings() {
   const results = matchSettings(query);
   const active = cat ? SETTINGS_CATEGORIES[cat] : null;
 
+  const completeness = profileCompleteness({ name: name || session?.name, handle: socialProfile?.handle, displayName: socialProfile?.displayName, bio: socialProfile?.bio, avatarUrl: socialProfile?.avatarUrl });
+  const nudge = completeness.complete
+    ? `${t("w.account.settings.cmpl-done")} ✓`
+    : `${t("w.account.settings.cmpl-add")} ${completeness.missing.slice(0, 2).map((m) => t(`w.account.settings.cmpl-${m}`)).join(" & ")}`;
+  const ringCirc = 2 * Math.PI * 27;
+
   return (
     <div style={{ maxWidth: 640 }}>
       {active ? (
@@ -516,19 +615,34 @@ export default function AccountSettings() {
           {/* Profile header — shared anatomy with mobile: a bordered row card with a
               rounded-square lime-gradient initial avatar, name + email, role/provider
               pills under the name, and the membership FREE/FULL pill pinned right. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 22, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
-              {(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}
+          <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
+            {/* Tappable identity row → opens Edit profile. The avatar is wrapped
+                in a completeness ring; the nudge says what's left to fill. */}
+            <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
+              <span style={{ position: "relative", width: 60, height: 60, flex: "none", display: "grid", placeItems: "center" }}>
+                <svg width="60" height="60" viewBox="0 0 60 60" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
+                  <circle cx="30" cy="30" r="27" fill="none" stroke={LINE} strokeWidth="3" />
+                  <circle cx="30" cy="30" r="27" fill="none" stroke={LIME_HEX} strokeWidth="3" strokeLinecap="round" strokeDasharray={ringCirc} strokeDashoffset={ringCirc * (1 - completeness.percent / 100)} transform="rotate(-90 30 30)" style={{ transition: "stroke-dashoffset .4s" }} />
+                </svg>
+                {socialProfile?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={socialProfile.avatarUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{ width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 20, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>{(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}</span>
+                )}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ ...disp, fontWeight: 800, fontSize: fs.title, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</span>
+                <span style={{ ...mono, fontSize: fs.micro, color: completeness.complete ? txt(LIME_HEX) : txt(ASH), display: "block", marginTop: 3 }}>{completeness.percent}% · {nudge}</span>
+              </span>
+              <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
+            </button>
+            {/* Quick actions */}
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
+              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: `${LIME_HEX}14`, border: `1px solid ${LIME_HEX}66`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
+              {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</div>
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={CHALK}>{session?.email}</Mono>
-              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", textTransform: "uppercase", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}66`, borderRadius: 999, padding: "4px 12px" }}>{session?.role ?? "client"}</span>
-                {session?.provider && <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", color: txt(ASH), background: `${ASH}1a`, border: `1px solid ${ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{t("w.account.settings.via")} {session.provider}</span>}
-              </div>
-            </div>
-            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
           </div>
 
           {/* Search */}
@@ -613,6 +727,16 @@ function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
         </span>
       ) : null}
     </button>
+  );
+}
+
+/** A grouped section header (Instagram-style) — an uppercase label with an
+ *  underline rule that splits a settings screen into named groups. */
+function GroupLabel({ children, top }: { children: ReactNode; top?: boolean }) {
+  return (
+    <div style={{ ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".14em", color: txt(ASH), marginTop: top ? 26 : 0, marginBottom: 14, paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+      {children}
+    </div>
   );
 }
 

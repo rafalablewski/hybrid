@@ -43,10 +43,10 @@ type TabId = "overview" | "prs" | "activity";
 
 /**
  * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
- * cover banner, an overlapping avatar with an edit icon (the shared "settings"
- * glyph — there is no pencil PNG in apps/mobile/assets/icons, so we keep the one
- * glyph across web↔mobile for parity; a dedicated pencil is a blocked follow-up
- * that needs a new design-kit asset), name + the (unchanged) membership pill,
+ * cover banner, an overlapping avatar with an edit-profile icon (the "edit"
+ * pencil glyph — a dedicated asset (assets/icons/edit.png) + shared SVG path so
+ * it's no longer confused with the settings gear, kept in lockstep web↔mobile),
+ * name + the (unchanged) membership pill,
  * bio, follower/following/rank counts, tabs
  * (Overview / PRs / Activity) and a 3-column grid of PUBLIC highlight tiles.
  *
@@ -217,9 +217,9 @@ export default function AuroraProfile() {
         <View pointerEvents="none" style={{ position: "absolute", top: -34, right: -24, width: 170, height: 170, borderRadius: 85, backgroundColor: C.lime, opacity: 0.18 }} />
       </View>
 
-      {/* HEAD — avatar overlapping the cover + the edit icon (shared "settings"
-          glyph; see note above) where a follower would see "Follow". No Edit /
-          Share buttons anywhere. */}
+      {/* HEAD — avatar overlapping the cover + the edit-profile icon (the
+          "edit" pencil glyph, distinct from the settings gear) where a follower
+          would see "Follow". No Edit / Share buttons anywhere. */}
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, paddingHorizontal: 4 }}>
         {/* Outer lime ring (2px) around the 3px ink border — RN box-shadow is
             unreliable, so the ring is a lime-filled wrapper View. Matches web's
@@ -240,7 +240,7 @@ export default function AuroraProfile() {
           hitSlop={8}
           style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", marginBottom: 6 }}
         >
-          <AuroraIcon name="settings" size={19} color={C.chalk} />
+          <AuroraIcon name="edit" size={19} color={C.chalk} />
         </Pressable>
       </View>
 
