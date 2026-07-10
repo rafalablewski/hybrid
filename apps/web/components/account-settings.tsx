@@ -593,14 +593,14 @@ function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
         width: "100%",
         textAlign: "left",
         background: INK2,
-        border: `1px solid ${danger ? `${RED}47` : LINE}`,
+        border: `1px solid ${danger ? `color-mix(in srgb, ${RED} 28%, transparent)` : LINE}`,
         borderRadius: 20,
         padding: 16,
         cursor: "pointer",
         color: CHALK,
       }}
     >
-      <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: danger ? `${RED}24` : `${accent}24`, color: danger ? txt(RED) : txt(accent) }}>
+      <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${danger ? RED : accent} 14%, transparent)`, color: danger ? txt(RED) : txt(accent) }}>
         <AuroraIcon name={icon} size={20} color="currentColor" strokeWidth={4} />
       </span>
       <span style={{ flex: wide ? 1 : "none", minWidth: 0 }}>

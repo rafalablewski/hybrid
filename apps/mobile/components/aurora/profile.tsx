@@ -370,7 +370,7 @@ export default function AuroraProfile() {
 
           {/* Achievements — earned/locked badge tiles with progress. */}
           <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${earnedCount} ${t("w.account.profile.earned")}`} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", gap: 8 }}>
             {achievements.map((a) => {
               const pct = Math.round(a.progress * 100);
               return (
