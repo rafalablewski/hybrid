@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
+import { useState, useEffect, type ReactNode } from "react";
+import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
 import { useAccountSettings } from "../../lib/account";
+import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useLiquidGlass } from "../../lib/liquid-glass";
@@ -45,7 +46,7 @@ export default function AuroraSettings() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t, lang, setLang } = useLang();
-  const { signOut, name, role, entitlement } = useSession();
+  const { signOut, name, entitlement } = useSession();
   const { pref, setPref } = useTheme();
   const lg = useLiquidGlass();
   const acct = useAccountSettings();
@@ -56,6 +57,15 @@ export default function AuroraSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const armed = confirm.trim().toUpperCase() === "RESET";
+  // Public profile — loaded for the header completeness ring + Share action.
+  const [profile, setProfile] = useState<any>(null);
+  useEffect(() => { getMyProfile().then((d: any) => { if (d?.profile) setProfile(d.profile); }).catch(() => {}); }, []);
+  const completeness = profileCompleteness({ name, handle: profile?.handle, displayName: profile?.displayName, bio: profile?.bio, avatarUrl: profile?.avatarUrl });
+  const nudge = completeness.complete
+    ? `${t("w.account.settings.cmpl-done")} ✓`
+    : `${t("w.account.settings.cmpl-add")} ${completeness.missing.slice(0, 2).map((m) => t(`w.account.settings.cmpl-${m}`)).join(" & ")}`;
+  const openEditProfile = () => (router.push as (p: string) => void)("/profile-edit");
+  const shareProfile = async () => { if (profile?.handle) { try { await Share.share({ message: `Follow @${profile.handle} on HYBRID` }); } catch { /* dismissed */ } } };
 
   const reset = async () => {
     if (!armed) return;
@@ -280,22 +290,41 @@ export default function AuroraSettings() {
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
-      {/* Profile header — shared anatomy with web: a bordered row card with a
-          rounded-square lime-gradient initial avatar, name + email, role/provider
-          pills under the name, and the membership FREE/FULL pill pinned right. */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
-        <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
-        </LinearGradient>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
-          {!!acct.email && <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{acct.email}</Text>}
-          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8, flexWrap: "wrap" }}>
-            <Tag label={role} color={C.violet} upper />
-            {!!acct.provider && <Tag label={`${t("w.account.settings.via")} ${acct.provider}`} color={C.ash} />}
+      {/* Profile header — tappable → Edit profile, with a completeness ring
+          around the avatar (a lime ring + a proportional bar, since RN has no
+          inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
+          and quick-action chips. Shared completeness math with web. */}
+      <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
+        <Pressable onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {profile?.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
+            ) : (
+              <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+              </LinearGradient>
+            )}
           </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? txt(C, C.lime) : C.ash, marginTop: 3 }}>{completeness.percent}% · {nudge}</Text>
+            <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 7, overflow: "hidden" }}>
+              <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
+            </View>
+          </View>
+          <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
+        </Pressable>
+        {/* Quick actions */}
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
+          <Pressable onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
+          </Pressable>
+          {!!profile?.handle && (
+            <Pressable onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>↗ {t("w.account.settings.share-profile")}</Text>
+            </Pressable>
+          )}
         </View>
-        <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
       </View>
 
       {/* Search */}

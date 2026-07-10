@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -59,6 +59,24 @@ export default function AccountSettings() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Public profile — loaded for the header completeness ring + Share action.
+  const [socialProfile, setSocialProfile] = useState<{ handle?: string; displayName?: string | null; bio?: string | null; avatarUrl?: string | null } | null>(null);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/social/profile").then((r) => (r.ok ? r.json() : null)).then((d: { profile?: typeof socialProfile }) => { if (live && d?.profile) setSocialProfile(d.profile); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  const shareProfile = async () => {
+    const h = socialProfile?.handle;
+    if (!h) return;
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/@${h}`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) { await navigator.share({ title: "HYBRID", text: `Follow @${h} on HYBRID`, url }); }
+      else { await navigator.clipboard.writeText(url); setShareMsg(`✓ ${t("w.account.settings.share-profile")}: @${h}`); setTimeout(() => setShareMsg(null), 1800); }
+    } catch { /* user dismissed the share sheet */ }
+  };
 
   // Profile editing — uses the user's OWN Supabase auth (no admin/backend route):
   // name lives in user_metadata, email/password are first-class auth fields.
@@ -532,6 +550,12 @@ export default function AccountSettings() {
   const results = matchSettings(query);
   const active = cat ? SETTINGS_CATEGORIES[cat] : null;
 
+  const completeness = profileCompleteness({ name: session?.name, handle: socialProfile?.handle, displayName: socialProfile?.displayName, bio: socialProfile?.bio, avatarUrl: socialProfile?.avatarUrl });
+  const nudge = completeness.complete
+    ? `${t("w.account.settings.cmpl-done")} ✓`
+    : `${t("w.account.settings.cmpl-add")} ${completeness.missing.slice(0, 2).map((m) => t(`w.account.settings.cmpl-${m}`)).join(" & ")}`;
+  const ringCirc = 2 * Math.PI * 27;
+
   return (
     <div style={{ maxWidth: 640 }}>
       {active ? (
@@ -553,19 +577,34 @@ export default function AccountSettings() {
           {/* Profile header — shared anatomy with mobile: a bordered row card with a
               rounded-square lime-gradient initial avatar, name + email, role/provider
               pills under the name, and the membership FREE/FULL pill pinned right. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 22, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
-              {(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}
+          <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
+            {/* Tappable identity row → opens Edit profile. The avatar is wrapped
+                in a completeness ring; the nudge says what's left to fill. */}
+            <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
+              <span style={{ position: "relative", width: 60, height: 60, flex: "none", display: "grid", placeItems: "center" }}>
+                <svg width="60" height="60" viewBox="0 0 60 60" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
+                  <circle cx="30" cy="30" r="27" fill="none" stroke={LINE} strokeWidth="3" />
+                  <circle cx="30" cy="30" r="27" fill="none" stroke={LIME_HEX} strokeWidth="3" strokeLinecap="round" strokeDasharray={ringCirc} strokeDashoffset={ringCirc * (1 - completeness.percent / 100)} transform="rotate(-90 30 30)" style={{ transition: "stroke-dashoffset .4s" }} />
+                </svg>
+                {socialProfile?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={socialProfile.avatarUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{ width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 20, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>{(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}</span>
+                )}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ ...disp, fontWeight: 800, fontSize: fs.title, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</span>
+                <span style={{ ...mono, fontSize: fs.micro, color: completeness.complete ? txt(LIME_HEX) : txt(ASH), display: "block", marginTop: 3 }}>{completeness.percent}% · {nudge}</span>
+              </span>
+              <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
+            </button>
+            {/* Quick actions */}
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
+              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: `${LIME_HEX}14`, border: `1px solid ${LIME_HEX}66`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
+              {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</div>
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={CHALK}>{session?.email}</Mono>
-              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", textTransform: "uppercase", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}66`, borderRadius: 999, padding: "4px 12px" }}>{session?.role ?? "client"}</span>
-                {session?.provider && <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", color: txt(ASH), background: `${ASH}1a`, border: `1px solid ${ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{t("w.account.settings.via")} {session.provider}</span>}
-              </div>
-            </div>
-            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
           </div>
 
           {/* Search */}
