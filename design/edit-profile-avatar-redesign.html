@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Profile · Avatar Picker — 6 Redesigns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* HYBRID brand tokens (packages/core/src/theme/tokens.ts) */
+    --ink:#0c0d0c;
+    --ink2:#141614;
+    --card:#161816;
+    --line:#2a2d2a;
+    --lime:#c6f84f;
+    --chalk:#f3f4ef;
+    --ash:#8b8f86;
+    --blue:#3c787e;
+    --violet:#c9a9f0;
+    --amber:#d0cd94;
+    --red:#d56f3e;
+    --line-soft:rgba(255,255,255,.07);
+    --line-soft2:rgba(255,255,255,.12);
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#050604;color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:44px 20px 90px;
+    background:
+      radial-gradient(120% 60% at 50% -10%,rgba(198,248,79,.06),transparent 55%),
+      radial-gradient(80% 40% at 90% 8%,rgba(60,120,126,.05),transparent 55%),
+      #050604;}
+
+  /* ---------- page chrome ---------- */
+  .page-head{max-width:1240px;margin:0 auto 42px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:42px;line-height:1.04;letter-spacing:-.035em;font-weight:800;margin-bottom:14px}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:680px;font-size:15.5px;line-height:1.6}
+  .brief{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);letter-spacing:.02em;color:var(--ash);background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(370px,1fr));gap:52px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:404px}
+  .cap{margin:0 4px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:7px;background:var(--lime);color:#0a0b09;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--ash);font-size:13.5px;line-height:1.55}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  /* ---------- device slice ---------- */
+  .slice{position:relative;border-radius:34px;padding:12px;
+    background:linear-gradient(165deg,#20241b,#0b0c09);
+    box-shadow:0 34px 70px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.04);}
+  .screen{position:relative;border-radius:24px;overflow:hidden;background:var(--ink);padding:20px 18px 22px}
+  .screen::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 30% at 50% -4%,rgba(198,248,79,.08),transparent 62%);}
+  .ctx{position:relative;z-index:1;display:flex;align-items:center;gap:11px;margin-bottom:18px;opacity:.9}
+  .ctx .b{width:38px;height:38px;border-radius:13px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .ctx .b svg{width:17px;height:17px;stroke:var(--chalk);fill:none;stroke-width:2.2}
+  .ctx h3{font-size:20px;font-weight:800;letter-spacing:-.02em}
+  .ctx p{font-size:12px;color:var(--ash);margin-top:2px}
+
+  /* the section card everything lives in */
+  .sect{position:relative;z-index:1;border:1px solid var(--line);border-radius:22px;background:var(--card);padding:22px 20px}
+  .sk{font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+
+  /* shared swatch gradients — mirror the 6 AVATAR_PRESETS */
+  .g-lime{background:radial-gradient(120% 120% at 30% 22%,#e9ff8a,#c6f84f 42%,#7fae1f)}
+  .g-teal{background:radial-gradient(120% 120% at 30% 22%,#7fd6c9,#3c9a8f 45%,#22635c)}
+  .g-blue{background:radial-gradient(120% 120% at 30% 22%,#6fb2c4,#3c787e 46%,#274f57)}
+  .g-violet{background:radial-gradient(120% 120% at 30% 22%,#e2c8fb,#c9a9f0 44%,#8f6fc4)}
+  .g-amber{background:radial-gradient(120% 120% at 30% 22%,#ece9b4,#d0cd94 44%,#9c9862)}
+  .g-coral{background:radial-gradient(120% 120% at 30% 22%,#f0a883,#d56f3e 46%,#a24a24)}
+
+  .check{position:absolute;right:-3px;bottom:-3px;width:19px;height:19px;border-radius:50%;background:var(--lime);border:2.5px solid var(--card);display:grid;place-items:center}
+  .check svg{width:10px;height:10px;stroke:#0a0b09;fill:none;stroke-width:3.4}
+
+  .ghost{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);background:transparent;color:var(--ash);border-radius:999px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.16s}
+  .ghost:hover{border-color:var(--line-soft2);color:var(--chalk)}
+  .soon{font:700 9px/1 var(--mono);letter-spacing:.1em;color:var(--ink);background:var(--ash);border-radius:5px;padding:3px 5px}
+
+  /* =================================================================
+     IDEA 1 — STUDIO  (refined current; tabs + named swatch)
+  ================================================================= */
+  .c1 .tabs{display:flex;gap:4px;padding:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;margin-bottom:20px}
+  .c1 .tabs button{flex:1;border:0;background:transparent;color:var(--ash);font:700 13px/1 var(--sans);padding:10px;border-radius:999px;cursor:pointer;transition:.16s}
+  .c1 .tabs button.on{background:var(--lime);color:#0a0b09}
+  .c1 .stage{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .c1 .ring{width:104px;height:104px;border-radius:50%;padding:4px;display:grid;place-items:center;transition:.2s}
+  .c1 .ring .face{width:100%;height:100%;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:38px;color:#0a0b09}
+  .c1 .named{font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:10px}
+  .c1 .named b{color:var(--chalk)}
+  .c1 .dots{display:flex;gap:11px;justify-content:center;margin:16px 0 18px}
+  .c1 .dot{position:relative;width:40px;height:40px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.16s;transform:scale(.9)}
+  .c1 .dot.on{border-color:var(--lime);transform:scale(1)}
+  .c1 .up{display:flex;justify-content:center}
+
+  /* =================================================================
+     IDEA 2 — CAROUSEL  (large true previews, horizontal snap)
+  ================================================================= */
+  .c2 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .c2 .rail{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .c2 .rail::-webkit-scrollbar{display:none}
+  .c2 .tile{position:relative;flex:none;width:96px;height:96px;border-radius:22px;scroll-snap-align:center;display:grid;place-items:center;cursor:pointer;
+    border:2.5px solid transparent;transition:.16s;box-shadow:0 8px 20px -10px rgba(0,0,0,.7)}
+  .c2 .tile span{font-weight:900;font-size:38px;color:#0a0b09;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+  .c2 .tile.on{border-color:var(--lime);transform:translateY(-3px)}
+  .c2 .up{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .c2 .hint{font:500 12px/1.4 var(--mono);color:var(--ash);flex:1}
+
+  /* =================================================================
+     IDEA 3 — PREVIEW GRID  (see the initial on every gradient + upload tile)
+  ================================================================= */
+  .c3 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+  .c3 .cell{position:relative;aspect-ratio:1;border-radius:18px;display:grid;place-items:center;cursor:pointer;border:2.5px solid transparent;transition:.16s}
+  .c3 .cell span{font-weight:900;font-size:26px;color:#0a0b09}
+  .c3 .cell.on{border-color:var(--lime)}
+  .c3 .add{border:1.5px dashed var(--line-soft2);background:var(--ink2);color:var(--ash);flex-direction:column;gap:4px}
+  .c3 .add svg{width:20px;height:20px;stroke:var(--ash);fill:none;stroke-width:2}
+  .c3 .add small{font:700 8px/1 var(--mono);letter-spacing:.08em}
+  .c3 .lead{display:flex;align-items:center;justify-content:space-between}
+  .c3 .lead b{font-size:15px;font-weight:700;letter-spacing:-.01em}
+
+  /* =================================================================
+     IDEA 4 — COMPACT  (horizontal — avatar left, controls right)
+  ================================================================= */
+  .c4 .row{display:flex;gap:18px;align-items:center}
+  .c4 .big{position:relative;flex:none;width:92px;height:92px;border-radius:50%;padding:3px;display:grid;place-items:center}
+  .c4 .big .face{width:100%;height:100%;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:34px;color:#0a0b09}
+  .c4 .big .edit{position:absolute;right:0;bottom:2px;width:28px;height:28px;border-radius:50%;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center}
+  .c4 .big .edit svg{width:13px;height:13px;stroke:var(--chalk);fill:none;stroke-width:2}
+  .c4 .ctrl{flex:1;min-width:0}
+  .c4 .ctrl .sk{display:block;margin-bottom:10px}
+  .c4 .mini{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+  .c4 .m{position:relative;aspect-ratio:1;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.16s}
+  .c4 .m.on{border-color:var(--lime)}
+  .c4 .m .check{width:15px;height:15px;right:-2px;bottom:-2px}
+  .c4 .m .check svg{width:8px;height:8px}
+  .c4 .link{font-family:var(--mono);font-size:12px;color:var(--ash);display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .c4 .link svg{width:14px;height:14px;stroke:var(--ash);fill:none;stroke-width:2}
+
+  /* =================================================================
+     IDEA 5 — HERO GLOW  (editorial; glow tracks the active accent)
+  ================================================================= */
+  .c5 .sect{overflow:hidden}
+  .c5 .stage{position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 0 4px}
+  .c5 .aura{position:absolute;top:-20px;width:200px;height:200px;border-radius:50%;filter:blur(46px);opacity:.5;transition:.3s;z-index:0}
+  .c5 .big{position:relative;z-index:1;width:112px;height:112px;border-radius:50%;padding:4px;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+  .c5 .big .face{width:100%;height:100%;border-radius:50%;border:4px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:42px;color:#0a0b09}
+  .c5 .who{position:relative;z-index:1;text-align:center;margin-top:14px}
+  .c5 .who b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .c5 .who span{display:block;font:500 12px/1 var(--mono);color:var(--lime);margin-top:5px}
+  .c5 .rail{position:relative;z-index:1;display:flex;gap:9px;justify-content:center;margin:18px 0 6px;padding:7px;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:999px;width:fit-content;margin-left:auto;margin-right:auto}
+  .c5 .p{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.16s}
+  .c5 .p.on{border-color:var(--lime);transform:scale(1.12)}
+  .c5 .up{text-align:center;margin-top:14px}
+  .c5 .up a{font-family:var(--mono);font-size:12px;color:var(--ash);border-bottom:1px dashed var(--line-soft2);padding-bottom:2px;cursor:pointer}
+
+  /* =================================================================
+     IDEA 6 — UPLOADER FIRST  (photo-forward; presets as fallback)
+  ================================================================= */
+  .c6 .drop{position:relative;border:1.5px dashed var(--line-soft2);border-radius:18px;background:linear-gradient(180deg,rgba(198,248,79,.04),transparent);padding:26px 18px;text-align:center;cursor:pointer;transition:.16s}
+  .c6 .drop:hover{border-color:var(--lime)}
+  .c6 .drop .ic{width:46px;height:46px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;margin:0 auto 12px}
+  .c6 .drop .ic svg{width:22px;height:22px;stroke:var(--lime);fill:none;stroke-width:2}
+  .c6 .drop b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .c6 .drop small{display:block;color:var(--ash);font-size:12px;margin-top:5px}
+  .c6 .drop .badge{position:absolute;top:12px;right:12px}
+  .c6 .div{display:flex;align-items:center;gap:12px;margin:18px 0}
+  .c6 .div::before,.c6 .div::after{content:"";flex:1;height:1px;background:var(--line)}
+  .c6 .div span{font:700 10px/1 var(--mono);letter-spacing:.14em;color:var(--ash);text-transform:uppercase}
+  .c6 .dots{display:flex;gap:10px;justify-content:center}
+  .c6 .dot{position:relative;width:38px;height:38px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.16s}
+  .c6 .dot.on{border-color:var(--lime)}
+
+  /* done button footer common to a couple slices */
+  .done{margin-top:16px;background:var(--lime);color:#0a0b09;font-weight:800;font-size:15px;border:0;border-radius:14px;padding:14px;width:100%;cursor:pointer;position:relative;z-index:1}
+
+  @media(max-width:460px){
+    body{padding:30px 12px 60px}
+    .page-head h1{font-size:32px}
+  }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="kicker">HYBRID · Edit Profile</div>
+  <h1>Avatar &amp; preset picker <span>— six redesigns</span></h1>
+  <p>The current “Pick a preset” card works but reads as a placeholder: a ringed monogram, a bare row of colour dots, and a disabled upload button. These six directions keep the exact same data (six branded gradient presets + a photo-upload slot that’s still <b>soon</b>) but give the section a considered, shipped feel. Tap any swatch — they’re live.</p>
+  <div class="brief">
+    <span class="tag">Brand <b>chartreuse #c6f84f</b></span>
+    <span class="tag">6 gradient presets</span>
+    <span class="tag">Photo upload <b>soon</b></span>
+    <span class="tag">Web ↔ mobile parity</span>
+    <span class="tag">Dark surface only</span>
+  </div>
+</header>
+
+<main class="gallery">
+
+  <!-- ============ IDEA 1 — STUDIO ============ -->
+  <section class="concept c1">
+    <div class="cap">
+      <div class="n"><i>1</i> Studio</div>
+      <h2>Studio</h2>
+      <p>The safest evolution of today’s card. A <b>Preset / Photo</b> tab pair sets expectations, the monogram grows and the active swatch gets a <b>name</b> — so the row stops feeling anonymous.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>Photo, name, handle &amp; visibility</p></div>
+      </div>
+      <div class="sect">
+        <div class="tabs"><button class="on">Preset</button><button>Photo</button></div>
+        <div class="stage">
+          <div class="ring on g-lime" data-ring><div class="face">R</div></div>
+          <div class="named">Preset · <b data-name>Chartreuse</b></div>
+        </div>
+        <div class="dots" data-group="1">
+          <div class="dot g-lime on"></div>
+          <div class="dot g-teal"></div>
+          <div class="dot g-blue"></div>
+          <div class="dot g-violet"></div>
+          <div class="dot g-amber"></div>
+          <div class="dot g-coral"></div>
+        </div>
+        <div class="up"><button class="ghost">Upload a photo <span class="soon">SOON</span></button></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ IDEA 2 — CAROUSEL ============ -->
+  <section class="concept c2">
+    <div class="cap">
+      <div class="n"><i>2</i> Carousel</div>
+      <h2>Carousel</h2>
+      <p>Stop showing colour <i>dots</i> and start showing the <b>actual avatar</b>. Each tile renders the monogram on that gradient, so the swipe is a true preview. Lifts the selected tile and lands a check.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>Your public avatar</p></div>
+      </div>
+      <div class="sect">
+        <div class="top"><span class="sk">Your avatar</span><span class="sk" style="color:var(--lime)">1 / 6</span></div>
+        <div class="rail" data-group="2">
+          <div class="tile g-lime on"><span>R</span><div class="check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+          <div class="tile g-teal"><span>R</span></div>
+          <div class="tile g-blue"><span>R</span></div>
+          <div class="tile g-violet"><span>R</span></div>
+          <div class="tile g-amber"><span>R</span></div>
+          <div class="tile g-coral"><span>R</span></div>
+        </div>
+        <div class="up">
+          <span class="hint">Swipe presets, or add your own photo.</span>
+          <button class="ghost">Upload <span class="soon">SOON</span></button>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ IDEA 3 — PREVIEW GRID ============ -->
+  <section class="concept c3">
+    <div class="cap">
+      <div class="n"><i>3</i> Preview grid</div>
+      <h2>Preview grid</h2>
+      <p>All options visible at once — no scrolling, no hunting. Every gradient shows the monogram, and the upload slot becomes a first-class <b>dashed “+” tile</b> that reads as coming soon rather than a dead button.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>Choose your look</p></div>
+      </div>
+      <div class="sect">
+        <div class="lead"><b>Choose your look</b><span class="sk" style="color:var(--lime)">Preset</span></div>
+        <div class="grid" data-group="3">
+          <div class="cell g-lime on"><span>R</span><div class="check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+          <div class="cell g-teal"><span>R</span></div>
+          <div class="cell g-blue"><span>R</span></div>
+          <div class="cell g-violet"><span>R</span></div>
+          <div class="cell g-amber"><span>R</span></div>
+          <div class="cell g-coral"><span>R</span></div>
+          <div class="cell g-lime" style="background:radial-gradient(120% 120% at 30% 22%,#c9a9f0,#3c787e)"><span>R</span></div>
+          <div class="cell add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><small>SOON</small></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ IDEA 4 — COMPACT ============ -->
+  <section class="concept c4">
+    <div class="cap">
+      <div class="n"><i>4</i> Compact</div>
+      <h2>Compact</h2>
+      <p>Reclaims vertical space in a long form. Avatar on the left with a floating <b>edit chip</b>, presets and upload tucked to the right. Half the height of the current card — the fields below rise into view.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>rafalablewski</p></div>
+      </div>
+      <div class="sect">
+        <div class="row">
+          <div class="big g-lime" data-ring2>
+            <div class="face">R</div>
+            <div class="edit"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+          </div>
+          <div class="ctrl">
+            <span class="sk">Pick a preset</span>
+            <div class="mini" data-group="4">
+              <div class="m g-lime on"><div class="check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div></div>
+              <div class="m g-teal"></div>
+              <div class="m g-blue"></div>
+              <div class="m g-violet"></div>
+              <div class="m g-amber"></div>
+              <div class="m g-coral"></div>
+            </div>
+            <span class="link"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/></svg> Upload a photo (soon)</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ IDEA 5 — HERO GLOW ============ -->
+  <section class="concept c5">
+    <div class="cap">
+      <div class="n"><i>5</i> Hero glow</div>
+      <h2>Hero glow</h2>
+      <p>The premium, marketing-grade take. A soft aura behind the avatar <b>adopts the selected accent</b> as you pick, the handle sits under it, and presets live in a floating capsule rail. Upload is a quiet dashed link.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>Public profile</p></div>
+      </div>
+      <div class="sect">
+        <div class="stage">
+          <div class="aura g-lime" data-aura></div>
+          <div class="big g-lime" data-ring3><div class="face">R</div></div>
+          <div class="who"><b>rafalablewski</b><span>@rafalablewski</span></div>
+        </div>
+        <div class="rail" data-group="5">
+          <div class="p g-lime on"></div>
+          <div class="p g-teal"></div>
+          <div class="p g-blue"></div>
+          <div class="p g-violet"></div>
+          <div class="p g-amber"></div>
+          <div class="p g-coral"></div>
+        </div>
+        <div class="up"><a>Upload a photo instead — coming soon</a></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ IDEA 6 — UPLOADER FIRST ============ -->
+  <section class="concept c6">
+    <div class="cap">
+      <div class="n"><i>6</i> Uploader-first</div>
+      <h2>Uploader-first</h2>
+      <p>Built for the day photo upload ships. A real <b>drop zone</b> leads, presets become the graceful fallback below an “or” divider. Ship it with the zone disabled today, flip it live later — no redesign needed.</p>
+    </div>
+    <div class="slice"><div class="screen">
+      <div class="ctx">
+        <div class="b"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div><h3>Edit profile</h3><p>Profile photo</p></div>
+      </div>
+      <div class="sect">
+        <div class="drop">
+          <span class="soon badge">SOON</span>
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg></div>
+          <b>Add a profile photo</b>
+          <small>Drag an image here or tap to browse</small>
+        </div>
+        <div class="div"><span>or pick a preset</span></div>
+        <div class="dots" data-group="6">
+          <div class="dot g-lime on"></div>
+          <div class="dot g-teal"></div>
+          <div class="dot g-blue"></div>
+          <div class="dot g-violet"></div>
+          <div class="dot g-amber"></div>
+          <div class="dot g-coral"></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+</main>
+
+<script>
+  // preset metadata: gradient class -> display name + aura tint
+  const NAMES = {
+    "g-lime":"Chartreuse","g-teal":"Teal","g-blue":"Deep teal",
+    "g-violet":"Violet","g-amber":"Sand","g-coral":"Terracotta"
+  };
+  function gradClass(el){ return [...el.classList].find(c=>c.startsWith("g-")); }
+
+  document.querySelectorAll("[data-group]").forEach(group=>{
+    const items = [...group.children].filter(c=>gradClass(c) && !c.classList.contains("add"));
+    items.forEach(item=>{
+      item.addEventListener("click",()=>{
+        const g = gradClass(item);
+        items.forEach(i=>{ i.classList.remove("on"); i.querySelector(".check")?.remove(); });
+        item.classList.add("on");
+        // re-add a check where the design uses one
+        if(item.matches(".tile,.cell,.m")){
+          const c=document.createElement("div"); c.className="check";
+          c.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+          item.appendChild(c);
+        }
+        // sync the slice's big avatar + labels
+        const screen = group.closest(".screen");
+        const ring = screen.querySelector("[data-ring],[data-ring2],[data-ring3]");
+        if(ring){ const cls=gradClass(ring); ring.classList.remove(cls); ring.classList.add(g); }
+        const aura = screen.querySelector("[data-aura]");
+        if(aura){ const cls=gradClass(aura); aura.classList.remove(cls); aura.classList.add(g); }
+        const name = screen.querySelector("[data-name]");
+        if(name){ name.textContent = NAMES[g]; }
+      });
+    });
+  });
+</script>
+</body>
+</html>
