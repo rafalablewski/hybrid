@@ -133,6 +133,7 @@ export function SocialProfileEdit({ onDone, embedded }: { onDone?: () => void; e
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState(false);
+  const [avail, setAvail] = useState<null | "checking" | "ok" | "taken">(null);
   const busy = useBusy();
 
   const load = async () => {
@@ -142,6 +143,22 @@ export function SocialProfileEdit({ onDone, embedded }: { onDone?: () => void; e
     else setForm((f) => ({ ...f, handle: d.suggestedHandle ?? "" }));
   };
   useEffect(() => { load(); }, []);
+
+  // Live handle availability — debounced. Format is validated instantly; a
+  // valid, changed handle is checked against the server (404 = free).
+  useEffect(() => {
+    const h = normalizeHandle(form.handle);
+    if (!h || !isValidHandle(h)) { setAvail(null); return; }
+    if (data?.profile && h === data.profile.handle) { setAvail("ok"); return; }
+    setAvail("checking");
+    const id = setTimeout(async () => {
+      try {
+        const r: any = await jget(`/api/social/profile/${h}`);
+        setAvail(r?.profile ? "taken" : "ok");
+      } catch { setAvail("ok"); }
+    }, 450);
+    return () => clearTimeout(id);
+  }, [form.handle, data]);
 
   const save = () => busy.run("save", async () => {
     setErr(null);
@@ -163,8 +180,26 @@ export function SocialProfileEdit({ onDone, embedded }: { onDone?: () => void; e
   );
   const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 14 } as const;
 
+  const hNorm = normalizeHandle(form.handle);
+  const fmtValid = isValidHandle(hNorm);
+  const isMine = !!data?.profile && hNorm === data.profile.handle;
+  const bioLen = (form.bio ?? "").length;
+  const visLabel = form.visibility === "public" ? "Public" : form.visibility === "private" ? "Private" : "Followers";
+
   const inner = (
     <>
+      {/* Live "what followers see" preview — updates as you type. */}
+      <div style={{ position: "relative", borderRadius: aurora ? 16 : 10, padding: 14, marginBottom: 16, background: C("ink2"), border: `1px solid ${C("line")}` }}>
+        <span style={{ position: "absolute", top: 12, right: 12, fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{visLabel}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={48} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{form.displayName || form.handle || "Your name"}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--lime-text)" }}>@{form.handle || "handle"}</div>
+          </div>
+        </div>
+        {form.bio ? <div style={{ fontSize: 13, color: C("chalk"), marginTop: 10, lineHeight: 1.5 }}>{form.bio}</div> : null}
+      </div>
       {!claimed && <p style={{ color: C("ash"), fontSize: 13, marginTop: 0 }}>Claim a handle so friends can find and follow you.</p>}
       {/* Avatar — a real preview + one-tap branded gradient presets. A photo
           upload is coming with the avatars Storage bucket (social-avatar-upload). */}
@@ -189,8 +224,22 @@ export function SocialProfileEdit({ onDone, embedded }: { onDone?: () => void; e
         </div>
       ))}
       {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
+      {form.handle.length > 0 && (
+        <div aria-live="polite" style={{ marginTop: -6, marginBottom: 12, fontFamily: "var(--font-mono)", fontSize: 11 }}>
+          {!fmtValid ? (
+            <span style={{ color: C("red") }}>✕ Handle must be 3–20 chars: a–z, 0–9, _</span>
+          ) : avail === "taken" ? (
+            <span style={{ color: C("red") }}>✕ @{hNorm} is taken</span>
+          ) : avail === "checking" ? (
+            <span style={{ color: C("ash") }}>Checking availability…</span>
+          ) : (
+            <span style={{ color: "var(--lime-text)" }}>✓ {isMine ? "This is your handle" : `@${hNorm} is available`}</span>
+          )}
+        </div>
+      )}
       {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
       {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
+      <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 10, color: bioLen >= 280 ? C("red") : C("ash"), marginTop: -8, marginBottom: 12 }}>{bioLen}/280</div>
       {field("Who can see your results", (
         <div style={{ display: "flex", gap: 8 }}>
           {(["public", "followers", "private"] as const).map((v) => (
