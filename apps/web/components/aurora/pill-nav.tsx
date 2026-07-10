@@ -66,7 +66,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   // open. Profile is now a bar slot (right of More); everything else (Plans,
   // History, Cockpit, …) lives in the More sheet, so landing on those lights
   // "More".
-  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "profile"]);
+  const barIds = new Set<string>([...tabs.map((t) => t.id), "train", "log", "profile"]);
   const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
   // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒) here rather
   // than hidden, so the whole toolkit is visible; a locked tile upsells.
@@ -196,7 +196,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
           {tabs.map((tab) => (
             <PillButton key={tab.id} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
-          <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
+          <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
           <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
           <PillButton icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>

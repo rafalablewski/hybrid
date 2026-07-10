@@ -1,0 +1,443 @@
+<title>Train launcher — 5 redesign ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --ink3:#1b1e19;
+    --line:#2a2d2a; --line2:#3a3f39;
+    --lime:#c6f84f; --lime-dim:#93bd3a; --olive:#232a12;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --blue:#4f97a0; --violet:#c9a9f0;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{padding:48px 22px 90px}
+  ::selection{background:var(--lime);color:var(--ink)}
+
+  /* ---------- page chrome ---------- */
+  .page-head{max-width:1240px;margin:0 auto 40px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime)}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance}
+  .page-head h1 em{font-style:normal;color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:64ch;font-size:15px;line-height:1.65}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .brief{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);color:var(--ash);background:var(--ink2);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:52px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:392px}
+  .cap{margin:0 4px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.16em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:7px;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px;text-wrap:balance}
+  .cap p{color:var(--ash);font-size:13.5px;line-height:1.6}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .cap .state{display:inline-block;margin-top:11px;font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash2);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+
+  /* ---------- phone ---------- */
+  .phone{position:relative;width:100%;aspect-ratio:390/844;border-radius:48px;padding:11px;
+    background:linear-gradient(155deg,#2a2f22,#0b0c09 60%);
+    box-shadow:0 46px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.045),inset 0 0 0 1px rgba(0,0,0,.55)}
+  .screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
+  .glow{position:absolute;inset:0;pointer-events:none;z-index:0;background:
+      radial-gradient(115% 40% at 50% -8%,rgba(198,248,79,.14),transparent 60%),
+      radial-gradient(80% 36% at 108% 2%,rgba(120,110,60,.09),transparent 55%)}
+  .status{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:16px 26px 2px;font-size:15px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center}
+  .status svg{fill:var(--chalk)}
+  .bat{display:inline-flex;align-items:center;gap:4px}
+  .bat b{background:#f0c000;color:#161200;font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px;font-family:var(--mono)}
+  .body{position:relative;z-index:2;flex:1;overflow:hidden;padding:12px 20px 0}
+  .navwrap{position:relative;z-index:3;padding:6px 16px 14px}
+  .navbar{height:66px;border-radius:26px;background:rgba(20,22,19,.66);backdrop-filter:blur(18px);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;position:relative}
+  .navbar svg{width:22px;height:22px;stroke:var(--ash2);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .navbar .fab{width:58px;height:58px;border-radius:50%;background:var(--lime);display:grid;place-items:center;
+    box-shadow:0 0 26px rgba(198,248,79,.55);border:4px solid var(--ink);margin-top:-14px}
+  .navbar .fab svg{stroke:var(--ink);stroke-width:2.4;width:26px;height:26px}
+
+  /* ---------- shared screen atoms ---------- */
+  .h1{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1}
+  .sub{font:400 12.5px/1.5 var(--mono);color:var(--ash);margin-top:8px}
+  .eyebrow{font:700 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .lime-link{font:800 13px/1 var(--sans);color:var(--lime)}
+  .foot{font:400 11px/1.55 var(--mono);color:var(--ash2);margin-top:16px}
+  .stack{display:flex;flex-direction:column}
+
+  /* Hero primary button (full) */
+  .hero{background:var(--lime);border-radius:26px;padding:26px 20px;text-align:center;color:var(--ink)}
+  .hero .t{font-size:22px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;justify-content:center;gap:10px}
+  .hero .s{font:600 11px/1 var(--mono);opacity:.68;margin-top:8px}
+  .play{width:26px;height:26px;border-radius:8px;background:rgba(12,13,12,.16);display:inline-grid;place-items:center}
+  .play svg{width:13px;height:13px;fill:var(--ink)}
+
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:22px;padding:17px}
+  .ghost{border:1px solid var(--line2);border-radius:999px;padding:15px;text-align:center;font-size:15px;font-weight:700;color:var(--chalk);display:flex;align-items:center;justify-content:center;gap:8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+  /* =========================================================
+     IDEA 1 — COMMAND BAR
+  ========================================================= */
+  .c1 .body{display:flex;flex-direction:column;gap:14px}
+  .c1 .pbtn{background:var(--lime);border-radius:20px;padding:18px 20px;color:var(--ink);display:flex;align-items:center;gap:14px}
+  .c1 .pbtn .play{width:34px;height:34px;border-radius:11px}
+  .c1 .pbtn .play svg{width:15px;height:15px}
+  .c1 .pbtn .t{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .c1 .pbtn .s{font:600 10.5px/1 var(--mono);opacity:.66;margin-top:4px}
+  .c1 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .c1 .chip{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:14px 10px 13px;text-align:center;position:relative}
+  .c1 .chip .ci{width:34px;height:34px;margin:0 auto 9px;border-radius:11px;background:var(--ink3);display:grid;place-items:center}
+  .c1 .chip .ci svg{width:17px;height:17px;stroke:var(--chalk);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .c1 .chip.ai .ci{background:rgba(201,169,240,.14)}
+  .c1 .chip.ai .ci svg{stroke:var(--violet)}
+  .c1 .chip .cl{font-size:12.5px;font-weight:700;letter-spacing:-.01em}
+  .c1 .chip .cm{font:600 9.5px/1 var(--mono);color:var(--ash2);margin-top:4px}
+  .c1 .chip .lk{position:absolute;top:9px;right:10px}
+  .c1 .chip .lk svg{width:12px;height:12px;stroke:var(--violet);fill:none;stroke-width:2}
+  .c1 .upsell{margin-top:auto;display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,rgba(201,169,240,.08),var(--ink2));border:1px solid rgba(201,169,240,.28);border-radius:16px;padding:13px 15px}
+  .c1 .upsell .ut{font-size:13px;font-weight:700}
+  .c1 .upsell .us{font:400 10.5px/1.4 var(--mono);color:var(--ash);margin-top:2px}
+  .c1 .upsell .arw{margin-left:auto;color:var(--violet);font-size:17px;font-weight:800}
+
+  /* =========================================================
+     IDEA 2 — READY TO TRAIN (readiness-led)
+  ========================================================= */
+  .c2 .body{display:flex;flex-direction:column;gap:15px}
+  .c2 .ready{background:var(--ink2);border:1px solid var(--line);border-radius:22px;padding:18px}
+  .c2 .ring{display:flex;align-items:center;gap:16px}
+  .c2 .dial{width:70px;height:70px;flex:none;position:relative;display:grid;place-items:center}
+  .c2 .dial svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .c2 .dial .num{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .c2 .dial .num s{font:700 9px/1 var(--mono);color:var(--ash);text-decoration:none;display:block;letter-spacing:.1em}
+  .c2 .ring .rt{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .c2 .ring .rs{font:400 11.5px/1.5 var(--mono);color:var(--ash);margin-top:5px}
+  .c2 .ring .rs b{color:var(--lime);font-weight:700}
+  .c2 .hero{margin-top:2px}
+  .c2 .ailine{display:flex;align-items:center;gap:11px;padding:2px 4px}
+  .c2 .ailine .d{width:8px;height:8px;border-radius:50%;background:var(--violet);flex:none;box-shadow:0 0 10px var(--violet)}
+  .c2 .ailine .at{font-size:12.5px;color:var(--ash)}
+  .c2 .ailine .at b{color:var(--chalk);font-weight:700}
+  .c2 .ailine .go{margin-left:auto;color:var(--violet);font-weight:800;font-size:12.5px}
+
+  /* =========================================================
+     IDEA 3 — TWO-CHOICE SPLIT
+  ========================================================= */
+  .c3 .body{display:flex;flex-direction:column}
+  .c3 .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .c3 .opt{border-radius:22px;padding:20px 16px;min-height:214px;display:flex;flex-direction:column}
+  .c3 .opt.a{background:var(--lime);color:var(--ink)}
+  .c3 .opt.b{background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+  .c3 .opt .oi{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:auto}
+  .c3 .opt.a .oi{background:rgba(12,13,12,.15)}
+  .c3 .opt.a .oi svg{stroke:var(--ink)}
+  .c3 .opt.b .oi{background:var(--ink3)}
+  .c3 .opt.b .oi svg{stroke:var(--lime)}
+  .c3 .opt .oi svg{width:22px;height:22px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .c3 .opt .ol{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;margin-top:16px;opacity:.7}
+  .c3 .opt .oh{font-size:20px;font-weight:800;letter-spacing:-.03em;margin-top:8px;line-height:1.05}
+  .c3 .opt .os{font:400 10.5px/1.45 var(--mono);margin-top:8px;opacity:.72}
+  .c3 .opt.a .os{color:var(--ink)}
+  .c3 .plans{margin-top:14px;display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .c3 .prow{display:flex;align-items:center;gap:12px;background:var(--ink2);padding:14px 15px}
+  .c3 .prow .pi{width:30px;height:30px;border-radius:9px;background:var(--ink3);display:grid;place-items:center;flex:none}
+  .c3 .prow .pi svg{width:15px;height:15px;stroke:var(--ash);fill:none;stroke-width:2}
+  .c3 .prow .pt{font-size:13.5px;font-weight:700}
+  .c3 .prow .pm{font:600 9.5px/1 var(--mono);color:var(--ash2);margin-top:3px}
+  .c3 .prow .pc{margin-left:auto;color:var(--ash2)}
+
+  /* =========================================================
+     IDEA 4 — MINIMAL / MONOCHROME
+  ========================================================= */
+  .c4 .body{display:flex;flex-direction:column;gap:1px}
+  .c4 .hd{padding:6px 2px 22px}
+  .c4 .hd h1{font-size:26px;font-weight:700;letter-spacing:-.03em}
+  .c4 .hd .sub{color:var(--ash2)}
+  .c4 .list{display:flex;flex-direction:column;background:var(--line);gap:1px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .c4 .item{display:flex;align-items:center;gap:15px;background:var(--ink);padding:19px 4px}
+  .c4 .item .mi{width:30px;flex:none;display:grid;place-items:center}
+  .c4 .item .mi svg{width:19px;height:19px;stroke:var(--ash);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .c4 .item.pri .mi svg{stroke:var(--lime)}
+  .c4 .item .it{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .c4 .item.pri .it{font-weight:800}
+  .c4 .item .im{font:400 10.5px/1 var(--mono);color:var(--ash2);margin-top:4px}
+  .c4 .item .ix{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .c4 .item .tag2{font:700 9px/1 var(--mono);letter-spacing:.1em;color:var(--violet);border:1px solid rgba(201,169,240,.32);border-radius:5px;padding:4px 6px}
+  .c4 .item .chev{width:15px;height:15px;stroke:var(--ash2);fill:none;stroke-width:2}
+  .c4 .item .dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 9px var(--lime)}
+
+  /* =========================================================
+     IDEA 5 — CONTEXTUAL HERO (adaptive)
+  ========================================================= */
+  .c5 .body{display:flex;flex-direction:column;gap:14px}
+  .c5 .ctx{display:flex;align-items:center;gap:8px;font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:2px 2px 0}
+  .c5 .ctx .d{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 9px var(--lime)}
+  .c5 .adapt{background:var(--lime);border-radius:26px;padding:22px;color:var(--ink);position:relative;overflow:hidden}
+  .c5 .adapt::after{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;border-radius:50%;background:rgba(12,13,12,.06)}
+  .c5 .adapt .k{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;opacity:.62;position:relative}
+  .c5 .adapt .big{font-size:25px;font-weight:800;letter-spacing:-.03em;margin-top:10px;line-height:1.02;position:relative}
+  .c5 .adapt .meta{font:600 11px/1.5 var(--mono);opacity:.7;margin-top:9px;position:relative}
+  .c5 .adapt .cta{position:relative;display:inline-flex;align-items:center;gap:9px;margin-top:16px;background:var(--ink);color:var(--lime);font-weight:800;font-size:14px;padding:12px 18px;border-radius:999px}
+  .c5 .adapt .cta svg{width:12px;height:12px;fill:var(--lime)}
+  .c5 .more{background:var(--ink2);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .c5 .more .mhd{display:flex;align-items:center;justify-content:space-between;padding:15px 17px}
+  .c5 .more .mhd .mt{font:700 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .c5 .more .mhd .chev{width:15px;height:15px;stroke:var(--ash);fill:none;stroke-width:2;transform:rotate(90deg)}
+  .c5 .more .mrow{display:flex;align-items:center;gap:12px;padding:14px 17px;border-top:1px solid var(--line)}
+  .c5 .more .mrow .mi{width:32px;height:32px;border-radius:10px;background:var(--ink3);display:grid;place-items:center;flex:none}
+  .c5 .more .mrow .mi svg{width:16px;height:16px;stroke:var(--chalk);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .c5 .more .mrow.ai .mi{background:rgba(201,169,240,.14)}
+  .c5 .more .mrow.ai .mi svg{stroke:var(--violet)}
+  .c5 .more .mrow .ml{font-size:13.5px;font-weight:700}
+  .c5 .more .mrow .mm{font:600 9.5px/1 var(--mono);color:var(--ash2);margin-top:3px}
+  .c5 .more .mrow .mx{margin-left:auto;font:800 12px/1 var(--sans);color:var(--lime)}
+  .c5 .more .mrow.ai .mx{color:var(--violet)}
+
+  @media (max-width:420px){ body{padding:32px 14px 60px} }
+</style>
+
+<div class="page-head">
+  <div class="kicker">Hybrid · Mobile</div>
+  <h1>The middle button, reimagined <em>— 5 directions for the Train launcher</em></h1>
+  <p>The Train launcher is the app's single most-tapped surface — the screen behind the lime dumbbell. Today it's one giant lime hero, a locked AI billboard, and a scatter of loosely related cards. Each concept below keeps the brand (chartreuse on near-black, mono labels, Archivo weights) but rethinks <b>hierarchy, density, and how the empty state feels</b>. Every screen is rendered on real tokens.</p>
+  <div class="brief">
+    <span class="tag"><b>lime</b> #c6f84f</span>
+    <span class="tag"><b>ink</b> #0c0d0c</span>
+    <span class="tag"><b>chalk</b> #f3f4ef</span>
+    <span class="tag"><b>violet</b> #c9a9f0 · premium</span>
+    <span class="tag">web ↔ mobile parity</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ IDEA 1 — COMMAND BAR ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i> Command bar</div>
+      <h2>Everything actionable, above the fold</h2>
+      <p>Shrink the hero to a normal pill and line up the other starts as an <b>equal-weight chip row</b>. The premium pitch becomes one quiet strip, not a billboard.</p>
+      <span class="state">Empty / new user</span>
+    </div>
+    <div class="phone c1">
+      <div class="screen">
+        <div class="glow"></div>
+        <div class="status"><span>12:54</span><span class="r"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><span class="bat"><b>73</b></span></span></div>
+        <div class="body">
+          <div class="row" style="margin:4px 2px 16px"><div><div class="h1">Train</div></div><div class="eyebrow">Ready</div></div>
+          <div class="pbtn">
+            <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+            <div><div class="t">Start workout</div><div class="s">empty · add as you go</div></div>
+          </div>
+          <div class="chips" style="margin-top:14px">
+            <div class="chip ai">
+              <span class="lk"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+              <div class="ci"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></div>
+              <div class="cl">AI coach</div><div class="cm">Premium</div>
+            </div>
+            <div class="chip">
+              <div class="ci"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg></div>
+              <div class="cl">Repeat</div><div class="cm">No history</div>
+            </div>
+            <div class="chip">
+              <div class="ci"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+              <div class="cl">Routine</div><div class="cm">Build one</div>
+            </div>
+          </div>
+          <div class="upsell">
+            <div><div class="ut">Your AI coach, unlocked</div><div class="us">Reads readiness → prescribes each set</div></div>
+            <span class="arw">→</span>
+          </div>
+        </div>
+        <div class="navwrap"><div class="navbar">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <span class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M4 9.5v5M20 9.5v5M6.5 12h11"/></svg></span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ IDEA 2 — READY TO TRAIN ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i> Ready to train</div>
+      <h2>Lead with state, then the action</h2>
+      <p>The first thing you read is a <b>readiness dial and context</b> — like a coach greeting you. Start sits underneath, and premium rides on real content instead of a hard sell.</p>
+      <span class="state">Returning athlete</span>
+    </div>
+    <div class="phone c2">
+      <div class="screen">
+        <div class="glow"></div>
+        <div class="status"><span>12:54</span><span class="r"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><span class="bat"><b>73</b></span></span></div>
+        <div class="body">
+          <div style="margin:4px 2px 4px"><div class="h1">Train</div></div>
+          <div class="ready">
+            <div class="ring">
+              <div class="dial">
+                <svg width="70" height="70"><circle cx="35" cy="35" r="30" fill="none" stroke="#2a2d2a" stroke-width="6"/><circle cx="35" cy="35" r="30" fill="none" stroke="#c6f84f" stroke-width="6" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="30"/></svg>
+                <div class="num">84<s>/100</s></div>
+              </div>
+              <div><div class="rt">Rested &amp; ready</div><div class="rs">2 days since <b>legs</b> · HRV trending up. A good day to push volume.</div></div>
+            </div>
+          </div>
+          <div class="hero">
+            <div class="t"><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>Start workout</div>
+            <div class="s">empty session · add as you go</div>
+          </div>
+          <div class="ailine">
+            <span class="d"></span>
+            <span class="at"><b>Premium</b> reads this and prescribes your sets</span>
+            <span class="go">Unlock →</span>
+          </div>
+          <div class="ghost" style="margin-top:4px">＋ Build a routine</div>
+        </div>
+        <div class="navwrap"><div class="navbar">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <span class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M4 9.5v5M20 9.5v5M6.5 12h11"/></svg></span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ IDEA 3 — TWO-CHOICE SPLIT ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i> Two-choice split</div>
+      <h2>Just log, or give me structure</h2>
+      <p>Surface the real decision as <b>two equal cards</b>. "Get a plan" expands inline into AI, repeat-last and routines — no top-to-bottom scroll of near-identical cards.</p>
+      <span class="state">Empty / new user</span>
+    </div>
+    <div class="phone c3">
+      <div class="screen">
+        <div class="glow"></div>
+        <div class="status"><span>12:54</span><span class="r"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><span class="bat"><b>73</b></span></span></div>
+        <div class="body">
+          <div style="margin:4px 2px 0"><div class="h1">How do you<br>want to train?</div><div class="sub">Pick a lane — you can change mid-session.</div></div>
+          <div class="split">
+            <div class="opt a">
+              <div class="oi"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+              <div class="ol">One tap</div>
+              <div class="oh">Start empty</div>
+              <div class="os">A blank session. Add lifts as you go.</div>
+            </div>
+            <div class="opt b">
+              <div class="oi"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></div>
+              <div class="ol">Guided</div>
+              <div class="oh">Get a plan</div>
+              <div class="os">AI, a routine, or repeat your last.</div>
+            </div>
+          </div>
+          <div class="plans">
+            <div class="prow"><span class="pi" style="background:rgba(201,169,240,.14)"><svg viewBox="0 0 24 24" style="stroke:#c9a9f0"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></span><div><div class="pt">AI coach</div><div class="pm">Premium · reads readiness</div></div><span class="pc">→</span></div>
+            <div class="prow"><span class="pi"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><div><div class="pt">Build a routine</div><div class="pm">Reuse it any day</div></div><span class="pc">→</span></div>
+          </div>
+        </div>
+        <div class="navwrap"><div class="navbar">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <span class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M4 9.5v5M20 9.5v5M6.5 12h11"/></svg></span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ IDEA 4 — MINIMAL / MONOCHROME ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i> Minimal</div>
+      <h2>Dial the lime all the way back</h2>
+      <p>Lime becomes a <b>thin accent</b> — a glyph, a dot — not a full-bleed slab. A single clean list, tight rhythm. Reads as a precise tool, not a promo page.</p>
+      <span class="state">Empty / new user</span>
+    </div>
+    <div class="phone c4">
+      <div class="screen">
+        <div class="glow" style="opacity:.4"></div>
+        <div class="status"><span>12:54</span><span class="r"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><span class="bat"><b>73</b></span></span></div>
+        <div class="body">
+          <div class="hd"><h1>Start training</h1><div class="sub">Tap to begin. Log as you go.</div></div>
+          <div class="list">
+            <div class="item pri">
+              <span class="mi"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#c6f84f" stroke="none"/></svg></span>
+              <div><div class="it">Empty session</div><div class="im">Add lifts as you go</div></div>
+              <div class="ix"><span class="dot"></span></div>
+            </div>
+            <div class="item">
+              <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>
+              <div><div class="it">AI-prescribed</div><div class="im">Readiness-driven sets &amp; loads</div></div>
+              <div class="ix"><span class="tag2">PREMIUM</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+            </div>
+            <div class="item">
+              <span class="mi"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+              <div><div class="it">From a routine</div><div class="im">None yet — build your first</div></div>
+              <div class="ix"><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+            </div>
+            <div class="item">
+              <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg></span>
+              <div><div class="it">Repeat last</div><div class="im">No sessions logged yet</div></div>
+              <div class="ix"><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+            </div>
+          </div>
+          <div class="foot">Finish and you'll get a shareable summary — the deep dive waits on the web.</div>
+        </div>
+        <div class="navwrap"><div class="navbar">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <span class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M4 9.5v5M20 9.5v5M6.5 12h11"/></svg></span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ IDEA 5 — CONTEXTUAL HERO ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i> Contextual hero</div>
+      <h2>One smart button that reads your day</h2>
+      <p>The primary <b>adapts</b>: first workout, resume a draft, or repeat your last. Everything else folds into one "More ways to start" — no five near-identical cards.</p>
+      <span class="state">Returning · adaptive</span>
+    </div>
+    <div class="phone c5">
+      <div class="screen">
+        <div class="glow"></div>
+        <div class="status"><span>12:54</span><span class="r"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg><span class="bat"><b>73</b></span></span></div>
+        <div class="body">
+          <div style="margin:4px 2px 2px"><div class="h1">Train</div></div>
+          <div class="ctx"><span class="d"></span>Rested · 2 days since your last session</div>
+          <div class="adapt">
+            <div class="k">Pick up where you left off</div>
+            <div class="big">Push Day A</div>
+            <div class="meta">Bench · Overhead · Dips — 6 lifts · 48 min last time</div>
+            <span class="cta"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Repeat this</span>
+          </div>
+          <div class="more">
+            <div class="mhd"><span class="mt">More ways to start</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="mrow"><span class="mi"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#f3f4ef" stroke="none"/></svg></span><div><div class="ml">Empty session</div><div class="mm">Add as you go</div></div><span class="mx">Start</span></div>
+            <div class="mrow ai"><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1"/></svg></span><div><div class="ml">AI coach</div><div class="mm">Readiness 84/100</div></div><span class="mx">Unlock</span></div>
+            <div class="mrow"><span class="mi"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><div><div class="ml">Build a routine</div><div class="mm">Reuse it any day</div></div><span class="mx">＋</span></div>
+          </div>
+        </div>
+        <div class="navwrap"><div class="navbar">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9h12v-9"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <span class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M4 9.5v5M20 9.5v5M6.5 12h11"/></svg></span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
