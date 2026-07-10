@@ -264,15 +264,13 @@ export default function AuroraSettings() {
   };
 
   // A render HELPER (not a component) so it doesn't remount on each keystroke.
-  // Each category is a BENTO tile: a tinted icon chip, the title and a one-line
-  // value/subtitle. Two tiles per row; a group with an odd count gets a
-  // full-width "wide" trailing tile (icon left, text, chevron) so the grid never
-  // leaves a lonely half-tile.
-  const renderTile = (c: SettingsCategory, i: number, count: number) => {
+  // Each category is a full-width LIST ROW inside its group's Section card: a
+  // tinted icon chip, the title, a one-line value/subtitle and a chevron. A
+  // hairline separates rows within the card (first row draws none).
+  const renderRow = (c: SettingsCategory, first: boolean) => {
     const accent = toneColor[TONE[c.id]];
     const { tile, fg } = tone(accent);
     const line = summary(c.id) || c.subtitle;
-    const wide = count % 2 === 1 && i === count - 1;
     const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;
     return (
       <Pressable
@@ -280,29 +278,16 @@ export default function AuroraSettings() {
         onPress={() => openCat(c)}
         accessibilityRole="button"
         accessibilityLabel={c.title}
-        style={{
-          flexGrow: 1,
-          flexBasis: wide ? "100%" : "45%",
-          minHeight: wide ? 0 : 118,
-          flexDirection: wide ? "row" : "column",
-          alignItems: wide ? "center" : "stretch",
-          justifyContent: wide ? "flex-start" : "space-between",
-          gap: wide ? space.md : 0,
-          backgroundColor: C.ink2,
-          borderWidth: 1,
-          borderColor: c.danger ? `${C.red}47` : C.line,
-          borderRadius: 20,
-          padding: 16,
-        }}
+        style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 13, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
       >
         <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name={c.icon} size={20} color={c.danger ? (txt(C, C.red) as string) : fg} />
         </View>
-        <View style={{ flex: wide ? 1 : undefined }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: titleColor }}>{c.title}</Text>
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, lineHeight: 15 }}>{line}</Text>
         </View>
-        {wide ? <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} /> : null}
+        <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
       </Pressable>
     );
   };
@@ -378,19 +363,18 @@ export default function AuroraSettings() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.account.settings.no-results")}</Text>
           </ACard>
         ) : (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11, marginTop: 16 }}>
-            {results.map((c, i) => renderTile(c, i, results.length))}
-          </View>
+          <ACard style={{ marginTop: 16 }}>
+            {results.map((c, i) => renderRow(c, i === 0))}
+          </ACard>
         )
       ) : (
-        SETTINGS_GROUPS.map((group) => (
-          <View key={group.id} style={{ marginTop: 22 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10, marginLeft: 4 }}>{group.label}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11 }}>
-              {group.categories.map((c, i) => renderTile(c, i, group.categories.length))}
-            </View>
-          </View>
-        ))
+        <View style={{ marginTop: 8 }}>
+          {SETTINGS_GROUPS.map((group) => (
+            <Section key={group.id} label={group.label}>
+              {group.categories.map((c, i) => renderRow(c, i === 0))}
+            </Section>
+          ))}
+        </View>
       )}
     </AuroraScreen>
   );

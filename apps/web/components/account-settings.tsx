@@ -643,22 +643,19 @@ export default function AccountSettings() {
             results.length === 0 ? (
               <Card><Mono s={{ display: "block" }} c={ASH}>{t("w.account.settings.no-results")}</Mono></Card>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+              <Card>
                 {results.map((c, i) => (
-                  <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={results.length % 2 === 1 && i === results.length - 1} onOpen={() => { setCat(c.id); setQuery(""); }} />
+                  <Row key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} first={i === 0} onOpen={() => { setCat(c.id); setQuery(""); }} />
                 ))}
-              </div>
+              </Card>
             )
           ) : (
             SETTINGS_GROUPS.map((group) => (
-              <div key={group.id} style={{ marginBottom: 22 }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8, marginLeft: 4 }} c={ASH}>{group.label}</Mono>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
-                  {group.categories.map((c, i) => (
-                    <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={group.categories.length % 2 === 1 && i === group.categories.length - 1} onOpen={() => setCat(c.id)} />
-                  ))}
-                </div>
-              </div>
+              <Section key={group.id} label={group.label}>
+                {group.categories.map((c, i) => (
+                  <Row key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} first={i === 0} onOpen={() => setCat(c.id)} />
+                ))}
+              </Section>
             ))
           )}
         </>
@@ -667,35 +664,31 @@ export default function AccountSettings() {
   );
 }
 
-/** A bento settings tile: tinted icon chip + title + one-line value/subtitle. A
- *  group with an odd number of categories gets a full-width `wide` trailing tile
- *  (icon left, text, chevron) so the grid never leaves a lonely half-tile. */
-function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
+/** A settings list row inside its group's Section card: tinted icon chip +
+ *  title + one-line value/subtitle + chevron. A hairline separates rows within
+ *  the card (the first row draws none). */
+function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
   icon: AuroraIconName;
   accent: string;
   title: string;
   subtitle: string;
   danger?: boolean;
-  wide?: boolean;
+  first?: boolean;
   onOpen: () => void;
 }) {
   return (
     <button
       onClick={onOpen}
       style={{
-        gridColumn: wide ? "span 2" : "auto",
         display: "flex",
-        flexDirection: wide ? "row" : "column",
-        alignItems: wide ? "center" : "stretch",
-        justifyContent: wide ? "flex-start" : "space-between",
-        gap: wide ? 14 : 0,
-        minHeight: wide ? 0 : 118,
+        alignItems: "center",
+        gap: 14,
         width: "100%",
         textAlign: "left",
-        background: INK2,
-        border: `1px solid ${danger ? `color-mix(in srgb, ${RED} 28%, transparent)` : LINE}`,
-        borderRadius: 20,
-        padding: 16,
+        background: "none",
+        border: "none",
+        borderTop: first ? "none" : `1px solid ${LINE}`,
+        padding: "13px 0",
         cursor: "pointer",
         color: CHALK,
       }}
@@ -703,15 +696,13 @@ function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
       <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${danger ? RED : accent} 14%, transparent)`, color: danger ? txt(RED) : txt(accent) }}>
         <AuroraIcon name={icon} size={20} color="currentColor" strokeWidth={4} />
       </span>
-      <span style={{ flex: wide ? 1 : "none", minWidth: 0 }}>
+      <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
         <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
       </span>
-      {wide ? (
-        <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-        </span>
-      ) : null}
+      <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+      </span>
     </button>
   );
 }

@@ -32,12 +32,18 @@ export default function AuroraLoggerSettings() {
   const { t } = useLang();
   const prefs = useLoggerPrefs();
 
-  // A labelled group of segmented pills (units / rest / increment / start view).
+  // A section label — an uppercase header above its own card (the app-wide
+  // Settings grouping treatment).
+  const SLabel = ({ children }: { children: string }) => (
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginLeft: 4, marginTop: 18, marginBottom: 10 }}>{children}</Text>
+  );
+
+  // A labelled section of segmented pills (units / rest / increment / start view).
   const Group = <T extends string>({ title, options, value, onPick }: { title: string; options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) => (
-    <ACard style={{ marginTop: 14 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 12 }}>{title}</Text>
-      <ASegment options={options} value={value} onPick={onPick} />
-    </ACard>
+    <>
+      <SLabel>{title}</SLabel>
+      <ACard><ASegment options={options} value={value} onPick={onPick} /></ACard>
+    </>
   );
 
   return (
@@ -46,7 +52,8 @@ export default function AuroraLoggerSettings() {
       <ASub style={{ marginTop: 8 }}>{t("loggerPrefs.intro")}</ASub>
 
       {/* Behaviour toggles */}
-      <ACard style={{ marginTop: 18 }}>
+      <SLabel>{t("loggerPrefs.behaviour")}</SLabel>
+      <ACard>
         {ROWS.map((r, i) => (
           <View
             key={r.key}
