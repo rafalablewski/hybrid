@@ -272,15 +272,15 @@ export default function AuroraToday({
           and Done today opens a pop-up of everything logged today + the calendar. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
         <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--lime-text)" }}>＋ {t("w.home.today.glanceLog")}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>＋ {t("w.home.today.glanceLog")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</div>
         </button>
         <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--blue-text)" }}>{t("w.home.today.glanceReadinessCta")}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>{t("w.home.today.glanceReadinessCta")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</div>
         </button>
         <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--amber-text)" }}>✓ {doneToday.length}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>✓ {doneToday.length}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceDone")}</div>
         </button>
       </div>
