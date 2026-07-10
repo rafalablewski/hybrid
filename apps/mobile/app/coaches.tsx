@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator, Switch } from "react-native";
+import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -8,6 +8,7 @@ import {
   getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
 } from "../lib/social-api";
 import { Avatar, Stars, Empty, SButton, SPill } from "../components/social-kit";
+import { GlassToggle } from "../components/glass-toggle";
 
 // ---- coach detail (what a client sees) ----
 function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
@@ -141,8 +142,8 @@ function Storefront() {
         <TextInput value={form.specialties} onChangeText={(v) => setForm({ ...form, specialties: v })} placeholder="Specialties (comma-separated)" placeholderTextColor={C.ash} style={inp} />
         <TextInput value={form.sports} onChangeText={(v) => setForm({ ...form, sports: v })} placeholder="Sports (comma-separated)" placeholderTextColor={C.ash} style={inp} />
         <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder="Pricing note" placeholderTextColor={C.ash} style={inp} />
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Accepting clients</Text><Switch value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} /></View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Auto-accept enrolments</Text><Switch value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} /></View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Accepting clients</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel="Accepting clients" /></View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Auto-accept enrolments</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel="Auto-accept enrolments" /></View>
         <SButton label={saved ? "Saved ✓" : "Save storefront"} onPress={async () => { const r: any = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { alert(r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
       </Card>
 

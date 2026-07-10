@@ -1,9 +1,11 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { fs, F } from "../lib/ui";
+import { GlassToggle } from "./glass-toggle";
 
-/** A labelled preference row with an on/off pill — shared by Notifications +
+/** A labelled preference row with an on/off toggle — shared by Notifications +
  *  Privacy on BOTH mobile Settings variants (classic + Aurora) so the toggle
- *  looks and behaves identically. */
+ *  looks and behaves identically. Uses the shared GlassToggle (the native
+ *  Liquid-Glass switch from Logger settings) so every settings row matches. */
 export function ToggleRow({
   C, title, desc, on, onToggle, disabled, noBorder,
 }: {
@@ -22,18 +24,7 @@ export function ToggleRow({
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>
       </View>
-      <Pressable
-        onPress={onToggle}
-        disabled={disabled}
-        accessibilityRole="switch"
-        accessibilityLabel={title}
-        accessibilityHint={desc}
-        accessibilityState={{ checked: on, disabled: !!disabled }}
-        hitSlop={10}
-        style={{ width: 46, height: 26, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", opacity: disabled ? 0.5 : 1, justifyContent: "center" }}
-      >
-        <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: on ? 24 : 2, backgroundColor: on ? C.onAccent : C.ash }} />
-      </Pressable>
+      <GlassToggle value={on} onValueChange={onToggle} disabled={disabled} accessibilityLabel={title} />
     </View>
   );
 }

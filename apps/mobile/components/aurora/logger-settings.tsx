@@ -1,9 +1,10 @@
-import { View, Text, Switch } from "react-native";
+import { View, Text } from "react-native";
 import { REST_SECONDS_CHOICES, type LoggerPrefs } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { fs, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { GlassToggle } from "../glass-toggle";
 import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
 type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
@@ -55,11 +56,10 @@ export default function AuroraLoggerSettings() {
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Text>
             </View>
-            <Switch
+            <GlassToggle
               value={prefs[r.key]}
               onValueChange={(v) => setLoggerPref(r.key, v)}
-              trackColor={{ false: C.line, true: C.lime }}
-              thumbColor={C.chalk}
+              accessibilityLabel={t(r.titleKey)}
             />
           </View>
         ))}
