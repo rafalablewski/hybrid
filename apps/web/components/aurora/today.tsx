@@ -286,8 +286,8 @@ export default function AuroraToday({
       </div>
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--violet-text)" }}>✦ {t("w.home.today.goFull")}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}><span style={{ color: "var(--violet-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
         <button onClick={() => (onNavigate ? onNavigate("plans") : router.push("/plans"))} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.home.today.seePlans")} →</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

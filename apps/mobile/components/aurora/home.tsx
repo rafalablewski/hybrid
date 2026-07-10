@@ -349,7 +349,7 @@ export default function AuroraHome() {
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: txt(C, C.violet) }}>✦ {t("w.home.today.goFull")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}><Text style={{ color: txt(C, C.violet) }}>✦</Text> {t("w.home.today.goFull")}</Text>
           <Pressable onPress={() => router.push("/(tabs)/plans")} hitSlop={8}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.seePlans")} →</Text>
           </Pressable>
