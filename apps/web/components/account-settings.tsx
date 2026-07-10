@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import type { ReactNode } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
@@ -359,8 +359,11 @@ export default function AccountSettings() {
           <>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.notifications-desc")}</Mono>
             <div>
-              {ACCOUNT_NOTIF_ROWS.map(({ key, title, desc }) => (
-                <PrefRow key={key} title={title} desc={desc} on={!!notif[key]} onToggle={() => toggleNotif(key)} disabled={!authOn} />
+              {ACCOUNT_NOTIF_ROWS.map((row, i) => (
+                <Fragment key={row.key}>
+                  {(i === 0 || ACCOUNT_NOTIF_ROWS[i - 1]?.group !== row.group) && <GroupLabel top={i > 0}>{row.group}</GroupLabel>}
+                  <PrefRow title={row.title} desc={row.desc} on={!!notif[row.key]} onToggle={() => toggleNotif(row.key)} disabled={!authOn} />
+                </Fragment>
               ))}
             </div>
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
@@ -371,8 +374,11 @@ export default function AccountSettings() {
           <>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.privacy-desc")}</Mono>
             <div>
-              {ACCOUNT_PRIVACY_ROWS.map(({ key, title, desc }) => (
-                <PrefRow key={key} title={title} desc={desc} on={!!priv[key]} onToggle={() => togglePriv(key)} disabled={!authOn} />
+              {ACCOUNT_PRIVACY_ROWS.map((row, i) => (
+                <Fragment key={row.key}>
+                  {(i === 0 || ACCOUNT_PRIVACY_ROWS[i - 1]?.group !== row.group) && <GroupLabel top={i > 0}>{row.group}</GroupLabel>}
+                  <PrefRow title={row.title} desc={row.desc} on={!!priv[row.key]} onToggle={() => togglePriv(row.key)} disabled={!authOn} />
+                </Fragment>
               ))}
             </div>
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
@@ -513,6 +519,15 @@ export default function AccountSettings() {
         return (
           <>
             <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>{t("w.account.settings.export-data-desc")}</Mono>
+            <div style={{ marginTop: 14 }}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.data-included")}</Mono>
+              {[1, 2, 3].map((n) => (
+                <div key={n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                  <span style={{ color: txt(LIME_HEX), fontWeight: 800 }}>✓</span>
+                  <Mono s={{ fontSize: fs.body }} c={CHALK}>{t(`w.account.settings.data-incl-${n}`)}</Mono>
+                </div>
+              ))}
+            </div>
             <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>{t("w.account.settings.download-data")}</button>
           </>
         );

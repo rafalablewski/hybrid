@@ -121,8 +121,11 @@ export default function AuroraSettings() {
         return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.notifications-desc")}</Text>
-        {ACCOUNT_NOTIF_ROWS.map((row) => (
-          <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+        {ACCOUNT_NOTIF_ROWS.map((row, i) => (
+          <View key={row.key}>
+            {(i === 0 || ACCOUNT_NOTIF_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
+            <ToggleRow C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+          </View>
         ))}
       </>
         );
@@ -130,8 +133,11 @@ export default function AuroraSettings() {
         return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.privacy-desc")}</Text>
-        {ACCOUNT_PRIVACY_ROWS.map((row) => (
-          <ToggleRow key={row.key} C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+        {ACCOUNT_PRIVACY_ROWS.map((row, i) => (
+          <View key={row.key}>
+            {(i === 0 || ACCOUNT_PRIVACY_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
+            <ToggleRow C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+          </View>
         ))}
       </>
         );
@@ -181,6 +187,14 @@ export default function AuroraSettings() {
       <>
         <Label color={C.ash}>EXPORT</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
+        <View style={{ marginBottom: 12 }}>
+          {[1, 2, 3].map((n) => (
+            <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
+              <Text style={{ color: txt(C, C.lime) as string, fontFamily: F.bold }}>✓</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.data-incl-${n}`)}</Text>
+            </View>
+          ))}
+        </View>
         {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
         {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
       </>

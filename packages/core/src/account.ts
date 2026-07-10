@@ -5,8 +5,10 @@
 // and persist the toggles to Supabase auth user_metadata, so the two clients
 // can't drift on either the keys or the copy.
 
-/** A togglable preference row: a stable storage key + the label/description. */
-export type PrefRowDef = { key: string; title: string; desc: string };
+/** A togglable preference row: a stable storage key + the label/description +
+ *  the section it belongs to (rows sharing a `group`, kept contiguous, render
+ *  under one sub-header on both clients). */
+export type PrefRowDef = { key: string; title: string; desc: string; group: string };
 
 /** Notification channels. Stored under user_metadata.notifications.{key}. */
 export const ACCOUNT_NOTIF_DEFAULTS: Record<string, boolean> = {
@@ -17,10 +19,10 @@ export const ACCOUNT_NOTIF_DEFAULTS: Record<string, boolean> = {
 };
 
 export const ACCOUNT_NOTIF_ROWS: PrefRowDef[] = [
-  { key: "weeklyRecap", title: "Weekly recap", desc: "Your Sunday training summary." },
-  { key: "coachMessages", title: "Coach messages", desc: "When your coach replies to a check-in or assigns work." },
-  { key: "checkinReminders", title: "Check-in reminders", desc: "A nudge when your weekly check-in is due." },
-  { key: "productUpdates", title: "Product updates", desc: "Occasional news about new features." },
+  { key: "weeklyRecap", title: "Weekly recap", desc: "Your Sunday training summary.", group: "Training" },
+  { key: "checkinReminders", title: "Check-in reminders", desc: "A nudge when your weekly check-in is due.", group: "Training" },
+  { key: "coachMessages", title: "Coach messages", desc: "When your coach replies to a check-in or assigns work.", group: "Coaching" },
+  { key: "productUpdates", title: "Product updates", desc: "Occasional news about new features.", group: "Product" },
 ];
 
 /** Privacy switches. Stored under user_metadata.privacy.{key}. */
@@ -31,7 +33,7 @@ export const ACCOUNT_PRIVACY_DEFAULTS: Record<string, boolean> = {
 };
 
 export const ACCOUNT_PRIVACY_ROWS: PrefRowDef[] = [
-  { key: "coachCanSeeDetail", title: "Share detail with my coach", desc: "Let a linked coach see your full session detail, not just summaries." },
-  { key: "discoverable", title: "Discoverable in Talent", desc: "Appear in coach talent searches (your benchmarks, never raw logs)." },
-  { key: "analyticsOptOut", title: "Opt out of product analytics", desc: "Don't include my usage in aggregate product analytics." },
+  { key: "coachCanSeeDetail", title: "Share detail with my coach", desc: "Let a linked coach see your full session detail, not just summaries.", group: "Coaching" },
+  { key: "discoverable", title: "Discoverable in Talent", desc: "Appear in coach talent searches (your benchmarks, never raw logs).", group: "Discovery" },
+  { key: "analyticsOptOut", title: "Opt out of product analytics", desc: "Don't include my usage in aggregate product analytics.", group: "Data & analytics" },
 ];
