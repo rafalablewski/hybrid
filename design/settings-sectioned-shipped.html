@@ -78,15 +78,81 @@ body{padding:44px 20px 80px;background:radial-gradient(120% 50% at 50% -8%,rgba(
 .nav svg{width:22px;height:22px;stroke:var(--ash);fill:none;stroke-width:1.9}
 .nav .fab{width:50px;height:50px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:3px solid #0a0b09;box-shadow:0 0 18px rgba(198,248,79,.5)}
 .nav .fab svg{stroke:#0a0b09;stroke-width:2.5}
+
+/* hub */
+.phead{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:15px;margin-top:2px}
+.phead .top{display:flex;align-items:center;gap:13px}
+.phead .av{width:52px;height:52px;border-radius:50%;flex:none;display:grid;place-items:center;background:radial-gradient(120% 120% at 30% 22%,#e9ff8a,#c6f84f 42%,#7fae1f);font-weight:900;font-size:20px;color:#0a0b09;border:2.5px solid var(--ink)}
+.phead .nm{flex:1;min-width:0}
+.phead .nm b{font-size:16px;font-weight:800}
+.phead .nm .pct{font:500 11px/1 var(--mono);color:var(--lime);margin-top:4px;display:block}
+.phead .bar{height:5px;border-radius:5px;background:var(--line);margin-top:7px;overflow:hidden}
+.phead .bar i{display:block;height:100%;width:72%;background:var(--lime)}
+.tagpill{border:1px solid var(--ash);border-radius:999px;padding:3px 10px;font:700 9px/1 var(--mono);color:var(--ash);text-transform:uppercase;letter-spacing:.05em;flex:none}
+.search{display:flex;align-items:center;gap:9px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:0 14px;margin-top:16px}
+.search svg{width:17px;height:17px;stroke:var(--ash);fill:none;stroke-width:2}
+.search span{color:var(--ash2);font-size:14px;padding:11px 0}
+.srow{display:flex;align-items:center;gap:13px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.srow.first{border-top:0}
+.srow .ic{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center}
+.srow .ic svg{width:19px;height:19px;fill:none;stroke-width:2}
+.srow .mid{flex:1;min-width:0}
+.srow .mid .t{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.srow .mid .s{font:400 11px/1.3 var(--mono);color:var(--ash);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .cv{stroke:var(--ash2);fill:none;stroke-width:2.2;width:15px;height:15px;flex:none}
 </style>
 
 <header class="head">
   <div class="kick">HYBRID · shipped</div>
   <h1>Every Settings screen, sectioned</h1>
-  <p>The Sectioned pattern now runs across <b>all</b> of Settings on both clients — an uppercase label above its own card, per group. Toggles everywhere are the one shared <b>Liquid-Glass switch</b> (the Logger golden standard). Two examples below; the same treatment applies to Privacy, Security, Logger, Subscription, Data and Danger.</p>
+  <p>The Sectioned pattern now runs across <b>all</b> of Settings on both clients — an uppercase label above its own card, per group. Toggles everywhere are the one shared <b>Liquid-Glass switch</b> (the Logger golden standard). The hub and two sub-pages are shown; the same treatment applies to Privacy, Security, Logger, Subscription, Data and Danger.</p>
 </header>
 
 <main class="gal">
+
+  <!-- HUB -->
+  <section class="wrap">
+    <div class="cap"><i>H</i> Settings hub</div>
+    <div class="phone"><div class="status"><div>16:57</div><div>5G<span class="bat">62</span></div></div>
+    <div class="screen"><div class="body">
+      <div class="title" style="font-size:28px;margin:6px 4px 6px">Settings</div>
+      <div class="phead">
+        <div class="top">
+          <div class="av">R</div>
+          <div class="nm"><b>rafalablewski</b><span class="pct">72% · Add a photo &amp; bio</span><div class="bar"><i></i></div></div>
+          <div class="tagpill">Free</div>
+        </div>
+      </div>
+      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg><span>Search settings</span></div>
+
+      <div class="slabel">Account</div>
+      <div class="card">
+        <div class="srow first"><div class="ic" style="background:rgba(198,248,79,.16)"><svg stroke="#c6f84f" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></div><div class="mid"><div class="t">Edit profile</div><div class="s">rafalablewski</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(108,182,189,.2)"><svg stroke="#6cb6bd" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></div><div class="mid"><div class="t">Preferences</div><div class="s">Aurora · EN · kg</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(208,205,148,.2)"><svg stroke="#d0cd94" viewBox="0 0 24 24"><path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/></svg></div><div class="mid"><div class="t">Logger</div><div class="s">Detailed</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>
+
+      <div class="slabel">Privacy &amp; notifications</div>
+      <div class="card">
+        <div class="srow first"><div class="ic" style="background:rgba(201,169,240,.2)"><svg stroke="#c9a9f0" viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div><div class="mid"><div class="t">Notifications</div><div class="s">5/8 on</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(108,182,189,.2)"><svg stroke="#6cb6bd" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div class="mid"><div class="t">Privacy</div><div class="s">3/6 on</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(108,182,189,.2)"><svg stroke="#6cb6bd" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div><div class="mid"><div class="t">Security</div><div class="s">email</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>
+
+      <div class="slabel">Membership &amp; data</div>
+      <div class="card">
+        <div class="srow first"><div class="ic" style="background:rgba(198,248,79,.16)"><svg stroke="#c6f84f" viewBox="0 0 24 24"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.8l6.5-.9z"/></svg></div><div class="mid"><div class="t">Subscription</div><div class="s">Free</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(139,143,134,.2)"><svg stroke="#8b8f86" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div><div class="mid"><div class="t">Your data</div><div class="s">Export</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="srow"><div class="ic" style="background:rgba(213,111,62,.22)"><svg stroke="#d56f3e" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14"/></svg></div><div class="mid"><div class="t" style="color:#d56f3e">Danger zone</div><div class="s">Reset account</div></div><svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>
+    </div><div class="nav">
+      <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+      <div class="fab"><svg viewBox="0 0 24 24"><path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/></svg></div>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7 7 0 000-2l2-1.6-2-3.4-2.3 1a7 7 0 00-1.7-1L17 3.5h-4l-.4 2.5a7 7 0 00-1.7 1l-2.3-1-2 3.4 2 1.6a7 7 0 000 2l-2 1.6 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.5h4l.4-2.5a7 7 0 001.7-1l2.3 1 2-3.4z"/></svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+    </div></div></div>
+  </section>
 
   <!-- PREFERENCES -->
   <section class="wrap">
