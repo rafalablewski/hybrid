@@ -360,12 +360,15 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          {t("w.home.today.recoverMore")}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.ash }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>
+            {t("w.home.today.recoverMore")}
+          </Text>
+        </View>
         <View style={{ gap: 10 }}>
-          <DeferRow C={C} icon="heart" tint={C.blue} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
-          <DeferRow C={C} icon="user" tint={C.violet} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
+          <DeferRow C={C} icon="heart" tint={C.ash} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
+          <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 
         </Animated.View>

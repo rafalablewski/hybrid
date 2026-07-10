@@ -306,10 +306,13 @@ export default function AuroraToday({
       </div>
 
       {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-      <div style={{ margin: "26px 2px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: C("ash"), flexShrink: 0 }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</span>
+      </div>
       <div style={{ display: "grid", gap: 10 }}>
-        <DeferRow glyph="◍" tint="blue" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />
-        <DeferRow glyph="★" tint="violet" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
+        <DeferRow glyph="◍" tint="ash" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />
+        <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
@@ -437,7 +440,7 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
   return (
     <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 15px", cursor: "pointer", color: C("chalk") }}>
       <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: `var(--${tint}-text)`, fontSize: 14 }}>{glyph}</span>
+        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: C(tint), fontSize: 14 }}>{glyph}</span>
         <span>
           <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{title}</span>
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{sub}</span>
