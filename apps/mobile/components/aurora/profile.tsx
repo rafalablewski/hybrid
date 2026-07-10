@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
   computePerformanceState,
@@ -32,22 +33,26 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, RADIUS } from "./kit";
-import { getMyProfile, getConnections } from "../../lib/social-api";
+import { fs, F } from "../../lib/ui";
+import { AuroraScreen, RADIUS, Ring, Spark } from "./kit";
+import { getMyProfile, getConnections, getLeaderboard } from "../../lib/social-api";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
+type TabId = "overview" | "prs" | "activity";
 
 /**
- * AURORA profile — the "You" account screen, an Apple-ID / Tesla-account take on
- * the athlete's identity + a real, earned-data résumé. Every metric is computed
- * from the same engines the rest of the app runs (sessions + signals), so nothing
- * here is fabricated; an empty history degrades to honest zeros / empty states.
+ * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
+ * cover banner, an overlapping avatar with an EDIT (pencil) icon, name + the
+ * (unchanged) membership pill, bio, follower/following/rank counts, tabs
+ * (Overview / PRs / Activity) and a 3-column grid of PUBLIC highlight tiles.
  *
- * Sections (top→bottom, matching reference/preview/profile/profile-consensus.html):
- * account hero · spec strip (HPI / streak / PRs) · actions · ID card · HPI hero ·
- * training heatmap · achievements · personal records · module tiles.
+ * Privacy: HPI is PRIVATE — it is deliberately absent from the public highlight
+ * grid and every follower-facing surface. It lives only in a clearly-marked
+ * "Private · only you" card at the bottom, visible to the owner (this screen is
+ * always your own profile). Every metric is computed from the same engines the
+ * rest of the app runs (real sessions + signals); an empty history degrades to
+ * honest zeros / omitted tiles — nothing here is fabricated.
  */
 export default function AuroraProfile() {
   const { palette: C } = useTheme();
@@ -61,6 +66,7 @@ export default function AuroraProfile() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState<TabId>("overview");
 
   const load = useCallback(() => {
     setRefreshing(true);
@@ -99,6 +105,7 @@ export default function AuroraProfile() {
   const weekStreakBest = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   const hasData = sessions.length > 0;
+  const earnedCount = useMemo(() => achievements.filter((a) => a.earned).length, [achievements]);
   // Lifetime tonnage — total load × reps across every logged session, formatted
   // to the athlete's units (tonnes for kg, total lb for lb).
   const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
@@ -112,20 +119,60 @@ export default function AuroraProfile() {
   const tier = entitlement === "paid" ? "FULL" : "FREE";
   const lime = txt(C, C.lime);
 
-  // Social summary — owner-only "set up your profile" nudge (top) + the
-  // following/followers counts (above the membership card).
+  // Social summary — owner-only "set up your profile" nudge (top), the public
+  // bio + avatar, the following/followers counts and (derived) friends rank.
   const [socialP, setSocialP] = useState<any>(null);
   const [socialConns, setSocialConns] = useState<any>(null);
+  const [rank, setRank] = useState<number | null>(null);
   useEffect(() => {
     let alive = true;
     getMyProfile().then((d: any) => { if (alive) setSocialP(d); }).catch(() => {});
     getConnections().then((d: any) => { if (alive) setSocialConns(d); }).catch(() => {});
+    // Friends leaderboard (this week's volume) → my position among mutual follows.
+    // Only meaningful when there's more than just me on the board; otherwise omitted.
+    getLeaderboard("volume").then((d: any) => {
+      const board = d?.board;
+      if (alive && Array.isArray(board) && board.length > 1) {
+        const me = board.find((r: any) => r?.isMe);
+        if (me?.rank) setRank(me.rank);
+      }
+    }).catch(() => {});
     return () => { alive = false; };
   }, []);
   const sClaimed = !!socialP?.profile;
   const sComplete = sClaimed && !!socialP.profile.bio && !!socialP.profile.avatarUrl;
+  const bioText: string = socialP?.profile?.bio ?? "";
+  const avatarUrl: string = socialP?.profile?.avatarUrl ?? "";
   const followingN = socialConns?.following?.length ?? 0;
   const followersN = socialConns?.followers?.length ?? 0;
+
+  const streakLabel =
+    dayStreak.current > 0 ? `${dayStreak.current}d` : weekStreakBest > 0 ? `${weekStreakBest}w` : "—";
+
+  // PUBLIC highlight tiles — everything a follower is allowed to see. HPI is
+  // intentionally NOT here. Built from real logged data; empty data → the tile
+  // is simply omitted rather than faked. Top lifts lead, then the headline
+  // consistency/volume numbers.
+  const publicTiles = useMemo(() => {
+    const out: { v: string; k: string }[] = [];
+    for (const [lift, e1rm] of topPrs.slice(0, 2)) {
+      out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR` });
+    }
+    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak") });
+    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions") });
+    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage") });
+    if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements") });
+    return out.slice(0, 6);
+  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
+
+  const socialCounts = useMemo(() => {
+    const out = [
+      { n: `${followersN}`, k: "Followers" },
+      { n: `${followingN}`, k: "Following" },
+    ];
+    if (rank != null) out.push({ n: `#${rank}`, k: "Rank" });
+    return out;
+  }, [followersN, followingN, rank]);
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
@@ -144,236 +191,233 @@ export default function AuroraProfile() {
         </Pressable>
       )}
 
-      {/* ACCOUNT HERO — centered avatar + Apple-ID identifier */}
-      <View style={{ alignItems: "center" }}>
-        <View style={{ width: 98, height: 98 }}>
-          <View style={{ width: 98, height: 98, borderRadius: 49, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 34, color: lime }}>{initials}</Text>
-          </View>
-          <Pressable
-            onPress={() => router.push("/settings")}
-            accessibilityRole="button"
-            accessibilityLabel={t("w.account.profile.edit")}
-            hitSlop={10}
-            style={{ position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, borderWidth: 3, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}
-          >
-            <AuroraIcon name="settings" size={15} color={C.onAccent} />
-          </Pressable>
+      {/* COVER BANNER — Aurora gradient wash with a lime corner glow. */}
+      <View style={{ height: 104, borderRadius: 20, overflow: "hidden" }}>
+        <LinearGradient
+          colors={[`${C.violet}66`, `${C.lime}33`, C.ink2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View pointerEvents="none" style={{ position: "absolute", top: -34, right: -24, width: 170, height: 170, borderRadius: 85, backgroundColor: C.lime, opacity: 0.18 }} />
+      </View>
+
+      {/* HEAD — avatar overlapping the cover + the EDIT (pencil) icon where a
+          follower would see "Follow". No Edit / Share buttons anywhere. */}
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, paddingHorizontal: 4 }}>
+        <View style={{ width: 84, height: 84, borderRadius: 42, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={{ width: "100%", height: "100%" }} />
+          ) : (
+            <Text style={{ fontFamily: F.black, fontSize: 32, color: lime }}>{initials}</Text>
+          )}
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 15 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 25, color: C.chalk, letterSpacing: -0.6 }}>{name}</Text>
-          <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.7 }}>{tier}</Text>
-          </View>
+        <Pressable
+          onPress={() => router.push("/profile-edit")}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.account.profile.edit")}
+          hitSlop={8}
+          style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", marginBottom: 6 }}
+        >
+          <AuroraIcon name="settings" size={19} color={C.chalk} />
+        </Pressable>
+      </View>
+
+      {/* NAME + membership pill (pill UNCHANGED from the original design). */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 12, paddingHorizontal: 4 }}>
+        <Text style={{ fontFamily: F.black, fontSize: 23, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
+        <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.7 }}>{tier}</Text>
         </View>
-        {/* ONE identity line — the Hybrid ID. (The membership card no longer
-            repeats an "Athlete ID"; the email stays as quiet account contact.) */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>
-          HYBRID ID · {athleteId(email || name || "")}
-        </Text>
-        {!!email && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, opacity: 0.8, marginTop: 4 }}>{email}</Text>
+      </View>
+
+      {/* BIO + quiet HYBRID ID line. */}
+      <View style={{ marginTop: 7, paddingHorizontal: 4 }}>
+        {!!bioText && (
+          <Text style={{ fontFamily: F.reg, fontSize: 13.5, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
         )}
-        <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.chalk, opacity: 0.85, marginTop: 8 }}>
-          {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {createdYear}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: bioText ? 6 : 0 }}>
+          HYBRID ID · {athleteId(email || name || "")} · {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {createdYear}
         </Text>
       </View>
 
-      {/* SPEC STRIP — hairline-divided HPI / Streak / PRs */}
-      <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginTop: 20 }}>
-        <SpecCol C={C} n={showHpi ? `${hpi.score}` : "🔒"} k="HPI" first />
-        <SpecCol C={C} n={`${weekStreakBest}w`} k={t("w.account.profile.spec-streak")} />
-        <SpecCol C={C} n={`${prCount}`} k="PRs" />
-      </View>
-
-      {/* VOLUME STRIP — total sessions + lifetime tonnage (the two headline
-          "how much have I done" numbers, from real logged sessions). */}
-      <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginTop: 12 }}>
-        <SpecCol C={C} n={hasData ? `${sessions.length}` : "—"} k={t("w.account.profile.id-sessions")} first />
-        <SpecCol C={C} n={hasData && lifetimeTonnage > 0 ? fmtTonnage(lifetimeTonnage, prefs.units) : "—"} k={t("w.account.profile.spec-tonnage")} />
-      </View>
-
-      {/* ACTIONS */}
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
-        <Pressable onPress={() => router.push("/settings")} style={{ flex: 1, alignItems: "center", backgroundColor: C.lime, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.account.profile.edit")}</Text>
-        </Pressable>
-        <Pressable onPress={() => router.push("/statistics")} style={{ flex: 1, alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.profile.share-card")}</Text>
-        </Pressable>
-      </View>
-
-      <View style={{ height: 1, backgroundColor: C.line, marginVertical: 22 }} />
-
-      {/* FOLLOWING / FOLLOWERS — only these two, above the membership card. */}
-      <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginBottom: 18 }}>
-        {[{ n: followingN, k: "Following" }, { n: followersN, k: "Followers" }].map((c, i) => (
-          <View key={c.k} style={{ flex: 1, alignItems: "center", paddingVertical: 14, borderRightWidth: i < 1 ? 1 : 0, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{c.n}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase", marginTop: 5 }}>{c.k}</Text>
+      {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
+      <View style={{ flexDirection: "row", gap: 22, marginTop: 14, paddingHorizontal: 4 }}>
+        {socialCounts.map((c) => (
+          <View key={c.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{c.n}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.8, color: C.ash, textTransform: "uppercase" }}>{c.k}</Text>
           </View>
         ))}
       </View>
 
-      {/* ID CARD — premium membership card */}
-      <View style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
-        {/* soft lime corner sheen */}
-        <View pointerEvents="none" style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: 90, backgroundColor: C.lime, opacity: 0.12 }} />
-        {/* faint diagonal etch */}
-        <View pointerEvents="none" style={{ position: "absolute", top: 30, left: -40, width: 260, height: 1, backgroundColor: C.lime, opacity: 0.06, transform: [{ rotate: "20deg" }] }} />
-        <View pointerEvents="none" style={{ position: "absolute", top: 70, left: -40, width: 260, height: 1, backgroundColor: C.lime, opacity: 0.06, transform: [{ rotate: "20deg" }] }} />
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk, letterSpacing: 0.3 }}>
-            HYBRID<Text style={{ color: C.lime }}>.</Text> · {t("w.account.profile.membership")}
-          </Text>
-          <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.8 }}>{tier} · {role === "coach" ? t("w.account.profile.coach-upper") : t("w.account.profile.member-upper")}</Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 30 }}>
-          <IdMeta C={C} label={t("w.account.profile.id-member-since")} value={`${createdYear}`} />
-          <IdMeta C={C} label={t("w.account.profile.id-sessions")} value={`${sessions.length}`} />
-          <IdMeta C={C} label={t("w.account.profile.id-index")} value={showHpi ? `${hpi.score}` : "🔒"} accent />
-        </View>
+      {/* TABS — Overview / PRs / Activity */}
+      <View style={{ flexDirection: "row", marginTop: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
+        {([
+          { id: "overview" as const, label: "Overview" },
+          { id: "prs" as const, label: "PRs" },
+          { id: "activity" as const, label: "Activity" },
+        ]).map((tb) => {
+          const on = tab === tb.id;
+          return (
+            <Pressable key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
+              {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* HPI HERO — Full only; free (casual) users get a locked upsell. */}
+      {/* TAB CONTENT */}
+      {tab === "overview" && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 16 }}>
+          {publicTiles.length > 0 ? (
+            publicTiles.map((tile, i) => (
+              <View key={`${tile.k}-${i}`} style={{ width: "31.5%", aspectRatio: 1, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, marginBottom: 9 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4 }}>{tile.v}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 6, maxWidth: "100%" }}>{tile.k}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={{ width: "100%", padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {tab === "prs" && (
+        <View style={{ marginTop: 16 }}>
+          {topPrs.length > 0 ? (
+            topPrs.map(([lift, e1rm]) => (
+              <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
+                    <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
+                </View>
+                {/* relative-strength bar — each PR against your heaviest lift. */}
+                <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 11, overflow: "hidden" }}>
+                  <View style={{ width: `${Math.max(8, Math.round((e1rm / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {tab === "activity" && (
+        <View style={{ marginTop: 16 }}>
+          {/* 26-week training heatmap */}
+          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, backgroundColor: C.ink2, padding: 16 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 }}>
+              {monthLabels(heat).map((m, i) => (
+                <Text key={i} style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{m}</Text>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", gap: 3 }}>
+              {heat.map((col, ci) => (
+                <View key={ci} style={{ flex: 1, gap: 3 }}>
+                  {col.map((cell, ri) => (
+                    <View key={ri} style={{ flex: 1, aspectRatio: 1, borderRadius: 2.5, backgroundColor: heatColor(cell.level, C) }} />
+                  ))}
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 8, color: lime }}>
+                {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.less")}</Text>
+              {[0, 1, 2, 3, 4].map((l) => (
+                <View key={l} style={{ width: 10, height: 10, borderRadius: 2.5, backgroundColor: heatColor(l as HeatCell["level"], C) }} />
+              ))}
+              <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.more")}</Text>
+            </View>
+          </View>
+
+          {/* Achievements — earned/locked badge tiles with progress. */}
+          <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${earnedCount} ${t("w.account.profile.earned")}`} />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+            {achievements.map((a) => {
+              const pct = Math.round(a.progress * 100);
+              return (
+                <View key={a.id} style={{ width: "23%", alignItems: "center", marginBottom: 14 }}>
+                  <View
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      borderColor: a.earned ? `${C.lime}73` : C.line,
+                      backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 24, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
+                  </View>
+                  <View style={{ width: 48, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
+                    <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : `${C.lime}99` }} />
+                  </View>
+                  <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: 8.5, color: C.ash, marginTop: 6, maxWidth: "100%", textAlign: "center" }}>{a.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────
+          PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
+          lives here, clearly marked private and visible only to the owner. */}
+      <SectionHeader C={C} title="Private · only you" action="🔒" />
       {showHpi ? (
-        <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 80, lineHeight: 80, letterSpacing: -3, color: C.chalk, marginTop: 10 }}>
-            {hpiHead(hpi.score)}<Text style={{ color: C.lime }}>{hpiTail(hpi.score)}</Text>
+        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <Ring value={hpi.score} size={64} color={C.lime} track={C.line}>
+              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{hpi.score}</Text>
+            </Ring>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>{hpiDelta >= 0 ? `▲ +${hpiDelta}` : `▼ ${hpiDelta}`}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={{ marginTop: 14 }}>
+            <Spark series={hpiTrace} color={C.lime} height={34} />
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>
+            {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
           </Text>
-          <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
-          </View>
-          {/* 12-bar HPI trace, latest highlighted lime */}
-          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
-            {(() => {
-              const max = Math.max(...hpiTrace, 1);
-              const min = Math.min(...hpiTrace);
-              const range = max - min || 1;
-              return hpiTrace.map((v, i) => (
-                <View
-                  key={i}
-                  style={{ flex: 1, height: 6 + ((v - min) / range) * 28, borderRadius: 2, backgroundColor: i === hpiTrace.length - 1 ? C.lime : C.line }}
-                />
-              ));
-            })()}
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
-            <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> {t("w.account.profile.vs-first-read")} · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
+          <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 8, opacity: 0.85 }}>
+            Private — never shown on your public profile.
           </Text>
         </View>
       ) : (
-        <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text style={{ fontSize: 11 }}>🔒</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-locked-title")}</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 64, lineHeight: 64, letterSpacing: -3, color: C.ash, opacity: 0.5, marginTop: 10 }}>
-            ——<Text style={{ color: C.lime }}>—</Text>
-          </Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
           <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
           </Pressable>
-        </View>
-      )}
-
-      {/* TRAINING — 26-week heatmap */}
-      <SectionHeader C={C} title={t("w.account.profile.training")} action={`${sessions.length} ${t("w.account.profile.sessions")}`} />
-      <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, backgroundColor: C.ink2, padding: 16 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 }}>
-          {monthLabels(heat).map((m, i) => (
-            <Text key={i} style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{m}</Text>
-          ))}
-        </View>
-        {/* 7 rows × N week-columns */}
-        <View style={{ flexDirection: "row", gap: 3 }}>
-          {heat.map((col, ci) => (
-            <View key={ci} style={{ flex: 1, gap: 3 }}>
-              {col.map((cell, ri) => (
-                <View key={ri} style={{ flex: 1, aspectRatio: 1, borderRadius: 2.5, backgroundColor: heatColor(cell.level, C) }} />
-              ))}
-            </View>
-          ))}
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: lime }}>
-            {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
-          </Text>
-          <View style={{ flex: 1 }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.less")}</Text>
-          {[0, 1, 2, 3, 4].map((l) => (
-            <View key={l} style={{ width: 10, height: 10, borderRadius: 2.5, backgroundColor: heatColor(l as HeatCell["level"], C) }} />
-          ))}
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.more")}</Text>
-        </View>
-      </View>
-
-      {/* ACHIEVEMENTS — squared badge tiles */}
-      <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${achievements.filter((a) => a.earned).length} ${t("w.account.profile.earned")}`} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.ms }}>
-        {achievements.map((a) => {
-          const pct = Math.round(a.progress * 100);
-          return (
-            <View key={a.id} style={{ width: 80, alignItems: "center" }}>
-              <View
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: a.earned ? `${C.lime}73` : C.line,
-                  backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...(a.earned
-                    ? { shadowColor: C.lime, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 4 }
-                    : {}),
-                }}
-              >
-                {/* The real badge icon — full when earned, dimmed while locked. A
-                    padlock hid what you're working toward; the bar below shows how
-                    close you are, so a locked badge motivates instead of deadends. */}
-                <Text style={{ fontSize: 27, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
-              </View>
-              <View style={{ width: 60, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 9, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : `${C.lime}99` }} />
-              </View>
-              <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.nano, color: C.ash, marginTop: 7, maxWidth: 80, textAlign: "center" }}>{a.label}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: a.earned ? lime : C.ash, marginTop: 2 }}>{a.earned ? "✓" : `${pct}%`}</Text>
-            </View>
-          );
-        })}
-      </ScrollView>
-
-      {/* PERSONAL RECORDS — top lifts by e1RM */}
-      <SectionHeader C={C} title={t("w.account.profile.personal-records")} action={hasData ? t("w.account.profile.by-e1rm") : ""} />
-      {topPrs.length > 0 ? (
-        topPrs.map(([lift, e1rm]) => (
-          <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
-                <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
-                </View>
-              </View>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
-            </View>
-            {/* relative-strength bar — each PR against your heaviest lift, so the
-                records read as a quick visual ranking (matches the achievement bars). */}
-            <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 11, overflow: "hidden" }}>
-              <View style={{ width: `${Math.max(8, Math.round((e1rm / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
-            </View>
-          </View>
-        ))
-      ) : (
-        <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
         </View>
       )}
 
@@ -390,10 +434,6 @@ function useIdentity() {
   const createdYear = createdAt ? new Date(createdAt).getFullYear() : new Date().getFullYear();
   return { name, email: acct.email, role, entitlement, createdYear };
 }
-
-// HPI head/tail split so the last digit renders lime (matches the mockup's "8|2").
-const hpiHead = (n: number) => { const s = `${n}`; return s.length > 1 ? s.slice(0, -1) : ""; };
-const hpiTail = (n: number) => `${n}`.slice(-1);
 
 function heatColor(level: HeatCell["level"], C: P): string {
   if (level === 0) return C.line;
@@ -415,24 +455,6 @@ function monthLabels(heat: HeatCell[][]): string[] {
   }
   out.push("NOW");
   return out;
-}
-
-function SpecCol({ C, n, k, first }: { C: P; n: string; k: string; first?: boolean }) {
-  return (
-    <View style={{ flex: 1, alignItems: "center", paddingVertical: 15, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, letterSpacing: -0.4 }}>{n}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginTop: 5 }}>{k}</Text>
-    </View>
-  );
-}
-
-function IdMeta({ C, label, value, accent }: { C: P; label: string; value: string; accent?: boolean }) {
-  return (
-    <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: accent ? txt(C, C.lime) : C.chalk, marginTop: 4 }}>{value}</Text>
-    </View>
-  );
 }
 
 function SectionHeader({ C, title, action }: { C: P; title: string; action: string }) {

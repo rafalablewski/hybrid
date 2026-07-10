@@ -35,13 +35,15 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const { isEnabled, value } = useFlags();
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
-  const dialogRef = useDialog<HTMLDivElement>(() => setMoreOpen(false), moreOpen);
+  const [query, setQuery] = useState("");
+  const closeMore = () => { setMoreOpen(false); setQuery(""); };
+  const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
 
   if (!aurora) return null;
 
   const access = sanitizePersonaAccess(value("access.personaNav"));
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
-  const go = (id: string) => { setMoreOpen(false); onSelect(id); };
+  const go = (id: string) => { closeMore(); onSelect(id); };
 
   const tabs = PRIMARY;
   // "More" lights only when the active screen isn't one of the bar slots
@@ -57,10 +59,21 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     .map((g) => ({ ...g, items: g.items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
     .filter((g) => g.items.length > 0);
 
+  // Springboard search — filters the launcher tiles by (localized) label and
+  // drops clusters left empty by the filter, so the grid stays tight. Parity
+  // with the mobile More tab's search-first springboard.
+  const totalTools = groups.reduce((n, g) => n + g.items.length, 0);
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? groups
+        .map((g) => ({ ...g, items: g.items.filter(({ item }) => label(item.id, item.label).toLowerCase().includes(q)) }))
+        .filter((g) => g.items.length > 0)
+    : groups;
+
   return (
     <>
       {moreOpen && (
-        <div onClick={() => setMoreOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
+        <div onClick={closeMore} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
           <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: "20px 20px 110px" }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
 
@@ -79,7 +92,24 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               </button>
             )}
 
-            {groups.map((g) => (
+            {/* Search — filters the springboard tiles by label (parity with the mobile More tab). */}
+            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "0 14px", marginBottom: 18 }}>
+              <AuroraIcon name="search" size={18} strokeWidth={2.4} color={C("ash")} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${totalTools} tools & screens`}
+                aria-label="Search tools"
+                autoCapitalize="none"
+                autoCorrect="off"
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "13px 0" }}
+              />
+              {query.length > 0 && (
+                <button onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+              )}
+            </div>
+
+            {shown.map((g) => (
               <div key={g.group} style={{ marginBottom: 18 }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
                   {t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`)}
@@ -103,6 +133,9 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 </div>
               </div>
             ))}
+            {q.length > 0 && shown.length === 0 && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", padding: "22px 0 10px" }}>{`No tools match “${query}”`}</div>
+            )}
           </div>
         </div>
       )}

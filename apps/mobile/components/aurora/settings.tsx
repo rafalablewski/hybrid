@@ -202,21 +202,45 @@ export default function AuroraSettings() {
   };
 
   // A render HELPER (not a component) so it doesn't remount on each keystroke.
-  const renderRow = (c: SettingsCategory, first: boolean) => {
+  // Each category is a BENTO tile: a tinted icon chip, the title and a one-line
+  // value/subtitle. Two tiles per row; a group with an odd count gets a
+  // full-width "wide" trailing tile (icon left, text, chevron) so the grid never
+  // leaves a lonely half-tile.
+  const renderTile = (c: SettingsCategory, i: number, count: number) => {
     const accent = toneColor[TONE[c.id]];
     const { tile, fg } = tone(accent);
-    const val = summary(c.id);
+    const line = summary(c.id) || c.subtitle;
+    const wide = count % 2 === 1 && i === count - 1;
+    const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;
     return (
-      <Pressable key={c.id} onPress={() => openCat(c)} accessibilityRole="button" accessibilityLabel={c.title} style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: 16, paddingVertical: 15, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
-        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: tile, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name={c.icon} size={19} color={fg} />
+      <Pressable
+        key={c.id}
+        onPress={() => openCat(c)}
+        accessibilityRole="button"
+        accessibilityLabel={c.title}
+        style={{
+          flexGrow: 1,
+          flexBasis: wide ? "100%" : "45%",
+          minHeight: wide ? 0 : 118,
+          flexDirection: wide ? "row" : "column",
+          alignItems: wide ? "center" : "stretch",
+          justifyContent: wide ? "flex-start" : "space-between",
+          gap: wide ? space.md : 0,
+          backgroundColor: C.ink2,
+          borderWidth: 1,
+          borderColor: c.danger ? `${C.red}47` : C.line,
+          borderRadius: 20,
+          padding: 16,
+        }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name={c.icon} size={20} color={c.danger ? (txt(C, C.red) as string) : fg} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: c.danger ? (txt(C, C.red) as string) : C.chalk }}>{c.title}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{c.subtitle}</Text>
+        <View style={{ flex: wide ? 1 : undefined }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: titleColor }}>{c.title}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, lineHeight: 15 }}>{line}</Text>
         </View>
-        {val ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, maxWidth: 104 }}>{val}</Text> : null}
-        <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
+        {wide ? <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} /> : null}
       </Pressable>
     );
   };
@@ -261,18 +285,22 @@ export default function AuroraSettings() {
       </View>
 
       {query ? (
-        <ACard style={{ padding: 0, overflow: "hidden", marginTop: 16 }}>
-          {results.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, padding: 16 }}>{t("w.account.settings.no-results")}</Text>
-          ) : results.map((c, i) => renderRow(c, i === 0))}
-        </ACard>
+        results.length === 0 ? (
+          <ACard style={{ marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.account.settings.no-results")}</Text>
+          </ACard>
+        ) : (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11, marginTop: 16 }}>
+            {results.map((c, i) => renderTile(c, i, results.length))}
+          </View>
+        )
       ) : (
         SETTINGS_GROUPS.map((group) => (
           <View key={group.id} style={{ marginTop: 22 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10, marginLeft: 4 }}>{group.label}</Text>
-            <ACard style={{ padding: 0, overflow: "hidden" }}>
-              {group.categories.map((c, i) => renderRow(c, i === 0))}
-            </ACard>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11 }}>
+              {group.categories.map((c, i) => renderTile(c, i, group.categories.length))}
+            </View>
           </View>
         ))
       )}

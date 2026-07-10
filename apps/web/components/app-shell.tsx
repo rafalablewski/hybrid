@@ -15,8 +15,10 @@ import { fs, space,
   LIME,
   CHALK,
   ASH,
+  BLUE,
   VIOLET,
   AMBER,
+  RED,
   LIME_T,
   ON_ACCENT,
   txt,
@@ -139,17 +141,18 @@ export default function AppShell() {
   // console shell (components/admin/panel.tsx).
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // Concept-4 parity: on the mobile drawer the nav DRILLS one area at a time (the
-  // same category hub as the mobile app's More tab) instead of one long grouped
-  // scroll; the desktop rail keeps every group expanded (it has the room).
-  const [drillGroup, setDrillGroup] = useState<string | null>(null);
+  // Springboard parity: on the mobile drawer the nav is a searchable GRID of
+  // feature launcher tiles (the same "Springboard" as the mobile app's More tab)
+  // instead of one long grouped scroll; the desktop rail keeps every group
+  // expanded (it has the room). `moreSearch` filters the tiles by label.
+  const [moreSearch, setMoreSearch] = useState("");
   const railCollapsed = collapsed && !isMobile;
   useEffect(() => {
     if (!isMobile) setDrawerOpen(false);
   }, [isMobile]);
-  // Reopen the drawer at the hub, never mid-drill.
+  // Reset the springboard search each time the drawer closes.
   useEffect(() => {
-    if (!drawerOpen) setDrillGroup(null);
+    if (!drawerOpen) setMoreSearch("");
   }, [drawerOpen]);
   useEffect(() => {
     if (!isMobile || !drawerOpen) return;
@@ -387,58 +390,82 @@ export default function AppShell() {
               );
             };
 
-            // MOBILE DRAWER — concept-4 category hub (drill one area at a time).
+            // MOBILE DRAWER — the Springboard: a searchable grid of launcher
+            // tiles grouped by cluster (parity with the mobile app's More tab).
             if (isMobile) {
-              const area = drillGroup ? navGroups.find((g) => g.group === drillGroup) : null;
-              if (area) {
-                return (
-                  <div>
-                    <button
-                      onClick={() => setDrillGroup(null)}
-                      style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", color: LIME_T, ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em", padding: "4px 8px 12px" }}
-                    >
-                      ‹ {t("nav.more") === "nav.more" ? "Menu" : t("nav.more")}
-                    </button>
-                    <div style={{ ...disp, fontWeight: 800, fontSize: 20, padding: "0 10px 12px" }}>{groupLabel(area.group)}</div>
-                    {area.items.map(itemBtn)}
-                  </div>
-                );
-              }
+              // Per-cluster accent tint (matches the mobile GROUP_META spectrum).
+              const GROUP_ACCENT: Record<string, string> = { home: LIME, train: LIME, analyze: BLUE, recovery: AMBER, social: VIOLET, teams: RED, account: ASH };
+              const navName = (id: string, fb: string) => (t(`nav.${id}`) === `nav.${id}` ? fb : t(`nav.${id}`));
+              const goItem = (id: string, locked: boolean) => {
+                setPendingBlocks(undefined);
+                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `springboard-${id}` }); setUpgradeOpen(true); }
+                else setScreen(id);
+                setDrawerOpen(false);
+              };
+              const qy = moreSearch.trim().toLowerCase();
+              const totalTools = navGroups.reduce((n, g) => n + g.items.length, 0);
+              const springboard = navGroups
+                .map(({ group, items }) => ({ group, items: items.filter(({ item }) => !qy || navName(item.id, item.label).toLowerCase().includes(qy)) }))
+                .filter((g) => g.items.length > 0);
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {navGroups.map(({ group, items }) => {
-                    const gi = aurora ? AURORA_NAV_ICONS[items[0]!.item.id] : undefined;
+                <div>
+                  {/* Search — filters the tiles below by label. */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, background: INK2, border: `1px solid ${LINE}`, borderRadius: 13, padding: "11px 13px" }}>
+                    {aurora ? <AuroraIcon name="search" size={17} strokeWidth={2.6} /> : <span style={{ ...mono, color: ASH }}>⌕</span>}
+                    <input
+                      value={moreSearch}
+                      onChange={(e) => setMoreSearch(e.target.value)}
+                      placeholder={`Search ${totalTools} tools & screens`}
+                      aria-label="Search tools"
+                      style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: CHALK, ...disp, fontSize: fs.body }}
+                    />
+                    {moreSearch && (
+                      <button onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
+                    )}
+                  </div>
+
+                  {springboard.map(({ group, items }) => {
+                    const accent = GROUP_ACCENT[group] ?? LIME;
                     return (
-                    <button
-                      key={group}
-                      onClick={() => setDrillGroup(group)}
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        padding: "13px 13px",
-                        borderRadius: 14,
-                        cursor: "pointer",
-                        border: `1px solid var(--color-line)`,
-                        background: "var(--color-card)",
-                        color: "var(--color-chalk)",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ width: 34, height: 34, borderRadius: 11, display: "grid", placeItems: "center", background: "var(--color-ink2)", flexShrink: 0 }}>
-                        {gi ? <AuroraIcon name={gi} size={18} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle }}>{items[0]!.item.icon}</span>}
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, display: "block" }}>{groupLabel(group)}</span>
-                        <Mono s={{ fontSize: 10, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }} c={ASH}>
-                          {items.slice(0, 3).map(({ item: i }) => (t(`nav.${i.id}`) === `nav.${i.id}` ? i.label : t(`nav.${i.id}`))).join(" · ")}{items.length > 3 ? ` · +${items.length - 3}` : ""}
-                        </Mono>
-                      </span>
-                      <Mono s={{ fontSize: fs.body }} c={ASH}>{items.length} ›</Mono>
-                    </button>
+                      <div key={group} style={{ marginTop: 18 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px", marginBottom: 8 }}>
+                          <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
+                          <Mono s={{ fontSize: 9 }} c={LIME}>{items.length}</Mono>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(62px, 1fr))", gap: 12 }}>
+                          {items.map(({ item, locked }) => {
+                            const label = navName(item.id, item.label);
+                            const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
+                            const iconColor = locked ? ASH : (txt(accent) || accent);
+                            return (
+                              <button
+                                key={item.id}
+                                data-tour={`nav-${item.id}`}
+                                onClick={() => goItem(item.id, locked)}
+                                title={locked ? `${label} · Full` : label}
+                                aria-label={locked ? `${label} (Full)` : label}
+                                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                              >
+                                <span style={{ position: "relative", width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
+                                  {ic ? <AuroraIcon name={ic} size={22} color={iconColor} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
+                                  {locked && (
+                                    <span aria-hidden style={{ position: "absolute", top: -4, right: -4, width: 17, height: 17, borderRadius: 9, background: LIME, border: `2px solid ${INK}`, display: "grid", placeItems: "center" }}>
+                                      <AuroraIcon name="lock" size={9} color={ON_ACCENT} strokeWidth={3} />
+                                    </span>
+                                  )}
+                                </span>
+                                <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: locked ? ASH : "var(--color-chalk)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
+
+                  {qy && springboard.length === 0 && (
+                    <Mono s={{ display: "block", marginTop: 16, padding: "0 2px" }} c={ASH}>No tools match “{moreSearch}”.</Mono>
+                  )}
                 </div>
               );
             }

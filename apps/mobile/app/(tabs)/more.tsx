@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Text, Pressable, Linking, TextInput } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { groupedNavWithLocks, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName, type NavGroup } from "@hybrid/core";
 import { track } from "../../lib/track";
@@ -8,18 +8,21 @@ import { usePersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
 import { WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, Screen, Kicker, Mono, H1, F } from "../../lib/ui";
+import { fs, Screen, Kicker, Mono, H1, F } from "../../lib/ui";
 import { AuroraScreen } from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 
-// ── Concept 4 — CATEGORY HUB ────────────────────────────────────────────────
-// The old flat springboard listed ~40 destinations in one scroll (unreadable).
-// This shows the SEVEN canonical areas as cards; tapping one drills into just
-// that area's screens. Same information architecture as the web sidebar
-// (groupedNav), so the two clients can't drift — the web shows the groups
-// expanded on a desktop rail, mobile drills one at a time. Every feature stays.
+// ── SPRINGBOARD — the app library ───────────────────────────────────────────
+// A searchable grid of feature LAUNCHER TILES (icon-in-a-chip + short label),
+// grouped by the canonical cluster (Home/Train/Analyze/Recovery/Social/Teams/
+// Account) with a mono uppercase section header + count. Tapping a tile navigates
+// straight to that feature; the search field filters tiles by label. The tool set
+// AND its gating come from the SHARED nav model (groupedNavWithLocks) — the exact
+// same source the web menu uses, so the two clients can't drift. Premium (Full)
+// tools a free user hasn't unlocked wear a lime LOCK badge and route to /upgrade;
+// tools that only exist on the web app show a blue WEB dot and open the web app.
 
 // Mobile route for each nav id. Ids the user has access to but that AREN'T here
 // live on the web app only — surfaced inside their area with a "web" tag + a tap
@@ -93,7 +96,8 @@ export default function More() {
   const initials = ((name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
   const persona = usePersona();
   const access = useNavAccess();
-  const [open, setOpen] = useState<NavGroup | null>(null);
+  // Springboard search — filters the launcher tiles by (localized) label.
+  const [query, setQuery] = useState("");
 
   const navLabel = (id: string, fallback: string) => { const k = "nav." + id; const v = t(k); return v === k ? fallback : v; };
   const groupLabel = (g: NavGroup) => { const k = "nav.group." + g; const v = t(k); return v === k ? GROUP_LABEL[g] : v; };
@@ -122,51 +126,15 @@ export default function More() {
     it.href ? router.push(it.href) : openWeb();
   };
 
-  // ── DRILL VIEW — one area's screens ──
-  const openArea = open ? areas.find((a) => a.group === open) : null;
-  if (openArea) {
-    const meta = GROUP_META[openArea.group];
-    const accent = C[meta.ck] as string;
-    const drill = (
-      <>
-        <Pressable onPress={() => setOpen(null)} hitSlop={10} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>‹ {t("nav.more")}</Text>
-        </Pressable>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6, marginBottom: 4 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${accent}1c`, borderWidth: 1, borderColor: `${accent}66`, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name={meta.icon} size={22} color={txt(C, accent)} />
-          </View>
-          <H1>{groupLabel(openArea.group)}</H1>
-        </View>
-        <View style={{ marginTop: 12 }}>
-          {openArea.items.map((it, i) => (
-            <Pressable
-              key={it.id}
-              onPress={() => go(it)}
-              style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 13, paddingHorizontal: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
-            >
-              <AuroraIcon name={it.icon} size={20} color={it.locked ? C.ash : C.chalk} />
-              <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: it.locked ? C.ash : C.chalk }}>{it.label}</Text>
-              {it.locked && (
-                <View style={{ backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>🔒 FULL</Text>
-                </View>
-              )}
-              {!it.href && !it.locked && (
-                <View style={{ backgroundColor: `${C.blue}1f`, borderWidth: 1, borderColor: `${C.blue}66`, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.blue) }}>WEB</Text>
-                </View>
-              )}
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ash }}>{it.locked ? "✦" : "→"}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </>
-    );
-    return aurora ? <AuroraScreen>{drill}</AuroraScreen> : <Screen>{drill}</Screen>;
-  }
+  // Springboard filter — match the (localized) label against the query; drop
+  // clusters left empty by the filter so the grid stays tight.
+  const q = query.trim().toLowerCase();
+  const totalTools = areas.reduce((n, a) => n + a.items.length, 0);
+  const filteredAreas = q
+    ? areas.map((a) => ({ ...a, items: a.items.filter((it) => it.label.toLowerCase().includes(q)) })).filter((a) => a.items.length > 0)
+    : areas;
 
-  // ── HUB VIEW — identity + the seven area cards ──
+  // ── HUB VIEW — identity + the springboard ──
   const cardRow = { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 15, flexDirection: "row" as const, alignItems: "center" as const, gap: 13 };
 
   const body = (
@@ -230,28 +198,70 @@ export default function More() {
         </Pressable>
       )}
 
-      {/* THE SEVEN AREAS — tap one to drill in. */}
+      {/* THE SPRINGBOARD — search + a grid of launcher tiles per cluster. */}
       <View style={{ marginTop: 22 }}>
         <Kicker>Everything else</Kicker>
-        <View style={{ marginTop: 10, gap: space.sm }}>
-          {areas.map(({ group, items }) => {
-            const meta = GROUP_META[group];
-            const accent = C[meta.ck] as string;
-            const preview = items.slice(0, 3).map((i) => i.label).join(" · ") + (items.length > 3 ? ` · +${items.length - 3}` : "");
-            return (
-              <Pressable key={group} onPress={() => setOpen(group)} style={cardRow}>
-                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${accent}1c`, borderWidth: 1, borderColor: `${accent}55`, alignItems: "center", justifyContent: "center" }}>
-                  <AuroraIcon name={meta.icon} size={21} color={txt(C, accent)} />
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{groupLabel(group)}</Text>
-                  <Mono style={{ marginTop: 2, fontSize: fs.micro }} numberOfLines={1}>{preview}</Mono>
-                </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{items.length} ›</Text>
-              </Pressable>
-            );
-          })}
+
+        {/* Search — filters the tiles below by label. */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 15, paddingHorizontal: 14, paddingVertical: 12, marginTop: 12 }}>
+          <AuroraIcon name="search" size={18} color={C.ash} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={`Search ${totalTools} tools & screens`}
+            placeholderTextColor={C.ash}
+            accessibilityLabel="Search tools"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: C.chalk, paddingVertical: 0 }}
+          />
+          {query.length > 0 && (
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
+            </Pressable>
+          )}
         </View>
+
+        {filteredAreas.map(({ group, items }) => {
+          const accent = C[GROUP_META[group].ck] as string;
+          return (
+            <View key={group} style={{ marginTop: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{items.length}</Text>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                {items.map((it) => (
+                  <Pressable
+                    key={it.id}
+                    onPress={() => go(it)}
+                    accessibilityRole="button"
+                    accessibilityLabel={it.locked ? `${it.label} (Full)` : it.label}
+                    style={{ width: "25%", alignItems: "center", paddingVertical: 8, paddingHorizontal: 2 }}
+                  >
+                    <View style={{ width: 58, height: 58, borderRadius: 18, backgroundColor: `${accent}1c`, borderWidth: 1, borderColor: `${accent}44`, alignItems: "center", justifyContent: "center" }}>
+                      <AuroraIcon name={it.icon} size={24} color={it.locked ? C.ash : txt(C, accent)} />
+                      {it.locked && (
+                        <View style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                          <AuroraIcon name="lock" size={9} color={C.onAccent} />
+                        </View>
+                      )}
+                      {!it.locked && !it.href && (
+                        <View style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: C.blue, borderWidth: 2, borderColor: C.ink }} />
+                      )}
+                    </View>
+                    <Text numberOfLines={2} style={{ marginTop: 6, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 14, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+
+        {q.length > 0 && filteredAreas.length === 0 && (
+          <Mono style={{ marginTop: 18 }}>No tools match “{query}”.</Mono>
+        )}
       </View>
 
       <Pressable onPress={signOut} style={{ marginTop: 26, alignItems: "center" }}>

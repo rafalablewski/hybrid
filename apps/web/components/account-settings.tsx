@@ -536,22 +536,24 @@ export default function AccountSettings() {
           </div>
 
           {query ? (
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-              {results.length === 0 ? (
-                <Mono s={{ display: "block", padding: 16 }} c={ASH}>{t("w.account.settings.no-results")}</Mono>
-              ) : results.map((c, i) => (
-                <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => { setCat(c.id); setQuery(""); }} />
-              ))}
-            </Card>
+            results.length === 0 ? (
+              <Card><Mono s={{ display: "block" }} c={ASH}>{t("w.account.settings.no-results")}</Mono></Card>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                {results.map((c, i) => (
+                  <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={results.length % 2 === 1 && i === results.length - 1} onOpen={() => { setCat(c.id); setQuery(""); }} />
+                ))}
+              </div>
+            )
           ) : (
             SETTINGS_GROUPS.map((group) => (
               <div key={group.id} style={{ marginBottom: 22 }}>
                 <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8, marginLeft: 4 }} c={ASH}>{group.label}</Mono>
-                <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
                   {group.categories.map((c, i) => (
-                    <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => setCat(c.id)} />
+                    <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={group.categories.length % 2 === 1 && i === group.categories.length - 1} onOpen={() => setCat(c.id)} />
                   ))}
-                </Card>
+                </div>
               </div>
             ))
           )}
@@ -561,33 +563,51 @@ export default function AccountSettings() {
   );
 }
 
-/** A drill-in category row: icon-tile + title/subtitle + current-value + chevron. */
-function NavRow({ icon, accent, title, subtitle, value, danger, first, onOpen }: {
+/** A bento settings tile: tinted icon chip + title + one-line value/subtitle. A
+ *  group with an odd number of categories gets a full-width `wide` trailing tile
+ *  (icon left, text, chevron) so the grid never leaves a lonely half-tile. */
+function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
   icon: AuroraIconName;
   accent: string;
   title: string;
   subtitle: string;
-  value?: string;
   danger?: boolean;
-  first?: boolean;
+  wide?: boolean;
   onOpen: () => void;
 }) {
   return (
     <button
       onClick={onOpen}
-      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", borderTop: first ? "none" : `1px solid ${LINE}`, background: "none", border: "none", cursor: "pointer", textAlign: "left", color: CHALK }}
+      style={{
+        gridColumn: wide ? "span 2" : "auto",
+        display: "flex",
+        flexDirection: wide ? "row" : "column",
+        alignItems: wide ? "center" : "stretch",
+        justifyContent: wide ? "flex-start" : "space-between",
+        gap: wide ? 14 : 0,
+        minHeight: wide ? 0 : 118,
+        width: "100%",
+        textAlign: "left",
+        background: INK2,
+        border: `1px solid ${danger ? `${RED}47` : LINE}`,
+        borderRadius: 20,
+        padding: 16,
+        cursor: "pointer",
+        color: CHALK,
+      }}
     >
-      <span style={{ width: 34, height: 34, borderRadius: 11, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `${accent}24`, color: txt(accent) }}>
-        <AuroraIcon name={icon} size={18} color="currentColor" strokeWidth={4} />
+      <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: danger ? `${RED}24` : `${accent}24`, color: danger ? txt(RED) : txt(accent) }}>
+        <AuroraIcon name={icon} size={20} color="currentColor" strokeWidth={4} />
       </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{ flex: wide ? 1 : "none", minWidth: 0 }}>
         <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
-        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
+        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
       </span>
-      {value ? <span style={{ ...mono, fontSize: fs.caption, color: txt(ASH), flex: "none", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span> : null}
-      <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-      </span>
+      {wide ? (
+        <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </span>
+      ) : null}
     </button>
   );
 }
