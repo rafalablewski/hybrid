@@ -8,7 +8,6 @@ import {
   trainingHeatmap,
   computeAchievements,
   bestE1rmMap,
-  lifetimePrCount,
   longestWeekStreak,
   streak,
   toTrainingLog,
@@ -21,6 +20,7 @@ import {
   type LoggedSession,
   type Achievement,
   type HeatCell,
+  type AuroraIconName,
 } from "@hybrid/core";
 import {
   fetchSessions,
@@ -43,8 +43,11 @@ type TabId = "overview" | "prs" | "activity";
 
 /**
  * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
- * cover banner, an overlapping avatar with an EDIT (pencil) icon, name + the
- * (unchanged) membership pill, bio, follower/following/rank counts, tabs
+ * cover banner, an overlapping avatar with an edit icon (the shared "settings"
+ * glyph — there is no pencil PNG in apps/mobile/assets/icons, so we keep the one
+ * glyph across web↔mobile for parity; a dedicated pencil is a blocked follow-up
+ * that needs a new design-kit asset), name + the (unchanged) membership pill,
+ * bio, follower/following/rank counts, tabs
  * (Overview / PRs / Activity) and a 3-column grid of PUBLIC highlight tiles.
  *
  * Privacy: HPI is PRIVATE — it is deliberately absent from the public highlight
@@ -87,12 +90,22 @@ export default function AuroraProfile() {
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpi = state.hpi;
 
-  // 12-point HPI trace (oldest→today) — the same trajectory engine as the Performance State.
+  // HPI 12-point trace (oldest→today) + a 30-day delta from the trajectory —
+  // SAME window + semantics as the web client (30-day trajectory, down-sampled
+  // to 12 points, delta = current score − oldest point in the window).
+  const traj = useMemo(() => [...performanceTrajectory(log, 30)].sort((a, b) => b.daysAgo - a.daysAgo), [log]);
   const hpiTrace = useMemo(() => {
-    const series = [...performanceTrajectory(log, 12)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi);
-    return series.length ? series : [hpi.score];
-  }, [log, hpi.score]);
-  const hpiDelta = hpiTrace.length > 1 ? hpiTrace[hpiTrace.length - 1]! - hpiTrace[0]! : 0;
+    const series = traj.map((p) => p.hpi);
+    if (series.length <= 12) return series;
+    // down-sample to 12 evenly-spaced points (latest always kept last).
+    const out: number[] = [];
+    for (let i = 0; i < 12; i++) out.push(series[Math.round((i * (series.length - 1)) / 11)]!);
+    return out;
+  }, [traj]);
+  const hpiDelta = useMemo(() => {
+    if (traj.length < 2) return 0;
+    return hpi.score - traj[0]!.hpi;
+  }, [traj, hpi.score]);
 
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions), [sessions]);
@@ -101,7 +114,6 @@ export default function AuroraProfile() {
     () => [...prMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3),
     [prMap],
   );
-  const prCount = useMemo(() => lifetimePrCount(sessions), [sessions]);
   const weekStreakBest = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   const hasData = sessions.length > 0;
@@ -154,25 +166,28 @@ export default function AuroraProfile() {
   // is simply omitted rather than faked. Top lifts lead, then the headline
   // consistency/volume numbers.
   const publicTiles = useMemo(() => {
-    const out: { v: string; k: string }[] = [];
+    // Each tile type → an apt EXISTING AuroraIconName (identical mapping on web):
+    // PR/lift = arrow-up, streak = check-circle, sessions = calendar-event,
+    // tonnage = list-check, badges = verified.
+    const out: { v: string; k: string; icon: AuroraIconName }[] = [];
     for (const [lift, e1rm] of topPrs.slice(0, 2)) {
-      out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR` });
+      out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR`, icon: "arrow-up" });
     }
-    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak") });
-    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions") });
-    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage") });
-    if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements") });
+    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
+    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
+    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
+    if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
   }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
-      { n: `${followersN}`, k: "Followers" },
-      { n: `${followingN}`, k: "Following" },
+      { n: `${followersN}`, k: t("w.account.profile.followers") },
+      { n: `${followingN}`, k: t("w.account.profile.following") },
     ];
-    if (rank != null) out.push({ n: `#${rank}`, k: "Rank" });
+    if (rank != null) out.push({ n: `#${rank}`, k: t("w.account.profile.rank") });
     return out;
-  }, [followersN, followingN, rank]);
+  }, [followersN, followingN, rank, t]);
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
@@ -184,15 +199,15 @@ export default function AuroraProfile() {
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontWeight: "800", fontSize: 16, color: C.chalk }}>{sClaimed ? "Complete your profile" : "Set up your public profile"}</Text>
-            <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? "Add a photo and bio so friends recognise you." : "Claim a handle, add a photo and bio so friends can find and follow you."}</Text>
+            <Text style={{ fontFamily: F.bold, fontWeight: "800", fontSize: 16, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
+            <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
           </View>
           <Text style={{ color: C.lime, fontFamily: F.bold, fontSize: 18 }}>→</Text>
         </Pressable>
       )}
 
       {/* COVER BANNER — Aurora gradient wash with a lime corner glow. */}
-      <View style={{ height: 104, borderRadius: 20, overflow: "hidden" }}>
+      <View style={{ height: 96, borderRadius: 20, overflow: "hidden" }}>
         <LinearGradient
           colors={[`${C.violet}66`, `${C.lime}33`, C.ink2]}
           start={{ x: 0, y: 0 }}
@@ -202,15 +217,21 @@ export default function AuroraProfile() {
         <View pointerEvents="none" style={{ position: "absolute", top: -34, right: -24, width: 170, height: 170, borderRadius: 85, backgroundColor: C.lime, opacity: 0.18 }} />
       </View>
 
-      {/* HEAD — avatar overlapping the cover + the EDIT (pencil) icon where a
-          follower would see "Follow". No Edit / Share buttons anywhere. */}
+      {/* HEAD — avatar overlapping the cover + the edit icon (shared "settings"
+          glyph; see note above) where a follower would see "Follow". No Edit /
+          Share buttons anywhere. */}
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, paddingHorizontal: 4 }}>
-        <View style={{ width: 84, height: 84, borderRadius: 42, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={{ width: "100%", height: "100%" }} />
-          ) : (
-            <Text style={{ fontFamily: F.black, fontSize: 32, color: lime }}>{initials}</Text>
-          )}
+        {/* Outer lime ring (2px) around the 3px ink border — RN box-shadow is
+            unreliable, so the ring is a lime-filled wrapper View. Matches web's
+            `box-shadow: 0 0 0 2px lime` on the avatar. */}
+        <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 84, height: 84, borderRadius: 42, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={{ width: "100%", height: "100%" }} />
+            ) : (
+              <Text style={{ fontFamily: F.black, fontSize: 32, color: lime }}>{initials}</Text>
+            )}
+          </View>
         </View>
         <Pressable
           onPress={() => router.push("/profile-edit")}
@@ -254,9 +275,9 @@ export default function AuroraProfile() {
       {/* TABS — Overview / PRs / Activity */}
       <View style={{ flexDirection: "row", marginTop: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
         {([
-          { id: "overview" as const, label: "Overview" },
-          { id: "prs" as const, label: "PRs" },
-          { id: "activity" as const, label: "Activity" },
+          { id: "overview" as const, label: t("w.account.profile.tab-overview") },
+          { id: "prs" as const, label: t("w.account.profile.tab-prs") },
+          { id: "activity" as const, label: t("w.account.profile.tab-activity") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -274,8 +295,9 @@ export default function AuroraProfile() {
           {publicTiles.length > 0 ? (
             publicTiles.map((tile, i) => (
               <View key={`${tile.k}-${i}`} style={{ width: "31.5%", aspectRatio: 1, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, marginBottom: 9 }}>
-                <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4 }}>{tile.v}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 6, maxWidth: "100%" }}>{tile.k}</Text>
+                <AuroraIcon name={tile.icon} size={22} color={C.lime} />
+                <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
               </View>
             ))
           ) : (
@@ -381,31 +403,37 @@ export default function AuroraProfile() {
       {/* ─────────────────────────────────────────────────────────────────────
           PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
           lives here, clearly marked private and visible only to the owner. */}
-      <SectionHeader C={C} title="Private · only you" action="🔒" />
+      <SectionHeader C={C} title={t("w.account.profile.private-title")} action="🔒" />
       {showHpi ? (
         <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <Ring value={hpi.score} size={64} color={C.lime} track={C.line}>
-              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{hpi.score}</Text>
+            {/* No training yet → honest empty state (unrated band + "—"), never a
+                fabricated score. Same gating as the web client. */}
+            <Ring value={hasData ? hpi.score : 0} size={64} color={C.lime} track={C.line}>
+              <Text style={{ fontFamily: F.black, fontSize: 19, color: hasData ? C.chalk : C.ash }}>{hasData ? hpi.score : "—"}</Text>
             </Ring>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
                 <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hasData ? hpi.band : t("w.account.profile.unrated")}</Text>
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>{hpiDelta >= 0 ? `▲ +${hpiDelta}` : `▼ ${hpiDelta}`}</Text>
+                {hasData && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>{hpiDelta >= 0 ? `▲ +${hpiDelta}` : `▼ ${hpiDelta}`}</Text>}
               </View>
             </View>
           </View>
-          <View style={{ marginTop: 14 }}>
-            <Spark series={hpiTrace} color={C.lime} height={34} />
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>
-            {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
+          {hasData && (
+            <View style={{ marginTop: 14 }}>
+              <Spark series={hpiTrace} color={C.lime} height={34} />
+            </View>
+          )}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: hasData ? 10 : 14, lineHeight: 17 }}>
+            {hasData
+              ? `${t("w.account.profile.comp-strength")} ${hpi.components.strength} · ${t("w.account.profile.comp-engine")} ${hpi.components.endurance} · ${t("w.account.profile.comp-recovery")} ${hpi.components.recovery >= 0 ? "+" : ""}${hpi.components.recovery}`
+              : t("w.account.profile.hpi-empty")}
           </Text>
           <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 8, opacity: 0.85 }}>
-            Private — never shown on your public profile.
+            {t("w.account.profile.private-note")}
           </Text>
         </View>
       ) : (

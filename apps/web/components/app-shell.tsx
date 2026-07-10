@@ -345,8 +345,8 @@ export default function AppShell() {
               .map(({ group, items }) => ({ group, items: items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
               .filter((g) => g.items.length > 0);
 
-            // One nav destination button — reused by the desktop groups AND the
-            // mobile drill list.
+            // One nav destination button — used by the desktop rail groups (the
+            // mobile drawer renders the springboard grid below instead).
             const itemBtn = ({ item: { id, label: fallback, icon: ic }, locked }: { item: { id: string; label: string; icon: string }; locked: boolean }) => {
               const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
               const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
@@ -398,7 +398,7 @@ export default function AppShell() {
               const navName = (id: string, fb: string) => (t(`nav.${id}`) === `nav.${id}` ? fb : t(`nav.${id}`));
               const goItem = (id: string, locked: boolean) => {
                 setPendingBlocks(undefined);
-                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `springboard-${id}` }); setUpgradeOpen(true); }
+                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); setUpgradeOpen(true); }
                 else setScreen(id);
                 setDrawerOpen(false);
               };
@@ -409,8 +409,24 @@ export default function AppShell() {
                 .filter((g) => g.items.length > 0);
               return (
                 <div>
+                  {/* Unlock Full — the accent membership CARD (kicker → title →
+                      blurb → Go Full pill), matching the mobile More tab + pill-nav
+                      sheet. Casual only; the plain sidebar entry is desktop-only. */}
+                  {showUpgradeEntry && isEnabled("nav.upgrade") && (
+                    <button
+                      onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); openUpgrade(); setDrawerOpen(false); }}
+                      style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: INK, border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
+                    >
+                      <span aria-hidden style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
+                      <span style={{ ...mono, display: "block", fontSize: fs.nano, letterSpacing: ".2em", color: LIME_T }}>{t("w.home.pillnav.upgradeKicker")}</span>
+                      <span style={{ ...disp, display: "block", fontWeight: 900, fontSize: 22, color: CHALK, marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
+                      <span style={{ ...mono, display: "block", fontSize: fs.micro, color: ASH, marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
+                      <span style={{ ...disp, display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: LIME, color: ON_ACCENT, borderRadius: 999, padding: "9px 18px", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
+                    </button>
+                  )}
+
                   {/* Search — filters the tiles below by label. */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, background: INK2, border: `1px solid ${LINE}`, borderRadius: 13, padding: "11px 13px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, background: INK2, border: `1px solid ${LINE}`, borderRadius: 15, padding: "11px 13px" }}>
                     {aurora ? <AuroraIcon name="search" size={17} strokeWidth={2.6} /> : <span style={{ ...mono, color: ASH }}>⌕</span>}
                     <input
                       value={moreSearch}
@@ -432,7 +448,7 @@ export default function AppShell() {
                           <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
                           <Mono s={{ fontSize: 9 }} c={LIME}>{items.length}</Mono>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(62px, 1fr))", gap: 12 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
                           {items.map(({ item, locked }) => {
                             const label = navName(item.id, item.label);
                             const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
@@ -446,10 +462,10 @@ export default function AppShell() {
                                 aria-label={locked ? `${label} (Full)` : label}
                                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}
                               >
-                                <span style={{ position: "relative", width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
-                                  {ic ? <AuroraIcon name={ic} size={22} color={iconColor} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
+                                <span style={{ position: "relative", width: 58, height: 58, borderRadius: 18, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
+                                  {ic ? <AuroraIcon name={ic} size={24} color={iconColor} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
                                   {locked && (
-                                    <span aria-hidden style={{ position: "absolute", top: -4, right: -4, width: 17, height: 17, borderRadius: 9, background: LIME, border: `2px solid ${INK}`, display: "grid", placeItems: "center" }}>
+                                    <span aria-hidden style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, background: LIME, border: `2px solid ${INK}`, display: "grid", placeItems: "center" }}>
                                       <AuroraIcon name="lock" size={9} color={ON_ACCENT} strokeWidth={3} />
                                     </span>
                                   )}
@@ -487,8 +503,10 @@ export default function AppShell() {
           })()}
 
           {/* ONE upgrade entry — value-labeled, not a feature tab. Casual only;
-              opens the single Full bundle page. Keeps the nav clean (no locks). */}
-          {showUpgradeEntry && isEnabled("nav.upgrade") && (
+              opens the single Full bundle page. Keeps the nav clean (no locks).
+              Desktop rail only — the mobile drawer shows the accent membership
+              CARD version inside its springboard branch above. */}
+          {!isMobile && showUpgradeEntry && isEnabled("nav.upgrade") && (
             <button
               onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); setDrawerOpen(false); }}
               title={railCollapsed ? "Unlock Full" : undefined}

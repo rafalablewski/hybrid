@@ -6,6 +6,7 @@ import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
+import { useFlags } from "../../lib/flags";
 import { WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, Screen, Kicker, Mono, H1, F } from "../../lib/ui";
@@ -22,7 +23,7 @@ import { useTemplate } from "../../lib/template";
 // AND its gating come from the SHARED nav model (groupedNavWithLocks) — the exact
 // same source the web menu uses, so the two clients can't drift. Premium (Full)
 // tools a free user hasn't unlocked wear a lime LOCK badge and route to /upgrade;
-// tools that only exist on the web app show a blue WEB dot and open the web app.
+// tools that only exist on the web app show a small blue dot and open the web app.
 
 // Mobile route for each nav id. Ids the user has access to but that AREN'T here
 // live on the web app only — surfaced inside their area with a "web" tag + a tap
@@ -96,6 +97,7 @@ export default function More() {
   const initials = ((name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
   const persona = usePersona();
   const access = useNavAccess();
+  const { isEnabled } = useFlags();
   // Springboard search — filters the launcher tiles by (localized) label.
   const [query, setQuery] = useState("");
 
@@ -111,7 +113,11 @@ export default function More() {
   const areas: { group: NavGroup; items: HubItem[] }[] = groupedNavWithLocks(persona, access)
     .map(({ group, items }) => ({
       group: group as NavGroup,
-      items: items.map(({ item: i, locked }) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null, locked })),
+      items: items
+        // Drop tools whose `nav.<id>` feature flag is off — the same gate the web
+        // surfaces apply, so the tool set stays in lockstep across all clients.
+        .filter(({ item: i }) => isEnabled(`nav.${i.id}`))
+        .map(({ item: i, locked }) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null, locked })),
     }))
     .filter((a) => a.items.length > 0);
   // Onboarding is a re-runnable setup FLOW (not a nav item), so inject it into Train.
@@ -129,7 +135,12 @@ export default function More() {
   // Springboard filter — match the (localized) label against the query; drop
   // clusters left empty by the filter so the grid stays tight.
   const q = query.trim().toLowerCase();
-  const totalTools = areas.reduce((n, a) => n + a.items.length, 0);
+  // Tool count for the search placeholder. Kept in agreement with the web More
+  // surfaces (drawer + pill-nav sheet): both count the persona-gated nav tools.
+  // The injected "onboarding" tile is a re-runnable SETUP FLOW that only exists on
+  // mobile, so it's excluded from the count (it still renders as a tile). The
+  // nav-flag gate is already applied to `areas` above (useFlags), matching web.
+  const totalTools = areas.reduce((n, a) => n + a.items.filter((it) => it.id !== "onboarding").length, 0);
   const filteredAreas = q
     ? areas.map((a) => ({ ...a, items: a.items.filter((it) => it.label.toLowerCase().includes(q)) })).filter((a) => a.items.length > 0)
     : areas;
@@ -175,11 +186,11 @@ export default function More() {
           style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: C.lime, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
         >
           <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.lime}24` }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.lime) }}>UPGRADE</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>Unlock Full</Text>
-          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</Mono>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.lime) }}>{t("more.upgradeKicker")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
+          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>{t("more.upgradeBlurb")}</Mono>
           <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Go Full →</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("more.goFull")}</Text>
           </View>
         </Pressable>
       )}
@@ -198,12 +209,11 @@ export default function More() {
         </Pressable>
       )}
 
-      {/* THE SPRINGBOARD — search + a grid of launcher tiles per cluster. */}
-      <View style={{ marginTop: 22 }}>
-        <Kicker>Everything else</Kicker>
-
+      {/* THE SPRINGBOARD — search + a grid of launcher tiles per cluster. The
+          "Everything else" heading is the H1 above; no duplicate kicker here. */}
+      <View style={{ marginTop: 20 }}>
         {/* Search — filters the tiles below by label. */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 15, paddingHorizontal: 14, paddingVertical: 12, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 15, paddingHorizontal: 14, paddingVertical: 12 }}>
           <AuroraIcon name="search" size={18} color={C.ash} />
           <TextInput
             value={query}

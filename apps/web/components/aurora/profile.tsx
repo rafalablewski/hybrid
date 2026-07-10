@@ -21,6 +21,7 @@ import { fs, space,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
+  type AuroraIconName,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -30,10 +31,12 @@ import { AuroraIcon } from "./icons";
 
 /**
  * AURORA Profile · "You" (web) — the SOCIAL layout: a cover banner, an
- * overlapping avatar with an EDIT (pencil) icon, name + the (unchanged)
- * membership pill, bio, follower/following/rank counts, tabs (Overview / PRs /
- * Activity) and a 3-column grid of PUBLIC highlight tiles. Kept at parity with
- * the mobile client.
+ * overlapping avatar with an edit icon (the shared "settings" glyph — the mobile
+ * kit has no pencil PNG asset, so both clients use the one glyph for parity; a
+ * dedicated pencil is a blocked follow-up needing a new design-kit asset), name
+ * + the (unchanged) membership pill, bio, follower/following/rank counts, tabs
+ * (Overview / PRs / Activity) and a 3-column grid of PUBLIC highlight tiles.
+ * Kept at parity with the mobile client.
  *
  * Privacy: HPI is PRIVATE — deliberately absent from the public highlight grid
  * and every follower-facing surface. It lives only in a clearly-marked
@@ -180,23 +183,26 @@ export default function AuroraProfile({
   // intentionally NOT here. Built from real logged data; empty data → the tile
   // is omitted rather than faked.
   const publicTiles = useMemo(() => {
-    const out: { v: string; k: string }[] = [];
-    for (const [lift, e1rm] of prs.slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR` });
-    if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak") });
-    if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions") });
-    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage") });
-    if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements") });
+    // Each tile type → an apt EXISTING AuroraIconName (identical mapping on
+    // mobile): PR/lift = arrow-up, streak = check-circle, sessions =
+    // calendar-event, tonnage = list-check, badges = verified.
+    const out: { v: string; k: string; icon: AuroraIconName }[] = [];
+    for (const [lift, e1rm] of prs.slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
+    if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
+    if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
+    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
+    if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
   }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
-      { n: String(followersN), k: "Followers" },
-      { n: String(followingN), k: "Following" },
+      { n: String(followersN), k: t("w.account.profile.followers") },
+      { n: String(followingN), k: t("w.account.profile.following") },
     ];
-    if (rank != null) out.push({ n: `#${rank}`, k: "Rank" });
+    if (rank != null) out.push({ n: `#${rank}`, k: t("w.account.profile.rank") });
     return out;
-  }, [followersN, followingN, rank]);
+  }, [followersN, followingN, rank, t]);
 
   const sectionHead = (title: string, action?: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 13px" }}>
@@ -217,22 +223,23 @@ export default function AuroraProfile({
             <AuroraIcon name="user-circle" size={22} color={C("ink")} />
           </span>
           <span style={{ flex: 1 }}>
-            <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? "Complete your profile" : "Set up your public profile"}</span>
-            <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? "Add a photo and bio so friends recognise you." : "Claim a handle, add a photo and bio so friends can find and follow you."}</span>
+            <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</span>
+            <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</span>
           </span>
           <span style={{ color: C("lime"), fontWeight: 800, fontSize: 18 }}>→</span>
         </button>
       )}
 
       {/* COVER BANNER — Aurora gradient wash with a lime corner glow. */}
-      <div style={{ position: "relative", height: 108, borderRadius: 20, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
+      <div style={{ position: "relative", height: 96, borderRadius: 20, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
         <span style={{ position: "absolute", top: -34, right: -24, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 32%, transparent), transparent 70%)", pointerEvents: "none" }} />
       </div>
 
-      {/* HEAD — avatar overlapping the cover + the EDIT (pencil) icon where a
-          follower would see "Follow". No Edit / Share buttons anywhere. */}
+      {/* HEAD — avatar overlapping the cover + the edit icon (shared "settings"
+          glyph; see note above) where a follower would see "Follow". No Edit /
+          Share buttons anywhere. */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, padding: "0 4px" }}>
-        <div style={{ width: 84, height: 84, borderRadius: "50%", border: `3px solid ${C("ink")}`, background: C("ink2"), display: "grid", placeItems: "center", overflow: "hidden", fontWeight: 900, fontSize: 32, color: "var(--lime-text)" }}>
+        <div style={{ width: 84, height: 84, borderRadius: "50%", border: `3px solid ${C("ink")}`, boxShadow: "0 0 0 2px var(--color-lime)", background: C("ink2"), display: "grid", placeItems: "center", overflow: "hidden", fontWeight: 900, fontSize: 32, color: "var(--lime-text)" }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -276,9 +283,9 @@ export default function AuroraProfile({
       {/* TABS — Overview / PRs / Activity */}
       <div style={{ display: "flex", marginTop: 16, borderBottom: `1px solid ${C("line")}` }}>
         {([
-          { id: "overview" as const, label: "Overview" },
-          { id: "prs" as const, label: "PRs" },
-          { id: "activity" as const, label: "Activity" },
+          { id: "overview" as const, label: t("w.account.profile.tab-overview") },
+          { id: "prs" as const, label: t("w.account.profile.tab-prs") },
+          { id: "activity" as const, label: t("w.account.profile.tab-activity") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -302,8 +309,9 @@ export default function AuroraProfile({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: space.sm, marginTop: 16 }}>
             {publicTiles.map((tile, i) => (
               <div key={`${tile.k}-${i}`} style={{ aspectRatio: "1", border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center" }}>
-                <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.v}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
+                <AuroraIcon name={tile.icon} size={22} color={C("lime")} />
+                <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", marginTop: 6 }}>{tile.v}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
               </div>
             ))}
           </div>
@@ -404,7 +412,7 @@ export default function AuroraProfile({
       {/* ─────────────────────────────────────────────────────────────────────
           PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
           lives here, clearly marked private and visible only to the owner. */}
-      {sectionHead("Private · only you", "🔒")}
+      {sectionHead(t("w.account.profile.private-title"), "🔒")}
       {showHpi ? (
         <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -425,7 +433,7 @@ export default function AuroraProfile({
             )}
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 8, opacity: 0.85 }}>
-            Private — never shown on your public profile.
+            {t("w.account.profile.private-note")}
           </div>
         </div>
       ) : (

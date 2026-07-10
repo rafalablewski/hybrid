@@ -14,6 +14,7 @@ import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
@@ -263,19 +264,26 @@ export default function AuroraSettings() {
     );
   }
 
-  // ── LIST ── profile header, search, grouped category rows.
+  // ── LIST ── screen title, profile header, search, grouped category tiles.
   return (
     <AuroraScreen>
-      <View style={{ alignItems: "center", marginTop: 4 }}>
-        <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="user" size={38} color={txt(C, C.lime)} />
+      <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
+      {/* Profile header — shared anatomy with web: a bordered row card with a
+          rounded-square lime-gradient initial avatar, name + email, role/provider
+          pills under the name, and the membership FREE/FULL pill pinned right. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
+        <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+        </LinearGradient>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
+          {!!acct.email && <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{acct.email}</Text>}
+          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8, flexWrap: "wrap" }}>
+            <Tag label={role} color={C.violet} upper />
+            {!!acct.provider && <Tag label={`${t("w.account.settings.via")} ${acct.provider}`} color={C.ash} />}
+          </View>
         </View>
-        <AHeading style={{ fontSize: fs.heading, marginTop: 14 }}>{name}</AHeading>
-        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
-          <Tag label={role.toUpperCase()} color={C.violet} />
-          <Tag label={entitlement === "paid" ? "FULL · PAID" : "FREE"} color={entitlement === "paid" ? C.lime : C.ash} />
-        </View>
-        {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
+        <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
       </View>
 
       {/* Search */}
@@ -316,11 +324,11 @@ function Label({ children, color, top }: { children: ReactNode; color: string; t
   );
 }
 
-function Tag({ label, color }: { label: string; color: string }) {
+function Tag({ label, color, upper }: { label: string; color: string; upper?: boolean }) {
   const { palette: C } = useTheme();
   return (
     <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
     </View>
   );
 }

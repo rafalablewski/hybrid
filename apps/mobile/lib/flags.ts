@@ -33,3 +33,18 @@ export function useFeatureFlag(key: string): boolean {
     () => true,
   );
 }
+
+/** Non-hook read of a flag (defaults true until loaded / for unknown keys).
+ *  For gating lists where calling a hook per item would break the Rules of
+ *  Hooks — pair it with useFlags() so the component still re-renders on load. */
+export function featureEnabled(key: string): boolean {
+  return flags[key] !== false;
+}
+
+/** Subscribe-once hook returning an isEnabled() gate — the mobile twin of web
+ *  lib/use-flags' useFlags(). Re-renders when the flag set lands so gated lists
+ *  settle from their default-on state to the real values. */
+export function useFlags(): { isEnabled: (key: string) => boolean } {
+  useSyncExternalStore(subscribe, () => flags, () => flags);
+  return { isEnabled: featureEnabled };
+}
