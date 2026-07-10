@@ -282,26 +282,18 @@ export default function AccountSettings() {
   const renderBody = (id: SettingsCategoryId): ReactNode => {
     switch (id) {
       case "account":
-        // Unified Edit-profile screen: the public profile (avatar + presets,
-        // handle, bio, visibility) on top, then the account identity (name,
-        // email). One surface — the old separate "Public profile" category is
-        // gone. Save actions stay split (social API vs Supabase auth).
+        // Unified Edit-profile screen: a live preview, avatar + presets, then a
+        // tap-a-row list (name, username, bio, email, visibility) — each row
+        // opens a focused field editor. One surface; the old separate "Public
+        // profile" category is gone. name/email persist via Supabase auth (passed
+        // in), the rest via the social API.
         return (
           <>
-            <SocialProfileEdit embedded />
-            <GroupLabel top>{t("w.account.settings.account-identity")}</GroupLabel>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.display-name")}</Mono>
-            <div style={{ display: "flex", gap: space.sm }}>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.settings.your-name-ph")} style={{ ...editInput, flex: 1 }} />
-              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>{t("w.account.settings.save")}</button>
-            </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>{t("w.account.settings.change-email")}</Mono>
-            <div style={{ display: "flex", gap: space.sm }}>
-              <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
-              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>{t("w.account.settings.update")}</button>
-            </div>
-            {profileMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
-            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
+            <SocialProfileEdit
+              embedded
+              account={{ name, setName, saveName, email: session?.email, newEmail, setNewEmail, changeEmail, busy: profileBusy, msg: profileMsg }}
+            />
+            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
         );
       case "preferences":
