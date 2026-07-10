@@ -17,7 +17,6 @@ import { fs, space,
   fmtTonnage,
   FUNNEL,
   ROLE_COLOR,
-  SECTION_COLOR,
   readinessRole,
   type SemanticRole,
   type LoggedSession,
@@ -183,15 +182,11 @@ export default function AuroraToday({
         </div>
       </div>
 
-      {/* ───── TRAIN ───── */}
-      <Kicker k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C(SECTION_COLOR.train)} />
-
-      {/* PLAN TODAY — the single focused hero (your one job today) */}
+      {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
+          eyebrow: the screen is already today's training and the plan names
+          itself — the interface shouldn't narrate what the athlete can see. */}
       <div data-tour="today-plan" style={{ ...card }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
-              {t("w.home.today.yourPlan")}{!(isAthlete && (hasData || plan || phase)) && plan ? t("w.home.today.asWritten") : ""}
-            </span>
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
@@ -205,8 +200,11 @@ export default function AuroraToday({
           {plan ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 10 }}>
-                {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
+              {/* One anchor — "how far in" — carried by a thin bar, not four
+                  overlapping restatements of the same position. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</span>
+                <span style={{ flex: 1, height: 2, background: C("line"), borderRadius: 2, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, background: C("lime") }} /></span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
                 {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
@@ -354,23 +352,6 @@ export default function AuroraToday({
         )}
         <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>📅 {t("w.home.today.doneCalendar")}</button>
       </Sheet>
-    </div>
-  );
-}
-
-// A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
-// optional trailing action puts a link on the right (e.g. Plan → full Calendar).
-function Kicker({ k, h, color, action }: { k: string; h: string; color: string; action?: { label: string; onClick: () => void } }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, flexShrink: 0 }} />
-        {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
-      </div>
-      {action && (
-        <button onClick={action.onClick} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{action.label}</button>
-      )}
     </div>
   );
 }

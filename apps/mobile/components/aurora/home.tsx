@@ -19,7 +19,6 @@ import {
   sessionCardioTotals,
   sessionVolume,
   fmtTonnage,
-  SECTION_COLOR,
   type LoggedSession,
   type Macrocycle,
   type Experience,
@@ -247,15 +246,11 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
         </View>
 
-        {/* ───── TRAIN ───── */}
-        <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C[SECTION_COLOR.train]} />
-
-        {/* PLAN TODAY — the single focused hero (your one job today) */}
+        {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
+            eyebrow: the screen is already today's training and the plan names
+            itself — the interface shouldn't narrate what the athlete can see. */}
         <ACard style={{ marginTop: 14 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash, flex: 1 }}>
-                {t("w.home.today.yourPlan")}{plan && !(isAthlete && planReadiness) ? t("w.home.today.asWritten") : ""}
-              </Text>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
                 {/* Readiness as a glanceable DIAL, not "95/100" digits to parse. */}
                 {isAthlete && planReadiness ? (
@@ -271,9 +266,14 @@ export default function AuroraHome() {
             {plan ? (
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
-                  {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
-                </Text>
+                {/* One anchor — "how far in" — carried by a thin bar, not four
+                    overlapping restatements of the same position. */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</Text>
+                  <View style={{ flex: 1, height: 2, backgroundColor: C.line, borderRadius: 2, overflow: "hidden" }}>
+                    <View style={{ height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, backgroundColor: C.lime }} />
+                  </View>
+                </View>
                 {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> · {r.note}</Text> : null}</Text>
@@ -426,25 +426,6 @@ export default function AuroraHome() {
         </View>
       </Sheet>
     </SafeAreaView>
-  );
-}
-
-// A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
-// optional trailing action puts a link on the right (e.g. Plan → full Calendar).
-function Kicker({ C, k, h, color, action }: { C: P; k: string; h: string; color: string; action?: { label: string; onPress: () => void } }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-        <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
-        {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k} · {h}</Text>
-      </View>
-      {action && (
-        <Pressable onPress={action.onPress} hitSlop={8}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{action.label}</Text>
-        </Pressable>
-      )}
-    </View>
   );
 }
 
