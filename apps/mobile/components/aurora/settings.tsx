@@ -1,6 +1,6 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
@@ -60,8 +60,14 @@ export default function AuroraSettings() {
   const [error, setError] = useState("");
   const armed = confirm.trim().toUpperCase() === "RESET";
   // Public profile — loaded for the header completeness ring + Share action.
+  // Re-fetched on every screen focus so returning from Edit profile (this screen
+  // stays mounted in the stack) reflects the latest handle/bio/photo.
   const [profile, setProfile] = useState<any>(null);
-  useEffect(() => { getMyProfile().then((d: any) => { if (d?.profile) setProfile(d.profile); }).catch(() => {}); }, []);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    getMyProfile().then((d: any) => { if (active && d?.profile) setProfile(d.profile); }).catch(() => {});
+    return () => { active = false; };
+  }, []));
   const completeness = profileCompleteness({ name, handle: profile?.handle, displayName: profile?.displayName, bio: profile?.bio, avatarUrl: profile?.avatarUrl });
   const nudge = completeness.complete
     ? `${t("w.account.settings.cmpl-done")} ✓`

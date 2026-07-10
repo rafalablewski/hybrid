@@ -134,7 +134,7 @@ interface AccountBits {
   busy: boolean; msg?: string | null;
 }
 
-export function SocialProfileEdit({ onDone, embedded, account }: { onDone?: () => void; embedded?: boolean; account?: AccountBits }) {
+export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }: { onDone?: () => void; embedded?: boolean; account?: AccountBits; onProfileUpdate?: (p: Pick<MyProfile, "handle" | "displayName" | "bio" | "avatarUrl">) => void }) {
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<any>(null);
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
@@ -158,13 +158,14 @@ export function SocialProfileEdit({ onDone, embedded, account }: { onDone?: () =
     if (!h || !isValidHandle(h)) { setAvail(null); return; }
     if (data?.profile && h === data.profile.handle) { setAvail("ok"); return; }
     setAvail("checking");
+    let active = true; // ignore a stale response if the handle changed meanwhile
     const id = setTimeout(async () => {
       try {
         const r: any = await jget(`/api/social/profile/${h}`);
-        setAvail(r?.profile ? "taken" : "ok");
-      } catch { setAvail("ok"); }
+        if (active) setAvail(r?.profile ? "taken" : "ok");
+      } catch { if (active) setAvail("ok"); }
     }, 450);
-    return () => clearTimeout(id);
+    return () => { active = false; clearTimeout(id); };
   }, [form.handle, data]);
 
   // Persist all social fields at once; returns success so a focused field editor
@@ -175,6 +176,7 @@ export function SocialProfileEdit({ onDone, embedded, account }: { onDone?: () =
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return false; }
     const r: any = await jsend("/api/social/profile", "PUT", { ...form, handle: h });
     if (r.error) { setErr(r.error); return false; }
+    onProfileUpdate?.({ handle: h, displayName: form.displayName, bio: form.bio, avatarUrl: form.avatarUrl });
     return true;
   };
   const fieldSaveSocial = async () => { setSaving(true); const ok = await saveSocial(); setSaving(false); if (ok) setEditing(null); };

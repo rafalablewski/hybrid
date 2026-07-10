@@ -292,6 +292,7 @@ export default function AccountSettings() {
             <SocialProfileEdit
               embedded
               account={{ name, setName, saveName, email: session?.email, newEmail, setNewEmail, changeEmail, busy: profileBusy, msg: profileMsg }}
+              onProfileUpdate={(p) => setSocialProfile(p)}
             />
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
@@ -587,7 +588,7 @@ export default function AccountSettings() {
   const results = matchSettings(query);
   const active = cat ? SETTINGS_CATEGORIES[cat] : null;
 
-  const completeness = profileCompleteness({ name: session?.name, handle: socialProfile?.handle, displayName: socialProfile?.displayName, bio: socialProfile?.bio, avatarUrl: socialProfile?.avatarUrl });
+  const completeness = profileCompleteness({ name: name || session?.name, handle: socialProfile?.handle, displayName: socialProfile?.displayName, bio: socialProfile?.bio, avatarUrl: socialProfile?.avatarUrl });
   const nudge = completeness.complete
     ? `${t("w.account.settings.cmpl-done")} ✓`
     : `${t("w.account.settings.cmpl-add")} ${completeness.missing.slice(0, 2).map((m) => t(`w.account.settings.cmpl-${m}`)).join(" & ")}`;

@@ -40,11 +40,12 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     if (!h || !isValidHandle(h)) { setAvail(null); return; }
     if (data?.profile && h === data.profile.handle) { setAvail("ok"); return; }
     setAvail("checking");
+    let active = true; // ignore a stale response if the handle changed meanwhile
     const id = setTimeout(async () => {
       const r: any = await getProfile(h);
-      setAvail(r?.profile ? "taken" : "ok");
+      if (active) setAvail(r?.profile ? "taken" : "ok");
     }, 450);
-    return () => clearTimeout(id);
+    return () => { active = false; clearTimeout(id); };
   }, [form.handle, data]);
 
   // Persist the public profile (all social fields at once). Returns success so
