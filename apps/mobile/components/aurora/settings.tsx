@@ -29,7 +29,7 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 
 /** Per-category accent — the icon-tile tint, matching the V1 mockup. */
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
-  account: "lime", social: "lime", preferences: "blue", logger: "amber", notifications: "violet",
+  account: "lime", preferences: "blue", logger: "amber", notifications: "violet",
   privacy: "blue", coaching: "violet", security: "blue", subscription: "lime",
   data: "ash", danger: "red",
 };
@@ -76,20 +76,9 @@ export default function AuroraSettings() {
   // listed here navigate instead of expanding.
   const renderBody = (id: SettingsCategoryId): ReactNode => {
     switch (id) {
-      case "account":
-        return (
-      <>
-        <Label color={C.lime}>PROFILE</Label>
-        <AField value={acct.name} onChange={acct.setName} placeholder={t("w.account.settings.your-name-ph")} icon="user" />
-        <AField value={acct.newEmail} onChange={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} keyboard="email-address" icon="mail" />
-        {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginBottom: 10 }}>{acct.profileMsg}</Text>}
-        <View style={{ flexDirection: "row", gap: space.sm }}>
-          <APill label={t("w.account.settings.save-name")} variant="soft" disabled={acct.busy} onPress={acct.saveName} style={{ flex: 1, paddingVertical: 13 }} />
-          <APill label={t("w.account.settings.update-email")} variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} style={{ flex: 1, paddingVertical: 13 }} />
-        </View>
-        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.account.settings.profile-needs-account")}</Text>}
-      </>
-        );
+      // "account" (Edit profile) now navigates to the dedicated /profile-edit
+      // screen (see ROUTES) — the unified avatar + public-profile + name/email
+      // editor — so it has no inline body here.
       case "preferences":
         return (
       <>
@@ -199,7 +188,7 @@ export default function AuroraSettings() {
 
   // Rows that navigate to a dedicated screen instead of a drill-in sub-view.
   const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
-    social: "/profile-edit",
+    account: "/profile-edit",
     logger: "/logger-settings",
     coaching: "/coach-apply",
     subscription: "/upgrade",

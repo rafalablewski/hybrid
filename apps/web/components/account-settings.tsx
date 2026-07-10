@@ -22,7 +22,7 @@ type CoachStatus = "pending" | "approved" | "denied";
 // the two clients share the same hues. Uses LIME_HEX (raw hex) not LIME (a CSS
 // var) so the `${accent}24` chip tint + txt(accent) icon colour resolve.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME_HEX, social: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
+  account: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
   privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME_HEX,
   data: ASH, danger: RED,
 };
@@ -257,8 +257,14 @@ export default function AccountSettings() {
   const renderBody = (id: SettingsCategoryId): ReactNode => {
     switch (id) {
       case "account":
+        // Unified Edit-profile screen: the public profile (avatar + presets,
+        // handle, bio, visibility) on top, then the account identity (name,
+        // email). One surface — the old separate "Public profile" category is
+        // gone. Save actions stay split (social API vs Supabase auth).
         return (
           <>
+            <SocialProfileEdit embedded />
+            <GroupLabel top>{t("w.account.settings.account-identity")}</GroupLabel>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.display-name")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.settings.your-name-ph")} style={{ ...editInput, flex: 1 }} />
@@ -273,8 +279,6 @@ export default function AccountSettings() {
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
         );
-      case "social":
-        return <SocialProfileEdit />;
       case "preferences":
         return (
           <>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { normalizeHandle, isValidHandle } from "@hybrid/core";
+import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
 import { useDialog } from "../lib/use-dialog";
 import {
   C, useSocialTheme, card, Avatar, Btn, Pill, FollowButton, EmptyState, ScreenHead, Stars,
@@ -127,7 +127,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
 // ----- The EDIT form (handle · name · bio · avatar · privacy/visibility).
 // Lives in Settings AND the dedicated Edit-profile surface — NOT inline on the
 // Profile screen. `onDone` (when provided) shows a Back/Cancel + fires on save.
-export function SocialProfileEdit({ onDone }: { onDone?: () => void }) {
+export function SocialProfileEdit({ onDone, embedded }: { onDone?: () => void; embedded?: boolean }) {
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<any>(null);
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
@@ -163,33 +163,55 @@ export function SocialProfileEdit({ onDone }: { onDone?: () => void }) {
   );
   const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 14 } as const;
 
+  const inner = (
+    <>
+      {!claimed && <p style={{ color: C("ash"), fontSize: 13, marginTop: 0 }}>Claim a handle so friends can find and follow you.</p>}
+      {/* Avatar — a real preview + one-tap branded gradient presets. A photo
+          upload is coming with the avatars Storage bucket (social-avatar-upload). */}
+      {field("Profile photo", (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={64} />
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              {AVATAR_PRESETS.map((p) => (
+                <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={`Preset ${p.id}`} aria-pressed={form.avatarUrl === p.uri}
+                  style={{ width: 34, height: 34, borderRadius: "50%", padding: 0, cursor: "pointer", overflow: "hidden", background: "none", border: `2px solid ${form.avatarUrl === p.uri ? C("lime") : "transparent"}` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+            <button disabled title="Photo upload is coming soon" style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>Upload photo (soon)</button>
+            <input style={inputStyle} value={form.avatarUrl ?? ""} onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })} placeholder="or paste an image URL" />
+          </div>
+        </div>
+      ))}
+      {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
+      {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
+      {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
+      {field("Who can see your results", (
+        <div style={{ display: "flex", gap: 8 }}>
+          {(["public", "followers", "private"] as const).map((v) => (
+            <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
+          ))}
+        </div>
+      ))}
+      {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Btn onClick={save} disabled={busy.is("save")}>{busy.is("save") ? "Saving…" : savedMsg ? "Saved ✓" : claimed ? "Save" : "Claim handle"}</Btn>
+        {onDone && <Btn ghost onClick={onDone}>{claimed ? "Done" : "Back"}</Btn>}
+      </div>
+    </>
+  );
+
+  // Embedded (inside the unified Edit-profile card) drops the extra card + label.
+  if (embedded) return inner;
   return (
     <div style={{ maxWidth: 460 }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>Public profile</div>
-      <div style={card(aurora)}>
-        {!claimed && <p style={{ color: C("ash"), fontSize: 13, marginTop: 0 }}>Claim a handle so friends can find and follow you.</p>}
-        {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
-        {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
-        {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
-        {field("Avatar image URL", (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={40} />
-            <input style={inputStyle} value={form.avatarUrl ?? ""} onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })} placeholder="https://…  (upload coming soon)" />
-          </div>
-        ))}
-        {field("Who can see your results", (
-          <div style={{ display: "flex", gap: 8 }}>
-            {(["public", "followers", "private"] as const).map((v) => (
-              <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
-            ))}
-          </div>
-        ))}
-        {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <Btn onClick={save} disabled={busy.is("save")}>{busy.is("save") ? "Saving…" : savedMsg ? "Saved ✓" : claimed ? "Save" : "Claim handle"}</Btn>
-          {onDone && <Btn ghost onClick={onDone}>{claimed ? "Done" : "Back"}</Btn>}
-        </div>
-      </div>
+      <div style={card(aurora)}>{inner}</div>
     </div>
   );
 }
