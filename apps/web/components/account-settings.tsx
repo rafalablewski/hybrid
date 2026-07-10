@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -399,7 +399,15 @@ export default function AccountSettings() {
                 ) : (
                   <>
                     <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.coach-intro")}</Mono>
-                    <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
+                    <div style={{ marginTop: 12 }}>
+                      {[1, 2, 3].map((n) => (
+                        <div key={n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
+                          <span style={{ ...mono, fontSize: fs.micro, fontWeight: 800, width: 20, height: 20, flex: "none", borderRadius: 6, display: "grid", placeItems: "center", color: ON_ACCENT, background: LIME }}>{n}</span>
+                          <Mono s={{ fontSize: fs.body }} c={CHALK}>{t(`w.account.settings.coach-step-${n}`)}</Mono>
+                        </div>
+                      ))}
+                    </div>
+                    <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 12, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                     {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
                     <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                       {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
@@ -492,6 +500,18 @@ export default function AccountSettings() {
             </div>
             {!paid ? (
               <>
+                <div style={{ marginTop: 16 }}>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.full")}</Mono>
+                  {FULL_BENEFITS.map((b, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0" }}>
+                      <span style={{ color: txt(LIME_HEX), fontWeight: 800, marginTop: 1 }}>✓</span>
+                      <div>
+                        <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: CHALK }}>{b.title}</div>
+                        <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{b.desc}</Mono>
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
                 </button>

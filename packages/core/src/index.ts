@@ -54,6 +54,7 @@ export * from "./settings-nav";
 export * from "./password-strength";
 export * from "./avatar-presets";
 export * from "./profile-completeness";
+export * from "./full-benefits";
 export * from "./scale";
 export * from "./email";
 
