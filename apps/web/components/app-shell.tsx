@@ -38,6 +38,7 @@ const AuroraCompetition = dynamic(() => import("./aurora/competition"), { ssr: f
 const AuroraPeriodize = dynamic(() => import("./aurora/periodize"), { ssr: false });
 const AuroraBuilder = dynamic(() => import("./aurora/builder"), { ssr: false });
 const AuroraLogger = dynamic(() => import("./aurora/logger"), { ssr: false });
+const AuroraTrainWeb = dynamic(() => import("./aurora/train"), { ssr: false });
 const AuroraRunTrack = dynamic(() => import("./aurora/run-track"), { ssr: false });
 const AuroraCoach = dynamic(() => import("./aurora/coach"), { ssr: false });
 const AuroraUpgrade = dynamic(() => import("./aurora/upgrade"), { ssr: false });
@@ -350,10 +351,13 @@ export default function AppShell() {
             const itemBtn = ({ item: { id, label: fallback, icon: ic }, locked }: { item: { id: string; label: string; icon: string }; locked: boolean }) => {
               const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
               const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
+              // The "log" (Train) nav item opens the Train LAUNCHER, not the
+              // logger directly — the launcher is screen "train"; highlight it too.
+              const active = screen === id || (id === "log" && screen === "train");
               const onClick = () => {
                 setPendingBlocks(undefined);
                 if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `sidebar-${id}` }); setUpgradeOpen(true); }
-                else setScreen(id);
+                else setScreen(id === "log" ? "train" : id);
                 setDrawerOpen(false);
               };
               return (
@@ -373,8 +377,8 @@ export default function AppShell() {
                     borderRadius: 10,
                     cursor: "pointer",
                     border: "none",
-                    background: screen === id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
-                    color: txt(screen === id ? LIME : ASH),
+                    background: active ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
+                    color: txt(active ? LIME : ASH),
                     ...disp,
                     fontSize: fs.bodyLg,
                     fontWeight: 600,
@@ -399,7 +403,7 @@ export default function AppShell() {
               const goItem = (id: string, locked: boolean) => {
                 setPendingBlocks(undefined);
                 if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); setUpgradeOpen(true); }
-                else setScreen(id);
+                else setScreen(id === "log" ? "train" : id);
                 setDrawerOpen(false);
               };
               const qy = moreSearch.trim().toLowerCase();
@@ -855,6 +859,18 @@ export default function AppShell() {
         {screen === "runtrack" && <AuroraRunTrack onSaved={refresh} />}
 
         {screen === "video" && <AuroraVideo />}
+
+        {/* Train LAUNCHER — the middle-button screen (mobile parity): the
+            adaptive prescribed-session slot + the minimal list of ways to start.
+            Each option seeds the logger (screen "log") via onStart. */}
+        {screen === "train" && (
+          <AuroraTrainWeb
+            sessions={sessions}
+            bio={bio ?? undefined}
+            onStart={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }}
+            onNavigate={navigate}
+          />
+        )}
 
         {screen === "log" && (
           <AuroraLogger

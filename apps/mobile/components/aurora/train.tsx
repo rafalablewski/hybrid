@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -16,11 +16,16 @@ import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { fs, F } from "../../lib/ui";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, type Palette } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
+import type { AuroraIconName } from "@hybrid/core";
 
-/** AURORA Train launcher — start a session (one-tap / AI / repeat-last /
- *  routine), resume a draft. Reuses prescribeSession + sessions/routines APIs. */
+/** AURORA Train launcher — MINIMAL: one calm list of ways to start, topped by a
+ *  single adaptive slot for today's prescribed session. Before you train that
+ *  slot is the hero (or, for free users, the Premium pitch); once ANY session is
+ *  logged today it collapses to a compact "done" marker and the list stays so an
+ *  extra session is one tap away. Mirrored 1:1 on web (components/aurora/train). */
 export default function AuroraTrain() {
   const { palette: C } = useTheme();
   const router = useRouter();
@@ -47,19 +52,28 @@ export default function AuroraTrain() {
   );
 
   const last = sessions[0];
+  const hasHistory = sessions.length > 0;
   const start = (source: "empty" | "ai" | "last" | "new") => router.push(`/workout?source=${source}`);
-  // Premium gate for the AI-prescribed start: guests register, free users upgrade.
-  const startAI = () => {
-    if (isAthlete) return start("ai");
-    track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "train-ai" });
+  // One upgrade funnel for every premium slot (AI + routines): guests register,
+  // free users upgrade — never fabricate premium content.
+  const upsell = (source: string) => {
+    track(FUNNEL.upgradeEntryClick, { client: "mobile", source });
     router.push(session ? "/upgrade" : "/login?mode=signup");
   };
+  const startAI = () => (isAthlete ? start("ai") : upsell("train-ai"));
+
+  // "Any session logged today = done" — today's prescribed work is considered
+  // done once anything lands, so the hero steps back to a done marker.
+  const todayStr = new Date().toDateString();
+  const doneToday = sessions.find((s) => new Date(s.startedAt).toDateString() === todayStr);
+  const prescribedDone = isAthlete && !!doneToday;
 
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: 28 }}>{t("train.title")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("train.intro")}</Text>
 
+      {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -70,83 +84,182 @@ export default function AuroraTrain() {
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{draft.exercises.length} {t("workout.exercises")} · {t("train.inProgress")}</Text>
-          <Pressable onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>▶  {t("train.resume")}</Text>
+          <Pressable onPress={() => start("new")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>▶  {t("train.resume")}</Text>
           </Pressable>
         </ACard>
       )}
 
-      {/* One-tap hero start */}
-      <Pressable
-        onPress={() => start(draft ? "new" : defaultStart)}
-        style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, paddingVertical: 28, alignItems: "center", marginTop: 16 }}
-      >
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.ink }}>▶  {draft ? t("train.startFresh") : t("train.startWorkout")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("train.emptySub")}</Text>
-      </Pressable>
-
-      {/* AI-prescribed start — a PREMIUM feature. Paid athletes see their real
-          readiness-driven prescription; casual/guests see the pitch + a single
-          upgrade tap (no fabricated numbers). */}
-      <Pressable onPress={startAI}>
-        <ACard style={{ marginTop: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>
-              {!isAthlete ? `AI coach · ${t("train.premium")}` : sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}
-            </Text>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{!isAthlete ? t("w.home.today.unlockFullBtn") : t("train.start")}</Text>
-          </View>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>
-            {!isAthlete ? t("train.aiLockedTitle") : sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("train.aiEmptyTitle")}
-          </Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-            {!isAthlete ? t("train.aiLockedBlurb") : sessions.length > 0 ? rx.why : t("train.aiEmptyBlurb")}
-          </Text>
-        </ACard>
-      </Pressable>
-
-      {/* Repeat last */}
-      {last && (
-        <Pressable onPress={() => start("last")}>
-          <ACard style={{ marginTop: 16 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("train.repeatLast")}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("train.start")}</Text>
-            </View>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{last.title}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
-              {last.blocks.map((b) => b.name).slice(0, 3).join(" · ")}
-            </Text>
-          </ACard>
-        </Pressable>
+      {/* THE ADAPTIVE SLOT — done marker · prescribed hero · or Premium pitch. */}
+      {prescribedDone && doneToday ? (
+        <DoneMarker C={C} session={doneToday} onPress={() => router.push(`/session/${doneToday.id}`)} t={t} />
+      ) : isAthlete ? (
+        <PrescribedHero C={C} rx={rx} hasHistory={hasHistory} onPress={() => start("ai")} t={t} />
+      ) : (
+        <PremiumHero C={C} onPress={() => upsell("train-ai")} t={t} />
       )}
 
-      {/* Routines */}
-      {routines.length > 0 && (
-        <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("train.routines")}</Text>
-          {routines.map((r, i) => (
-            <Pressable
-              key={r.id}
-              onPress={() => router.push(`/workout?source=template&templateId=${r.id}`)}
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: i ? 10 : 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}</Text>
-              </View>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.start")}</Text>
-            </Pressable>
-          ))}
-        </ACard>
-      )}
+      {/* MINIMAL LIST — the other ways to start. Thin accents, hairline rows. */}
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 22, marginBottom: 4, marginHorizontal: 4 }}>
+        {prescribedDone ? t("train.trainAgain") : t("train.moreWays")}
+      </Text>
+      <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
+        {/* Empty session — the always-available free start. */}
+        <ListRow
+          C={C}
+          icon="play"
+          iconColor={C.lime}
+          title={t("train.emptySession")}
+          bold
+          meta={t("train.emptySub")}
+          right={<View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime }} />}
+          onPress={() => start(draft ? "new" : "empty")}
+          first
+        />
 
-      {/* Build a reusable routine */}
+        {/* Routines — a Premium slot. Athletes see their saved routines (or a
+            build prompt); free users get one upsell row. */}
+        {isAthlete ? (
+          routines.length > 0 ? (
+            routines.map((r) => (
+              <ListRow
+                key={r.id}
+                C={C}
+                icon="list-check"
+                iconColor={C.ash}
+                title={r.name}
+                meta={r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}
+                right={<Chevron C={C} />}
+                onPress={() => router.push(`/workout?source=template&templateId=${r.id}`)}
+              />
+            ))
+          ) : (
+            <ListRow C={C} icon="list-check" iconColor={C.ash} title={t("train.fromRoutine")} meta={t("train.buildFirst")} right={<Chevron C={C} />} onPress={() => router.push("/builder")} />
+          )
+        ) : (
+          <ListRow C={C} icon="list-check" iconColor={C.ash} title={t("train.fromRoutine")} premium right={<Chevron C={C} />} onPress={() => upsell("train-routine")} />
+        )}
+
+        {/* Repeat last — free, only once there's history. */}
+        {last && (
+          <ListRow C={C} icon="swap" iconColor={C.ash} title={t("train.repeatLast")} meta={last.title} right={<Chevron C={C} />} onPress={() => start("last")} />
+        )}
+      </View>
+
+      {/* Build a reusable routine. */}
       <Pressable onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ Build a routine</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
       </Pressable>
 
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
+}
+
+type T = (k: string) => string;
+
+/** Prescribed session — the big lime hero (athletes, not yet trained today). */
+function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: ReturnType<typeof prescribeSession>; hasHistory: boolean; onPress: () => void; t: T }) {
+  const title = hasHistory
+    ? `${rx.blocks[0]?.name ?? ""}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`
+    : t("train.aiEmptyTitle");
+  const blurb = hasHistory ? rx.why : t("train.aiEmptyBlurb");
+  return (
+    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
+        {t("train.today")} · {t("train.premium")} · {rx.readiness}/100
+      </Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.onAccent, marginTop: 10, letterSpacing: -0.4 }}>{title}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: 17 }} numberOfLines={2}>{blurb}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, backgroundColor: C.ink, borderRadius: 14, paddingVertical: 14, marginTop: 16 }}>
+        <AuroraIcon name="play" size={15} color={C.lime} />
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/** Premium pitch — the adaptive slot for free/casual users (no prescription). */
+function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T }) {
+  return (
+    <Pressable onPress={onPress} style={{ marginTop: 16 }}>
+      <ACard style={{ borderColor: withAlpha(C.violet, "44") }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI coach · {t("train.premium")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("w.home.today.unlockFullBtn")}</Text>
+        </View>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
+      </ACard>
+    </Pressable>
+  );
+}
+
+/** Done marker — the collapsed slot once today's work is logged. */
+function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSession; onPress: () => void; t: T }) {
+  const names = session.blocks.map((b) => b.name).slice(0, 3).join(" · ");
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: RADIUS.card, padding: 17, marginTop: 16 }}
+    >
+      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+        <AuroraIcon name="check" size={24} color={C.onAccent} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.today")} · {t("train.done")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names ? `${names} · ` : ""}{t("train.tapSummary")}</Text>
+      </View>
+      <Chevron C={C} />
+    </Pressable>
+  );
+}
+
+/** One hairline list row: icon · title/meta · right slot. */
+function ListRow({
+  C, icon, iconColor, title, meta, right, onPress, bold, premium, first,
+}: {
+  C: Palette;
+  icon: AuroraIconName;
+  iconColor: string;
+  title: string;
+  meta?: string;
+  right?: ReactNode;
+  onPress: () => void;
+  bold?: boolean;
+  premium?: boolean;
+  first?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ flexDirection: "row", alignItems: "center", gap: 15, paddingVertical: 18, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
+    >
+      <View style={{ width: 26, alignItems: "center" }}>
+        <AuroraIcon name={icon} size={19} color={iconColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.1 }}>{title}</Text>
+        {!!meta && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{meta}</Text>}
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        {premium && (
+          <View style={{ borderWidth: 1, borderColor: withAlpha(C.violet, "55"), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: txt(C, C.violet) }}>PREMIUM</Text>
+          </View>
+        )}
+        {right}
+      </View>
+    </Pressable>
+  );
+}
+
+function Chevron({ C }: { C: Palette }) {
+  return <Text style={{ fontFamily: F.reg, fontSize: 18, color: C.ash, opacity: 0.7 }}>›</Text>;
+}
+
+/** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA`. */
+function withAlpha(hex: string, alpha: string): string {
+  return /^#[0-9a-fA-F]{6}$/.test(hex) ? `${hex}${alpha}` : hex;
 }
