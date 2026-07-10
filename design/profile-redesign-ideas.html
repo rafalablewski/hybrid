@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile Redesign — 5 Ideas to 10/10</title>
+<style>
+  :root{
+    --lime:#c6f135;
+    --lime-dim:#9fbf2c;
+    --olive:#2d3316;
+    --bg:#0a0b09;
+    --ink:#f4f6ef;
+    --muted:#8a8f82;
+    --muted2:#5f6459;
+    --card:#141613;
+    --card2:#1b1e19;
+    --line:rgba(255,255,255,.07);
+    --line2:rgba(255,255,255,.12);
+    --red:#ff5a4d;
+    --blue:#5aa9ff;
+    --purple:#b18cff;
+    --orange:#ff9f4a;
+    --gold:#e8c66a;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#050604;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:40px 20px 80px}
+
+  .page-head{max-width:1200px;margin:0 auto 34px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--lime);margin-bottom:14px}
+  .page-head h1{font-size:40px;line-height:1.04;letter-spacing:-.03em;font-weight:800;margin-bottom:12px}
+  .page-head h1 span{color:var(--muted)}
+  .page-head p{color:var(--muted);max-width:700px;font-size:15px;line-height:1.6}
+  .page-head p b{color:var(--ink);font-weight:600}
+  .page-head .brief{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);color:var(--muted);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  .gallery{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:46px 30px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:392px}
+  .concept-cap{margin:0 6px 16px}
+  .concept-cap .n{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:9px}
+  .concept-cap .n i{width:22px;height:22px;border-radius:7px;background:var(--lime);color:#0a0b09;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .concept-cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:5px}
+  .concept-cap p{color:var(--muted);font-size:13px;line-height:1.55}
+  .concept-cap p b{color:var(--ink);font-weight:600}
+
+  .phone{position:relative;width:100%;aspect-ratio:390/844;border-radius:46px;padding:11px;
+    background:linear-gradient(160deg,#262a1e,#0c0d0a);
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .glow{position:absolute;inset:0;pointer-events:none;z-index:0;background:
+      radial-gradient(120% 40% at 50% -8%,rgba(198,241,53,.18),transparent 60%);}
+  .status{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:15px 26px 4px;font-size:14px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
+  .bat{background:var(--lime);color:#0a0b09;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .scroll{position:relative;z-index:2;flex:1;overflow:hidden}
+  .scroll-inner{padding:6px 18px 0}
+  .fade{position:absolute;left:0;right:0;bottom:0;height:60px;z-index:2;pointer-events:none;background:linear-gradient(transparent,var(--bg))}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 4px}
+  .topbar .back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+  .topbar .back svg,.topbar .ib svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2}
+  .topbar .acts{display:flex;gap:8px}
+  .topbar .ib{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+
+  .free{display:inline-flex;align-items:center;font:700 11px/1 var(--mono);letter-spacing:.08em;color:var(--lime);border:1px solid rgba(198,241,53,.5);padding:5px 9px;border-radius:999px}
+  .mono-id{font:400 12px/1.5 var(--mono);letter-spacing:.06em;color:var(--muted)}
+
+  /* edit affordance (replaces the old Edit/Share buttons) */
+  .edit-ic{width:36px;height:36px;border-radius:12px;background:var(--card);border:1px solid var(--line2);display:grid;place-items:center;flex:none}
+  .edit-ic svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2}
+  .edit-dot{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:rgba(198,241,53,.14);border:1px solid rgba(198,241,53,.4);vertical-align:middle}
+  .edit-dot svg{width:13px;height:13px;stroke:var(--lime);fill:none;stroke-width:2.2}
+  /* private marker for HPI */
+  .priv{display:inline-flex;align-items:center;gap:5px;font:700 9px/1 var(--mono);letter-spacing:.12em;color:var(--muted);border:1px solid var(--line2);padding:5px 8px;border-radius:999px;white-space:nowrap}
+  .priv svg{width:10px;height:10px;stroke:var(--muted);fill:none;stroke-width:2}
+  .privstrip{margin-top:14px;display:flex;align-items:center;gap:12px;background:var(--card);border:1px dashed var(--line2);border-radius:16px;padding:12px 14px}
+  .privstrip .ring{width:46px;height:46px;position:relative;flex:none}
+  .privstrip .ring svg{width:46px;height:46px;transform:rotate(-90deg)}
+  .privstrip .ring .v{position:absolute;inset:0;display:grid;place-items:center;font-size:15px;font-weight:800}
+  .privstrip b{font-size:15px;font-weight:800}
+  .privstrip s{text-decoration:none;font:400 10.5px/1.4 var(--mono);color:var(--muted);display:block;margin-top:2px}
+
+  .btn-lime{background:var(--lime);color:#0a0b09;font-weight:800;border-radius:14px;padding:13px;text-align:center;font-size:15px}
+  .btn-ghost{background:var(--card);border:1px solid var(--line2);color:var(--ink);font-weight:700;border-radius:14px;padding:13px;text-align:center;font-size:15px}
+
+  .heat{display:grid;grid-template-columns:repeat(16,1fr);gap:3px}
+  .heat i{aspect-ratio:1;border-radius:2px;background:#1c1f18}
+  .heat i.l1{background:rgba(198,241,53,.25)}
+  .heat i.l2{background:rgba(198,241,53,.5)}
+  .heat i.l3{background:rgba(198,241,53,.78)}
+  .heat i.l4{background:var(--lime)}
+
+  .badge-row{display:flex;gap:9px}
+  .medal{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;flex:none;position:relative}
+  .medal svg{width:24px;height:24px}
+
+  /* =========================================================
+     IDEA 1 — THE INDEX (signature score as hero, Whoop-style)
+  ========================================================= */
+  .c1 .idrow{display:flex;align-items:center;gap:12px;margin:12px 0 8px}
+  .c1 .av{width:48px;height:48px;border-radius:15px;background:#1c1f18;border:1px solid var(--line2);display:grid;place-items:center;color:var(--lime);font-weight:800;font-size:20px;flex:none}
+  .c1 .idrow h3{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .c1 .idrow .sub{font:400 11px/1.4 var(--mono);color:var(--muted);margin-top:3px}
+  .c1 .gauge{position:relative;display:grid;place-items:center;margin:6px auto 4px;width:220px;height:220px}
+  .c1 .gauge svg{width:220px;height:220px;transform:rotate(-90deg)}
+  .c1 .gauge .mid{position:absolute;text-align:center}
+  .c1 .gauge .mid .lab{font:700 10px/1 var(--mono);letter-spacing:.2em;color:var(--muted)}
+  .c1 .gauge .mid .num{font-size:58px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:6px}
+  .c1 .gauge .mid .num small{font-size:20px;color:var(--muted)}
+  .c1 .gauge .mid .tier{margin-top:7px;font:700 11px/1 var(--mono);color:var(--lime);letter-spacing:.1em}
+  .c1 .delta{display:inline-flex;align-items:center;gap:5px;font:700 12px/1 var(--mono);color:var(--lime);background:rgba(198,241,53,.12);padding:6px 10px;border-radius:999px}
+  .c1 .subs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+  .c1 .sub-c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 10px;text-align:center}
+  .c1 .sub-c .ring{width:38px;height:38px;margin:0 auto 8px;position:relative}
+  .c1 .sub-c .ring svg{width:38px;height:38px;transform:rotate(-90deg)}
+  .c1 .sub-c b{font-size:15px;font-weight:800}
+  .c1 .sub-c span{display:block;font:600 9px/1 var(--mono);letter-spacing:.12em;color:var(--muted);margin-top:4px}
+
+  /* =========================================================
+     IDEA 2 — ATHLETE CARD (collectible player card)
+  ========================================================= */
+  .c2 .card{position:relative;border-radius:26px;overflow:hidden;padding:20px;border:1px solid rgba(198,241,53,.35);
+    background:linear-gradient(160deg,#2b3319 0%,#171a12 55%,#0e0f0b 100%)}
+  .c2 .card::before{content:"";position:absolute;inset:0;background:
+      radial-gradient(70% 45% at 85% 8%,rgba(198,241,53,.28),transparent 60%);pointer-events:none}
+  .c2 .card .top{position:relative;display:flex;justify-content:space-between;align-items:flex-start}
+  .c2 .rating{text-align:center}
+  .c2 .rating b{font-size:44px;font-weight:800;line-height:.9;letter-spacing:-.03em;color:var(--lime)}
+  .c2 .rating span{display:block;font:700 10px/1 var(--mono);letter-spacing:.2em;color:var(--ink);margin-top:2px}
+  .c2 .rating .pos{font:700 10px/1 var(--mono);letter-spacing:.1em;color:var(--muted);margin-top:6px}
+  .c2 .tier-b{font:700 10px/1 var(--mono);letter-spacing:.1em;color:#0a0b09;background:var(--lime);padding:6px 9px;border-radius:7px}
+  .c2 .av{width:104px;height:104px;border-radius:50%;margin:8px auto 0;background:#0e100b;border:2px solid var(--lime);display:grid;place-items:center;font-size:44px;font-weight:800;color:var(--lime);position:relative}
+  .c2 .card h3{position:relative;text-align:center;font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:12px}
+  .c2 .card .hid{position:relative;text-align:center;font:400 11px/1.4 var(--mono);color:var(--muted);margin-top:4px}
+  .c2 .attrs{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;margin-top:18px}
+  .c2 .attr{display:flex;align-items:center;gap:9px}
+  .c2 .attr b{font:700 13px/1 var(--mono);color:var(--lime);width:24px}
+  .c2 .attr span{font:600 11px/1 var(--mono);letter-spacing:.08em;color:var(--muted);width:38px}
+  .c2 .attr .bar{flex:1;height:5px;border-radius:3px;background:#2a2d25;overflow:hidden}
+  .c2 .attr .bar i{display:block;height:100%;background:var(--lime);border-radius:3px}
+  .c2 .cta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+
+  /* =========================================================
+     IDEA 3 — MISSION DASHBOARD (quantified-self bento)
+  ========================================================= */
+  .c3 .hero{display:flex;align-items:center;gap:13px;margin:12px 0 12px}
+  .c3 .av{width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,var(--lime),#6fa80f);display:grid;place-items:center;color:#0a0b09;font-weight:800;font-size:24px;flex:none}
+  .c3 .hero h3{font-size:21px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+  .c3 .hero .sub{font:400 11px/1.4 var(--mono);color:var(--muted);margin-top:4px}
+  .c3 .bento{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .c3 .b{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;position:relative;overflow:hidden}
+  .c3 .b .lab{font:700 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .c3 .b .big{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .c3 .b .big small{font-size:14px;color:var(--muted);font-weight:600}
+  .c3 .b .d{font:700 10px/1 var(--mono);color:var(--lime);margin-top:6px}
+  .c3 .span2{grid-column:span 2}
+  .c3 .hpi{background:linear-gradient(150deg,rgba(198,241,53,.16),var(--card));border-color:rgba(198,241,53,.3);display:flex;align-items:center;gap:14px}
+  .c3 .hpi .ring{width:64px;height:64px;position:relative;flex:none}
+  .c3 .hpi .ring svg{width:64px;height:64px;transform:rotate(-90deg)}
+  .c3 .hpi .ring .v{position:absolute;inset:0;display:grid;place-items:center;font-size:19px;font-weight:800}
+  .c3 .hpi .t b{font-size:16px;font-weight:800;display:block}
+  .c3 .hpi .t s{text-decoration:none;font:400 11px/1.4 var(--mono);color:var(--muted);display:block;margin-top:3px}
+  .c3 .spark{margin-top:10px}
+  .c3 .heatcard .lab{margin-bottom:10px}
+
+  /* =========================================================
+     IDEA 4 — SOCIAL (Instagram/X profile w/ tabs)
+  ========================================================= */
+  .c4 .cover{height:96px;border-radius:20px;margin:8px 0 0;background:linear-gradient(120deg,#2b3319,#3a4a1a 40%,#161811);position:relative;overflow:hidden}
+  .c4 .cover::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 120% at 80% 0,rgba(198,241,53,.35),transparent 60%)}
+  .c4 .head{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-38px;padding:0 4px}
+  .c4 .av{width:82px;height:82px;border-radius:50%;background:#0e100b;border:3px solid var(--bg);display:grid;place-items:center;color:var(--lime);font-weight:800;font-size:34px;box-shadow:0 0 0 2px var(--lime)}
+  .c4 .follow{background:var(--lime);color:#0a0b09;font-weight:800;font-size:14px;padding:10px 20px;border-radius:999px;margin-bottom:6px}
+  .c4 .nm{display:flex;align-items:center;gap:8px;margin-top:12px}
+  .c4 .nm h3{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .c4 .bio{font-size:13.5px;color:#c8ccbe;line-height:1.5;margin-top:7px}
+  .c4 .bio .hid{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:5px}
+  .c4 .social{display:flex;gap:22px;margin-top:13px}
+  .c4 .social div b{font-size:17px;font-weight:800}
+  .c4 .social div span{font:600 10px/1 var(--mono);letter-spacing:.1em;color:var(--muted);margin-left:5px}
+  .c4 .tabs{display:flex;gap:5px;margin-top:16px;border-bottom:1px solid var(--line);padding-bottom:0}
+  .c4 .tab{flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--muted);padding:11px 0;position:relative}
+  .c4 .tab.on{color:var(--ink)}
+  .c4 .tab.on::after{content:"";position:absolute;left:15%;right:15%;bottom:-1px;height:2px;background:var(--lime);border-radius:2px}
+  .c4 .pins{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+  .c4 .pin{aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px;text-align:center}
+  .c4 .pin b{font-size:20px;font-weight:800}
+  .c4 .pin span{font:600 8.5px/1.2 var(--mono);letter-spacing:.06em;color:var(--muted);margin-top:4px}
+  .c4 .pin svg{width:22px;height:22px;stroke:var(--lime);fill:none;stroke-width:1.8;margin-bottom:6px}
+
+  /* =========================================================
+     IDEA 5 — THE JOURNEY (narrative timeline + heatmap)
+  ========================================================= */
+  .c5 .hero{text-align:center;padding:14px 0 6px}
+  .c5 .av{width:76px;height:76px;border-radius:50%;margin:0 auto;background:#0e100b;border:2px solid var(--lime);display:grid;place-items:center;color:var(--lime);font-weight:800;font-size:32px}
+  .c5 .hero h3{font-size:23px;font-weight:800;letter-spacing:-.02em;margin-top:11px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .c5 .hero .sub{font:400 11px/1.5 var(--mono);color:var(--muted);margin-top:5px}
+  .c5 .lvl{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .c5 .lvl .row{display:flex;justify-content:space-between;align-items:baseline}
+  .c5 .lvl .row b{font-size:14px;font-weight:800}
+  .c5 .lvl .row span{font:600 11px/1 var(--mono);color:var(--muted)}
+  .c5 .lvl .track{height:8px;border-radius:5px;background:#2a2d25;margin-top:10px;overflow:hidden}
+  .c5 .lvl .track i{display:block;height:100%;width:64%;background:linear-gradient(90deg,var(--lime-dim),var(--lime));border-radius:5px}
+  .c5 .lvl .hint{font:400 10.5px/1.4 var(--mono);color:var(--muted2);margin-top:9px}
+  .c5 .cap{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin:20px 2px 12px}
+  .c5 .tl{position:relative;padding-left:26px}
+  .c5 .tl::before{content:"";position:absolute;left:8px;top:4px;bottom:8px;width:2px;background:var(--line2)}
+  .c5 .ev{position:relative;margin-bottom:16px}
+  .c5 .ev .dot{position:absolute;left:-26px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--card2);border:2px solid var(--lime);display:grid;place-items:center}
+  .c5 .ev .dot svg{width:9px;height:9px;stroke:var(--lime);fill:none;stroke-width:2.5}
+  .c5 .ev .when{font:600 10px/1 var(--mono);letter-spacing:.08em;color:var(--muted)}
+  .c5 .ev b{display:block;font-size:15px;font-weight:800;margin-top:4px}
+  .c5 .ev p{font:400 11.5px/1.4 var(--mono);color:var(--muted);margin-top:3px}
+
+  @media (max-width:520px){
+    body{padding:24px 12px 60px}
+    .page-head h1{font-size:30px}
+    .gallery{gap:38px 20px}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Aurora · Profile R&amp;D</div>
+  <h1>The profile, pushed to 10/10 <span>— 5 directions</span></h1>
+  <p>Revised to your notes. <b>HPI is private</b> — it's your own performance indicator, shown only to you and never on any public-facing surface. There are <b>no Edit / Share buttons</b>; you edit from the <b>edit icon next to your avatar / name</b>. <b>Hybrid membership stays exactly as it is</b> (the FREE pill is untouched). The job is still to fix the dead space and make streak &amp; consistency visual (heatmaps, rings, sparklines) — while keeping the Aurora lime + mono-ID identity.</p>
+  <div class="brief">
+    <span class="tag"><b>Private</b> · HPI is only-you, never public</span>
+    <span class="tag"><b>Edit</b> · via the icon by your avatar — no buttons</span>
+    <span class="tag"><b>Unchanged</b> · Hybrid membership / FREE pill</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ IDEA 1 : THE INDEX ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>1</i> The Index</div>
+      <h2>Your private cockpit</h2>
+      <p><b>Whoop / credit-score energy — for your eyes only.</b> The Hybrid Performance Index becomes a big gauge with a tier, weekly delta and three sub-rings, clearly marked <b>Private · only you</b>. Your best number stops being a mystery padlock, but never leaks to your public profile. Edit lives on the icon by your name.</p>
+    </div>
+    <div class="phone"><div class="screen c1">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts">
+            <div class="ib"><svg viewBox="0 0 24 24"><path d="M4 12v8h16v-8M16 6l-4-4-4 4M12 2v13"/></svg></div>
+            <div class="ib"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div>
+          </div>
+        </div>
+        <div class="idrow">
+          <div class="av">R</div>
+          <div style="flex:1"><h3>rafalablewski <span class="free" style="vertical-align:middle">FREE</span></h3><div class="sub">HYBRID ID · 0x6636·80</div></div>
+          <div class="edit-ic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+        </div>
+        <div class="gauge">
+          <svg viewBox="0 0 220 220">
+            <circle cx="110" cy="110" r="96" fill="none" stroke="#1c1f18" stroke-width="16"/>
+            <circle cx="110" cy="110" r="96" fill="none" stroke="url(#g1)" stroke-width="16" stroke-linecap="round"
+              stroke-dasharray="603" stroke-dashoffset="169"/>
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fa80f"/><stop offset="1" stop-color="#c6f135"/></linearGradient></defs>
+          </svg>
+          <div class="mid">
+            <div class="lab">HYBRID INDEX</div>
+            <div class="num">72<small>/100</small></div>
+            <div class="tier">◆ TIER · ADVANCING</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap"><span class="priv"><svg viewBox="0 0 24 24"><path d="M2 2l20 20"/><path d="M6.7 6.7C4 8.3 2.5 10.5 2 12c1.7 3.3 5 6 10 6a10 10 0 004.4-1M9.9 5.2A10 10 0 0112 5c5 0 8.3 2.7 10 6a15 15 0 01-2.7 3.5"/></svg>PRIVATE · ONLY YOU</span><span class="delta"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#c6f135" stroke-width="3"><path d="M6 15l6-6 6 6"/></svg> +4 this week</span></div>
+        <div class="subs">
+          <div class="sub-c">
+            <div class="ring"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="15" fill="none" stroke="#2a2d25" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="#c6f135" stroke-width="4" stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="24"/></svg></div>
+            <b>81</b><span>STRENGTH</span>
+          </div>
+          <div class="sub-c">
+            <div class="ring"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="15" fill="none" stroke="#2a2d25" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="#5aa9ff" stroke-width="4" stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="42"/></svg></div>
+            <b>64</b><span>ENGINE</span>
+          </div>
+          <div class="sub-c">
+            <div class="ring"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="15" fill="none" stroke="#2a2d25" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="#b18cff" stroke-width="4" stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="15"/></svg></div>
+            <b>84</b><span>RECOVERY</span>
+          </div>
+        </div>
+        <div class="mono-id" style="text-align:center;margin-top:18px;line-height:1.5">The Index and its sub-scores are private —<br>they never appear on your public profile.</div>
+      </div></div>
+      <div class="fade"></div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 2 : ATHLETE CARD ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>2</i> Athlete Card</div>
+      <h2>Public card · private HPI</h2>
+      <p><b>Shows the split cleanly.</b> The card is exactly what a follower sees — name, membership, badges and public strength attributes, <b>no private numbers on it</b>. Your HPI sits below in a dashed "only you" strip. Edit is the icon on the card — no buttons.</p>
+    </div>
+    <div class="phone"><div class="screen c2">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts"><div class="ib"><svg viewBox="0 0 24 24"><path d="M4 12v8h16v-8M16 6l-4-4-4 4M12 2v13"/></svg></div></div>
+        </div>
+        <div style="height:6px"></div>
+        <div class="card">
+          <div class="top">
+            <div class="free" style="background:rgba(0,0,0,.2)">FREE</div>
+            <div class="edit-ic" style="background:rgba(0,0,0,.25)"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+          </div>
+          <div class="av">R</div>
+          <h3>rafalablewski</h3>
+          <div class="hid">HYBRID ID · 0x6636·80 · #12 in KRK · since 2026</div>
+          <div class="attrs">
+            <div class="attr"><span>STR</span><div class="bar"><i style="width:81%"></i></div><b>81</b></div>
+            <div class="attr"><span>END</span><div class="bar"><i style="width:64%"></i></div><b>64</b></div>
+            <div class="attr"><span>PWR</span><div class="bar"><i style="width:77%"></i></div><b>77</b></div>
+            <div class="attr"><span>MOB</span><div class="bar"><i style="width:58%"></i></div><b>58</b></div>
+            <div class="attr"><span>VOL</span><div class="bar"><i style="width:70%"></i></div><b>70</b></div>
+            <div class="attr"><span>CON</span><div class="bar"><i style="width:88%"></i></div><b>88</b></div>
+          </div>
+        </div>
+        <div class="badge-row" style="margin-top:14px;justify-content:center">
+          <div class="medal" style="background:rgba(232,198,106,.15);border:1px solid rgba(232,198,106,.4)"><svg viewBox="0 0 24 24" fill="none" stroke="#e8c66a" stroke-width="1.8"><circle cx="12" cy="9" r="5"/><path d="M9 14l-2 8 5-3 5 3-2-8"/></svg></div>
+          <div class="medal" style="background:rgba(198,241,53,.14);border:1px solid rgba(198,241,53,.4)"><svg viewBox="0 0 24 24" fill="none" stroke="#c6f135" stroke-width="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
+          <div class="medal" style="background:rgba(90,169,255,.14);border:1px solid rgba(90,169,255,.4)"><svg viewBox="0 0 24 24" fill="none" stroke="#5aa9ff" stroke-width="1.8"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></div>
+          <div class="medal" style="background:var(--card);border:1px solid var(--line)"><span style="font:700 12px/1 var(--mono);color:var(--muted)">+5</span></div>
+        </div>
+        <div class="privstrip">
+          <div class="ring"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#2a2d25" stroke-width="5"/><circle cx="23" cy="23" r="19" fill="none" stroke="#c6f135" stroke-width="5" stroke-linecap="round" stroke-dasharray="119" stroke-dashoffset="33"/></svg><div class="v">72</div></div>
+          <div style="flex:1"><b>Hybrid Index · 72</b><s>Private — visible only to you, never on the card</s></div>
+          <span class="priv"><svg viewBox="0 0 24 24"><path d="M2 2l20 20"/><path d="M6.7 6.7C4 8.3 2.5 10.5 2 12c1.7 3.3 5 6 10 6a10 10 0 004.4-1M9.9 5.2A10 10 0 0112 5c5 0 8.3 2.7 10 6a15 15 0 01-2.7 3.5"/></svg>ONLY YOU</span>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 3 : MISSION DASHBOARD ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>3</i> Mission Dashboard</div>
+      <h2>Quantified-self bento</h2>
+      <p><b>Every number earns its tile.</b> HPI ring, a live consistency heatmap, tonnage sparkline and PR feed sit in a dense bento. Reads like an athlete's control panel — information-rich but calm.</p>
+    </div>
+    <div class="phone"><div class="screen c3">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts"><div class="ib"><svg viewBox="0 0 24 24"><path d="M4 12v8h16v-8M16 6l-4-4-4 4M12 2v13"/></svg></div><div class="ib"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div></div>
+        </div>
+        <div class="hero">
+          <div class="av">R</div>
+          <div style="flex:1"><h3>rafalablewski <span class="free">FREE</span></h3><div class="sub">Hybrid Athlete · KRK · since 2026</div></div>
+          <div class="edit-ic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+        </div>
+        <div class="bento">
+          <div class="b hpi span2">
+            <span class="priv" style="position:absolute;top:11px;right:11px"><svg viewBox="0 0 24 24"><path d="M2 2l20 20"/><path d="M6.7 6.7C4 8.3 2.5 10.5 2 12c1.7 3.3 5 6 10 6a10 10 0 004.4-1M9.9 5.2A10 10 0 0112 5c5 0 8.3 2.7 10 6a15 15 0 01-2.7 3.5"/></svg>ONLY YOU</span>
+            <div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="#2a2d25" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="#c6f135" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="48"/></svg><div class="v">72</div></div>
+            <div class="t"><b>Hybrid Index</b><s>Private · Advancing · +4 this week</s></div>
+          </div>
+          <div class="b">
+            <div class="lab">Streak</div>
+            <div class="big">7<small> days</small></div>
+            <div class="d">↑ personal best</div>
+          </div>
+          <div class="b">
+            <div class="lab">Sessions</div>
+            <div class="big">4<small>/wk</small></div>
+            <div class="d">on target</div>
+          </div>
+          <div class="b span2 heatcard">
+            <div class="lab">Consistency · last 16 weeks</div>
+            <div class="heat" id="heat3"></div>
+          </div>
+          <div class="b">
+            <div class="lab">Tonnage</div>
+            <div class="big">2.3<small>t</small></div>
+            <svg class="spark" width="100%" height="26" viewBox="0 0 120 26" preserveAspectRatio="none" fill="none"><polyline points="0,20 20,22 40,14 60,16 80,8 100,10 120,4" stroke="#5aa9ff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="b">
+            <div class="lab">Latest PR</div>
+            <div class="big" style="font-size:20px">Deadlift</div>
+            <div class="d">180 kg · +5</div>
+          </div>
+        </div>
+        <div style="height:6px"></div>
+      </div></div>
+      <div class="fade"></div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 4 : SOCIAL ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>4</i> Social</div>
+      <h2>Built for followers</h2>
+      <p><b>Own the community side.</b> Cover, avatar, bio and follower counts up top; on your own profile the edit icon sits where Follow would be. Tabs (Overview · PRs · Activity) with a highlight grid of <b>public</b> stats — HPI is deliberately absent because it's private.</p>
+    </div>
+    <div class="phone"><div class="screen c4">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts"><div class="ib"><svg viewBox="0 0 24 24"><path d="M4 12v8h16v-8M16 6l-4-4-4 4M12 2v13"/></svg></div><div class="ib"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div></div>
+        </div>
+        <div class="cover"></div>
+        <div class="head">
+          <div class="av">R</div>
+          <div class="edit-ic" style="width:46px;height:46px;border-radius:15px;margin-bottom:6px"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+        </div>
+        <div class="nm"><h3>rafalablewski</h3><span class="free">FREE</span></div>
+        <div class="bio">Hybrid Athlete · runner &amp; lifter. Chasing a sub-20 5k and a 2× bodyweight deadlift.<span class="hid">HYBRID ID · 0x6636·80 · member since 2026</span></div>
+        <div class="social">
+          <div><b>128</b><span>FOLLOWERS</span></div>
+          <div><b>86</b><span>FOLLOWING</span></div>
+          <div><b>#12</b><span>KRK RANK</span></div>
+        </div>
+        <div class="tabs">
+          <div class="tab on">Overview</div>
+          <div class="tab">PRs</div>
+          <div class="tab">Activity</div>
+        </div>
+        <div class="pins">
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16"/></svg><b>180</b><span>DEADLIFT PR</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b>19:42</b><span>5K BEST</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16"/></svg><b>140</b><span>SQUAT PR</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><b>7d</b><span>STREAK</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><b>2.3t</b><span>TONNAGE</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M9 14l-2 8 5-3 5 3-2-8"/></svg><b>6</b><span>BADGES</span></div>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 5 : THE JOURNEY ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>5</i> The Journey</div>
+      <h2>A story with momentum</h2>
+      <p><b>Progress you can feel.</b> A level bar toward the next tier, then a vertical timeline of milestones — PRs, streaks, badges earned since day one. Reframes the profile as a journey, and the FREE→Full jump as the next level to unlock.</p>
+    </div>
+    <div class="phone"><div class="screen c5">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts"><div class="ib"><svg viewBox="0 0 24 24"><path d="M4 12v8h16v-8M16 6l-4-4-4 4M12 2v13"/></svg></div><div class="ib"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div></div>
+        </div>
+        <div class="hero">
+          <div class="av">R</div>
+          <h3>rafalablewski <span class="free">FREE</span> <span class="edit-dot"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span></h3>
+          <div class="sub">HYBRID ID · 0x6636·80 · Hybrid Athlete</div>
+        </div>
+        <div class="lvl">
+          <div class="row"><b>Level 4 · Advancing</b><span class="priv"><svg viewBox="0 0 24 24"><path d="M2 2l20 20"/><path d="M6.7 6.7C4 8.3 2.5 10.5 2 12c1.7 3.3 5 6 10 6a10 10 0 004.4-1M9.9 5.2A10 10 0 0112 5c5 0 8.3 2.7 10 6a15 15 0 01-2.7 3.5"/></svg>HPI 72 · PRIVATE</span></div>
+          <div class="track"><i></i></div>
+          <div class="hint">28 pts to Tier 5 — unlock Analytics, Performance State &amp; the Cockpit with Full.</div>
+        </div>
+        <div class="cap">This month</div>
+        <div class="heat" id="heat5" style="grid-template-columns:repeat(20,1fr)"></div>
+        <div class="cap">Your journey</div>
+        <div class="tl">
+          <div class="ev">
+            <div class="dot"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16"/></svg></div>
+            <div class="when">2 DAYS AGO</div>
+            <b>New PR · Deadlift 180 kg</b>
+            <p>+5 kg over your last best · top 8% in KRK</p>
+          </div>
+          <div class="ev">
+            <div class="dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>
+            <div class="when">THIS WEEK</div>
+            <b>7-day streak 🔥</b>
+            <p>Longest streak yet — consistency badge earned</p>
+          </div>
+          <div class="ev">
+            <div class="dot"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1z"/></svg></div>
+            <div class="when">MAR 2026</div>
+            <b>Reached Tier 4</b>
+            <p>Crossed HPI 70 for the first time</p>
+          </div>
+          <div class="ev">
+            <div class="dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></div>
+            <div class="when">JAN 2026</div>
+            <b>Joined Aurora</b>
+            <p>Day one · Hybrid Athlete</p>
+          </div>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+    </div></div>
+  </div>
+
+</div>
+
+<script>
+  // deterministic pseudo-random heatmap fills (no Math.random needed)
+  function paint(el, n, seed){
+    if(!el) return;
+    var levels=['','l1','l2','l3','l4'];
+    var s=seed;
+    for(var i=0;i<n;i++){
+      s=(s*1103515245+12345)&0x7fffffff;
+      var r=(s>>8)%100;
+      var cls;
+      if(r<32)cls='';
+      else if(r<52)cls='l1';
+      else if(r<70)cls='l2';
+      else if(r<86)cls='l3';
+      else cls='l4';
+      var d=document.createElement('i');
+      if(cls)d.className=cls;
+      el.appendChild(d);
+    }
+  }
+  paint(document.getElementById('heat3'),16*5,7);
+  paint(document.getElementById('heat5'),20*4,19);
+
+  // idea 4 tab switch (visual only)
+  document.querySelectorAll('.c4 .tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      t.parentElement.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+      t.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>
