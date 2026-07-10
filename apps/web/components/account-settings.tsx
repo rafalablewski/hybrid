@@ -36,6 +36,13 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "pl", label: "PL" },
   { id: "de", label: "DE" },
 ];
+// Theme picker swatches — a mini colour preview per template, shared shape with
+// mobile so the two Preferences screens read the same. Aurora = dark/lime,
+// Japandi = warm-light/clay.
+const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, string, string] }[] = [
+  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
+  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
+];
 
 export default function AccountSettings() {
   const isMobile = useIsMobile();
@@ -300,11 +307,14 @@ export default function AccountSettings() {
       case "preferences":
         return (
           <>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
-              {(["dark", "light"] as const).map((m) => (
-                <button key={m} onClick={() => setTheme(m)} title={m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
-                  {m === "dark" ? "Aurora" : "Japandi"}
+              {THEME_SWATCHES.map((s) => (
+                <button key={s.id} onClick={() => setTheme(s.id)} title={s.id === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ flex: 1, textAlign: "left", padding: 12, borderRadius: rCard, cursor: "pointer", background: theme === s.id ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", border: `1px solid ${theme === s.id ? LIME : LINE}` }}>
+                  <div style={{ display: "flex", gap: 5, marginBottom: 8 }}>
+                    {s.colors.map((c, i) => <span key={i} style={{ width: 18, height: 18, borderRadius: 6, background: c, border: `1px solid ${LINE}` }} />)}
+                  </div>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: theme === s.id ? txt(LIME) : txt(CHALK) }}>{s.label}</div>
                 </button>
               ))}
             </div>

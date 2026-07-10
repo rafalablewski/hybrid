@@ -17,10 +17,12 @@ import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "
 import { AuroraIcon } from "./icons";
 import { LinearGradient } from "expo-linear-gradient";
 
-const APPEARANCE: { id: ThemePref; label: string }[] = [
-  { id: "system", label: "System" },
-  { id: "dark", label: "Aurora" },
-  { id: "light", label: "Japandi" },
+// Theme picker swatches — a mini colour preview per template (shared shape with
+// web's Preferences). system = mixed, Aurora = dark/lime, Japandi = warm/clay.
+const THEME_SWATCHES: { id: ThemePref; label: string; colors: [string, string, string] }[] = [
+  { id: "system", label: "System", colors: ["#0a0b09", "#efeee7", "#8a8f82"] },
+  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
+  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
@@ -93,7 +95,19 @@ export default function AuroraSettings() {
         return (
       <>
         <Label color={C.ash}>APPEARANCE</Label>
-        <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {THEME_SWATCHES.map((s) => {
+            const on = pref === s.id;
+            return (
+              <Pressable key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 11, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+                <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
+                  {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
         <Label color={C.ash} top>LANGUAGE</Label>
         <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         {lg.supported && (
