@@ -325,9 +325,11 @@ export default function AccountSettings() {
         return (
           <>
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.workout-logger")}</Mono>
-            <button onClick={() => setLoggerPref("detailed", !prefs.detailed)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}>
-              {prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple")}
-            </button>
+            <div>
+              <PrefRow title={t("w.account.settings.logger-detailed-t")} desc={t("w.account.settings.logger-detailed-help")} on={prefs.detailed} onToggle={() => setLoggerPref("detailed", !prefs.detailed)} />
+              <PrefRow title={t("w.account.settings.logger-warmups-t")} desc={t("w.account.settings.volume-counting-help")} on={prefs.countWarmupsInVolume} onToggle={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} />
+              <PrefRow title={t("w.account.settings.logger-fractional-t")} desc={t("w.account.settings.fractional-help")} on={prefs.fractionalVolume} onToggle={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} />
+            </div>
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.units")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["kg", "lb"] as const).map((u) => (
@@ -336,15 +338,6 @@ export default function AccountSettings() {
                 </button>
               ))}
             </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.volume-counting")}</Mono>
-            <button onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}>
-              {prefs.countWarmupsInVolume ? t("w.account.settings.warmups-count") : t("w.account.settings.warmups-excluded")}
-            </button>
-            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.volume-counting-help")}</Mono>
-            <button onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}>
-              {prefs.fractionalVolume ? t("w.account.settings.fractional-on") : t("w.account.settings.fractional-off")}
-            </button>
-            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.fractional-help")}</Mono>
           </>
         );
       case "notifications":
