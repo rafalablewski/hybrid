@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, Pressable, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
 import { Card, Loading, F, fs } from "../../lib/ui";
@@ -48,13 +48,16 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     return () => { active = false; clearTimeout(id); };
   }, [form.handle, data]);
 
-  // Persist the public profile (all social fields at once). Returns success so
-  // the focused editor can close only when the save actually went through.
-  const saveSocial = async (): Promise<boolean> => {
+  // Persist the public profile (all social fields at once). An optional override
+  // lets inline controls (visibility segment, preset save) persist their new
+  // value without waiting for the async setForm to flush. Returns success so the
+  // focused editor can close only when the save actually went through.
+  const saveSocial = async (override?: Partial<typeof form>): Promise<boolean> => {
     setErr(null);
-    const h = normalizeHandle(form.handle);
+    const next = { ...form, ...override };
+    const h = normalizeHandle(next.handle);
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); AccessibilityInfo.announceForAccessibility("Invalid handle"); return false; }
-    const r: any = await putMyProfile({ ...form, handle: h });
+    const r: any = await putMyProfile({ ...next, handle: h });
     if (r.error) { setErr(r.error); AccessibilityInfo.announceForAccessibility(r.error); return false; }
     return true;
   };
@@ -67,7 +70,6 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const fmtValid = isValidHandle(hNorm);
   const isMine = !!data?.profile && hNorm === data.profile.handle;
   const bioLen = (form.bio ?? "").length;
-  const visLabel = form.visibility === "public" ? "Public" : form.visibility === "private" ? "Private" : "Followers";
   const feedbackColor = (!fmtValid || avail === "taken" ? C.red : avail === "checking" ? C.ash : txt(C, C.lime)) as string;
   const lime = txt(C, C.lime) as string;
 
@@ -131,80 +133,98 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     );
   }
 
-  // ── LIST (preview + avatar + tappable rows) ───────────────────────────────
-  const rows: { key: FieldKey; label: string; value: string; muted: boolean }[] = [
-    { key: "name", label: "Name", value: acct.name || "Add your name", muted: !acct.name },
-    { key: "handle", label: "Username", value: form.handle ? `@${form.handle}` : "Claim a handle", muted: !form.handle },
-    { key: "displayName", label: "Display name", value: form.displayName || "Optional", muted: !form.displayName },
-    { key: "bio", label: "Bio", value: form.bio || "Add a bio", muted: !form.bio },
-    { key: "email", label: "Email", value: acct.email || "Add an email", muted: !acct.email },
-    { key: "visibility", label: "Visibility", value: visLabel, muted: false },
-  ];
+  // ── SECTIONED editor ──────────────────────────────────────────────────────
+  // Every part of the screen lives in a labelled section (Photo · Identity ·
+  // Contact · Visibility) — the app-wide settings pattern. Text fields still
+  // open the focused editor; Visibility is an inline segment that saves on tap.
+  const pickVisibility = (v: "public" | "followers" | "private") => {
+    setForm({ ...form, visibility: v });
+    if (claimed) void saveSocial({ visibility: v });
+  };
+
+  const FieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }) => (
+    <Pressable onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+      <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
+      <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
+    </Pressable>
+  );
 
   return (
     <>
-      {/* Live "what followers see" preview. */}
+      {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
+      <SectionLabel first>Photo</SectionLabel>
       <Card>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <View style={{ width: 48, height: 48, borderRadius: 24, overflow: "hidden", backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-            {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 18, color: lime }}>{initials}</Text>}
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{form.displayName || form.handle || "Your name"}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 12, color: lime }}>@{form.handle || "handle"}</Text>
-          </View>
-          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, color: C.ash }}>{visLabel}</Text>
-          </View>
-        </View>
-        {form.bio ? <Text style={{ fontSize: 13, color: C.chalk, marginTop: 10, lineHeight: 19 }}>{form.bio}</Text> : null}
-      </Card>
-
-      {/* Avatar — preview + one-tap branded gradient presets (photo upload soon). */}
-      <Card style={{ marginTop: 14 }}>
-        <View style={{ alignItems: "center", gap: 8 }}>
-          <View style={{ width: 92, height: 92, borderRadius: 46, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
-            <View style={{ width: 86, height: 86, borderRadius: 43, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-              {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 34, color: lime }}>{initials}</Text>}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+              {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 22, color: lime }}>{initials}</Text>}
             </View>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>Pick a preset</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
-            {AVATAR_PRESETS.map((p) => {
-              const on = form.avatarUrl === p.uri;
-              return (
-                <Pressable key={p.id} onPress={async () => { setForm({ ...form, avatarUrl: p.uri }); }} accessibilityRole="button" accessibilityLabel={`Preset ${p.id}`} style={{ width: 44, height: 44, borderRadius: 22, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
-                  <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%", borderRadius: 22 }} />
-                </Pressable>
-              );
-            })}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Preset avatar</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              {AVATAR_PRESETS.map((p) => {
+                const on = form.avatarUrl === p.uri;
+                return (
+                  <Pressable key={p.id} onPress={() => setForm({ ...form, avatarUrl: p.uri })} accessibilityRole="button" accessibilityLabel={`Preset ${p.id}`} style={{ width: 30, height: 30, borderRadius: 15, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
+                    <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%", borderRadius: 15 }} />
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
-            {form.avatarUrl ? <SButton label="Save photo" small onPress={saveSocial} /> : null}
-            <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Upload photo (soon)</Text>
-            </Pressable>
-          </View>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
+          {form.avatarUrl ? <SButton label="Save photo" small onPress={() => saveSocial()} /> : null}
+          <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Upload photo (soon)</Text>
+          </Pressable>
         </View>
       </Card>
 
-      {/* Tap-a-row list. */}
-      <Card style={{ marginTop: 14 }}>
-        {rows.map((row, i) => (
-          <Pressable key={row.key} onPress={() => setEditing(row.key)} accessibilityRole="button" accessibilityLabel={row.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: C.line }}>
-            <Text style={{ width: 92, color: C.ash, fontSize: 13 }}>{row.label}</Text>
-            <Text numberOfLines={1} style={{ flex: 1, color: row.muted ? C.ash : C.chalk, fontSize: 14 }}>{row.value}</Text>
-            <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
-          </Pressable>
-        ))}
+      {/* ── IDENTITY ── name, handle, display name, bio. */}
+      <SectionLabel>Identity</SectionLabel>
+      <Card>
+        <FieldRow rk="name" label="Name" value={acct.name || "Add your name"} muted={!acct.name} first />
+        <FieldRow rk="handle" label="Username" value={form.handle ? `@${form.handle}` : "Claim a handle"} muted={!form.handle} />
+        <FieldRow rk="displayName" label="Display name" value={form.displayName || "Optional"} muted={!form.displayName} />
+        <FieldRow rk="bio" label="Bio" value={form.bio || "Add a bio"} muted={!form.bio} />
+      </Card>
+
+      {/* ── CONTACT ── account email. */}
+      <SectionLabel>Contact</SectionLabel>
+      <Card>
+        <FieldRow rk="email" label="Email" value={acct.email || "Add an email"} muted={!acct.email} first />
+      </Card>
+
+      {/* ── VISIBILITY ── inline segment, saves on tap. */}
+      <SectionLabel>Visibility</SectionLabel>
+      <Card>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {(["public", "followers", "private"] as const).map((v) => (
+            <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => pickVisibility(v)} />
+          ))}
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>Who can see your results and profile.</Text>
       </Card>
 
       {onDone && (
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 18 }}>
           <SButton label="Done" onPress={onDone} />
         </View>
       )}
       {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
     </>
+  );
+}
+
+/** A labelled section header — the app-wide settings grouping treatment. */
+function SectionLabel({ children, first }: { children: ReactNode; first?: boolean }) {
+  const C = useTheme().palette;
+  return (
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginLeft: 4, marginBottom: 10, marginTop: first ? 0 : 18 }}>
+      {children}
+    </Text>
   );
 }

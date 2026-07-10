@@ -170,13 +170,14 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
 
   // Persist all social fields at once; returns success so a focused field editor
   // closes only when the save actually went through.
-  const saveSocial = async (): Promise<boolean> => {
+  const saveSocial = async (override?: Partial<typeof form>): Promise<boolean> => {
     setErr(null);
-    const h = normalizeHandle(form.handle);
+    const next = { ...form, ...override };
+    const h = normalizeHandle(next.handle);
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return false; }
-    const r: any = await jsend("/api/social/profile", "PUT", { ...form, handle: h });
+    const r: any = await jsend("/api/social/profile", "PUT", { ...next, handle: h });
     if (r.error) { setErr(r.error); return false; }
-    onProfileUpdate?.({ handle: h, displayName: form.displayName, bio: form.bio, avatarUrl: form.avatarUrl });
+    onProfileUpdate?.({ handle: h, displayName: next.displayName, bio: next.bio, avatarUrl: next.avatarUrl });
     return true;
   };
   const fieldSaveSocial = async () => { setSaving(true); const ok = await saveSocial(); setSaving(false); if (ok) setEditing(null); };
@@ -188,7 +189,6 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   const fmtValid = isValidHandle(hNorm);
   const isMine = !!data?.profile && hNorm === data.profile.handle;
   const bioLen = (form.bio ?? "").length;
-  const visLabel = form.visibility === "public" ? "Public" : form.visibility === "private" ? "Private" : "Followers";
 
   // ── FOCUSED FIELD EDITOR ──────────────────────────────────────────────────
   if (editing) {
@@ -246,61 +246,82 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
     );
   }
 
-  // ── LIST (preview + avatar + tappable rows) ───────────────────────────────
-  const rows: { key: FieldKey; label: string; value: string; muted: boolean }[] = [
+  // ── SECTIONED editor ──────────────────────────────────────────────────────
+  // Every part of the screen sits in a labelled section (Photo · Identity ·
+  // Contact · Visibility) — the app-wide settings pattern. Text fields open the
+  // focused editor; Visibility is an inline segment that saves on change.
+  const identityRows: { key: FieldKey; label: string; value: string; muted: boolean }[] = [
     ...(account ? [{ key: "name" as const, label: "Name", value: account.name || "Add your name", muted: !account.name }] : []),
     { key: "handle", label: "Username", value: form.handle ? `@${form.handle}` : "Claim a handle", muted: !form.handle },
     { key: "displayName", label: "Display name", value: form.displayName || "Optional", muted: !form.displayName },
     { key: "bio", label: "Bio", value: form.bio || "Add a bio", muted: !form.bio },
-    ...(account ? [{ key: "email" as const, label: "Email", value: account.email || "Add an email", muted: !account.email }] : []),
-    { key: "visibility", label: "Visibility", value: visLabel, muted: false },
   ];
+  const contactRows: { key: FieldKey; label: string; value: string; muted: boolean }[] =
+    account ? [{ key: "email", label: "Email", value: account.email || "Add an email", muted: !account.email }] : [];
+
+  const pickVisibility = (v: "public" | "followers" | "private") => {
+    setForm({ ...form, visibility: v });
+    if (claimed) void (async () => { setSaving(true); await saveSocial({ visibility: v }); setSaving(false); })();
+  };
+
+  const secLabel = (text: string, first?: boolean) => (
+    <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10, marginLeft: 4, marginTop: first ? 0 : 20 }}>{text}</div>
+  );
+  const rowList = (items: { key: FieldKey; label: string; value: string; muted: boolean }[]) => (
+    <div style={{ border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, overflow: "hidden" }}>
+      {items.map((row, i) => (
+        <button key={row.key} onClick={() => setEditing(row.key)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 14px", background: "none", border: "none", borderTop: i > 0 ? `1px solid ${C("line")}` : "none", cursor: "pointer" }}>
+          <span style={{ width: 96, flex: "none", fontSize: 12, color: C("ash") }}>{row.label}</span>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: row.muted ? C("ash") : C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</span>
+          <span style={{ color: C("ash"), fontSize: 16 }}>›</span>
+        </button>
+      ))}
+    </div>
+  );
 
   const body = (
     <>
-      {/* Live "what followers see" preview — updates as you type. */}
-      <div style={{ position: "relative", borderRadius: aurora ? 16 : 10, padding: 14, marginBottom: 16, background: C("ink2"), border: `1px solid ${C("line")}` }}>
-        <span style={{ position: "absolute", top: 12, right: 12, fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{visLabel}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={48} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{form.displayName || form.handle || "Your name"}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--lime-text)" }}>@{form.handle || "handle"}</div>
+      {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
+      {secLabel("Photo", true)}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, padding: 14 }}>
+        <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={58} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk") }}>Preset avatar</div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>
+            {AVATAR_PRESETS.map((p) => (
+              <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={`Preset ${p.id}`} aria-pressed={form.avatarUrl === p.uri}
+                style={{ width: 30, height: 30, borderRadius: "50%", padding: 0, cursor: "pointer", overflow: "hidden", background: "none", border: `2px solid ${form.avatarUrl === p.uri ? C("lime") : "transparent"}` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              </button>
+            ))}
           </div>
         </div>
-        {form.bio ? <div style={{ fontSize: 13, color: C("chalk"), marginTop: 10, lineHeight: 1.5 }}>{form.bio}</div> : null}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+        {form.avatarUrl && <Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save photo"}</Btn>}
+        <button disabled title="Photo upload is coming soon" style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>Upload photo (soon)</button>
       </div>
 
-      {/* Avatar — preview + one-tap branded gradient presets (photo upload soon). */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={72} />
-        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", justifyContent: "center" }}>
-          {AVATAR_PRESETS.map((p) => (
-            <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={`Preset ${p.id}`} aria-pressed={form.avatarUrl === p.uri}
-              style={{ width: 34, height: 34, borderRadius: "50%", padding: 0, cursor: "pointer", overflow: "hidden", background: "none", border: `2px solid ${form.avatarUrl === p.uri ? C("lime") : "transparent"}` }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            </button>
+      {/* ── IDENTITY ── name, handle, display name, bio. */}
+      {secLabel("Identity")}
+      {rowList(identityRows)}
+
+      {/* ── CONTACT ── account email. */}
+      {contactRows.length > 0 && (<>{secLabel("Contact")}{rowList(contactRows)}</>)}
+
+      {/* ── VISIBILITY ── inline segment, saves on change. */}
+      {secLabel("Visibility")}
+      <div style={{ border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, padding: 14 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          {(["public", "followers", "private"] as const).map((v) => (
+            <Pill key={v} active={form.visibility === v} onClick={() => pickVisibility(v)}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {form.avatarUrl && <Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save photo"}</Btn>}
-          <button disabled title="Photo upload is coming soon" style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>Upload photo (soon)</button>
-        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10 }}>Who can see your results and profile.</div>
       </div>
 
-      {/* Tap-a-row list. */}
-      <div style={{ border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, overflow: "hidden" }}>
-        {rows.map((row, i) => (
-          <button key={row.key} onClick={() => setEditing(row.key)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 14px", background: "none", border: "none", borderTop: i > 0 ? `1px solid ${C("line")}` : "none", cursor: "pointer" }}>
-            <span style={{ width: 92, flex: "none", fontSize: 12, color: C("ash") }}>{row.label}</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: row.muted ? C("ash") : C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</span>
-            <span style={{ color: C("ash"), fontSize: 16 }}>›</span>
-          </button>
-        ))}
-      </div>
-
-      {onDone && <div style={{ marginTop: 14 }}><Btn ghost onClick={onDone}>Done</Btn></div>}
+      {onDone && <div style={{ marginTop: 18 }}><Btn ghost onClick={onDone}>Done</Btn></div>}
       {account?.msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: account.msg.startsWith("✓") ? "var(--lime-text)" : C("ash") }}>{account.msg}</div>}
     </>
   );
