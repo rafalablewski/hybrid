@@ -48,6 +48,7 @@ const SOURCES: Record<AuroraIconName, ReturnType<typeof require>> = {
   "user-square": require("../../assets/icons/user-square.png"),
   download: require("../../assets/icons/download.png"),
   copy: require("../../assets/icons/copy.png"),
+  edit: require("../../assets/icons/edit.png"),
 };
 
 export function AuroraIcon({

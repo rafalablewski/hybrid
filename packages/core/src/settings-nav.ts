@@ -70,7 +70,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "login",
     label: "Account & billing",
     categories: [
-      { id: "security", icon: "lock", title: "Security", subtitle: "Password, 2FA, sessions", keywords: ["password", "mfa", "2fa", "two factor", "sign out everywhere", "sessions"] },
+      { id: "security", icon: "lock", title: "Password & security", subtitle: "Password, 2FA, login activity", keywords: ["password", "mfa", "2fa", "two factor", "sign out everywhere", "sessions", "login", "security"] },
       { id: "subscription", icon: "offer", title: "Subscription", subtitle: "Your plan & billing", keywords: ["upgrade", "full", "billing", "manage subscription", "stripe", "plan", "cancel"] },
     ],
   },

@@ -48,7 +48,8 @@ export type AuroraIconName =
   | "check-circle"
   | "user-square"
   | "download"
-  | "copy";
+  | "copy"
+  | "edit";
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -122,6 +123,9 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   "user-square": ["M18.2197 60C19.3225 52 24.6614 48 36.0004 48C47.3393 48 52.6782 52 53.781 60M36 39C40 39 42 36.8571 42 31.5C42 26.1429 40 24 36 24C32 24 30 26.1429 30 31.5C30 36.8571 32 39 36 39ZM18 60H54C57.3137 60 60 57.3137 60 54V18C60 14.6863 57.3137 12 54 12H18C14.6863 12 12 14.6863 12 18V54C12 57.3137 14.6863 60 18 60Z"],
   download: ["M21 36L36 51L51 36M36 51V12M51 60H21"],
   copy: ["M9 48V12C9 8.68629 11.6863 6 15 6H45M27 66H54C57.3137 66 60 63.3137 60 60V24C60 20.6863 57.3137 18 54 18H27C23.6863 18 21 20.6863 21 24V60C21 63.3137 23.6863 66 27 66Z"],
+  // Pencil / "edit profile" — distinct from the `settings` gear so the two
+  // aren't confused next to an avatar. Kept in lockstep with the mobile PNG.
+  edit: ["M51 9L63 21L22.5 61.5L6 66L10.5 49.5Z", "M44 16L56 28"],
 };
 
 /**

@@ -235,9 +235,9 @@ export default function AuroraProfile({
         <span style={{ position: "absolute", top: -34, right: -24, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 32%, transparent), transparent 70%)", pointerEvents: "none" }} />
       </div>
 
-      {/* HEAD — avatar overlapping the cover + the edit icon (shared "settings"
-          glyph; see note above) where a follower would see "Follow". No Edit /
-          Share buttons anywhere. */}
+      {/* HEAD — avatar overlapping the cover + the edit-profile icon (the
+          "edit" pencil glyph, distinct from the settings gear) where a follower
+          would see "Follow". No Edit / Share buttons anywhere. */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, padding: "0 4px" }}>
         <div style={{ width: 84, height: 84, borderRadius: "50%", border: `3px solid ${C("ink")}`, boxShadow: "0 0 0 2px var(--color-lime)", background: C("ink2"), display: "grid", placeItems: "center", overflow: "hidden", fontWeight: 900, fontSize: 32, color: "var(--lime-text)" }}>
           {avatarUrl ? (
@@ -252,7 +252,7 @@ export default function AuroraProfile({
           aria-label={t("w.account.profile.edit")}
           style={{ width: 46, height: 46, borderRadius: 15, background: C("ink2"), border: `1px solid ${C("line")}`, color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer", marginBottom: 6 }}
         >
-          <AuroraIcon name="settings" size={19} color={C("chalk")} />
+          <AuroraIcon name="edit" size={19} color={C("chalk")} />
         </button>
       </div>
 
