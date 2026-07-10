@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Manually · kcal + P/C/F — 5 Fresh Ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#6cb6bd;--amber:#d0cd94;--violet:#c9a9f0;--red:#e58a5c;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:44px 20px 90px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1280px;margin:0 auto 40px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:690px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .brief{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);color:var(--ash);background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  .gallery{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(374px,1fr));gap:52px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:408px}
+  .cap{margin:0 6px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:10px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.55}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  .phone{position:relative;width:100%;aspect-ratio:390/812;border-radius:48px;padding:11px;
+    background:linear-gradient(160deg,#2a2e21,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
+  .behind{position:absolute;inset:0;padding:52px 22px 0;opacity:.3;filter:saturate(.7)}
+  .behind .bk{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .behind .bcard{margin-top:14px;border:1px solid var(--line);border-radius:20px;padding:16px}
+  .behind .bcard .bt{font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--chalk)}
+  .behind .bcard .bm{font:400 11px/1.5 var(--mono);color:var(--ash);margin-top:5px}
+  .scrim{position:absolute;inset:0;background:linear-gradient(transparent,rgba(0,0,0,.55) 30%)}
+  .status{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:16px 28px 4px;font-size:14px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
+  .bat{background:var(--amber);color:#161608;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
+
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:4;background:var(--ink2);
+    border-radius:30px 30px 37px 37px;border-top:1px solid var(--line);
+    padding:12px 20px 22px;box-shadow:0 -30px 60px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;max-height:90%}
+  .grab{width:44px;height:5px;border-radius:3px;background:#3a3e34;margin:0 auto 14px;flex:none}
+  .title{font-size:27px;font-weight:800;letter-spacing:-.03em}
+  .subttl{font:400 12px/1 var(--mono);color:var(--ash);margin-top:6px}
+  .divider{display:flex;align-items:center;gap:12px;margin:16px 0 14px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .divider span{font:700 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
+  .pill{width:100%;border:none;border-radius:999px;background:var(--lime);color:var(--on-accent);font-weight:800;font-size:16px;padding:16px;cursor:pointer}
+  .pill:active{transform:scale(.99)}
+
+  .premade{margin-top:auto;padding-top:6px}
+  .pm-div{display:flex;align-items:center;gap:12px;margin:15px 0 11px}
+  .pm-div::before,.pm-div::after{content:"";flex:1;height:1px;background:var(--line)}
+  .pm-div span{font:700 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
+  .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;opacity:.5}
+  .pm{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px 13px}
+  .pm .top{display:flex;justify-content:space-between;align-items:center}
+  .pm .em{font-size:20px}.pm .lk{font-size:11px}
+  .pm b{display:block;font-size:14px;font-weight:800;margin-top:8px}
+  .pm .kc{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:4px}
+
+  /* ===== F1 · NUTRITION FACTS LABEL ===== */
+  .f1 .label{background:#f3f0e7;color:#111;border-radius:8px;padding:14px 16px 16px;font-family:"Helvetica Neue",Arial,var(--sans);box-shadow:0 10px 30px -12px rgba(0,0,0,.7)}
+  .f1 .label .lt{font-size:26px;font-weight:800;letter-spacing:-.02em;border-bottom:2px solid #111;padding-bottom:3px}
+  .f1 .label .serv{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:8px solid #111}
+  .f1 .label .amt{font-size:9px;font-weight:700;text-align:right;padding:5px 0 1px;border-bottom:1px solid #111}
+  .f1 .label .calrow{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:5px solid #111;padding:3px 0}
+  .f1 .label .calrow .cl{font-size:16px;font-weight:800}
+  .f1 .label .calrow input{width:96px;border:none;background:transparent;text-align:right;font-size:34px;font-weight:800;letter-spacing:-.03em;color:#111;font-variant-numeric:tabular-nums}
+  .f1 .label .calrow input:focus{outline:none;background:rgba(198,248,79,.35);border-radius:4px}
+  .f1 .label .dvh{font-size:9px;font-weight:700;text-align:right;padding:3px 0;border-bottom:1px solid #111}
+  .f1 .label .nr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #111;font-size:13px}
+  .f1 .label .nr .nm{font-weight:700}
+  .f1 .label .nr input{width:52px;border:none;background:transparent;font-size:15px;font-weight:700;color:#111;border-bottom:1px dotted #888;text-align:center;font-variant-numeric:tabular-nums}
+  .f1 .label .nr input:focus{outline:none;background:rgba(198,248,79,.35)}
+  .f1 .label .nr .g{color:#333}
+  .f1 .label .nr .dv{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+  .f1 .label .foot{font-size:8.5px;color:#333;padding-top:8px;line-height:1.4}
+  .f1 .label .dotp{color:#8ea63a}.f1 .label .dotc{color:#4d9aa1}.f1 .label .dotf{color:#a58a3a}
+
+  /* ===== F2 · QUADRANT TILES ===== */
+  .f2 .quad{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .f2 .tile{position:relative;background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:16px 15px 15px;overflow:hidden;min-height:104px;display:flex;flex-direction:column;justify-content:space-between}
+  .f2 .tile .lab{display:flex;align-items:center;gap:7px;font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .f2 .tile .lab i{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .f2 .tile.k .lab i{background:var(--chalk)}.f2 .tile.p .lab i{background:var(--lime)}
+  .f2 .tile.c .lab i{background:var(--blue)}.f2 .tile.f .lab i{background:var(--amber)}
+  .f2 .tile input{width:100%;border:none;background:transparent;color:var(--chalk);font:800 40px/1 var(--sans);letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:8px}
+  .f2 .tile input:focus{outline:none}
+  .f2 .tile .un{font:600 10px/1 var(--mono);color:var(--ash2)}
+  .f2 .tile .fill{position:absolute;left:0;bottom:0;height:4px;transition:width .3s ease}
+  .f2 .tile.k .fill{background:var(--chalk)}.f2 .tile.p .fill{background:var(--lime)}
+  .f2 .tile.c .fill{background:var(--blue)}.f2 .tile.f .fill{background:var(--amber)}
+  .f2 .tile.k input:focus~.fill,.f2 .tile:focus-within{border-color:var(--line2)}
+  .f2 .recon{text-align:center;font:600 10px/1 var(--mono);color:var(--ash);margin-top:12px}
+  .f2 .recon b{color:var(--lime-text)}
+
+  /* ===== F3 · SPEC-SHEET ROWS ===== */
+  .f3 .hero{display:flex;align-items:baseline;gap:8px;justify-content:center;margin-bottom:4px}
+  .f3 .hero input{width:150px;border:none;background:transparent;text-align:center;color:var(--chalk);font:800 52px/1 var(--sans);letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+  .f3 .hero input:focus{outline:none}
+  .f3 .hero s{font:700 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .f3 .recon{text-align:center;font:600 10px/1 var(--mono);color:var(--ash2);margin-bottom:14px;min-height:12px}
+  .f3 .recon.warn{color:var(--amber)}
+  .f3 .recon b{color:var(--lime-text)}
+  .f3 .srow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-top:1px solid var(--line)}
+  .f3 .srow:last-of-type{border-bottom:1px solid var(--line)}
+  .f3 .srow .dot{width:10px;height:10px;border-radius:3px;flex:none}
+  .f3 .srow.p .dot{background:var(--lime)}.f3 .srow.c .dot{background:var(--blue)}.f3 .srow.f .dot{background:var(--amber)}
+  .f3 .srow .nm{font-size:15px;font-weight:700}
+  .f3 .srow .kk{margin-left:auto;font:600 10px/1 var(--mono);color:var(--ash2);font-variant-numeric:tabular-nums}
+  .f3 .srow input{width:64px;border:none;background:var(--ink);border:1px solid var(--line);border-radius:11px;color:var(--chalk);font:800 18px/1 var(--sans);text-align:center;padding:10px 0;font-variant-numeric:tabular-nums}
+  .f3 .srow input:focus{outline:none;border-color:var(--lime)}
+  .f3 .srow .gg{font:600 10px/1 var(--mono);color:var(--ash)}
+
+  /* ===== F4 · FILL-IN-THE-BLANK ===== */
+  .f4 .sentence{font-size:23px;font-weight:600;line-height:1.5;letter-spacing:-.01em;color:var(--ash);margin:4px 0 16px}
+  .f4 .sentence input{border:none;background:transparent;font:800 24px/1 var(--sans);color:var(--chalk);text-align:center;border-bottom:2px solid var(--line2);padding:0 2px 3px;width:58px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .f4 .sentence input:focus{outline:none;border-color:var(--lime)}
+  .f4 .sentence .wk{color:var(--chalk)}
+  .f4 .sentence .up{color:var(--lime-text)}.f4 .sentence .uc{color:var(--blue)}.f4 .sentence .uf{color:var(--amber)}
+  .f4 .splitbar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--line);margin-bottom:6px}
+  .f4 .splitbar i{transition:width .3s ease}
+  .f4 .splitbar .sp{background:var(--lime)}.f4 .splitbar .sc{background:var(--blue)}.f4 .splitbar .sf{background:var(--amber)}
+  .f4 .slg{display:flex;justify-content:space-between;font:600 10px/1 var(--mono);color:var(--ash)}
+  .f4 .slg b{color:var(--chalk);font-variant-numeric:tabular-nums}
+
+  /* ===== F5 · FOCUS FLOW ===== */
+  .f5 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
+  .f5 .chip{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:10px 4px;cursor:pointer;text-align:center}
+  .f5 .chip.sel{border-color:var(--lime);background:rgba(198,248,79,.08)}
+  .f5 .chip s{display:block;font:700 8.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .f5 .chip b{display:block;font-size:19px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .f5 .chip.k.sel b{color:var(--chalk)}.f5 .chip.p.sel b{color:var(--lime-text)}
+  .f5 .chip.c.sel b{color:var(--blue)}.f5 .chip.f.sel b{color:var(--amber)}
+  .f5 .disp{text-align:center;margin-bottom:10px}
+  .f5 .disp .num{font-size:58px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
+  .f5 .disp .num.empty{color:var(--ash2)}
+  .f5 .disp .un{font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash);margin-top:8px}
+  .f5 .disp .rc{font:600 10px/1 var(--mono);color:var(--lime-text);margin-top:6px;min-height:12px}
+  .f5 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+  .f5 .key{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:13px;font-size:21px;font-weight:700;color:var(--chalk);cursor:pointer;font-variant-numeric:tabular-nums}
+  .f5 .key:active{background:var(--lime);color:var(--on-accent)}
+  .f5 .key.fn{color:var(--ash);font-size:18px}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  .foot{max-width:1280px;margin:56px auto 0;padding-top:22px;border-top:1px solid var(--line);color:var(--ash2);font:400 12.5px/1.7 var(--mono)}
+  .foot b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Hybrid · Nutrition · Log Manually</div>
+  <h1>One entry, <span>four numbers</span></h1>
+  <p>No more Calories / Macros tabs — a single form that always takes <b>kcal, protein, carbs, fat</b>. Five fresh layouts for exactly those four fields. Colour law throughout: <b><span style="color:var(--lime-text)">protein</span></b> lime, <b><span style="color:var(--blue)">carbs</span></b> teal, <b><span style="color:var(--amber)">fat</span></b> sand. Every field is live — type and watch each respond.</p>
+  <div class="brief">
+    <span class="tag"><b>kcal + P + C + F</b> in one shot</span>
+    <span class="tag">Fields reconcile (4·4·9)</span>
+    <span class="tag">Type — it's interactive</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ===== F1 · NUTRITION FACTS LABEL ===== -->
+  <div class="concept f1">
+    <div class="cap">
+      <span class="n"><i>1</i> Nutrition label</span>
+      <h2>Fill in the label you already know</h2>
+      <p>The form <b>becomes an FDA nutrition-facts label</b> — a bright card pasted into the dark sheet. You fill kcal + P/C/F; the % Daily Value column fills itself. Instantly legible, zero learning curve.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="label">
+          <div class="lt">Nutrition Facts</div>
+          <div class="serv"><span>Your meal</span><span>1 serving</span></div>
+          <div class="amt">Amount per serving</div>
+          <div class="calrow"><span class="cl">Calories</span><input inputmode="numeric" placeholder="0" data-l="k" aria-label="Calories"></div>
+          <div class="dvh">% Daily Value *</div>
+          <div class="nr"><span class="nm dotf">Total Fat</span><input inputmode="numeric" placeholder="0" data-l="f" aria-label="Fat"><span class="g">g</span><span class="dv" data-dv="f">0%</span></div>
+          <div class="nr"><span class="nm dotc">Total Carbohydrate</span><input inputmode="numeric" placeholder="0" data-l="c" aria-label="Carbs"><span class="g">g</span><span class="dv" data-dv="c">0%</span></div>
+          <div class="nr"><span class="nm dotp">Protein</span><input inputmode="numeric" placeholder="0" data-l="p" aria-label="Protein"><span class="g">g</span><span class="dv" data-dv="p">0%</span></div>
+          <div class="foot">* Based on a 2,000 kcal day. Macros compute to <b data-l="auto">0</b> kcal.</div>
+        </div>
+        <button class="pill" style="margin-top:14px">Add meal</button>
+        <div class="premade"><div class="pm-div"><span>Pre-made · Full</span></div><div class="pm-grid"><div class="pm"><div class="top"><span class="em">🍳</span><span class="lk">🔒</span></div><b>Breakfast</b><div class="kc">~520 kcal</div></div><div class="pm"><div class="top"><span class="em">🥗</span><span class="lk">🔒</span></div><b>Lunch</b><div class="kc">~680 kcal</div></div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== F2 · QUADRANT TILES ===== -->
+  <div class="concept f2">
+    <div class="cap">
+      <span class="n"><i>2</i> Quadrant tiles</span>
+      <h2>Four big targets, one tap each</h2>
+      <p>Each number is a large tile — thumb-sized, colour-flagged, with a fill line that grows as you type. Symmetric and calm; nothing is cramped. A quiet line reconciles kcal against the macros.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="quad">
+          <div class="tile k"><div class="lab"><i></i>Calories</div><input inputmode="numeric" placeholder="0" data-q="k" aria-label="Calories"><div class="un">kcal</div><div class="fill" data-fill="k" style="width:0"></div></div>
+          <div class="tile p"><div class="lab"><i></i>Protein</div><input inputmode="numeric" placeholder="0" data-q="p" aria-label="Protein"><div class="un">grams</div><div class="fill" data-fill="p" style="width:0"></div></div>
+          <div class="tile c"><div class="lab"><i></i>Carbs</div><input inputmode="numeric" placeholder="0" data-q="c" aria-label="Carbs"><div class="un">grams</div><div class="fill" data-fill="c" style="width:0"></div></div>
+          <div class="tile f"><div class="lab"><i></i>Fat</div><input inputmode="numeric" placeholder="0" data-q="f" aria-label="Fat"><div class="un">grams</div><div class="fill" data-fill="f" style="width:0"></div></div>
+        </div>
+        <div class="recon" data-q="recon">Macros ≈ <b>0</b> kcal</div>
+        <button class="pill" style="margin-top:12px">Add meal</button>
+        <div class="premade"><div class="pm-div"><span>Pre-made · Full</span></div><div class="pm-grid"><div class="pm"><div class="top"><span class="em">🍽️</span><span class="lk">🔒</span></div><b>Dinner</b><div class="kc">~740 kcal</div></div><div class="pm"><div class="top"><span class="em">🥤</span><span class="lk">🔒</span></div><b>Snack</b><div class="kc">~210 kcal</div></div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== F3 · SPEC-SHEET ROWS ===== -->
+  <div class="concept f3">
+    <div class="cap">
+      <span class="n"><i>3</i> Spec sheet</span>
+      <h2>Calories lead, macros itemise</h2>
+      <p>kcal is the hero number; P / C / F list beneath as spec rows, each showing the calories it contributes. A reconcile line flags when your typed kcal drifts from the macro math — <b>tap to match</b>.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="hero"><input inputmode="numeric" placeholder="0" data-s="k" aria-label="Calories"><s>kcal</s></div>
+        <div class="recon" data-s="recon"></div>
+        <div class="srow p"><span class="dot"></span><span class="nm">Protein</span><input inputmode="numeric" placeholder="0" data-s="p" aria-label="Protein"><span class="gg">g</span><span class="kk" data-sk="p">0 kcal</span></div>
+        <div class="srow c"><span class="dot"></span><span class="nm">Carbs</span><input inputmode="numeric" placeholder="0" data-s="c" aria-label="Carbs"><span class="gg">g</span><span class="kk" data-sk="c">0 kcal</span></div>
+        <div class="srow f"><span class="dot"></span><span class="nm">Fat</span><input inputmode="numeric" placeholder="0" data-s="f" aria-label="Fat"><span class="gg">g</span><span class="kk" data-sk="f">0 kcal</span></div>
+        <button class="pill" style="margin-top:16px">Add meal</button>
+        <div class="premade"><div class="pm-div"><span>Pre-made · Full</span></div><div class="pm-grid"><div class="pm"><div class="top"><span class="em">🍳</span><span class="lk">🔒</span></div><b>Breakfast</b><div class="kc">~520 kcal</div></div><div class="pm"><div class="top"><span class="em">🥗</span><span class="lk">🔒</span></div><b>Lunch</b><div class="kc">~680 kcal</div></div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== F4 · FILL-IN-THE-BLANK ===== -->
+  <div class="concept f4">
+    <div class="cap">
+      <span class="n"><i>4</i> Say it in a sentence</span>
+      <h2>Log it the way you'd describe it</h2>
+      <p>The form reads like a sentence with editable blanks — human, not a grid of boxes. Tap a blank, type, move on. A slim split bar underneath shows the balance forming as you go.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="sentence">
+          This meal is <input inputmode="numeric" placeholder="0" data-b="k" aria-label="Calories"> <span class="wk">kcal</span> —
+          <input inputmode="numeric" placeholder="0" data-b="p" aria-label="Protein"><span class="up">g&nbsp;protein</span>,
+          <input inputmode="numeric" placeholder="0" data-b="c" aria-label="Carbs"><span class="uc">g&nbsp;carbs</span>,
+          <input inputmode="numeric" placeholder="0" data-b="f" aria-label="Fat"><span class="uf">g&nbsp;fat</span>.
+        </div>
+        <div class="splitbar"><i class="sp" data-b="sp" style="width:0"></i><i class="sc" data-b="sc" style="width:0"></i><i class="sf" data-b="sf" style="width:0"></i></div>
+        <div class="slg"><span>Split by calories</span><span><b data-b="auto">0</b> kcal from macros</span></div>
+        <button class="pill" style="margin-top:18px">Add meal</button>
+        <div class="premade"><div class="pm-div"><span>Pre-made · Full</span></div><div class="pm-grid"><div class="pm"><div class="top"><span class="em">🍽️</span><span class="lk">🔒</span></div><b>Dinner</b><div class="kc">~740 kcal</div></div><div class="pm"><div class="top"><span class="em">🥤</span><span class="lk">🔒</span></div><b>Snack</b><div class="kc">~210 kcal</div></div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== F5 · FOCUS FLOW ===== -->
+  <div class="concept f5">
+    <div class="cap">
+      <span class="n"><i>5</i> Focus flow</span>
+      <h2>One number at a time, no keyboard</h2>
+      <p>Four chips hold the values; tap one to make it the giant display, key it in, move to the next. The whole entry happens on a thumb pad — fast, deliberate, and it never fights the system keyboard.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="chips">
+          <div class="chip k sel" data-t="k"><s>kcal</s><b data-v="k">0</b></div>
+          <div class="chip p" data-t="p"><s>Protein</s><b data-v="p">0</b></div>
+          <div class="chip c" data-t="c"><s>Carbs</s><b data-v="c">0</b></div>
+          <div class="chip f" data-t="f"><s>Fat</s><b data-v="f">0</b></div>
+        </div>
+        <div class="disp"><div class="num empty" data-d="num">0</div><div class="un" data-d="un">kcal</div><div class="rc" data-d="rc"></div></div>
+        <div class="pad">
+          <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+          <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+          <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+          <button class="key fn" data-k="c">C</button><button class="key">0</button><button class="key fn" data-k="del">⌫</button>
+        </div>
+        <button class="pill">Add meal</button>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <b>Merge.</b> These replace the Calories / Macros toggle with one form that always captures all four numbers.<br>
+  <b>Reconcile.</b> Protein·4 + carbs·4 + fat·9 is shown against the typed kcal so the two can't silently disagree.<br>
+  <b>Parity.</b> Whichever is chosen ships to web + mobile in one change; the shared math lives in packages/core.
+</div>
+
+<script>
+  var KP=4,KC=4,KF=9;
+  function val(el){return Math.max(0,parseInt((el&&el.value)||'0',10)||0);}
+
+  // ===== F1 · nutrition label (%DV) =====
+  (function(){
+    var r=document.querySelector('.f1'); if(!r)return;
+    var DV={k:2000,f:78,c:275,p:50};
+    var g={k:r.querySelector('[data-l="k"]'),f:r.querySelector('[data-l="f"]'),c:r.querySelector('[data-l="c"]'),p:r.querySelector('[data-l="p"]')};
+    function calc(){
+      ['f','c','p'].forEach(function(key){
+        r.querySelector('[data-dv="'+key+'"]').textContent=Math.round(val(g[key])/DV[key]*100)+'%';
+      });
+      r.querySelector('[data-l="auto"]').textContent=val(g.p)*KP+val(g.c)*KC+val(g.f)*KF;
+    }
+    Object.keys(g).forEach(function(k){if(g[k])g[k].addEventListener('input',calc);});
+  })();
+
+  // ===== F2 · quadrant tiles =====
+  (function(){
+    var r=document.querySelector('.f2'); if(!r)return;
+    var soft={k:1000,p:60,c:120,f:50};
+    var g={k:r.querySelector('[data-q="k"]'),p:r.querySelector('[data-q="p"]'),c:r.querySelector('[data-q="c"]'),f:r.querySelector('[data-q="f"]')};
+    function calc(){
+      ['k','p','c','f'].forEach(function(key){
+        r.querySelector('[data-fill="'+key+'"]').style.width=Math.min(100,val(g[key])/soft[key]*100)+'%';
+      });
+      r.querySelector('[data-q="recon"]').innerHTML='Macros ≈ <b>'+(val(g.p)*KP+val(g.c)*KC+val(g.f)*KF)+'</b> kcal';
+    }
+    ['k','p','c','f'].forEach(function(key){g[key].addEventListener('input',calc);});
+  })();
+
+  // ===== F3 · spec sheet (contributions + reconcile) =====
+  (function(){
+    var r=document.querySelector('.f3'); if(!r)return;
+    var g={k:r.querySelector('[data-s="k"]'),p:r.querySelector('[data-s="p"]'),c:r.querySelector('[data-s="c"]'),f:r.querySelector('[data-s="f"]')};
+    var rec=r.querySelector('[data-s="recon"]');
+    function calc(){
+      var kp=val(g.p)*KP,kc=val(g.c)*KC,kf=val(g.f)*KF, sum=kp+kc+kf, typed=val(g.k);
+      r.querySelector('[data-sk="p"]').textContent=kp+' kcal';
+      r.querySelector('[data-sk="c"]').textContent=kc+' kcal';
+      r.querySelector('[data-sk="f"]').textContent=kf+' kcal';
+      if(!sum){rec.className='recon';rec.textContent='';return;}
+      if(!typed){rec.className='recon';rec.innerHTML='Macros total <b>'+sum+'</b> kcal · tap to use';rec.style.cursor='pointer';}
+      else if(Math.abs(typed-sum)<=Math.max(15,sum*0.03)){rec.className='recon';rec.innerHTML='✓ matches macros ('+sum+' kcal)';rec.style.cursor='default';}
+      else {rec.className='recon warn';rec.innerHTML='⚠ macros = '+sum+' kcal · tap to match';rec.style.cursor='pointer';}
+    }
+    rec.addEventListener('click',function(){var sum=val(g.p)*KP+val(g.c)*KC+val(g.f)*KF;if(sum){g.k.value=sum;calc();}});
+    ['k','p','c','f'].forEach(function(key){g[key].addEventListener('input',calc);});
+  })();
+
+  // ===== F4 · fill-in-the-blank =====
+  (function(){
+    var r=document.querySelector('.f4'); if(!r)return;
+    var g={k:r.querySelector('[data-b="k"]'),p:r.querySelector('[data-b="p"]'),c:r.querySelector('[data-b="c"]'),f:r.querySelector('[data-b="f"]')};
+    function calc(){
+      var kp=val(g.p)*KP,kc=val(g.c)*KC,kf=val(g.f)*KF,tot=kp+kc+kf||1;
+      r.querySelector('[data-b="sp"]').style.width=(kp/tot*100)+'%';
+      r.querySelector('[data-b="sc"]').style.width=(kc/tot*100)+'%';
+      r.querySelector('[data-b="sf"]').style.width=(kf/tot*100)+'%';
+      r.querySelector('[data-b="auto"]').textContent=kp+kc+kf;
+    }
+    ['k','p','c','f'].forEach(function(key){g[key].addEventListener('input',calc);});
+  })();
+
+  // ===== F5 · focus flow =====
+  (function(){
+    var r=document.querySelector('.f5'); if(!r)return;
+    var st={k:0,p:0,c:0,f:0,sel:'k'};
+    var units={k:'kcal',p:'grams protein',c:'grams carbs',f:'grams fat'};
+    var num=r.querySelector('[data-d="num"]'), un=r.querySelector('[data-d="un"]'), rc=r.querySelector('[data-d="rc"]');
+    function render(){
+      var v=st[st.sel];
+      num.textContent=v||'0'; num.classList.toggle('empty',!v);
+      un.textContent=units[st.sel];
+      var sum=st.p*KP+st.c*KC+st.f*KF;
+      rc.textContent = st.sel==='k' ? (sum?'macros ≈ '+sum+' kcal':'') : (sum?'= '+sum+' kcal so far':'');
+      r.querySelectorAll('.chip').forEach(function(ch){
+        ch.classList.toggle('sel',ch.dataset.t===st.sel);
+        r.querySelector('[data-v="'+ch.dataset.t+'"]').textContent=st[ch.dataset.t];
+      });
+    }
+    r.querySelectorAll('.chip').forEach(function(ch){ch.addEventListener('click',function(){st.sel=ch.dataset.t;render();});});
+    r.querySelectorAll('.pad .key').forEach(function(k){
+      k.addEventListener('click',function(){
+        var cur=String(st[st.sel]===0?'':st[st.sel]), d=k.dataset.k, max=st.sel==='k'?4:3;
+        if(d==='c')cur='';
+        else if(d==='del')cur=cur.slice(0,-1);
+        else if(cur.length<max)cur+=k.textContent.trim();
+        st[st.sel]=parseInt(cur||'0',10)||0; render();
+      });
+    });
+    render();
+  })();
+</script>
+</body>
+</html>
