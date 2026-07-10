@@ -29,13 +29,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
-  const [mealName, setMealName] = useState("");
-  const [macroMode, setMacroMode] = useState(false);
   const [scanning, setScanning] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mealMsg, setMealMsg] = useState("");
+  // Signal kinds already POSTed for the meal being entered — survives a partial
+  // failure so a retry doesn't duplicate the kinds that already succeeded.
+  const loggedKinds = useRef<Set<string>>(new Set());
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
@@ -58,19 +59,30 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const personalized = maint.kcal != null;
 
   const add = async () => {
-    setSaving(true); setError("");
-    const entries: [string, string, string][] = [["energyIntake", f.kcal, "kcal"], ["protein", f.protein, "g"], ["carbs", f.carbs, "g"], ["fat", f.fat, "g"]];
+    setSaving(true); setError(""); setMealMsg("");
+    // One unified entry: kcal + macros. When kcal is left blank, derive it from
+    // the macros (4·4·9) so the calorie total always moves — mirrors how a preset
+    // stores an explicit kcal alongside its macros.
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const protein = num(f.protein), carbs = num(f.carbs), fat = num(f.fat);
+    const kcal = num(f.kcal) || protein * 4 + carbs * 4 + fat * 9;
+    // Post one signal per macro, remembering which kinds already landed
+    // (loggedKinds) so a retry after a partial network failure re-sends ONLY the
+    // failed kinds and never double-logs. Reset once the whole meal is in.
+    const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
+      .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
+    if (!jobs.length) { setSaving(false); return; }
     try {
-      let any = false;
-      for (const [kind, v, unit] of entries) {
-        const n = parseFloat(v);
-        if (!Number.isFinite(n) || n <= 0) continue;
-        any = true;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: n, unit, source: "manual" }) });
+      for (const [kind, value, unit] of jobs) {
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "manual" }) });
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
+        loggedKinds.current.add(kind);
       }
-      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); revalidate.recovery(); }
+      setF({ kcal: "", protein: "", carbs: "", fat: "" });
+      setMealMsg(`+${Math.round(kcal)} kcal`);
+      loggedKinds.current = new Set();
+      await load(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
   };
@@ -92,24 +104,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
-  // Compact quick-add: log the entered kcal as an energyIntake signal (macros
-  // stay on the full screen). The optional name just labels the confirmation.
-  const addMeal = async () => {
-    const n = parseFloat(f.kcal);
-    if (!Number.isFinite(n) || n <= 0) return;
-    setSaving(true); setError("");
-    try {
-      const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "energyIntake", value: n, unit: "kcal", source: "manual" }) });
-      if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
-      if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); setSaving(false); return; }
-      setF((s) => ({ ...s, kcal: "" }));
-      setMealMsg(mealName ? `${mealName} · +${Math.round(n)} kcal` : `+${Math.round(n)} kcal`);
-      setMealName("");
-      await load(); revalidate.recovery();
-    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
-    setSaving(false);
-  };
-
   // Scan a nutrition label (Full) — read the file as a data URL, send it to the
   // AI vision endpoint, and prefill the macro fields. A 403 means not-Full →
   // route to upgrade.
@@ -126,9 +120,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       if (res.status === 403) { onNavigate?.("upgrade"); setScanning(false); return; }
       if (!res.ok) { setError(t("w.recovery.nutrition.scanFailed")); setScanning(false); return; }
       const d = (await res.json()) as { name: string | null; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null };
-      setMacroMode(true);
       setF({ kcal: d.kcal != null ? String(d.kcal) : "", protein: d.protein != null ? String(d.protein) : "", carbs: d.carbs != null ? String(d.carbs) : "", fat: d.fat != null ? String(d.fat) : "" });
-      if (d.name) setMealName(d.name);
     } catch { setError(t("w.recovery.nutrition.scanFailed")); }
     setScanning(false);
   };
@@ -144,26 +136,33 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</div>
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
-        {/* Calories ↔ Macros toggle */}
-        <div style={{ display: "flex", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3, marginBottom: 12 }}>
-          {[{ id: false, l: t("w.recovery.nutrition.tabCalories") }, { id: true, l: t("w.recovery.nutrition.tabMacros") }].map((o) => (
-            <button key={String(o.id)} onClick={() => setMacroMode(o.id)} aria-pressed={macroMode === o.id} style={{ flex: 1, padding: "8px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, background: macroMode === o.id ? C("lime") : "transparent", color: macroMode === o.id ? C("ink") : C("ash") }}>{o.l}</button>
-          ))}
+        {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {([
+            { k: "kcal", label: t("w.recovery.nutrition.tabCalories"), unit: "kcal", color: C("chalk"), max: 1000 },
+            { k: "protein", label: t("w.recovery.nutrition.protein"), unit: "g", color: C("lime"), max: 60 },
+            { k: "carbs", label: t("w.recovery.nutrition.carbs"), unit: "g", color: C("blue"), max: 120 },
+            { k: "fat", label: t("w.recovery.nutrition.fat"), unit: "g", color: C("amber"), max: 50 },
+          ] as const).map((tile) => {
+            const raw = f[tile.k];
+            const pct = Math.min(100, (Math.max(0, parseFloat(raw) || 0) / tile.max) * 100);
+            return (
+              <div key={tile.k} style={{ position: "relative", overflow: "hidden", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px 15px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: tile.color }} />{tile.label}
+                </div>
+                <input value={raw} onChange={(e) => setF((s) => ({ ...s, [tile.k]: e.target.value }))} inputMode="numeric" placeholder="0" aria-label={tile.label} style={{ width: "100%", boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 38, letterSpacing: "-.03em", padding: "6px 0 0" }} />
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{tile.unit}</div>
+                <div style={{ position: "absolute", left: 0, bottom: 0, height: 4, width: `${pct}%`, background: tile.color, transition: "width .3s ease" }} />
+              </div>
+            );
+          })}
         </div>
-        {macroMode ? (
-          <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
-            <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
-            <input value={f.protein} onChange={(e) => setF((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
-            <input value={f.carbs} onChange={(e) => setF((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.carbsPh")} style={numField} />
-            <input value={f.fat} onChange={(e) => setF((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
-          </div>
-        ) : (
-          <div style={{ display: "flex", gap: space.sm }}>
-            <input value={mealName} onChange={(e) => setMealName(e.target.value)} placeholder={t("w.recovery.nutrition.mealNamePh")} style={{ flex: 1, minWidth: 0, boxSizing: "border-box", fontFamily: "var(--font-display)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none" }} />
-            <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={{ width: 104, boxSizing: "border-box", fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 12px", outline: "none", textAlign: "center" }} />
-          </div>
-        )}
-        <button onClick={macroMode ? add : addMeal} disabled={saving} style={{ width: "100%", marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 16, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? t("w.recovery.nutrition.adding") : macroMode ? t("w.recovery.nutrition.add") : t("w.recovery.nutrition.addMeal")}</button>
+        {(() => {
+          const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
+          return macroKcal > 0 ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</div> : null;
+        })()}
+        <button onClick={add} disabled={saving} style={{ width: "100%", marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 16, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
         {/* Scan label — AI vision, Full only (free → upgrade) */}
         <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: full ? "transparent" : `color-mix(in srgb, ${C("violet")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, transparent)`}`, borderRadius: 14, padding: 12, cursor: scanning ? "default" : "pointer", color: full ? C("chalk") : "var(--violet-text)", fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
           <span>{full ? "📷" : "🔒"}</span>{scanning ? t("w.recovery.nutrition.scanning") : `${t("w.recovery.nutrition.scanLabel")}${full ? "" : " · Full"}`}

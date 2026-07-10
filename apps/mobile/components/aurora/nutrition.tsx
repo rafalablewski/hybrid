@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -46,8 +46,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
-  const [mealName, setMealName] = useState("");
-  const [macroMode, setMacroMode] = useState(false);
+  // Signal kinds already logged for the meal being entered — survives a partial
+  // failure so a retry doesn't duplicate the kinds that already succeeded.
+  const loggedKinds = useRef<Set<string>>(new Set());
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mealMsg, setMealMsg] = useState("");
@@ -66,18 +67,26 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   const add = async () => {
     setSaving(true);
-    const jobs: Promise<boolean>[] = [];
-    const push = (k: string, v: string, unit: string) => {
-      const n = parseFloat(v);
-      if (Number.isFinite(n) && n > 0) jobs.push(createSignal(k, n, unit));
-    };
-    push("energyIntake", f.kcal, "kcal");
-    push("protein", f.protein, "g");
-    push("carbs", f.carbs, "g");
-    push("fat", f.fat, "g");
-    const results = await Promise.all(jobs);
-    if (results.includes(false)) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
-    else setF({ kcal: "", protein: "", carbs: "", fat: "" });
+    setMealMsg("");
+    // One unified entry: kcal + macros. When kcal is left blank, derive it from
+    // the macros (4·4·9) so the calorie total always moves — mirrors how a preset
+    // stores an explicit kcal alongside its macros.
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const protein = num(f.protein), carbs = num(f.carbs), fat = num(f.fat);
+    const kcal = num(f.kcal) || protein * 4 + carbs * 4 + fat * 9;
+    // Post one signal per macro, remembering which kinds already landed
+    // (loggedKinds) so a retry after a partial failure re-sends ONLY the failed
+    // kinds and never double-logs. Reset once the whole meal is in.
+    const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
+      .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
+    if (!jobs.length) { setSaving(false); return; }
+    let failed = false;
+    for (const [kind, value, unit] of jobs) {
+      if (!(await createSignal(kind, value, unit))) { failed = true; break; }
+      loggedKinds.current.add(kind);
+    }
+    if (failed) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
+    else { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); loggedKinds.current = new Set(); }
     setSaving(false);
     revalidate.recovery();
   };
@@ -94,21 +103,6 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     revalidate.recovery();
   };
 
-  // Compact quick-add: log the entered kcal as an energyIntake signal (macros
-  // stay on the full screen). The optional name just labels the confirmation.
-  const addMeal = async () => {
-    const n = parseFloat(f.kcal);
-    if (!Number.isFinite(n) || n <= 0) return;
-    setSaving(true);
-    const ok = await createSignal("energyIntake", n, "kcal");
-    setSaving(false);
-    if (!ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setF((s) => ({ ...s, kcal: "" }));
-    setMealMsg(mealName ? `${mealName} · +${Math.round(n)} kcal` : `+${Math.round(n)} kcal`);
-    setMealName("");
-    revalidate.recovery();
-  };
-
   // Scan a nutrition label (Full) — pick a photo, send it to the AI vision
   // endpoint, and prefill the macro fields. Free users are routed to upgrade.
   const scan = async () => {
@@ -122,9 +116,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     setScanning(false);
     if (!out.ok || !out.data) { Alert.alert(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
     const d = out.data;
-    setMacroMode(true);
     setF({ kcal: d.kcal != null ? String(d.kcal) : "", protein: d.protein != null ? String(d.protein) : "", carbs: d.carbs != null ? String(d.carbs) : "", fat: d.fat != null ? String(d.fat) : "" });
-    if (d.name) setMealName(d.name);
   };
 
   // The Today "Nutrition" sheet — a focused Add-a-meal, not the whole tracker.
@@ -135,33 +127,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
-        {/* Calories ↔ Macros toggle */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 3, marginBottom: 12 }}>
-          {[{ id: false, l: t("w.recovery.nutrition.tabCalories") }, { id: true, l: t("w.recovery.nutrition.tabMacros") }].map((o) => (
-            <Pressable key={String(o.id)} onPress={() => setMacroMode(o.id)} accessibilityRole="button" accessibilityState={{ selected: macroMode === o.id }} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 999, backgroundColor: macroMode === o.id ? C.lime : "transparent" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: macroMode === o.id ? C.onAccent : C.ash }}>{o.l}</Text>
-            </Pressable>
-          ))}
+        {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+          <QuadTile field="kcal" label={t("w.recovery.nutrition.tabCalories")} unit="kcal" color={C.chalk} max={1000} value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} />
+          <QuadTile field="protein" label={t("w.recovery.nutrition.protein")} unit="g" color={C.lime} max={60} value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} />
+          <QuadTile field="carbs" label={t("w.recovery.nutrition.carbs")} unit="g" color={C.blue} max={120} value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} />
+          <QuadTile field="fat" label={t("w.recovery.nutrition.fat")} unit="g" color={C.amber} max={50} value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} />
         </View>
-        {macroMode ? (
-          <>
-            <View style={{ flexDirection: "row", gap: space.sm }}>
-              <Cell value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} ph="kcal" />
-              <Cell value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} ph={t("w.recovery.nutrition.proteinPh")} />
-              <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph={t("w.recovery.nutrition.carbsPh")} />
-              <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
-            </View>
-            <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")} onPress={add} disabled={saving} style={{ marginTop: 12 }} />
-          </>
-        ) : (
-          <>
-            <View style={{ flexDirection: "row", gap: space.sm }}>
-              <TextInput value={mealName} onChangeText={setMealName} placeholder={t("w.recovery.nutrition.mealNamePh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13 }} />
-              <TextInput value={f.kcal} onChangeText={(v) => setF((s) => ({ ...s, kcal: v }))} keyboardType="numeric" placeholder="kcal" placeholderTextColor={C.ash} style={{ width: 96, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 13, textAlign: "center" }} />
-            </View>
-            <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")} onPress={addMeal} disabled={saving} style={{ marginTop: 12 }} />
-          </>
-        )}
+        {(() => {
+          const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
+          return macroKcal > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</Text> : null;
+        })()}
+        <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")} onPress={add} disabled={saving} style={{ marginTop: 12 }} />
         {/* Scan label — AI vision, Full only (free → upgrade) */}
         <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: full ? C.line : `${C.violet}3d`, backgroundColor: full ? "transparent" : `${C.violet}12`, opacity: scanning ? 0.6 : 1 }}>
           <Text style={{ fontSize: 15 }}>{full ? "📷" : "🔒"}</Text>
@@ -368,6 +345,27 @@ function MacroRow({ labelKey, cur, target, color }: { labelKey: string; cur: num
         <Bar cur={cur} target={target} color={color} />
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: 14 }}>{Math.round(cur)}/{target}g</Text>
+    </View>
+  );
+}
+
+// One quadrant tile of the compact Add-a-meal entry: a labelled big-number
+// field (kcal / protein / carbs / fat) with a colour dot and a fill line that
+// grows toward a soft max as you type.
+function QuadTile({ field, label, unit, color, max, value, onChange }: { field: string; label: string; unit: string; color: string; max: number; value: string; onChange: (v: string) => void }) {
+  const { palette: C } = useTheme();
+  const pct = Math.min(1, Math.max(0, parseFloat(value) || 0) / max);
+  return (
+    <View style={{ flexGrow: 1, flexBasis: "46%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 14, overflow: "hidden" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: color }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      </View>
+      <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} testID={`quad-${field}`} style={{ fontFamily: F.black, fontSize: 34, letterSpacing: -1, color: C.chalk, paddingVertical: 4, marginTop: 6 }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{unit}</Text>
+      <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 10, overflow: "hidden" }}>
+        <View style={{ width: `${pct * 100}%`, height: 4, backgroundColor: color }} />
+      </View>
     </View>
   );
 }
