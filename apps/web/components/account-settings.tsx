@@ -11,17 +11,19 @@ import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, BLUE, VIOLET, AMBER, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import { SocialProfileEdit } from "./social-profile";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 
-// Per-category accent — the icon-tile tint, matching the V1 mockup + mobile.
+// Per-category accent — the icon-tile tint, mirroring mobile's TONE exactly so
+// the two clients share the same hues. Uses LIME_HEX (raw hex) not LIME (a CSS
+// var) so the `${accent}24` chip tint + txt(accent) icon colour resolve.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME, social: LIME, preferences: LIME, logger: LIME, notifications: LIME,
-  privacy: LIME, coaching: LIME, security: LIME, subscription: LIME,
+  account: LIME_HEX, social: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
+  privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME_HEX,
   data: ASH, danger: RED,
 };
 
@@ -511,20 +513,22 @@ export default function AccountSettings() {
         <>
           <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</h2>
 
-          {/* Profile header */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-            <div style={{ width: 60, height: 60, borderRadius: "50%", flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 24, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
+          {/* Profile header — shared anatomy with mobile: a bordered row card with a
+              rounded-square lime-gradient initial avatar, name + email, role/provider
+              pills under the name, and the membership FREE/FULL pill pinned right. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 22, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
               {(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{session?.name || t("w.account.settings.your-account")}</div>
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={CHALK}>{session?.email}</Mono>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</div>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={CHALK}>{session?.email}</Mono>
               <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: ASH, background: `${INK2}`, border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
-                <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
-                {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
+                <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", textTransform: "uppercase", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}66`, borderRadius: 999, padding: "4px 12px" }}>{session?.role ?? "client"}</span>
+                {session?.provider && <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", color: txt(ASH), background: `${ASH}1a`, border: `1px solid ${ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{t("w.account.settings.via")} {session.provider}</span>}
               </div>
             </div>
+            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
           </div>
 
           {/* Search */}
@@ -536,22 +540,24 @@ export default function AccountSettings() {
           </div>
 
           {query ? (
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-              {results.length === 0 ? (
-                <Mono s={{ display: "block", padding: 16 }} c={ASH}>{t("w.account.settings.no-results")}</Mono>
-              ) : results.map((c, i) => (
-                <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => { setCat(c.id); setQuery(""); }} />
-              ))}
-            </Card>
+            results.length === 0 ? (
+              <Card><Mono s={{ display: "block" }} c={ASH}>{t("w.account.settings.no-results")}</Mono></Card>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                {results.map((c, i) => (
+                  <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={results.length % 2 === 1 && i === results.length - 1} onOpen={() => { setCat(c.id); setQuery(""); }} />
+                ))}
+              </div>
+            )
           ) : (
             SETTINGS_GROUPS.map((group) => (
               <div key={group.id} style={{ marginBottom: 22 }}>
                 <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8, marginLeft: 4 }} c={ASH}>{group.label}</Mono>
-                <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
                   {group.categories.map((c, i) => (
-                    <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => setCat(c.id)} />
+                    <Tile key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={summary(c.id) || c.subtitle} danger={c.danger} wide={group.categories.length % 2 === 1 && i === group.categories.length - 1} onOpen={() => setCat(c.id)} />
                   ))}
-                </Card>
+                </div>
               </div>
             ))
           )}
@@ -561,33 +567,51 @@ export default function AccountSettings() {
   );
 }
 
-/** A drill-in category row: icon-tile + title/subtitle + current-value + chevron. */
-function NavRow({ icon, accent, title, subtitle, value, danger, first, onOpen }: {
+/** A bento settings tile: tinted icon chip + title + one-line value/subtitle. A
+ *  group with an odd number of categories gets a full-width `wide` trailing tile
+ *  (icon left, text, chevron) so the grid never leaves a lonely half-tile. */
+function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
   icon: AuroraIconName;
   accent: string;
   title: string;
   subtitle: string;
-  value?: string;
   danger?: boolean;
-  first?: boolean;
+  wide?: boolean;
   onOpen: () => void;
 }) {
   return (
     <button
       onClick={onOpen}
-      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", borderTop: first ? "none" : `1px solid ${LINE}`, background: "none", border: "none", cursor: "pointer", textAlign: "left", color: CHALK }}
+      style={{
+        gridColumn: wide ? "span 2" : "auto",
+        display: "flex",
+        flexDirection: wide ? "row" : "column",
+        alignItems: wide ? "center" : "stretch",
+        justifyContent: wide ? "flex-start" : "space-between",
+        gap: wide ? 14 : 0,
+        minHeight: wide ? 0 : 118,
+        width: "100%",
+        textAlign: "left",
+        background: INK2,
+        border: `1px solid ${danger ? `color-mix(in srgb, ${RED} 28%, transparent)` : LINE}`,
+        borderRadius: 20,
+        padding: 16,
+        cursor: "pointer",
+        color: CHALK,
+      }}
     >
-      <span style={{ width: 34, height: 34, borderRadius: 11, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `${accent}24`, color: txt(accent) }}>
-        <AuroraIcon name={icon} size={18} color="currentColor" strokeWidth={4} />
+      <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${danger ? RED : accent} 14%, transparent)`, color: danger ? txt(RED) : txt(accent) }}>
+        <AuroraIcon name={icon} size={20} color="currentColor" strokeWidth={4} />
       </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{ flex: wide ? 1 : "none", minWidth: 0 }}>
         <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
-        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
+        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
       </span>
-      {value ? <span style={{ ...mono, fontSize: fs.caption, color: txt(ASH), flex: "none", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span> : null}
-      <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-      </span>
+      {wide ? (
+        <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </span>
+      ) : null}
     </button>
   );
 }

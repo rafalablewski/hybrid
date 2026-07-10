@@ -58,6 +58,19 @@ export const web_account = {
     "w.account.profile.share-band": "band",
     "w.account.profile.copied": "Copied ✓",
     "w.account.profile.share-card": "Share card",
+    // social profile redesign (aurora/profile.tsx)
+    "w.account.profile.tab-overview": "Overview",
+    "w.account.profile.tab-prs": "PRs",
+    "w.account.profile.tab-activity": "Activity",
+    "w.account.profile.followers": "Followers",
+    "w.account.profile.following": "Following",
+    "w.account.profile.rank": "Rank",
+    "w.account.profile.private-title": "Private · only you",
+    "w.account.profile.private-note": "Private — never shown on your public profile.",
+    "w.account.profile.setup-title": "Set up your public profile",
+    "w.account.profile.setup-body": "Claim a handle, add a photo and bio so friends can find and follow you.",
+    "w.account.profile.setup-complete-title": "Complete your profile",
+    "w.account.profile.setup-complete-body": "Add a photo and bio so friends recognise you.",
 
     // --- connections (aurora/connections.tsx) ---
     "w.account.connections.title": "Connections",
@@ -403,6 +416,19 @@ export const web_account = {
     "w.account.profile.share-band": "poziom",
     "w.account.profile.copied": "Skopiowano ✓",
     "w.account.profile.share-card": "Udostępnij kartę",
+    // social profile redesign (aurora/profile.tsx)
+    "w.account.profile.tab-overview": "Przegląd",
+    "w.account.profile.tab-prs": "Rekordy",
+    "w.account.profile.tab-activity": "Aktywność",
+    "w.account.profile.followers": "Obserwujący",
+    "w.account.profile.following": "Obserwowani",
+    "w.account.profile.rank": "Miejsce",
+    "w.account.profile.private-title": "Prywatne · tylko Ty",
+    "w.account.profile.private-note": "Prywatne — nigdy nie widoczne na Twoim profilu publicznym.",
+    "w.account.profile.setup-title": "Skonfiguruj profil publiczny",
+    "w.account.profile.setup-body": "Zarezerwuj nazwę, dodaj zdjęcie i bio, aby znajomi mogli Cię znaleźć i obserwować.",
+    "w.account.profile.setup-complete-title": "Uzupełnij profil",
+    "w.account.profile.setup-complete-body": "Dodaj zdjęcie i bio, aby znajomi Cię rozpoznali.",
 
     // --- connections ---
     "w.account.connections.title": "Połączenia",
@@ -748,6 +774,19 @@ export const web_account = {
     "w.account.profile.share-band": "Stufe",
     "w.account.profile.copied": "Kopiert ✓",
     "w.account.profile.share-card": "Karte teilen",
+    // social profile redesign (aurora/profile.tsx)
+    "w.account.profile.tab-overview": "Übersicht",
+    "w.account.profile.tab-prs": "PRs",
+    "w.account.profile.tab-activity": "Aktivität",
+    "w.account.profile.followers": "Follower",
+    "w.account.profile.following": "Folge ich",
+    "w.account.profile.rank": "Rang",
+    "w.account.profile.private-title": "Privat · nur du",
+    "w.account.profile.private-note": "Privat — nie in deinem öffentlichen Profil sichtbar.",
+    "w.account.profile.setup-title": "Richte dein öffentliches Profil ein",
+    "w.account.profile.setup-body": "Sichere dir einen Handle, füge Foto und Bio hinzu, damit Freunde dich finden und dir folgen können.",
+    "w.account.profile.setup-complete-title": "Vervollständige dein Profil",
+    "w.account.profile.setup-complete-body": "Füge Foto und Bio hinzu, damit Freunde dich erkennen.",
 
     // --- connections ---
     "w.account.connections.title": "Verbindungen",

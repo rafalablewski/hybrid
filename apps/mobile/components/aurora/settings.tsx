@@ -14,6 +14,7 @@ import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
@@ -202,21 +203,45 @@ export default function AuroraSettings() {
   };
 
   // A render HELPER (not a component) so it doesn't remount on each keystroke.
-  const renderRow = (c: SettingsCategory, first: boolean) => {
+  // Each category is a BENTO tile: a tinted icon chip, the title and a one-line
+  // value/subtitle. Two tiles per row; a group with an odd count gets a
+  // full-width "wide" trailing tile (icon left, text, chevron) so the grid never
+  // leaves a lonely half-tile.
+  const renderTile = (c: SettingsCategory, i: number, count: number) => {
     const accent = toneColor[TONE[c.id]];
     const { tile, fg } = tone(accent);
-    const val = summary(c.id);
+    const line = summary(c.id) || c.subtitle;
+    const wide = count % 2 === 1 && i === count - 1;
+    const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;
     return (
-      <Pressable key={c.id} onPress={() => openCat(c)} accessibilityRole="button" accessibilityLabel={c.title} style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: 16, paddingVertical: 15, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
-        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: tile, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name={c.icon} size={19} color={fg} />
+      <Pressable
+        key={c.id}
+        onPress={() => openCat(c)}
+        accessibilityRole="button"
+        accessibilityLabel={c.title}
+        style={{
+          flexGrow: 1,
+          flexBasis: wide ? "100%" : "45%",
+          minHeight: wide ? 0 : 118,
+          flexDirection: wide ? "row" : "column",
+          alignItems: wide ? "center" : "stretch",
+          justifyContent: wide ? "flex-start" : "space-between",
+          gap: wide ? space.md : 0,
+          backgroundColor: C.ink2,
+          borderWidth: 1,
+          borderColor: c.danger ? `${C.red}47` : C.line,
+          borderRadius: 20,
+          padding: 16,
+        }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name={c.icon} size={20} color={c.danger ? (txt(C, C.red) as string) : fg} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: c.danger ? (txt(C, C.red) as string) : C.chalk }}>{c.title}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{c.subtitle}</Text>
+        <View style={{ flex: wide ? 1 : undefined }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: titleColor }}>{c.title}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, lineHeight: 15 }}>{line}</Text>
         </View>
-        {val ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, maxWidth: 104 }}>{val}</Text> : null}
-        <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
+        {wide ? <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} /> : null}
       </Pressable>
     );
   };
@@ -239,19 +264,26 @@ export default function AuroraSettings() {
     );
   }
 
-  // ── LIST ── profile header, search, grouped category rows.
+  // ── LIST ── screen title, profile header, search, grouped category tiles.
   return (
     <AuroraScreen>
-      <View style={{ alignItems: "center", marginTop: 4 }}>
-        <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="user" size={38} color={txt(C, C.lime)} />
+      <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
+      {/* Profile header — shared anatomy with web: a bordered row card with a
+          rounded-square lime-gradient initial avatar, name + email, role/provider
+          pills under the name, and the membership FREE/FULL pill pinned right. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
+        <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+        </LinearGradient>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
+          {!!acct.email && <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{acct.email}</Text>}
+          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8, flexWrap: "wrap" }}>
+            <Tag label={role} color={C.violet} upper />
+            {!!acct.provider && <Tag label={`${t("w.account.settings.via")} ${acct.provider}`} color={C.ash} />}
+          </View>
         </View>
-        <AHeading style={{ fontSize: fs.heading, marginTop: 14 }}>{name}</AHeading>
-        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
-          <Tag label={role.toUpperCase()} color={C.violet} />
-          <Tag label={entitlement === "paid" ? "FULL · PAID" : "FREE"} color={entitlement === "paid" ? C.lime : C.ash} />
-        </View>
-        {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
+        <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
       </View>
 
       {/* Search */}
@@ -261,18 +293,22 @@ export default function AuroraSettings() {
       </View>
 
       {query ? (
-        <ACard style={{ padding: 0, overflow: "hidden", marginTop: 16 }}>
-          {results.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, padding: 16 }}>{t("w.account.settings.no-results")}</Text>
-          ) : results.map((c, i) => renderRow(c, i === 0))}
-        </ACard>
+        results.length === 0 ? (
+          <ACard style={{ marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.account.settings.no-results")}</Text>
+          </ACard>
+        ) : (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11, marginTop: 16 }}>
+            {results.map((c, i) => renderTile(c, i, results.length))}
+          </View>
+        )
       ) : (
         SETTINGS_GROUPS.map((group) => (
           <View key={group.id} style={{ marginTop: 22 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10, marginLeft: 4 }}>{group.label}</Text>
-            <ACard style={{ padding: 0, overflow: "hidden" }}>
-              {group.categories.map((c, i) => renderRow(c, i === 0))}
-            </ACard>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11 }}>
+              {group.categories.map((c, i) => renderTile(c, i, group.categories.length))}
+            </View>
           </View>
         ))
       )}
@@ -288,11 +324,11 @@ function Label({ children, color, top }: { children: ReactNode; color: string; t
   );
 }
 
-function Tag({ label, color }: { label: string; color: string }) {
+function Tag({ label, color, upper }: { label: string; color: string; upper?: boolean }) {
   const { palette: C } = useTheme();
   return (
     <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
     </View>
   );
 }

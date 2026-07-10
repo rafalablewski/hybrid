@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings Redesign — 5 Ideas</title>
+<style>
+  :root{
+    --lime:#c6f135;
+    --lime-dim:#a9d426;
+    --bg:#0a0b09;
+    --ink:#f4f6ef;
+    --muted:#8a8f82;
+    --muted2:#5f6459;
+    --card:#141613;
+    --card2:#1b1e19;
+    --line:rgba(255,255,255,.07);
+    --line2:rgba(255,255,255,.11);
+    --red:#ff5a4d;
+    --blue:#5aa9ff;
+    --radius:26px;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#050604;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:40px 20px 80px}
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- page chrome ---------- */
+  .page-head{max-width:1180px;margin:0 auto 34px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--lime);margin-bottom:14px}
+  .page-head h1{font-size:40px;line-height:1.05;letter-spacing:-.03em;font-weight:800;margin-bottom:12px}
+  .page-head h1 span{color:var(--muted)}
+  .page-head p{color:var(--muted);max-width:640px;font-size:15px;line-height:1.55}
+  .page-head .brief{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);letter-spacing:.02em;color:var(--muted);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:44px 30px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:390px}
+  .concept-cap{margin:0 6px 16px}
+  .concept-cap .n{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:9px}
+  .concept-cap .n i{width:22px;height:22px;border-radius:7px;background:var(--lime);color:#0a0b09;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .concept-cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:5px}
+  .concept-cap p{color:var(--muted);font-size:13px;line-height:1.5}
+  .concept-cap p b{color:var(--ink);font-weight:600}
+
+  /* ---------- phone ---------- */
+  .phone{position:relative;width:100%;aspect-ratio:390/844;border-radius:46px;padding:11px;
+    background:linear-gradient(160deg,#26291f,#0c0d0a);
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .glow{position:absolute;inset:0;pointer-events:none;background:
+      radial-gradient(120% 45% at 50% -6%,rgba(198,241,53,.14),transparent 60%),
+      radial-gradient(90% 40% at 100% 6%,rgba(90,169,255,.05),transparent 55%);}
+  /* status bar */
+  .status{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:15px 26px 4px;font-size:14px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
+  .bat{background:var(--lime);color:#0a0b09;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .scroll{position:relative;z-index:2;flex:1;overflow:hidden;padding:6px 0 0}
+  .scroll-inner{padding:0 18px}
+
+  /* nav bar */
+  .navbar{position:relative;z-index:3;height:74px;margin:0 14px 12px;border-radius:26px;background:rgba(20,22,19,.72);
+    backdrop-filter:blur(18px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around}
+  .navbar svg{width:23px;height:23px;stroke:var(--muted);fill:none;stroke-width:1.9}
+  .navbar .fab{width:52px;height:52px;border-radius:50%;background:var(--lime);display:grid;place-items:center;box-shadow:0 0 22px rgba(198,241,53,.6);border:3px solid #0a0b09}
+  .navbar .fab svg{stroke:#0a0b09;stroke-width:2.4;width:24px;height:24px}
+
+  /* shared bits */
+  .scr-head{padding:10px 4px 16px;display:flex;align-items:center;gap:14px}
+  .back{width:40px;height:40px;border-radius:13px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .back svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:2.2}
+  .scr-title{font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .scr-sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .cap{font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin:22px 6px 10px}
+
+  /* toggle */
+  .tgl{width:46px;height:28px;border-radius:999px;background:#2a2d25;position:relative;flex:none;transition:.22s;cursor:pointer}
+  .tgl::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#8a8f82;transition:.22s}
+  .tgl.on{background:var(--lime)}
+  .tgl.on::after{left:21px;background:#0a0b09}
+
+  /* segmented */
+  .seg{display:flex;gap:4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:999px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font:700 13px/1 var(--sans);padding:11px 6px;border-radius:999px;cursor:pointer;transition:.18s}
+  .seg button.on{background:var(--lime);color:#0a0b09}
+
+  .chev{stroke:var(--muted2);fill:none;stroke-width:2;width:16px;height:16px;flex:none}
+
+  /* =================================================================
+     IDEA 1 — COMMAND (X-style dense grouped list)
+  ================================================================= */
+  .c1 .search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:6px}
+  .c1 .search svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2}
+  .c1 .search span{color:var(--muted2);font-size:15px}
+  .c1 .grp{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .c1 .row{display:flex;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line)}
+  .c1 .row:last-child{border-bottom:0}
+  .c1 .row .lbl{font-size:16px;font-weight:600}
+  .c1 .row .val{margin-left:auto;color:var(--muted);font-size:15px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .c1 .foot{font-size:12.5px;color:var(--muted);padding:9px 8px 2px;line-height:1.5}
+  .c1 .foot a{color:var(--blue)}
+  .c1 .logout{text-align:center;color:var(--red);font-weight:700;font-size:16px;padding:18px;margin-top:8px}
+
+  /* =================================================================
+     IDEA 2 — APERTURE (Instagram-style profile hero + icon rows)
+  ================================================================= */
+  .c2 .hero{background:linear-gradient(150deg,#1f2418,#141613);border:1px solid var(--line);border-radius:24px;padding:20px;text-align:center;position:relative;overflow:hidden}
+  .c2 .hero::before{content:"";position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(198,241,53,.22),transparent 70%)}
+  .c2 .av{width:78px;height:78px;border-radius:50%;margin:0 auto 12px;background:linear-gradient(135deg,var(--lime),#6fa80f);display:grid;place-items:center;font-size:30px;font-weight:800;color:#0a0b09;border:3px solid #0a0b09;box-shadow:0 0 0 2px var(--lime)}
+  .c2 .hero h3{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .c2 .hero .h{color:var(--muted);font-size:14px;margin-top:2px}
+  .c2 .stats{display:flex;justify-content:center;gap:26px;margin-top:16px;position:relative}
+  .c2 .stats div{text-align:center}
+  .c2 .stats b{display:block;font-size:18px;font-weight:800}
+  .c2 .stats span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .c2 .edit{margin-top:16px;background:var(--lime);color:#0a0b09;font-weight:800;font-size:14px;border-radius:12px;padding:11px;position:relative}
+  .c2 .grp{margin-top:8px}
+  .c2 .row{display:flex;align-items:center;gap:14px;padding:13px 4px;border-bottom:1px solid var(--line)}
+  .c2 .row:last-child{border-bottom:0}
+  .c2 .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .c2 .ic svg{width:19px;height:19px;fill:none;stroke-width:2}
+  .c2 .row .lbl{font-size:15.5px;font-weight:600}
+  .c2 .row .d{font-size:12px;color:var(--muted);margin-top:1px}
+
+  /* =================================================================
+     IDEA 3 — FOCUS (search-first + quick toggle chips)
+  ================================================================= */
+  .c3 .search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:14px 16px}
+  .c3 .search svg{width:19px;height:19px;stroke:var(--muted);fill:none;stroke-width:2}
+  .c3 .search span{color:var(--muted2);font-size:15px}
+  .c3 .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .c3 .q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .c3 .q .t{display:flex;align-items:center;justify-content:space-between}
+  .c3 .q .t b{font-size:14px;font-weight:700}
+  .c3 .q .s{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .c3 .q.hot{border-color:rgba(198,241,53,.4);background:linear-gradient(160deg,rgba(198,241,53,.1),var(--card))}
+  .c3 .list .row{display:flex;align-items:center;gap:13px;padding:15px 16px;background:var(--card);border:1px solid var(--line);border-radius:15px;margin-bottom:9px}
+  .c3 .list .ic{width:34px;height:34px;border-radius:10px;background:var(--card2);display:grid;place-items:center;flex:none}
+  .c3 .list .ic svg{width:17px;height:17px;stroke:var(--lime);fill:none;stroke-width:2}
+  .c3 .list .lbl{font-size:15px;font-weight:600}
+  .c3 .list .d{font-size:12px;color:var(--muted);margin-top:1px}
+
+  /* =================================================================
+     IDEA 4 — BENTO (dashboard tile grid)
+  ================================================================= */
+  .c4 .hero{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px}
+  .c4 .hero .av{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--lime),#6fa80f);display:grid;place-items:center;font-weight:800;color:#0a0b09;font-size:20px;flex:none}
+  .c4 .hero h3{font-size:16px;font-weight:800}
+  .c4 .hero span{font-size:13px;color:var(--muted)}
+  .c4 .hero .pro{margin-left:auto;background:var(--lime);color:#0a0b09;font:800 11px/1 var(--mono);padding:6px 9px;border-radius:8px}
+  .c4 .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:11px}
+  .c4 .tile{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;min-height:112px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .c4 .tile .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;margin-bottom:auto}
+  .c4 .tile .ic svg{width:20px;height:20px;fill:none;stroke-width:2}
+  .c4 .tile b{font-size:15px;font-weight:700;margin-top:14px}
+  .c4 .tile span{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .c4 .tile.wide{grid-column:span 2;min-height:0;flex-direction:row;align-items:center;gap:13px}
+  .c4 .tile.wide .ic{margin:0}
+  .c4 .tile.wide b{margin:0}
+  .c4 .tile.danger{border-color:rgba(255,90,77,.28)}
+  .c4 .tile.danger .ic{background:rgba(255,90,77,.14)}
+  .c4 .tile.danger .ic svg{stroke:var(--red)}
+  .c4 .tile.danger b{color:var(--red)}
+
+  /* =================================================================
+     IDEA 5 — NATIVE (iOS-grade grouped inset, live controls)
+  ================================================================= */
+  .c5 .banner{display:flex;align-items:center;gap:14px;background:linear-gradient(150deg,#1c2016,#141613);border:1px solid var(--line);border-radius:22px;padding:16px}
+  .c5 .banner .av{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--lime),#6fa80f);display:grid;place-items:center;font-weight:800;color:#0a0b09;font-size:23px;flex:none}
+  .c5 .banner h3{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .c5 .banner span{font-size:13px;color:var(--muted)}
+  .c5 .banner .chev{stroke:var(--muted2)}
+  .c5 .grp{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .c5 .row{display:flex;align-items:center;gap:13px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .c5 .row:last-child{border-bottom:0}
+  .c5 .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+  .c5 .ic svg{width:17px;height:17px;fill:none;stroke:#0a0b09;stroke-width:2.1}
+  .c5 .row .lbl{font-size:15.5px;font-weight:600}
+  .c5 .row .val{margin-left:auto;color:var(--muted);font-size:14px}
+  .c5 .foot{font-size:12px;color:var(--muted);padding:8px 10px 0;line-height:1.45}
+
+  @media (max-width:520px){
+    body{padding:24px 12px 60px}
+    .page-head h1{font-size:30px}
+    .gallery{gap:36px 20px}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Aurora · Settings R&amp;D</div>
+  <h1>Settings, reimagined <span>— 5 directions</span></h1>
+  <p>The current settings screens read as empty cards floating in dead space. These five concepts borrow the density, hierarchy and polish of X, Instagram and native iOS — while keeping the Aurora lime + dark identity and the barbell brand. Tap toggles &amp; segments to feel each one.</p>
+  <div class="brief">
+    <span class="tag"><b>Problem</b> · too plain, too much empty space</span>
+    <span class="tag"><b>Keep</b> · dark + lime, bottom nav</span>
+    <span class="tag"><b>Borrow</b> · X density · IG profile · iOS grouping</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ IDEA 1 : COMMAND ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>1</i> Command</div>
+      <h2>The X list</h2>
+      <p><b>Dense grouped rows</b> — label left, live value right, chevron. A search bar up top. Zero wasted space; everything scannable at a glance.</p>
+    </div>
+    <div class="phone"><div class="screen c1">
+      <div class="glow"></div>
+      <div class="status"><span>7:44</span><span class="r">▪▪▪ <svg viewBox="0 0 24 24" width="16" fill="#f4f6ef"><path d="M12 4C7 4 3 8 2 10l10 10L22 10c-1-2-5-6-10-6z" opacity=".9"/></svg><span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="scr-head">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div><div class="scr-title">Account</div><div class="scr-sub">@rafalablewski</div></div>
+        </div>
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Search settings</span></div>
+        <div class="cap">Profile</div>
+        <div class="grp">
+          <div class="row"><span class="lbl">Username</span><span class="val">@rafalablewski</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Display name</span><span class="val">Rafał A.</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Phone</span><span class="val">+48 662 361 430</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Email</span><span class="val">rafal…@gmail.pl</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="cap">App</div>
+        <div class="grp">
+          <div class="row"><span class="lbl">Appearance</span><span class="val">Aurora</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Language</span><span class="val">English</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Liquid Glass</span><span class="val">Off</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="foot">Manage how the app looks and speaks. <a>Learn more</a></div>
+        <div class="cap">Privacy</div>
+        <div class="grp">
+          <div class="row"><span class="lbl">Who sees results</span><span class="val">Followers</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><span class="lbl">Blocked</span><span class="val">2</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="logout">Log out</div>
+      </div></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16M6 12h0M18 12h0" stroke-linecap="round"/><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/></svg></div>
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 2 : APERTURE ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>2</i> Aperture</div>
+      <h2>The Instagram profile</h2>
+      <p><b>Identity first.</b> A profile hero with avatar, stats and an Edit button, then colour-chip icon rows. Makes the account feel alive, social and personal.</p>
+    </div>
+    <div class="phone"><div class="screen c2">
+      <div class="glow"></div>
+      <div class="status"><span>7:45</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="scr-head">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="scr-title">Settings</div>
+        </div>
+        <div class="hero">
+          <div class="av">R</div>
+          <h3>Rafał Ablewski</h3>
+          <div class="h">@rafalablewski · Hybrid athlete</div>
+          <div class="stats">
+            <div><b>1.2k</b><span>Followers</span></div>
+            <div><b>318</b><span>Following</span></div>
+            <div><b>47</b><span>Results</span></div>
+          </div>
+          <div class="edit">Edit profile</div>
+        </div>
+        <div class="cap">Account</div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><div style="flex:1"><div class="lbl">Public profile</div><div class="d">Handle, bio, photo &amp; privacy</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 5 9-5"/></svg></div><div style="flex:1"><div class="lbl">Email &amp; phone</div><div class="d">rafal…@gmail.pl · +48 662…</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:rgba(255,90,77,.14)"><svg viewBox="0 0 24 24" stroke="#ff5a4d"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div><div style="flex:1"><div class="lbl">Security</div><div class="d">Password, sessions, 2FA</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="cap">Preferences</div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></div><div style="flex:1"><div class="lbl">Appearance</div><div class="d">Aurora theme</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:rgba(255,255,255,.08)"><svg viewBox="0 0 24 24" stroke="#f4f6ef"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><div style="flex:1"><div class="lbl">Language</div><div class="d">English</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+      </div></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 3 : FOCUS ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>3</i> Focus</div>
+      <h2>Search-first + quick toggles</h2>
+      <p><b>Fast controls up top.</b> A prominent search, then a grid of the toggles people flip most — no drilling. Everything else lives in tidy rows below.</p>
+    </div>
+    <div class="phone"><div class="screen c3">
+      <div class="glow"></div>
+      <div class="status"><span>7:45</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="scr-head">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="scr-title">Settings</div>
+        </div>
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Search settings &amp; account</span></div>
+        <div class="cap">Quick controls</div>
+        <div class="quick">
+          <div class="q hot"><div class="t"><b>Liquid Glass</b><span class="tgl" data-tgl></span></div><div class="s">Native SwiftUI surfaces</div></div>
+          <div class="q"><div class="t"><b>Notifications</b><span class="tgl on" data-tgl></span></div><div class="s">Push &amp; reminders</div></div>
+          <div class="q"><div class="t"><b>Private results</b><span class="tgl" data-tgl></span></div><div class="s">Hide from feed</div></div>
+          <div class="q"><div class="t"><b>Haptics</b><span class="tgl on" data-tgl></span></div><div class="s">Feedback on tap</div></div>
+        </div>
+        <div class="cap">Everything else</div>
+        <div class="list">
+          <div class="row"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><div style="flex:1"><div class="lbl">Account &amp; profile</div><div class="d">Handle, email, phone</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><div style="flex:1"><div class="lbl">Appearance &amp; language</div><div class="d">Aurora · English</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div><div style="flex:1"><div class="lbl">Privacy &amp; security</div><div class="d">2FA, sessions, blocked</div></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+      </div></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+        <svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 4 : BENTO ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>4</i> Bento</div>
+      <h2>The tile dashboard</h2>
+      <p><b>Tap-target grid.</b> Big, thumb-friendly tiles with icons fill the space the old cards wasted. Feels like a modern app home, not a form.</p>
+    </div>
+    <div class="phone"><div class="screen c4">
+      <div class="glow"></div>
+      <div class="status"><span>7:46</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="scr-head">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="scr-title">Settings</div>
+        </div>
+        <div class="hero">
+          <div class="av">R</div>
+          <div><h3>Rafał Ablewski</h3><span>@rafalablewski</span></div>
+          <div class="pro">PRO</div>
+        </div>
+        <div class="grid">
+          <div class="tile"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><b>Account</b><span>Profile &amp; login</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><b>Appearance</b><span>Aurora theme</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,255,255,.08)"><svg viewBox="0 0 24 24" stroke="#f4f6ef"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><b>Language</b><span>English</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,90,77,.14)"><svg viewBox="0 0 24 24" stroke="#ff5a4d"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div><b>Security</b><span>2FA · sessions</span></div>
+          <div class="tile wide"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 004 0"/></svg></div><div style="flex:1"><b>Notifications</b><br><span>Push, email &amp; reminders</span></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="tile danger"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></div><b>Log out</b><span>End session</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,255,255,.08)"><svg viewBox="0 0 24 24" stroke="#f4f6ef"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0"/></svg></div><b>About</b><span>v3.2 · legal</span></div>
+        </div>
+      </div></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+        <svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ IDEA 5 : NATIVE ============ -->
+  <div class="concept">
+    <div class="concept-cap">
+      <div class="n"><i>5</i> Native</div>
+      <h2>iOS-grade grouped inset</h2>
+      <p><b>Familiar &amp; frictionless.</b> Apple-Settings structure — banner, tinted icon chips, inline toggles &amp; live values, section footnotes. Feels premium and native on day one.</p>
+    </div>
+    <div class="phone"><div class="screen c5">
+      <div class="glow"></div>
+      <div class="status"><span>7:46</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="scr-head">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="scr-title">Settings</div>
+        </div>
+        <div class="banner">
+          <div class="av">R</div>
+          <div style="flex:1"><h3>Rafał Ablewski</h3><span>Account, profile &amp; privacy</span></div>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="cap">Account</div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:#c6f135"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><span class="lbl">Username</span><span class="val">@rafalablewski</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:#5aa9ff"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 5 9-5"/></svg></div><span class="lbl">Email</span><span class="val">rafal…@gmail.pl</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:#34c759"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a11 11 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg></div><span class="lbl">Phone</span><span class="val">+48 662…</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="foot">Your handle is how friends find and follow you.</div>
+        <div class="cap">Preferences</div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:#c6f135"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><span class="lbl">Appearance</span><span class="val">Aurora</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:#af52de"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><span class="lbl">Language</span><span class="val">English</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="row"><div class="ic" style="background:#ff9f0a"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="6"/><circle cx="8" cy="12" r="3" fill="#0a0b09" stroke="none"/></svg></div><span class="lbl">Liquid Glass</span><span class="tgl" data-tgl style="margin-left:auto"></span></div>
+        </div>
+        <div class="foot">Render surfaces as native SwiftUI Liquid Glass. Off restores the standard look.</div>
+      </div></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<script>
+  // interactive toggles for the live feel
+  document.querySelectorAll('[data-tgl]').forEach(function(t){
+    t.addEventListener('click',function(){ t.classList.toggle('on'); });
+  });
+</script>
+</body>
+</html>

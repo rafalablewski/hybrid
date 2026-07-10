@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chosen Redesign Set — Profile · More · Settings</title>
+<style>
+  :root{
+    --lime:#c6f135; --lime-dim:#9fbf2c; --olive:#2d3316;
+    --bg:#0a0b09; --ink:#f4f6ef; --muted:#8a8f82; --muted2:#5f6459;
+    --card:#141613; --card2:#1b1e19;
+    --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+    --red:#ff5a4d; --blue:#5aa9ff; --purple:#b18cff; --orange:#ff9f4a;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#050604;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:40px 20px 80px}
+
+  .page-head{max-width:1240px;margin:0 auto 34px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--lime);margin-bottom:14px}
+  .page-head h1{font-size:40px;line-height:1.04;letter-spacing:-.03em;font-weight:800;margin-bottom:12px}
+  .page-head h1 span{color:var(--muted)}
+  .page-head p{color:var(--muted);max-width:720px;font-size:15px;line-height:1.6}
+  .page-head p b{color:var(--ink);font-weight:600}
+  .page-head .brief{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);color:var(--muted);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+  .tag b{color:var(--lime);font-weight:700}
+
+  .gallery{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:44px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:392px}
+  .concept-cap{margin:0 6px 16px;display:flex;align-items:center;gap:11px}
+  .concept-cap .num{width:30px;height:30px;border-radius:9px;background:var(--lime);color:#0a0b09;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+  .concept-cap h2{font-size:19px;letter-spacing:-.02em;font-weight:800}
+  .concept-cap .sub{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+
+  .phone{position:relative;width:100%;aspect-ratio:390/844;border-radius:46px;padding:11px;
+    background:linear-gradient(160deg,#262a1e,#0c0d0a);
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .glow{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 40% at 50% -8%,rgba(198,241,53,.16),transparent 60%)}
+  .status{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:15px 26px 4px;font-size:14px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
+  .bat{background:var(--lime);color:#0a0b09;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .scroll{position:relative;z-index:2;flex:1;overflow:hidden}
+  .scroll-inner{padding:6px 18px 0}
+  .fade{position:absolute;left:0;right:0;bottom:94px;height:42px;z-index:2;pointer-events:none;background:linear-gradient(transparent,var(--bg))}
+
+  .navbar{position:relative;z-index:3;height:70px;margin:0 14px 12px;border-radius:26px;background:rgba(20,22,19,.72);backdrop-filter:blur(18px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around}
+  .navbar svg{width:23px;height:23px;stroke:var(--muted);fill:none;stroke-width:1.9}
+  .navbar .pill{width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center}
+  .navbar .pill svg{stroke:#0a0b09;stroke-width:2}
+  .navbar .fab{width:52px;height:52px;border-radius:50%;background:var(--lime);display:grid;place-items:center;box-shadow:0 0 22px rgba(198,241,53,.6);border:3px solid #0a0b09}
+  .navbar .fab svg{stroke:#0a0b09;stroke-width:2.4;width:24px;height:24px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 4px}
+  .topbar .back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+  .topbar .back svg,.topbar .ib svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2}
+  .topbar .acts{display:flex;gap:8px}
+  .topbar .ib{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+
+  .kick{font:600 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:8px 2px 6px}
+  .h-big{font-size:33px;font-weight:800;letter-spacing:-.035em;line-height:.98}
+  .cap{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin:20px 4px 11px;display:flex;align-items:center;justify-content:space-between}
+  .cap a{color:var(--lime);letter-spacing:.06em}
+  .chev{stroke:var(--muted2);fill:none;stroke-width:2;width:15px;height:15px;flex:none}
+  .free{display:inline-flex;align-items:center;font:700 11px/1 var(--mono);letter-spacing:.08em;color:var(--lime);border:1px solid rgba(198,241,53,.5);padding:5px 9px;border-radius:999px}
+  .edit-ic{width:36px;height:36px;border-radius:12px;background:var(--card);border:1px solid var(--line2);display:grid;place-items:center;flex:none}
+  .edit-ic svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2}
+
+  /* ---------------- PROFILE · Social ---------------- */
+  .s-prof .cover{height:96px;border-radius:20px;margin:8px 0 0;background:linear-gradient(120deg,#2b3319,#3a4a1a 40%,#161811);position:relative;overflow:hidden}
+  .s-prof .cover::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 120% at 80% 0,rgba(198,241,53,.35),transparent 60%)}
+  .s-prof .head{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-38px;padding:0 4px}
+  .s-prof .av{width:82px;height:82px;border-radius:50%;background:#0e100b;border:3px solid var(--bg);display:grid;place-items:center;color:var(--lime);font-weight:800;font-size:34px;box-shadow:0 0 0 2px var(--lime)}
+  .s-prof .nm{display:flex;align-items:center;gap:8px;margin-top:12px}
+  .s-prof .nm h3{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .s-prof .bio{font-size:13.5px;color:#c8ccbe;line-height:1.5;margin-top:7px}
+  .s-prof .bio .hid{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:5px}
+  .s-prof .social{display:flex;gap:22px;margin-top:13px}
+  .s-prof .social div b{font-size:17px;font-weight:800}
+  .s-prof .social div span{font:600 10px/1 var(--mono);letter-spacing:.1em;color:var(--muted);margin-left:5px}
+  .s-prof .tabs{display:flex;gap:5px;margin-top:16px;border-bottom:1px solid var(--line)}
+  .s-prof .tab{flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--muted);padding:11px 0;position:relative;cursor:pointer}
+  .s-prof .tab.on{color:var(--ink)}
+  .s-prof .tab.on::after{content:"";position:absolute;left:15%;right:15%;bottom:-1px;height:2px;background:var(--lime);border-radius:2px}
+  .s-prof .pins{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+  .s-prof .pin{aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px;text-align:center}
+  .s-prof .pin b{font-size:20px;font-weight:800}
+  .s-prof .pin span{font:600 8.5px/1.2 var(--mono);letter-spacing:.06em;color:var(--muted);margin-top:4px}
+  .s-prof .pin svg{width:22px;height:22px;stroke:var(--lime);fill:none;stroke-width:1.8;margin-bottom:6px}
+
+  /* ---------------- MORE · Springboard ---------------- */
+  .s-more .search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line2);border-radius:15px;padding:12px 14px;margin-bottom:4px}
+  .s-more .search svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2}
+  .s-more .search span{color:var(--muted2);font-size:15px}
+  .s-more .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 4px}
+  .s-more .app{text-align:center}
+  .s-more .app .tile{width:56px;height:56px;margin:0 auto 7px;border-radius:17px;display:grid;place-items:center;position:relative}
+  .s-more .app .tile svg{width:26px;height:26px;fill:none;stroke-width:2}
+  .s-more .app b{font-size:11px;font-weight:600;color:#d7dacd;display:block;line-height:1.2}
+  .s-more .app .lk{position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:2px solid var(--bg)}
+  .s-more .app .lk svg{width:8px;height:8px;stroke:#0a0b09;stroke-width:2.4}
+
+  /* ---------------- SETTINGS · Bento ---------------- */
+  .s-set .hero{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px;margin-top:8px}
+  .s-set .hero .av{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--lime),#6fa80f);display:grid;place-items:center;font-weight:800;color:#0a0b09;font-size:20px;flex:none}
+  .s-set .hero h3{font-size:16px;font-weight:800}
+  .s-set .hero .subm{font:400 11px/1.4 var(--mono);color:var(--muted);margin-top:4px}
+  .s-set .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
+  .s-set .tile{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;min-height:112px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .s-set .tile .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;margin-bottom:auto}
+  .s-set .tile .ic svg{width:20px;height:20px;fill:none;stroke-width:2}
+  .s-set .tile b{font-size:15px;font-weight:700;margin-top:14px}
+  .s-set .tile span{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .s-set .tile.wide{grid-column:span 2;min-height:0;flex-direction:row;align-items:center;gap:13px}
+  .s-set .tile.wide .ic{margin:0}
+  .s-set .tile.wide b{margin:0}
+  .s-set .tile.danger{border-color:rgba(255,90,77,.28)}
+  .s-set .tile.danger .ic{background:rgba(255,90,77,.14)}
+  .s-set .tile.danger .ic svg{stroke:var(--red)}
+  .s-set .tile.danger b{color:var(--red)}
+
+  @media (max-width:520px){
+    body{padding:24px 12px 60px}
+    .page-head h1{font-size:30px}
+    .gallery{gap:36px 20px}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Aurora · Chosen direction</div>
+  <h1>The set, unified <span>— Profile · More · Settings</span></h1>
+  <p>Your three picks in one system: <b>Profile → Social</b>, <b>More → Springboard</b>, <b>Settings → Bento</b>. Shared status bar, bottom nav, <b>rafalablewski / FREE</b> identity and mono captions tie them together. Profile keeps your rules — <b>HPI is private</b> (absent from the public grid), <b>editing is the pencil by the avatar</b>, and the <b>FREE membership pill is untouched</b>.</p>
+  <div class="brief">
+    <span class="tag"><b>Profile</b> · Social · followers + highlight grid</span>
+    <span class="tag"><b>More</b> · Springboard · searchable icon library</span>
+    <span class="tag"><b>Settings</b> · Bento · tap-target tile grid</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ PROFILE · SOCIAL ============ -->
+  <div class="concept">
+    <div class="concept-cap"><div class="num">01</div><div><h2>Profile</h2><div class="sub">Social · idea 04</div></div></div>
+    <div class="phone"><div class="screen s-prof">
+      <div class="glow"></div>
+      <div class="status"><span>8:02</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="cover"></div>
+        <div class="head">
+          <div class="av">R</div>
+          <div class="edit-ic" style="width:46px;height:46px;border-radius:15px;margin-bottom:6px"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+        </div>
+        <div class="nm"><h3>rafalablewski</h3><span class="free">FREE</span></div>
+        <div class="bio">Hybrid Athlete · runner &amp; lifter. Chasing a sub-20 5k and a 2× bodyweight deadlift.<span class="hid">HYBRID ID · 0x6636·80 · member since 2026</span></div>
+        <div class="social">
+          <div><b>128</b><span>FOLLOWERS</span></div>
+          <div><b>86</b><span>FOLLOWING</span></div>
+          <div><b>#12</b><span>KRK RANK</span></div>
+        </div>
+        <div class="tabs">
+          <div class="tab on">Overview</div>
+          <div class="tab">PRs</div>
+          <div class="tab">Activity</div>
+        </div>
+        <div class="pins">
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16"/></svg><b>180</b><span>DEADLIFT PR</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b>19:42</b><span>5K BEST</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M6 9v6M18 9v6M4 12h16"/></svg><b>140</b><span>SQUAT PR</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><b>7d</b><span>STREAK</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><b>2.3t</b><span>TONNAGE</span></div>
+          <div class="pin"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M9 14l-2 8 5-3 5 3-2-8"/></svg><b>6</b><span>BADGES</span></div>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg>
+        <div class="pill"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ MORE · SPRINGBOARD ============ -->
+  <div class="concept">
+    <div class="concept-cap"><div class="num">02</div><div><h2>More</h2><div class="sub">Springboard · idea 01</div></div></div>
+    <div class="phone"><div class="screen s-more">
+      <div class="glow"></div>
+      <div class="status"><span>7:54</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="kick">More</div>
+        <div class="h-big">Everything else</div>
+        <div style="height:14px"></div>
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Search 42 tools &amp; screens</span></div>
+        <div class="cap">Train <a>10</a></div>
+        <div class="grid">
+          <div class="app"><div class="tile" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><path d="M6 9v6M18 9v6M4 12h16"/></svg></div><b>Log</b></div>
+          <div class="app"><div class="tile" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><b>Timer</b></div>
+          <div class="app"><div class="tile" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><path d="M12 21s-7-5-7-11a7 7 0 0114 0c0 6-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><b>Run</b></div>
+          <div class="app"><div class="tile" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><b>Plans</b><div class="lk"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div></div>
+        </div>
+        <div class="cap">Analyze <a>11</a></div>
+        <div class="grid">
+          <div class="app"><div class="tile" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><b>Stats</b></div>
+          <div class="app"><div class="tile" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-2"/></svg></div><b>Perf</b><div class="lk"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div></div>
+          <div class="app"><div class="tile" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><path d="M3 17l6-6 4 4 8-8"/></svg></div><b>Trends</b><div class="lk"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div></div>
+          <div class="app"><div class="tile" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><path d="M4 15l4-4 3 3 5-6 4 5"/></svg></div><b>Velocity</b><div class="lk"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div></div>
+        </div>
+        <div class="cap">Recovery &amp; Social <a>8</a></div>
+        <div class="grid">
+          <div class="app"><div class="tile" style="background:rgba(177,140,255,.16)"><svg viewBox="0 0 24 24" stroke="#b18cff"><path d="M12 21s-7-4-7-10a4 4 0 017-2 4 4 0 017 2c0 6-7 10-7 10z"/></svg></div><b>Check-in</b></div>
+          <div class="app"><div class="tile" style="background:rgba(255,159,74,.16)"><svg viewBox="0 0 24 24" stroke="#ff9f4a"><path d="M6 3v7a3 3 0 006 0V3M9 3v18M18 3c-2 1-2 6 0 8v10"/></svg></div><b>Nutrition</b></div>
+          <div class="app"><div class="tile" style="background:rgba(177,140,255,.16)"><svg viewBox="0 0 24 24" stroke="#b18cff"><circle cx="9" cy="9" r="4"/><path d="M2 21c0-4 3-6 7-6M15 8l6 6M21 8l-6 6"/></svg></div><b>Friends</b></div>
+          <div class="app"><div class="tile" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 01-12 0zM6 6H3v2a3 3 0 003 3M18 6h3v2a3 3 0 01-3 3"/></svg></div><b>Ranks</b></div>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <div class="pill"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ SETTINGS · BENTO ============ -->
+  <div class="concept">
+    <div class="concept-cap"><div class="num">03</div><div><h2>Settings</h2><div class="sub">Bento · idea 04</div></div></div>
+    <div class="phone"><div class="screen s-set">
+      <div class="glow"></div>
+      <div class="status"><span>7:45</span><span class="r">▪▪▪ <span class="bat">85</span></span></div>
+      <div class="scroll"><div class="scroll-inner">
+        <div class="topbar">
+          <div class="back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="acts"><div class="ib"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></div></div>
+        </div>
+        <div class="kick">More › Account</div>
+        <div class="h-big">Settings</div>
+        <div class="hero">
+          <div class="av">R</div>
+          <div style="flex:1"><h3>rafalablewski</h3><div class="subm">HYBRID ID · 0x6636·80</div></div>
+          <span class="free">FREE</span>
+        </div>
+        <div class="grid">
+          <div class="tile"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><b>Account</b><span>Profile &amp; login</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(90,169,255,.16)"><svg viewBox="0 0 24 24" stroke="#5aa9ff"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><b>Appearance</b><span>Aurora theme</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,255,255,.08)"><svg viewBox="0 0 24 24" stroke="#f4f6ef"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><b>Language</b><span>English</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,90,77,.14)"><svg viewBox="0 0 24 24" stroke="#ff5a4d"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div><b>Security</b><span>2FA · sessions</span></div>
+          <div class="tile wide"><div class="ic" style="background:rgba(198,241,53,.16)"><svg viewBox="0 0 24 24" stroke="#c6f135"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 004 0"/></svg></div><div style="flex:1"><b>Notifications</b><br><span>Push, email &amp; reminders</span></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+          <div class="tile danger"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></div><b>Log out</b><span>End session</span></div>
+          <div class="tile"><div class="ic" style="background:rgba(255,255,255,.08)"><svg viewBox="0 0 24 24" stroke="#f4f6ef"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0"/></svg></div><b>About</b><span>v3.2 · legal</span></div>
+        </div>
+      </div></div>
+      <div class="fade"></div>
+      <div class="navbar">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+        <div class="fab"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="3" height="6" rx="1"/><rect x="16" y="9" width="3" height="6" rx="1"/><path d="M8 12h8" stroke-linecap="round"/></svg></div>
+        <div class="pill"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.5 2.6l1.5 1.2-2 3.4-1.8-.7a7 7 0 01-2.2 1.3L13.5 23h-3l-.7-2a7 7 0 01-2.2-1.3l-1.8.7-2-3.4 1.5-1.2A7 7 0 015 12"/></svg></div>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.s-prof .tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      t.parentElement.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+      t.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>

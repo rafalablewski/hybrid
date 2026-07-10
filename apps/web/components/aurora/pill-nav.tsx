@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { fs, space, groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
+import { useSession } from "@/lib/session";
 import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
 import { useTemplate } from "@/lib/use-template";
@@ -29,19 +31,34 @@ const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
 
 const C = (v: string) => `var(--color-${v})`;
 
+// Per-cluster accent tint (the mobile GROUP_META spectrum), so the springboard
+// tiles read the same across all three More surfaces. Ash for Account.
+const GROUP_ACCENT: Record<string, string> = { home: "lime", train: "lime", analyze: "blue", recovery: "amber", social: "violet", teams: "red", account: "ash" };
+// Icon colour on the tint chip — bright lime / ash stay as-is, the others use
+// their darkened *-text var so accent icons keep contrast in the light Aurora
+// theme (mirrors web `txt()` in the sidebar/drawer springboards).
+const accentIcon = (name: string) => (name === "lime" ? C("lime") : name === "ash" ? C("ash") : `var(--${name}-text)`);
+
 export default function AuroraPillNav({ activeId, onSelect }: { activeId?: string; onSelect: (id: string) => void }) {
   const aurora = useTemplate().template === "aurora";
   const persona = usePersona();
+  const { session, logout } = useSession();
+  const router = useRouter();
   const { isEnabled, value } = useFlags();
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
-  const dialogRef = useDialog<HTMLDivElement>(() => setMoreOpen(false), moreOpen);
+  const [query, setQuery] = useState("");
+  const closeMore = () => { setMoreOpen(false); setQuery(""); };
+  const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
 
   if (!aurora) return null;
 
+  const initials = ((session?.name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
+  const signOut = () => { closeMore(); logout(); router.replace("/login"); };
+
   const access = sanitizePersonaAccess(value("access.personaNav"));
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
-  const go = (id: string) => { setMoreOpen(false); onSelect(id); };
+  const go = (id: string) => { closeMore(); onSelect(id); };
 
   const tabs = PRIMARY;
   // "More" lights only when the active screen isn't one of the bar slots
@@ -57,12 +74,40 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     .map((g) => ({ ...g, items: g.items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
     .filter((g) => g.items.length > 0);
 
+  // Springboard search — filters the launcher tiles by (localized) label and
+  // drops clusters left empty by the filter, so the grid stays tight. Parity
+  // with the mobile More tab's search-first springboard.
+  const totalTools = groups.reduce((n, g) => n + g.items.length, 0);
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? groups
+        .map((g) => ({ ...g, items: g.items.filter(({ item }) => label(item.id, item.label).toLowerCase().includes(q)) }))
+        .filter((g) => g.items.length > 0)
+    : groups;
+
   return (
     <>
       {moreOpen && (
-        <div onClick={() => setMoreOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
+        <div onClick={closeMore} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
           <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: "20px 20px 110px" }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
+
+            {/* Identity — avatar + name + role/entitlement (tap → profile) with a
+                Settings cog, matching the mobile More tab's identity card. */}
+            {session && (
+              <div style={{ display: "flex", alignItems: "center", gap: 13, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 15, marginBottom: 16 }}>
+                <button onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 13, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                  <span style={{ width: 42, height: 42, borderRadius: 21, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
+                    <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" · ")}</span>
+                  </span>
+                </button>
+                <button onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
+                  <AuroraIcon name="settings" size={19} strokeWidth={2.6} color={C("chalk")} />
+                </button>
+              </div>
+            )}
 
             {/* Unlock Full — the one accent in the hub (parity with the mobile
                 More tab's membership card). Casual users only. */}
@@ -79,30 +124,65 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               </button>
             )}
 
-            {groups.map((g) => (
+            {/* Search — filters the springboard tiles by label (parity with the mobile More tab). */}
+            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "0 14px", marginBottom: 18 }}>
+              <AuroraIcon name="search" size={18} strokeWidth={2.4} color={C("ash")} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${totalTools} tools & screens`}
+                aria-label="Search tools"
+                autoCapitalize="none"
+                autoCorrect="off"
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "13px 0" }}
+              />
+              {query.length > 0 && (
+                <button onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+              )}
+            </div>
+
+            {shown.map((g) => {
+              const accent = C(GROUP_ACCENT[g.group] ?? "lime");
+              const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
+              return (
               <div key={g.group} style={{ marginBottom: 18 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
-                  {t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`)}
+                {/* Cluster header — label + lime count (parity with the mobile More tab + the drawer). */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{groupName}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("lime") }}>{g.items.length}</span>
                 </div>
-                {/* Springboard grid — rounded glyph tiles, one text colour (chalk),
-                    matching the mobile More tab. Active tile takes the lime accent. */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: space.xxs }}>
+                {/* Springboard grid — fixed 4-col accent-tinted glyph tiles with a
+                    lime lock badge, matching the mobile More tab + the drawer. */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: space.xs }}>
                   {g.items.map(({ item: { id, label: fb }, locked }) => {
-                    const on = id === activeId;
+                    const name = label(id, fb);
                     const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
                     return (
-                      <button key={id} onClick={openItem} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
-                        <span style={{ position: "relative", width: 54, height: 54, borderRadius: 18, display: "grid", placeItems: "center", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? "color-mix(in srgb, var(--color-lime) 12%, transparent)" : C("ink"), opacity: locked ? 0.75 : 1 }}>
-                          <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.6} color={on ? C("lime") : C("chalk")} />
-                          {locked && <span aria-hidden style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: 10, background: C("ink2"), border: `1px solid color-mix(in srgb, var(--color-lime) 55%, transparent)`, display: "grid", placeItems: "center", fontSize: 10 }}>🔒</span>}
+                      <button key={id} onClick={openItem} title={locked ? `${name} · Full` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
+                        <span style={{ position: "relative", width: 58, height: 58, borderRadius: 18, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
+                          <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={24} strokeWidth={2.6} color={locked ? C("ash") : accentIcon(GROUP_ACCENT[g.group] ?? "lime")} />
+                          {locked && (
+                            <span aria-hidden style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, background: C("lime"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center" }}>
+                              <AuroraIcon name="lock" size={9} strokeWidth={3} color={C("ink")} />
+                            </span>
+                          )}
                         </span>
-                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: on ? C("lime") : locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.2, maxWidth: 84, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label(id, fb)}</span>
+                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
+            {q.length > 0 && shown.length === 0 && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", padding: "22px 0 10px" }}>{`No tools match “${query}”.`}</div>
+            )}
+
+            {/* Sign out — matching the mobile More tab's bottom action. */}
+            {session && (
+              <button onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "14px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
+            )}
           </div>
         </div>
       )}
