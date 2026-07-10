@@ -8,12 +8,13 @@ import { useTheme } from "../lib/theme";
  *  look and behave identically app-wide. Web has no native switch equivalent —
  *  it keeps its pill toggle (native-only Liquid Glass constraint). */
 export function GlassToggle({
-  value, onValueChange, disabled, accessibilityLabel,
+  value, onValueChange, disabled, accessibilityLabel, accessibilityHint,
 }: {
   value: boolean;
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
   const C = useTheme().palette;
   return (
@@ -22,6 +23,7 @@ export function GlassToggle({
       onValueChange={onValueChange}
       disabled={disabled}
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       trackColor={{ false: C.line, true: C.lime }}
       thumbColor={C.chalk}
       ios_backgroundColor={C.line}

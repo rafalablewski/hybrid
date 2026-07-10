@@ -24,7 +24,7 @@ export function ToggleRow({
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>
       </View>
-      <GlassToggle value={on} onValueChange={onToggle} disabled={disabled} accessibilityLabel={title} />
+      <GlassToggle value={on} onValueChange={onToggle} disabled={disabled} accessibilityLabel={title} accessibilityHint={desc} />
     </View>
   );
 }

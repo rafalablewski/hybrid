@@ -322,6 +322,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
       </div>
 
       {onDone && <div style={{ marginTop: 18 }}><Btn ghost onClick={onDone}>Done</Btn></div>}
+      {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: C("red") }}>{err}</div>}
       {account?.msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: account.msg.startsWith("✓") ? "var(--lime-text)" : C("ash") }}>{account.msg}</div>}
     </>
   );

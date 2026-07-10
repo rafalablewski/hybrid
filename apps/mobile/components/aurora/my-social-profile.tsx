@@ -142,8 +142,10 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     if (claimed) void saveSocial({ visibility: v });
   };
 
-  const FieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }) => (
-    <Pressable onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+  // A tappable field row → opens the focused editor. A plain render function
+  // (not a <Component/>) so the rows aren't remounted on every parent render.
+  const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
+    <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
       <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
       <Text numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
       <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
@@ -186,16 +188,16 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       {/* ── IDENTITY ── name, handle, display name, bio. */}
       <SectionLabel>Identity</SectionLabel>
       <Card>
-        <FieldRow rk="name" label="Name" value={acct.name || "Add your name"} muted={!acct.name} first />
-        <FieldRow rk="handle" label="Username" value={form.handle ? `@${form.handle}` : "Claim a handle"} muted={!form.handle} />
-        <FieldRow rk="displayName" label="Display name" value={form.displayName || "Optional"} muted={!form.displayName} />
-        <FieldRow rk="bio" label="Bio" value={form.bio || "Add a bio"} muted={!form.bio} />
+        {fieldRow({ rk: "name", label: "Name", value: acct.name || "Add your name", muted: !acct.name, first: true })}
+        {fieldRow({ rk: "handle", label: "Username", value: form.handle ? `@${form.handle}` : "Claim a handle", muted: !form.handle })}
+        {fieldRow({ rk: "displayName", label: "Display name", value: form.displayName || "Optional", muted: !form.displayName })}
+        {fieldRow({ rk: "bio", label: "Bio", value: form.bio || "Add a bio", muted: !form.bio })}
       </Card>
 
       {/* ── CONTACT ── account email. */}
       <SectionLabel>Contact</SectionLabel>
       <Card>
-        <FieldRow rk="email" label="Email" value={acct.email || "Add an email"} muted={!acct.email} first />
+        {fieldRow({ rk: "email", label: "Email", value: acct.email || "Add an email", muted: !acct.email, first: true })}
       </Card>
 
       {/* ── VISIBILITY ── inline segment, saves on tap. */}
@@ -214,6 +216,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
           <SButton label="Done" onPress={onDone} />
         </View>
       )}
+      {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.red, marginTop: 10, textAlign: "center" }}>{err}</Text>}
       {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
     </>
   );
