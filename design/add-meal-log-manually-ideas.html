@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Add a Meal · Log Manually — 5 Ideas</title>
+<title>Add a Meal · Log Manually — 9 Ideas</title>
 <style>
   :root{
     /* Aurora dark tokens — mirrored from packages/core/src/theme/palette.ts + tokens.ts */
@@ -18,10 +18,8 @@
     --ash2:#5f6459;
     --lime:#c6f84f;
     --lime-text:#c6f84f;
-    --lime-dim:#7f9a3a;
     --on-accent:#0c0d0c;
     --violet:#c9a9f0;
-    --violet-dim:#7b5fa0;
     --blue:#6cb6bd;
     --amber:#d0cd94;
     --red:#e58a5c;
@@ -36,23 +34,24 @@
   ::selection{background:var(--lime);color:var(--on-accent)}
 
   /* ---------- page chrome ---------- */
-  .page-head{max-width:1240px;margin:0 auto 40px}
+  .page-head{max-width:1280px;margin:0 auto 40px}
   .kicker{font:600 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
   .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
   .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance}
   .page-head h1 span{color:var(--ash)}
-  .page-head p{color:var(--ash);max-width:660px;font-size:15px;line-height:1.62}
+  .page-head p{color:var(--ash);max-width:680px;font-size:15px;line-height:1.62}
   .page-head p b{color:var(--chalk);font-weight:600}
   .brief{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
   .tag{font:600 12px/1 var(--mono);color:var(--ash);background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
   .tag b{color:var(--lime);font-weight:700}
 
   /* ---------- gallery ---------- */
-  .gallery{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(370px,1fr));gap:52px 34px;align-items:start;justify-items:center}
-  .concept{width:100%;max-width:404px}
+  .gallery{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(374px,1fr));gap:52px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:408px}
   .cap{margin:0 6px 18px}
   .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:10px}
   .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap .n u{text-decoration:none;color:var(--ash2);font-weight:600}
   .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
   .cap p{color:var(--ash);font-size:13px;line-height:1.55}
   .cap p b{color:var(--chalk);font-weight:600}
@@ -62,8 +61,7 @@
     background:linear-gradient(160deg,#2a2e21,#0b0c09);
     box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
   .screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
-  /* dimmed "Today" behind the sheet */
-  .behind{position:absolute;inset:0;padding:52px 22px 0;opacity:.32;filter:saturate(.7)}
+  .behind{position:absolute;inset:0;padding:52px 22px 0;opacity:.3;filter:saturate(.7)}
   .behind .bk{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
   .behind .bcard{margin-top:14px;border:1px solid var(--line);border-radius:20px;padding:16px}
   .behind .bcard .bt{font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--chalk)}
@@ -74,124 +72,192 @@
   .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
   .bat{background:var(--amber);color:#161608;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
 
-  /* the bottom sheet */
+  /* bottom sheet */
   .sheet{position:absolute;left:0;right:0;bottom:0;z-index:4;background:var(--ink2);
     border-radius:30px 30px 37px 37px;border-top:1px solid var(--line);
     padding:12px 20px 22px;box-shadow:0 -30px 60px -20px rgba(0,0,0,.7);
-    display:flex;flex-direction:column;max-height:88%}
+    display:flex;flex-direction:column;max-height:90%}
   .grab{width:44px;height:5px;border-radius:3px;background:#3a3e34;margin:0 auto 14px;flex:none}
   .title{font-size:27px;font-weight:800;letter-spacing:-.03em;color:var(--chalk)}
   .sub{font:400 12px/1 var(--mono);color:var(--ash);margin-top:6px}
   .sub b{color:var(--lime-text);font-weight:400}
 
-  .divider{display:flex;align-items:center;gap:12px;margin:18px 0 15px}
+  .divider{display:flex;align-items:center;gap:12px;margin:16px 0 14px}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
   .divider span{font:700 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
 
-  /* base field + pill primitives (the CURRENT look, reused) */
+  /* base primitives */
   .field{background:var(--ink);border:1px solid var(--line);border-radius:15px;padding:14px;font-family:var(--sans);font-size:16px;color:var(--chalk);width:100%}
   .field::placeholder{color:var(--ash2)}
   .field.mono{font-family:var(--mono);text-align:center}
   .pill{width:100%;border:none;border-radius:999px;background:var(--lime);color:var(--on-accent);font-weight:800;font-size:16px;padding:16px;cursor:pointer;letter-spacing:-.01em}
   .pill:active{transform:scale(.99)}
+  .row{display:flex;gap:9px}
+  .hint{font:400 11px/1.4 var(--mono);color:var(--ash2);margin-top:10px;text-align:center}
 
-  /* premade hint (kept as-is, dimmed) */
-  .premade{margin-top:auto;padding-top:6px}
-  .pm-div{display:flex;align-items:center;gap:12px;margin:16px 0 12px}
-  .pm-div::before,.pm-div::after{content:"";flex:1;height:1px;background:var(--line)}
-  .pm-div span{font:700 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
-  .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;opacity:.5}
-  .pm{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px 13px}
-  .pm .top{display:flex;justify-content:space-between;align-items:center}
-  .pm .em{font-size:20px}
-  .pm .lk{font-size:11px;filter:grayscale(.2)}
-  .pm b{display:block;font-size:14px;font-weight:800;margin-top:8px}
-  .pm .kc{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:4px}
-
-  /* segmented toggle (Calories / Macros) */
+  /* segmented Calories/Macros toggle — REQUIRED on every idea */
   .seg{display:flex;background:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:13px}
   .seg button{flex:1;border:none;background:transparent;color:var(--ash);font:700 13px/1 var(--sans);padding:9px;border-radius:999px;cursor:pointer}
   .seg button.on{background:var(--lime);color:var(--on-accent)}
 
-  .row{display:flex;gap:9px}
-  .hint{font:400 11px/1.4 var(--mono);color:var(--ash2);margin-top:10px;text-align:center}
-  .ok{font:400 12px/1 var(--mono);color:var(--lime-text);margin-top:12px}
+  /* mode switching driven by [data-mode] on .sheet */
+  .m-mac{display:none}
+  .sheet[data-mode="mac"] .m-cal{display:none}
+  .sheet[data-mode="mac"] .m-mac{display:block}
 
-  /* ============ IDEA 1 — LIVE RING ============ */
-  .c1 .ringwrap{display:flex;align-items:center;gap:16px;margin-bottom:15px}
-  .c1 .ring{position:relative;width:104px;height:104px;flex:none}
+  /* shared macro mini-form (used by every macros mode) */
+  .autokcal{display:flex;align-items:baseline;gap:8px;justify-content:center;padding:11px;border:1px dashed var(--line2);border-radius:15px;margin-bottom:11px;background:var(--ink)}
+  .autokcal b{font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .autokcal s{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .mrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .mcell{position:relative;background:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px 8px 11px;overflow:hidden}
+  .mcell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+  .mcell.p::before{background:var(--lime)}
+  .mcell.c::before{background:var(--blue)}
+  .mcell.f::before{background:var(--amber)}
+  .mcell label{font:700 9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px}
+  .mcell input{width:100%;border:none;background:transparent;color:var(--chalk);font:800 22px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .mcell input:focus{outline:none}
+  .mcell .pct{font:600 9px/1 var(--mono);color:var(--ash2);margin-top:6px}
+  .mbar{height:4px;border-radius:2px;background:var(--line);margin-top:11px;display:flex;overflow:hidden}
+  .mbar i{height:100%;display:block;transition:width .3s ease}
+  .mbar .bp{background:var(--lime)}.mbar .bc{background:var(--blue)}.mbar .bf{background:var(--amber)}
+
+  /* premade hint */
+  .premade{margin-top:auto;padding-top:6px}
+  .pm-div{display:flex;align-items:center;gap:12px;margin:15px 0 11px}
+  .pm-div::before,.pm-div::after{content:"";flex:1;height:1px;background:var(--line)}
+  .pm-div span{font:700 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
+  .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pm{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px 13px;opacity:.5}
+  .pm.recent{opacity:1;border-color:rgba(198,248,79,.42);background:linear-gradient(150deg,rgba(198,248,79,.08),var(--card2))}
+  .pm .top{display:flex;justify-content:space-between;align-items:center}
+  .pm .em{font-size:20px}
+  .pm .lk{font-size:11px}
+  .pm .rtag{font:700 8px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lime-text);border:1px solid rgba(198,248,79,.4);padding:3px 5px;border-radius:6px}
+  .pm b{display:block;font-size:14px;font-weight:800;margin-top:8px}
+  .pm .kc{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:4px}
+
+  /* ============ 1 · LIVE RING ============ */
+  .c1 .ringwrap{display:flex;align-items:center;gap:16px;margin-bottom:13px}
+  .c1 .ring{position:relative;width:102px;height:102px;flex:none}
   .c1 .ring svg{transform:rotate(-90deg)}
-  .c1 .ring .track{stroke:var(--line);}
+  .c1 .ring .track{stroke:var(--line)}
   .c1 .ring .done{stroke:var(--lime);stroke-linecap:round;transition:stroke-dashoffset .35s cubic-bezier(.4,0,.2,1)}
   .c1 .ring .ghost{stroke:var(--lime);opacity:.32;stroke-linecap:round;transition:stroke-dashoffset .18s ease}
   .c1 .ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .c1 .ring .ctr b{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-  .c1 .ring .ctr s{font:600 8.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none;margin-top:3px}
-  .c1 .rmeta{flex:1}
+  .c1 .ring .ctr b{font-size:25px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .c1 .ring .ctr s{font:600 8px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none;margin-top:3px}
   .c1 .rmeta .big{font-size:15px;font-weight:700}
   .c1 .rmeta .big span{color:var(--lime-text)}
-  .c1 .rmeta .sm{font:400 11.5px/1.5 var(--mono);color:var(--ash);margin-top:5px}
+  .c1 .rmeta .sm{font:400 11px/1.5 var(--mono);color:var(--ash);margin-top:5px}
 
-  /* ============ IDEA 2 — MACRO CELLS ============ */
-  .c2 .autokcal{display:flex;align-items:baseline;gap:8px;justify-content:center;padding:12px;border:1px dashed var(--line2);border-radius:15px;margin-bottom:13px;background:var(--ink)}
-  .c2 .autokcal b{font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-  .c2 .autokcal s{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none}
-  .c2 .mrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
-  .c2 .mcell{position:relative;background:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px 8px 11px;overflow:hidden}
-  .c2 .mcell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
-  .c2 .mcell.p::before{background:var(--lime)}
-  .c2 .mcell.c::before{background:var(--blue)}
-  .c2 .mcell.f::before{background:var(--amber)}
-  .c2 .mcell label{font:700 9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px}
-  .c2 .mcell input{width:100%;border:none;background:transparent;color:var(--chalk);font:800 22px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-  .c2 .mcell input:focus{outline:none}
-  .c2 .mcell .pct{font:600 9px/1 var(--mono);color:var(--ash2);margin-top:6px}
-  .c2 .mbar{height:4px;border-radius:2px;background:var(--line);margin-top:14px;display:flex;overflow:hidden}
-  .c2 .mbar i{height:100%;display:block;transition:width .3s ease}
-  .c2 .mbar .bp{background:var(--lime)}
-  .c2 .mbar .bc{background:var(--blue)}
-  .c2 .mbar .bf{background:var(--amber)}
-
-  /* ============ IDEA 3 — KEYPAD HERO ============ */
-  .c3 .disp{text-align:center;padding:6px 0 4px}
-  .c3 .disp .num{font-size:64px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
+  /* ============ 3 · KEYPAD ============ */
+  .c3 .disp{text-align:center;padding:2px 0 0}
+  .c3 .disp .num{font-size:56px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
   .c3 .disp .num.empty{color:var(--ash2)}
-  .c3 .disp .un{font:700 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin-top:8px}
-  .c3 .nameline{display:flex;align-items:center;gap:8px;justify-content:center;margin:14px 0 6px}
-  .c3 .nameline input{border:none;background:transparent;text-align:center;color:var(--chalk);font:600 15px/1 var(--sans);width:170px;border-bottom:1px solid var(--line)}
+  .c3 .disp .un{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin-top:7px}
+  .c3 .disp .kc{font:600 11px/1 var(--mono);color:var(--lime-text);margin-top:6px;min-height:12px}
+  .c3 .targets{display:flex;gap:7px;margin:11px 0 4px}
+  .c3 .targets button{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center}
+  .c3 .targets button.sel{border-color:var(--lime);background:rgba(198,248,79,.08)}
+  .c3 .targets button s{display:block;font:700 8.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--ash)}
+  .c3 .targets button b{display:block;font-size:16px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .c3 .nameline{display:flex;justify-content:center;margin:11px 0 8px}
+  .c3 .nameline input{border:none;background:transparent;text-align:center;color:var(--chalk);font:600 15px/1 var(--sans);width:180px;border-bottom:1px solid var(--line);padding-bottom:6px}
   .c3 .nameline input::placeholder{color:var(--ash2)}
   .c3 .nameline input:focus{outline:none;border-color:var(--lime)}
-  .c3 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px}
-  .c3 .key{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:15px;font-size:22px;font-weight:700;color:var(--chalk);cursor:pointer;font-variant-numeric:tabular-nums}
+  .c3 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:2px 0 12px}
+  .c3 .key{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:13px;font-size:21px;font-weight:700;color:var(--chalk);cursor:pointer;font-variant-numeric:tabular-nums}
   .c3 .key:active{background:var(--lime);color:var(--on-accent)}
-  .c3 .key.fn{color:var(--ash);font-size:19px}
+  .c3 .key.fn{color:var(--ash);font-size:18px}
 
-  /* ============ IDEA 4 — RECENT CHIPS ============ */
+  /* ============ 4 · RECENTS ============ */
   .c4 .chlab{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin-bottom:9px}
-  .c4 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -20px 15px;padding-left:20px;padding-right:20px;scrollbar-width:none}
-  .c4 .chips::-webkit-scrollbar{display:none}
-  .c4 .chip{flex:none;display:flex;flex-direction:column;gap:3px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 13px;cursor:pointer;min-width:96px}
-  .c4 .chip:active,.c4 .chip.pick{border-color:var(--lime);background:rgba(198,248,79,.08)}
-  .c4 .chip b{font-size:14px;font-weight:700;white-space:nowrap}
-  .c4 .chip s{font:600 10px/1 var(--mono);letter-spacing:.06em;color:var(--ash);text-decoration:none;font-variant-numeric:tabular-nums}
-  .c4 .chip .frq{font:600 8.5px/1 var(--mono);color:var(--ash2)}
+  .chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px 13px;padding:0 20px 6px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;display:flex;flex-direction:column;gap:3px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 13px;cursor:pointer;min-width:104px}
+  .chip:active,.chip.pick{border-color:var(--lime);background:rgba(198,248,79,.08)}
+  .chip b{font-size:14px;font-weight:700;white-space:nowrap}
+  .chip s{font:600 10px/1 var(--mono);letter-spacing:.06em;color:var(--ash);text-decoration:none;font-variant-numeric:tabular-nums}
+  .chip .frq{font:600 8.5px/1 var(--mono);color:var(--ash2)}
 
-  /* ============ IDEA 5 — PORTION STEPPER ============ */
-  .c5 .stepper{display:flex;align-items:center;background:var(--ink);border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-bottom:11px}
-  .c5 .stepper button{width:54px;height:56px;border:none;background:var(--card2);color:var(--chalk);font-size:26px;font-weight:600;cursor:pointer}
+  /* ============ 5 · STEPPER ============ */
+  .c5 .stepper{display:flex;align-items:center;background:var(--ink);border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-bottom:10px}
+  .c5 .stepper button{width:52px;height:54px;border:none;background:var(--card2);color:var(--chalk);font-size:25px;font-weight:600;cursor:pointer}
   .c5 .stepper button:active{background:var(--lime);color:var(--on-accent)}
-  .c5 .stepper .val{flex:1;text-align:center;font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .c5 .stepper .val{flex:1;text-align:center;font-size:25px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .c5 .stepper .val s{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash);text-decoration:none;margin-left:5px}
-  .c5 .quick{display:flex;gap:8px;margin-bottom:14px}
+  .c5 .quick{display:flex;gap:8px;margin-bottom:12px}
   .c5 .quick button{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 0;color:var(--chalk);font:700 13px/1 var(--mono);cursor:pointer}
   .c5 .quick button:active{border-color:var(--lime);color:var(--lime-text)}
+  .c5 .plab{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-bottom:8px}
   .c5 .mult{display:flex;gap:6px;margin-bottom:13px}
   .c5 .mult button{flex:1;background:transparent;border:1px solid var(--line);border-radius:10px;padding:9px 0;color:var(--ash);font:700 12px/1 var(--mono);cursor:pointer}
   .c5 .mult button.on{background:var(--lime);border-color:var(--lime);color:var(--on-accent)}
-  .c5 .plab{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-bottom:8px}
+
+  /* ============ 6 · PREVIEW CARD ============ */
+  .c6 .mealcard{background:linear-gradient(150deg,rgba(198,248,79,.07),var(--card));border:1px solid var(--line2);border-radius:18px;padding:15px;margin-bottom:12px}
+  .c6 .mealcard .hd{display:flex;justify-content:space-between;align-items:baseline}
+  .c6 .mealcard .nm{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .c6 .mealcard .nm.ph{color:var(--ash2)}
+  .c6 .mealcard .kc{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .c6 .mealcard .kc s{font:600 10px/1 var(--mono);color:var(--ash);text-decoration:none;margin-left:3px}
+  .c6 .mealcard .split{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:12px;background:var(--line)}
+  .c6 .mealcard .split i{display:block;transition:width .3s ease}
+  .c6 .mealcard .lg{display:flex;gap:14px;margin-top:9px}
+  .c6 .mealcard .lg span{font:600 10px/1 var(--mono);color:var(--ash);display:flex;align-items:center;gap:5px}
+  .c6 .mealcard .lg span::before{content:"";width:8px;height:8px;border-radius:2px}
+  .c6 .mealcard .lg .lp::before{background:var(--lime)}
+  .c6 .mealcard .lg .lc::before{background:var(--blue)}
+  .c6 .mealcard .lg .lf::before{background:var(--amber)}
+
+  /* ============ 7 · SCRUBBER ============ */
+  .scrub{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:var(--line);outline:none;margin:6px 0}
+  .scrub::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--lime);border:3px solid var(--ink2);box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
+  .scrub::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--lime);border:3px solid var(--ink2);cursor:pointer}
+  .c7 .bignum{text-align:center;font-size:46px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+  .c7 .bignum s{font:700 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash);text-decoration:none;display:block;margin-top:6px}
+  .c7 .ticks{display:flex;justify-content:space-between;font:600 9px/1 var(--mono);color:var(--ash2);margin-top:2px}
+  .c7 .srow{margin-bottom:10px}
+  .c7 .srow .l{display:flex;justify-content:space-between;font:700 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .c7 .srow .l b{color:var(--chalk);font-variant-numeric:tabular-nums}
+  .c7 .srow.p input{accent-color:var(--lime)}
+
+  /* ============ 8 · NATURAL LANGUAGE ============ */
+  .c8 .nl{position:relative}
+  .c8 .nl textarea{width:100%;min-height:64px;resize:none;background:var(--ink);border:1px solid var(--line);border-radius:15px;padding:14px;color:var(--chalk);font:400 15px/1.4 var(--sans)}
+  .c8 .nl textarea::placeholder{color:var(--ash2)}
+  .c8 .nl textarea:focus{outline:none;border-color:var(--lime)}
+  .c8 .parse{margin-top:11px;background:var(--card);border:1px solid var(--line2);border-radius:15px;padding:13px}
+  .c8 .parse .row1{display:flex;justify-content:space-between;align-items:center}
+  .c8 .parse .est{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .c8 .parse .kc{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+  .c8 .parse .kc s{font:600 10px/1 var(--mono);color:var(--ash);text-decoration:none;margin-left:3px}
+  .c8 .parse .m-mac .macs{display:flex;gap:8px;margin-top:11px}
+  .c8 .parse .macs div{flex:1;text-align:center;background:var(--ink);border-radius:10px;padding:7px 0}
+  .c8 .parse .macs s{display:block;font:700 8.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .c8 .parse .macs b{display:block;font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .c8 .ainote{font:400 10px/1.4 var(--mono);color:var(--ash2);margin-top:9px;text-align:center}
+
+  /* ============ 9 · UNIT × QTY ============ */
+  .c9 .units{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+  .c9 .units button{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 4px;cursor:pointer;text-align:center}
+  .c9 .units button.on{border-color:var(--lime);background:rgba(198,248,79,.08)}
+  .c9 .units button s{display:block;font-size:13px;font-weight:800;text-decoration:none}
+  .c9 .units button i{display:block;font:600 8.5px/1 var(--mono);color:var(--ash);font-style:normal;margin-top:4px}
+  .c9 .qtyrow{display:flex;align-items:center;gap:11px;background:var(--ink);border:1px solid var(--line);border-radius:15px;padding:10px 12px;margin-bottom:12px}
+  .c9 .qtyrow .lab{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .c9 .qstep{display:flex;align-items:center;gap:12px;margin-left:auto}
+  .c9 .qstep button{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--card2);color:var(--chalk);font-size:20px;cursor:pointer}
+  .c9 .qstep b{font-size:19px;font-weight:800;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+  .c9 .total{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:12px;border:1px dashed var(--line2);border-radius:15px;margin-bottom:13px;background:var(--ink)}
+  .c9 .total b{font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .c9 .total s{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .c9 .total .m-mac{display:flex;gap:10px;font:600 11px/1 var(--mono);color:var(--ash)}
 
   @media (prefers-reduced-motion: reduce){*{transition:none!important}}
-  .foot{max-width:1240px;margin:56px auto 0;padding-top:22px;border-top:1px solid var(--line);color:var(--ash2);font:400 12.5px/1.6 var(--mono)}
+  .foot{max-width:1280px;margin:56px auto 0;padding-top:22px;border-top:1px solid var(--line);color:var(--ash2);font:400 12.5px/1.7 var(--mono)}
   .foot b{color:var(--ash)}
 </style>
 </head>
@@ -199,52 +265,60 @@
 
 <div class="page-head">
   <div class="kicker">Hybrid · Nutrition · Add-a-meal sheet</div>
-  <h1>Log Manually, <span>five ways</span></h1>
-  <p>Same Aurora dark surface, same tokens (<b>lime #c6f84f</b>, mono labels, ink cards). Only the <b>Log Manually · Free</b> block is redesigned — the Scan-label upsell and the Pre-made grid stay exactly as they are (shown dimmed). Several mocks are live: <b>type in the ring</b>, <b>tap the keypad</b>, <b>tap a recent meal</b>.</p>
+  <h1>Log Manually, <span>nine ways</span></h1>
+  <p>Aurora dark surface, real tokens. Every idea now <b>keeps the Calories / Macros toggle</b> — tap it on any phone to switch modes. Recent meals also <b>graduate into the Pre-made grid for Full</b> (idea 4). Pre-made + Scan-label upsell otherwise stay as-is. Live: the ring, keypad, chips, steppers, sliders and parser all respond.</p>
   <div class="brief">
-    <span class="tag"><b>Try it</b> · fields are interactive</span>
-    <span class="tag">Parity · one core, web + mobile</span>
-    <span class="tag">Reps are a single number</span>
+    <span class="tag"><b>Tap</b> Calories / Macros on any phone</span>
+    <span class="tag"><b>Recents</b> → also in Pre-made (Full)</span>
+    <span class="tag">Fields are interactive</span>
   </div>
 </div>
 
 <div class="gallery">
 
-  <!-- ============ IDEA 1 — LIVE RING ============ -->
+  <!-- ============ 1 · LIVE RING ============ -->
   <div class="concept c1">
     <div class="cap">
       <span class="n"><i>1</i> Live ring</span>
       <h2>Type, and watch the day fill</h2>
-      <p>The dead <b>0 / 2200</b> line becomes a ring. The number you type previews as a ghost arc against your target — <b>room left</b> is instant, before you even tap Add.</p>
+      <p>The dead <b>0 / 2200</b> line becomes a ring. In either mode the ghost arc previews this meal against your target — <b>room left</b> is instant. Macros mode sums the split into the same ring.</p>
     </div>
     <div class="phone"><div class="screen">
       <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
-      <div class="behind">
-        <div class="bk">● Train · Today's session</div>
-        <div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div>
-      </div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
       <div class="scrim"></div>
       <div class="sheet">
         <div class="grab"></div>
         <div class="title">Add a meal</div>
         <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
         <div class="ringwrap">
           <div class="ring">
-            <svg width="104" height="104" viewBox="0 0 104 104">
-              <circle class="track" cx="52" cy="52" r="45" fill="none" stroke-width="9"/>
-              <circle class="ghost" cx="52" cy="52" r="45" fill="none" stroke-width="9" stroke-dasharray="283" stroke-dashoffset="283" id="r1ghost"/>
-              <circle class="done" cx="52" cy="52" r="45" fill="none" stroke-width="9" stroke-dasharray="283" stroke-dashoffset="283" id="r1done"/>
+            <svg width="102" height="102" viewBox="0 0 102 102">
+              <circle class="track" cx="51" cy="51" r="44" fill="none" stroke-width="9"/>
+              <circle class="ghost" cx="51" cy="51" r="44" fill="none" stroke-width="9" stroke-dasharray="276" stroke-dashoffset="276" data-ring="ghost"/>
+              <circle class="done" cx="51" cy="51" r="44" fill="none" stroke-width="9" stroke-dasharray="276" stroke-dashoffset="276"/>
             </svg>
-            <div class="ctr"><b id="r1left">2200</b><s>kcal left</s></div>
+            <div class="ctr"><b data-ring="left">2200</b><s>kcal left</s></div>
           </div>
           <div class="rmeta">
-            <div class="big">Adding <span id="r1add">0</span> kcal</div>
+            <div class="big">Adding <span data-ring="add">0</span> kcal</div>
             <div class="sm">Target 2200 · logged 0<br>Ghost arc = this meal</div>
           </div>
         </div>
-        <div class="row">
-          <input class="field" placeholder="Meal name" style="flex:1" aria-label="Meal name">
-          <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" id="r1input" aria-label="Calories">
+        <div class="m-cal">
+          <div class="row">
+            <input class="field" placeholder="Meal name" style="flex:1" aria-label="Meal name">
+            <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" data-ring="input" aria-label="Calories">
+          </div>
+        </div>
+        <div class="m-mac macmini" data-ring-mac>
+          <div class="mrow">
+            <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-m="p"><div class="pct" data-pct="p">0%</div></div>
+            <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-m="c"><div class="pct" data-pct="c">0%</div></div>
+            <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-m="f"><div class="pct" data-pct="f">0%</div></div>
+          </div>
+          <div class="mbar"><i class="bp" data-bar="p"></i><i class="bc" data-bar="c"></i><i class="bf" data-bar="f"></i></div>
         </div>
         <button class="pill" style="margin-top:11px">Add meal</button>
         <div class="premade">
@@ -258,32 +332,37 @@
     </div></div>
   </div>
 
-  <!-- ============ IDEA 2 — MACRO CELLS ============ -->
+  <!-- ============ 2 · MACRO CALCULATOR ============ -->
   <div class="concept c2">
     <div class="cap">
-      <span class="n"><i>2</i> Macro calculator</span>
-      <h2>Four blank boxes → a self-checking calc</h2>
-      <p>Each macro gets its own colour and a live share. Enter <b>P / C / F</b> and kcal computes itself (4·4·9) — no double-entry, no guessing whether the numbers agree.</p>
+      <span class="n"><i>2</i> Macro calculator <u>(toggle showcase)</u></span>
+      <h2>Macros mode that checks itself</h2>
+      <p>This is the toggle at its best. <b>Calories</b> = name + kcal. Flip to <b>Macros</b> and the four blank boxes become colour-coded cells that <b>auto-compute kcal</b> (4·4·9) with a live split — no double-entry.</p>
     </div>
     <div class="phone"><div class="screen">
       <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
-      <div class="behind">
-        <div class="bk">● Train · Today's session</div>
-        <div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div>
-      </div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
       <div class="scrim"></div>
-      <div class="sheet">
+      <div class="sheet" data-mode="mac">
         <div class="grab"></div>
         <div class="title">Add a meal</div>
         <div class="divider"><span>Log Manually · Free</span></div>
-        <div class="seg"><button>Calories</button><button class="on">Macros</button></div>
-        <div class="autokcal"><b id="c2kcal">0</b><s>kcal · auto</s></div>
-        <div class="mrow">
-          <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-m="p"><div class="pct" data-pct="p">0%</div></div>
-          <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-m="c"><div class="pct" data-pct="c">0%</div></div>
-          <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-m="f"><div class="pct" data-pct="f">0%</div></div>
+        <div class="seg"><button data-mode="cal">Calories</button><button class="on" data-mode="mac">Macros</button></div>
+        <div class="m-cal">
+          <div class="row">
+            <input class="field" placeholder="Meal name" style="flex:1" aria-label="Meal name">
+            <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" aria-label="Calories">
+          </div>
         </div>
-        <div class="mbar"><i class="bp" id="c2bp" style="width:0"></i><i class="bc" id="c2bc" style="width:0"></i><i class="bf" id="c2bf" style="width:0"></i></div>
+        <div class="m-mac macmini">
+          <div class="autokcal"><b data-kcal>0</b><s>kcal · auto</s></div>
+          <div class="mrow">
+            <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-m="p"><div class="pct" data-pct="p">0%</div></div>
+            <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-m="c"><div class="pct" data-pct="c">0%</div></div>
+            <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-m="f"><div class="pct" data-pct="f">0%</div></div>
+          </div>
+          <div class="mbar"><i class="bp" data-bar="p"></i><i class="bc" data-bar="c"></i><i class="bf" data-bar="f"></i></div>
+        </div>
         <button class="pill" style="margin-top:14px">Add meal</button>
         <div class="premade">
           <div class="pm-div"><span>Pre-made · Full</span></div>
@@ -296,26 +375,28 @@
     </div></div>
   </div>
 
-  <!-- ============ IDEA 3 — KEYPAD HERO ============ -->
+  <!-- ============ 3 · UNIVERSAL KEYPAD ============ -->
   <div class="concept c3">
     <div class="cap">
-      <span class="n"><i>3</i> Keypad hero</span>
-      <h2>The calorie count, thumb-sized</h2>
-      <p>The cramped 92px box becomes a big display driven by an inline pad — one thumb, no keyboard reach. Reads like the app's other display numbers. Name drops to a quiet, optional line.</p>
+      <span class="n"><i>3</i> Universal keypad</span>
+      <h2>One thumb pad — the toggle reveals macros</h2>
+      <p>Big display driven by an inline pad, no keyboard reach. In <b>Calories</b> it fills kcal; flip to <b>Macros</b> and P / C / F targets appear — tap a target, key it in, kcal computes itself.</p>
     </div>
     <div class="phone"><div class="screen">
       <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
-      <div class="behind">
-        <div class="bk">● Train · Today's session</div>
-        <div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div>
-      </div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
       <div class="scrim"></div>
       <div class="sheet">
         <div class="grab"></div>
         <div class="title">Add a meal</div>
-        <div class="sub"><b>0</b> / 2200 kcal today</div>
         <div class="divider"><span>Log Manually · Free</span></div>
-        <div class="disp"><div class="num empty" id="c3num">0</div><div class="un">kcal</div></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <div class="disp"><div class="num empty" data-kp="num">0</div><div class="un" data-kp="un">kcal</div><div class="kc" data-kp="auto"></div></div>
+        <div class="targets m-mac">
+          <button data-t="p" class="sel"><s>Protein g</s><b data-kt="p">0</b></button>
+          <button data-t="c"><s>Carbs g</s><b data-kt="c">0</b></button>
+          <button data-t="f"><s>Fat g</s><b data-kt="f">0</b></button>
+        </div>
         <div class="nameline"><input placeholder="name it (optional)" aria-label="Meal name"></div>
         <div class="pad">
           <button class="key">1</button><button class="key">2</button><button class="key">3</button>
@@ -328,38 +409,140 @@
     </div></div>
   </div>
 
-  <!-- ============ IDEA 4 — RECENT CHIPS ============ -->
+  <!-- ============ 4 · RECENTS (+ in pre-made for Full) ============ -->
   <div class="concept c4">
     <div class="cap">
       <span class="n"><i>4</i> Recent &amp; frequent</span>
-      <h2>The meals you already eat, one tap</h2>
-      <p>Pulled from your own <b>energyIntake</b> history. Tap a chip and both fields fill — logging drops to a single tap. Makes the <b>free</b> tier feel personal without touching the locked pre-made grid.</p>
+      <h2>Your meals, one tap — and in Pre-made</h2>
+      <p>Chips from your own history. Each carries full macros, so a tap fills <b>kcal</b> in Calories mode or <b>all four fields</b> in Macros mode. For <b>Full</b>, your recents also graduate into the Pre-made grid ↓.</p>
     </div>
     <div class="phone"><div class="screen">
       <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
-      <div class="behind">
-        <div class="bk">● Train · Today's session</div>
-        <div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div>
-      </div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
       <div class="scrim"></div>
       <div class="sheet">
         <div class="grab"></div>
         <div class="title">Add a meal</div>
-        <div class="sub"><b>0</b> / 2200 kcal today</div>
         <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
         <div class="chlab">↺ Your recent meals</div>
-        <div class="chips" id="c4chips">
-          <div class="chip" data-n="Oats + whey" data-k="420"><b>Oats + whey</b><s>420 kcal</s><span class="frq">12× logged</span></div>
-          <div class="chip" data-n="Chicken bowl" data-k="540"><b>Chicken bowl</b><s>540 kcal</s><span class="frq">9× logged</span></div>
-          <div class="chip" data-n="Greek yogurt" data-k="180"><b>Greek yogurt</b><s>180 kcal</s><span class="frq">7× logged</span></div>
-          <div class="chip" data-n="Rice + beef" data-k="650"><b>Rice + beef</b><s>650 kcal</s><span class="frq">6× logged</span></div>
+        <div class="chips">
+          <div class="chip" data-n="Oats + whey" data-k="420" data-p="34" data-c="48" data-f="9"><b>Oats + whey</b><s>420 kcal</s><span class="frq">12× logged</span></div>
+          <div class="chip" data-n="Chicken bowl" data-k="540" data-p="46" data-c="52" data-f="14"><b>Chicken bowl</b><s>540 kcal</s><span class="frq">9× logged</span></div>
+          <div class="chip" data-n="Greek yogurt" data-k="180" data-p="18" data-c="12" data-f="6"><b>Greek yogurt</b><s>180 kcal</s><span class="frq">7× logged</span></div>
+          <div class="chip" data-n="Rice + beef" data-k="650" data-p="42" data-c="70" data-f="18"><b>Rice + beef</b><s>650 kcal</s><span class="frq">6× logged</span></div>
         </div>
-        <div class="row">
-          <input class="field" placeholder="Meal name" style="flex:1" id="c4name" aria-label="Meal name">
-          <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" id="c4kcal" aria-label="Calories">
+        <div class="m-cal">
+          <div class="row">
+            <input class="field" placeholder="Meal name" style="flex:1" data-r4="name" aria-label="Meal name">
+            <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" data-r4="kcal" aria-label="Calories">
+          </div>
+        </div>
+        <div class="m-mac">
+          <div class="row" style="margin-bottom:9px"><input class="field" placeholder="Meal name" data-r4="name2" aria-label="Meal name"></div>
+          <div class="mrow">
+            <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-r4="p"><div class="pct">g</div></div>
+            <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-r4="c"><div class="pct">g</div></div>
+            <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-r4="f"><div class="pct">g</div></div>
+          </div>
         </div>
         <button class="pill" style="margin-top:11px">Add meal</button>
-        <div class="hint" id="c4hint">Tap a recent meal to fill — or type your own</div>
+        <div class="hint" data-r4="hint">Tap a recent meal to fill — or enter your own</div>
+        <div class="premade">
+          <div class="pm-div"><span>Pre-made · Full</span></div>
+          <div class="pm-grid">
+            <div class="pm recent"><div class="top"><span class="em">🥣</span><span class="rtag">↺ Recent</span></div><b>Oats + whey</b><div class="kc">420 kcal · your go-to</div></div>
+            <div class="pm recent"><div class="top"><span class="em">🍗</span><span class="rtag">↺ Recent</span></div><b>Chicken bowl</b><div class="kc">540 kcal · your go-to</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ 5 · ESTIMATE STEPPER ============ -->
+  <div class="concept c5">
+    <div class="cap">
+      <span class="n"><i>5</i> Estimate stepper</span>
+      <h2>Dial it in — nobody types 537</h2>
+      <p>Logging is estimation. Calories mode gives a <b>− / +</b> stepper, quick jumps and a portion multiplier. Macros mode keeps the same honesty with the self-computing cells.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <input class="field" placeholder="Meal name" style="margin-bottom:11px" aria-label="Meal name">
+        <div class="m-cal">
+          <div class="stepper">
+            <button data-s="-50" aria-label="minus 50">−</button>
+            <div class="val"><span data-st="val">400</span><s>kcal</s></div>
+            <button data-s="50" aria-label="plus 50">+</button>
+          </div>
+          <div class="quick"><button data-q="100">+100</button><button data-q="250">+250</button><button data-q="500">+500</button></div>
+          <div class="plab">Portion</div>
+          <div class="mult" data-st="mult"><button data-x="0.5">½</button><button class="on" data-x="1">1</button><button data-x="1.5">1.5×</button><button data-x="2">2×</button></div>
+        </div>
+        <div class="m-mac macmini">
+          <div class="autokcal"><b data-kcal>0</b><s>kcal · auto</s></div>
+          <div class="mrow">
+            <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-m="p"><div class="pct" data-pct="p">0%</div></div>
+            <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-m="c"><div class="pct" data-pct="c">0%</div></div>
+            <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-m="f"><div class="pct" data-pct="f">0%</div></div>
+          </div>
+          <div class="mbar"><i class="bp" data-bar="p"></i><i class="bc" data-bar="c"></i><i class="bf" data-bar="f"></i></div>
+        </div>
+        <button class="pill" style="margin-top:4px">Add meal</button>
+        <div class="premade">
+          <div class="pm-div"><span>Pre-made · Full</span></div>
+          <div class="pm-grid">
+            <div class="pm"><div class="top"><span class="em">🍽️</span><span class="lk">🔒</span></div><b>Dinner</b><div class="kc">~740 kcal</div></div>
+            <div class="pm"><div class="top"><span class="em">🥤</span><span class="lk">🔒</span></div><b>Snack</b><div class="kc">~210 kcal</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ 6 · PREVIEW CARD ============ -->
+  <div class="concept c6">
+    <div class="cap">
+      <span class="n"><i>6</i> Live preview card</span>
+      <h2>See the meal before you commit</h2>
+      <p>A meal card materialises as you type: name, kcal, and a 3-segment macro bar. Calories mode uses a balanced default split; Macros mode fills the bar with your real P / C / F. Confidence before Add.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <div class="mealcard">
+          <div class="hd"><div class="nm ph" data-pc="name">Your meal</div><div class="kc"><span data-pc="kcal">0</span><s>kcal</s></div></div>
+          <div class="split"><i class="ip" data-pc="sp" style="background:var(--lime);width:33%"></i><i class="ic" data-pc="sc" style="background:var(--blue);width:34%"></i><i class="if" data-pc="sf" style="background:var(--amber);width:33%"></i></div>
+          <div class="lg"><span class="lp">P <b data-pc="gp" style="margin-left:3px">–</b></span><span class="lc">C <b data-pc="gc" style="margin-left:3px">–</b></span><span class="lf">F <b data-pc="gf" style="margin-left:3px">–</b></span></div>
+        </div>
+        <div class="m-cal">
+          <div class="row">
+            <input class="field" placeholder="Meal name" style="flex:1" data-pc="in-name" aria-label="Meal name">
+            <input class="field mono" placeholder="kcal" inputmode="numeric" style="width:92px" data-pc="in-kcal" aria-label="Calories">
+          </div>
+        </div>
+        <div class="m-mac">
+          <div class="row" style="margin-bottom:9px"><input class="field" placeholder="Meal name" data-pc="in-name2" aria-label="Meal name"></div>
+          <div class="mrow">
+            <div class="mcell p"><label>Protein</label><input inputmode="numeric" placeholder="0" data-pc="in-p"><div class="pct">g</div></div>
+            <div class="mcell c"><label>Carbs</label><input inputmode="numeric" placeholder="0" data-pc="in-c"><div class="pct">g</div></div>
+            <div class="mcell f"><label>Fat</label><input inputmode="numeric" placeholder="0" data-pc="in-f"><div class="pct">g</div></div>
+          </div>
+        </div>
+        <button class="pill" style="margin-top:12px">Add meal</button>
         <div class="premade">
           <div class="pm-div"><span>Pre-made · Full</span></div>
           <div class="pm-grid">
@@ -371,37 +554,118 @@
     </div></div>
   </div>
 
-  <!-- ============ IDEA 5 — PORTION STEPPER ============ -->
-  <div class="concept c5">
+  <!-- ============ 7 · SCRUBBER ============ -->
+  <div class="concept c7">
     <div class="cap">
-      <span class="n"><i>5</i> Estimate stepper</span>
-      <h2>Dial it in — nobody types 537</h2>
-      <p>Manual logging is estimation. A <b>− / +</b> stepper, quick <b>+100 / +250 / +500</b> jumps, and a portion multiplier (½ · 1 · 1.5× · 2×) meet that reality instead of demanding an exact number.</p>
+      <span class="n"><i>7</i> Slider scrub</span>
+      <h2>Drag, don't type</h2>
+      <p>A calorie slider snaps to 10s — drag to an estimate in one gesture. Flip to Macros and it becomes three mini-sliders (P / C / F) with kcal auto-summing above. Fast, tactile, zero keyboard.</p>
     </div>
     <div class="phone"><div class="screen">
       <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
-      <div class="behind">
-        <div class="bk">● Train · Today's session</div>
-        <div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div>
-      </div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
       <div class="scrim"></div>
       <div class="sheet">
         <div class="grab"></div>
         <div class="title">Add a meal</div>
-        <div class="sub"><b>0</b> / 2200 kcal today</div>
         <div class="divider"><span>Log Manually · Free</span></div>
-        <input class="field" placeholder="Meal name" style="margin-bottom:11px" aria-label="Meal name">
-        <div class="stepper">
-          <button data-s="-50" aria-label="minus 50">−</button>
-          <div class="val"><span id="c5val">400</span><s>kcal</s></div>
-          <button data-s="50" aria-label="plus 50">+</button>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <input class="field" placeholder="Meal name" style="margin-bottom:14px" aria-label="Meal name">
+        <div class="m-cal">
+          <div class="bignum"><span data-sc="cal">400</span><s>kcal</s></div>
+          <input type="range" class="scrub" min="0" max="1500" step="10" value="400" data-sc="range" aria-label="Calories">
+          <div class="ticks"><span>0</span><span>500</span><span>1000</span><span>1500</span></div>
         </div>
-        <div class="quick">
-          <button data-q="100">+100</button><button data-q="250">+250</button><button data-q="500">+500</button>
+        <div class="m-mac">
+          <div class="bignum" style="font-size:34px;margin-bottom:10px"><span data-sc="mkcal">0</span><s>kcal · from macros</s></div>
+          <div class="srow p"><div class="l"><span>Protein</span><b><span data-sc="pv">0</span> g</b></div><input type="range" class="scrub" min="0" max="80" step="1" value="0" data-sc="p" aria-label="Protein"></div>
+          <div class="srow p"><div class="l"><span>Carbs</span><b><span data-sc="cv">0</span> g</b></div><input type="range" class="scrub" min="0" max="120" step="1" value="0" data-sc="c" aria-label="Carbs"></div>
+          <div class="srow p"><div class="l"><span>Fat</span><b><span data-sc="fv">0</span> g</b></div><input type="range" class="scrub" min="0" max="60" step="1" value="0" data-sc="f" aria-label="Fat"></div>
         </div>
-        <div class="plab">Portion</div>
-        <div class="mult" id="c5mult">
-          <button data-x="0.5">½</button><button class="on" data-x="1">1</button><button data-x="1.5">1.5×</button><button data-x="2">2×</button>
+        <button class="pill" style="margin-top:14px">Add meal</button>
+        <div class="premade">
+          <div class="pm-div"><span>Pre-made · Full</span></div>
+          <div class="pm-grid">
+            <div class="pm"><div class="top"><span class="em">🍽️</span><span class="lk">🔒</span></div><b>Dinner</b><div class="kc">~740 kcal</div></div>
+            <div class="pm"><div class="top"><span class="em">🥤</span><span class="lk">🔒</span></div><b>Snack</b><div class="kc">~210 kcal</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ 8 · NATURAL LANGUAGE ============ -->
+  <div class="concept c8">
+    <div class="cap">
+      <span class="n"><i>8</i> Natural-language add</span>
+      <h2>Just describe it</h2>
+      <p>Type "2 eggs and toast" — an estimate chip appears you can nudge. Calories mode returns kcal; Macros mode returns kcal + P / C / F. <b>Real parsing needs the AI key</b> (a blocked capability) — this shows the heuristic fallback.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <div class="nl">
+          <textarea data-nl="in" placeholder="Describe your meal — e.g. 2 eggs and toast with butter"></textarea>
+          <div class="parse">
+            <div class="row1"><span class="est">Estimated</span><div class="kc"><span data-nl="kcal">0</span><s>kcal</s></div></div>
+            <div class="m-mac">
+              <div class="macs">
+                <div><s>Protein</s><b><span data-nl="p">0</span>g</b></div>
+                <div><s>Carbs</s><b><span data-nl="c">0</span>g</b></div>
+                <div><s>Fat</s><b><span data-nl="f">0</span>g</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="ainote">Illustrative estimate · precise parse ships with the AI key</div>
+        </div>
+        <button class="pill" style="margin-top:12px">Add meal</button>
+        <div class="premade">
+          <div class="pm-div"><span>Pre-made · Full</span></div>
+          <div class="pm-grid">
+            <div class="pm"><div class="top"><span class="em">🍳</span><span class="lk">🔒</span></div><b>Breakfast</b><div class="kc">~520 kcal</div></div>
+            <div class="pm"><div class="top"><span class="em">🥗</span><span class="lk">🔒</span></div><b>Lunch</b><div class="kc">~680 kcal</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============ 9 · UNIT × QUANTITY ============ -->
+  <div class="concept c9">
+    <div class="cap">
+      <span class="n"><i>9</i> Unit × quantity</span>
+      <h2>Pick a unit, dial the count</h2>
+      <p>Choose serving / 100 g / plate / handful, then step the quantity — kcal multiplies. Calories mode shows the total; Macros mode shows the per-unit split scaled by count. Great for repeatable portions.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>13:02</span><div class="r"><span>▪▪▪</span><span>▾</span><span class="bat">73</span></div></div>
+      <div class="behind"><div class="bk">● Train · Today's session</div><div class="bcard"><div class="bt">Soviet 8-Week Peaking</div><div class="bm">Week 1 · Day 6 · AM · Power Snatch</div></div></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="title">Add a meal</div>
+        <div class="divider"><span>Log Manually · Free</span></div>
+        <div class="seg"><button class="on" data-mode="cal">Calories</button><button data-mode="mac">Macros</button></div>
+        <input class="field" placeholder="Meal name" style="margin-bottom:12px" aria-label="Meal name">
+        <div class="units" data-q="units">
+          <button class="on" data-u="220"><s>Serving</s><i>220 kcal</i></button>
+          <button data-u="130"><s>100 g</s><i>130 kcal</i></button>
+          <button data-u="400"><s>Plate</s><i>400 kcal</i></button>
+          <button data-u="90"><s>Handful</s><i>90 kcal</i></button>
+        </div>
+        <div class="qtyrow">
+          <span class="lab">Quantity</span>
+          <div class="qstep"><button data-qd="-1" aria-label="less">−</button><b data-q="n">1</b><button data-qd="1" aria-label="more">+</button></div>
+        </div>
+        <div class="total">
+          <b data-q="kcal">220</b><s>kcal total</s>
+          <div class="m-mac"><span style="color:var(--lime-text)">P <b data-q="p">14</b></span><span style="color:var(--blue)">C <b data-q="c">25</b></span><span style="color:var(--amber)">F <b data-q="f">7</b></span></div>
         </div>
         <button class="pill">Add meal</button>
         <div class="premade">
@@ -418,92 +682,222 @@
 </div>
 
 <div class="foot">
-  <b>Note.</b> These are Aurora dark-surface mocks matching the shared screenshot; the app's Japandi light theme would map the same tokens.<br>
-  Whatever's chosen ships to <b>web + mobile in the same change</b> (shared logic in packages/core) per the parity rule.
+  <b>Toggle preserved.</b> Every concept keeps Calories / Macros — tap it on any phone.<br>
+  <b>Recents in Pre-made.</b> Idea 4 promotes your frequent meals into the Full pre-made grid (unlocked, tagged ↺ Recent).<br>
+  <b>Parity.</b> Whatever's chosen ships to web + mobile in one change; shared logic lives in packages/core.
 </div>
 
 <script>
-  // ---- Idea 1: live ring ----
-  (function(){
-    var C=283, target=2200, input=document.getElementById('r1input');
-    var ghost=document.getElementById('r1ghost'), done=document.getElementById('r1done');
-    var left=document.getElementById('r1left'), add=document.getElementById('r1add');
-    if(!input)return;
-    input.addEventListener('input',function(){
-      var v=Math.max(0,parseInt(input.value||'0',10)||0);
-      var frac=Math.min(1,v/target);
-      ghost.style.strokeDashoffset=C*(1-frac);
-      add.textContent=v;
-      left.textContent=Math.max(0,target-v);
+  // ---- generic Calories/Macros toggle ----
+  document.querySelectorAll('.seg').forEach(function(seg){
+    seg.querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        seg.querySelectorAll('button').forEach(function(b){b.classList.remove('on');});
+        btn.classList.add('on');
+        var sheet=seg.closest('.sheet');
+        if(btn.dataset.mode==='mac')sheet.setAttribute('data-mode','mac');
+        else sheet.removeAttribute('data-mode');
+        seg.dispatchEvent(new CustomEvent('modechange',{bubbles:true,detail:btn.dataset.mode}));
+      });
     });
-  })();
+  });
 
-  // ---- Idea 2: macro calculator ----
-  (function(){
-    var cells=document.querySelectorAll('.c2 .mcell input');
-    if(!cells.length)return;
-    var out=document.getElementById('c2kcal');
-    var pcts={p:document.querySelector('[data-pct=p]'),c:document.querySelector('[data-pct=c]'),f:document.querySelector('[data-pct=f]')};
-    var bars={p:document.getElementById('c2bp'),c:document.getElementById('c2bc'),f:document.getElementById('c2bf')};
+  // ---- generic macro mini-form (auto-kcal + % bars) ----
+  document.querySelectorAll('.macmini').forEach(function(mm){
+    var ins=mm.querySelectorAll('input[data-m]');
+    var out=mm.querySelector('[data-kcal]');
+    var pcts={p:mm.querySelector('[data-pct="p"]'),c:mm.querySelector('[data-pct="c"]'),f:mm.querySelector('[data-pct="f"]')};
+    var bars={p:mm.querySelector('[data-bar="p"]'),c:mm.querySelector('[data-bar="c"]'),f:mm.querySelector('[data-bar="f"]')};
     function calc(){
       var v={p:0,c:0,f:0};
-      cells.forEach(function(el){v[el.dataset.m]=Math.max(0,parseInt(el.value||'0',10)||0);});
-      var kp=v.p*4, kc=v.c*4, kf=v.f*9, tot=kp+kc+kf;
-      out.textContent=tot;
-      function set(k,cal){var pc=tot?Math.round(cal/tot*100):0;pcts[k].textContent=pc+'%';bars[k].style.width=pc+'%';}
-      set('p',kp);set('c',kc);set('f',kf);
+      ins.forEach(function(el){v[el.dataset.m]=Math.max(0,parseInt(el.value||'0',10)||0);});
+      var k={p:v.p*4,c:v.c*4,f:v.f*9}, tot=k.p+k.c+k.f;
+      if(out)out.textContent=tot;
+      ['p','c','f'].forEach(function(key){
+        var pc=tot?Math.round(k[key]/tot*100):0;
+        if(pcts[key])pcts[key].textContent=pc+'%';
+        if(bars[key])bars[key].style.width=pc+'%';
+      });
+      if(mm.dataset.oncalc)window[mm.dataset.oncalc](tot);
     }
-    cells.forEach(function(el){el.addEventListener('input',calc);});
+    ins.forEach(function(el){el.addEventListener('input',calc);});
+    mm._calc=calc;
+  });
+
+  // ---- 1 · live ring (fed by cal input AND macros mini) ----
+  (function(){
+    var root=document.querySelector('.c1'); if(!root)return;
+    var C=276, target=2200;
+    var ghost=root.querySelector('[data-ring="ghost"]'), left=root.querySelector('[data-ring="left"]'), add=root.querySelector('[data-ring="add"]');
+    function updateRing(v){
+      v=Math.max(0,v||0);
+      ghost.style.strokeDashoffset=C*(1-Math.min(1,v/target));
+      add.textContent=v; left.textContent=Math.max(0,target-v);
+    }
+    root.querySelector('[data-ring="input"]').addEventListener('input',function(e){updateRing(parseInt(e.target.value||'0',10)||0);});
+    var mac=root.querySelector('[data-ring-mac]');
+    mac.querySelectorAll('input[data-m]').forEach(function(el){
+      el.addEventListener('input',function(){
+        var v={p:0,c:0,f:0};
+        mac.querySelectorAll('input[data-m]').forEach(function(x){v[x.dataset.m]=parseInt(x.value||'0',10)||0;});
+        var tot=v.p*4+v.c*4+v.f*9;
+        // also drive the % bars
+        var bars={p:mac.querySelector('[data-bar="p"]'),c:mac.querySelector('[data-bar="c"]'),f:mac.querySelector('[data-bar="f"]')};
+        var pcts={p:mac.querySelector('[data-pct="p"]'),c:mac.querySelector('[data-pct="c"]'),f:mac.querySelector('[data-pct="f"]')};
+        var kk={p:v.p*4,c:v.c*4,f:v.f*9};
+        ['p','c','f'].forEach(function(k){var pc=tot?Math.round(kk[k]/tot*100):0;if(bars[k])bars[k].style.width=pc+'%';if(pcts[k])pcts[k].textContent=pc+'%';});
+        updateRing(tot);
+      });
+    });
+    // reset ring when switching modes
+    root.querySelector('.seg').addEventListener('modechange',function(){updateRing(0);});
   })();
 
-  // ---- Idea 3: keypad ----
+  // ---- 3 · universal keypad ----
   (function(){
-    var num=document.getElementById('c3num'); if(!num)return;
-    var val='';
-    document.querySelectorAll('.c3 .key').forEach(function(k){
+    var root=document.querySelector('.c3'); if(!root)return;
+    var st={kcal:0,p:0,c:0,f:0,mode:'cal',sel:'kcal'};
+    var num=root.querySelector('[data-kp="num"]'), un=root.querySelector('[data-kp="un"]'), auto=root.querySelector('[data-kp="auto"]');
+    var tbtns=root.querySelectorAll('.targets button');
+    function autoKcal(){return st.p*4+st.c*4+st.f*9;}
+    function render(){
+      if(st.mode==='cal'){
+        num.textContent=st.kcal||'0'; num.classList.toggle('empty',!st.kcal);
+        un.textContent='kcal'; auto.textContent='';
+      }else{
+        var val=st[st.sel];
+        num.textContent=val||'0'; num.classList.toggle('empty',!val);
+        un.textContent=({p:'grams protein',c:'grams carbs',f:'grams fat'})[st.sel];
+        auto.textContent='= '+autoKcal()+' kcal';
+        tbtns.forEach(function(b){
+          b.classList.toggle('sel',b.dataset.t===st.sel);
+          root.querySelector('[data-kt="'+b.dataset.t+'"]').textContent=st[b.dataset.t];
+        });
+      }
+    }
+    tbtns.forEach(function(b){b.addEventListener('click',function(){st.sel=b.dataset.t;render();});});
+    root.querySelector('.seg').addEventListener('modechange',function(e){
+      st.mode=e.detail; if(st.mode==='mac'&&st.sel==='kcal')st.sel='p'; if(st.mode==='cal')st.sel='kcal'; render();
+    });
+    root.querySelectorAll('.pad .key').forEach(function(k){
       k.addEventListener('click',function(){
-        var d=k.dataset.k;
-        if(d==='c')val='';
-        else if(d==='del')val=val.slice(0,-1);
-        else if(val.length<4)val+=k.textContent.trim();
-        num.textContent=val||'0';
-        num.classList.toggle('empty',!val);
+        var tgt=st.mode==='cal'?'kcal':st.sel, d=k.dataset.k;
+        var cur=String(st[tgt]===0?'':st[tgt]);
+        if(d==='c')cur='';
+        else if(d==='del')cur=cur.slice(0,-1);
+        else if(cur.length<(tgt==='kcal'?4:3))cur+=k.textContent.trim();
+        st[tgt]=parseInt(cur||'0',10)||0; render();
       });
     });
+    render();
   })();
 
-  // ---- Idea 4: recent chips ----
+  // ---- 4 · recents (fills cal OR macro fields by mode) ----
   (function(){
-    var name=document.getElementById('c4name'), kcal=document.getElementById('c4kcal');
-    var hint=document.getElementById('c4hint'); if(!name)return;
-    document.querySelectorAll('.c4 .chip').forEach(function(ch){
+    var root=document.querySelector('.c4'); if(!root)return;
+    var q=function(s){return root.querySelector('[data-r4="'+s+'"]');};
+    root.querySelectorAll('.chip').forEach(function(ch){
       ch.addEventListener('click',function(){
-        document.querySelectorAll('.c4 .chip').forEach(function(x){x.classList.remove('pick');});
+        root.querySelectorAll('.chip').forEach(function(x){x.classList.remove('pick');});
         ch.classList.add('pick');
-        name.value=ch.dataset.n; kcal.value=ch.dataset.k;
-        hint.textContent='✓ '+ch.dataset.n+' · '+ch.dataset.k+' kcal — tap Add meal';
-        hint.style.color='var(--lime-text)';
+        var d=ch.dataset;
+        q('name').value=d.n; q('kcal').value=d.k;
+        q('name2').value=d.n; q('p').value=d.p; q('c').value=d.c; q('f').value=d.f;
+        q('hint').textContent='✓ '+d.n+' · '+d.k+' kcal · '+d.p+'p '+d.c+'c '+d.f+'f';
+        q('hint').style.color='var(--lime-text)';
       });
     });
   })();
 
-  // ---- Idea 5: stepper + quick + multiplier ----
+  // ---- 5 · stepper ----
   (function(){
-    var el=document.getElementById('c5val'); if(!el)return;
-    var base=400, mult=1;
+    var root=document.querySelector('.c5'); if(!root)return;
+    var el=root.querySelector('[data-st="val"]'), base=400, mult=1;
     function render(){el.textContent=Math.max(0,Math.round(base*mult/10)*10);}
-    document.querySelectorAll('.c5 .stepper button').forEach(function(b){
-      b.addEventListener('click',function(){base=Math.max(0,base+parseInt(b.dataset.s,10));render();});
-    });
-    document.querySelectorAll('.c5 .quick button').forEach(function(b){
-      b.addEventListener('click',function(){base+=parseInt(b.dataset.q,10);render();});
-    });
-    document.querySelectorAll('.c5 .mult button').forEach(function(b){
-      b.addEventListener('click',function(){
-        document.querySelectorAll('.c5 .mult button').forEach(function(x){x.classList.remove('on');});
-        b.classList.add('on'); mult=parseFloat(b.dataset.x); render();
+    root.querySelectorAll('.stepper button').forEach(function(b){b.addEventListener('click',function(){base=Math.max(0,base+parseInt(b.dataset.s,10));render();});});
+    root.querySelectorAll('.quick button').forEach(function(b){b.addEventListener('click',function(){base+=parseInt(b.dataset.q,10);render();});});
+    root.querySelectorAll('[data-st="mult"] button').forEach(function(b){b.addEventListener('click',function(){
+      root.querySelectorAll('[data-st="mult"] button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); mult=parseFloat(b.dataset.x); render();
+    });});
+  })();
+
+  // ---- 6 · preview card ----
+  (function(){
+    var root=document.querySelector('.c6'); if(!root)return;
+    var q=function(s){return root.querySelector('[data-pc="'+s+'"]');};
+    function render(){
+      var mac=root.querySelector('.sheet').getAttribute('data-mode')==='mac';
+      var name=(mac?q('in-name2').value:q('in-name').value)||'';
+      q('name').textContent=name||'Your meal';
+      q('name').classList.toggle('ph',!name);
+      var p,c,f,kcal;
+      if(mac){
+        p=+q('in-p').value||0; c=+q('in-c').value||0; f=+q('in-f').value||0;
+        kcal=p*4+c*4+f*9;
+      }else{
+        kcal=+q('in-kcal').value||0;
+        p=Math.round(kcal*0.3/4); c=Math.round(kcal*0.4/4); f=Math.round(kcal*0.3/9);
+      }
+      q('kcal').textContent=kcal;
+      q('gp').textContent=kcal?p+'g':'–'; q('gc').textContent=kcal?c+'g':'–'; q('gf').textContent=kcal?f+'g':'–';
+      var kp=p*4,kc=c*4,kf=f*9,tot=kp+kc+kf||1;
+      q('sp').style.width=(kp/tot*100)+'%'; q('sc').style.width=(kc/tot*100)+'%'; q('sf').style.width=(kf/tot*100)+'%';
+    }
+    root.querySelectorAll('input').forEach(function(i){i.addEventListener('input',render);});
+    root.querySelector('.seg').addEventListener('modechange',render);
+  })();
+
+  // ---- 7 · scrubber ----
+  (function(){
+    var root=document.querySelector('.c7'); if(!root)return;
+    root.querySelector('[data-sc="range"]').addEventListener('input',function(e){root.querySelector('[data-sc="cal"]').textContent=e.target.value;});
+    function macs(){
+      var p=+root.querySelector('[data-sc="p"]').value, c=+root.querySelector('[data-sc="c"]').value, f=+root.querySelector('[data-sc="f"]').value;
+      root.querySelector('[data-sc="pv"]').textContent=p; root.querySelector('[data-sc="cv"]').textContent=c; root.querySelector('[data-sc="fv"]').textContent=f;
+      root.querySelector('[data-sc="mkcal"]').textContent=p*4+c*4+f*9;
+    }
+    ['p','c','f'].forEach(function(k){root.querySelector('[data-sc="'+k+'"]').addEventListener('input',macs);});
+  })();
+
+  // ---- 8 · natural-language (heuristic) ----
+  (function(){
+    var root=document.querySelector('.c8'); if(!root)return;
+    var map=[['egg',78,6,1,5],['toast',90,3,15,1],['bread',80,3,14,1],['butter',100,0,0,11],['chicken',200,30,0,8],['rice',200,4,44,1],['bowl',250,15,30,8],['banana',105,1,27,0],['oat',150,5,27,3],['whey',120,24,3,1],['yogurt',150,15,10,4],['beef',250,26,0,16],['salad',120,4,10,7],['pasta',220,8,43,2],['cheese',110,7,1,9],['apple',95,0,25,0],['coffee',5,0,1,0],['protein',120,24,3,1],['shake',180,25,12,3],['pizza',285,12,36,10]];
+    function est(txt){
+      var t=txt.toLowerCase(), k=0,p=0,c=0,f=0,hit=false;
+      map.forEach(function(m){
+        var re=new RegExp('(\\d+)?\\s*'+m[0],'g'), mm;
+        while((mm=re.exec(t))){hit=true;var n=parseInt(mm[1]||'1',10);k+=m[1]*n;p+=m[2]*n;c+=m[3]*n;f+=m[4]*n;}
       });
+      if(!hit&&t.trim()){var w=t.trim().split(/\s+/).length;k=w*70;p=Math.round(k*0.25/4);c=Math.round(k*0.45/4);f=Math.round(k*0.3/9);}
+      return {k:k,p:p,c:c,f:f};
+    }
+    root.querySelector('[data-nl="in"]').addEventListener('input',function(e){
+      var r=est(e.target.value);
+      root.querySelector('[data-nl="kcal"]').textContent=r.k;
+      root.querySelector('[data-nl="p"]').textContent=r.p;
+      root.querySelector('[data-nl="c"]').textContent=r.c;
+      root.querySelector('[data-nl="f"]').textContent=r.f;
     });
+  })();
+
+  // ---- 9 · unit × quantity ----
+  (function(){
+    var root=document.querySelector('.c9'); if(!root)return;
+    var unit=220, qty=1;
+    var kcalEl=root.querySelector('[data-q="kcal"]'), nEl=root.querySelector('[data-q="n"]');
+    var pEl=root.querySelector('[data-q="p"]'), cEl=root.querySelector('[data-q="c"]'), fEl=root.querySelector('[data-q="f"]');
+    function render(){
+      var tot=unit*qty; nEl.textContent=qty; kcalEl.textContent=tot;
+      pEl.textContent=Math.round(tot*0.25/4); cEl.textContent=Math.round(tot*0.45/4); fEl.textContent=Math.round(tot*0.3/9);
+    }
+    root.querySelectorAll('[data-q="units"] button').forEach(function(b){b.addEventListener('click',function(){
+      root.querySelectorAll('[data-q="units"] button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); unit=parseInt(b.dataset.u,10); render();
+    });});
+    root.querySelectorAll('[data-qd]').forEach(function(b){b.addEventListener('click',function(){qty=Math.max(1,qty+parseInt(b.dataset.qd,10));render();});});
+    render();
   })();
 </script>
 </body>
