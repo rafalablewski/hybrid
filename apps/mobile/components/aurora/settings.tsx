@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { useRouter } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
@@ -122,24 +122,47 @@ export default function AuroraSettings() {
         ))}
       </>
         );
-      case "security":
+      case "security": {
+        const emailProvider = !acct.provider || acct.provider === "email";
+        const pw = passwordStrength(acct.newPw);
+        const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
         return (
       <>
-        <Label color={C.ash}>PASSWORD</Label>
-        {acct.provider && acct.provider !== "email" ? (
+        {/* GROUP — Login & recovery */}
+        <Label color={txt(C, C.lime) as string}>{t("w.account.settings.sec-login-recovery").toUpperCase()}</Label>
+        <Label color={C.ash}>{t("w.account.settings.change-password").toUpperCase()}</Label>
+        {!emailProvider ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
         ) : (
           <>
             <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
+            {acct.newPw.length > 0 && (
+              <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
+              </View>
+            )}
             <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 13 }} />
             {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
           </>
         )}
-        <Label color={C.ash} top>ACTIVE SESSIONS</Label>
+        <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
+
+        {/* GROUP — Security checks */}
+        <Label color={txt(C, C.lime) as string} top>{t("w.account.settings.sec-checks").toUpperCase()}</Label>
+        <Label color={C.ash}>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
+        </View>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
         <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
       </>
         );
+      }
       case "data":
         return (
       <>

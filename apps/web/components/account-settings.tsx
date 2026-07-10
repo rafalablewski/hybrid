@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -372,31 +372,64 @@ export default function AccountSettings() {
             )}
           </>
         );
-      case "security":
+      case "security": {
+        const emailProvider = !session?.provider || session.provider === "email";
+        const pw = passwordStrength(newPw);
+        const pwColor = pw.score >= 4 ? LIME_HEX : pw.score === 3 ? BLUE : pw.score === 2 ? AMBER : RED;
         return (
           <>
+            {/* GROUP — Login & recovery */}
+            <GroupLabel>{t("w.account.settings.sec-login-recovery")}</GroupLabel>
             <MfaSettings />
             <div style={{ marginTop: 16 }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.change-password")}</Mono>
-              {session?.provider && session.provider !== "email" ? (
+              {!emailProvider ? (
                 <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-                  {t("w.account.settings.signin-with")} {session.provider} {t("w.account.settings.manage-password-there")}
+                  {t("w.account.settings.signin-with")} {session!.provider} {t("w.account.settings.manage-password-there")}
                 </Mono>
               ) : (
-                <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
-                  <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
-                  <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
-                </div>
+                <>
+                  <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
+                    <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
+                    <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
+                  </div>
+                  {newPw.length > 0 && (
+                    <div style={{ marginTop: 10 }} aria-live="polite">
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {[1, 2, 3, 4].map((i) => (
+                          <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i <= pw.score ? pwColor : LINE, transition: "background .15s" }} />
+                        ))}
+                      </div>
+                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={pwColor}>
+                        {t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}
+                      </Mono>
+                    </div>
+                  )}
+                </>
               )}
               {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
             </div>
             <div style={{ marginTop: 16 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.active-sessions")}</Mono>
-              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.active-sessions-desc")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.connected-account")}</Mono>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+                {!emailProvider ? session!.provider : (session?.email || t("w.account.settings.new-password-ph"))}
+              </Mono>
+            </div>
+
+            {/* GROUP — Security checks */}
+            <GroupLabel top>{t("w.account.settings.sec-checks")}</GroupLabel>
+            <div>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.where-logged-in")}</Mono>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: LIME, flex: "none" }} />
+                <Mono s={{ fontSize: fs.body }} c={CHALK}>{t("w.account.settings.this-device")}</Mono>
+              </div>
+              <Mono s={{ fontSize: fs.micro, lineHeight: 1.6, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.active-sessions-desc")}</Mono>
               <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
             </div>
           </>
         );
+      }
       case "subscription":
         return isClient ? (
           <>
@@ -613,6 +646,16 @@ function Tile({ icon, accent, title, subtitle, danger, wide, onOpen }: {
         </span>
       ) : null}
     </button>
+  );
+}
+
+/** A grouped section header (Instagram-style) — an uppercase label with an
+ *  underline rule that splits a settings screen into named groups. */
+function GroupLabel({ children, top }: { children: ReactNode; top?: boolean }) {
+  return (
+    <div style={{ ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".14em", color: txt(ASH), marginTop: top ? 26 : 0, marginBottom: 14, paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+      {children}
+    </div>
   );
 }
 
