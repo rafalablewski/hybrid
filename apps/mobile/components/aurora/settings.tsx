@@ -100,50 +100,54 @@ export default function AuroraSettings() {
       case "preferences":
         return (
       <>
-        <Label color={C.ash}>APPEARANCE</Label>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {THEME_SWATCHES.map((s) => {
-            const on = pref === s.id;
-            return (
-              <Pressable key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 11, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
-                <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
-                  {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
-                </View>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Label color={C.ash} top>LANGUAGE</Label>
-        <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
-        {lg.supported && (
-          <View style={{ marginTop: 6 }}>
-            <ToggleRow C={C} title={t("w.account.settings.liquid-glass")} desc={t("w.account.settings.liquid-glass-help")} on={lg.enabled} onToggle={() => lg.setEnabled(!lg.enabled)} />
+        <Section label={t("w.account.settings.appearance")}>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {THEME_SWATCHES.map((s) => {
+              const on = pref === s.id;
+              return (
+                <Pressable key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 11, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+                  <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
+                    {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
+                  </View>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
+                </Pressable>
+              );
+            })}
           </View>
+        </Section>
+        <Section label={t("w.account.settings.language")}>
+          <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
+        </Section>
+        {lg.supported && (
+          <Section label={t("w.account.settings.display")}>
+            <ToggleRow C={C} title={t("w.account.settings.liquid-glass")} desc={t("w.account.settings.liquid-glass-help")} on={lg.enabled} onToggle={() => lg.setEnabled(!lg.enabled)} noBorder />
+          </Section>
         )}
       </>
         );
       case "notifications":
         return (
       <>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.notifications-desc")}</Text>
-        {ACCOUNT_NOTIF_ROWS.map((row, i) => (
-          <View key={row.key}>
-            {(i === 0 || ACCOUNT_NOTIF_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
-            <ToggleRow C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
-          </View>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.notifications-desc")}</Text>
+        {groupRows(ACCOUNT_NOTIF_ROWS).map((g) => (
+          <Section key={g.group} label={g.group}>
+            {g.items.map((row, i) => (
+              <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} noBorder={i === 0} />
+            ))}
+          </Section>
         ))}
       </>
         );
       case "privacy":
         return (
       <>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.privacy-desc")}</Text>
-        {ACCOUNT_PRIVACY_ROWS.map((row, i) => (
-          <View key={row.key}>
-            {(i === 0 || ACCOUNT_PRIVACY_ROWS[i - 1].group !== row.group) && <Label color={C.ash} top={i > 0}>{row.group.toUpperCase()}</Label>}
-            <ToggleRow C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
-          </View>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.privacy-desc")}</Text>
+        {groupRows(ACCOUNT_PRIVACY_ROWS).map((g) => (
+          <Section key={g.group} label={g.group}>
+            {g.items.map((row, i) => (
+              <ToggleRow key={row.key} C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} noBorder={i === 0} />
+            ))}
+          </Section>
         ))}
       </>
         );
@@ -153,65 +157,66 @@ export default function AuroraSettings() {
         const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
         return (
       <>
-        {/* GROUP — Login & recovery */}
-        <Label color={txt(C, C.lime) as string}>{t("w.account.settings.sec-login-recovery").toUpperCase()}</Label>
-        <Label color={C.ash}>{t("w.account.settings.change-password").toUpperCase()}</Label>
-        {!emailProvider ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
-        ) : (
-          <>
-            <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
-            {acct.newPw.length > 0 && (
-              <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+        <Section label={t("w.account.settings.sec-login-recovery")}>
+          <Label color={C.ash} tight>{t("w.account.settings.change-password").toUpperCase()}</Label>
+          {!emailProvider ? (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
+          ) : (
+            <>
+              <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
+              {acct.newPw.length > 0 && (
+                <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
+                  <View style={{ flexDirection: "row", gap: 4 }}>
+                    {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
-              </View>
-            )}
-            <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 13 }} />
-            {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
-          </>
-        )}
-        <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
-
-        {/* GROUP — Security checks */}
-        <Label color={txt(C, C.lime) as string} top>{t("w.account.settings.sec-checks").toUpperCase()}</Label>
-        <Label color={C.ash}>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
-        </View>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
-        <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
+              )}
+              <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 13 }} />
+              {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
+            </>
+          )}
+          <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
+        </Section>
+        <Section label={t("w.account.settings.sec-checks")}>
+          <Label color={C.ash} tight>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
+          <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
+        </Section>
       </>
         );
       }
       case "data":
         return (
       <>
-        <Label color={C.ash}>EXPORT</Label>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
-        <View style={{ marginBottom: 12 }}>
-          {[1, 2, 3].map((n) => (
-            <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
-              <Text style={{ color: txt(C, C.lime) as string, fontFamily: F.bold }}>✓</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.data-incl-${n}`)}</Text>
-            </View>
-          ))}
-        </View>
-        {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
-        {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
+        <Section label={t("w.account.settings.export")}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
+          <View style={{ marginBottom: 12 }}>
+            {[1, 2, 3].map((n) => (
+              <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
+                <Text style={{ color: txt(C, C.lime) as string, fontFamily: F.bold }}>✓</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.data-incl-${n}`)}</Text>
+              </View>
+            ))}
+          </View>
+          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
+          {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
+        </Section>
       </>
         );
       case "danger":
         return (
       <>
-        <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 13 }} />
-        <View style={{ borderLeftWidth: 3, borderLeftColor: C.red, paddingLeft: 14, marginTop: 16 }}>
-          <Label color={C.red}>{t("settings.resetTitle").toUpperCase()}</Label>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
+        <Section label={t("common.signout")}>
+          <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 13 }} />
+        </Section>
+        <Section label={t("settings.resetTitle")} tone={C.red}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
           <TextInput
             value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
@@ -222,7 +227,7 @@ export default function AuroraSettings() {
           <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
           </Pressable>
-        </View>
+        </Section>
       </>
         );
       default:
@@ -315,7 +320,7 @@ export default function AuroraSettings() {
           </Pressable>
           <AHeading style={{ fontSize: fs.display, color: active.danger ? (txt(C, C.red) as string) : C.chalk }}>{active.title}</AHeading>
         </View>
-        <ACard>{renderBody(active.id)}</ACard>
+        {renderBody(active.id)}
       </AuroraScreen>
     );
   }
@@ -391,12 +396,37 @@ export default function AuroraSettings() {
   );
 }
 
-function Label({ children, color, top }: { children: ReactNode; color: string; top?: boolean }) {
+function Label({ children, color, top, tight }: { children: ReactNode; color: string; top?: boolean; tight?: boolean }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color, marginTop: top ? 18 : 14, marginBottom: 10 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
       {children}
     </Text>
   );
+}
+
+/** A labelled section — the app-wide grouping: an uppercase header sitting above
+ *  its own card. Every Settings sub-page is built from these so the whole surface
+ *  reads as consistent sections (matching the Sectioned edit-profile screen). */
+function Section({ label, tone, children }: { label: string; tone?: string; children: ReactNode }) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
+      <ACard>{children}</ACard>
+    </View>
+  );
+}
+
+/** Collapse a flat, group-tagged row list into contiguous [group → items] runs
+ *  so each group can render as its own Section. */
+function groupRows<T extends { group: string }>(rows: readonly T[]): { group: string; items: T[] }[] {
+  const out: { group: string; items: T[] }[] = [];
+  for (const r of rows) {
+    const last = out[out.length - 1];
+    if (last && last.group === r.group) last.items.push(r);
+    else out.push({ group: r.group, items: [r] });
+  }
+  return out;
 }
 
 function Tag({ label, color, upper }: { label: string; color: string; upper?: boolean }) {
