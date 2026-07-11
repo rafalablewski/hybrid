@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
@@ -99,6 +99,19 @@ export default function AuroraToday({
   const [coachOpen, setCoachOpen] = useState(false);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle.
   const [liftsOpen, setLiftsOpen] = useState(false);
+  // Keep keyboard focus with the lift toggle across open/close: the "Show all"
+  // pill and the "Hide lifts" button are different elements, so when one
+  // unmounts we move focus to the other — but only after a user-driven toggle
+  // (the ref guard keeps this from stealing focus on first render).
+  const showLiftsRef = useRef<HTMLButtonElement>(null);
+  const hideLiftsRef = useRef<HTMLButtonElement>(null);
+  const liftsToggled = useRef(false);
+  useEffect(() => {
+    if (!liftsToggled.current) return;
+    liftsToggled.current = false;
+    (liftsOpen ? hideLiftsRef : showLiftsRef).current?.focus();
+  }, [liftsOpen]);
+  const toggleLifts = (open: boolean) => { liftsToggled.current = true; setLiftsOpen(open); };
 
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(
@@ -232,14 +245,14 @@ export default function AuroraToday({
                       </div>
                       {many && !liftsOpen && (
                         <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 72, display: "flex", justifyContent: "center", alignItems: "flex-end", background: `linear-gradient(transparent, ${C("ink2")})`, pointerEvents: "none" }}>
-                          <button onClick={() => setLiftsOpen(true)} aria-expanded={false} style={{ pointerEvents: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
+                          <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ pointerEvents: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
                             {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
                           </button>
                         </div>
                       )}
                     </div>
                     {many && liftsOpen && (
-                      <button onClick={() => setLiftsOpen(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
+                      <button ref={hideLiftsRef} onClick={() => toggleLifts(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
                         {t("w.home.today.hideLifts")}
                       </button>
                     )}

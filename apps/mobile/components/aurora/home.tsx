@@ -292,7 +292,7 @@ export default function AuroraHome() {
                   );
                   return (
                     <>
-                      <LiftRow r={rows[0]!} i={0} />
+                      {rows[0] && <LiftRow r={rows[0]} i={0} />}
                       {many && !liftsOpen && (
                         <View style={{ position: "relative" }}>
                           {rows.slice(1, 3).map((r, i) => (
