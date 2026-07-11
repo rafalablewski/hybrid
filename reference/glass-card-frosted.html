@@ -57,6 +57,10 @@
     backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
   .glass.revealed .veil{opacity:0;pointer-events:none}
   .glass.revealed .frost .g.blur{filter:none;opacity:1}
+  /* the last two lifts are collapsed until "show more" */
+  .extra{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+  .glass.revealed .extra{grid-template-rows:1fr}
+  .extra > .inner{overflow:hidden;min-height:0}
   /* a small "show less" appears once revealed */
   .less{display:none;width:100%;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10.5px;color:rgba(243,244,239,.55);padding:8px 0 0;text-align:center}
   .glass.revealed .less{display:block}
@@ -72,7 +76,7 @@
 </style>
 
 <div class="stage">
-  <p class="cap">Frosted list · one clear, four behind a reveal</p>
+  <p class="cap">Frosted list · one clear, two frosted, show more</p>
   <div class="bloom">
     <div class="glass" id="card">
       <p class="kick">Today · AM</p>
@@ -81,15 +85,18 @@
       <div class="bar"><i></i></div>
 
       <div class="frost">
-        <!-- legible -->
+        <!-- legible anchor -->
         <div class="lrow g"><span class="nm"><em>AM</em>Power Snatch</span><span class="sc">60%×3×3, 70%×3×4</span></div>
-        <!-- frosted until revealed -->
+        <!-- two frosted teaser rows -->
         <div class="lrow g blur"><span class="nm"><em>AM</em>Clean &amp; Jerk</span><span class="sc">70%×2×4</span></div>
         <div class="lrow g blur"><span class="nm"><em>AM</em>Back Squat</span><span class="sc">75%×3×3</span></div>
-        <div class="lrow g blur"><span class="nm"><em>PM</em>Snatch Pull</span><span class="sc">90%×3×3</span></div>
-        <div class="lrow g blur"><span class="nm"><em>PM</em>Front Squat</span><span class="sc">70%×3×4</span></div>
+        <!-- the rest, collapsed until show more -->
+        <div class="extra"><div class="inner">
+          <div class="lrow g"><span class="nm"><em>PM</em>Snatch Pull</span><span class="sc">90%×3×3</span></div>
+          <div class="lrow g"><span class="nm"><em>PM</em>Front Squat</span><span class="sc">70%×3×4</span></div>
+        </div></div>
 
-        <div class="veil"><button class="more" id="more" aria-expanded="false" aria-controls="card">Show 4 more →</button></div>
+        <div class="veil"><button class="more" id="more" aria-expanded="false" aria-controls="card">Show more →</button></div>
       </div>
 
       <button class="less" id="less">Show less</button>
