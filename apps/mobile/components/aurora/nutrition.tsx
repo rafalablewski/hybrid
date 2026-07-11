@@ -7,11 +7,13 @@ import {
   adaptiveTargets,
   estimateMaintenance,
   dailyNutrition,
+  weightTrend,
   isFullAccess,
   MEAL_PRESETS,
   mealPresetSignals,
   type NutritionGoal,
   type MealPreset,
+  type WeightPoint,
 } from "@hybrid/core";
 import { createSignal, getAssignedDiet, scanNutritionLabel } from "../../lib/api";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
@@ -63,6 +65,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const targets = useMemo(() => adaptiveTargets(sig, { goal }), [signals, goal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
+  const weight = useMemo(() => weightTrend(sig), [signals]);
   const personalized = maint.kcal != null;
 
   const add = async () => {
@@ -223,7 +226,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>/ {targets.kcal}</Text>
             </View>
             <Bar cur={today.kcal} target={targets.kcal} color={C.lime} />
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal, {targets.basis}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal, {targets.basis}{maint.weightChangeKg != null ? `, ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text>
           </ACard>
 
           <MacroRow labelKey="w.recovery.nutrition.protein" cur={today.protein} target={targets.protein} color={C.blue} />
@@ -241,6 +244,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{l}</Text></View>
             ))}
           </View>
+        </ACard>
+      )}
+
+      {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate, from the
+          same composition engine the web nutrition screen uses. */}
+      {weight.points.length > 0 && (
+        <ACard style={{ marginTop: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, weight.ratePerWeek <= 0 ? C.lime : C.amber) }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</Text>
+          </View>
+          <WeightTrend points={weight.points} color={C.lime} />
         </ACard>
       )}
 
@@ -330,6 +345,38 @@ function CDivider({ label, tier, premium }: { label: string; tier?: string; prem
         {tier ? <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${C.violet}73` : C.line, color: premium ? txt(C, C.violet) : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+    </View>
+  );
+}
+
+// Bodyweight-trend chart — the mobile parity of the web recharts LineChart
+// (aurora/nutrition.tsx). No react-native-svg: it reuses the native bar-trend
+// idiom (Spark / TrendBars) on the EWMA-smoothed weight series, with the raw
+// latest weight + span dates so it reads as a trend at a glance. The weekly
+// rate badge lives in the card header (like web).
+function WeightTrend({ points, color }: { points: WeightPoint[]; color: string }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const series = points.map((p) => p.smoothed);
+  const max = Math.max(...series), min = Math.min(...series), range = max - min || 1;
+  const first = points[0]!, latest = points[points.length - 1]!;
+  return (
+    <View style={{ marginTop: 12 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{latest.smoothed} kg <Text style={{ color: C.ash }}>{t("w.recovery.nutrition.trend")}</Text></Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{latest.raw} kg {t("w.recovery.nutrition.raw")}</Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 64, gap: series.length > 40 ? 1 : 2 }}>
+        {series.map((v, i) => (
+          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : `${color}55` }} />
+        ))}
+      </View>
+      {points.length > 1 && (
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{first.date.slice(5)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{latest.date.slice(5)}</Text>
+        </View>
+      )}
     </View>
   );
 }
