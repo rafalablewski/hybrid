@@ -1,26 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, ScreenHead, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 
-interface FeedItem {
-  id: string; kind: string; subjectType: string; subjectId: string;
-  author: { id: string; handle: string; displayName: string | null; avatarUrl: string | null };
-  title: string; body: string | null; chips: string[]; lead: string | null; when: string; accent: string;
-  kudos: number; comments: number; kudosedByMe: boolean; mine: boolean;
-}
+type FeedItem = FeedItemView;
 
 function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
-  const [list, setList] = useState<any[] | null>(null);
+  const [list, setList] = useState<CommentView[] | null>(null);
   const [text, setText] = useState("");
-  const load = () => jget(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`).then((r: any) => setList(r.comments ?? []));
+  const load = () => jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`).then((r) => setList(r.comments ?? []));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
   const send = async () => {
     if (!text.trim()) return;
     await jsend("/api/social/comments", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
     setText("");
-    const r: any = await jget(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`);
+    const r = await jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`);
     setList(r.comments ?? []);
     onCount((r.comments ?? []).length);
   };
@@ -52,17 +48,17 @@ export default function SocialFeed() {
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
 
-  const load = () => jget("/api/social/feed").then((r: any) => setFeed(r.feed ?? []));
+  const load = () => jget<FeedResponse>("/api/social/feed").then((r) => setFeed(r.feed ?? []));
   useEffect(() => { load(); }, []);
 
   const cheer = async (item: FeedItem) => {
-    const r: any = await jsend("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
+    const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos, kudosedByMe: r.kudosedByMe } : x)) ?? f);
   };
   const share = async () => {
     if (!text.trim() && !attachPr) return;
     setPosting(true);
-    const r: any = await jsend("/api/social/posts", "POST", { text, attachPr });
+    const r = await jsend<MutationResult>("/api/social/posts", "POST", { text, attachPr });
     setPosting(false);
     if (r.error) { alert(r.error); return; }
     setText(""); setAttachPr(false); load();

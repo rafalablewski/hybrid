@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { F } from "../lib/ui";
+import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 
 export function initials(name?: string | null, handle?: string) {
@@ -66,8 +67,8 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
 // A modal showing any user's public profile (reused by feed / discover / leaderboard).
 export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
   const C = useTheme().palette;
-  const [data, setData] = useState<any>(null);
-  const [cmp, setCmp] = useState<any>(null);
+  const [data, setData] = useState<PublicProfileResponse | null>(null);
+  const [cmp, setCmp] = useState<CompareResult | null>(null);
   const load = () => getProfile(handle).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const p = data?.profile;
@@ -89,7 +90,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
         <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "88%", borderWidth: 1, borderColor: C.line }}>
           <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
-            {!p ? <ActivityIndicator color={C.lime} /> : (
+            {!data || !p ? <ActivityIndicator color={C.lime} /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
@@ -105,7 +106,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                     : following
                       ? <SButton label={rel === "friend" || rel === "close" ? "Friends ✓" : "Following"} ghost small onPress={async () => { await unfollow({ handle }); load(); }} />
                       : <SButton label={rel === "follower" ? "Follow back" : "Follow"} small onPress={async () => { await follow({ handle }); load(); }} />)}
-                  {data?.canViewResults && rel !== "self" && <SButton label="Compare" ghost small onPress={async () => { const r: any = await getCompare(handle); setCmp(r.compare ?? null); }} />}
+                  {data?.canViewResults && rel !== "self" && <SButton label="Compare" ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />}
                 </View>
                 {data?.canViewResults ? (
                   data?.stats && (
@@ -132,7 +133,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 {cmp && (
                   <View style={{ marginTop: 18 }}>
                     <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 8 }}>You {cmp.score.a} — {cmp.score.b} {p.displayName || "@" + p.handle}</Text>
-                    {[...cmp.lines, ...cmp.sharedLifts.map((s: any) => ({ ...s, label: s.lift, unit: "kg" }))].map((l: any, i: number) => (
+                    {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
                       <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
                         <Text style={{ flex: 1, textAlign: "right", fontFamily: F.mono, color: l.leader === "a" ? C.lime : C.chalk }}>{l.a}{l.unit}</Text>
                         <Text style={{ width: 120, textAlign: "center", color: C.ash, fontSize: 11 }}>{l.label}</Text>

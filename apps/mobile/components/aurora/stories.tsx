@@ -12,8 +12,7 @@ import { Avatar } from "../social-kit";
 // shows your own story so the rail isn't a lonely placeholder, but never invents
 // friends. Mirrors the web Stories (aurora/stories.tsx).
 
-interface Author { displayName: string | null; handle: string; avatarUrl: string | null }
-interface Item { id: string; author: Author }
+interface Author { displayName?: string | null; handle: string; avatarUrl?: string | null }
 
 export default function Stories({ name, youLabel, onOpen }: { name?: string | null; youLabel: string; onOpen: () => void }) {
   const C = useTheme().palette;
@@ -21,7 +20,7 @@ export default function Stories({ name, youLabel, onOpen }: { name?: string | nu
   useEffect(() => {
     let alive = true;
     getFeed()
-      .then((r: { feed?: Item[] }) => {
+      .then((r) => {
         if (!alive) return;
         const seen = new Set<string>();
         const list: Author[] = [];

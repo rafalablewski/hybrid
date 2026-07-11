@@ -3,14 +3,15 @@ import { View, Text, Pressable, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
 
-function Comments({ item }: { item: any }) {
+function Comments({ item }: { item: FeedItemView }) {
   const C = useTheme().palette;
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<CommentView[]>([]);
   const [text, setText] = useState("");
-  const load = () => getComments(item.subjectType, item.subjectId).then((r: any) => setList(r.comments ?? []));
+  const load = () => getComments(item.subjectType, item.subjectId).then((r) => setList(r.comments ?? []));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
   const send = async () => {
     if (!text.trim()) return;
@@ -36,7 +37,7 @@ function Comments({ item }: { item: any }) {
 export default function FeedScreen() {
   const C = useTheme().palette;
   const router = useRouter();
-  const [feed, setFeed] = useState<any[] | null>(null);
+  const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,23 +45,23 @@ export default function FeedScreen() {
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
 
-  const load = useCallback(() => getFeed().then((r: any) => setFeed(r.feed ?? [])), []);
+  const load = useCallback(() => getFeed().then((r) => setFeed(r.feed ?? [])), []);
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const cheer = async (item: any) => {
-    const r: any = await toggleKudos({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
+  const cheer = async (item: FeedItemView) => {
+    const r = await toggleKudos({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos, kudosedByMe: r.kudosedByMe } : x)) ?? f);
   };
   const share = async () => {
     if (!text.trim() && !attachPr) return;
     setPosting(true);
-    const r: any = await createPost({ text, attachPr });
+    const r = await createPost({ text, attachPr });
     setPosting(false);
     if (r.error) { alert(r.error); return; }
     setText(""); setAttachPr(false); load();
   };
-  const del = async (item: any) => { await deletePost(item.subjectId); load(); };
+  const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>

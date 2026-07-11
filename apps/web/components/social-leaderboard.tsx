@@ -1,23 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
+import { LEADERBOARD_METRICS, type LeaderboardMetric, type LeaderRow, type LeaderboardResponse } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Pill, EmptyState, ScreenHead, jget } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
-
-interface Row { rank: number; id: string; handle: string; displayName: string | null; avatarUrl: string | null; value: number; label: string; isMe: boolean }
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function SocialLeaderboard() {
   const { aurora } = useSocialTheme();
   const [metric, setMetric] = useState<LeaderboardMetric>("volume");
-  const [board, setBoard] = useState<Row[] | null>(null);
+  const [board, setBoard] = useState<LeaderRow[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
 
   useEffect(() => {
     setBoard(null);
-    jget(`/api/social/leaderboard?metric=${metric}`).then((r: any) => setBoard(r.board ?? []));
+    jget<LeaderboardResponse>(`/api/social/leaderboard?metric=${metric}`).then((r) => setBoard(r.board ?? []));
   }, [metric]);
 
   return (
