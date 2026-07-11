@@ -14,7 +14,8 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
   const send = async () => {
     if (!text.trim()) return;
-    await jsend("/api/social/comments", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
+    const posted = await jsend<MutationResult>("/api/social/comments", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
+    if (posted.error) { alert(posted.error); return; } // don't clear the box on a failed post
     setText("");
     const r = await jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`);
     setList(r.comments ?? []);

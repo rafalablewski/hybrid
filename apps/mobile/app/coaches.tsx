@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
@@ -60,7 +60,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</Text>
-                        : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { alert(r.error); return; } load(); }} />}
+                        : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { Alert.alert("Error", r.error); return; } load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (
@@ -96,7 +96,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                       {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
                     </View>
                     <TextInput value={body} onChangeText={setBody} multiline placeholder="How was the coaching?" placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
-                    <View style={{ marginTop: 8 }}><SButton label="Submit review" small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { alert(r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
+                    <View style={{ marginTop: 8 }}><SButton label="Submit review" small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { Alert.alert("Error", r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
                   </View>
                 )}
                 {data.reviews.map((rv: StorefrontReview) => (
@@ -122,13 +122,16 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
 function Storefront() {
   const C = useTheme().palette;
   const [data, setData] = useState<CoachProfileResponse | null>(null);
-  const [form, setForm] = useState({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "" });
+  // `visibility` has no mobile UI control, but it MUST round-trip: the PUT handler
+  // does a full update (visibility defaults to "public"), so omitting it would
+  // silently reset an "unlisted" storefront to public on every mobile save.
+  const [form, setForm] = useState({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "", visibility: "public" });
   const [programs, setPrograms] = useState<CoachProgramData[]>([]);
   const [enroll, setEnroll] = useState<CoachEnrollmentsResponse>({ incoming: [], mine: [] });
   const [saved, setSaved] = useState(false);
   const load = async () => {
     const d = await getCoachProfile(); setData(d);
-    if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "" });
+    if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "", visibility: d.profile.visibility });
     const pr = await getCoachPrograms(); setPrograms(pr.programs ?? []);
     setEnroll(await getEnrollments());
   };
@@ -149,7 +152,7 @@ function Storefront() {
         <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder="Pricing note" placeholderTextColor={C.ash} style={inp} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Accepting clients</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel="Accepting clients" /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Auto-accept enrolments</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel="Auto-accept enrolments" /></View>
-        <SButton label={saved ? "Saved ✓" : "Save storefront"} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { alert(r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+        <SButton label={saved ? "Saved ✓" : "Save storefront"} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { Alert.alert("Error", r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
       </Card>
 
       <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>Programs ({programs.length})</Text>
