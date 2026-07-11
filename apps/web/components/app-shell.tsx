@@ -397,8 +397,6 @@ export default function AppShell() {
             // MOBILE DRAWER — the Springboard: a searchable grid of launcher
             // tiles grouped by cluster (parity with the mobile app's More tab).
             if (isMobile) {
-              // Per-cluster accent tint (matches the mobile GROUP_META spectrum).
-              const GROUP_ACCENT: Record<string, string> = { home: LIME, train: LIME, analyze: BLUE, recovery: AMBER, social: VIOLET, teams: RED, account: ASH };
               const navName = (id: string, fb: string) => (t(`nav.${id}`) === `nav.${id}` ? fb : t(`nav.${id}`));
               const goItem = (id: string, locked: boolean) => {
                 setPendingBlocks(undefined);
@@ -445,11 +443,9 @@ export default function AppShell() {
                   </div>
 
                   {springboard.map(({ group, items }) => {
-                    const accent = GROUP_ACCENT[group] ?? LIME;
                     return (
                       <div key={group} style={{ marginTop: 18 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 10 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: 2, background: accent, flex: "none" }} />
                           <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
                           <Mono s={{ fontSize: 9, marginLeft: "auto" }} c={ASH}>{items.length}</Mono>
                         </div>

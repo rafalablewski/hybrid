@@ -43,8 +43,8 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
 // mobile so the two Preferences screens read the same. Aurora = dark/lime,
 // Japandi = warm-light/clay.
 const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, string, string] }[] = [
-  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
-  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
+  { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
+  { id: "light", label: "Japandi", colors: ["#eae3d4", "#a4543a", "#5f6d4b"] },
 ];
 
 export default function AccountSettings() {
