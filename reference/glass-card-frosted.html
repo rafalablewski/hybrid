@@ -1,0 +1,115 @@
+<!-- HYBRID — Liquid Glass plan-day card · frosted list + expand button (interactive).
+     First lifts legible, remaining frosted behind a "show more" reveal.
+     Start under the [note]. Tokens: packages/core/src/theme/tokens.ts. Standalone. -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Glass card · frosted + expand</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --lime:#c6f84f; --chalk:#f3f4ef; --violet:#c9a9f0;
+    --disp:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --bg:#0a0b0a; --muted:#8b8f86;
+  }
+  @media (prefers-color-scheme: light){ :root{ --bg:#eae3d4; --muted:#6b6456; } }
+  :root[data-theme="dark"]{ --bg:#0a0b0a; --muted:#8b8f86; }
+  :root[data-theme="light"]{ --bg:#eae3d4; --muted:#6b6456; }
+
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);font-family:var(--disp);display:grid;place-items:center;padding:44px 20px}
+  .stage{width:100%;max-width:404px}
+  .cap{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 16px}
+
+  /* ---- Liquid Glass base ---- */
+  .bloom{position:relative;border-radius:28px;padding:15px;background:#090b09;overflow:hidden;isolation:isolate;box-shadow:0 40px 80px -40px rgba(0,0,0,.7)}
+  .bloom::before{content:"";position:absolute;inset:-45%;z-index:0;
+    background:
+      radial-gradient(38% 38% at 22% 18%, rgba(198,248,79,.55), transparent 70%),
+      radial-gradient(40% 40% at 82% 26%, rgba(60,120,126,.62), transparent 70%),
+      radial-gradient(42% 42% at 62% 92%, rgba(201,169,240,.5), transparent 70%),
+      radial-gradient(36% 36% at 12% 88%, rgba(213,111,62,.4), transparent 70%);
+    filter:blur(26px)}
+  .glass{position:relative;z-index:1;color:var(--chalk);background:rgba(18,20,18,.52);
+    border:1px solid rgba(243,244,239,.16);border-radius:20px;padding:22px;
+    backdrop-filter:blur(20px) saturate(1.35);-webkit-backdrop-filter:blur(20px) saturate(1.35);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+  .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(243,244,239,.66);margin:0 0 7px}
+  h3{font-weight:800;font-size:24px;letter-spacing:-.025em;margin:0 0 4px;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+  .day{font-family:var(--mono);font-size:11.5px;color:rgba(243,244,239,.62);margin:0 0 13px}
+  .bar{height:5px;border-radius:100px;background:rgba(255,255,255,.14);overflow:hidden;margin-bottom:16px}
+  .bar i{display:block;width:14%;height:100%;background:var(--lime);border-radius:100px}
+
+  .lrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:6px 0}
+  .lrow .nm{font-weight:600;font-size:14.5px}
+  .lrow .nm em{font-style:normal;font-family:var(--mono);font-size:9px;color:rgba(243,244,239,.5);margin-right:7px;letter-spacing:.05em}
+  .lrow .sc{font-family:var(--mono);font-size:11px;color:rgba(243,244,239,.6);white-space:nowrap}
+
+  /* ---- frosted region: legible lifts, then blurred ones behind a reveal ---- */
+  .frost{position:relative}
+  .frost .g{transition:filter .3s ease, opacity .3s ease}
+  .frost .g.blur{filter:blur(3px);opacity:.5}
+  /* fade + button overlay sits over the frosted rows until revealed */
+  .frost .veil{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-end;
+    height:70px;padding-bottom:2px;background:linear-gradient(transparent,rgba(18,20,18,.78));pointer-events:none;transition:opacity .3s ease}
+  .more{pointer-events:auto;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--lime);
+    background:rgba(198,248,79,.14);border:1px solid rgba(198,248,79,.4);border-radius:100px;padding:5px 13px;cursor:pointer;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .glass.revealed .veil{opacity:0;pointer-events:none}
+  .glass.revealed .frost .g.blur{filter:none;opacity:1}
+  /* a small "show less" appears once revealed */
+  .less{display:none;width:100%;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10.5px;color:rgba(243,244,239,.55);padding:8px 0 0;text-align:center}
+  .glass.revealed .less{display:block}
+
+  .note{border:1px dashed rgba(243,244,239,.26);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.55;color:rgba(243,244,239,.68);margin-top:16px}
+  .note b{color:var(--violet)}
+  .go{margin-top:10px;width:100%;border:1px solid rgba(198,248,79,.5);background:rgba(198,248,79,.16);color:var(--lime);
+    font-family:var(--disp);font-weight:700;font-size:16px;padding:14px;border-radius:100px;cursor:pointer;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:background .15s}
+  .go:hover{background:rgba(198,248,79,.26)}
+  :focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="stage">
+  <p class="cap">Frosted list · two clear, three behind a reveal</p>
+  <div class="bloom">
+    <div class="glass" id="card">
+      <p class="kick">Today · AM</p>
+      <h3>Soviet 8-Week Peaking</h3>
+      <p class="day">Day 05 / 37 · peaking block</p>
+      <div class="bar"><i></i></div>
+
+      <div class="frost">
+        <!-- legible -->
+        <div class="lrow g"><span class="nm"><em>AM</em>Power Snatch</span><span class="sc">60%×3×3, 70%×3×4</span></div>
+        <div class="lrow g"><span class="nm"><em>AM</em>Clean &amp; Jerk</span><span class="sc">70%×2×4</span></div>
+        <!-- frosted until revealed -->
+        <div class="lrow g blur"><span class="nm"><em>AM</em>Back Squat</span><span class="sc">75%×3×3</span></div>
+        <div class="lrow g blur"><span class="nm"><em>PM</em>Snatch Pull</span><span class="sc">90%×3×3</span></div>
+        <div class="lrow g blur"><span class="nm"><em>PM</em>Front Squat</span><span class="sc">70%×3×4</span></div>
+
+        <div class="veil"><button class="more" id="more" aria-expanded="false" aria-controls="card">Show 3 more →</button></div>
+      </div>
+
+      <button class="less" id="less">Show less</button>
+
+      <div class="note">Following as written. <b>Unlock Full</b> to auto-adjust loads to your recovery.</div>
+      <button class="go">Start →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var card = document.getElementById("card");
+  var more = document.getElementById("more");
+  var less = document.getElementById("less");
+  more.addEventListener("click", function(){
+    card.classList.add("revealed");
+    more.setAttribute("aria-expanded", "true");
+  });
+  less.addEventListener("click", function(){
+    card.classList.remove("revealed");
+    more.setAttribute("aria-expanded", "false");
+  });
+</script>
