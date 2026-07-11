@@ -253,19 +253,23 @@ export default function AuroraHome() {
             eyebrow: the screen is already today's training and the plan names
             itself — the interface shouldn't narrate what the athlete can see. */}
         <ACard style={{ marginTop: 14 }}>
-            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                {/* Readiness as a glanceable DIAL, not "95/100" digits to parse. */}
+            {/* On a plan, Start becomes the full-width action BELOW the note; the
+                top row then carries only the readiness dial (athlete). Other
+                states keep the compact top-right Start. */}
+            {(isAthlete && planReadiness) || !plan ? (
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
                 {isAthlete && planReadiness ? (
                   <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
                     <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
                   </Ring>
                 ) : null}
-                <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.start")}</Text>
-                </Pressable>
+                {!plan && (
+                  <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.start")}</Text>
+                  </Pressable>
+                )}
               </View>
-            </View>
+            ) : null}
             {plan ? (
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
@@ -295,7 +299,7 @@ export default function AuroraHome() {
                       {rows[0] && <LiftRow r={rows[0]} i={0} />}
                       {many && !liftsOpen && (
                         <View style={{ position: "relative" }}>
-                          {rows.slice(1, 3).map((r, i) => (
+                          {rows.slice(1, 4).map((r, i) => (
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
                           <BlurView intensity={12} tint={scheme} style={StyleSheet.absoluteFill} pointerEvents="none" />
@@ -322,6 +326,10 @@ export default function AuroraHome() {
                     <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: txt(C, C.lime) }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
+                {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
+                <Pressable onPress={startPrescribed} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.home.today.start")}</Text>
+                </Pressable>
               </>
             ) : isAthlete && (hasData || phase) ? (
               /* PREMIUM only — the real readiness-driven AI prescription. Casual
