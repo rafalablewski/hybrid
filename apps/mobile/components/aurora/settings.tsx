@@ -6,6 +6,7 @@ import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
+import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
@@ -14,6 +15,7 @@ import { useLiquidGlass } from "../../lib/liquid-glass";
 import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
+import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LinearGradient } from "expo-linear-gradient";
@@ -52,10 +54,15 @@ export default function AuroraSettings() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t, lang, setLang } = useLang();
-  const { signOut, name, entitlement } = useSession();
+  const { signOut, name, role, entitlement } = useSession();
   const { pref, setPref } = useTheme();
   const lg = useLiquidGlass();
   const acct = useAccountSettings();
+  // Mode toggle — Full (athlete) is a paid upgrade; a CLIENT chooses casual vs
+  // athlete, mirroring web's useClientPersonaChoice()/setClientPersona().
+  const personaChoice = useClientPersonaChoice() ?? "casual";
+  const paid = entitlement === "paid";
+  const isClient = role === "client";
   // Drill-in navigation: null = the category list; a category id = its sub-page.
   const [cat, setCat] = useState<SettingsCategoryId | null>(null);
   const [query, setQuery] = useState("");
@@ -161,6 +168,7 @@ export default function AuroraSettings() {
         const pwColor = txt(C, pw.score >= 4 ? C.lime : pw.score === 3 ? C.blue : pw.score === 2 ? C.amber : C.red);
         return (
       <>
+        <MfaSettings />
         <Section label={t("w.account.settings.sec-login-recovery")}>
           <Label color={C.ash} tight>{t("w.account.settings.change-password").toUpperCase()}</Label>
           {!emailProvider ? (
@@ -191,6 +199,57 @@ export default function AuroraSettings() {
           </View>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
           <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
+        </Section>
+      </>
+        );
+      }
+      case "subscription": {
+        // Mode toggle — parity with web account-settings.tsx. A CLIENT flips
+        // Simple(casual)/Full(athlete); Full is a paid upgrade, so when not paid
+        // tapping it routes to the upgrade screen instead of switching. Coaches/
+        // admins get the read-only line (no self-serve persona).
+        const goUpgrade = () => (router.push as (p: string) => void)("/upgrade");
+        if (!isClient) {
+          return (
+        <Section label={t("w.account.settings.mode")}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>
+            {paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")} — {t("w.account.settings.mode-desc")}
+          </Text>
+        </Section>
+          );
+        }
+        const ModeCard = ({ on, title, tags, locked, onPress }: { on: boolean; title: string; tags: string; locked?: boolean; onPress: () => void }) => (
+          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
+              {locked && (
+                <>
+                  <Text style={{ fontSize: fs.micro }}>🔒</Text>
+                  <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: `${C.lime}1a`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.5 }}>{t("w.account.settings.paid")}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{tags}</Text>
+          </Pressable>
+        );
+        return (
+      <>
+        <Section label={t("w.account.settings.mode")}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 12 }}>{t("w.account.settings.mode-desc")}</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <ModeCard on={personaChoice === "casual"} title={t("w.account.settings.simple")} tags={t("w.account.settings.simple-tags")} onPress={() => setClientPersona("casual")} />
+            <ModeCard on={paid && personaChoice === "athlete"} title={t("w.account.settings.full")} tags={t("w.account.settings.full-tags")} locked={!paid} onPress={() => (paid ? setClientPersona("athlete") : goUpgrade())} />
+          </View>
+          {!paid ? (
+            <>
+              <APill label={t("w.account.settings.upgrade-full")} variant="primary" onPress={goUpgrade} style={{ paddingVertical: 13, marginTop: 16 }} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.account.settings.unlocks")}</Text>
+            </>
+          ) : (
+            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={goUpgrade} style={{ paddingVertical: 13, marginTop: 16 }} />
+          )}
         </Section>
       </>
         );
@@ -244,7 +303,8 @@ export default function AuroraSettings() {
     account: "/profile-edit",
     logger: "/logger-settings",
     coaching: "/coach-apply",
-    subscription: "/upgrade",
+    // `subscription` drills in to the inline Mode section (Simple/Full toggle),
+    // parity with web; the Full upgrade CTA there routes on to /upgrade.
   };
 
   // A short current-value summary shown on the right of each category row.
