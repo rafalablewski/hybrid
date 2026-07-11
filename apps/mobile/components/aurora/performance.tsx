@@ -11,6 +11,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
