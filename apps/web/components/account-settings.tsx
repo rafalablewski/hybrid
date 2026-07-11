@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, REST_SECONDS_CHOICES, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { MetaLine } from "./aurora/meta";
 import { useLang } from "@/lib/i18n";
@@ -334,12 +334,49 @@ export default function AccountSettings() {
               <PrefRow first title={t("w.account.settings.logger-detailed-t")} desc={t("w.account.settings.logger-detailed-help")} on={prefs.detailed} onToggle={() => setLoggerPref("detailed", !prefs.detailed)} />
               <PrefRow title={t("w.account.settings.logger-warmups-t")} desc={t("w.account.settings.volume-counting-help")} on={prefs.countWarmupsInVolume} onToggle={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} />
               <PrefRow title={t("w.account.settings.logger-fractional-t")} desc={t("w.account.settings.fractional-help")} on={prefs.fractionalVolume} onToggle={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} />
+              <PrefRow title={t("loggerPrefs.plateCalc")} desc={t("loggerPrefs.plateCalcDesc")} on={prefs.plateCalc} onToggle={() => setLoggerPref("plateCalc", !prefs.plateCalc)} />
+              <PrefRow title={t("loggerPrefs.autoAdvance")} desc={t("loggerPrefs.autoAdvanceDesc")} on={prefs.autoAdvance} onToggle={() => setLoggerPref("autoAdvance", !prefs.autoAdvance)} />
+              <PrefRow title={t("loggerPrefs.rpeAsRir")} desc={t("loggerPrefs.rpeAsRirDesc")} on={prefs.rpeAsRir} onToggle={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} />
+              <PrefRow title={t("loggerPrefs.countIn")} desc={t("loggerPrefs.countInDesc")} on={prefs.countIn} onToggle={() => setLoggerPref("countIn", !prefs.countIn)} />
+              <PrefRow title={t("loggerPrefs.restTimer")} desc={t("loggerPrefs.restTimerDesc")} on={prefs.restTimer} onToggle={() => setLoggerPref("restTimer", !prefs.restTimer)} />
+              <PrefRow title={t("loggerPrefs.carryOver")} desc={t("loggerPrefs.carryOverDesc")} on={prefs.carryOver} onToggle={() => setLoggerPref("carryOver", !prefs.carryOver)} />
+              <PrefRow title={t("loggerPrefs.keepAwake")} desc={t("loggerPrefs.keepAwakeDesc")} on={prefs.keepAwake} onToggle={() => setLoggerPref("keepAwake", !prefs.keepAwake)} />
+              <PrefRow title={t("loggerPrefs.haptics")} desc={t("loggerPrefs.hapticsDesc")} on={prefs.haptics} onToggle={() => setLoggerPref("haptics", !prefs.haptics)} />
             </Section>
+            {prefs.restTimer && (
+              <Section label={t("loggerPrefs.restDefault")}>
+                <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
+                  {REST_SECONDS_CHOICES.map((sec) => (
+                    <button key={sec} onClick={() => setLoggerPref("restSeconds", sec)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.restSeconds === sec ? txt(LIME) : txt(ASH), background: prefs.restSeconds === sec ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.restSeconds === sec ? LIME : LINE}` }}>
+                      {sec}s
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            )}
             <Section label={t("w.account.settings.units")}>
               <div style={{ display: "flex", gap: space.sm }}>
                 {(["kg", "lb"] as const).map((u) => (
                   <button key={u} onClick={() => setLoggerPref("units", u)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}>
                     {u}
+                  </button>
+                ))}
+              </div>
+            </Section>
+            <Section label={t("loggerPrefs.quickIncrement")}>
+              <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
+                {(prefs.units === "lb" ? [0, 5, 10] : [0, 2.5, 5]).map((inc) => (
+                  <button key={inc} onClick={() => setLoggerPref("quickIncrement", inc)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.quickIncrement === inc ? txt(LIME) : txt(ASH), background: prefs.quickIncrement === inc ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.quickIncrement === inc ? LIME : LINE}` }}>
+                    {inc === 0 ? t("common.off") : `±${inc}`}
+                  </button>
+                ))}
+              </div>
+            </Section>
+            <Section label={t("loggerPrefs.defaultStart")}>
+              <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
+                {([{ id: "empty", label: "Empty" }, { id: "ai", label: "AI" }, { id: "last", label: "Repeat last" }] as const).map((o) => (
+                  <button key={o.id} onClick={() => setLoggerPref("defaultStart", o.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.defaultStart === o.id ? txt(LIME) : txt(ASH), background: prefs.defaultStart === o.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.defaultStart === o.id ? LIME : LINE}` }}>
+                    {o.label}
                   </button>
                 ))}
               </div>
