@@ -16,8 +16,9 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
@@ -444,6 +445,33 @@ export function ASegment<T extends string>({
         );
       })}
     </View>
+  );
+}
+
+/**
+ * The one canonical screen-header BACK button — a 44×44 line-bordered square with
+ * the Aurora `back` glyph, the exact treatment the web app uses (see the web
+ * interval-timer / standalone headers). This is the single source of truth so
+ * every pushed sub-screen gets an identical, labelled return control instead of
+ * the ad-hoc `‹`/`←` variants screens used to hand-roll.
+ *
+ * Defaults to `router.back()`; pass `onPress` for in-screen back navigation
+ * (e.g. a settings sub-page that pops its own state rather than the stack).
+ */
+export function ABack({ onPress, label, style }: { onPress?: () => void; label?: string; style?: ViewStyle }) {
+  const { palette } = useTheme();
+  const { t } = useLang();
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label ?? t("common.back")}
+      onPress={onPress ?? (() => router.back())}
+      hitSlop={8}
+      style={[{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }, style]}
+    >
+      <AuroraIcon name="back" size={20} color={palette.chalk} />
+    </Pressable>
   );
 }
 

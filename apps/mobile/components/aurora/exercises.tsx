@@ -11,7 +11,7 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
@@ -44,9 +44,7 @@ export default function AuroraExercises() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.ex.title")}</AHeading>
       </View>
 

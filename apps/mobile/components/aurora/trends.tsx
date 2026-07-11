@@ -11,8 +11,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
@@ -55,9 +54,7 @@ export default function AuroraTrends() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>

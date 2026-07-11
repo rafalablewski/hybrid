@@ -7,7 +7,7 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
 
 const STORE_KEY = "hybrid.sport";
 
@@ -58,7 +58,10 @@ export default function AuroraSport() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Sport</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>Sport</AHeading>
+      </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("sport.intro")}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>

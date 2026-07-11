@@ -5,7 +5,7 @@ import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import PercentProgram from "../percent-program";
@@ -34,7 +34,10 @@ export default function AuroraPlans() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
+      </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>

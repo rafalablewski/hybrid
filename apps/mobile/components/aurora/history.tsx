@@ -8,7 +8,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -47,6 +47,7 @@ export default function AuroraHistory() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={() => q.refetch()}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
         <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.lime : C.line, backgroundColor: showArchived ? `${C.lime}1a` : "transparent" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>

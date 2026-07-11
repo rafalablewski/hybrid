@@ -13,7 +13,7 @@ import {
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-import { AuroraScreen, ACard, ASegment, AHeading, RADIUS } from "../components/aurora/kit";
+import { ABack, AuroraScreen, ACard, ASegment, AHeading, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
 const RANGES: { id: StatRange; label: string }[] = [
@@ -53,9 +53,7 @@ export default function Statistics() {
     <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={C.chalk} />
-          </Pressable>
+          <ABack />
           <AHeading style={{ fontSize: fs.display }}>Your{"\n"}Statistics</AHeading>
         </View>
         <View style={{ alignItems: "flex-end", marginTop: 6 }}>

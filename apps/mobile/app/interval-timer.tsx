@@ -11,7 +11,7 @@ import {
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { fs, space, F } from "../lib/ui";
-import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
+import { ABack, AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
 /**
@@ -91,9 +91,7 @@ export default function IntervalTimer() {
     <AuroraScreen scroll={false}>
       {/* header */}
       <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <AuroraIcon name="play" size={18} color={C.ash} />
           <View>

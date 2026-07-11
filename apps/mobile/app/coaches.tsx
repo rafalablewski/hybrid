@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
+import { ABack } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import type {
   CoachCard, CoachStorefrontResponse, CoachProfileResponse, CoachProgramData,
@@ -199,7 +200,7 @@ export default function CoachesScreen() {
   return (
     <Screen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.chalk, fontSize: 18 }}>‹</Text></Pressable>
+        <ABack />
         <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Coaches</Text><Text style={{ color: C.ash, fontSize: 13 }}>Find a coach · start a program.</Text></View>
       </View>
       {isCoach && (

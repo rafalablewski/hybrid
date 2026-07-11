@@ -6,8 +6,7 @@ import { fetchVideoAnalyses, type VideoAnalysis } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 // Technique score (0–100) on the shared good-score scale (green→amber→red).
@@ -31,9 +30,7 @@ export default function AuroraVideo() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vid.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.vid.intro-mobile")}</ASub>
