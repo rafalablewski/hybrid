@@ -97,7 +97,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
           <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={C("lime")} />
         </div>
         <div style={{ display: "flex", gap: space.ms, marginTop: 16, flexWrap: "wrap" }}>
-          <button onClick={toggle} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: running ? C("amber") : C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 26px", cursor: "pointer" }}>
+          <button onClick={toggle} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: running ? C("amber") : C("lime"), color: running ? "#12170f" : "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 26px", cursor: "pointer" }}>
             {running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}
           </button>
           <button onClick={reset} disabled={elapsed === 0} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "transparent", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "12px 20px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
