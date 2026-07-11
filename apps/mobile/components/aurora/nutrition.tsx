@@ -194,14 +194,14 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {coachDiet?.diet && (
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>
-            {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} · {t("w.recovery.nutrition.readOnly")}
+            {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} ({t("w.recovery.nutrition.readOnly")})
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 8 }}>
             {([["w.recovery.nutrition.energy", coachDiet.diet.kcal, " kcal"], ["w.recovery.nutrition.protein", coachDiet.diet.protein, "g"], ["w.recovery.nutrition.carbs", coachDiet.diet.carbs, "g"], ["w.recovery.nutrition.fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <View key={label}>
                   <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(label)}{unit === " kcal" ? " · kcal" : ""}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(label)}{unit === " kcal" ? " (kcal)" : ""}</Text>
                 </View>
               ) : null),
             )}
@@ -220,7 +220,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>/ {targets.kcal}</Text>
             </View>
             <Bar cur={today.kcal} target={targets.kcal} color={C.lime} />
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal · {targets.basis}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal, {targets.basis}</Text>
           </ACard>
 
           <MacroRow labelKey="w.recovery.nutrition.protein" cur={today.protein} target={targets.protein} color={C.blue} />
@@ -280,8 +280,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                   <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
                   {!full && <Text style={{ fontSize: 12 }}>🔒</Text>}
                 </View>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>{t(p.labelKey)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>{t(p.labelKey).split(" · ")[0]}</Text>
+                {t(p.labelKey).split(" · ")[1] ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(p.labelKey).split(" · ")[1]}</Text> : null}
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{p.kcal} kcal ({p.protein}p {p.carbs}c {p.fat}f)</Text>
               </Pressable>
             ))}
           </View>
@@ -299,7 +300,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             <View key={d.date} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{d.date.slice(5)}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{Math.round(d.kcal)} kcal</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(d.protein)}p {Math.round(d.carbs)}c {Math.round(d.fat)}f</Text>
             </View>
           ))}
         </View>
@@ -314,7 +315,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   );
 }
 
-// A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
+// A labelled hairline divider ("──── LOG MANUALLY [FREE] ────") for the compact
 // Add-a-meal sheet.
 function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
   const { palette: C } = useTheme();

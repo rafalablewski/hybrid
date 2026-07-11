@@ -209,14 +209,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16, }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-            {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} · {t("w.recovery.nutrition.readOnly")}
+            {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} ({t("w.recovery.nutrition.readOnly")})
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
             {([["w.recovery.nutrition.energy", coachDiet.diet.kcal, "kcal"], ["w.recovery.nutrition.protein", coachDiet.diet.protein, "g"], ["w.recovery.nutrition.carbs", coachDiet.diet.carbs, "g"], ["w.recovery.nutrition.fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <div key={label}>
                   <div style={{ fontWeight: 800, fontSize: fs.heading }}>{val}{unit === "g" ? "g" : ""}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(label)}{unit === "kcal" ? " · kcal" : ""}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(label)}{unit === "kcal" ? " (kcal)" : ""}</div>
                 </div>
               ) : null),
             )}
@@ -235,7 +235,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
             <Bar cur={today.kcal} target={targets.kcal} color={C("lime")} />
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10 }}>
-              {t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal · {targets.basis}{maint.weightChangeKg != null ? ` · ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+              {t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal, {targets.basis}{maint.weightChangeKg != null ? `, ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
             </div>
           </div>
           <MacroRow label="w.recovery.nutrition.protein" cur={today.protein} target={targets.protein} color={C("blue")} />
@@ -309,8 +309,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               >
                 {!full && <span style={{ position: "absolute", top: 10, right: 11, fontSize: 12, color: "var(--violet-text)" }}>🔒</span>}
                 <span style={{ fontSize: 22 }}>{p.emoji}</span>
-                <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey)}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</span>
+                <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[0]}</span>
+                {t(p.labelKey).split(" · ")[1] && <span style={{ fontSize: fs.caption, color: C("ash"), lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[1]}</span>}
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{p.kcal} kcal ({p.protein}p {p.carbs}c {p.fat}f)</span>
               </button>
             ))}
           </div>
@@ -326,7 +327,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ) : recent.map((d, i) => (
             <div key={d.date} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: space.sm, padding: "8px 0", borderTop: i ? `1px solid ${C("line")}` : "none", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
               <span>{d.date.slice(5)}</span><span>{Math.round(d.kcal)} kcal</span>
-              <span style={{ color: C("ash") }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</span>
+              <span style={{ color: C("ash") }}>{Math.round(d.protein)}p {Math.round(d.carbs)}c {Math.round(d.fat)}f</span>
             </div>
           ))}
         </div>
@@ -335,7 +336,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   );
 }
 
-// A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
+// A labelled hairline divider ("──── LOG MANUALLY [FREE] ────") for the compact
 // Add-a-meal sheet.
 function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
   const C = (v: string) => `var(--color-${v})`;
