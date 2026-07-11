@@ -11,6 +11,7 @@ import {
   Platform,
   Animated,
   Easing,
+  type StyleProp,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -462,7 +463,7 @@ export function ASegment<T extends string>({
  * Defaults to `router.back()`; pass `onPress` for in-screen back navigation
  * (e.g. a settings sub-page that pops its own state rather than the stack).
  */
-export function ABack({ onPress, label, style }: { onPress?: () => void; label?: string; style?: ViewStyle }) {
+export function ABack({ onPress, label, style }: { onPress?: () => void; label?: string; style?: StyleProp<ViewStyle> }) {
   const { palette, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
