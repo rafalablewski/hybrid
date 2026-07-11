@@ -144,9 +144,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 17, fontWeight: "500" }}>＋</Text>
             <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: fs.body, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
           </Pressable>
-          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: full ? `${C.violet}80` : C.violet, backgroundColor: full ? "transparent" : C.violet, opacity: scanning ? 0.6 : 1 }}>
-            {!full && <AuroraIcon name="lock" size={12} color={C.ink} />}
-            <Text style={{ fontFamily: F.bold, fontWeight: full ? "700" : "800", fontSize: fs.caption, color: full ? txt(C, C.violet) : C.ink }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
+          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: `${C.violet}8c`, backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
+            <Text style={{ color: txt(C, C.violet), fontSize: 12 }}>✦</Text>
+            <Text style={{ fontFamily: F.bold, fontWeight: "700", fontSize: fs.caption, color: C.chalk }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
+            {!full && <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", borderWidth: 1, borderColor: `${C.violet}66`, color: txt(C, C.violet), borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 }}>{t("w.account.settings.full")}</Text>}
           </Pressable>
         </View>
         {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {mealMsg}</Text> : null}
