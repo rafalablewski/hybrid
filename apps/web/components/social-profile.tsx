@@ -42,7 +42,10 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
 
   const p = data?.profile;
-  const relation: string = data?.relation ?? "none";
+  // A pending follow request lives in `followState`, NOT `relation` (which is
+  // self/none/following/…), so fold it in — otherwise the "Requested" button +
+  // "request is pending" copy never show for a private account you've asked to follow.
+  const relation: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
 
   const doFollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { handle }); await load(); });
   const doUnfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { handle }); await load(); });

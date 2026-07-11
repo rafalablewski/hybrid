@@ -50,7 +50,15 @@ export async function GET(request: Request) {
     const profiles = await prisma.socialProfile.findMany({ where: { userId: { in: ids } }, select: { userId: true } });
     const withProfile = profiles.map((p) => p.userId).slice(0, 12);
     const cards = await authorCards(withProfile);
-    const suggestions = withProfile.map((id) => ({ ...cards.get(id), reason: reason.get(id) }));
+    // Map the AuthorCard's `id` onto `userId` (the field the discover clients key
+    // + follow on — search returns `userId`, so suggestions must match), and drop
+    // any id without a resolved card so a partial `{ reason }` object never ships.
+    const suggestions = withProfile
+      .map((id) => {
+        const card = cards.get(id);
+        return card ? { ...card, userId: id, reason: reason.get(id) } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
 
     return NextResponse.json({ suggestions });
   } catch (e) {
