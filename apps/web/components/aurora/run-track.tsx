@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fs, space, pacePerKm } from "@hybrid/core";
+import { fs, space, pacePerKm, mmss } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 /** AURORA Run tracking (web) — live-run surface with a PLACEHOLDER route map
  *  (live GPS needs the native build); the stopwatch + manual distance → pace

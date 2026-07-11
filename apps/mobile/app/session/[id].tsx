@@ -25,6 +25,7 @@ import {
   sessionCardioTotals,
   formatSportDistance,
   headlineRunMove,
+  mmss,
   type LoggedSession,
   type PrHit,
   type CardioPrHit,
@@ -41,7 +42,6 @@ import { AuroraScreen } from "../../components/aurora/kit";
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 export default function SessionDetail() {
   const C = useTheme().palette;

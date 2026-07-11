@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
+import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Card, Mono, Kicker, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -98,21 +99,6 @@ function fmtUsd(n: number): string {
   if (n >= 1) return `$${n.toFixed(2)}`;
   if (n > 0) return `$${n.toFixed(3)}`;
   return "$0";
-}
-function ago(iso: string): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
-function until(iso: string | null): string {
-  if (!iso) return "—";
-  const s = (new Date(iso).getTime() - Date.now()) / 1000;
-  if (s < 0) return "due now";
-  if (s < 3600) return `in ${Math.ceil(s / 60)}m`;
-  if (s < 86400) return `in ${Math.round(s / 3600)}h`;
-  return `in ${Math.round(s / 86400)}d`;
 }
 const DOT = (p: Palette): Record<string, string> => ({ active: p.lime, paused: p.amber, draft: p.ash });
 
