@@ -63,7 +63,7 @@ export default function SaveRoutineCard({
         </div>
         <button
           onClick={goUpgrade}
-          style={{ marginTop: 12, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: C("ink"), background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: "pointer" }}
+          style={{ marginTop: 12, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: "pointer" }}
         >
           {t("w.train.logger.routineUnlock")}
         </button>
@@ -121,7 +121,7 @@ export default function SaveRoutineCard({
       <button
         onClick={save}
         disabled={state === "saving"}
-        style={{ marginTop: 11, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: C("ink"), background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1 }}
+        style={{ marginTop: 11, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1 }}
       >
         {state === "saving" ? t("w.train.logger.saving") : t("w.train.logger.saveToRoutines")}
       </button>
@@ -192,7 +192,7 @@ export function SessionRename({
         aria-label="Save"
         onClick={commit}
         disabled={saving}
-        style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: C("ink"), background: C("lime"), border: "none", borderRadius: 10, padding: "8px 14px", cursor: "pointer" }}
+        style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 10, padding: "8px 14px", cursor: "pointer" }}
       >
         ✓
       </button>

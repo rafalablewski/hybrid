@@ -78,7 +78,7 @@ export default function AuroraProgress() {
         <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>{t("w.recovery.progress.intro")}</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
-          style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
+          style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
           <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.addPhoto")}
         </button>
       </div>

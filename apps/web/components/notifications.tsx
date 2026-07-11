@@ -78,7 +78,7 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
           )}
           <h1 style={{ fontWeight: 900, fontSize: 24, margin: 0 }}>{t("w.account.notifications.title")}</h1>
           {feed.length + social.length > 0 && (
-            <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length + social.length}</span>
+            <span style={{ marginLeft: "auto", background: C("lime"), color: "var(--on-accent)", borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length + social.length}</span>
           )}
         </div>
 
@@ -95,7 +95,7 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{n.when}</div>
                   {n.actionable && (
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button onClick={() => respond(n, true)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Accept" : "Approve"}</button>
+                      <button onClick={() => respond(n, true)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Accept" : "Approve"}</button>
                       <button onClick={() => respond(n, false)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Decline" : "Deny"}</button>
                     </div>
                   )}

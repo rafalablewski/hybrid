@@ -115,7 +115,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: C("lime") }}>{t("w.home.pillnav.upgradeKicker")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: "var(--on-accent)", borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
               </button>
             )}
 

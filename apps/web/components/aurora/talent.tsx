@@ -91,7 +91,7 @@ export default function AuroraTalent() {
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
   const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
-  const btn: React.CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" };
+  const btn: React.CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" };
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
   return (

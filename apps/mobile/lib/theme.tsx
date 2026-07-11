@@ -21,20 +21,28 @@ export interface Palette extends ThemePalette {
   onAccent: string;
 }
 
-const ACCENTS = {
-  lime: colors.lime,
-  blue: colors.blue,
+// JAPANDI · CLAY & SAGE: the primary + secondary accent FILLS now flip per theme
+// (dark = chartreuse/teal; light = clay/sage), mirroring globals.css's
+// --color-lime / --color-blue overrides. violet/amber/red stay on the fixed brand
+// hues. `lime` maps to the theme's primary `accent`; `blue` to the sage secondary
+// on light. `onAccent` comes from the theme (paper on clay in light, ink on lime
+// in dark). Any raw `colors.lime` fill (not routed through the palette) stays
+// chartreuse — see capabilities.ts → design-system-unification-sweep.
+const SAGE = "#5f6d4b"; // sage secondary — mirror of globals.css --color-blue (light)
+
+const fillsFor = (scheme: ThemeName, t: ThemePalette) => ({
+  lime: t.accent, // primary action fill (clay on light, chartreuse on dark)
+  blue: scheme === "light" ? SAGE : colors.blue,
   violet: colors.violet,
   amber: colors.amber,
   red: colors.red,
-  onAccent: colors.ink,
-};
+  onAccent: t.onAccent,
+});
 
-// MIST (light) + AURORA (dark) share the SAME chartreuse accent now — the bright
-// brand fills (lime/blue/…) stay fixed across themes; only the surfaces/text flip
-// (from THEMES) and accent TEXT darkens on light (via accentText / txt()). Dark
-// text sits on the bright lime fill in both themes (onAccent = ink).
-export const paletteFor = (scheme: ThemeName): Palette => ({ ...THEMES[scheme], ...ACCENTS });
+export const paletteFor = (scheme: ThemeName): Palette => {
+  const t = THEMES[scheme];
+  return { ...t, ...fillsFor(scheme, t) };
+};
 
 /** Map a bright accent (or ash) used as TEXT to its theme-aware colour. */
 export function txt(palette: Palette, c: string): string {

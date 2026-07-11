@@ -150,7 +150,7 @@ function PrescribedHero({ rx, hasHistory, onStart, t }: { rx: ReturnType<typeof 
   return (
     <button
       onClick={onStart}
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 24, padding: 22, marginTop: 18, color: C("ink") }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 24, padding: 22, marginTop: 18, color: "var(--on-accent)" }}
     >
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {t("home.readiness")} {rx.readiness}/100

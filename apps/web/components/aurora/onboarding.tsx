@@ -88,7 +88,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
         <button aria-label={t("common.back")} onClick={back} disabled={idx === 0} style={{ width: 60, height: 52, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.4 : 1, display: "grid", placeItems: "center" }}>
           <AuroraIcon name="back" size={20} />
         </button>
-        <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
+        <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
           {onPlanStep ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
         </button>
       </div>

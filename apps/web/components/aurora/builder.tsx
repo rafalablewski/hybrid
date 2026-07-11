@@ -82,7 +82,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
         {allowedSave ? (
           <button onClick={save} disabled={saving || blocks.length === 0}
-            style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
+            style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
             {saving ? tr("w.train.builder.saving") : tr("w.train.builder.saveAsTemplate")}
           </button>
         ) : (
@@ -90,7 +90,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
           <div style={{ border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 8%, transparent)`, borderRadius: 16, padding: 14 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}>✦ {tr("w.train.logger.routineFullTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{tr("w.train.logger.routineFullBlurb")}</div>
-            <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
+            <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
           </div>
         )}
       </div>

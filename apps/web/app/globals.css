@@ -147,46 +147,49 @@ html {
 }
 
 [data-theme="light"] {
-  /* JAPANDI — a warm, tactile light theme (oat paper, never pure white), matching
-     reference/today-cockpit-design-concepts/04-japandi.html. Oat-paper page → a
-     warm off-white card, with a SOFT WARM hairline (#e2d9c9) that reads as quiet
-     separation, not a hard black box. The brand CHARTREUSE stays the accent
-     (mossy dark-green #47630a as text). These values MIRROR
-     packages/core/src/theme/palette.ts (THEMES.light), guarded at WCAG AA by the
-     contrast test — keep the two in lockstep. The bright fills (lime/teal/…) stay
-     put; only surfaces, text and the accent-as-text warm/darken. */
-  --color-ink: #efe9df;
-  --color-ink2: #f5f0e6;
-  --color-card: #fcfaf4;
-  --color-line: #e2d9c9;
-  --color-chalk: #3a352c;
-  --color-ash: #6d665a;
-  /* Chartreuse stays the accent fill in light too (the bright lime is fine on the
-     white card with dark on-accent text) — no more clay swap. */
-  --color-lime: #c6f84f;
+  /* JAPANDI · CLAY & SAGE — the warm light theme. An OAT ramp (ground → raised →
+     near-white card, each a clear step so cards float) with a soft warm hairline
+     (#e0d7c6). The primary action is a muted CLAY (#a4543a) carrying a warm paper
+     ink; the acid-chartreuse fill is retired (it failed contrast + glared on
+     paper). The SAGE secondary (#5f6d4b) rides the `blue`/conditioning channel.
+     These values MIRROR packages/core/src/theme/palette.ts (THEMES.light) and
+     apps/mobile/lib/theme.tsx — keep all three in lockstep; the WCAG contrast
+     test guards the ratios. Only surfaces/text/accents change; the glass material
+     math is unchanged. */
+  --color-ink: #eae3d4;
+  --color-ink2: #f2ecdf;
+  --color-card: #f9f5ec;
+  --color-line: #e0d7c6;
+  --color-chalk: #33302a;
+  --color-ash: #6b6456;
+  /* CLAY replaces chartreuse as the primary action FILL in light (bg-lime → clay
+     app-wide). SAGE replaces the teal `blue` fill so the conditioning/secondary
+     accent reads as a calm green, not acid lime. Dark keeps the brand hues. */
+  --color-lime: #a4543a; /* clay — primary action fill */
+  --color-blue: #5f6d4b; /* sage — secondary / conditioning fill */
 
   --glass-base: 255, 255, 255;
   --glass-rgb: 255, 255, 255;
   --text-rgb: 18, 23, 15;
   --rim-hi: rgba(255, 255, 255, 0.95);
-  --rim-lo: rgba(24, 34, 22, 0.06);
+  --rim-lo: rgba(58, 40, 28, 0.06);
   --inner-hi: rgba(255, 255, 255, 0.7);
-  --inner-lo: rgba(24, 34, 22, 0.1);
-  --drop: rgba(24, 34, 22, 0.16);
+  --inner-lo: rgba(58, 40, 28, 0.1);
+  --drop: rgba(58, 40, 28, 0.16);
   --lg-bright: 0.99;
   --grain-blend: multiply;
   --grain-opacity: 0.03;
-  --accent-text: #47630a; /* dark-green chartreuse — AA on the white card */
-  --on-accent: #0a0c0b; /* dark text on the bright lime fill (both themes) */
+  --accent-text: #8f4a30; /* clay-as-text — AA on the Oat card */
+  --on-accent: #faf6ef; /* warm paper ink on the clay fill (4.99:1) */
   --font-heading: "Archivo", system-ui, sans-serif; /* cool minimal — no serif */
-  /* darkened accents that clear AA on the Mist card surface (blue/amber/red keep
-     the Spectrum teal/sand/terracotta hues so accent-text matches the fills) */
-  --lime-text: #47630a;
-  --blue-text: #2c5d6c;
+  /* accent-text tones that clear AA on the Oat card. `lime` = clay (primary),
+     `blue` = sage (secondary); violet/amber/red keep their darkened hues. */
+  --lime-text: #8f4a30;
+  --blue-text: #4f5c3a;
   --violet-text: #6a4885;
   --amber-text: #875427;
   --red-text: #973a30;
-  --glass-glow-rgb: 198, 248, 79; /* chartreuse — matches the accent fill */
+  --glass-glow-rgb: 164, 84, 58; /* clay — matches the primary accent fill */
 }
 
 /* ════════════════════════════════════════════════════════════════════

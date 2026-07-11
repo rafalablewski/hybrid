@@ -144,7 +144,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               marginTop: 16,
               width: "100%",
               background: C("lime"),
-              color: C("ink"),
+              color: "var(--on-accent)",
               border: "none",
               borderRadius: 999,
               padding: "13px 18px",

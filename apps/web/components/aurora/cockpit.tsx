@@ -171,7 +171,7 @@ export default function AuroraCockpit({
                 <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.today.yourWeek")}</span>
               </span>
-              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 11px" }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</span>}
+              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 11px" }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</span>}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginTop: 14 }}>
               <Stat label={t("w.home.today.sessions")} value={`${recap.sessions}`} />
@@ -457,7 +457,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
           </div>
         ))}
       </div>
-      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: C("ink"), background: C("lime"), border: "none", borderRadius: 999, padding: "15px 28px", marginTop: 18, cursor: "pointer" }}>
+      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "15px 28px", marginTop: 18, cursor: "pointer" }}>
         {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>
