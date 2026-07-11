@@ -207,19 +207,45 @@ export default function AuroraToday({
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</span>
                 <span style={{ flex: 1, height: 2, background: C("line"), borderRadius: 2, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, background: C("lime") }} /></span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
-                {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
-                  </div>
-                ))}
-              </div>
-              {plan.rows.length > 1 && (
-                <button onClick={() => setLiftsOpen((o) => !o)} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--lime-text)" }}>
-                  <span>{liftsOpen ? "▴" : "▾"}</span>{liftsOpen ? t("w.home.today.hideLifts") : `${t("w.home.today.showAllLifts")} ${plan.rows.length} ${t("w.home.today.liftsWord")}`}
-                </button>
-              )}
+              {/* Lift reveal: the first lift reads clear; the next two sit frosted
+                  behind a reveal so the card teases "there's more" at a fixed
+                  height instead of a bare text toggle. Expanding lifts the frost
+                  and unfolds the rest. */}
+              {(() => {
+                const rows = plan.rows;
+                const many = rows.length > 1;
+                const TEASER = 3; // first clear + up to two frosted
+                const shown = liftsOpen ? rows : rows.slice(0, TEASER);
+                return (
+                  <>
+                    <div style={{ position: "relative" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
+                        {shown.map((r, i) => {
+                          const frosted = !liftsOpen && i >= 1;
+                          return (
+                            <div key={i} aria-hidden={frosted || undefined} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none", filter: frosted ? "blur(3px)" : undefined, opacity: frosted ? 0.6 : 1, pointerEvents: frosted ? "none" : undefined, userSelect: frosted ? "none" : undefined, transition: "filter .28s ease, opacity .28s ease" }}>
+                              <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {many && !liftsOpen && (
+                        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 72, display: "flex", justifyContent: "center", alignItems: "flex-end", background: `linear-gradient(transparent, ${C("ink2")})`, pointerEvents: "none" }}>
+                          <button onClick={() => setLiftsOpen(true)} aria-expanded={false} style={{ pointerEvents: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
+                            {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {many && liftsOpen && (
+                      <button onClick={() => setLiftsOpen(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
+                        {t("w.home.today.hideLifts")}
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
