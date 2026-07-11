@@ -448,33 +448,32 @@ export default function AppShell() {
                     const accent = GROUP_ACCENT[group] ?? LIME;
                     return (
                       <div key={group} style={{ marginTop: 18 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 10 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: 2, background: accent, flex: "none" }} />
                           <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
-                          <Mono s={{ fontSize: 9 }} c={LIME}>{items.length}</Mono>
+                          <Mono s={{ fontSize: 9, marginLeft: "auto" }} c={ASH}>{items.length}</Mono>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8 }}>
                           {items.map(({ item, locked }) => {
                             const label = navName(item.id, item.label);
                             const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
-                            const iconColor = locked ? ASH : (txt(accent) || accent);
+                            const iconColor = locked ? ASH : "var(--color-chalk)";
                             return (
                               <button
                                 key={item.id}
                                 data-tour={`nav-${item.id}`}
                                 onClick={() => goItem(item.id, locked)}
-                                title={locked ? `${label} · Full` : label}
+                                title={locked ? `${label} (Full)` : label}
                                 aria-label={locked ? `${label} (Full)` : label}
-                                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                                style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: INK2, border: `1px solid ${LINE}`, borderRadius: 14, padding: "12px 4px", cursor: "pointer", opacity: locked ? 0.6 : 1 }}
                               >
-                                <span style={{ position: "relative", width: 58, height: 58, borderRadius: 18, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
-                                  {ic ? <AuroraIcon name={ic} size={24} color={iconColor} strokeWidth={2.6} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
-                                  {locked && (
-                                    <span aria-hidden style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, background: LIME, border: `2px solid ${INK}`, display: "grid", placeItems: "center" }}>
-                                      <AuroraIcon name="lock" size={9} color={ON_ACCENT} strokeWidth={3} />
-                                    </span>
-                                  )}
-                                </span>
-                                <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: locked ? ASH : "var(--color-chalk)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
+                                {ic ? <AuroraIcon name={ic} size={22} color={iconColor} strokeWidth={2.4} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
+                                <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
+                                {locked && (
+                                  <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
+                                    <AuroraIcon name="lock" size={11} color="var(--violet-text)" strokeWidth={2.4} />
+                                  </span>
+                                )}
                               </button>
                             );
                           })}
