@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CAPABILITIES,
   capabilitiesByStatus,
@@ -65,16 +66,44 @@ export default function CapabilitiesScreen() {
   );
 }
 
+// Some `detail` records run to thousands of characters (a full ship log per
+// capability). Keep every character in the DOM — the registry is the source of
+// truth and stays searchable — but clamp it to a few lines by default so the
+// screen reads as a scannable list of titles, not a wall of prose. Expand per row.
+const LONG_DETAIL = 320;
+
 function Row({ cap, color }: { cap: Capability; color: string }) {
+  const [open, setOpen] = useState(false);
+  const long = cap.detail.length > LONG_DETAIL;
+  const clamp = long && !open;
   return (
     <Card style={{ borderLeft: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{cap.title}</div>
         <Chip c={ASH}>{cap.area}</Chip>
       </div>
-      <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+      <Mono
+        s={{
+          fontSize: fs.body,
+          lineHeight: 1.5,
+          display: clamp ? "-webkit-box" : "block",
+          WebkitLineClamp: clamp ? 3 : "unset",
+          WebkitBoxOrient: "vertical",
+          overflow: clamp ? "hidden" : "visible",
+          marginTop: 6,
+        }}
+        c={CHALK}
+      >
         {cap.detail}
       </Mono>
+      {long && (
+        <button
+          onClick={() => setOpen((v) => !v)}
+          style={{ ...mono, fontSize: fs.micro, color: color, background: "none", border: "none", padding: 0, marginTop: 6, cursor: "pointer", textTransform: "uppercase", letterSpacing: ".08em" }}
+        >
+          {open ? "Show less" : "Show more"}
+        </button>
+      )}
       {cap.blockedBy && (
         <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 8, background: `${AMBER}12`, border: `1px solid ${AMBER}40` }}>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={AMBER}>
