@@ -7,7 +7,7 @@ import { ProfileDrawer } from "./social-profile";
 interface FeedItem {
   id: string; kind: string; subjectType: string; subjectId: string;
   author: { id: string; handle: string; displayName: string | null; avatarUrl: string | null };
-  title: string; detail: string; when: string; accent: string;
+  title: string; body: string | null; chips: string[]; lead: string | null; when: string; accent: string;
   kudos: number; comments: number; kudosedByMe: boolean; mine: boolean;
 }
 
@@ -110,7 +110,17 @@ export default function SocialFeed() {
                 <button onClick={() => del(item)} aria-label="Delete post" style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
               )}
             </div>
-            <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.detail}</p>
+            {item.body && <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.body}</p>}
+            {(item.lead || item.chips.length > 0) && (
+              <div style={{ border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginTop: 10 }}>
+                {item.lead && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: C("chalk") }}>{item.lead}</div>}
+                {item.chips.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: item.lead ? 8 : 0 }}>
+                    {item.chips.map((c, i) => <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{c}</span>)}
+                  </div>
+                )}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
               <button onClick={() => cheer(item)} style={{ background: "none", border: "none", cursor: "pointer", color: item.kudosedByMe ? C("lime") : C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
                 {item.kudosedByMe ? "👏" : "👏"} {item.kudos > 0 ? item.kudos : ""} Cheer

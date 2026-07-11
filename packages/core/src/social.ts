@@ -127,7 +127,13 @@ export interface FeedItem {
   subjectId: string;
   author: FeedAuthor;
   title: string;
-  detail: string;
+  /** prose body (a post's caption / status text), or null. */
+  body: string | null;
+  /** structured stat pills (session/PR/workout stats) — rendered as separate
+   *  chips, never a `·`-joined string that has to be split back apart. */
+  chips: string[];
+  /** the workout name / "PR" tag that leads the card, or null. */
+  lead: string | null;
   /** epoch ms for sorting + relative-time. */
   at: number;
   when: string; // "2h ago"
@@ -147,22 +153,20 @@ export interface FeedOptions {
 }
 
 /** View model for a feed CARD (avatar header + optional prose body + stat
- *  chips), shared by web + mobile so both render the identical card. The
- *  ` · `-delimited `detail` becomes the stat chips; a post keeps its prose as the
- *  body, and a session puts its workout name in the meta line. */
+ *  chips), shared by web + mobile so both render the identical card. Every field
+ *  is already structured on the FeedItem — no `·`-delimited string is split back
+ *  apart, and nothing is re-joined with a separator for display. */
 export interface FeedCardView {
   name: string;
-  meta: string;
+  when: string;
+  /** the workout name / "PR" tag that leads the card, or null. */
+  lead: string | null;
   body: string | null;
   chips: string[];
 }
-export function feedCardView(it: { kind: FeedKind; author: { displayName?: string | null; handle: string }; detail: string; when: string }): FeedCardView {
+export function feedCardView(it: { author: { displayName?: string | null; handle: string }; body?: string | null; chips?: string[]; lead?: string | null; when: string }): FeedCardView {
   const name = it.author.displayName || `@${it.author.handle}`;
-  const segs = it.detail.split("·").map((s) => s.trim()).filter(Boolean);
-  if (it.kind === "post") return { name, meta: it.when, body: it.detail.trim() || null, chips: [] };
-  if (it.kind === "pr") return { name, meta: `${it.when} · PR`, body: null, chips: segs };
-  // session / recap / anything else: workout name → meta, the rest → chips.
-  return { name, meta: segs.length ? `${it.when} · ${segs[0]}` : it.when, body: null, chips: segs.slice(1) };
+  return { name, when: it.when, lead: it.lead ?? null, body: it.body ?? null, chips: it.chips ?? [] };
 }
 
 const ms = (iso: string) => new Date(iso).getTime();
@@ -198,7 +202,12 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         subjectId: s.id,
         author,
         title: `${author.displayName || "@" + author.handle} trained`,
-        detail: `${s.title}${moves ? ` · ${moves} ${moves === 1 ? "exercise" : "exercises"}` : ""}${vol ? ` · ${vol.toLocaleString()} kg` : ""}`,
+        body: null,
+        lead: s.title,
+        chips: [
+          ...(moves ? [`${moves} ${moves === 1 ? "exercise" : "exercises"}`] : []),
+          ...(vol ? [`${vol.toLocaleString()} kg`] : []),
+        ],
         at,
         when: relativeTime(at, now),
         metric: vol || undefined,
@@ -217,10 +226,12 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           subjectId: s.id,
           author,
           title: `${author.displayName || "@" + author.handle} hit a PR`,
-          detail:
+          body: null,
+          lead: "PR",
+          chips:
             prs.length === 1
-              ? `${top.lift} — ${top.e1rm} kg e1RM`
-              : `${prs.length} PRs · top ${top.lift} ${top.e1rm} kg`,
+              ? [`${top.lift} — ${top.e1rm} kg e1RM`]
+              : [`${prs.length} PRs`, `top ${top.lift} — ${top.e1rm} kg`],
           at: at + 1, // tie-break above the session card
           when: relativeTime(at, now),
           metric: top.e1rm,
@@ -236,25 +247,29 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       if (!Number.isFinite(post.at) || post.at < now - windowMs || post.at > now + 60_000) continue;
       const d = post.data ?? {};
       let title: string;
-      let detail: string;
+      let body: string | null = null;
+      let lead: string | null = null;
+      let chips: string[] = [];
       let accent: FeedAccent;
       let metric: number | undefined;
       if (post.kind === "pr") {
         title = `${nm} shared a PR`;
-        detail = `${d.lift ?? "Lift"} — ${d.e1rm ?? "?"} kg e1RM`;
+        lead = "PR";
+        chips = [`${d.lift ?? "Lift"} — ${d.e1rm ?? "?"} kg e1RM`];
         accent = "amber";
         metric = typeof d.e1rm === "number" ? d.e1rm : undefined;
       } else if (post.kind === "workout") {
         title = `${nm} shared a workout`;
-        detail = `${d.title ?? "Workout"}${d.volume ? ` · ${Number(d.volume).toLocaleString()} kg` : ""}`;
+        lead = String(d.title ?? "Workout");
+        chips = d.volume ? [`${Number(d.volume).toLocaleString()} kg`] : [];
         accent = "lime";
       } else {
         title = `${nm} posted`;
-        detail = post.text || "";
+        body = post.text || null;
         accent = "violet";
       }
-      // a caption on a card sits in front of the card summary
-      if (post.text && post.kind !== "status") detail = `${post.text} · ${detail}`;
+      // a caption on a shared card becomes the prose body above the summary
+      if (post.text && post.kind !== "status") body = post.text;
       items.push({
         id: `post-${post.id}`,
         kind: "post",
@@ -262,7 +277,9 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         subjectId: post.id,
         author,
         title,
-        detail,
+        body,
+        chips,
+        lead,
         at: post.at,
         when: relativeTime(post.at, now),
         metric,
@@ -569,10 +586,10 @@ export interface DiscoverCoach {
  *  Deliberately diverse + clearly illustrative; the rail swaps to live coaches
  *  the moment the marketplace returns any. */
 export const PLACEHOLDER_COACHES: DiscoverCoach[] = [
-  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting · 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true },
+  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting, 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true },
   { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true },
   { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true },
-  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting · raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true },
+  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting, raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true },
   { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true },
   { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true },
 ];
@@ -588,7 +605,7 @@ export function coachRailItems(apiCoaches?: Array<Record<string, unknown>> | nul
     userId: typeof c.userId === "string" ? c.userId : undefined,
     handle: String(c.handle ?? ""),
     name: String(c.name ?? c.handle ?? "Coach"),
-    headline: String(c.headline ?? (Array.isArray(c.specialties) ? (c.specialties as string[]).join(" · ") : "") ?? ""),
+    headline: String(c.headline ?? (Array.isArray(c.specialties) ? (c.specialties as string[]).join(", ") : "") ?? ""),
     specialties: Array.isArray(c.specialties) ? (c.specialties as string[]) : [],
     rating: typeof c.rating === "number" ? c.rating : null,
     reviews: typeof c.reviews === "number" ? c.reviews : undefined,
