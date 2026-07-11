@@ -124,7 +124,7 @@ export default function AuroraTeamCompare() {
       <div style={card}>
         <div style={{ marginBottom: 14 }}>
           <div style={kicker(meta.color)}>{t("w.teams.compare.teamComparison")}</div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{`${data?.lift ?? lift} · ${t(meta.label)}`}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{data?.lift ?? lift}</div>
         </div>
         <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 46)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 24 }}>

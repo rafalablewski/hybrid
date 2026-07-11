@@ -62,7 +62,7 @@ export const web_train = {
     "w.train.comp.peakLands": "peak lands on event ✓",
     "w.train.comp.peakAtWeek": "peak at week",
     "w.train.comp.adjustTaper": "— adjust taper",
-    "w.train.comp.projection": "Fitness · fatigue · form projection",
+    "w.train.comp.projection": "Form projection",
     "w.train.comp.formNote": "form (freshness) peaks as the taper sheds fatigue faster than fitness",
     "w.train.comp.event": "event",
 
@@ -330,7 +330,7 @@ export const web_train = {
     "w.train.comp.peakLands": "szczyt wypada na zawodach ✓",
     "w.train.comp.peakAtWeek": "szczyt w tygodniu",
     "w.train.comp.adjustTaper": "— skoryguj tapering",
-    "w.train.comp.projection": "Prognoza formy · zmęczenia · świeżości",
+    "w.train.comp.projection": "Prognoza formy",
     "w.train.comp.formNote": "forma (świeżość) osiąga szczyt, gdy tapering redukuje zmęczenie szybciej niż formę",
     "w.train.comp.event": "wydarzenie",
 
@@ -590,7 +590,7 @@ export const web_train = {
     "w.train.comp.peakLands": "Höchstform fällt auf Wettkampf ✓",
     "w.train.comp.peakAtWeek": "Höchstform in Woche",
     "w.train.comp.adjustTaper": "— Tapering anpassen",
-    "w.train.comp.projection": "Fitness · Ermüdung · Form-Projektion",
+    "w.train.comp.projection": "Form-Projektion",
     "w.train.comp.formNote": "Form (Frische) erreicht den Höhepunkt, wenn das Tapering Ermüdung schneller abbaut als Fitness",
     "w.train.comp.event": "Veranstaltung",
 

@@ -62,8 +62,8 @@ export default function AuroraTalent() {
 
   return (
     <AuroraScreen>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.talent.kickerTalentGraph")}</Text>
-      <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
+      {/* Eyebrow cut — "Talent graph" just named the screen; the heading leads. */}
+      <AHeading style={{ fontSize: fs.display }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>

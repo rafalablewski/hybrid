@@ -77,7 +77,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
           ); })}
         </div>
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, color: C("ash") }}>{ml(focusMuscle)} · {t("w.analyze.trends.weeklySets8w")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, color: C("ash") }}>{ml(focusMuscle)} {t("w.analyze.trends.weeklySets8w")}</div>
           <ResponsiveContainer width="100%" height={120}><BarChart data={muscleWeeks.map((s, i) => ({ w: fmtWeek(weeks[i]?.weekStart ?? ""), sets: s }))}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.nano }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.nano }} width={26} allowDecimals={false} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {advice.length > 0 && (

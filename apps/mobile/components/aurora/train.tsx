@@ -166,7 +166,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
   return (
     <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
-        {t("train.today")} · {t("train.premium")} · {rx.readiness}/100
+        {t("home.readiness")} {rx.readiness}/100
       </Text>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.onAccent, marginTop: 10, letterSpacing: -0.4 }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: 17 }} numberOfLines={2}>{blurb}</Text>
@@ -184,7 +184,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
     <Pressable onPress={onPress} style={{ marginTop: 16 }}>
       <ACard style={{ borderColor: withAlpha(C.violet, 0.27) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI coach · {t("train.premium")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI coach</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
@@ -206,7 +206,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
         <AuroraIcon name="check" size={24} color={C.onAccent} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.today")} · {t("train.done")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names ? `${names} · ` : ""}{t("train.tapSummary")}</Text>
       </View>

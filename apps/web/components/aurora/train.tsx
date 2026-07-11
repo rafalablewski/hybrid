@@ -152,7 +152,7 @@ function PrescribedHero({ rx, hasHistory, onStart, t }: { rx: ReturnType<typeof 
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 24, padding: 22, marginTop: 18, color: C("ink") }}
     >
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-        {t("train.today")} · {t("train.premium")} · {rx.readiness}/100
+        {t("home.readiness")} {rx.readiness}/100
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 25, letterSpacing: "-.03em", marginTop: 10 }}>{title}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, opacity: 0.7, marginTop: 8, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{blurb}</div>
@@ -171,7 +171,7 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--color-violet) 40%, transparent)`, borderRadius: 22, padding: 18, marginTop: 18 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", color: "var(--violet-text)" }}>AI coach · {t("train.premium")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", color: "var(--violet-text)" }}>AI coach</span>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: "var(--violet-text)" }}>{t("w.home.today.unlockFullBtn")}</span>
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("train.aiLockedTitle")}</div>
@@ -192,7 +192,7 @@ function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: ()
         <AuroraIcon name="check" size={24} strokeWidth={2.8} color={C("ink")} />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("train.today")} · {t("train.done")}</span>
+        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("train.done")}</span>
         <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), marginTop: 5 }}>{session.title}</span>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{names ? `${names} · ` : ""}{t("train.tapSummary")}</span>
       </span>
