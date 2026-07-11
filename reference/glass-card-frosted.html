@@ -1,9 +1,10 @@
-<!-- HYBRID — Liquid Glass plan-day card · frosted list + expand button (interactive).
-     First lifts legible, remaining frosted behind a "show more" reveal.
+<!-- HYBRID — Liquid Glass plan-day card · frosted list + "show more" (CSS-only, no JS).
+     One lift clear, two frosted teaser rows; "Show more" reveals the full 5.
+     Uses a hidden-checkbox toggle so it works even where scripts don't run.
      Start under the [note]. Tokens: packages/core/src/theme/tokens.ts. Standalone. -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>HYBRID — Glass card · frosted + expand</title>
+<title>HYBRID — Glass card · frosted + show more</title>
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
   :root{
@@ -45,25 +46,34 @@
   .lrow .nm em{font-style:normal;font-family:var(--mono);font-size:9px;color:rgba(243,244,239,.5);margin-right:7px;letter-spacing:.05em}
   .lrow .sc{font-family:var(--mono);font-size:11px;color:rgba(243,244,239,.6);white-space:nowrap}
 
-  /* ---- frosted region: legible lifts, then blurred ones behind a reveal ---- */
+  /* ---- the CSS-only toggle (hidden checkbox drives everything) ---- */
+  .rev{position:absolute;width:1px;height:1px;opacity:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}
+
   .frost{position:relative}
   .frost .g{transition:filter .3s ease, opacity .3s ease}
   .frost .g.blur{filter:blur(3px);opacity:.5}
-  /* fade + button overlay sits over the frosted rows until revealed */
-  .frost .veil{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-end;
-    height:70px;padding-bottom:2px;background:linear-gradient(transparent,rgba(18,20,18,.78));pointer-events:none;transition:opacity .3s ease}
-  .more{pointer-events:auto;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--lime);
-    background:rgba(198,248,79,.14);border:1px solid rgba(198,248,79,.4);border-radius:100px;padding:5px 13px;cursor:pointer;
-    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-  .glass.revealed .veil{opacity:0;pointer-events:none}
-  .glass.revealed .frost .g.blur{filter:none;opacity:1}
-  /* the last two lifts are collapsed until "show more" */
+
+  /* the last two lifts collapse until revealed */
   .extra{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
-  .glass.revealed .extra{grid-template-rows:1fr}
   .extra > .inner{overflow:hidden;min-height:0}
-  /* a small "show less" appears once revealed */
-  .less{display:none;width:100%;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10.5px;color:rgba(243,244,239,.55);padding:8px 0 0;text-align:center}
-  .glass.revealed .less{display:block}
+
+  /* fade + button overlay over the frosted rows */
+  .veil{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-end;
+    height:72px;padding-bottom:2px;background:linear-gradient(transparent,rgba(18,20,18,.82));transition:opacity .3s ease}
+  .more{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--lime);
+    background:rgba(198,248,79,.16);border:1px solid rgba(198,248,79,.45);border-radius:100px;padding:6px 15px;cursor:pointer;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);user-select:none;transition:background .15s}
+  .more:hover{background:rgba(198,248,79,.28)}
+  .less{display:none;width:100%;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:10.5px;
+    color:rgba(243,244,239,.55);padding:9px 0 0;text-align:center;user-select:none}
+
+  /* --- checked state: reveal everything --- */
+  .rev:checked ~ .frost .g.blur{filter:none;opacity:1}
+  .rev:checked ~ .frost .extra{grid-template-rows:1fr}
+  .rev:checked ~ .frost .veil{opacity:0;pointer-events:none}
+  .rev:checked ~ .less{display:block}
+  /* keyboard focus ring on the visible label */
+  .rev:focus-visible ~ .frost .more{outline:2px solid var(--lime);outline-offset:2px}
 
   .note{border:1px dashed rgba(243,244,239,.26);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.55;color:rgba(243,244,239,.68);margin-top:16px}
   .note b{color:var(--violet)}
@@ -71,18 +81,20 @@
     font-family:var(--disp);font-weight:700;font-size:16px;padding:14px;border-radius:100px;cursor:pointer;
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:background .15s}
   .go:hover{background:rgba(198,248,79,.26)}
-  :focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:6px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="stage">
   <p class="cap">Frosted list · one clear, two frosted, show more</p>
   <div class="bloom">
-    <div class="glass" id="card">
+    <div class="glass">
       <p class="kick">Today · AM</p>
       <h3>Soviet 8-Week Peaking</h3>
       <p class="day">Day 05 / 37 · peaking block</p>
       <div class="bar"><i></i></div>
+
+      <!-- hidden checkbox: the label buttons below toggle it, CSS does the rest -->
+      <input type="checkbox" id="rev" class="rev" />
 
       <div class="frost">
         <!-- legible anchor -->
@@ -96,27 +108,13 @@
           <div class="lrow g"><span class="nm"><em>PM</em>Front Squat</span><span class="sc">70%×3×4</span></div>
         </div></div>
 
-        <div class="veil"><button class="more" id="more" aria-expanded="false" aria-controls="card">Show more →</button></div>
+        <div class="veil"><label class="more" for="rev">Show more →</label></div>
       </div>
 
-      <button class="less" id="less">Show less</button>
+      <label class="less" for="rev">Show less</label>
 
       <div class="note">Following as written. <b>Unlock Full</b> to auto-adjust loads to your recovery.</div>
       <button class="go">Start →</button>
     </div>
   </div>
 </div>
-
-<script>
-  var card = document.getElementById("card");
-  var more = document.getElementById("more");
-  var less = document.getElementById("less");
-  more.addEventListener("click", function(){
-    card.classList.add("revealed");
-    more.setAttribute("aria-expanded", "true");
-  });
-  less.addEventListener("click", function(){
-    card.classList.remove("revealed");
-    more.setAttribute("aria-expanded", "false");
-  });
-</script>
