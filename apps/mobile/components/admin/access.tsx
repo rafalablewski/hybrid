@@ -3,6 +3,7 @@ import { View, Text, Pressable, Alert } from "react-native";
 import {
   groupedNav,
   sanitizePersonaAccess,
+  AURORA_NAV_ICONS,
   type NavGroup,
   type Persona,
   type PersonaAccess,
@@ -10,6 +11,7 @@ import {
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
 
 // Mobile Access (Governance) — parity with the web "access" section, which
@@ -230,8 +232,9 @@ export default function AdminAccess() {
                   return (
                     <View key={item.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                        <AuroraIcon name={AURORA_NAV_ICONS[item.id] ?? "info"} size={18} color={palette.chalk} />
                         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>
-                          {item.icon} {item.label}
+                          {item.label}
                         </Text>
                         {overridden && <Chip color={palette.amber}>overridden</Chip>}
                       </View>

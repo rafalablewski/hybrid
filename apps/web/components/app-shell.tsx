@@ -348,7 +348,7 @@ export default function AppShell() {
 
             // One nav destination button — used by the desktop rail groups (the
             // mobile drawer renders the springboard grid below instead).
-            const itemBtn = ({ item: { id, label: fallback, icon: ic }, locked }: { item: { id: string; label: string; icon: string }; locked: boolean }) => {
+            const itemBtn = ({ item: { id, label: fallback }, locked }: { item: { id: string; label: string }; locked: boolean }) => {
               const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
               const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
               // The "log" (Train) nav item opens the Train LAUNCHER, not the
@@ -386,7 +386,7 @@ export default function AppShell() {
                   }}
                 >
                   <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18, opacity: locked ? 0.7 : 1 }}>
-                    {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
+                    <AuroraIcon name={auroraIcon ?? "info"} size={18} strokeWidth={2.6} />
                   </span>
                   {!railCollapsed && <span style={{ flex: 1 }}>{label}</span>}
                   {!railCollapsed && locked && <span aria-hidden title="Full" style={{ fontSize: 11, opacity: 0.8 }}>🔒</span>}
@@ -463,7 +463,7 @@ export default function AppShell() {
                                 aria-label={locked ? `${label} (Full)` : label}
                                 style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: INK2, border: `1px solid ${LINE}`, borderRadius: 14, padding: "12px 4px", cursor: "pointer", opacity: locked ? 0.6 : 1 }}
                               >
-                                {ic ? <AuroraIcon name={ic} size={22} color={iconColor} strokeWidth={2.4} /> : <span style={{ fontSize: fs.subtitle, color: iconColor }}>{item.icon}</span>}
+                                <AuroraIcon name={ic ?? "info"} size={22} color={iconColor} strokeWidth={2.4} />
                                 <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
                                 {locked && (
                                   <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>

@@ -58,8 +58,9 @@ export interface NavItem {
   id: string;
   /** English fallback label (clients prefer the localized nav.<id>) */
   label: string;
-  /** glyph icon */
-  icon: string;
+  // NOTE: nav icons are NOT stored here — they come from the single design-kit
+  // vocabulary in theme/icons.ts (AURORA_NAV_ICONS: id → AuroraIconName), so every
+  // surface renders the same line-icon set. There is no per-item glyph string.
   group: NavGroup;
   /**
    * The lowest persona that sees this item (nested — see `Persona`). Omitted =
@@ -90,53 +91,53 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 // started") is no longer a standalone tab either: it's a reachable flow (first
 // run, and Cockpit's "Set up / change plan"), not a persistent nav item.
 export const NAV_ITEMS: NavItem[] = [
-  { id: "today", label: "Today", icon: "➤", group: "home" },
-  { id: "cockpit", label: "Cockpit", icon: "◈", group: "home", minPersona: "athlete" },
-  { id: "notifications", label: "Notifications", icon: "🔔", group: "home" },
+  { id: "today", label: "Today", group: "home" },
+  { id: "cockpit", label: "Cockpit", group: "home", minPersona: "athlete" },
+  { id: "notifications", label: "Notifications", group: "home" },
 
-  { id: "log", label: "Log session", icon: "✎", group: "train" },
-  { id: "timer", label: "Interval timer", icon: "⏱", group: "train" },
-  { id: "runtrack", label: "Run tracking", icon: "📍", group: "train" },
-  { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
-  { id: "builder", label: "Builder", icon: "⊕", group: "train" },
-  { id: "plans", label: "Plans", icon: "▤", group: "train" },
-  { id: "periodize", label: "Periodize", icon: "◰", group: "train", minPersona: "athlete" },
-  { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },
-  { id: "competition", label: "Competition", icon: "▲", group: "train", minPersona: "athlete" },
+  { id: "log", label: "Log session", group: "train" },
+  { id: "timer", label: "Interval timer", group: "train" },
+  { id: "runtrack", label: "Run tracking", group: "train" },
+  { id: "calendar", label: "Calendar", group: "train" },
+  { id: "builder", label: "Builder", group: "train" },
+  { id: "plans", label: "Plans", group: "train" },
+  { id: "periodize", label: "Periodize", group: "train", minPersona: "athlete" },
+  { id: "sport", label: "Sport", group: "train", minPersona: "athlete" },
+  { id: "competition", label: "Competition", group: "train", minPersona: "athlete" },
 
-  { id: "statistics", label: "Statistics", icon: "📊", group: "analyze" },
-  { id: "performance", label: "Performance", icon: "◈", group: "analyze", minPersona: "athlete" },
-  { id: "analytics", label: "Analytics", icon: "◷", group: "analyze", minPersona: "athlete" },
-  { id: "volume", label: "Volume", icon: "▦", group: "analyze", minPersona: "athlete" },
-  { id: "exercises", label: "Exercises", icon: "≡", group: "analyze", minPersona: "athlete" },
-  { id: "trends", label: "Trends", icon: "↗", group: "analyze", minPersona: "athlete" },
-  { id: "velocity", label: "Velocity (VBT)", icon: "⚡", group: "analyze", minPersona: "athlete" },
-  { id: "running", label: "Running", icon: "🏃", group: "analyze", minPersona: "athlete" },
-  { id: "forceplate", label: "Force plate", icon: "◇", group: "analyze", minPersona: "athlete" },
-  { id: "video", label: "Video", icon: "▷", group: "analyze", minPersona: "athlete" },
-  { id: "history", label: "History", icon: "≣", group: "analyze" },
+  { id: "statistics", label: "Statistics", group: "analyze" },
+  { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
+  { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete" },
+  { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
+  { id: "exercises", label: "Exercises", group: "analyze", minPersona: "athlete" },
+  { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
+  { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
+  { id: "running", label: "Running", group: "analyze", minPersona: "athlete" },
+  { id: "forceplate", label: "Force plate", group: "analyze", minPersona: "athlete" },
+  { id: "video", label: "Video", group: "analyze", minPersona: "athlete" },
+  { id: "history", label: "History", group: "analyze" },
 
-  { id: "checkin", label: "Check-in", icon: "✓", group: "recovery" },
-  { id: "nutrition", label: "Nutrition", icon: "🍎", group: "recovery" },
-  { id: "progress", label: "Progress photos", icon: "📸", group: "recovery" },
-  { id: "longevity", label: "Longevity", icon: "❤", group: "recovery", minPersona: "athlete" },
+  { id: "checkin", label: "Check-in", group: "recovery" },
+  { id: "nutrition", label: "Nutrition", group: "recovery" },
+  { id: "progress", label: "Progress photos", group: "recovery" },
+  { id: "longevity", label: "Longevity", group: "recovery", minPersona: "athlete" },
 
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
-  { id: "feed", label: "Feed", icon: "📣", group: "social" },
-  { id: "discover", label: "Find friends", icon: "🧭", group: "social" },
-  { id: "leaderboard", label: "Leaderboard", icon: "🏆", group: "social" },
-  { id: "coaches", label: "Coaches", icon: "✦", group: "social" },
+  { id: "feed", label: "Feed", group: "social" },
+  { id: "discover", label: "Find friends", group: "social" },
+  { id: "leaderboard", label: "Leaderboard", group: "social" },
+  { id: "coaches", label: "Coaches", group: "social" },
 
-  { id: "coach", label: "Coach", icon: "✦", group: "teams", minPersona: "coach" },
-  { id: "squad", label: "Squad monitor", icon: "◫", group: "teams", minPersona: "coach" },
-  { id: "teamcompare", label: "Team compare", icon: "⚖", group: "teams", minPersona: "coach" },
-  { id: "org", label: "Organization", icon: "⬡", group: "teams", minPersona: "coach" },
-  { id: "talent", label: "Talent", icon: "✸", group: "teams", minPersona: "athlete" },
-  { id: "tactical", label: "Tactical", icon: "▰", group: "teams", minPersona: "coach" },
+  { id: "coach", label: "Coach", group: "teams", minPersona: "coach" },
+  { id: "squad", label: "Squad monitor", group: "teams", minPersona: "coach" },
+  { id: "teamcompare", label: "Team compare", group: "teams", minPersona: "coach" },
+  { id: "org", label: "Organization", group: "teams", minPersona: "coach" },
+  { id: "talent", label: "Talent", group: "teams", minPersona: "athlete" },
+  { id: "tactical", label: "Tactical", group: "teams", minPersona: "coach" },
 
-  { id: "profile", label: "Profile", icon: "◐", group: "account" },
-  { id: "connections", label: "Connections", icon: "⌁", group: "account", minPersona: "athlete" },
-  { id: "settings", label: "Settings", icon: "⚙", group: "account" },
+  { id: "profile", label: "Profile", group: "account" },
+  { id: "connections", label: "Connections", group: "account", minPersona: "athlete" },
+  { id: "settings", label: "Settings", group: "account" },
 ];
 
 const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2, admin: 3 };
