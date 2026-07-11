@@ -450,25 +450,34 @@ export function ASegment<T extends string>({
 
 /**
  * The one canonical screen-header BACK button — a 44×44 line-bordered square with
- * the Aurora `back` glyph, the exact treatment the web app uses (see the web
- * interval-timer / standalone headers). This is the single source of truth so
- * every pushed sub-screen gets an identical, labelled return control instead of
- * the ad-hoc `‹`/`←` variants screens used to hand-roll.
+ * the `back` glyph. This is the single source of truth so every pushed sub-screen
+ * gets an identical, labelled return control instead of the ad-hoc `‹`/`←`
+ * variants screens used to hand-roll.
+ *
+ * Theme-aware surface: AURORA (dark) keeps the transparent OUTLINED square (the
+ * treatment the web app uses); JAPANDI (light) fills it as a SOFT SURFACE — an
+ * ink2 tile with a touch of depth — because a hollow outline reads as unfinished
+ * on the warm paper ground, where every other control is a floating card.
  *
  * Defaults to `router.back()`; pass `onPress` for in-screen back navigation
  * (e.g. a settings sub-page that pops its own state rather than the stack).
  */
 export function ABack({ onPress, label, style }: { onPress?: () => void; label?: string; style?: ViewStyle }) {
-  const { palette } = useTheme();
+  const { palette, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
+  const soft = scheme === "light";
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label ?? t("common.back")}
       onPress={onPress ?? (() => router.back())}
       hitSlop={8}
-      style={[{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }, style]}
+      style={[
+        { width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
+        soft && { backgroundColor: palette.ink2, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+        style,
+      ]}
     >
       <AuroraIcon name="back" size={20} color={palette.chalk} />
     </Pressable>

@@ -26,6 +26,15 @@
   --font-heading: "Archivo", system-ui, sans-serif;
 }
 
+/* Screen-header BACK button surface — AURORA (dark) is a transparent outlined
+   square; JAPANDI (light) fills it as a soft surface (an ink2 tile with a touch
+   of depth), because a hollow outline reads as unfinished on the warm paper
+   ground. Parity with the mobile ABack primitive. */
+:root {
+  --back-surface: transparent;
+  --back-shadow: none;
+}
+
 html,
 body {
   background: var(--color-ink);
@@ -163,6 +172,9 @@ html {
   --color-line: #e0d7c6;
   --color-chalk: #33302a;
   --color-ash: #6b6456;
+  /* Japandi back button = soft surface (see :root --back-surface). */
+  --back-surface: var(--color-ink2);
+  --back-shadow: 0 6px 16px -10px rgba(70, 55, 30, 0.35);
   /* CLAY replaces chartreuse as the primary action FILL in light (bg-lime → clay
      app-wide). SAGE replaces the teal `blue` fill so the conditioning/secondary
      accent reads as a calm green, not acid lime. Dark keeps the brand hues. */

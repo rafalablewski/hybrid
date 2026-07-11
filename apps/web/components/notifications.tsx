@@ -72,7 +72,7 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
       <div style={{ width: "100%", maxWidth: 460 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
           {!embedded && (
-            <button onClick={() => router.push("/app")} aria-label={t("w.account.notifications.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <button onClick={() => router.push("/app")} aria-label={t("w.account.notifications.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
               {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
