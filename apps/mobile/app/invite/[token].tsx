@@ -3,7 +3,7 @@ import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
@@ -65,9 +65,9 @@ export default function InviteClaim() {
         </>
       ) : state === "error" ? (
         <>
-          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.amber, textAlign: "center", marginTop: 12 }}>{msg}</Text>
+          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.amber), textAlign: "center", marginTop: 12 }}>{msg}</Text>
           <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, color: C.lime }}>Try again</Text>
+            <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>Try again</Text>
           </Pressable>
         </>
       ) : (

@@ -4,7 +4,7 @@ import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayCont
 import { enrollPlan } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
 import { MetaLine } from "./aurora/meta";
 
@@ -101,7 +101,7 @@ export default function PercentProgram({
 
       {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <View style={card}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.lime }}>{view.inputsTitle}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{view.inputsTitle}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
           {view.inputs.map((inp) => (
             <View key={inp.key} style={{ gap: 4 }}>
@@ -146,7 +146,7 @@ export default function PercentProgram({
           {state === "busy" ? "Enrolling…" : state === "done" ? "✓ Enrolled" : `Enroll in ${plan.name}`}
         </Text>
       </Pressable>
-      {state === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
+      {state === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
     </View>
   );
 }
@@ -200,7 +200,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 function DayHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: HAIR }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>{title}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -209,7 +209,7 @@ function DayHeader({ title, right, C }: { title: string; right: string | null; C
 function Band({ label, color, topBorder, C }: { label: string; color: string; topBorder: boolean; C: Palette }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, borderTopWidth: topBorder ? 1 : 0, borderTopColor: HAIR, backgroundColor: tint(color, 0.04) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, color) }}>{label}</Text>
     </View>
   );
 }
@@ -313,7 +313,7 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
         <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
           <Text style={{ width: MX_NAME, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
           {cols.map((c) => (
-            <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, fontWeight: "700", textAlign: "center", color: loadHex(C, c.color) }}>{c.load}</Text>
+            <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, fontWeight: "700", textAlign: "center", color: txt(C, loadHex(C, c.color)) }}>{c.load}</Text>
           ))}
         </View>
         {lifts.map((l, i) => {
@@ -327,7 +327,7 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
               {cols.map((c) => {
                 const st = byLoad.get(c.load);
                 return (
-                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.caption, textAlign: "center", color: st ? loadHex(C, c.color) : "#34372f" }}>
+                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.caption, textAlign: "center", color: st ? txt(C, loadHex(C, c.color)) : "#34372f" }}>
                     {st ? st.detail : "·"}
                   </Text>
                 );
@@ -346,7 +346,7 @@ function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
     <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10 }}>{lift.setsReps ?? "—"}</Text>
-      <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: loadHex(C, rpeColor(lift.rpe!)) }}>@{lift.rpe}</Text>
+      <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: txt(C, loadHex(C, rpeColor(lift.rpe!))) }}>@{lift.rpe}</Text>
     </View>
   );
 }
@@ -358,7 +358,7 @@ function FallbackRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C:
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? loadHex(C, lift.intensity) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </View>
   );
 }

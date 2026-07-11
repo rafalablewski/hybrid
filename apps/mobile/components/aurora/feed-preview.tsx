@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
 import { feedCardView } from "@hybrid/core";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
@@ -79,7 +79,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
               {/* header line — name, verified, @handle, time */}
               <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
-                {it.author?.coachVerified ? <Text style={{ color: C.lime, fontSize: 12 }}>✓</Text> : null}
+                {it.author?.coachVerified ? <Text style={{ color: txt(C, C.lime), fontSize: 12 }}>✓</Text> : null}
                 <Text numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle}  ` : ""}{v.when}</Text>
               </View>
 

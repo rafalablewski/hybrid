@@ -44,11 +44,18 @@ export const paletteFor = (scheme: ThemeName): Palette => {
   return { ...t, ...fillsFor(scheme, t) };
 };
 
-/** Map a bright accent (or ash) used as TEXT to its theme-aware colour. */
+/** Map a bright accent (or ash) used as TEXT to its theme-aware colour. Accepts
+ *  EITHER the fixed brand constant (colors.lime/…) OR the theme's own fill value
+ *  (palette.lime/palette.blue) — the accent FILLS now flip per theme (clay/sage on
+ *  light), so a screen passing `C.lime` (= palette.lime = clay on light) still
+ *  resolves to the right accent-TEXT tone instead of falling through to the raw
+ *  fill hex. In dark the palette fill equals the brand constant, so both match. */
 export function txt(palette: Palette, c: string): string {
   switch (c) {
+    case palette.lime: // theme primary fill (clay on light)
     case colors.lime:
       return palette.accentText.lime;
+    case palette.blue: // theme secondary fill (sage on light)
     case colors.blue:
       return palette.accentText.blue;
     case colors.violet:

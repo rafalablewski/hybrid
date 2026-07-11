@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 import {
   getCoaches, getCoach, enrollProgram, postReview,
   getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
@@ -33,18 +33,18 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: C.blue }}> ✓</Text> : null}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
                     <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{c.handle}</Text>
                     <View style={{ marginTop: 4 }}><Stars rating={data.rating} /></View>
                   </View>
                 </View>
-                {c.headline ? <Text style={{ color: C.lime, fontWeight: "600", marginTop: 12 }}>{c.headline}</Text> : null}
+                {c.headline ? <Text style={{ color: txt(C, C.lime), fontWeight: "600", marginTop: 12 }}>{c.headline}</Text> : null}
                 {c.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 22, marginTop: 8 }}>{c.bio}</Text> : null}
                 <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
                   {c.specialties?.map((s: string) => <View key={s} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.chalk, fontSize: 12 }}>{s}</Text></View>)}
                 </View>
                 {c.priceNote ? <Text style={{ color: C.ash, fontSize: 13, marginTop: 10 }}>💳 {c.priceNote}</Text> : null}
-                {data.isMyCoach ? <Text style={{ color: C.lime, fontSize: 13, marginTop: 10 }}>✓ This is your coach.</Text> : null}
+                {data.isMyCoach ? <Text style={{ color: txt(C, C.lime), fontSize: 13, marginTop: 10 }}>✓ This is your coach.</Text> : null}
 
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 22, marginBottom: 6 }}>Online programs</Text>
                 {data.programs.length === 0 ? <Text style={{ color: C.ash, fontSize: 13 }}>No published programs yet.</Text> : data.programs.map((p: any) => (
@@ -60,7 +60,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (
                       <>
-                        <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}><Text style={{ color: C.lime, fontSize: 12, fontFamily: F.bold, marginTop: 8 }}>{preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}</Text></Pressable>
+                        <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}><Text style={{ color: txt(C, C.lime), fontSize: 12, fontFamily: F.bold, marginTop: 8 }}>{preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}</Text></Pressable>
                         {preview === p.id && (
                           <View style={{ marginTop: 8 }}>
                             {p.preview.map((w: any, wi: number) => (
@@ -99,7 +99,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
                       <Text style={{ color: C.chalk, fontWeight: "600", fontSize: 13 }}>{rv.author?.displayName || `@${rv.author?.handle}`}</Text>
-                      <Text style={{ color: C.amber, fontSize: 12 }}>{"★".repeat(rv.rating)}</Text>
+                      <Text style={{ color: txt(C, C.amber), fontSize: 12 }}>{"★".repeat(rv.rating)}</Text>
                     </View>
                     {rv.body ? <Text style={{ color: C.ash, fontSize: 13, marginTop: 6, lineHeight: 19 }}>{rv.body}</Text> : null}
                   </View>
@@ -134,7 +134,7 @@ function Storefront() {
 
   return (
     <View>
-      {!data.handle && <Card><Text style={{ color: C.amber }}>⚠ Claim a @handle on My profile first — the marketplace lists you by handle.</Text></Card>}
+      {!data.handle && <Card><Text style={{ color: txt(C, C.amber) }}>⚠ Claim a @handle on My profile first — the marketplace lists you by handle.</Text></Card>}
       <Card>
         <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 12 }}>Your storefront</Text>
         <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder="Headline" placeholderTextColor={C.ash} style={inp} />
@@ -210,7 +210,7 @@ export default function CoachesScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: C.blue }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> · full</Text> : null}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> · full</Text> : null}</Text>
                     <Text style={{ color: C.ash, fontSize: 13 }}>{c.headline || c.specialties.join(" · ") || `@${c.handle}`}</Text>
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4, alignItems: "center" }}>
                       <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>{c.programs} program{c.programs === 1 ? "" : "s"}</Text>

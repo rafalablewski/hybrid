@@ -202,7 +202,7 @@ export default function AuroraProfile() {
             <Text style={{ fontFamily: F.bold, fontWeight: "800", fontSize: 16, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
             <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
           </View>
-          <Text style={{ color: C.lime, fontFamily: F.bold, fontSize: 18 }}>→</Text>
+          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18 }}>→</Text>
         </Pressable>
       )}
 

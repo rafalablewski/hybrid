@@ -41,7 +41,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 17 }}>Follow a coach</Text>
           <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>Swipe to find a coach for your goal</Text>
         </View>
-        <Pressable onPress={onOpen}><Text style={{ color: C.lime, fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>Browse all →</Text></Pressable>
+        <Pressable onPress={onOpen}><Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>Browse all →</Text></Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={228} decelerationRate="fast" contentContainerStyle={{ gap: 12, paddingRight: 8 }}>
@@ -57,7 +57,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
                   <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
                   <Text style={{ fontSize: 11, marginTop: 2 }}>
                     {c.rating == null ? <Text style={{ color: C.ash, fontFamily: F.mono }}>New</Text> : (
-                      <Text><Text style={{ color: C.amber }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
+                      <Text><Text style={{ color: txt(C, C.amber) }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
                     )}
                   </Text>
                 </View>
