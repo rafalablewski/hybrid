@@ -332,12 +332,17 @@ export function H1({ children }: { children: ReactNode }) {
   return <Text style={{ fontFamily: F.black, fontSize: 30, color: palette.chalk, letterSpacing: -1 }}>{children}</Text>;
 }
 
-export function Chip({ children, color = C.lime }: { children: ReactNode; color?: string }) {
+export function Chip({ children, color }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
   const aurora = useTemplate().template === "aurora";
+  // Default (no color) = the theme's PRIMARY accent: tint from the theme fill
+  // (clay on light, chartreuse on dark) and text via the brand key so txt() maps
+  // it to the theme's accent-text tone. An explicit color keeps its own hue.
+  const key = color ?? C.lime;
+  const fill = color ?? palette.lime;
   return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+    <View style={{ backgroundColor: `${fill}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, key), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>
@@ -347,7 +352,7 @@ export function Chip({ children, color = C.lime }: { children: ReactNode; color?
 export function Button({
   label,
   onPress,
-  color = C.lime,
+  color,
   disabled,
 }: {
   label: string;
@@ -357,6 +362,9 @@ export function Button({
 }) {
   const { palette } = useTheme();
   const aurora = useTemplate().template === "aurora";
+  // Default fill = the theme's PRIMARY accent (clay on light, chartreuse on dark);
+  // an explicit color still wins. Text is always the theme's onAccent ink.
+  const fill = color ?? palette.lime;
   return (
     <Pressable
       onPress={onPress}
@@ -365,7 +373,7 @@ export function Button({
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       style={{
-        backgroundColor: color,
+        backgroundColor: fill,
         borderRadius: aurora ? 999 : 12,
         paddingVertical: aurora ? 16 : 14,
         paddingHorizontal: 24,

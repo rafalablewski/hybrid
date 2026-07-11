@@ -76,7 +76,7 @@ export default function Stories({ you, youLabel, onOpen }: { you: string; youLab
       <Bubble ring={false} label={youLabel} onClick={onOpen}>
         <span style={{ position: "relative", width: "100%", height: "100%", display: "grid", placeItems: "center" }}>
           {you}
-          <span style={{ position: "absolute", bottom: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: C("lime"), color: C("ink"), display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800, border: `2px solid ${C("ink2")}` }}>+</span>
+          <span style={{ position: "absolute", bottom: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: C("lime"), color: "var(--on-accent)", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 800, border: `2px solid ${C("ink2")}` }}>+</span>
         </span>
       </Bubble>
       {authors.map((a) => (

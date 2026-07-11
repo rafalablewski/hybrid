@@ -83,7 +83,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
               </div>
               <button
                 onClick={() => follow(c)}
-                style={{ marginTop: 12, width: "100%", padding: "8px 0", borderRadius: 999, border: `1px solid ${isFollowing ? C("line") : C("lime")}`, background: isFollowing ? "transparent" : C("lime"), color: isFollowing ? C("chalk") : C("ink"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                style={{ marginTop: 12, width: "100%", padding: "8px 0", borderRadius: 999, border: `1px solid ${isFollowing ? C("line") : C("lime")}`, background: isFollowing ? "transparent" : C("lime"), color: isFollowing ? C("chalk") : "var(--on-accent)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
               >
                 {isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}
               </button>

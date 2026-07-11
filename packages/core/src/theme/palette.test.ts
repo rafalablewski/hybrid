@@ -44,5 +44,12 @@ describe("theme palettes meet WCAG AA", () => {
         expect(contrastRatio(ac, t.card)).toBeGreaterThanOrEqual(WCAG.AA);
       });
     }
+
+    // The primary action: text/icon ON the accent fill must clear AA. This is the
+    // pairing the old light theme broke (white on lime = 1.34:1); guarding it here
+    // stops any future accent edit from regressing the button legibility.
+    it(`${name}: onAccent on accent fill ≥ AA`, () => {
+      expect(contrastRatio(t.onAccent, t.accent)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
   }
 });

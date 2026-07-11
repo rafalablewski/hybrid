@@ -66,7 +66,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
                   <span style={{ display: "flex", gap: 3 }}>{asg && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("violet") }} />}{ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("amber") }} />}</span>
                 </div>
-                {day && <div style={{ marginTop: 4 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 6, padding: "1px 6px" }}>{day.count}×</span></div>}
+                {day && <div style={{ marginTop: 4 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 6, padding: "1px 6px" }}>{day.count}×</span></div>}
               </button>
             );
           })}

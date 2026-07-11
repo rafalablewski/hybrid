@@ -71,7 +71,7 @@ export default function AuroraCompetition() {
             {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={input} />
-          <button onClick={create} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 20px", cursor: "pointer" }}>{t("w.train.comp.addEvent")}</button>
+          <button onClick={create} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 20px", cursor: "pointer" }}>{t("w.train.comp.addEvent")}</button>
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           {events.map((e) => {

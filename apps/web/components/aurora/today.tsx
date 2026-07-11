@@ -192,7 +192,7 @@ export default function AuroraToday({
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
                 onClick={() => onStart(plan ? plan.blocks : isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
-                style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {t("w.home.today.start")}
               </button>
