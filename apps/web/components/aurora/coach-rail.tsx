@@ -19,7 +19,7 @@ function Stars({ rating }: { rating: number | null }) {
   if (rating == null) return <span style={{ color: C("ash"), fontSize: 11, fontFamily: "var(--font-mono)" }}>New</span>;
   const full = Math.round(rating);
   return (
-    <span style={{ fontSize: 11, color: C("amber"), letterSpacing: 0.5 }}>
+    <span style={{ fontSize: 11, color: C("gold"), letterSpacing: 0.5 }}>
       {"★".repeat(full)}
       <span style={{ color: C("line") }}>{"★".repeat(5 - full)}</span>
       <span style={{ color: C("ash"), fontFamily: "var(--font-mono)", marginLeft: 3 }}>{rating.toFixed(1)}</span>

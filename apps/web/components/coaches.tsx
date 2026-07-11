@@ -114,7 +114,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
             {reviewOpen && (
               <div style={card(true, { marginTop: 10, padding: 14 })}>
                 <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-                  {[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("amber") : C("line") }}>★</button>)}
+                  {[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("gold") : C("line") }}>★</button>)}
                 </div>
                 <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="How was the coaching?" style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 12, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
                 <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>Submit review</Btn></div>
@@ -125,7 +125,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
                   <span style={{ color: C("chalk"), fontWeight: 600, fontSize: 13 }}>{rv.author?.displayName || `@${rv.author?.handle}`}</span>
-                  <span style={{ color: C("amber"), fontSize: 12 }}>{"★".repeat(rv.rating)}</span>
+                  <span style={{ color: C("gold"), fontSize: 12 }}>{"★".repeat(rv.rating)}</span>
                 </div>
                 {rv.body && <p style={{ color: C("ash"), fontSize: 13, margin: "6px 0 0", lineHeight: 1.5 }}>{rv.body}</p>}
               </div>

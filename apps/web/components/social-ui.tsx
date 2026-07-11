@@ -77,7 +77,7 @@ export function Stars({ rating, size = 14 }: { rating: number | null; size?: num
   if (rating == null) return <span style={{ color: C("ash"), fontSize: size }}>No reviews yet</span>;
   const full = Math.round(rating);
   return (
-    <span style={{ color: C("amber"), fontSize: size, letterSpacing: 1 }} aria-label={`${rating} of 5`}>
+    <span style={{ color: C("gold"), fontSize: size, letterSpacing: 1 }} aria-label={`${rating} of 5`}>
       {"★".repeat(full)}
       <span style={{ color: C("line") }}>{"★".repeat(5 - full)}</span>{" "}
       <span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>{rating.toFixed(1)}</span>

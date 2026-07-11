@@ -88,7 +88,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                 {reviewOpen && (
                   <View style={{ backgroundColor: C.ink2, borderRadius: 16, padding: 14, marginTop: 10 }}>
                     <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
-                      {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.amber : C.line }}>★</Text></Pressable>)}
+                      {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
                     </View>
                     <TextInput value={body} onChangeText={setBody} multiline placeholder="How was the coaching?" placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
                     <View style={{ marginTop: 8 }}><SButton label="Submit review" small onPress={async () => { const r: any = await postReview(handle, { rating, body }); if (r.error) { alert(r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
@@ -99,7 +99,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
                       <Text style={{ color: C.chalk, fontWeight: "600", fontSize: 13 }}>{rv.author?.displayName || `@${rv.author?.handle}`}</Text>
-                      <Text style={{ color: txt(C, C.amber), fontSize: 12 }}>{"★".repeat(rv.rating)}</Text>
+                      <Text style={{ color: C.gold, fontSize: 12 }}>{"★".repeat(rv.rating)}</Text>
                     </View>
                     {rv.body ? <Text style={{ color: C.ash, fontSize: 13, marginTop: 6, lineHeight: 19 }}>{rv.body}</Text> : null}
                   </View>

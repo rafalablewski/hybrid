@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
 import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
+import { MetaLine } from "./aurora/meta";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -611,24 +612,24 @@ export default function AccountSettings() {
               <span style={{ position: "relative", width: 60, height: 60, flex: "none", display: "grid", placeItems: "center" }}>
                 <svg width="60" height="60" viewBox="0 0 60 60" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
                   <circle cx="30" cy="30" r="27" fill="none" stroke={LINE} strokeWidth="3" />
-                  <circle cx="30" cy="30" r="27" fill="none" stroke={LIME_HEX} strokeWidth="3" strokeLinecap="round" strokeDasharray={ringCirc} strokeDashoffset={ringCirc * (1 - completeness.percent / 100)} transform="rotate(-90 30 30)" style={{ transition: "stroke-dashoffset .4s" }} />
+                  <circle cx="30" cy="30" r="27" fill="none" strokeWidth="3" strokeLinecap="round" strokeDasharray={ringCirc} strokeDashoffset={ringCirc * (1 - completeness.percent / 100)} transform="rotate(-90 30 30)" style={{ stroke: "var(--color-lime)", transition: "stroke-dashoffset .4s" }} />
                 </svg>
                 {socialProfile?.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={socialProfile.avatarUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 20, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>{(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}</span>
+                  <span style={{ width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 20, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, ${BLUE})` }}>{(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}</span>
                 )}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ ...disp, fontWeight: 800, fontSize: fs.title, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session?.name || t("w.account.settings.your-account")}</span>
-                <span style={{ ...mono, fontSize: fs.micro, color: completeness.complete ? txt(LIME_HEX) : txt(ASH), display: "block", marginTop: 3 }}>{completeness.percent}% · {nudge}</span>
+                <MetaLine text={`${completeness.percent}% · ${nudge}`} style={{ ...mono, fontSize: fs.micro, color: completeness.complete ? txt(LIME_HEX) : txt(ASH), marginTop: 3 }} />
               </span>
               <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
             </button>
             {/* Quick actions */}
             <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
-              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: `${LIME_HEX}14`, border: `1px solid ${LIME_HEX}66`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
               {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
               {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
@@ -701,7 +702,7 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
-        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
+        <MetaLine text={subtitle} style={{ ...mono, fontSize: fs.micro, color: txt(ASH), marginTop: 3 }} />
       </span>
       <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>

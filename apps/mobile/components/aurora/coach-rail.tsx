@@ -57,7 +57,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
                   <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
                   <Text style={{ fontSize: 11, marginTop: 2 }}>
                     {c.rating == null ? <Text style={{ color: C.ash, fontFamily: F.mono }}>New</Text> : (
-                      <Text><Text style={{ color: txt(C, C.amber) }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
+                      <Text><Text style={{ color: C.gold }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
                     )}
                   </Text>
                 </View>

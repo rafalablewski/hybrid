@@ -35,6 +35,9 @@ export interface ThemePalette {
   accent: string;
   /** text/icon colour that sits ON the `accent` fill (guarded ≥ AA vs `accent`). */
   onAccent: string;
+  /** rating GOLD (coach ★ ratings) — a Pantone-gold, lifted on dark / deepened on
+   *  light so it reads as gold on either surface. Decorative (not AA-guarded). */
+  gold: string;
   /** accent colours when used as foreground text */
   accentText: { lime: string; blue: string; violet: string; amber: string; red: string };
 }
@@ -67,6 +70,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     // AURORA keeps the bright chartreuse action fill with near-black ink on top.
     accent: "#c6f84f",
     onAccent: "#0c0d0c",
+    gold: "#e6c34e", // bright gold on the dark card
     // SPECTRUM accent-text: chartreuse + sand read on dark as-is; teal/terracotta
     // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; violet unchanged.
     accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
@@ -90,6 +94,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ash: "#6b6456",
     accent: "#a4543a", // clay — the primary action fill
     onAccent: "#faf6ef", // warm paper ink on the clay fill
+    gold: "#b58a24", // deep antique gold — reads as gold on the oat card
     accentText: { lime: "#8f4a30", blue: "#4f5c3a", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

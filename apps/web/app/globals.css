@@ -17,6 +17,7 @@
   --color-violet: #c9a9f0;
   --color-amber: #d0cd94;
   --color-red: #d56f3e;
+  --color-gold: #e6c34e; /* rating gold (coach ★) — bright on the dark card */
 
   --font-display: "Archivo", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -167,6 +168,7 @@ html {
      accent reads as a calm green, not acid lime. Dark keeps the brand hues. */
   --color-lime: #a4543a; /* clay — primary action fill */
   --color-blue: #5f6d4b; /* sage — secondary / conditioning fill */
+  --color-gold: #b58a24; /* rating gold — deepened so it reads gold on oat */
 
   --glass-base: 255, 255, 255;
   --glass-rgb: 255, 255, 255;
