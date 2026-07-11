@@ -69,7 +69,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
                 ))}
               </View>
               <Pressable onPress={() => doFollow(c)} style={{ marginTop: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: isFollowing ? C.line : C.lime, backgroundColor: isFollowing ? "transparent" : C.lime, alignItems: "center" }}>
-                <Text style={{ color: isFollowing ? C.chalk : C.ink, fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>{isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}</Text>
+                <Text style={{ color: isFollowing ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>{isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}</Text>
               </Pressable>
             </View>
           );

@@ -60,7 +60,7 @@ export default function InviteClaim() {
             Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
           </Text>
           <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 20, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>Sign in / Create account</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>Sign in / Create account</Text>
           </Pressable>
         </>
       ) : state === "error" ? (

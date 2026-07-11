@@ -1012,7 +1012,7 @@ export default function Workout() {
                       onPress={() => toggleDone(x.uid, i, !s.done)}
                       style={{ width: 40, height: 40, borderRadius: R.field, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
                     >
-                      <Text style={{ fontSize: fs.subtitle, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
+                      <Text style={{ fontSize: fs.subtitle, color: s.done ? C.onAccent : C.ash, fontFamily: F.black }}>✓</Text>
                     </Pressable>
                     </View>
                   </SwipeRow>
@@ -1022,7 +1022,7 @@ export default function Workout() {
                     five). The set badge still re-types a set with a tap. */}
                 <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginTop: 4 }}>
                   <Pressable onPress={() => addSet(x.uid)} style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 9, paddingHorizontal: 18 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.ink }}>{t("workout.addSet")}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("workout.addSet")}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
@@ -1230,7 +1230,7 @@ export default function Workout() {
                       ))}
                       {q.length > 0 && !exact && (
                         <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 16, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-                          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{custom.trim()}”</Text>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{custom.trim()}”</Text>
                         </Pressable>
                       )}
                     </>
@@ -1260,7 +1260,7 @@ export default function Workout() {
               disabled={saving}
               style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
             >
-              {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
+              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.finishWorkout")}</Text>}
             </Pressable>
           </View>
         )}
@@ -1495,7 +1495,7 @@ function Summary({
                     )}
                     <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: s.swatch }} />
                   </View>
-                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.micro, color: selected ? C.ink : C.ash }}>{t(s.nameKey)}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.micro, color: selected ? C.onAccent : C.ash }}>{t(s.nameKey)}</Text>
                 </Pressable>
               );
             })}
@@ -1520,7 +1520,7 @@ function Summary({
               : null),
           }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>↗ {shareLabel}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
         </Pressable>
 
         <View style={{ flex: 1, minHeight: 24 }} />
@@ -1594,7 +1594,7 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
           style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.routineUnlock")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.routineUnlock")}</Text>
         </Pressable>
       </View>
     );
@@ -1630,7 +1630,7 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
         disabled={state === "saving"}
         style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
     </View>
   );
@@ -1673,7 +1673,7 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
         style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
       />
       <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>✓</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>✓</Text>
       </Pressable>
     </View>
   );

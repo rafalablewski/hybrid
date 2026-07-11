@@ -39,7 +39,7 @@ export function SButton({ label, onPress, ghost, tone, small, disabled }: { labe
   const t = tone ?? C.lime;
   return (
     <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1 }}>
-      <Text style={{ color: ghost ? C.chalk : C.ink, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13 }}>{label}</Text>
+      <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -48,7 +48,7 @@ export function SPill({ label, active, onPress, count }: { label: string; active
   const C = useTheme().palette;
   return (
     <Pressable onPress={onPress} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? C.lime : "transparent" }}>
-      <Text style={{ color: active ? C.ink : C.chalk, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>{label}{count ? ` ${count}` : ""}</Text>
+      <Text style={{ color: active ? C.onAccent : C.chalk, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>{label}{count ? ` ${count}` : ""}</Text>
     </Pressable>
   );
 }

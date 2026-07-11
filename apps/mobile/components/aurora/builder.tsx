@@ -122,7 +122,7 @@ export default function AuroraBuilder() {
                 ))}
               {q.length > 0 && !exact && (
                 <Pressable onPress={() => add(query)} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{query.trim()}”</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{query.trim()}”</Text>
                 </Pressable>
               )}
             </ScrollView>
@@ -148,7 +148,7 @@ export default function AuroraBuilder() {
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
             style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.routineUnlock")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.routineUnlock")}</Text>
           </Pressable>
         </View>
       )}
