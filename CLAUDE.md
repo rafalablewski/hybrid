@@ -23,8 +23,21 @@ Expo mobile app, one backend, one Supabase/Postgres database.
 
 ## Deploy
 `main` auto-deploys `apps/web` to Vercel. Work on the feature branch, then
-fast-forward `main` to ship. Mobile ships via EAS Build → TestFlight (needs an
-Apple Developer account + Expo token — not yet available).
+fast-forward `main` to ship.
+
+Mobile ships via **GitHub Actions → TestFlight** — the
+`.github/workflows/mobile-release.yml` workflow. It runs on a GitHub cloud Mac:
+`expo prebuild` is local codegen only (**no Expo/EAS account, service, or
+token**), `codemagic-cli-tools` (the open-source Apple-signing helper, *not* the
+codemagic.io service) creates/reuses the Apple Distribution cert + provisioning
+profile from an App Store Connect API key, then it builds the IPA and uploads to
+TestFlight (internal testing — available immediately, no beta review). Build
+numbers auto-increment (seconds since 2024-01-01). Free + unlimited (public
+repo, no EAS quota). **Trigger:** GitHub → Actions → "Mobile — build &
+TestFlight" → Run workflow, or push a `mobile-v*` tag. **Required repo secrets**
+(documented in the workflow header): `APPLE_ASC_API_KEY_P8`, `APPLE_ASC_KEY_ID`,
+`APPLE_ASC_ISSUER_ID`, `APPLE_CERT_PRIVATE_KEY`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+JS-only changes can instead ship over-the-air via EAS Update (`eas-update`).
 
 ## Environment limits (this sandbox)
 - Network is allowlisted: npm + `api.expo.dev` reachable; **Supabase host + raw
