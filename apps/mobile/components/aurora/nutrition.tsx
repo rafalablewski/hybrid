@@ -138,7 +138,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
           return macroKcal > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</Text> : null;
         })()}
-        <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")} onPress={add} disabled={saving} style={{ marginTop: 12 }} />
+        <Pressable onPress={add} disabled={saving} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.addMeal")} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, borderWidth: 1, borderColor: C.line, borderRadius: 0, paddingVertical: 15, opacity: saving ? 0.6 : 1 }}>
+          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18, fontWeight: "500" }}>＋</Text>
+          <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.subtitle, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
+        </Pressable>
         {/* Scan label — AI vision, Full only (free → upgrade) */}
         <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: full ? C.line : `${C.violet}3d`, backgroundColor: full ? "transparent" : `${C.violet}12`, opacity: scanning ? 0.6 : 1 }}>
           <Text style={{ fontSize: 15 }}>{full ? "📷" : "🔒"}</Text>
