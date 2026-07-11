@@ -5,6 +5,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
 
@@ -66,7 +67,7 @@ export default function AuroraExplore() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{p.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.meta}</Text>
+              <View style={{ marginTop: 2 }}><MetaLine text={p.meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }} /></View>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
           </Pressable>

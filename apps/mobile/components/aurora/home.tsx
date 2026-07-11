@@ -38,6 +38,7 @@ import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
@@ -304,9 +305,12 @@ export default function AuroraHome() {
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
                 {phase && (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
-                    {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
-                  </Text>
+                  <View style={{ marginTop: 4 }}>
+                    <MetaLine
+                      parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
+                      textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}
+                    />
+                  </View>
                 )}
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>

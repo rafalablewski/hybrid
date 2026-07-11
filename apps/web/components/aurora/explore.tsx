@@ -5,6 +5,7 @@ import { useLang } from "@/lib/i18n";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -58,7 +59,7 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
             <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(p.tint)} 16%, transparent)`, fontSize: 20 }}>{p.emoji}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{p.name}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }}>{p.meta}</span>
+              <MetaLine text={p.meta} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }} />
             </span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
           </button>

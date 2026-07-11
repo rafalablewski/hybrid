@@ -37,6 +37,7 @@ import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -237,9 +238,10 @@ export default function AuroraToday({
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
               {phase && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}>
-                  {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
-                </div>
+                <MetaLine
+                  parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
+                  style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}
+                />
               )}
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
             </>

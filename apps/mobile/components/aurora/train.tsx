@@ -19,6 +19,7 @@ import { fs, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import type { AuroraIconName } from "@hybrid/core";
 
 /** AURORA Train launcher — MINIMAL: one calm list of ways to start, topped by a
@@ -82,7 +83,7 @@ export default function AuroraTrain() {
             </Pressable>
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{draft.exercises.length} {t("workout.exercises")} · {t("train.inProgress")}</Text>
+          <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t("workout.exercises")}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
           <Pressable onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>▶  {t("train.resume")}</Text>
           </Pressable>
@@ -184,7 +185,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
     <Pressable onPress={onPress} style={{ marginTop: 16 }}>
       <ACard style={{ borderColor: withAlpha(C.violet, 0.27) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI coach</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{t("train.aiCoach")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
@@ -230,6 +231,7 @@ function ListRow({
   premium?: boolean;
   first?: boolean;
 }) {
+  const { t } = useLang();
   return (
     <Pressable
       onPress={onPress}
@@ -240,12 +242,12 @@ function ListRow({
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.1 }}>{title}</Text>
-        {!!meta && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{meta}</Text>}
+        {!!meta && <View style={{ marginTop: 4 }}><MetaLine text={meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
           <View style={{ borderWidth: 1, borderColor: withAlpha(C.violet, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: txt(C, C.violet) }}>PREMIUM</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.violet) }}>{t("train.premium")}</Text>
           </View>
         )}
         {right}

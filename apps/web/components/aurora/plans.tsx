@@ -5,6 +5,7 @@ import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor
 import { useLang } from "@/lib/i18n";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
 import ProgramDays from "../program-days";
+import { MetaLine } from "./meta";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18 } as const;
@@ -60,7 +61,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
         {goal.plans.map((p) => (
           <div key={p.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(p.id); } }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontWeight: 800, fontSize: fs.title }}>{p.name}</div>{p.hot && chip(C("lime"), t("w.train.plans.popular"))}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, margin: "6px 0 10px", color: C("ash") }}>{p.weeks} {t("w.train.plans.wks")} · {p.sessions}{t("w.train.plans.perWk")} · {p.tag}</div>
+            <MetaLine parts={[`${p.weeks} ${t("w.train.plans.wks")}`, `${p.sessions}${t("w.train.plans.perWk")}`, p.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.caption, margin: "6px 0 10px", color: C("ash") }} />
             <p style={{ fontSize: fs.body, lineHeight: 1.5 }}>{p.desc}</p>
             <div style={{ marginTop: 12 }}>{p.focus.map((f) => <span key={f}>{chip(C("ash"), f)}</span>)}</div>
           </div>
@@ -83,7 +84,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, goal.name)}
       <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "6px 0 4px" }}><h2 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{plan.name}</h2>{plan.hot && chip(C("lime"), t("w.train.plans.popular"))}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{plan.weeks} {t("w.train.plans.weeks")} · {plan.sessions}{t("w.train.plans.perWeek")} · {d.level}</div>
+      <MetaLine parts={[`${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWeek")}`, d.level]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md, marginBottom: 16 }}>
         <Info label={t("w.train.plans.forWho")} value={d.forWho} /><Info label={t("w.train.plans.outcome")} value={d.outcome} /><Info label={t("w.train.plans.sessionLength")} value={d.sessionLength} /><Info label={t("w.train.plans.equipment")} value={d.equipment} />
@@ -157,7 +158,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, goal.name)}
       <h2 style={{ fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks === 1 ? "1 week" : `${plan.weeks} ${t("w.train.plans.weeks")}`} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}</div>
+      <MetaLine parts={[plan.weeks === 1 ? t("w.train.plans.week1") : `${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWeek")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }} />
 
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{view.inputsTitle}</div>
@@ -174,9 +175,9 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
       {(view.weeks.length > 1 || view.weekVolume) && (
         <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
           {view.weeks.length > 1 && view.weeks.map((w) => (
-            <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>Wk {w}</button>
+            <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.train.plans.wkShort")} {w}</button>
           ))}
-          {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} this week</span>}
+          {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} {t("w.train.plans.thisWeek")}</span>}
         </div>
       )}
 
