@@ -84,15 +84,15 @@ describe("loading — % kept, kg derived", () => {
 
   it("formats %-first, appending kg only when a max is known", () => {
     expect(formatStep({ pct: 70, reps: 3, sets: 3 })).toBe("70%×3×3");
-    expect(formatStep({ pct: 70, reps: 3, sets: 3 }, 100)).toBe("70%×3×3 · 70kg");
+    expect(formatStep({ pct: 70, reps: 3, sets: 3 }, 100)).toBe("70%×3×3 (70kg)");
     expect(formatStep({ pct: 60, reps: 4, sets: 4, plus: 1 })).toBe("60%×4+1×4");
     expect(formatStep({ pct: null, reps: 8, sets: 4 })).toBe("BW×8×4");
   });
 
   it("formats a whole ramped lift, using the ref max when supplied", () => {
     const lift: PlanLift = { name: "Snatch", ref: "snatch", steps: parsePercentSteps("(60%/3)2, (70%/3)3") };
-    expect(formatLift(lift)).toBe("60%×3×2 · 70%×3×3");
-    expect(formatLift(lift, { snatch: 100 })).toBe("60%×3×2 · 60kg · 70%×3×3 · 70kg");
+    expect(formatLift(lift)).toBe("60%×3×2, 70%×3×3");
+    expect(formatLift(lift, { snatch: 100 })).toBe("60%×3×2 (60kg), 70%×3×3 (70kg)");
   });
 });
 
@@ -122,7 +122,7 @@ describe("the Soviet 8-week program", () => {
     const pm = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[1]!; // Day 1 PM
     const acc = pm.lifts.filter((l) => liftKind(l) === "rpe");
     expect(acc.map((l) => l.name)).toEqual(["Clean Pull", "Snatch Balance", "Push Press", "Front Squat", "Chinese Plank"]);
-    expect(acc[0]).toMatchObject({ setsReps: "5×3", rpe: 8, prescription: "5×3 · @8", note: "pulling power · @ 90–110% of clean" });
+    expect(acc[0]).toMatchObject({ setsReps: "5×3", rpe: 8, prescription: "5×3 @8", note: "pulling power · @ 90–110% of clean" });
     // they don't count toward NL, so the day total is unchanged
     expect(planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.nl).toBe(160);
     // and they vanish in later weeks
@@ -154,7 +154,7 @@ describe("planProgramView", () => {
     expect(day1.nl).toBe(160);
     expect(day1.volume).toBe("160 lifts");
     expect(day1.sessions[0]!.label).toBe("AM");
-    expect(day1.sessions[0]!.lifts[0]!.prescription).toBe("60%×4×3 · 70%×4×2");
+    expect(day1.sessions[0]!.lifts[0]!.prescription).toBe("60%×4×3, 70%×4×2");
 
     const c0 = v.days.find((d) => d.kindLabel === "Active rest");
     expect(c0).toBeTruthy();
@@ -174,7 +174,7 @@ describe("planProgramView", () => {
 
   it("exposes coloured per-step views for strength lifts (load split from tail)", () => {
     const v = planProgramView(SOVIET_OWL_8WK, { week: 1 });
-    const press = v.days[0]!.sessions[0]!.lifts[0]!; // 60%×4×3 · 70%×4×2
+    const press = v.days[0]!.sessions[0]!.lifts[0]!; // 60%×4×3, 70%×4×2
     expect(press.steps).toHaveLength(2);
     expect(press.steps![0]).toMatchObject({ load: "60%", color: "blue", detail: "×4×3", kg: null });
     expect(press.steps![1]).toMatchObject({ load: "70%", color: "lime", detail: "×4×2" });
@@ -235,7 +235,7 @@ describe("mixed endurance day — strength accessory on a run day", () => {
     expect(isProseLift(run!)).toBe(true);
     expect(isGymLift(accessory!)).toBe(true);
     // endurance day has no NL volume → a run/lift breakdown instead
-    expect(dayContentSummary(day)).toBe("1 run · 1 lift");
+    expect(dayContentSummary(day)).toBe("1 run, 1 lift");
   });
 
   it("liftKind separates %-barbell, RPE-accessory and prose", () => {
@@ -449,7 +449,7 @@ describe("endurance (running) program — same model, prose workouts", () => {
       "Walking Lunge",
       "Standing Calf Raise",
     ]);
-    expect(dayContentSummary(fri)).toBe("1 run · 4 lifts");
+    expect(dayContentSummary(fri)).toBe("1 run, 4 lifts");
   });
 
   it("surfaces goal-pace text inputs instead of numeric maxes", () => {
@@ -478,7 +478,7 @@ describe("hypertrophy (bodybuilding) program — same model, sets × reps", () =
     expect(mon.title).toBe("Mon · Push (Bench)");
     expect(mon.volume).toBe("5 exercises");
     const bench = mon.sessions[0]!.lifts[0]!;
-    expect(bench).toMatchObject({ name: "Bench Press", prescription: "4×6 · @9", note: "Main lift — progressive overload" });
+    expect(bench).toMatchObject({ name: "Bench Press", prescription: "4×6 @9", note: "Main lift — progressive overload" });
 
     // Sunday is a rest day with no volume chip.
     const sun = v.days[6]!;
@@ -489,9 +489,9 @@ describe("hypertrophy (bodybuilding) program — same model, sets × reps", () =
   it("injects working weight into prescription when the athlete supplies it", () => {
     const v = planProgramView(BB_PPL_6DAY, { week: 1, maxes: { bench: 80 } });
     const bench = v.days[0]!.sessions[0]!.lifts[0]!;
-    expect(bench.prescription).toBe("4×6 · 80 kg · @9");
+    expect(bench.prescription).toBe("4×6 80 kg @9");
     // Exercises without a weightRef are unaffected.
     const incline = v.days[0]!.sessions[0]!.lifts[1]!;
-    expect(incline.prescription).toBe("3×8 · @8");
+    expect(incline.prescription).toBe("3×8 @8");
   });
 });

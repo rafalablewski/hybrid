@@ -196,7 +196,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
 
 /** Done marker — the collapsed slot once today's work is logged. */
 function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSession; onPress: () => void; t: T }) {
-  const names = session.blocks.map((b) => b.name).slice(0, 3).join(" · ");
+  const names = session.blocks.map((b) => b.name).slice(0, 3).join(", ");
   return (
     <Pressable
       onPress={onPress}
@@ -208,7 +208,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names ? `${names} · ` : ""}{t("train.tapSummary")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
       </View>
       <Chevron C={C} />
     </Pressable>

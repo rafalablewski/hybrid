@@ -209,7 +209,7 @@ export default function AuroraToday({
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
                 {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> · {r.note}</span> : null}</span>
+                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
                   </div>
                 ))}

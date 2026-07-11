@@ -182,7 +182,7 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
 
 /** Done marker — the collapsed slot once today's work is logged. */
 function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: () => void; t: T }) {
-  const names = session.blocks.map((b) => b.name).slice(0, 3).join(" · ");
+  const names = session.blocks.map((b) => b.name).slice(0, 3).join(", ");
   return (
     <button
       onClick={onOpen}
@@ -194,7 +194,7 @@ function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: ()
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("train.done")}</span>
         <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), marginTop: 5 }}>{session.title}</span>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{names ? `${names} · ` : ""}{t("train.tapSummary")}</span>
+        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{names || t("train.tapSummary")}</span>
       </span>
       <Chevron />
     </button>
