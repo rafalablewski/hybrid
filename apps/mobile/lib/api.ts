@@ -1107,3 +1107,100 @@ export async function mutateRtpProtocol(id: string, body: object): Promise<boole
     return false;
   }
 }
+
+// Roster TAGS on a coach↔client link. The link detail carries the coach's tags;
+// PATCH { action: "tags", tags } replaces them (mirrors web's saveTags).
+export async function getCoachLinkTags(linkId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const d = (await res.json()) as { link?: { tags?: string[] } };
+    return d.link?.tags ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCoachLinkTags(linkId: string, tags: string[]): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ action: "tags", tags }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Per-client scheduled workouts (Assignments) the coach has programmed.
+export type CoachAssignment = { id: string; name: string; date: string; status: string };
+
+export async function getCoachAssignments(linkId: string): Promise<CoachAssignment[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { assignments?: CoachAssignment[] }).assignments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Assign one dated workout to this client (from a saved template, or one day of
+// a generated week). Mirrors the web POST /api/coach/links/[id]/assignments.
+export async function assignToClient(
+  linkId: string,
+  body: { name: string; blocks: unknown[]; date: string; templateId?: string },
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Enroll (persist) a macrocycle for this client so their Periodize/Today show
+// the same season the coach programs against. Mirrors web's coach macrocycle POST.
+export async function enrollClientMacrocycle(linkId: string, goal: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/macrocycle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ goal }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// The client's weekly check-ins, as the coach sees them (includes any reply).
+export async function getCoachCheckins(linkId: string): Promise<Checkin[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/checkins`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Post (or update) the coach's reply on one check-in. Mirrors web PATCH /api/checkins/[id].
+export async function replyToCheckin(checkinId: string, coachReply: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins/${checkinId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ coachReply }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
