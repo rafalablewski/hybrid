@@ -137,7 +137,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
           {([
             { k: "kcal", label: t("w.recovery.nutrition.tabCalories"), unit: "kcal", color: C("chalk"), max: 1000 },
             { k: "protein", label: t("w.recovery.nutrition.protein"), unit: "g", color: C("lime"), max: 60 },
@@ -163,9 +163,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           return macroKcal > 0 ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</div> : null;
         })()}
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-          <button onClick={add} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" }}><span aria-hidden style={{ fontSize: 17, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: full ? "transparent" : C("violet"), border: `1px solid ${full ? `color-mix(in srgb, ${C("violet")} 50%, transparent)` : C("violet")}`, borderRadius: 999, padding: "14px 12px", cursor: scanning ? "default" : "pointer", color: full ? "var(--violet-text)" : C("ink"), fontWeight: full ? 700 : 800, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1, whiteSpace: "nowrap" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10, marginTop: 12 }}>
+          <button onClick={add} disabled={saving} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><span aria-hidden style={{ fontSize: 17, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: full ? "transparent" : C("violet"), border: `1px solid ${full ? `color-mix(in srgb, ${C("violet")} 50%, transparent)` : C("violet")}`, borderRadius: 999, padding: "14px 12px", cursor: scanning ? "default" : "pointer", color: full ? "var(--violet-text)" : C("ink"), fontWeight: full ? 700 : 800, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
             {!full && <AuroraIcon name="lock" size={12} strokeWidth={2.2} color={C("ink")} />}
             {scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
           </button>
