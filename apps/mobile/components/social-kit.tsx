@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 import { F } from "../lib/ui";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 
@@ -27,7 +27,7 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   const full = Math.round(rating);
   return (
     <Text style={{ fontSize: size }}>
-      <Text style={{ color: C.amber }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: txt(C, C.amber) }}>{"★".repeat(full)}</Text>
       <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
       <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
     </Text>
@@ -94,7 +94,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: C.lime }}>✓</Text> : null}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}>✓</Text> : null}</Text>
                     <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
                   </View>
                 </View>
@@ -126,7 +126,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 {rel !== "self" && (
                   <View style={{ flexDirection: "row", gap: 18, marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
                     <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ Report</Text></Pressable>
-                    <Pressable onPress={doBlock}><Text style={{ color: C.red, fontSize: 12, fontFamily: F.bold }}>⊘ Block</Text></Pressable>
+                    <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: 12, fontFamily: F.bold }}>⊘ Block</Text></Pressable>
                   </View>
                 )}
                 {cmp && (

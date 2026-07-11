@@ -105,20 +105,20 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
               {!fmtValid ? "✕ 3–20 chars: a–z, 0–9, _" : avail === "taken" ? `✕ @${hNorm} is taken` : avail === "checking" ? "Checking availability…" : `✓ ${isMine ? "This is your handle" : "@" + hNorm + " is available"}`}
             </Text>
           )}
-          {err && <Text accessibilityRole="alert" style={{ color: C.red, fontSize: 13, marginTop: 8 }}>{err}</Text>}
+          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
           <SButton label={claimed ? "Save" : "Claim handle"} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
         {editing === "displayName" && (<>
           <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder="Optional" placeholderTextColor={C.ash} autoFocus style={inp} />
-          {err && <Text accessibilityRole="alert" style={{ color: C.red, fontSize: 13, marginTop: 8 }}>{err}</Text>}
+          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
           <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
         {editing === "bio" && (<>
           <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder="Hybrid athlete · runner · lifter…" placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
           <Text style={{ fontFamily: F.mono, fontSize: 10, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
-          {err && <Text accessibilityRole="alert" style={{ color: C.red, fontSize: 13, marginTop: 4 }}>{err}</Text>}
+          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
           <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
@@ -126,7 +126,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
           <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
             {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
           </View>
-          {err && <Text accessibilityRole="alert" style={{ color: C.red, fontSize: 13, marginTop: 4 }}>{err}</Text>}
+          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
           <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
       </Card>
@@ -216,7 +216,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
           <SButton label="Done" onPress={onDone} />
         </View>
       )}
-      {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.red, marginTop: 10, textAlign: "center" }}>{err}</Text>}
+      {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}
       {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
     </>
   );
