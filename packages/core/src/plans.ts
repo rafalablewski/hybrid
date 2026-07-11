@@ -143,6 +143,14 @@ export const PLANS: (GoalPlan & { color: string })[] = GOAL_TREE.flatMap((g) =>
   g.plans[0] ? [{ ...g.plans[0], color: g.color }] : [],
 );
 
+/** Explore plan-library preview — the top plan for each goal that has one,
+ *  carrying its goal's name + icon + colour. The SINGLE source for the Explore
+ *  preview rail on both clients, so the preview can never drift from the real
+ *  library (no duplicated names/metas) and its facts (discipline, scheme) come
+ *  straight from the plan data. */
+export const PLAN_PREVIEWS: { goalId: string; goalName: string; icon: string; color: string; plan: GoalPlan }[] =
+  GOAL_TREE.flatMap((g) => (g.plans[0] ? [{ goalId: g.id, goalName: g.name, icon: g.icon, color: g.color, plan: g.plans[0] }] : []));
+
 /** The named library plans for a goal (matched by GoalNode name, e.g.
  *  "Bodybuilding"). Empty when that goal has no uploaded plans yet (most don't
  *  — see the `plans-lib` capability). Powers the coach's named-plan picker. */
