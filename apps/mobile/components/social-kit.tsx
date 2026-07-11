@@ -27,7 +27,7 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   const full = Math.round(rating);
   return (
     <Text style={{ fontSize: size }}>
-      <Text style={{ color: txt(C, C.amber) }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
       <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
       <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
     </Text>

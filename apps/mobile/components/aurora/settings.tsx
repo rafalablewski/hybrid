@@ -15,6 +15,7 @@ import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Theme picker swatches — a mini colour preview per template (shared shape with
@@ -288,7 +289,7 @@ export default function AuroraSettings() {
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: titleColor }}>{c.title}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, lineHeight: 15 }}>{line}</Text>
+          <View style={{ marginTop: 3 }}><MetaLine text={line} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>
         </View>
         <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
       </Pressable>
@@ -327,14 +328,14 @@ export default function AuroraSettings() {
             {profile?.avatarUrl ? (
               <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (
-              <LinearGradient colors={[C.lime, "#9bd400"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
+              <LinearGradient colors={[C.lime, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
               </LinearGradient>
             )}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? txt(C, C.lime) : C.ash, marginTop: 3 }}>{completeness.percent}% · {nudge}</Text>
+            <View style={{ marginTop: 3 }}><MetaLine text={`${completeness.percent}% · ${nudge}`} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? (txt(C, C.lime) as string) : C.ash }} /></View>
             <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 7, overflow: "hidden" }}>
               <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
             </View>
