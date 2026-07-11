@@ -3,6 +3,11 @@ import { View, Text, Pressable, TextInput, Modal, ScrollView, ActivityIndicator 
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import type {
+  CoachCard, CoachStorefrontResponse, CoachProfileResponse, CoachProgramData,
+  CoachEnrollmentsResponse, StorefrontProgram, StorefrontReview, ProgramPreviewWeek,
+  ProgramPreviewDay, ProgramPreviewItem, EnrollmentRow,
+} from "@hybrid/core";
 import {
   getCoaches, getCoach, enrollProgram, postReview,
   getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
@@ -13,7 +18,7 @@ import { GlassToggle } from "../components/glass-toggle";
 // ---- coach detail (what a client sees) ----
 function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
   const C = useTheme().palette;
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<CoachStorefrontResponse | null>(null);
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -28,7 +33,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
         <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90%", borderWidth: 1, borderColor: C.line }}>
           <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
-            {!c ? <ActivityIndicator color={C.lime} /> : (
+            {!data || !c ? <ActivityIndicator color={C.lime} /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
@@ -47,7 +52,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                 {data.isMyCoach ? <Text style={{ color: txt(C, C.lime), fontSize: 13, marginTop: 10 }}>✓ This is your coach.</Text> : null}
 
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 22, marginBottom: 6 }}>Online programs</Text>
-                {data.programs.length === 0 ? <Text style={{ color: C.ash, fontSize: 13 }}>No published programs yet.</Text> : data.programs.map((p: any) => (
+                {data.programs.length === 0 ? <Text style={{ color: C.ash, fontSize: 13 }}>No published programs yet.</Text> : data.programs.map((p: StorefrontProgram) => (
                   <View key={p.id} style={{ backgroundColor: C.ink2, borderRadius: 16, padding: 14, marginBottom: 10 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                       <View style={{ flex: 1 }}>
@@ -55,7 +60,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</Text>
-                        : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r: any = await enrollProgram(p.id); setEnrolling(null); if (r.error) { alert(r.error); return; } load(); }} />}
+                        : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { alert(r.error); return; } load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (
@@ -63,13 +68,13 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}><Text style={{ color: txt(C, C.lime), fontSize: 12, fontFamily: F.bold, marginTop: 8 }}>{preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}</Text></Pressable>
                         {preview === p.id && (
                           <View style={{ marginTop: 8 }}>
-                            {p.preview.map((w: any, wi: number) => (
+                            {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
                               <View key={wi} style={{ marginBottom: 8 }}>
                                 <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }}>Week {wi + 1}</Text>
-                                {w.days.map((d: any, di: number) => (
+                                {w.days.map((d: ProgramPreviewDay, di: number) => (
                                   <View key={di} style={{ marginTop: 4 }}>
                                     <Text style={{ color: C.chalk, fontSize: 12.5, fontFamily: F.bold }}>{d.day || `Day ${di + 1}`}</Text>
-                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: any) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</Text>
+                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</Text>
                                   </View>
                                 ))}
                               </View>
@@ -91,10 +96,10 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                       {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
                     </View>
                     <TextInput value={body} onChangeText={setBody} multiline placeholder="How was the coaching?" placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
-                    <View style={{ marginTop: 8 }}><SButton label="Submit review" small onPress={async () => { const r: any = await postReview(handle, { rating, body }); if (r.error) { alert(r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
+                    <View style={{ marginTop: 8 }}><SButton label="Submit review" small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { alert(r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
                   </View>
                 )}
-                {data.reviews.map((rv: any) => (
+                {data.reviews.map((rv: StorefrontReview) => (
                   <View key={rv.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
@@ -116,15 +121,15 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
 // ---- coach's own storefront ----
 function Storefront() {
   const C = useTheme().palette;
-  const [data, setData] = useState<any>(null);
-  const [form, setForm] = useState<any>({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "" });
-  const [programs, setPrograms] = useState<any[]>([]);
-  const [enroll, setEnroll] = useState<any>({ incoming: [] });
+  const [data, setData] = useState<CoachProfileResponse | null>(null);
+  const [form, setForm] = useState({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "" });
+  const [programs, setPrograms] = useState<CoachProgramData[]>([]);
+  const [enroll, setEnroll] = useState<CoachEnrollmentsResponse>({ incoming: [], mine: [] });
   const [saved, setSaved] = useState(false);
   const load = async () => {
-    const d: any = await getCoachProfile(); setData(d);
+    const d = await getCoachProfile(); setData(d);
     if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "" });
-    const pr: any = await getCoachPrograms(); setPrograms(pr.programs ?? []);
+    const pr = await getCoachPrograms(); setPrograms(pr.programs ?? []);
     setEnroll(await getEnrollments());
   };
   useEffect(() => { load(); }, []);
@@ -144,7 +149,7 @@ function Storefront() {
         <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder="Pricing note" placeholderTextColor={C.ash} style={inp} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Accepting clients</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel="Accepting clients" /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>Auto-accept enrolments</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel="Auto-accept enrolments" /></View>
-        <SButton label={saved ? "Saved ✓" : "Save storefront"} onPress={async () => { const r: any = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { alert(r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+        <SButton label={saved ? "Saved ✓" : "Save storefront"} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { alert(r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
       </Card>
 
       <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>Programs ({programs.length})</Text>
@@ -161,7 +166,7 @@ function Storefront() {
         <>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>Enrolment requests</Text>
           <Card>
-            {enroll.incoming.map((e: any) => (
+            {enroll.incoming.map((e: EnrollmentRow) => (
               <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
                 <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} · {e.status}</Text></View>
@@ -180,13 +185,13 @@ export default function CoachesScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
   const [q, setQ] = useState("");
-  const [coaches, setCoaches] = useState<any[] | null>(null);
+  const [coaches, setCoaches] = useState<CoachCard[] | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [isCoach, setIsCoach] = useState(false);
 
-  const load = () => getCoaches(q.trim() || undefined).then((r: any) => setCoaches(r.coaches ?? []));
+  const load = () => getCoaches(q.trim() || undefined).then((r) => setCoaches(r.coaches ?? []));
   useEffect(() => { const id = setTimeout(load, 200); return () => clearTimeout(id); /* eslint-disable-next-line */ }, [q]);
-  useEffect(() => { getCoachProfile().then((d: any) => setIsCoach(!!d.isCoach)); }, []);
+  useEffect(() => { getCoachProfile().then((d) => setIsCoach(!!d.isCoach)); }, []);
 
   return (
     <Screen>

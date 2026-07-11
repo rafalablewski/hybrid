@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
+import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
 import { useDialog } from "../lib/use-dialog";
 import {
   C, useSocialTheme, card, Avatar, Btn, Pill, FollowButton, EmptyState, ScreenHead, Stars,
@@ -32,12 +33,12 @@ function StatRow({ stats }: { stats: Stats | null }) {
 
 // ----- A slide-over for viewing ANY user's public profile (reused by feed / discover / leaderboard).
 export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const [data, setData] = useState<any>(null);
-  const [compare, setCompare] = useState<any>(null);
+  const [data, setData] = useState<PublicProfileResponse | null>(null);
+  const [compare, setCompare] = useState<CompareResult | null>(null);
   const busy = useBusy();
   const dialogRef = useDialog<HTMLDivElement>(onClose);
 
-  const load = () => jget(`/api/social/profile/${handle}`).then(setData);
+  const load = () => jget<PublicProfileResponse>(`/api/social/profile/${handle}`).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
 
   const p = data?.profile;
@@ -45,7 +46,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
 
   const doFollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { handle }); await load(); });
   const doUnfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { handle }); await load(); });
-  const runCompare = () => busy.run("c", async () => { const r: any = await jget(`/api/social/compare?handle=${handle}`); setCompare(r.compare ?? null); });
+  const runCompare = () => busy.run("c", async () => { const r = await jget<CompareResponse>(`/api/social/compare?handle=${handle}`); setCompare(r.compare ?? null); });
   const doBlock = () => { if (!window.confirm(`Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`)) return; busy.run("b", async () => { await jsend("/api/social/block", "POST", { handle }); onClose(); }); };
   const doReport = () => { if (!p?.userId) return; if (!window.confirm(`Report @${handle} to the moderators?`)) return; busy.run("r", async () => { await jsend("/api/reports", "POST", { targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); alert("Thanks — reported to the moderators."); }); };
 
@@ -55,7 +56,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
-        {!p ? (
+        {!data || !p ? (
           <EmptyState title="Loading…" />
         ) : (
           <>
@@ -84,10 +85,10 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
               </div>
             )}
 
-            {data?.stats?.topLifts?.length > 0 && data.canViewResults && (
+            {data.canViewResults && data.stats && data.stats.topLifts.length > 0 && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 12, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Top lifts</div>
-                {data.stats.topLifts.map((l: any) => (
+                {data.stats.topLifts.map((l) => (
                   <div key={l.lift} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <span style={{ color: C("chalk") }}>{l.lift}</span>
                     <span style={{ fontFamily: "var(--font-mono)", color: C("lime") }}>{l.e1rm} kg</span>
@@ -108,7 +109,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>
                   You {compare.score.a} — {compare.score.b} {p.displayName || "@" + p.handle}
                 </div>
-                {[...compare.lines, ...compare.sharedLifts.map((s: any) => ({ ...s, label: s.lift, unit: "kg" }))].map((l: any, i: number) => (
+                {[...compare.lines, ...compare.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
                   <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <span style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: l.leader === "a" ? C("lime") : C("chalk") }}>{l.a}{l.unit}</span>
                     <span style={{ fontSize: 11, color: C("ash"), textAlign: "center", whiteSpace: "nowrap" }}>{l.label}</span>
@@ -136,7 +137,7 @@ interface AccountBits {
 
 export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }: { onDone?: () => void; embedded?: boolean; account?: AccountBits; onProfileUpdate?: (p: Pick<MyProfile, "handle" | "displayName" | "bio" | "avatarUrl">) => void }) {
   const { aurora } = useSocialTheme();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OwnProfileResponse | null>(null);
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
   const [avail, setAvail] = useState<null | "checking" | "ok" | "taken">(null);
@@ -144,7 +145,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const d: any = await jget("/api/social/profile");
+    const d = await jget<OwnProfileResponse>("/api/social/profile");
     setData(d);
     if (d.profile) setForm({ handle: d.profile.handle, displayName: d.profile.displayName ?? "", bio: d.profile.bio ?? "", visibility: d.profile.visibility, avatarUrl: d.profile.avatarUrl ?? "" });
     else setForm((f) => ({ ...f, handle: d.suggestedHandle ?? "" }));
@@ -161,7 +162,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
     let active = true; // ignore a stale response if the handle changed meanwhile
     const id = setTimeout(async () => {
       try {
-        const r: any = await jget(`/api/social/profile/${h}`);
+        const r = await jget<PublicProfileResponse>(`/api/social/profile/${h}`);
         if (active) setAvail(r?.profile ? "taken" : "ok");
       } catch { if (active) setAvail("ok"); }
     }, 450);
@@ -175,7 +176,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
     const next = { ...form, ...override };
     const h = normalizeHandle(next.handle);
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return false; }
-    const r: any = await jsend("/api/social/profile", "PUT", { ...next, handle: h });
+    const r = await jsend<MutationResult>("/api/social/profile", "PUT", { ...next, handle: h });
     if (r.error) { setErr(r.error); return false; }
     onProfileUpdate?.({ handle: h, displayName: next.displayName, bio: next.bio, avatarUrl: next.avatarUrl });
     return true;

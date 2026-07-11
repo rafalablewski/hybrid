@@ -1,18 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type {
+  CoachCard,
+  CoachesResponse,
+  CoachStorefrontResponse,
+  CoachProfileResponse,
+  CoachProgramsResponse,
+  CoachProgramData,
+  CoachEnrollmentsResponse,
+  StorefrontProgram,
+  StorefrontReview,
+  ProgramPreviewWeek,
+  ProgramPreviewDay,
+  ProgramPreviewItem,
+  EnrollmentRow,
+  MutationResult,
+} from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
 import { useDialog } from "../lib/use-dialog";
 
-interface CoachCard {
-  userId: string; handle: string; name: string | null; avatarUrl: string | null;
-  headline: string | null; specialties: string[]; sports: string[]; acceptingClients: boolean;
-  priceNote: string | null; coachVerified: boolean; programs: number; rating: number | null; reviews: number;
-}
-
 // ---------------- Coach detail (storefront a client sees) ----------------
 function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<CoachStorefrontResponse | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
@@ -20,16 +30,16 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
   const busy = useBusy();
   const dialogRef = useDialog<HTMLDivElement>(onClose);
 
-  const load = () => jget(`/api/coaches/${handle}`).then(setData);
+  const load = () => jget<CoachStorefrontResponse>(`/api/coaches/${handle}`).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
 
   const enroll = (programId: string) => busy.run(programId, async () => {
-    const r: any = await jsend("/api/coaches/enroll", "POST", { programId });
+    const r = await jsend<MutationResult>("/api/coaches/enroll", "POST", { programId });
     if (r.error) alert(r.error);
     await load();
   });
   const submitReview = () => busy.run("rev", async () => {
-    const r: any = await jsend(`/api/coaches/${handle}/reviews`, "POST", { rating, body });
+    const r = await jsend<MutationResult>(`/api/coaches/${handle}/reviews`, "POST", { rating, body });
     if (r.error) { alert(r.error); return; }
     setReviewOpen(false); setBody("");
     await load();
@@ -42,7 +52,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
-        {!c ? <EmptyState title="Loading…" /> : (
+        {!data || !c ? <EmptyState title="Loading…" /> : (
           <>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
@@ -67,7 +77,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
             <div style={{ marginTop: 22, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>Online programs</div>
             {data.programs.length === 0 ? (
               <div style={{ color: C("ash"), fontSize: 13, marginTop: 8 }}>No published programs yet.</div>
-            ) : data.programs.map((p: any) => (
+            ) : data.programs.map((p: StorefrontProgram) => (
               <div key={p.id} style={{ ...card(true, { marginTop: 10, padding: 14 }) }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                   <div>
@@ -88,13 +98,13 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                     </button>
                     {preview === p.id && (
                       <div style={{ marginTop: 8 }}>
-                        {p.preview.map((w: any, wi: number) => (
+                        {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
                           <div key={wi} style={{ marginBottom: 8 }}>
                             <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>Week {wi + 1}</div>
-                            {w.days.map((d: any, di: number) => (
+                            {w.days.map((d: ProgramPreviewDay, di: number) => (
                               <div key={di} style={{ marginTop: 4 }}>
                                 <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `Day ${di + 1}`}</div>
-                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: any) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</div>
+                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</div>
                               </div>
                             ))}
                           </div>
@@ -120,7 +130,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>Submit review</Btn></div>
               </div>
             )}
-            {data.reviews.map((rv: any) => (
+            {data.reviews.map((rv: StorefrontReview) => (
               <div key={rv.id} style={{ padding: "10px 0", borderBottom: `1px solid ${C("line")}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
@@ -140,29 +150,29 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
 // ---------------- Coach's own storefront editor ----------------
 function Storefront() {
   const { aurora } = useSocialTheme();
-  const [data, setData] = useState<any>(null);
-  const [form, setForm] = useState<any>({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "", visibility: "public" });
-  const [programs, setPrograms] = useState<any[]>([]);
-  const [enroll, setEnroll] = useState<any>({ incoming: [], mine: [] });
+  const [data, setData] = useState<CoachProfileResponse | null>(null);
+  const [form, setForm] = useState({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "", visibility: "public" });
+  const [programs, setPrograms] = useState<CoachProgramData[]>([]);
+  const [enroll, setEnroll] = useState<CoachEnrollmentsResponse>({ incoming: [], mine: [] });
   const [saved, setSaved] = useState(false);
   const busy = useBusy();
 
   const load = async () => {
-    const d: any = await jget("/api/coach/profile");
+    const d = await jget<CoachProfileResponse>("/api/coach/profile");
     setData(d);
     if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "", visibility: d.profile.visibility });
-    const pr: any = await jget("/api/coach/programs"); setPrograms(pr.programs ?? []);
-    setEnroll(await jget("/api/coach/enrollments"));
+    const pr = await jget<CoachProgramsResponse>("/api/coach/programs"); setPrograms(pr.programs ?? []);
+    setEnroll(await jget<CoachEnrollmentsResponse>("/api/coach/enrollments"));
   };
   useEffect(() => { load(); }, []);
 
   const save = () => busy.run("save", async () => {
-    const r: any = await jsend("/api/coach/profile", "PUT", { ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) });
+    const r = await jsend<MutationResult>("/api/coach/profile", "PUT", { ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) });
     if (r.error) { alert(r.error); return; }
     setSaved(true); setTimeout(() => setSaved(false), 1500);
     await load();
   });
-  const togglePublish = (p: any) => busy.run(p.id, async () => { await jsend(`/api/coach/programs/${p.id}`, "PATCH", { published: !p.published }); await load(); });
+  const togglePublish = (p: CoachProgramData) => busy.run(p.id, async () => { await jsend(`/api/coach/programs/${p.id}`, "PATCH", { published: !p.published }); await load(); });
   const respond = (id: string, action: string) => busy.run(id, async () => { await jsend("/api/coach/enrollments", "POST", { enrollmentId: id, action }); await load(); });
 
   if (!data) return <EmptyState title="Loading…" />;
@@ -204,7 +214,7 @@ function Storefront() {
         <>
           <div style={{ marginTop: 24, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>Enrolment requests</div>
           <div style={card(aurora)}>
-            {enroll.incoming.map((e: any) => (
+            {enroll.incoming.map((e: EnrollmentRow) => (
               <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -235,9 +245,9 @@ export default function Coaches() {
   const [detail, setDetail] = useState<string | null>(null);
   const [isCoach, setIsCoach] = useState(false);
 
-  const load = () => jget(`/api/coaches${q.trim() ? `?q=${encodeURIComponent(q)}` : ""}`).then((r: any) => setCoaches(r.coaches ?? []));
+  const load = () => jget<CoachesResponse>(`/api/coaches${q.trim() ? `?q=${encodeURIComponent(q)}` : ""}`).then((r) => setCoaches(r.coaches ?? []));
   useEffect(() => { const id = setTimeout(load, 200); return () => clearTimeout(id); /* eslint-disable-next-line */ }, [q]);
-  useEffect(() => { jget("/api/coach/profile").then((d: any) => setIsCoach(!!d.isCoach)); }, []);
+  useEffect(() => { jget<CoachProfileResponse>("/api/coach/profile").then((d) => setIsCoach(!!d.isCoach)); }, []);
 
   return (
     <div style={{ maxWidth: 640 }}>

@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { PersonCard, SearchResponse, SuggestionsResponse } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, FollowButton, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 
-interface Person { userId: string; handle: string; displayName: string | null; avatarUrl: string | null; coachVerified?: boolean; isCoach?: boolean; relation?: string; reason?: string }
+// NOTE: userId is OPTIONAL — /api/social/search returns it, but /api/social/
+// suggestions returns `id` (no userId), so suggested rows currently key + follow
+// on undefined. Kept honest here (was a required-string lie); see the audit.
+type Person = PersonCard;
 
 function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpen: (h: string) => void }) {
   const busy = useBusy();
@@ -33,16 +37,16 @@ export default function SocialDiscover() {
   const [sugg, setSugg] = useState<Person[]>([]);
   const [drawer, setDrawer] = useState<string | null>(null);
 
-  const loadSugg = () => jget("/api/social/suggestions").then((r: any) => setSugg(r.suggestions ?? []));
+  const loadSugg = () => jget<SuggestionsResponse>("/api/social/suggestions").then((r) => setSugg(r.suggestions ?? []));
   useEffect(() => { loadSugg(); }, []);
 
   useEffect(() => {
     if (q.trim().length < 2) { setResults(null); return; }
-    const id = setTimeout(() => { jget(`/api/social/search?q=${encodeURIComponent(q)}`).then((r: any) => setResults(r.results ?? [])); }, 250);
+    const id = setTimeout(() => { jget<SearchResponse>(`/api/social/search?q=${encodeURIComponent(q)}`).then((r) => setResults(r.results ?? [])); }, 250);
     return () => clearTimeout(id);
   }, [q]);
 
-  const refresh = () => { if (q.trim().length >= 2) jget(`/api/social/search?q=${encodeURIComponent(q)}`).then((r: any) => setResults(r.results ?? [])); loadSugg(); };
+  const refresh = () => { if (q.trim().length >= 2) jget<SearchResponse>(`/api/social/search?q=${encodeURIComponent(q)}`).then((r) => setResults(r.results ?? [])); loadSugg(); };
 
   return (
     <div style={{ maxWidth: 600 }}>

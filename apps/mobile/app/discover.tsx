@@ -3,12 +3,13 @@ import { View, Text, Pressable, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import type { PersonCard } from "@hybrid/core";
 import { searchPeople, getSuggestions, follow, unfollow } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
 
-function Row({ p, onChanged, onOpen }: { p: any; onChanged: () => void; onOpen: (h: string) => void }) {
+function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; onOpen: (h: string) => void }) {
   const C = useTheme().palette;
-  const rel = p.relation ?? "none";
+  const rel: string = p.relation ?? "none";
   const following = rel === "following" || rel === "friend" || rel === "close";
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
@@ -32,18 +33,18 @@ export default function DiscoverScreen() {
   const C = useTheme().palette;
   const router = useRouter();
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<any[] | null>(null);
-  const [sugg, setSugg] = useState<any[]>([]);
+  const [results, setResults] = useState<PersonCard[] | null>(null);
+  const [sugg, setSugg] = useState<PersonCard[]>([]);
   const [drawer, setDrawer] = useState<string | null>(null);
 
-  const loadSugg = () => getSuggestions().then((r: any) => setSugg(r.suggestions ?? []));
+  const loadSugg = () => getSuggestions().then((r) => setSugg(r.suggestions ?? []));
   useEffect(() => { loadSugg(); }, []);
   useEffect(() => {
     if (q.trim().length < 2) { setResults(null); return; }
-    const id = setTimeout(() => searchPeople(q).then((r: any) => setResults(r.results ?? [])), 250);
+    const id = setTimeout(() => searchPeople(q).then((r) => setResults(r.results ?? [])), 250);
     return () => clearTimeout(id);
   }, [q]);
-  const refresh = () => { if (q.trim().length >= 2) searchPeople(q).then((r: any) => setResults(r.results ?? [])); loadSugg(); };
+  const refresh = () => { if (q.trim().length >= 2) searchPeople(q).then((r) => setResults(r.results ?? [])); loadSugg(); };
 
   return (
     <Screen>
