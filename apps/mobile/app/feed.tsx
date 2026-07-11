@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, Pressable, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -15,7 +15,8 @@ function Comments({ item }: { item: FeedItemView }) {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
   const send = async () => {
     if (!text.trim()) return;
-    await postComment({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
+    const r = await postComment({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
+    if (r.error) { Alert.alert("Error", r.error); return; } // don't clear the box on a failed post
     setText(""); load();
   };
   return (
@@ -58,7 +59,7 @@ export default function FeedScreen() {
     setPosting(true);
     const r = await createPost({ text, attachPr });
     setPosting(false);
-    if (r.error) { alert(r.error); return; }
+    if (r.error) { Alert.alert("Error", r.error); return; }
     setText(""); setAttachPr(false); load();
   };
   const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };

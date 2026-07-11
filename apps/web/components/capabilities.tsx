@@ -98,6 +98,7 @@ function Row({ cap, color }: { cap: Capability; color: string }) {
       </Mono>
       {long && (
         <button
+          type="button"
           onClick={() => setOpen((v) => !v)}
           style={{ ...mono, fontSize: fs.micro, color: color, background: "none", border: "none", padding: 0, marginTop: 6, cursor: "pointer", textTransform: "uppercase", letterSpacing: ".08em" }}
         >

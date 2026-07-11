@@ -27,6 +27,9 @@ describe("ago", () => {
   it("never goes negative for a future instant", () => {
     expect(ago("2026-07-11T13:00:00Z", now)).toBe("just now");
   });
+  it("degrades to 'just now' on an invalid date string", () => {
+    expect(ago("not-a-date", now)).toBe("just now");
+  });
 });
 
 describe("until", () => {
@@ -41,5 +44,8 @@ describe("until", () => {
   });
   it("reads due now once the instant has passed", () => {
     expect(until("2026-07-11T11:00:00Z", now)).toBe("due now");
+  });
+  it("returns an em dash on an invalid date string", () => {
+    expect(until("not-a-date", now)).toBe("—");
   });
 });

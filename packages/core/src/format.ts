@@ -14,7 +14,9 @@ export function mmss(s: number): string {
 /** ISO timestamp → a compact "time since" label (`just now` / `5m ago` /
  *  `3h ago` / `2d ago`). Never negative (a future instant reads as `just now`). */
 export function ago(iso: string, now: number = Date.now()): string {
-  const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "just now";
+  const s = Math.max(0, (now - t) / 1000);
   if (s < 60) return "just now";
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
@@ -25,7 +27,9 @@ export function ago(iso: string, now: number = Date.now()): string {
  *  `in 2d`); `—` when null, `due now` once the instant has passed. */
 export function until(iso: string | null, now: number = Date.now()): string {
   if (!iso) return "—";
-  const s = (new Date(iso).getTime() - now) / 1000;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "—";
+  const s = (t - now) / 1000;
   if (s < 0) return "due now";
   if (s < 3600) return `in ${Math.ceil(s / 60)}m`;
   if (s < 86400) return `in ${Math.round(s / 3600)}h`;
