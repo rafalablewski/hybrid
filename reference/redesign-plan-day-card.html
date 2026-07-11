@@ -1,0 +1,509 @@
+<!-- HYBRID — Plan-day card redesign study. Standalone preview.
+     10 distinct treatments of the "Soviet 8-Week Peaking" plan-day card.
+     Grounded in packages/core/src/theme/tokens.ts (Archivo / JetBrains Mono,
+     ink #0c0d0c, chartreuse #c6f84f, Aurora spectrum). -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — plan-day card, 10 redesigns</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  /* ---- app tokens (fixed — the mock cards render in the product's palette) ---- */
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
+    --teal:#3c787e; --violet:#c9a9f0; --sand:#d0cd94; --clay:#d56f3e;
+    --disp:"Archivo","Archivo Narrow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+    /* ---- page chrome (theme-aware) ---- */
+    --bg:#0a0b0a; --bg2:#0e100e; --panel:#121412; --frame:#22251f;
+    --text:#f3f4ef; --muted:#8b8f86; --faint:#5c605a; --accent:#c6f84f;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eae3d4; --bg2:#f2ecdf; --panel:#f9f5ec; --frame:#e0d7c6;
+      --text:#33302a; --muted:#6b6456; --faint:#a49b88; --accent:#a4543a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0b0a; --bg2:#0e100e; --panel:#121412; --frame:#22251f;
+    --text:#f3f4ef; --muted:#8b8f86; --faint:#5c605a; --accent:#c6f84f;
+  }
+  :root[data-theme="light"]{
+    --bg:#eae3d4; --bg2:#f2ecdf; --panel:#f9f5ec; --frame:#e0d7c6;
+    --text:#33302a; --muted:#6b6456; --faint:#a49b88; --accent:#a4543a;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--disp);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    line-height:1.5;
+    background-image:radial-gradient(120% 80% at 100% -10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%);
+  }
+
+  /* ---------- studio header ---------- */
+  .wrap{max-width:1180px; margin:0 auto; padding:clamp(28px,5vw,72px) clamp(18px,4vw,48px) 96px}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--muted); display:flex; align-items:center; gap:12px; margin:0 0 22px;
+  }
+  .eyebrow::before{content:""; width:34px; height:2px; background:var(--accent)}
+  h1{
+    font-weight:900; font-size:clamp(38px,7.5vw,86px); line-height:.94;
+    letter-spacing:-.03em; margin:0 0 24px; text-wrap:balance;
+    max-width:14ch;
+  }
+  h1 em{font-style:normal; color:var(--accent)}
+  .lede{
+    font-size:clamp(16px,2vw,20px); color:var(--muted); max-width:62ch; margin:0 0 8px;
+  }
+  .lede b{color:var(--text); font-weight:600}
+  .meta{
+    font-family:var(--mono); font-size:12.5px; color:var(--faint);
+    margin-top:20px; display:flex; flex-wrap:wrap; gap:8px 18px;
+  }
+  .meta span{white-space:nowrap}
+  .meta b{color:var(--muted); font-weight:500}
+
+  .rule{height:1px; background:var(--frame); margin:44px 0}
+
+  /* ---------- concept grid ---------- */
+  .grid{
+    display:grid; gap:clamp(20px,3vw,34px);
+    grid-template-columns:repeat(auto-fill, minmax(340px,1fr));
+    align-items:start;
+  }
+  .concept{display:flex; flex-direction:column; gap:16px}
+  .chead{display:flex; align-items:baseline; gap:12px}
+  .num{
+    font-family:var(--mono); font-weight:700; font-size:12px;
+    color:var(--ink); background:var(--c,#c6f84f);
+    padding:3px 8px; border-radius:6px; letter-spacing:.04em; flex:none;
+    line-height:1;
+  }
+  .cname{font-weight:800; font-size:17px; letter-spacing:-.01em; margin:0}
+  .cwhy{font-size:13.5px; color:var(--muted); margin:2px 0 0; max-width:46ch}
+  .stage{
+    background:var(--bg2); border:1px solid var(--frame); border-radius:18px;
+    padding:22px; display:flex; justify-content:center;
+  }
+
+  /* ============================================================
+     SHARED MOCK PRIMITIVES (the app card lives on dark ink)
+     ============================================================ */
+  .card{
+    width:100%; max-width:420px; font-family:var(--disp);
+    color:var(--chalk); position:relative;
+  }
+  .k{font-family:var(--mono)}
+  .lifts{list-style:none; margin:0; padding:0}
+
+  /* -- 01 TERMINAL ------------------------------------------------ */
+  .t01{
+    background:#07090a; border:1px solid #1c3a1e; border-radius:12px;
+    padding:0; overflow:hidden; box-shadow:0 0 0 1px #0c1a0d, 0 24px 50px -30px #000;
+  }
+  .t01 .bar{
+    display:flex; align-items:center; gap:7px; padding:9px 12px;
+    background:#0b0f0b; border-bottom:1px solid #17251a;
+  }
+  .t01 .dot{width:9px;height:9px;border-radius:50%;background:#20301f}
+  .t01 .bar .title{margin-left:6px;font-family:var(--mono);font-size:11px;color:#5f7a5c;letter-spacing:.05em}
+  .t01 .body{padding:16px 16px 18px; font-family:var(--mono); font-size:13px; line-height:1.7}
+  .t01 .p{color:#7fdc4e}
+  .t01 .dim{color:#5c7a56}
+  .t01 .hl{color:#dfffb0}
+  .t01 .prog{color:#c6f84f}
+  .t01 .cur{display:inline-block;width:8px;height:15px;background:#c6f84f;vertical-align:-2px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .t01 .run{
+    margin-top:14px; display:inline-block; font-family:var(--mono); font-weight:700;
+    color:#07090a; background:#c6f84f; padding:7px 14px; border-radius:6px; font-size:13px;
+  }
+
+  /* -- 02 EDITORIAL ---------------------------------------------- */
+  .t02{background:var(--ink); border-radius:20px; padding:26px 24px 24px; border:1px solid var(--line)}
+  .t02 .kick{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--sand);margin:0 0 14px}
+  .t02 h3{font-weight:900;font-size:40px;line-height:.9;letter-spacing:-.035em;margin:0 0 18px;text-wrap:balance}
+  .t02 .day{font-family:var(--mono);font-size:13px;color:var(--ash);display:flex;justify-content:space-between;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:16px}
+  .t02 .day b{color:var(--chalk);font-weight:500}
+  .t02 .lift{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0}
+  .t02 .lift .nm{font-weight:600;font-size:15px}
+  .t02 .lift .sc{font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .t02 .go{margin-top:20px;width:100%;border:none;font-family:var(--disp);font-weight:800;font-size:16px;color:var(--ink);background:var(--lime);padding:13px;border-radius:100px;cursor:pointer}
+
+  /* -- 03 PROGRESS RING ------------------------------------------ */
+  .t03{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px;display:flex;gap:20px;align-items:center}
+  .t03 .ring{
+    --pct:14; flex:none; width:112px;height:112px;border-radius:50%;
+    background:conic-gradient(var(--lime) calc(var(--pct)*1%), #23271f 0);
+    display:grid;place-items:center; position:relative;
+  }
+  .t03 .ring::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--card)}
+  .t03 .ring .in{position:relative;text-align:center;line-height:1}
+  .t03 .ring .in .d{font-weight:900;font-size:30px;letter-spacing:-.03em}
+  .t03 .ring .in .of{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:3px}
+  .t03 .col{flex:1;min-width:0}
+  .t03 .col .kick{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);margin:0 0 5px}
+  .t03 .col h3{font-weight:800;font-size:21px;line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
+  .t03 .col .lift{font-size:13.5px;color:var(--ash)}
+  .t03 .col .lift b{color:var(--chalk);font-weight:600}
+  .t03 .col .sc{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-top:2px}
+  .t03 .col .go{margin-top:14px;display:inline-block;font-family:var(--mono);font-weight:700;font-size:12px;color:var(--lime);border:1px solid var(--lime);border-radius:100px;padding:6px 14px;cursor:pointer;background:none}
+
+  /* -- 04 LEFT SPINE --------------------------------------------- */
+  .t04{background:var(--card);border-radius:18px;overflow:hidden;display:flex;border:1px solid var(--line)}
+  .t04 .spine{flex:none;width:64px;background:linear-gradient(180deg,var(--lime),#a6d63f);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:18px 0}
+  .t04 .spine .lab{font-family:var(--mono);font-size:10px;letter-spacing:.2em;writing-mode:vertical-rl;transform:rotate(180deg);font-weight:600;opacity:.75}
+  .t04 .spine .big{font-weight:900;font-size:30px;line-height:1;letter-spacing:-.04em}
+  .t04 .spine .big small{display:block;font-size:11px;font-family:var(--mono);font-weight:500;opacity:.7}
+  .t04 .bd{flex:1;padding:20px}
+  .t04 h3{font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1;margin:0 0 14px}
+  .t04 .lift{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .t04 .lift:first-of-type{border-top:none}
+  .t04 .lift .nm{font-weight:600}.t04 .lift .nm span{font-family:var(--mono);font-size:10px;color:var(--sand);margin-right:6px}
+  .t04 .lift .sc{font-family:var(--mono);font-size:11px;color:var(--ash);white-space:nowrap}
+  .t04 .go{margin-top:14px;width:100%;border:none;background:var(--ink2);color:var(--lime);font-family:var(--mono);font-weight:700;font-size:13px;padding:11px;border-radius:10px;cursor:pointer}
+
+  /* -- 05 STAT TILES --------------------------------------------- */
+  .t05{background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:18px}
+  .t05 .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .t05 .top h3{font-weight:800;font-size:19px;letter-spacing:-.02em;margin:0;max-width:9ch;line-height:1}
+  .t05 .top .go{border:none;background:var(--lime);color:var(--ink);font-weight:800;font-size:13px;padding:8px 16px;border-radius:100px;cursor:pointer;font-family:var(--disp)}
+  .t05 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .t05 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+  .t05 .tile .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:0 0 6px}
+  .t05 .tile .v{font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1}
+  .t05 .tile .v small{font-size:12px;color:var(--ash);font-weight:500;font-family:var(--mono)}
+  .t05 .tile.wide{grid-column:span 3;display:flex;justify-content:space-between;align-items:center}
+  .t05 .tile.wide .v{font-size:15px}
+  .t05 .tile .chip{font-family:var(--mono);font-size:10.5px;color:var(--sand)}
+  .t05 .tile.acc{border-color:color-mix(in srgb,var(--lime) 40%,transparent)}
+  .t05 .tile.acc .v{color:var(--lime)}
+
+  /* -- 06 PERIODIZATION STRIP ------------------------------------ */
+  .t06{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+  .t06 .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .t06 h3{font-weight:800;font-size:20px;letter-spacing:-.02em;margin:0}
+  .t06 .badge{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--sand);padding:3px 8px;border-radius:6px;font-weight:600}
+  .t06 .weeks{display:flex;gap:5px;margin:18px 0 6px}
+  .t06 .wk{flex:1;height:34px;border-radius:5px;background:#22271f;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px}
+  .t06 .wk i{position:absolute;left:0;right:0;bottom:0;border-radius:5px;background:var(--lime);opacity:.5}
+  .t06 .wk.done i{opacity:.9}
+  .t06 .wk.now{outline:2px solid var(--lime);outline-offset:1px}
+  .t06 .wk.now i{opacity:1}
+  .t06 .wk b{position:relative;font-family:var(--mono);font-size:9px;color:var(--ash)}
+  .t06 .wk.now b,.t06 .wk.done b{color:var(--ink)}
+  .t06 .now-line{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .t06 .now-line b{color:var(--chalk);font-weight:500}
+  .t06 .now-line .lift b{color:var(--lime)}
+  .t06 .go{margin-top:14px;width:100%;border:none;background:var(--lime);color:var(--ink);font-weight:800;font-size:15px;padding:12px;border-radius:12px;cursor:pointer;font-family:var(--disp)}
+
+  /* -- 07 LIQUID GLASS ------------------------------------------- */
+  .t07wrap{position:relative;width:100%;max-width:420px;border-radius:24px;padding:16px;overflow:hidden;background:#0b0d0b}
+  .t07wrap::before{content:"";position:absolute;inset:-40%;background:
+     radial-gradient(40% 40% at 20% 20%,rgba(198,248,79,.55),transparent 70%),
+     radial-gradient(40% 40% at 85% 30%,rgba(60,120,126,.6),transparent 70%),
+     radial-gradient(45% 45% at 60% 90%,rgba(201,169,240,.5),transparent 70%);
+     filter:blur(22px)}
+  .t07{position:relative;background:rgba(20,22,20,.55);border:1px solid rgba(243,244,239,.16);border-radius:18px;padding:22px;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+  .t07 .kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(243,244,239,.7);margin:0 0 8px}
+  .t07 h3{font-weight:800;font-size:26px;letter-spacing:-.025em;margin:0 0 4px;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+  .t07 .day{font-family:var(--mono);font-size:12px;color:rgba(243,244,239,.65);margin-bottom:16px}
+  .t07 .glassbar{height:6px;border-radius:100px;background:rgba(255,255,255,.14);overflow:hidden;margin-bottom:16px}
+  .t07 .glassbar i{display:block;width:14%;height:100%;background:var(--lime)}
+  .t07 .lift{display:flex;justify-content:space-between;font-size:13.5px;color:rgba(243,244,239,.85)}
+  .t07 .lift .sc{font-family:var(--mono);font-size:11.5px;color:rgba(243,244,239,.6)}
+  .t07 .go{margin-top:18px;width:100%;border:1px solid rgba(198,248,79,.5);background:rgba(198,248,79,.16);color:var(--lime);font-family:var(--disp);font-weight:700;font-size:15px;padding:12px;border-radius:100px;cursor:pointer;backdrop-filter:blur(6px)}
+
+  /* -- 08 LIFTS FORWARD ------------------------------------------ */
+  .t08{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .t08 .hd{padding:16px 18px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .t08 .hd h3{font-weight:800;font-size:17px;letter-spacing:-.01em;margin:0}
+  .t08 .hd .d{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:2px}
+  .t08 .hd .go{border:none;background:var(--lime);color:var(--ink);font-weight:800;font-size:13px;padding:8px 15px;border-radius:100px;cursor:pointer;font-family:var(--disp)}
+  .t08 .row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #1e211d}
+  .t08 .row:first-child{border-top:none}
+  .t08 .row .tag{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.06em;color:var(--ash);width:22px;flex:none}
+  .t08 .row .nm{flex:1;font-weight:600;font-size:14px}
+  .t08 .row .load{width:88px;flex:none}
+  .t08 .row .load .b{height:5px;border-radius:100px;background:#22271f;overflow:hidden}
+  .t08 .row .load .b i{display:block;height:100%;background:var(--lime)}
+  .t08 .row .load .sc{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:4px;text-align:right}
+  .t08 .row.pm .tag{color:var(--violet)}
+
+  /* -- 09 BOARDING PASS ------------------------------------------ */
+  .t09{width:100%;max-width:420px;background:var(--chalk);color:var(--ink);border-radius:16px;overflow:hidden;font-family:var(--disp);position:relative}
+  .t09 .top{padding:18px 20px;display:flex;justify-content:space-between;align-items:flex-start}
+  .t09 .top .a .l{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:#6b6456;margin:0 0 4px}
+  .t09 .top .a h3{font-weight:900;font-size:24px;line-height:.95;letter-spacing:-.03em;margin:0;max-width:9ch}
+  .t09 .top .seat{text-align:right}
+  .t09 .top .seat .l{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:#6b6456;margin:0}
+  .t09 .top .seat .v{font-weight:900;font-size:22px;font-family:var(--mono);letter-spacing:-.02em}
+  .t09 .perf{border-top:2px dashed #cbc2af;position:relative;margin:4px 12px}
+  .t09 .perf::before,.t09 .perf::after{content:"";position:absolute;top:-9px;width:18px;height:18px;border-radius:50%;background:var(--bg2)}
+  .t09 .perf::before{left:-21px}.t09 .perf::after{right:-21px}
+  .t09 .stub{padding:14px 20px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .t09 .stub .fl{font-family:var(--mono);font-size:11px;color:#4a463c;line-height:1.5}
+  .t09 .stub .fl b{color:var(--ink)}
+  .t09 .stub .go{flex:none;border:none;background:var(--ink);color:var(--lime);font-family:var(--mono);font-weight:700;font-size:13px;padding:10px 16px;border-radius:8px;cursor:pointer}
+
+  /* -- 10 SWISS MINIMAL ------------------------------------------ */
+  .t10{width:100%;max-width:420px;background:#faf7f0;color:#1a1a17;border:1px solid #e4ddcd;border-radius:4px;padding:24px;font-family:var(--disp)}
+  .t10 .top{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:baseline;border-bottom:1px solid #1a1a17;padding-bottom:14px;margin-bottom:14px}
+  .t10 .top h3{grid-column:1;font-weight:700;font-size:23px;letter-spacing:-.02em;margin:0;line-height:1}
+  .t10 .top .n{grid-column:2;grid-row:1/3;text-align:right;font-family:var(--mono);font-size:12px;color:#8a8272;align-self:start}
+  .t10 .top .n b{display:block;font-size:34px;color:#1a1a17;font-weight:500;letter-spacing:-.03em;line-height:.9}
+  .t10 .top .sub{grid-column:1;font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:#8a8272}
+  .t10 .lift{display:grid;grid-template-columns:14px 1fr auto;gap:10px;font-size:13px;padding:3px 0}
+  .t10 .lift .i{font-family:var(--mono);font-size:10px;color:#b0a894}
+  .t10 .lift .nm{font-weight:600}
+  .t10 .lift .sc{font-family:var(--mono);font-size:11px;color:#8a8272;white-space:nowrap}
+  .t10 .foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid #1a1a17}
+  .t10 .foot .note{font-family:var(--mono);font-size:10px;color:#8a8272;max-width:22ch;line-height:1.4}
+  .t10 .foot .go{font-family:var(--disp);font-weight:700;font-size:14px;text-decoration:none;color:#1a1a17;border-bottom:2px solid #c6f84f;padding-bottom:1px}
+
+  /* note chip reused by a few */
+  .note-dash{border:1px dashed var(--line);border-radius:10px;padding:11px 13px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--ash);margin-top:14px}
+  .note-dash b{color:var(--sand)}
+
+  footer{margin-top:64px;border-top:1px solid var(--frame);padding-top:24px;font-family:var(--mono);font-size:12px;color:var(--faint);display:flex;flex-wrap:wrap;gap:8px 20px}
+  footer b{color:var(--muted);font-weight:500}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">HYBRID · Redesign study</p>
+  <h1>Ten ways to open a <em>training day</em>.</h1>
+  <p class="lede">One card, ten treatments. Each is the same plan-day surface from the app —
+     <b>Soviet 8-Week Peaking, day 5 of 37</b> — reworked into a distinct direction, all built on the real brand
+     tokens (Archivo · JetBrains Mono · chartreuse over ink, plus the Aurora spectrum).</p>
+  <div class="meta">
+    <span><b>Source</b> plan-day card</span>
+    <span><b>Palette</b> #0c0d0c · #c6f84f · teal/sand/terracotta/violet</span>
+    <span><b>Type</b> Archivo 900 / JetBrains Mono</span>
+    <span><b>Content</b> real — 5 lifts, live progress</span>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="grid">
+
+    <!-- 01 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#7fdc4e">01</span>
+        <div><h2 class="cname">Terminal</h2>
+        <p class="cwhy">Leans all the way into the mono/CLI voice already hinting in <span class="k">[note]</span>. Training day as a program you run.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t01">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">~/plans/soviet-peaking</span></div>
+        <div class="body">
+          <div><span class="dim">$</span> <span class="hl">hybrid</span> today</div>
+          <div class="p">▸ Soviet 8-Week Peaking</div>
+          <div class="dim">&nbsp;&nbsp;day <span class="prog">05</span>/37 &nbsp;[<span class="prog">██</span><span class="dim">░░░░░░░░░░░░░░</span>] 14%</div>
+          <div style="margin-top:8px"><span class="dim">AM</span> Power Snatch <span class="hl">60%×3×3 70%×3×4</span></div>
+          <div class="dim">&nbsp;&nbsp;+4 more lifts &nbsp;·&nbsp; following as written</div>
+          <div><span class="dim">$</span> <span class="cur"></span></div>
+          <span class="run">▸ run session</span>
+        </div>
+      </div></div></div>
+    </section>
+
+    <!-- 02 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#d0cd94">02</span>
+        <div><h2 class="cname">Editorial</h2>
+        <p class="cwhy">The plan name is the whole point — set it like a magazine cover and let structure fall away.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t02">
+        <p class="kick">Week 1 · Peaking block</p>
+        <h3>Soviet 8-Week Peaking</h3>
+        <div class="day"><span>DAY <b>05</b> / 37</span><span>13.5% complete</span></div>
+        <ul class="lifts">
+          <li class="lift"><span class="nm">Power Snatch</span><span class="sc">60%×3×3, 70%×3×4</span></li>
+          <li class="lift"><span class="nm">Clean &amp; Jerk</span><span class="sc">70%×2×4, 75%×2×3</span></li>
+          <li class="lift"><span class="nm">Back Squat</span><span class="sc">75%×3×3</span></li>
+          <li class="lift"><span class="nm">Snatch Pull</span><span class="sc">90%×3×3</span></li>
+          <li class="lift"><span class="nm">Front Squat</span><span class="sc">70%×3×4</span></li>
+        </ul>
+        <button class="go">Start today →</button>
+      </div></div></div>
+    </section>
+
+    <!-- 03 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#c6f84f">03</span>
+        <div><h2 class="cname">Progress ring</h2>
+        <p class="cwhy">Swaps the thin linear bar for a ring that makes 5/37 the hero — where you are in the block, at a glance.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t03">
+        <div class="ring"><div class="in"><div class="d">05</div><div class="of">/ 37</div></div></div>
+        <div class="col">
+          <p class="kick">Today · AM</p>
+          <h3>Soviet 8-Week Peaking</h3>
+          <div class="lift"><b>Power Snatch</b> · +4 lifts</div>
+          <div class="sc">60%×3×3, 70%×3×4</div>
+          <button class="go">Start →</button>
+        </div>
+      </div></div></div>
+    </section>
+
+    <!-- 04 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#3c787e">04</span>
+        <div><h2 class="cname">Left spine</h2>
+        <p class="cwhy">A colored rail carries the day count vertically; the body is a clean, scannable lift list.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t04">
+        <div class="spine">
+          <span class="lab">Soviet peaking</span>
+          <span class="big">05<small>/37</small></span>
+          <span class="lab">Day</span>
+        </div>
+        <div class="bd">
+          <h3>Today</h3>
+          <div class="lift"><span class="nm"><span>AM</span>Power Snatch</span><span class="sc">60×3×3 · 70×3×4</span></div>
+          <div class="lift"><span class="nm"><span>AM</span>Clean &amp; Jerk</span><span class="sc">70×2×4</span></div>
+          <div class="lift"><span class="nm"><span>AM</span>Back Squat</span><span class="sc">75×3×3</span></div>
+          <div class="lift"><span class="nm"><span>PM</span>Snatch Pull</span><span class="sc">90×3×3</span></div>
+          <div class="lift"><span class="nm"><span>PM</span>Front Squat</span><span class="sc">70×3×4</span></div>
+          <button class="go">▸ Start session</button>
+        </div>
+      </div></div></div>
+    </section>
+
+    <!-- 05 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#c9a9f0">05</span>
+        <div><h2 class="cname">Stat tiles</h2>
+        <p class="cwhy">Reads like a dashboard, not a paragraph: day, lifts, top set and total volume broken into glanceable tiles.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t05">
+        <div class="top"><h3>Soviet 8-Week Peaking</h3><button class="go">Start →</button></div>
+        <div class="tiles">
+          <div class="tile"><p class="l">Day</p><p class="v">05<small>/37</small></p></div>
+          <div class="tile"><p class="l">Lifts</p><p class="v">5</p></div>
+          <div class="tile acc"><p class="l">Top set</p><p class="v">70<small>%</small></p></div>
+          <div class="tile wide"><span class="v">Power Snatch</span><span class="chip">60%×3×3 · 70%×3×4</span></div>
+          <div class="tile wide"><span class="v" style="font-size:13px;color:var(--ash)">Following as written</span><span class="chip" style="color:var(--violet)">Unlock Full → auto-adjust</span></div>
+        </div>
+      </div></div></div>
+    </section>
+
+    <!-- 06 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#d56f3e">06</span>
+        <div><h2 class="cname">8-week strip</h2>
+        <p class="cwhy">Foregrounds the periodization: eight bars, rising intensity, today pinned inside week one.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t06">
+        <div class="hd"><h3>Soviet Peaking</h3><span class="badge">PEAK BLOCK</span></div>
+        <div class="weeks">
+          <div class="wk now"><i style="height:38%"></i><b>1</b></div>
+          <div class="wk"><i style="height:46%"></i><b>2</b></div>
+          <div class="wk"><i style="height:54%"></i><b>3</b></div>
+          <div class="wk"><i style="height:62%"></i><b>4</b></div>
+          <div class="wk"><i style="height:72%"></i><b>5</b></div>
+          <div class="wk"><i style="height:84%"></i><b>6</b></div>
+          <div class="wk"><i style="height:96%"></i><b>7</b></div>
+          <div class="wk"><i style="height:55%"></i><b>8</b></div>
+        </div>
+        <div class="now-line"><span>DAY <b>05</b> / 37</span><span class="lift">AM · <b>Power Snatch</b></span></div>
+        <button class="go">Start today</button>
+      </div></div></div>
+    </section>
+
+    <!-- 07 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#c6f84f">07</span>
+        <div><h2 class="cname">Liquid Glass</h2>
+        <p class="cwhy">The app's frosted direction: a translucent card floating over an Aurora-spectrum bloom.</p></div>
+      </div>
+      <div class="stage"><div class="t07wrap"><div class="t07">
+        <p class="kick">Today · AM</p>
+        <h3>Soviet 8-Week Peaking</h3>
+        <p class="day">Day 05 / 37 · peaking block</p>
+        <div class="glassbar"><i></i></div>
+        <div class="lift"><span>Power Snatch <span style="opacity:.6">+4</span></span><span class="sc">60%×3×3</span></div>
+        <button class="go">Start →</button>
+      </div></div></div>
+    </section>
+
+    <!-- 08 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#7fdc4e">08</span>
+        <div><h2 class="cname">Lifts forward</h2>
+        <p class="cwhy">Skips the "show all 5" tap — every lift is visible with its own load meter, AM/PM color-coded.</p></div>
+      </div>
+      <div class="stage"><div class="card"><div class="t08">
+        <div class="hd"><div><h3>Soviet 8-Week Peaking</h3><div class="d">day 05 / 37 · 5 lifts</div></div><button class="go">Start →</button></div>
+        <div class="row"><span class="tag">AM</span><span class="nm">Power Snatch</span><div class="load"><div class="b"><i style="width:70%"></i></div><div class="sc">60–70%</div></div></div>
+        <div class="row"><span class="tag">AM</span><span class="nm">Clean &amp; Jerk</span><div class="load"><div class="b"><i style="width:75%"></i></div><div class="sc">70–75%</div></div></div>
+        <div class="row"><span class="tag">AM</span><span class="nm">Back Squat</span><div class="load"><div class="b"><i style="width:75%"></i></div><div class="sc">75%</div></div></div>
+        <div class="row pm"><span class="tag">PM</span><span class="nm">Snatch Pull</span><div class="load"><div class="b"><i style="width:90%"></i></div><div class="sc">90%</div></div></div>
+        <div class="row pm"><span class="tag">PM</span><span class="nm">Front Squat</span><div class="load"><div class="b"><i style="width:70%"></i></div><div class="sc">70%</div></div></div>
+      </div></div></div>
+    </section>
+
+    <!-- 09 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#d0cd94">09</span>
+        <div><h2 class="cname">Boarding pass</h2>
+        <p class="cwhy">A day is a scheduled departure. Perforated stub, seat = day number, tear-off Start.</p></div>
+      </div>
+      <div class="stage"><div class="t09">
+        <div class="top">
+          <div class="a"><p class="l">SESSION · AM</p><h3>Soviet 8-Week Peaking</h3></div>
+          <div class="seat"><p class="l">DAY</p><p class="v">05</p></div>
+        </div>
+        <div class="perf"></div>
+        <div class="stub">
+          <div class="fl"><b>Power Snatch</b> 60%×3×3, 70%×3×4<br>+4 lifts · gate 37 · following as written</div>
+          <button class="go">START ▸</button>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- 10 -->
+    <section class="concept">
+      <div class="chead"><span class="num" style="--c:#3c787e">10</span>
+        <div><h2 class="cname">Swiss minimal</h2>
+        <p class="cwhy">Strict grid, hairline rules, one accent underline. Everything earns its place; nothing shouts.</p></div>
+      </div>
+      <div class="stage"><div class="t10">
+        <div class="top">
+          <h3>Soviet 8-Week Peaking</h3>
+          <div class="n">DAY<b>05</b>/37</div>
+          <div class="sub">Peaking block · AM + PM</div>
+        </div>
+        <div class="lift"><span class="i">01</span><span class="nm">Power Snatch</span><span class="sc">60%×3×3, 70%×3×4</span></div>
+        <div class="lift"><span class="i">02</span><span class="nm">Clean &amp; Jerk</span><span class="sc">70%×2×4, 75%×2×3</span></div>
+        <div class="lift"><span class="i">03</span><span class="nm">Back Squat</span><span class="sc">75%×3×3</span></div>
+        <div class="lift"><span class="i">04</span><span class="nm">Snatch Pull</span><span class="sc">90%×3×3</span></div>
+        <div class="lift"><span class="i">05</span><span class="nm">Front Squat</span><span class="sc">70%×3×4</span></div>
+        <div class="foot"><p class="note">Following as written. Unlock Full to auto-adjust loads.</p><a href="#" class="go">Start →</a></div>
+      </div></div>
+    </section>
+
+  </div>
+
+  <footer>
+    <span><b>10 concepts</b> · one plan-day card</span>
+    <span><b>tokens</b> packages/core/src/theme/tokens.ts</span>
+    <span><b>note</b> real content, live progress, brand palette throughout</span>
+  </footer>
+</div>
+
+<script>
+  // honor the viewer's theme toggle if the host stamps data-theme
+  (function(){
+    try{
+      var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+    }catch(e){}
+  })();
+</script>
