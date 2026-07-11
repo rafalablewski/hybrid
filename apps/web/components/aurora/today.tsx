@@ -200,17 +200,27 @@ export default function AuroraToday({
           eyebrow: the screen is already today's training and the plan names
           itself — the interface shouldn't narrate what the athlete can see. */}
       <div data-tour="today-plan" style={{ ...card }}>
-          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
-            <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
-              {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
-              <button
-                onClick={() => onStart(plan ? plan.blocks : isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
-                style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
-              >
-                {t("w.home.today.start")}
-              </button>
-            </div>
-          </div>
+          {(() => {
+            // On a plan, Start becomes the full-width action BELOW the note; the
+            // top row then carries only the readiness ring (athlete). Other
+            // states keep the compact top-right Start.
+            const showRing = isAthlete && (hasData || plan || phase);
+            const showTopStart = !plan;
+            if (!showRing && !showTopStart) return null;
+            return (
+              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
+                {showRing ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
+                {showTopStart && (
+                  <button
+                    onClick={() => onStart(isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
+                    style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
+                  >
+                    {t("w.home.today.start")}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           {plan ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
@@ -227,7 +237,7 @@ export default function AuroraToday({
               {(() => {
                 const rows = plan.rows;
                 const many = rows.length > 1;
-                const TEASER = 3; // first clear + up to two frosted
+                const TEASER = 4; // first clear + up to three frosted
                 const shown = liftsOpen ? rows : rows.slice(0, TEASER);
                 return (
                   <>
@@ -244,7 +254,7 @@ export default function AuroraToday({
                         })}
                       </div>
                       {many && !liftsOpen && (
-                        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 72, display: "flex", justifyContent: "center", alignItems: "flex-end", background: `linear-gradient(transparent, ${C("ink2")})`, pointerEvents: "none" }}>
+                        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 96, display: "flex", justifyContent: "center", alignItems: "flex-end", background: `linear-gradient(transparent, ${C("ink2")})`, pointerEvents: "none" }}>
                           <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ pointerEvents: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
                             {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
                           </button>
@@ -267,6 +277,13 @@ export default function AuroraToday({
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--lime-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
                 </button>
               )}
+              {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
+              <button
+                onClick={() => onStart(plan.blocks)}
+                style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
+              >
+                {t("w.home.today.start")}
+              </button>
             </>
           ) : isAthlete && (hasData || phase) ? (
             // PREMIUM only — the real readiness-driven AI prescription. Casual
