@@ -20,9 +20,9 @@ import { LinearGradient } from "expo-linear-gradient";
 // Theme picker swatches — a mini colour preview per template (shared shape with
 // web's Preferences). system = mixed, Aurora = dark/lime, Japandi = warm/clay.
 const THEME_SWATCHES: { id: ThemePref; label: string; colors: [string, string, string] }[] = [
-  { id: "system", label: "System", colors: ["#0a0b09", "#efeee7", "#8a8f82"] },
-  { id: "dark", label: "Aurora", colors: ["#0a0b09", "#c6f135", "#8a8f82"] },
-  { id: "light", label: "Japandi", colors: ["#efeee7", "#a9d426", "#63665c"] },
+  { id: "system", label: "System", colors: ["#0c0d0c", "#eae3d4", "#8b8f86"] },
+  { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
+  { id: "light", label: "Japandi", colors: ["#eae3d4", "#a4543a", "#5f6d4b"] },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },

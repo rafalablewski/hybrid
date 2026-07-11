@@ -72,19 +72,6 @@ const GROUP_LABEL: Record<NavGroup, string> = {
   home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", social: "Social", teams: "Teams & coaching", account: "Account",
 };
 
-// Per-area glyph + accent — the Spectrum coding (Train=chartreuse, Analyze=teal,
-// Recovery=sand, Social=violet, Teams=terracotta) so the seven cards read at a
-// glance by colour, not just text.
-const GROUP_META: Record<NavGroup, { icon: AuroraIconName; ck: keyof Palette }> = {
-  home: { icon: "village", ck: "lime" },
-  train: { icon: "list-check", ck: "lime" },
-  analyze: { icon: "search", ck: "blue" },
-  recovery: { icon: "check-circle", ck: "amber" },
-  social: { icon: "share", ck: "violet" },
-  teams: { icon: "user-square", ck: "red" },
-  account: { icon: "user-circle", ck: "ash" },
-};
-
 type HubItem = { id: string; label: string; icon: AuroraIconName; href: Href | null; locked: boolean };
 
 export default function More() {
@@ -234,11 +221,9 @@ export default function More() {
         </View>
 
         {filteredAreas.map(({ group, items }) => {
-          const accent = C[GROUP_META[group].ck] as string;
           return (
             <View key={group} style={{ marginTop: 20 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <View style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: accent }} />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
                 <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{items.length}</Text>
               </View>
