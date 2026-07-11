@@ -8,7 +8,7 @@ import {
 import { fs, space, F } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
@@ -63,7 +63,10 @@ export default function AuroraTalent() {
   return (
     <AuroraScreen>
       {/* Eyebrow cut — "Talent graph" just named the screen; the heading leads. */}
-      <AHeading style={{ fontSize: fs.display }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
+      </View>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>

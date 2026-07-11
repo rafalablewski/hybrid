@@ -2,10 +2,10 @@ import { View, Text } from "react-native";
 import { REST_SECONDS_CHOICES, type LoggerPrefs } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { fs, F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { GlassToggle } from "../glass-toggle";
-import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
 type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
 
@@ -48,7 +48,10 @@ export default function AuroraLoggerSettings() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: 28 }}>{t("loggerPrefs.title")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
+        <ABack />
+        <AHeading style={{ fontSize: 28 }}>{t("loggerPrefs.title")}</AHeading>
+      </View>
       <ASub style={{ marginTop: 8 }}>{t("loggerPrefs.intro")}</ASub>
 
       {/* Behaviour toggles */}

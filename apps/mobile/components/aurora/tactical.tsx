@@ -5,7 +5,7 @@ import { fetchState, type StateSnapshot } from "../../lib/api";
 import { fs, space, F } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const num = (s: string, d: number) => {
@@ -51,7 +51,10 @@ export default function AuroraTactical() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>{t("w.teams.tactical.deploymentReadiness")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("w.teams.tactical.deploymentReadiness")}</AHeading>
+      </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>
         {t("w.teams.tactical.headerBody")}
       </Text>
