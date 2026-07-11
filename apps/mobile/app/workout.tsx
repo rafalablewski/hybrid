@@ -110,7 +110,7 @@ Notifications.setNotificationHandler({
 
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; role?: SetRole; rest?: number };
+type WSet = { uid: string; reps: string; load: string; rpe: string; vel?: string; done: boolean; drop?: boolean; role?: SetRole; rest?: number };
 
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
@@ -698,6 +698,7 @@ export default function Workout() {
             load: s.load.trim(),
             reps: s.reps.trim(),
             ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
+            ...(s.vel?.trim() ? { vel: s.vel.trim() } : {}),
             ...(s.drop ? { drop: true } : {}),
             ...(s.role ? { role: s.role } : {}),
             ...(s.rest != null ? { rest: s.rest } : {}),
@@ -977,6 +978,7 @@ export default function Workout() {
                   <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
                   <ColHead>REPS</ColHead>
                   {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
+                  {prefs.detailed && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />
                   <View style={{ width: 40 }} />
                 </View>
@@ -1000,6 +1002,7 @@ export default function Workout() {
                     <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
+                    {prefs.detailed && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
                     <View style={{ width: 22, justifyContent: "center" }}>
                       <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={12} style={{ alignItems: "center" }}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === 0 ? C.line : C.ash }}>↑</Text>
