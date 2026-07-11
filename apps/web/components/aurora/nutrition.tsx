@@ -145,15 +145,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             { k: "fat", label: t("w.recovery.nutrition.fat"), unit: "g", color: C("amber"), max: 50 },
           ] as const).map((tile) => {
             const raw = f[tile.k];
-            const pct = Math.min(100, (Math.max(0, parseFloat(raw) || 0) / tile.max) * 100);
             return (
-              <div key={tile.k} style={{ position: "relative", overflow: "hidden", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px 15px" }}>
+              <div key={tile.k} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "11px 13px 12px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
                   <span style={{ width: 9, height: 9, borderRadius: 3, background: tile.color }} />{tile.label}
                 </div>
-                <input value={raw} onChange={(e) => setF((s) => ({ ...s, [tile.k]: e.target.value }))} inputMode="numeric" placeholder="0" aria-label={tile.label} style={{ width: "100%", boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 38, letterSpacing: "-.03em", padding: "6px 0 0" }} />
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{tile.unit}</div>
-                <div style={{ position: "absolute", left: 0, bottom: 0, height: 4, width: `${pct}%`, background: tile.color, transition: "width .3s ease" }} />
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+                  <input value={raw} onChange={(e) => setF((s) => ({ ...s, [tile.k]: e.target.value }))} inputMode="numeric" placeholder="0" aria-label={tile.label} style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }} />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), flex: "none" }}>{tile.unit}</span>
+                </div>
               </div>
             );
           })}
@@ -162,13 +162,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
           return macroKcal > 0 ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</div> : null;
         })()}
-        <button onClick={add} disabled={saving} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 9, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 0, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><span aria-hidden style={{ fontSize: 18, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
-        {/* Scan label — AI vision, Full only (free → upgrade) */}
-        <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: full ? "transparent" : C("violet"), border: `1px solid ${full ? `color-mix(in srgb, ${C("violet")} 50%, transparent)` : C("violet")}`, borderRadius: 0, padding: 13, cursor: scanning ? "default" : "pointer", color: full ? "var(--violet-text)" : C("ink"), fontWeight: full ? 700 : 800, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
-          {!full && <AuroraIcon name="lock" size={13} strokeWidth={2.2} color={C("ink")} />}
-          {scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
-          {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", border: `1px solid color-mix(in srgb, ${C("ink")} 35%, transparent)`, color: C("ink"), borderRadius: 999, padding: "2px 7px" }}>{t("w.account.settings.full")}</span>}
-        </button>
+        {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+          <button onClick={add} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, whiteSpace: "nowrap" }}><span aria-hidden style={{ fontSize: 17, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: full ? "transparent" : C("violet"), border: `1px solid ${full ? `color-mix(in srgb, ${C("violet")} 50%, transparent)` : C("violet")}`, borderRadius: 999, padding: "14px 12px", cursor: scanning ? "default" : "pointer", color: full ? "var(--violet-text)" : C("ink"), fontWeight: full ? 700 : 800, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1, whiteSpace: "nowrap" }}>
+            {!full && <AuroraIcon name="lock" size={12} strokeWidth={2.2} color={C("ink")} />}
+            {scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
+          </button>
+        </div>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file); e.target.value = ""; }} />
         {mealMsg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}>✓ {mealMsg}</div>}
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
