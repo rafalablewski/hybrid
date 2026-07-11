@@ -61,7 +61,7 @@ export default function AuroraProfile() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const { name, email, role, entitlement, createdYear } = useIdentity();
+  const { name, email, entitlement, createdYear } = useIdentity();
   const prefs = useLoggerPrefs();
   // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
   const showHpi = canSeeHPI(usePersona());
@@ -257,9 +257,10 @@ export default function AuroraProfile() {
         {!!bioText && (
           <Text style={{ fontFamily: F.reg, fontSize: 13.5, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: bioText ? 6 : 0 }}>
-          HYBRID ID · {athleteId(email || name || "")} · {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {createdYear}
-        </Text>
+        <View style={{ marginTop: bioText ? 6 : 0, gap: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>HYBRID ID · {athleteId(email || name || "")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, opacity: 0.75 }}>{t("w.account.profile.member-since")} {createdYear}</Text>
+        </View>
       </View>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}

@@ -77,7 +77,6 @@ export default function AuroraProfile({
   const email = session?.email ?? "";
   const paid = entitlement === "paid";
   const tier = paid ? "FULL" : "FREE";
-  const role = session?.role ?? "client";
 
   const go = (screen: string, route: string) => () => (onNavigate ? onNavigate(screen) : router.push(route));
 
@@ -265,8 +264,9 @@ export default function AuroraProfile({
       {/* BIO + quiet HYBRID ID line. */}
       <div style={{ marginTop: 7, padding: "0 4px" }}>
         {!!bioText && <div style={{ fontSize: 13.5, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".02em" }}>
-          HYBRID ID · {athleteId} · {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {memberSince}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".02em", lineHeight: 1.6 }}>
+          <div>HYBRID ID · {athleteId}</div>
+          <div style={{ opacity: 0.75 }}>{t("w.account.profile.member-since")} {memberSince}</div>
         </div>
       </div>
 
