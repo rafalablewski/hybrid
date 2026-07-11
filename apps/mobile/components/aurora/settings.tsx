@@ -319,7 +319,7 @@ export default function AuroraSettings() {
     <AuroraScreen>
       <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
       {/* Profile header — tappable → Edit profile, with a completeness ring
-          around the avatar (a lime ring + a proportional bar, since RN has no
+          around the avatar (a clay accent ring + a proportional bar, since RN has no
           inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
           and quick-action chips. Shared completeness math with web. */}
       <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>

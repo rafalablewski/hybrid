@@ -603,7 +603,7 @@ export default function AccountSettings() {
           <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</h2>
 
           {/* Profile header — shared anatomy with mobile: a bordered row card with a
-              rounded-square lime-gradient initial avatar, name + email, role/provider
+              rounded-square accent-gradient initial avatar, name + email, role/provider
               pills under the name, and the membership FREE/FULL pill pinned right. */}
           <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
             {/* Tappable identity row → opens Edit profile. The avatar is wrapped

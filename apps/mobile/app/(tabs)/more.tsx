@@ -22,7 +22,7 @@ import { useTemplate } from "../../lib/template";
 // straight to that feature; the search field filters tiles by label. The tool set
 // AND its gating come from the SHARED nav model (groupedNavWithLocks) — the exact
 // same source the web menu uses, so the two clients can't drift. Premium (Full)
-// tools a free user hasn't unlocked wear a lime LOCK badge and route to /upgrade;
+// tools a free user hasn't unlocked wear a premium (violet) LOCK badge and route to /upgrade;
 // tools that only exist on the web app show a small blue dot and open the web app.
 
 // Mobile route for each nav id. Ids the user has access to but that AREN'T here
