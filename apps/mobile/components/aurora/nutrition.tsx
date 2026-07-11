@@ -143,9 +143,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: fs.subtitle, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
         </Pressable>
         {/* Scan label — AI vision, Full only (free → upgrade) */}
-        <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: full ? C.line : `${C.violet}3d`, backgroundColor: full ? "transparent" : `${C.violet}12`, opacity: scanning ? 0.6 : 1 }}>
-          <Text style={{ fontSize: 15 }}>{full ? "📷" : "🔒"}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: full ? C.chalk : txt(C, C.violet) }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
+        <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, paddingVertical: 13, borderRadius: 0, borderWidth: 1, borderColor: full ? `${C.violet}80` : C.violet, backgroundColor: full ? "transparent" : C.violet, opacity: scanning ? 0.6 : 1 }}>
+          {!full && <AuroraIcon name="lock" size={13} color={C.ink} />}
+          <Text style={{ fontFamily: F.bold, fontWeight: full ? "700" : "800", fontSize: fs.caption, color: full ? txt(C, C.violet) : C.ink }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
+          {!full && <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", borderWidth: 1, borderColor: `${C.ink}59`, color: C.ink, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 }}>{t("w.account.settings.full")}</Text>}
         </Pressable>
         {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {mealMsg}</Text> : null}
 
