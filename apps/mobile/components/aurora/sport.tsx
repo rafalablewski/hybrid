@@ -104,7 +104,7 @@ export default function AuroraSport() {
                 backgroundColor: on ? C.lime : C.ink2,
               }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.ink : C.ash }}>{l}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.onAccent : C.ash }}>{l}</Text>
             </Pressable>
           );
         })}
@@ -126,7 +126,7 @@ export default function AuroraSport() {
         onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
         style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
       </Pressable>
 
       <ACard style={{ marginBottom: 12 }}>

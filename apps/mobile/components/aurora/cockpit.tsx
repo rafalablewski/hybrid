@@ -184,7 +184,7 @@ function Full() {
                 <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.home.today.yourWeek")}</Text>
               </View>
-              {recap.prs.length > 0 && <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.ink }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View>}
+              {recap.prs.length > 0 && <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View>}
             </View>
             <View style={{ flexDirection: "row", marginTop: 14 }}>
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} /></View>
@@ -295,7 +295,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
           const on = x.id === tab;
           return (
             <Pressable key={x.id} onPress={() => setTab(x.id)} style={{ flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: RADIUS.pill, backgroundColor: on ? C.chalk : "transparent" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.ink : C.ash }}>{x.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>{x.label}</Text>
             </Pressable>
           );
         })}

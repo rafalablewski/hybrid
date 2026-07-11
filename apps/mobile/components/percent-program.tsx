@@ -126,7 +126,7 @@ export default function PercentProgram({
             view.weeks.map((w) => (
               <Pressable key={w} onPress={() => setWeek(w)}>
                 <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.ink : C.chalk }}>{t("plans.wkShort")} {w}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.onAccent : C.chalk }}>{t("plans.wkShort")} {w}</Text>
                 </View>
               </Pressable>
             ))}
@@ -142,7 +142,7 @@ export default function PercentProgram({
       </View>
 
       <Pressable onPress={enroll} disabled={state === "busy" || state === "done"} style={{ marginTop: 6, backgroundColor: state === "done" ? C.ink2 : C.lime, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: state === "done" ? C.lime : C.ink }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: state === "done" ? C.lime : C.onAccent }}>
           {state === "busy" ? "Enrolling…" : state === "done" ? "✓ Enrolled" : `Enroll in ${plan.name}`}
         </Text>
       </Pressable>

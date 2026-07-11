@@ -99,7 +99,7 @@ export default function AuroraGlobalNav() {
         {/* Icon-only bar — the accessibilityLabel names the destination for
             screen readers; the active pill (chalk) marks the current tab. */}
         <View style={{ width: 46, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-          <AuroraIcon name={tab.glyph} size={23} color={focused ? C.ink : C.ash} />
+          <AuroraIcon name={tab.glyph} size={23} color={focused ? C.onAccent : C.ash} />
         </View>
       </Pressable>
     );

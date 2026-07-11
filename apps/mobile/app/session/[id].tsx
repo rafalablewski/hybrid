@@ -230,7 +230,7 @@ export default function SessionDetail() {
           onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
           style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.share")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.share")}</Text>
         </Pressable>
       </>
     </>,

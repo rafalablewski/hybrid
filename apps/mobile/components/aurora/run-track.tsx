@@ -92,7 +92,7 @@ export default function AuroraRunTrack() {
         </View>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
           <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: running ? "#12170f" : C.onAccent }}>{running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}</Text>
           </Pressable>
           <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.reset")}</Text>

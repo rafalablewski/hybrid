@@ -169,7 +169,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
             <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{saving ? "…" : t("quickSport.log")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("quickSport.log")}</Text>
             </Pressable>
           </View>
           {(pace || msg) && (
