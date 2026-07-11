@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { feedCardView } from "@hybrid/core";
 
-// The CONNECT feed — full-width post cards (avatar header · prose body · stat
-// pills · kudos/comments/share), the latest few of your circle's activity.
+// The CONNECT feed — full-width post cards (avatar header, prose body, stat
+// pills, kudos/comments/share), the latest few of your circle's activity.
 // Pulls /api/social/feed; tapping any card opens the full Feed. Renders nothing
 // when the feed is empty so it never clutters Today. Mirrored on mobile.
 
@@ -16,7 +16,7 @@ function initials(name?: string | null, handle?: string) {
   return (p.length >= 2 ? p[0]![0]! + p[1]![0]! : s.slice(0, 2)).toUpperCase();
 }
 
-interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; detail: string; when: string; kudos: number; comments: number; accent: string }
+interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
 
 export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
   const [feed, setFeed] = useState<Item[] | null>(null);
@@ -56,7 +56,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // Loaded + genuinely empty → render nothing so Today stays uncluttered.
   if (feed.length === 0) return null;
 
-  // X / Twitter-style post — avatar left; name ✓ @handle · time inline; prose;
+  // X / Twitter-style post — avatar left; name ✓ @handle, time inline; prose;
   // an optional attached-content card; a reply/repost/like/share row.
   const postStyle = horizontal
     ? { ...cardWidth, display: "flex", gap: 12, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 14, cursor: "pointer", color: C("chalk") }
@@ -75,19 +75,29 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
               ) : initials(a.displayName, a.handle)}
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              {/* header line — name · verified · @handle · time */}
+              {/* header line — name, verified, @handle, time */}
               <span style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 14 }}>
                 <span style={{ fontWeight: 800 }}>{v.name}</span>
                 {a.coachVerified && <span style={{ color: "var(--lime-text)", fontSize: 12 }}>✓</span>}
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle} · ` : ""}{v.meta}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle}  ` : ""}{v.when}</span>
               </span>
 
               {/* body prose */}
               {v.body && <span style={{ display: "block", fontSize: 14, lineHeight: 1.45, marginTop: 2 }}>{it.kind === "pr" ? "🏆 " : ""}{v.body}</span>}
 
-              {/* attached content — session/PR stats as one quiet card */}
-              {v.chips.length > 0 && (
-                <span style={{ display: "block", border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>{v.chips.join("  ·  ")}</span>
+              {/* attached content — the session/PR summary: a lead line + stat
+                  pills (each chip its own element, never a ·-joined string) */}
+              {(v.lead || v.chips.length > 0) && (
+                <span style={{ display: "block", border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginTop: 10 }}>
+                  {v.lead && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600, color: C("chalk") }}>{v.lead}</span>}
+                  {v.chips.length > 0 && (
+                    <span style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: v.lead ? 8 : 0 }}>
+                      {v.chips.map((c, i) => (
+                        <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{c}</span>
+                      ))}
+                    </span>
+                  )}
+                </span>
               )}
 
               {/* action row */}

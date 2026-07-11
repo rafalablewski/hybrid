@@ -208,13 +208,14 @@ export function formatStep(step: PercentStep, oneRm?: number | null): string {
   const reps = step.plus ? `${step.reps}+${step.plus}` : `${step.reps}`;
   const base = `${load}×${reps}${step.sets > 1 ? `×${step.sets}` : ""}`;
   const kg = stepKg(step, oneRm);
-  return kg != null ? `${base} · ${kg}kg` : base;
+  return kg != null ? `${base} (${kg}kg)` : base;
 }
 
-/** Format a lift's whole ramped prescription, joining steps with " · ". */
+/** Format a lift's whole ramped prescription, joining ramp steps with a comma
+ *  (a sequence of working sets — no middot separators). */
 export function formatLift(lift: PlanLift, maxes?: Record<string, number>): string {
   const oneRm = lift.ref ? maxes?.[lift.ref] : undefined;
-  return lift.steps.map((s) => formatStep(s, oneRm)).join(" · ");
+  return lift.steps.map((s) => formatStep(s, oneRm)).join(", ");
 }
 
 // ============================================================
@@ -397,21 +398,21 @@ export function dayContentSummary(day: ProgramDayView): string | null {
   const parts: string[] = [];
   if (runs) parts.push(`${runs} run${runs === 1 ? "" : "s"}`);
   if (gym) parts.push(`${gym} lift${gym === 1 ? "" : "s"}`);
-  return parts.join(" · ") || null;
+  return parts.join(", ") || null;
 }
 
 /** Format a hypertrophy (or prose) entry's prescription.
  *  Structured hypo entries → "4×6 · 80 kg · @9" (or without kg when unknown).
  *  Prose entries (endurance / conditioning) → detail string unchanged. */
 function formatEntry(e: PlanEntry, maxes?: Record<string, number>): string {
-  if (e.scheme != null) return e.rpe != null ? `${e.scheme} · @${e.rpe}` : e.scheme;
+  if (e.scheme != null) return e.rpe != null ? `${e.scheme} @${e.rpe}` : e.scheme;
   if (e.sets == null) return e.detail;
   const reps = e.reps === "AMRAP" ? "AMRAP" : `${e.reps ?? ""}`;
   const parts: string[] = [`${e.sets}×${reps}`];
   const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;
   if (kg) parts.push(`${kg} kg`);
   if (e.rpe != null) parts.push(`@${e.rpe}`);
-  return parts.join(" · ");
+  return parts.join(" ");
 }
 
 /** Render-ready per-step breakdown for a strength-percent lift — the load token
@@ -435,7 +436,7 @@ function liftNote(lift: PlanLift): string | null {
   const bits: string[] = [];
   if (lift.complexWith) bits.push(`+ ${lift.complexWith}`);
   if (lift.tempo) bits.push(lift.tempo);
-  return bits.length ? bits.join(" · ") : null;
+  return bits.length ? bits.join(", ") : null;
 }
 
 function kindLabelFor(program: PlanProgram, kind: PlanDayKind): string | null {

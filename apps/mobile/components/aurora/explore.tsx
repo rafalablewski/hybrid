@@ -1,23 +1,16 @@
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import { PLAN_PREVIEWS } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
 
 type P = ReturnType<typeof useTheme>["palette"];
-
-// The shipped plan library, previewed on Explore (all free to follow; tapping a
-// card opens the full Plans screen). Names are proper nouns (not translated).
-const PLANS_PREVIEW: { emoji: string; name: string; meta: string; tint: "lime" | "blue" | "violet" | "amber" }[] = [
-  { emoji: "🏋️", name: "Soviet 8-Week Peaking", meta: "Olympic weightlifting · 8 wk", tint: "lime" },
-  { emoji: "🏃", name: "Hansons 5K", meta: "Running · 9 wk", tint: "blue" },
-  { emoji: "💪", name: "6-Day PPL", meta: "Bodybuilding · hypertrophy", tint: "violet" },
-  { emoji: "🔔", name: "12-Week Kettlebell", meta: "Kettlebell · strength", tint: "amber" },
-];
 
 /**
  * AURORA Explore — the discovery surface for the Explore tab: search, a coach
@@ -55,18 +48,18 @@ export default function AuroraExplore() {
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} action={t("w.explore.all")} onAction={() => router.push("/(tabs)/plans")} />
       <View style={{ gap: 10 }}>
-        {PLANS_PREVIEW.map((p) => (
+        {PLAN_PREVIEWS.map((p) => (
           <Pressable
-            key={p.name}
+            key={p.plan.id}
             onPress={() => router.push("/(tabs)/plans")}
             style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: `${C[p.tint]}22`, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+            <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: `${p.color}22`, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 22, color: p.color }}>{p.icon}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{p.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.meta}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{p.plan.name}</Text>
+              <View style={{ marginTop: 2 }}><MetaLine parts={[p.goalName, p.plan.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }} /></View>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
           </Pressable>

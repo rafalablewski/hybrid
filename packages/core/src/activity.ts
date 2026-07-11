@@ -83,7 +83,7 @@ export function buildActivityFeed(input: ActivityInput): ActivityItem[] {
       id: `session-${s.id}`,
       kind: "completed",
       title: "Workout completed",
-      detail: `${s.title}${moves ? ` · ${moves} ${moves === 1 ? "exercise" : "exercises"}` : ""}`,
+      detail: `${s.title}${moves ? `, ${moves} ${moves === 1 ? "exercise" : "exercises"}` : ""}`,
       at,
       icon: "verified",
       accent: "lime",

@@ -17,7 +17,6 @@ import { fs, space,
   fmtTonnage,
   FUNNEL,
   ROLE_COLOR,
-  SECTION_COLOR,
   readinessRole,
   type SemanticRole,
   type LoggedSession,
@@ -38,6 +37,7 @@ import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -183,15 +183,11 @@ export default function AuroraToday({
         </div>
       </div>
 
-      {/* ───── TRAIN ───── */}
-      <Kicker k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C(SECTION_COLOR.train)} />
-
-      {/* PLAN TODAY — the single focused hero (your one job today) */}
+      {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
+          eyebrow: the screen is already today's training and the plan names
+          itself — the interface shouldn't narrate what the athlete can see. */}
       <div data-tour="today-plan" style={{ ...card }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
-              {t("w.home.today.yourPlan")}{!(isAthlete && (hasData || plan || phase)) && plan ? t("w.home.today.asWritten") : ""}
-            </span>
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
@@ -205,13 +201,16 @@ export default function AuroraToday({
           {plan ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 10 }}>
-                {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
+              {/* One anchor — "how far in" — carried by a thin bar, not four
+                  overlapping restatements of the same position. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</span>
+                <span style={{ flex: 1, height: 2, background: C("line"), borderRadius: 2, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, background: C("lime") }} /></span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
                 {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> · {r.note}</span> : null}</span>
+                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
                   </div>
                 ))}
@@ -224,10 +223,9 @@ export default function AuroraToday({
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-                  style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("lime")} 55%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("chalk") }}
+                  style={{ marginTop: 12, width: "100%", display: "block", padding: "11px 13px", cursor: "pointer", textAlign: "left", border: `1px dashed color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: "transparent" }}
                 >
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>{t("w.home.today.followingAsWritten1")}<span style={{ color: "var(--lime-text)" }}>{t("w.home.today.unlockFull")}</span>{t("w.home.today.followingAsWritten2")}</span>
-                  <span style={{ fontWeight: 800, fontSize: fs.note, color: "var(--lime-text)" }}>→</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--lime-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
                 </button>
               )}
             </>
@@ -240,9 +238,10 @@ export default function AuroraToday({
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
               {phase && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}>
-                  {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
-                </div>
+                <MetaLine
+                  parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
+                  style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}
+                />
               )}
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
             </>
@@ -272,23 +271,22 @@ export default function AuroraToday({
           and Done today opens a pop-up of everything logged today + the calendar. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
         <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--lime-text)" }}>＋ {t("w.home.today.glanceLog")}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>＋ {t("w.home.today.glanceLog")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</div>
         </button>
         <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--blue-text)" }}>{t("w.home.today.glanceReadinessCta")}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>{t("w.home.today.glanceReadinessCta")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</div>
         </button>
         <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--amber-text)" }}>✓ {doneToday.length}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C("chalk") }}>✓ {doneToday.length}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceDone")}</div>
         </button>
       </div>
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--violet-text)" }}>✦ {t("w.home.today.goFull")}</span>
-        <button onClick={() => (onNavigate ? onNavigate("plans") : router.push("/plans"))} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.home.today.seePlans")} →</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}><span style={{ color: "var(--violet-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <AccessCard
@@ -306,10 +304,13 @@ export default function AuroraToday({
       </div>
 
       {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-      <div style={{ margin: "26px 2px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: C("ash"), flexShrink: 0 }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</span>
+      </div>
       <div style={{ display: "grid", gap: 10 }}>
-        <DeferRow glyph="◍" tint="blue" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />
-        <DeferRow glyph="★" tint="violet" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
+        <DeferRow glyph="◍" tint="ash" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />
+        <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
@@ -352,23 +353,6 @@ export default function AuroraToday({
         )}
         <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>📅 {t("w.home.today.doneCalendar")}</button>
       </Sheet>
-    </div>
-  );
-}
-
-// A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
-// optional trailing action puts a link on the right (e.g. Plan → full Calendar).
-function Kicker({ k, h, color, action }: { k: string; h: string; color: string; action?: { label: string; onClick: () => void } }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, flexShrink: 0 }} />
-        {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
-      </div>
-      {action && (
-        <button onClick={action.onClick} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{action.label}</button>
-      )}
     </div>
   );
 }
@@ -437,7 +421,7 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
   return (
     <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 15px", cursor: "pointer", color: C("chalk") }}>
       <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: `var(--${tint}-text)`, fontSize: 14 }}>{glyph}</span>
+        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: C(tint), fontSize: 14 }}>{glyph}</span>
         <span>
           <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{title}</span>
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{sub}</span>

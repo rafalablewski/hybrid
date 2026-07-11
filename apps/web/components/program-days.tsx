@@ -79,8 +79,8 @@ function groupByKind(lifts: ProgramLiftView[]): Group[] {
 function bandFor(kind: LiftKind, n: number, hasPercent: boolean): { label: string; color: string } {
   const ex = `${n} exercise${n === 1 ? "" : "s"}`;
   if (kind === "run") return { label: "Run", color: BLUE };
-  if (kind === "percent") return { label: `Main · ${ex}`, color: AMBER };
-  return { label: `${hasPercent ? "Accessories" : "Strength"} · ${ex}`, color: LIME };
+  if (kind === "percent") return { label: `Main (${ex})`, color: AMBER };
+  return { label: `${hasPercent ? "Accessories" : "Strength"} (${ex})`, color: LIME };
 }
 
 function SessionBlock({ s, si }: { s: ProgramSessionView; si: number }) {
@@ -89,7 +89,7 @@ function SessionBlock({ s, si }: { s: ProgramSessionView; si: number }) {
   const hasPercent = groups.some((g) => g.kind === "percent");
   return (
     <>
-      {s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? BLUE : LIME} topBorder={si > 0} />}
+      {s.label && <Band label={s.volume ? `${s.label} (${s.volume})` : s.label} color={s.label === "PM" ? BLUE : LIME} topBorder={si > 0} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!s.label || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent);
@@ -209,7 +209,7 @@ function FallbackRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: st
 // a prose workout line (a run / cross-train) inside a day card
 function ProseRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
   const rest = /rest/i.test(lift.name);
-  const detail = [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
     <div style={{ padding: "12px 16px", borderTop }}>
       <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
@@ -248,7 +248,7 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
 function WeekRow({ lift, restName, first }: { lift?: ProgramLiftView; restName?: string; first: boolean }) {
   const name = lift?.name ?? restName ?? "—";
   const rest = lift ? /rest/i.test(lift.name) : true;
-  const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") || null : null;
+  const detail = lift ? (lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null) : null;
   return (
     <div style={{ marginTop: first ? 0 : 9 }}>
       <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>

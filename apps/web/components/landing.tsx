@@ -27,7 +27,7 @@ function ClassicLanding() {
           <Link href="/login" className="liquid-glass lg-hover inline-flex items-center px-4 py-2 font-display text-sm font-bold text-chalk"><span className="lg-sheen" />Sign in</Link>
         </header>
         <section className="pt-12 sm:pt-20">
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-lime">Strength · Conditioning</span>
+          <span className="font-mono text-xs uppercase tracking-[0.25em] text-lime">Strength & Conditioning</span>
           <h1 className="mt-5 font-display text-6xl font-black leading-[0.95] tracking-tight sm:text-8xl">Train like<br /><span className="text-lime">two athletes.</span></h1>
           <p className="mt-6 max-w-xl font-display text-lg text-ash">The only log built for athletes who lift heavy <i>and</i> condition. One app for the barbell and the engine — with an AI coach that programs both.</p>
           <div className="mt-8 flex flex-wrap gap-3"><Link href="/login" className="rounded-xl bg-lime px-7 py-3.5 font-display font-extrabold text-ink transition hover:opacity-90">Start training →</Link></div>
@@ -74,7 +74,7 @@ function AuroraLanding() {
 
         {/* HERO — lead with the product story, not the auth buttons */}
         <section className="pt-12 sm:pt-20">
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-lime">Strength · Conditioning</span>
+          <span className="font-mono text-xs uppercase tracking-[0.25em] text-lime">Strength & Conditioning</span>
           <h1 className="mt-5 font-display text-5xl font-black leading-[0.98] tracking-tight sm:text-7xl">
             Train like<br /><span className="text-lime">two athletes.</span>
           </h1>

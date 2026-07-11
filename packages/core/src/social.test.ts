@@ -156,10 +156,10 @@ describe("activity feed", () => {
     const status = feed.find((f) => f.subjectId === "p1")!;
     const pr = feed.find((f) => f.subjectId === "p2")!;
     expect(status.kind).toBe("post");
-    expect(status.detail).toContain("5k PB");
+    expect(status.body).toContain("5k PB");
     expect(pr.title).toContain("shared a PR");
-    expect(pr.detail).toContain("Back Squat");
-    expect(pr.detail).toContain("150");
+    expect(pr.chips.join(" ")).toContain("Back Squat");
+    expect(pr.chips.join(" ")).toContain("150");
     // newest first → the PR (more recent) leads
     expect(feed[0]!.subjectId).toBe("p2");
   });
@@ -251,25 +251,27 @@ describe("profile stats", () => {
 
 describe("feedCardView", () => {
   const author = { handle: "maja", displayName: "Maja K." };
-  it("session: workout name → meta, the rest → chips", () => {
-    const v = feedCardView({ kind: "session", author, detail: "Push day · 5 exercises · 18,200 kg", when: "2h ago" });
+  it("session: carries the workout name as lead and the stats as chips", () => {
+    const v = feedCardView({ author, lead: "Push day", chips: ["5 exercises", "18,200 kg"], body: null, when: "2h ago" });
     expect(v.name).toBe("Maja K.");
-    expect(v.meta).toBe("2h ago · Push day");
+    expect(v.when).toBe("2h ago");
+    expect(v.lead).toBe("Push day");
     expect(v.body).toBeNull();
     expect(v.chips).toEqual(["5 exercises", "18,200 kg"]);
   });
-  it("pr: detail segments become chips, PR tagged in meta", () => {
-    const v = feedCardView({ kind: "pr", author, detail: "Back Squat — 182 kg e1RM", when: "5h ago" });
-    expect(v.meta).toBe("5h ago · PR");
+  it("pr: lead is the PR tag, the lift/e1RM stays a chip", () => {
+    const v = feedCardView({ author, lead: "PR", chips: ["Back Squat — 182 kg e1RM"], body: null, when: "5h ago" });
+    expect(v.lead).toBe("PR");
     expect(v.chips).toEqual(["Back Squat — 182 kg e1RM"]);
   });
-  it("post: keeps its prose as the body, no chips", () => {
-    const v = feedCardView({ kind: "post", author, detail: "New bench PR this morning", when: "1h ago" });
+  it("post: keeps its prose as the body, no chips or lead", () => {
+    const v = feedCardView({ author, body: "New bench PR this morning", chips: [], lead: null, when: "1h ago" });
     expect(v.body).toBe("New bench PR this morning");
     expect(v.chips).toEqual([]);
+    expect(v.lead).toBeNull();
   });
   it("falls back to @handle when there's no display name", () => {
-    const v = feedCardView({ kind: "session", author: { handle: "tom", displayName: null }, detail: "Run", when: "now" });
+    const v = feedCardView({ author: { handle: "tom", displayName: null }, body: null, chips: [], lead: null, when: "now" });
     expect(v.name).toBe("@tom");
   });
 });

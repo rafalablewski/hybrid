@@ -1,21 +1,13 @@
 "use client";
 
-import { fs } from "@hybrid/core";
+import { fs, PLAN_PREVIEWS } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 
 const C = (v: string) => `var(--color-${v})`;
-
-// The shipped plan library, previewed on Explore (all free to follow; tapping a
-// card opens the full Plans screen). Names are proper nouns (not translated).
-const PLANS_PREVIEW: { emoji: string; name: string; meta: string; tint: string }[] = [
-  { emoji: "🏋️", name: "Soviet 8-Week Peaking", meta: "Olympic weightlifting · 8 wk", tint: "lime" },
-  { emoji: "🏃", name: "Hansons 5K", meta: "Running · 9 wk", tint: "blue" },
-  { emoji: "💪", name: "6-Day PPL", meta: "Bodybuilding · hypertrophy", tint: "violet" },
-  { emoji: "🔔", name: "12-Week Kettlebell", meta: "Kettlebell · strength", tint: "amber" },
-];
 
 /**
  * AURORA Explore (web) — the discovery surface for the Explore tab: search, a
@@ -49,16 +41,16 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
       <SectionHead title={t("w.explore.plans")} action={t("w.explore.all")} onAction={() => go("plans")} />
       <div style={{ display: "grid", gap: 10 }}>
-        {PLANS_PREVIEW.map((p) => (
+        {PLAN_PREVIEWS.map((p) => (
           <button
-            key={p.name}
+            key={p.plan.id}
             onClick={() => go("plans")}
             style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}
           >
-            <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(p.tint)} 16%, transparent)`, fontSize: 20 }}>{p.emoji}</span>
+            <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${p.color} 16%, transparent)`, fontSize: 22, color: p.color }}>{p.icon}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{p.name}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }}>{p.meta}</span>
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{p.plan.name}</span>
+              <MetaLine parts={[p.goalName, p.plan.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }} />
             </span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
           </button>

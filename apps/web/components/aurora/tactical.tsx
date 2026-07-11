@@ -50,8 +50,9 @@ export default function AuroraTactical() {
   return (
     <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, }}>
-        <div style={kicker("amber")}>{t("w.teams.tactical.headerKicker")}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
+        {/* Kicker cut — it restated the screen name and the "Deployment
+            readiness" heading below already carries it (mobile has no kicker). */}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, color: C("chalk") }}>
           {t("w.teams.tactical.headerBody")}
         </div>
       </div>

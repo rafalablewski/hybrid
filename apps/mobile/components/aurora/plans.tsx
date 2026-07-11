@@ -7,6 +7,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import PercentProgram from "../percent-program";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
@@ -33,7 +34,7 @@ export default function AuroraPlans() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Plans</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>
@@ -70,9 +71,9 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
             <ACard style={{ marginBottom: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{p.name}</Text>
-                {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>Popular</Text></View>}
+                {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("plans.popular")}</Text></View>}
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 6 }}>{p.weeks} {t("plans.weeks")} · {p.sessions}×/wk · {p.tag}</Text>
+              <View style={{ marginVertical: 6 }}><MetaLine parts={[`${p.weeks} ${t("plans.weeks")}`, `${p.sessions}${t("plans.perWk")}`, p.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
               <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
             </ACard>
           </Pressable>
@@ -92,7 +93,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
     <AuroraScreen>
       <Back onPress={back} label={goal.name} />
       <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{plan.name}</AHeading>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginBottom: 14, marginTop: 4 }}>{plan.weeks} {t("plans.weeks")} · {plan.sessions}×/wk · {d.level}</Text>
+      <View style={{ marginBottom: 14, marginTop: 4 }}><MetaLine parts={[`${plan.weeks} ${t("plans.weeks")}`, `${plan.sessions}${t("plans.perWk")}`, d.level]} textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }} /></View>
 
       <Field label={t("plan.forWho")} value={d.forWho} />
       <Field label={t("plan.outcome")} value={d.outcome} />
@@ -128,7 +129,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
         label={enrolled === "done" ? t("common.enrolled") : enrolled === "busy" ? t("common.enrolling") : `${t("common.enroll")} ${plan.name}`}
         onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
       />
-      {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
+      {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
     </AuroraScreen>
   );
 }

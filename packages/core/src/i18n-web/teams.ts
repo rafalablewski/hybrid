@@ -95,7 +95,7 @@ export const web_teams = {
     // talent.tsx
     "w.teams.talent.reportPrompt": "Report this profile — reason? (inappropriate / fake / spam / other)",
     "w.teams.talent.reportThanks": "Thanks — our team will review it.",
-    "w.teams.talent.headerKicker": "Talent Graph · benchmarks & discovery",
+    "w.teams.talent.headerKicker": "Benchmarks & discovery",
     "w.teams.talent.headerBody": "Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real talent from early physical maturity. Opt in to be discoverable — the talent market.",
     "w.teams.talent.liveHpi": "Live HPI from your Performance State:",
     "w.teams.talent.model": "model",
@@ -187,7 +187,7 @@ export const web_teams = {
     // org.tsx
     "w.teams.org.invitedPending": "Invited — they'll join on first sign-in.",
     "w.teams.org.couldNotAddMember": "could not add member",
-    "w.teams.org.headerKicker": "Org Graph · Team Operating System",
+    "w.teams.org.headerKicker": "Org Graph",
     "w.teams.org.noOrgs": "No organizations yet — create one to run a club or academy.",
     "w.teams.org.newOrgPlaceholder": "New organization name",
     "w.teams.org.createOrg": "Create org",
@@ -309,7 +309,7 @@ export const web_teams = {
     // talent.tsx
     "w.teams.talent.reportPrompt": "Zgłoś ten profil — powód? (nieodpowiedni / fałszywy / spam / inny)",
     "w.teams.talent.reportThanks": "Dziękujemy — nasz zespół to sprawdzi.",
-    "w.teams.talent.headerKicker": "Graf talentów · benchmarki i odkrywanie",
+    "w.teams.talent.headerKicker": "Benchmarki i odkrywanie",
     "w.teams.talent.headerBody": "Porównaj się ze swoją kohortą wieku/płci/sportu. Projekcja skorygowana o dojrzewanie oddziela prawdziwy talent od wczesnej dojrzałości fizycznej. Zgódź się na bycie widocznym — rynek talentów.",
     "w.teams.talent.liveHpi": "Aktualne HPI z Twojego stanu formy:",
     "w.teams.talent.model": "model",
@@ -401,7 +401,7 @@ export const web_teams = {
     // org.tsx
     "w.teams.org.invitedPending": "Zaproszono — dołączą przy pierwszym logowaniu.",
     "w.teams.org.couldNotAddMember": "nie udało się dodać członka",
-    "w.teams.org.headerKicker": "Graf Organizacji · System Operacyjny Zespołu",
+    "w.teams.org.headerKicker": "Graf Organizacji",
     "w.teams.org.noOrgs": "Brak organizacji — utwórz jedną, aby prowadzić klub lub akademię.",
     "w.teams.org.newOrgPlaceholder": "Nazwa nowej organizacji",
     "w.teams.org.createOrg": "Utwórz organizację",
@@ -523,7 +523,7 @@ export const web_teams = {
     // talent.tsx
     "w.teams.talent.reportPrompt": "Dieses Profil melden — Grund? (unangemessen / gefälscht / Spam / andere)",
     "w.teams.talent.reportThanks": "Danke — unser Team wird es prüfen.",
-    "w.teams.talent.headerKicker": "Talent-Graph · Benchmarks & Entdeckung",
+    "w.teams.talent.headerKicker": "Benchmarks & Entdeckung",
     "w.teams.talent.headerBody": "Vergleiche dich mit deiner Alters-/Geschlechts-/Sportkohorte. Die reifeangepasste Projektion trennt echtes Talent von früher körperlicher Reife. Stimme zu, auffindbar zu sein — der Talentmarkt.",
     "w.teams.talent.liveHpi": "Live-HPI von deinem Leistungszustand:",
     "w.teams.talent.model": "Modell",
@@ -615,7 +615,7 @@ export const web_teams = {
     // org.tsx
     "w.teams.org.invitedPending": "Eingeladen — sie treten bei der ersten Anmeldung bei.",
     "w.teams.org.couldNotAddMember": "Mitglied konnte nicht hinzugefügt werden",
-    "w.teams.org.headerKicker": "Org-Graph · Team-Betriebssystem",
+    "w.teams.org.headerKicker": "Org-Graph",
     "w.teams.org.noOrgs": "Noch keine Organisationen — erstelle eine, um einen Verein oder eine Akademie zu führen.",
     "w.teams.org.newOrgPlaceholder": "Name der neuen Organisation",
     "w.teams.org.createOrg": "Org erstellen",

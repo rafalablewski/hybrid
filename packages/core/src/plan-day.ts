@@ -116,7 +116,10 @@ export function planDayToBlocks(items: PlanSampleItem[]): SessionBlock[] {
 
 export interface PlanProgramTodayRow {
   name: string;
-  /** already-formatted prescription — "70%×3×3 · 95kg", "4×8 · 80 kg · @9", or the
+  /** "AM" / "PM" session band, rendered as a small tag before the name (not a
+   *  "AM, " string prefix), or null for a single daily session. */
+  session: string | null;
+  /** already-formatted prescription — "70%×3×3 (95kg)", "4×8 80 kg @9", or the
    *  prose workout ("3 miles easy"); reads exactly as the Plans-library card. */
   detail: string;
   /** complex / tempo / alternative annotation, or null. */
@@ -127,7 +130,7 @@ export interface PlanProgramToday {
   planId: string;
   planName: string;
   discipline: PlanDiscipline;
-  /** the day's label, e.g. "Week 2 · Legs" (week prefix only for multi-week plans). */
+  /** the day's label, e.g. "Week 2, Legs" (week prefix only for multi-week plans). */
   day: string;
   /** 0-based position among the plan's TRAINING days (rest days excluded). */
   dayIndex: number;
@@ -220,8 +223,7 @@ export function planProgramToday(
   const rows: PlanProgramTodayRow[] = [];
   const blocks: SessionBlock[] = [];
   view.sessions.forEach((sv, si) => {
-    const prefix = sv.label ? `${sv.label} · ` : "";
-    for (const l of sv.lifts) rows.push({ name: `${prefix}${l.name}`, detail: l.prescription, note: l.note });
+    for (const l of sv.lifts) rows.push({ name: l.name, session: sv.label ?? null, detail: l.prescription, note: l.note });
     const rawSession = raw.sessions[si];
     if (rawSession) {
       for (const l of rawSession.lifts ?? []) blocks.push(liftToBlock(l, maxes));
@@ -233,7 +235,7 @@ export function planProgramToday(
     planId,
     planName: findGoalPlan(planId)?.name ?? program.id,
     discipline: program.discipline,
-    day: `${multiWeek ? `Week ${week} · ` : ""}${raw.title}`,
+    day: `${multiWeek ? `Week ${week}, ` : ""}${raw.title}`,
     dayIndex,
     totalDays: flat.length,
     kindLabel: view.kindLabel,

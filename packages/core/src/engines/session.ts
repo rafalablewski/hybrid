@@ -334,7 +334,7 @@ export function cardioSummary(b: CardioBlock, opts: { rpe?: boolean } = {}): str
   const pace = cardioPace(b);
   if (pace) parts.push(pace);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
-  return parts.filter(Boolean).join(" · ") || "cardio";
+  return parts.filter(Boolean).join(", ") || "cardio";
 }
 
 /**
@@ -347,12 +347,12 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
   else if (b.rounds) parts.push(`${b.rounds} rounds`);
   if (b.minutes) parts.push(`${b.minutes} min`);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
-  return parts.filter(Boolean).join(" · ");
+  return parts.filter(Boolean).join(", ");
 }
 
 /** One-line summary of any block. */
 export function blockSummary(b: SessionBlock): string {
-  if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
+  if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(", ");
   if (isCardio(b)) return cardioSummary(b);
   return conditioningSummary(b);
 }
@@ -393,7 +393,7 @@ export function sessionShape(session: LoggedSession): "strength" | "cardio" | "m
 /**
  * Totals across a session's CARDIO blocks — distance (km), minutes, and a
  * derived overall pace (sec/km, distance-weighted). Powers the non-gym session
- * headline (Duration · Distance · Pace) so cardio/sport logs get their own
+ * headline (Duration, Distance, Pace) so cardio/sport logs get their own
  * summary instead of the gym Sets/Volume framing.
  */
 export function sessionCardioTotals(blocks: SessionBlock[]): {

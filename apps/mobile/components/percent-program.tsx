@@ -2,9 +2,11 @@ import { useState } from "react";
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
+import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
+import { MetaLine } from "./aurora/meta";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -31,8 +33,8 @@ function groupByKind(lifts: ProgramLiftView[]): Group[] {
 function bandFor(kind: LiftKind, n: number, hasPercent: boolean, C: Palette): { label: string; color: string } {
   const ex = `${n} exercise${n === 1 ? "" : "s"}`;
   if (kind === "run") return { label: "Run", color: C.blue };
-  if (kind === "percent") return { label: `Main · ${ex}`, color: C.amber };
-  return { label: `${hasPercent ? "Accessories" : "Strength"} · ${ex}`, color: C.lime };
+  if (kind === "percent") return { label: `Main (${ex})`, color: C.amber };
+  return { label: `${hasPercent ? "Accessories" : "Strength"} (${ex})`, color: C.lime };
 }
 
 /**
@@ -56,6 +58,7 @@ export default function PercentProgram({
   back: () => void;
 }) {
   const C = useTheme().palette;
+  const { t } = useLang();
   const [week, setWeek] = useState(1);
   // Maxes persist on-device (shared with Today) — seed each input from the store;
   // `vals` holds only the transient text being typed.
@@ -89,9 +92,12 @@ export default function PercentProgram({
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {goal.name}</Text>
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginBottom: 14 }}>
-        {plan.weeks} wk{plan.weeks === 1 ? "" : "s"} · {plan.sessions}×/wk · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
-      </Text>
+      <View style={{ marginBottom: 14 }}>
+        <MetaLine
+          parts={[plan.weeks === 1 ? t("plans.week1") : `${plan.weeks} ${t("plans.weeks")}`, `${plan.sessions}${t("plans.perWk")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]}
+          textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}
+        />
+      </View>
 
       {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <View style={card}>
@@ -120,7 +126,7 @@ export default function PercentProgram({
             view.weeks.map((w) => (
               <Pressable key={w} onPress={() => setWeek(w)}>
                 <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.ink : C.chalk }}>Wk {w}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.ink : C.chalk }}>{t("plans.wkShort")} {w}</Text>
                 </View>
               </Pressable>
             ))}
@@ -224,7 +230,7 @@ function SessionBlock({ s, si, C }: { s: ProgramSessionView; si: number; C: Pale
   const hasPercent = groups.some((g) => g.kind === "percent");
   return (
     <View>
-      {!!s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? C.blue : C.lime} topBorder={si > 0} C={C} />}
+      {!!s.label && <Band label={s.volume ? `${s.label} (${s.volume})` : s.label} color={s.label === "PM" ? C.blue : C.lime} topBorder={si > 0} C={C} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!s.label || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent, C);
@@ -253,7 +259,7 @@ function SessionBlock({ s, si, C }: { s: ProgramSessionView; si: number; C: Pale
 // a prose workout line (a run / cross-train) inside a day card
 function ProseRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
   const rest = /rest/i.test(lift.name);
-  const detail = [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
     <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -271,7 +277,7 @@ function ProseRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pa
 function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restName?: string; first: boolean; C: Palette }) {
   const name = lift?.name ?? restName ?? "—";
   const rest = lift ? /rest/i.test(lift.name) : true;
-  const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") || null : null;
+  const detail = lift ? (lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null) : null;
   return (
     <View style={{ marginTop: first ? 0 : 9 }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>

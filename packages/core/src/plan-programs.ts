@@ -98,7 +98,7 @@ const GM: RawLift = ["Good Morning", "(X/8)4"];
 // Week-1-only accessory block (the "Accessory Selection Matrix") — rendered in
 // its own Accessories block, separate from the % barbell work.
 const WEEK1_ACC: RawAcc[] = [
-  { name: "Clean Pull", scheme: "5×3", rpe: 8, note: "pulling power · @ 90–110% of clean" },
+  { name: "Clean Pull", scheme: "5×3", rpe: 8, note: "pulling power, @ 90–110% of clean" },
   { name: "Snatch Balance", scheme: "4×2", rpe: 7, note: "speed under bar" },
   { name: "Push Press", scheme: "5×5", rpe: 8, note: "jerk drive" },
   { name: "Front Squat", scheme: "5×3", rpe: 8, note: "clean recovery" },
@@ -741,7 +741,7 @@ function buildBBDay(d: BBDay, index: number): PlanDay {
   return {
     index,
     kind: "train",
-    title: `${d.day} · ${d.focus}`,
+    title: `${d.day}, ${d.focus}`,
     sessions: [
       {
         entries: d.exercises.map((ex, i) => ({
@@ -850,7 +850,7 @@ export const BB_PPL_6DAY: PlanProgram = {
     "rest, last exercise to failure. SWAPS: pick variations that suit you (dips for bench, front squats for high-bar, " +
     "pulldowns for pull-ups). DIET: eat enough to fuel growth — lean trainees need to gain weight.",
   source: "6-day Push/Pull/Legs bodybuilding split.",
-  weeks: [{ index: 1, days: [...BB_DAYS.map((d, i) => buildBBDay(d, i + 1)), { index: 7, kind: "rest", title: "Sun · Rest", sessions: [] }] }],
+  weeks: [{ index: 1, days: [...BB_DAYS.map((d, i) => buildBBDay(d, i + 1)), { index: 7, kind: "rest", title: "Sun, Rest", sessions: [] }] }],
 };
 
 // ============================================================
@@ -908,7 +908,7 @@ function buildCircuitProgram(meta: Omit<PlanProgram, "weeks">, blocks: CircuitBl
 // analogue of the OWL %-wave and the bodybuilding RPE heat.
 const FATLOSS_BLOCKS: CircuitBlock[] = [
   {
-    title: "Warm-Up · 10 min",
+    title: "Warm-Up, 10 min",
     effort: "easy",
     items: [
       ["Jumping Jacks", "2 min"],
@@ -919,7 +919,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
     ],
   },
   {
-    title: "Block 1 · Core & Stability · 2 rounds",
+    title: "Block 1, Core & Stability, 2 rounds",
     effort: "moderate",
     items: [
       ["KB Halo", "2 × 12"],
@@ -928,7 +928,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
     ],
   },
   {
-    title: "Block 2 · Leg + Glutes · 3 rounds",
+    title: "Block 2, Leg + Glutes, 3 rounds",
     effort: "hard",
     items: [
       ["Goblet Squat", "3 × 10"],
@@ -937,7 +937,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
     ],
   },
   {
-    title: "Block 3 · Push & Pull · 3 rounds",
+    title: "Block 3, Push & Pull, 3 rounds",
     effort: "moderate",
     items: [
       ["Single-Arm Floor Press", "3 × 12/side"],
@@ -946,7 +946,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
     ],
   },
   {
-    title: "Block 4 · Balance & Core Burn · 2 rounds",
+    title: "Block 4, Balance & Core Burn, 2 rounds",
     effort: "hard",
     items: [
       ["Single-Leg Deadlift", "2 × 10/side"],
@@ -955,16 +955,16 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
     ],
   },
   {
-    title: "Block 5 · Finisher · 2–3 rounds, no rest between",
+    title: "Block 5, Finisher, 2–3 rounds, no rest between",
     effort: "max",
     items: [
       ["Goblet Squat Hold", "20s"],
       ["KB Swing", "20s"],
-      ["High Knees", "20s", "No KB · then 1 min rest, repeat"],
+      ["High Knees", "20s", "No KB, then 1 min rest, repeat"],
     ],
   },
   {
-    title: "Cool-Down · 10 min",
+    title: "Cool-Down, 10 min",
     effort: "recover",
     prose: true,
     items: [
@@ -1024,7 +1024,7 @@ function buildKBDay(d: KBDay, index: number): PlanDay {
   return {
     index,
     kind: "train",
-    title: `${d.day} · ${d.focus}`,
+    title: `${d.day}, ${d.focus}`,
     sessions: [
       {
         entries: d.items.map(([name, scheme, note]) => ({

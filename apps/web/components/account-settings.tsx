@@ -11,19 +11,22 @@ import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { fs, space, LINE, LIME, LIME_HEX, BLUE, VIOLET, AMBER, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, BLUE, AMBER, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import { SocialProfileEdit } from "./social-profile";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 
-// Per-category accent — the icon-tile tint, mirroring mobile's TONE exactly so
-// the two clients share the same hues. Uses LIME_HEX (raw hex) not LIME (a CSS
-// var) so the `${accent}24` chip tint + txt(accent) icon colour resolve.
+// Per-category icon-tile tint, mirroring mobile's TONE exactly so the two
+// clients share the same hues. Unified to a single neutral (ASH) so the list
+// reads as one system instead of a rainbow — the hue no longer encodes anything
+// (category order already does). RED is kept ONLY for the destructive `danger`
+// section, where it is a real semantic warning (matches the delete/RESET flow).
+// Raw hex (not a CSS var) so the `${accent}24` chip tint + txt(accent) resolve.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME_HEX, preferences: BLUE, logger: AMBER, notifications: VIOLET,
-  privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME_HEX,
+  account: ASH, preferences: ASH, logger: ASH, notifications: ASH,
+  privacy: ASH, coaching: ASH, security: ASH, subscription: ASH,
   data: ASH, danger: RED,
 };
 

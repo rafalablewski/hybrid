@@ -166,7 +166,7 @@ export default function ReconciledWeek({
           sits as a full-width pill below (matching the mobile layout). */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
-          {t("w.home.recweek.thisWeek")} {reconciled.phase.label} · {t("w.home.recweek.week")} {reconciled.phase.week}
+          {reconciled.phase.label} {t("w.home.recweek.week")} {reconciled.phase.week}
         </Mono>
         <Chip c={reconciled.phase.kind === "recovery" ? AMBER : "var(--color-lime)"}>
           {reconciled.phase.kind === "recovery" ? t("w.home.recweek.deload") : t("w.home.recweek.load")}

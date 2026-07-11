@@ -19,7 +19,6 @@ import {
   sessionCardioTotals,
   sessionVolume,
   fmtTonnage,
-  SECTION_COLOR,
   type LoggedSession,
   type Macrocycle,
   type Experience,
@@ -39,6 +38,7 @@ import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
@@ -247,15 +247,11 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
         </View>
 
-        {/* ───── TRAIN ───── */}
-        <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C[SECTION_COLOR.train]} />
-
-        {/* PLAN TODAY — the single focused hero (your one job today) */}
+        {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
+            eyebrow: the screen is already today's training and the plan names
+            itself — the interface shouldn't narrate what the athlete can see. */}
         <ACard style={{ marginTop: 14 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash, flex: 1 }}>
-                {t("w.home.today.yourPlan")}{plan && !(isAthlete && planReadiness) ? t("w.home.today.asWritten") : ""}
-              </Text>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
                 {/* Readiness as a glanceable DIAL, not "95/100" digits to parse. */}
                 {isAthlete && planReadiness ? (
@@ -271,12 +267,17 @@ export default function AuroraHome() {
             {plan ? (
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
-                  {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
-                </Text>
+                {/* One anchor — "how far in" — carried by a thin bar, not four
+                    overlapping restatements of the same position. */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</Text>
+                  <View style={{ flex: 1, height: 2, backgroundColor: C.line, borderRadius: 2, overflow: "hidden" }}>
+                    <View style={{ height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, backgroundColor: C.lime }} />
+                  </View>
+                </View>
                 {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> · {r.note}</Text> : null}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}</Text>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
                   </View>
                 ))}
@@ -289,10 +290,9 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14` }}
+                    style={{ marginTop: 12, padding: 11, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.lime}66` }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.chalk, flex: 1 }}>{t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
-                    <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>→</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: txt(C, C.lime) }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
               </>
@@ -305,9 +305,12 @@ export default function AuroraHome() {
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
                 {phase && (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
-                    {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
-                  </Text>
+                  <View style={{ marginTop: 4 }}>
+                    <MetaLine
+                      parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
+                      textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}
+                    />
+                  </View>
                 )}
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>
@@ -334,25 +337,22 @@ export default function AuroraHome() {
             and Done today opens a pop-up of everything logged today + the calendar. */}
         <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
           <Pressable onPress={() => setQuickOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>＋ {t("w.home.today.glanceLog")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>＋ {t("w.home.today.glanceLog")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</Text>
           </Pressable>
           <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.blue) }}>{t("w.home.today.glanceReadinessCta")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("w.home.today.glanceReadinessCta")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</Text>
           </Pressable>
           <Pressable onPress={() => setDoneOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flex: 1, paddingVertical: 13, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.amber) }}>✓ {doneToday.length}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>✓ {doneToday.length}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceDone")}</Text>
           </Pressable>
         </View>
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: txt(C, C.violet) }}>✦ {t("w.home.today.goFull")}</Text>
-          <Pressable onPress={() => router.push("/(tabs)/plans")} hitSlop={8}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.seePlans")} →</Text>
-          </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}><Text style={{ color: txt(C, C.violet) }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
@@ -360,12 +360,15 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          {t("w.home.today.recoverMore")}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.ash }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>
+            {t("w.home.today.recoverMore")}
+          </Text>
+        </View>
         <View style={{ gap: 10 }}>
-          <DeferRow C={C} icon="heart" tint={C.blue} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
-          <DeferRow C={C} icon="user" tint={C.violet} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
+          <DeferRow C={C} icon="heart" tint={C.ash} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
+          <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 
         </Animated.View>
@@ -424,25 +427,6 @@ export default function AuroraHome() {
         </View>
       </Sheet>
     </SafeAreaView>
-  );
-}
-
-// A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
-// optional trailing action puts a link on the right (e.g. Plan → full Calendar).
-function Kicker({ C, k, h, color, action }: { C: P; k: string; h: string; color: string; action?: { label: string; onPress: () => void } }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-        <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
-        {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k} · {h}</Text>
-      </View>
-      {action && (
-        <Pressable onPress={action.onPress} hitSlop={8}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{action.label}</Text>
-        </Pressable>
-      )}
-    </View>
   );
 }
 

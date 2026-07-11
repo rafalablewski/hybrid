@@ -96,7 +96,7 @@ export default function AuroraTrends() {
                 );
               })}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{ml(focusMuscle)} · {t("w.analyze.trends.weeklySets8w")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{ml(focusMuscle)} {t("w.analyze.trends.weeklySets8w")}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
               {muscleWeeks.map((s, i) => { const mx = Math.max(...muscleWeeks, 1); return <View key={i} style={{ flex: 1, height: 4 + (s / mx) * 48, borderRadius: 3, backgroundColor: i === muscleWeeks.length - 1 ? C.blue : `${C.blue}66` }} />; })}
             </View>

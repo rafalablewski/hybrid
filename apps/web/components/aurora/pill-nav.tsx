@@ -34,11 +34,6 @@ const C = (v: string) => `var(--color-${v})`;
 // Per-cluster accent tint (the mobile GROUP_META spectrum), so the springboard
 // tiles read the same across all three More surfaces. Ash for Account.
 const GROUP_ACCENT: Record<string, string> = { home: "lime", train: "lime", analyze: "blue", recovery: "amber", social: "violet", teams: "red", account: "ash" };
-// Icon colour on the tint chip — bright lime / ash stay as-is, the others use
-// their darkened *-text var so accent icons keep contrast in the light Aurora
-// theme (mirrors web `txt()` in the sidebar/drawer springboards).
-const accentIcon = (name: string) => (name === "lime" ? C("lime") : name === "ash" ? C("ash") : `var(--${name}-text)`);
-
 export default function AuroraPillNav({ activeId, onSelect }: { activeId?: string; onSelect: (id: string) => void }) {
   const aurora = useTemplate().template === "aurora";
   const persona = usePersona();
@@ -146,28 +141,27 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
               return (
               <div key={g.group} style={{ marginBottom: 18 }}>
-                {/* Cluster header — label + lime count (parity with the mobile More tab + the drawer). */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                {/* Cluster header — accent marker + label + count (parity with the mobile More tab + the drawer). */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 2, background: accent, flex: "none" }} />
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{groupName}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("lime") }}>{g.items.length}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginLeft: "auto" }}>{g.items.length}</span>
                 </div>
-                {/* Springboard grid — fixed 4-col accent-tinted glyph tiles with a
-                    lime lock badge, matching the mobile More tab + the drawer. */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: space.xs }}>
+                {/* Springboard grid — 4-col neutral bordered cells (icon + label inside),
+                    section colour on the header marker, violet lock for premium. */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: space.xs }}>
                   {g.items.map(({ item: { id, label: fb }, locked }) => {
                     const name = label(id, fb);
                     const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
                     return (
-                      <button key={id} onClick={openItem} title={locked ? `${name} · Full` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
-                        <span style={{ position: "relative", width: 58, height: 58, borderRadius: 18, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${accent} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 32%, transparent)` }}>
-                          <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={24} strokeWidth={2.6} color={locked ? C("ash") : accentIcon(GROUP_ACCENT[g.group] ?? "lime")} />
-                          {locked && (
-                            <span aria-hidden style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, background: C("lime"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center" }}>
-                              <AuroraIcon name="lock" size={9} strokeWidth={3} color={C("ink")} />
-                            </span>
-                          )}
-                        </span>
+                      <button key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
+                        <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.4} color={locked ? C("ash") : C("chalk")} />
                         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
+                        {locked && (
+                          <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
+                            <AuroraIcon name="lock" size={11} strokeWidth={2.4} color="var(--violet-text)" />
+                          </span>
+                        )}
                       </button>
                     );
                   })}

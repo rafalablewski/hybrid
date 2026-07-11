@@ -30,10 +30,13 @@ const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "de", label: "Deutsch" },
 ];
 
-/** Per-category accent — the icon-tile tint, matching the V1 mockup. */
+/** Per-category icon-tile tint. Unified to a single neutral (ash) so the list
+ *  reads as one system instead of a rainbow — the hue no longer encodes
+ *  anything. Red is kept ONLY for the destructive `danger` section, where it is
+ *  a real semantic warning. Mirrors web's TONE for parity. */
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
-  account: "lime", preferences: "blue", logger: "amber", notifications: "violet",
-  privacy: "blue", coaching: "violet", security: "blue", subscription: "lime",
+  account: "ash", preferences: "ash", logger: "ash", notifications: "ash",
+  privacy: "ash", coaching: "ash", security: "ash", subscription: "ash",
   data: "ash", danger: "red",
 };
 

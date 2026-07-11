@@ -237,32 +237,32 @@ export default function More() {
           const accent = C[GROUP_META[group].ck] as string;
           return (
             <View key={group} style={{ marginTop: 20 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: accent }} />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{items.length}</Text>
+                <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{items.length}</Text>
               </View>
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>
                 {items.map((it) => (
-                  <Pressable
-                    key={it.id}
-                    onPress={() => go(it)}
-                    accessibilityRole="button"
-                    accessibilityLabel={it.locked ? `${it.label} (Full)` : it.label}
-                    style={{ width: "25%", alignItems: "center", paddingVertical: 8, paddingHorizontal: 2 }}
-                  >
-                    <View style={{ width: 58, height: 58, borderRadius: 18, backgroundColor: `${accent}1c`, borderWidth: 1, borderColor: `${accent}44`, alignItems: "center", justifyContent: "center" }}>
-                      <AuroraIcon name={it.icon} size={24} color={it.locked ? C.ash : txt(C, accent)} />
+                  <View key={it.id} style={{ width: "25%", padding: 4 }}>
+                    <Pressable
+                      onPress={() => go(it)}
+                      accessibilityRole="button"
+                      accessibilityLabel={it.locked ? `${it.label} (Full)` : it.label}
+                      style={{ position: "relative", minHeight: 80, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 4, alignItems: "center", justifyContent: "center", opacity: it.locked ? 0.6 : 1 }}
+                    >
+                      <AuroraIcon name={it.icon} size={22} color={it.locked ? C.ash : C.chalk} />
+                      <Text numberOfLines={2} style={{ marginTop: 7, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 13, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
                       {it.locked && (
-                        <View style={{ position: "absolute", top: -5, right: -5, width: 18, height: 18, borderRadius: 9, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                          <AuroraIcon name="lock" size={9} color={C.onAccent} />
+                        <View style={{ position: "absolute", top: 6, right: 6 }}>
+                          <AuroraIcon name="lock" size={11} color={txt(C, C.violet)} />
                         </View>
                       )}
                       {!it.locked && !it.href && (
-                        <View style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: C.blue, borderWidth: 2, borderColor: C.ink }} />
+                        <View style={{ position: "absolute", top: 8, right: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: C.blue }} />
                       )}
-                    </View>
-                    <Text numberOfLines={2} style={{ marginTop: 6, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 14, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
-                  </Pressable>
+                    </Pressable>
+                  </View>
                 ))}
               </View>
             </View>
