@@ -5,7 +5,7 @@ import { fetchEvents, createEvent, type EventRow } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Marathon", "CrossFit", "Powerlifting", "Cycling", "Swimming", "Hybrid"];
 const plus8w = () => new Date(Date.now() + 56 * 86_400_000).toISOString().slice(0, 10);
@@ -45,7 +45,10 @@ export default function AuroraCompetition() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>{t("w.account.upgrade.competition")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("w.account.upgrade.competition")}</AHeading>
+      </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.train.comp.intro")}</Text>
 
       <ACard style={{ marginTop: 16 }}>
