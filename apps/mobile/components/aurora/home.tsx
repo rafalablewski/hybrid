@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -275,18 +277,43 @@ export default function AuroraHome() {
                     <View style={{ height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, backgroundColor: C.lime }} />
                   </View>
                 </View>
-                {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
-                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
-                  </View>
-                ))}
-                {plan.rows.length > 1 && (
-                  <Pressable onPress={() => setLiftsOpen((o) => !o)} hitSlop={6} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: txt(C, C.lime) }}>{liftsOpen ? "▴" : "▾"}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: txt(C, C.lime) }}>{liftsOpen ? t("w.home.today.hideLifts") : `${t("w.home.today.showAllLifts")} ${plan.rows.length} ${t("w.home.today.liftsWord")}`}</Text>
-                  </Pressable>
-                )}
+                {/* Lift reveal: the first lift reads clear; the next two sit
+                    frosted (a real BlurView + fade) behind a reveal, so the card
+                    teases "there's more" at a fixed height. Expanding lifts the
+                    frost and unfolds the rest. Mirrors web today.tsx. */}
+                {(() => {
+                  const rows = plan.rows;
+                  const many = rows.length > 1;
+                  const LiftRow = ({ r, i }: { r: (typeof rows)[number]; i: number }) => (
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
+                    </View>
+                  );
+                  return (
+                    <>
+                      {rows[0] && <LiftRow r={rows[0]} i={0} />}
+                      {many && !liftsOpen && (
+                        <View style={{ position: "relative" }}>
+                          {rows.slice(1, 3).map((r, i) => (
+                            <LiftRow key={i} r={r} i={i + 1} />
+                          ))}
+                          <BlurView intensity={12} tint={scheme} style={StyleSheet.absoluteFill} pointerEvents="none" />
+                          <LinearGradient colors={["transparent", C.ink2]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
+                            <Text style={{ fontFamily: F.mono, fontSize: 11.5, fontWeight: "600", color: txt(C, C.lime) }}>{t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →</Text>
+                          </Pressable>
+                        </View>
+                      )}
+                      {liftsOpen && rows.slice(1).map((r, i) => <LiftRow key={i} r={r} i={i + 1} />)}
+                      {many && liftsOpen && (
+                        <Pressable onPress={() => setLiftsOpen(false)} hitSlop={6} style={{ marginTop: 12, alignSelf: "center" }}>
+                          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.home.today.hideLifts")}</Text>
+                        </Pressable>
+                      )}
+                    </>
+                  );
+                })()}
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
