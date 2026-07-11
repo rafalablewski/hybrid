@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
@@ -1054,6 +1054,53 @@ export async function addNote(linkId: string, body: string, isPrivate: boolean):
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ body, private: isPrivate }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---- return-to-play (gated injury protocols) ----
+// Same backend the web RtP panel uses (/api/rtp). Each protocol advances through
+// the 5 gated stages in rtp.ts; the server enforces the gates + logs an audit
+// trail (attest/advance/override). All best-effort → empty/false when signed out.
+export type RtpAuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
+export type RtpProtocol = { id: string; tissue: string; injuryDate: string; stage: RtpStage; completed: string[]; status: string; audit?: RtpAuditEntry[] };
+
+export async function fetchRtpProtocols(): Promise<RtpProtocol[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const d = (await res.json()) as { protocols?: RtpProtocol[] };
+    return (d.protocols ?? []).map((p) => ({ ...p, completed: p.completed ?? [], audit: p.audit ?? [] }));
+  } catch {
+    return [];
+  }
+}
+
+/** Open a new protocol for a tissue (server starts it at the `acute` stage). */
+export async function createRtpProtocol(tissue: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ tissue }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Mutate a protocol: toggle a gate, advance a stage, or override past unmet
+ *  gates with a reason. Mirrors the web PATCH /api/rtp/:id body. */
+export async function mutateRtpProtocol(id: string, body: object): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
     });
     return res.ok;
   } catch {
