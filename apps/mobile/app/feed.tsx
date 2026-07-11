@@ -95,7 +95,19 @@ export default function FeedScreen() {
               <Pressable onPress={() => del(item)} hitSlop={8}><Text style={{ color: C.ash, fontSize: 18 }}>×</Text></Pressable>
             )}
           </View>
-          <Text style={{ color: C.chalk, fontSize: 14, marginTop: 10, lineHeight: 21 }}>{item.detail}</Text>
+          {item.body ? <Text style={{ color: C.chalk, fontSize: 14, marginTop: 10, lineHeight: 21 }}>{item.body}</Text> : null}
+          {(item.lead || (item.chips?.length ?? 0) > 0) && (
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 12, marginTop: 10 }}>
+              {item.lead ? <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: C.chalk }}>{item.lead}</Text> : null}
+              {(item.chips?.length ?? 0) > 0 && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: item.lead ? 8 : 0 }}>
+                  {item.chips.map((c: string, i: number) => (
+                    <Text key={i} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>{c}</Text>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
           <View style={{ flexDirection: "row", gap: 18, marginTop: 12 }}>
             <Pressable onPress={() => cheer(item)}><Text style={{ color: item.kudosedByMe ? C.lime : C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>👏 {item.kudos > 0 ? item.kudos : ""} Cheer</Text></Pressable>
             <Pressable onPress={() => setOpen(open === item.id ? null : item.id)}><Text style={{ color: C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>💬 {item.comments > 0 ? item.comments : ""} Comment</Text></Pressable>
