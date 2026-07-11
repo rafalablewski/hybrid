@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { groupedNav, sanitizePersonaAccess, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
+import { groupedNav, sanitizePersonaAccess, AURORA_NAV_ICONS, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
 import { fs, space, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { AuroraIcon } from "../aurora/icons";
 
 // The role-based data-access model (RBAC) — distinct from the per-feature persona
 // matrix below. Moved here (admin-only Governance) from the old user-facing
@@ -190,9 +191,10 @@ export default function AdminAccess() {
                 return (
                   <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>
-                        {item.icon} {item.label}
-                        {overridden && <span style={{ marginLeft: 8 }}><Chip c={AMBER}>overridden</Chip></span>}
+                      <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, display: "flex", alignItems: "center", gap: 8 }}>
+                        <AuroraIcon name={AURORA_NAV_ICONS[item.id] ?? "info"} size={18} strokeWidth={2.6} color={CHALK} />
+                        {item.label}
+                        {overridden && <Chip c={AMBER}>overridden</Chip>}
                       </div>
                       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
                         {item.id} · default: {PERSONA_LABEL[def]}

@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRouter, type Href } from "expo-router";
-import { NAV_ITEMS, navVisibleTo } from "@hybrid/core";
+import { NAV_ITEMS, navVisibleTo, AURORA_NAV_ICONS } from "@hybrid/core";
+import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "../lib/i18n";
 import { usePersona } from "../lib/persona";
 import { useNavAccess } from "../lib/access";
@@ -70,10 +71,6 @@ const HREF: Record<string, Href> = {
   settings: "/settings",
 };
 const TILES = NAV_ITEMS.filter((i) => i.id in HREF);
-
-// Force monochrome (text) rendering on single-unit glyphs so they don't fall
-// back to dark emoji presentation; true emoji (🏃/🍎/📸) are left alone.
-const glyph = (ic: string) => (Array.from(ic).length === 1 ? `${ic}︎` : ic);
 
 /**
  * The central control-center menu: a floating glass orb (FAB) that blooms a
@@ -212,7 +209,7 @@ export function CommandMenu() {
                             borderColor: neutral(0.18),
                           }}
                         >
-                          <Text style={{ fontSize: fs.heading, color: palette.chalk }}>{glyph(tile.icon)}</Text>
+                          <AuroraIcon name={AURORA_NAV_ICONS[tile.id] ?? "info"} size={22} color={palette.chalk} />
                         </View>
                         <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: palette.chalk }} numberOfLines={1}>
                           {label(`nav.${tile.id}`, tile.label)}
