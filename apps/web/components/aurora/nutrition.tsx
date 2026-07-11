@@ -99,7 +99,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
       }
-      setMealMsg(`${t(p.labelKey)} · +${p.kcal} kcal`);
+      setMealMsg(`${t(p.labelKey).split(" · ")[0]} +${p.kcal} kcal`);
       await load(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
@@ -135,7 +135,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22 }}>{t("w.recovery.nutrition.addMealTitle")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</div>
 
-        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
+        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {([
@@ -162,16 +162,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
           return macroKcal > 0 ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</div> : null;
         })()}
-        <button onClick={add} disabled={saving} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 9, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 0, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><span aria-hidden style={{ color: "var(--lime-text)", fontSize: 18, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+        <button onClick={add} disabled={saving} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 9, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 0, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><span aria-hidden style={{ fontSize: 18, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
         {/* Scan label — AI vision, Full only (free → upgrade) */}
         <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ width: "100%", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: full ? "transparent" : `color-mix(in srgb, ${C("violet")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, transparent)`}`, borderRadius: 14, padding: 12, cursor: scanning ? "default" : "pointer", color: full ? C("chalk") : "var(--violet-text)", fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
-          <span>{full ? "📷" : "🔒"}</span>{scanning ? t("w.recovery.nutrition.scanning") : `${t("w.recovery.nutrition.scanLabel")}${full ? "" : " · Full"}`}
+          <span>{full ? "📷" : "🔒"}</span>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
         </button>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file); e.target.value = ""; }} />
         {mealMsg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}>✓ {mealMsg}</div>}
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
 
-        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} />
+        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} tier={t("w.account.settings.full")} premium />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {MEAL_PRESETS.map((p) => (
             <button key={p.id} onClick={() => logPreset(p)} style={{ textAlign: "left", background: full ? C("ink2") : `color-mix(in srgb, ${C("violet")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, transparent)`}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk"), opacity: full ? 1 : 0.92 }}>
@@ -337,12 +337,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
 // A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
 // Add-a-meal sheet.
-function CDivider({ label }: { label: string }) {
+function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 12px" }}>
       <span style={{ flex: 1, height: 1, background: C("line") }} />
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") }}>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") }}>{label}</span>
+        {tier && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 999, border: `1px solid ${premium ? `color-mix(in srgb, ${C("violet")} 45%, transparent)` : C("line")}`, color: premium ? "var(--violet-text)" : C("ash") }}>{tier}</span>}
+      </span>
       <span style={{ flex: 1, height: 1, background: C("line") }} />
     </div>
   );

@@ -99,7 +99,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     setMealMsg("");
     const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit)));
     if (ok.includes(false)) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setMealMsg(`${t(p.labelKey)} · +${p.kcal} kcal`);
+    setMealMsg(`${t(p.labelKey).split(" · ")[0]} +${p.kcal} kcal`);
     revalidate.recovery();
   };
 
@@ -126,7 +126,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{t("w.recovery.nutrition.addMealTitle")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
 
-        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
+        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
           <QuadTile field="kcal" label={t("w.recovery.nutrition.tabCalories")} unit="kcal" color={C.chalk} max={1000} value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} />
@@ -138,18 +138,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
           return macroKcal > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 12 }}>{t("w.recovery.nutrition.macrosApprox")} {macroKcal} kcal</Text> : null;
         })()}
-        <Pressable onPress={add} disabled={saving} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.addMeal")} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, borderWidth: 1, borderColor: C.line, borderRadius: 0, paddingVertical: 15, opacity: saving ? 0.6 : 1 }}>
+        <Pressable onPress={add} disabled={saving} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.addMeal")} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, borderWidth: 1, borderColor: C.lime, borderRadius: 0, paddingVertical: 15, opacity: saving ? 0.6 : 1 }}>
           <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18, fontWeight: "500" }}>＋</Text>
-          <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.subtitle, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
+          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: fs.subtitle, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
         </Pressable>
         {/* Scan label — AI vision, Full only (free → upgrade) */}
         <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: full ? C.line : `${C.violet}3d`, backgroundColor: full ? "transparent" : `${C.violet}12`, opacity: scanning ? 0.6 : 1 }}>
           <Text style={{ fontSize: 15 }}>{full ? "📷" : "🔒"}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: full ? C.chalk : txt(C, C.violet) }}>{scanning ? t("w.recovery.nutrition.scanning") : `${t("w.recovery.nutrition.scanLabel")}${full ? "" : " · Full"}`}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: full ? C.chalk : txt(C, C.violet) }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
         </Pressable>
         {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {mealMsg}</Text> : null}
 
-        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} />
+        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} tier={t("w.account.settings.full")} premium />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {MEAL_PRESETS.map((p) => (
             <Pressable
@@ -316,12 +316,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
 // A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
 // Add-a-meal sheet.
-function CDivider({ label }: { label: string }) {
+function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
   const { palette: C } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 18, marginBottom: 12 }}>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash }}>{label}</Text>
+        {tier ? <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${C.violet}73` : C.line, color: premium ? txt(C, C.violet) : C.ash }}>{tier}</Text> : null}
+      </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
     </View>
   );
