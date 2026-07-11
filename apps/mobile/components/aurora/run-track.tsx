@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { pacePerKm } from "@hybrid/core";
+import { pacePerKm, mmss } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
-
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 /** AURORA Run tracking — live-run surface with a PLACEHOLDER route map (live
  *  GPS needs expo-location + a map lib in the native build); the stopwatch +

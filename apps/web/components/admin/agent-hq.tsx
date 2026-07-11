@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ago, until } from "@hybrid/core";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -91,22 +92,6 @@ function fmtUsd(n: number): string {
   if (n > 0) return `$${n.toFixed(3)}`;
   return "$0";
 }
-function ago(iso: string): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
-function until(iso: string | null): string {
-  if (!iso) return "—";
-  const s = (new Date(iso).getTime() - Date.now()) / 1000;
-  if (s < 0) return "due now";
-  if (s < 3600) return `in ${Math.ceil(s / 60)}m`;
-  if (s < 86400) return `in ${Math.round(s / 3600)}h`;
-  return `in ${Math.round(s / 86400)}d`;
-}
-
 export default function AgentHQ() {
   const [data, setData] = useState<Overview | null>(null);
   const [err, setErr] = useState<string | null>(null);

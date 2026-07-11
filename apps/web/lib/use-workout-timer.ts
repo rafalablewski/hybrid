@@ -94,5 +94,6 @@ export function useWorkoutTimer() {
   return { elapsed, countdown, startedAt, paused, togglePause, resumeFrom, stop };
 }
 
-/** m:ss for the elapsed clock (mirrors the mobile logger's `mmss`). */
-export const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
+// m:ss for the elapsed clock — the single shared formatter, re-exported so the
+// existing `@/lib/use-workout-timer` importers don't have to change.
+export { mmss } from "@hybrid/core";

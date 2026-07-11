@@ -61,6 +61,7 @@ import {
   exercisesByCategory,
   FUNNEL,
   canSaveRoutine,
+  mmss,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
@@ -150,7 +151,6 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
   distance: "",
 });
 
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 type Summ = {
   /** The saved session's id (null for guests / offline) — backs the rename. */
