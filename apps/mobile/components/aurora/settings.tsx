@@ -14,7 +14,7 @@ import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useLiquidGlass } from "../../lib/liquid-glass";
 import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
-import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS } from "./kit";
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -364,9 +364,7 @@ export default function AuroraSettings() {
     return (
       <AuroraScreen>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 4, marginBottom: 10 }}>
-          <Pressable onPress={() => setCat(null)} accessibilityRole="button" accessibilityLabel={t("common.back")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={C.chalk} />
-          </Pressable>
+          <ABack onPress={() => setCat(null)} />
           <AHeading style={{ fontSize: fs.display, color: active.danger ? (txt(C, C.red) as string) : C.chalk }}>{active.title}</AHeading>
         </View>
         {renderBody(active.id)}

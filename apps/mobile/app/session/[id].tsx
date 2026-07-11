@@ -37,7 +37,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { AuroraScreen } from "../../components/aurora/kit";
+import { AuroraScreen, ABack } from "../../components/aurora/kit";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -70,7 +70,7 @@ export default function SessionDetail() {
   if (!session) {
     return wrap(
       <>
-        <Back router={router} t={t} />
+        <ABack />
         <Card style={{ marginTop: 12, alignItems: "center", paddingVertical: 28 }}>
           <Mono>{t("session.notFound")}</Mono>
         </Card>
@@ -116,7 +116,7 @@ export default function SessionDetail() {
 
   return wrap(
     <>
-      <Back router={router} t={t} />
+      <ABack />
 
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
       <Mono style={{ marginTop: 4 }}>
@@ -246,15 +246,6 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
 // otherwise) — one shared core formatter, see formatCardioPr.
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
   formatCardioPr(p, t("summary.firstTime"));
-
-function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {
-  const C = useTheme().palette;
-  return (
-    <Pressable onPress={() => router.back()} hitSlop={10}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("nav.history")}</Text>
-    </Pressable>
-  );
-}
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",

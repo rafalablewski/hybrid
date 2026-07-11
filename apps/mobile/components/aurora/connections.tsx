@@ -5,8 +5,7 @@ import { fetchConnections, syncConnection, API_BASE, type Conn, type Provider } 
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -40,9 +39,7 @@ export default function AuroraConnections() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.account.connections.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.account.connections.intro-mobile")}</ASub>

@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
 import { Screen, Card, Loading, F } from "../lib/ui";
+import { ABack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { getLeaderboard } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SPill } from "../components/social-kit";
@@ -21,7 +22,7 @@ export default function LeaderboardScreen() {
   return (
     <Screen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.chalk, fontSize: 18 }}>‹</Text></Pressable>
+        <ABack />
         <View><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Leaderboard</Text><Text style={{ color: C.ash, fontSize: 13 }}>This week · your friends.</Text></View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>

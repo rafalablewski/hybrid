@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
+import { ABack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
@@ -67,7 +68,7 @@ export default function FeedScreen() {
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.chalk, fontSize: 18 }}>‹</Text></Pressable>
+        <ABack />
         <View>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Feed</Text>
           <Text style={{ color: C.ash, fontSize: 13 }}>What your friends are training.</Text>

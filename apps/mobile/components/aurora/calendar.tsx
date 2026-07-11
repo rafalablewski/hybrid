@@ -8,7 +8,7 @@ import { fetchEvents, fetchAssignments, updateAssignment, type EventRow, type As
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
+import { ABack, AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -64,9 +64,7 @@ export default function AuroraCalendar() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("nav.calendar")}</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="calendar" size={24} color={txt(C, C.lime)} /></View>
       </View>

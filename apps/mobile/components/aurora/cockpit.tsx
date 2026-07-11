@@ -14,7 +14,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -86,7 +86,10 @@ function Full() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       {/* 1 · CONTEXT RAIL — title + season + sliding pills (scrolls like Today) */}
-      <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
+        <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
+      </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
         {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
       </Text>
@@ -425,7 +428,10 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   const { t } = useLang();
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
+      </View>
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
         <ACard key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>

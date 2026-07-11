@@ -7,7 +7,7 @@ import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; labelKey: string }[] = [
@@ -67,9 +67,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
     <>
       {!embedded && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={C.chalk} />
-          </Pressable>
+          <ABack />
           <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
           <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.red)} /></View>
         </View>

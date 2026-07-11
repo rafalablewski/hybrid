@@ -8,8 +8,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
-import { AuroraIcon } from "./icons";
+import { AuroraScreen, AuroraMark, APill, AField, AHeading, ABack } from "./kit";
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
  *  same Supabase auth flow as the classic login screen. */
@@ -114,15 +113,7 @@ export default function AuroraLogin() {
 
   return (
     <AuroraScreen>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("common.back")}
-        onPress={() => router.back()}
-        hitSlop={10}
-        style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}
-      >
-        <AuroraIcon name="back" size={20} color={palette.chalk} />
-      </Pressable>
+      <ABack />
 
       <AuroraMark size={56} />
       {mfaStep ? (

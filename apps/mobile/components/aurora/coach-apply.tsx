@@ -6,7 +6,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
@@ -52,9 +52,7 @@ export default function AuroraCoachApply() {
 
   return (
     <AuroraScreen>
-      <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
-      </Pressable>
+      <ABack />
 
       <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("w.account.settings.become-coach")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>

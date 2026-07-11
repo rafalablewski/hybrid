@@ -34,7 +34,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator — same list as web.
@@ -104,7 +104,10 @@ export default function AuroraCoach() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={() => load(true)}>
-      <AHeading style={{ fontSize: fs.display }}>{t("nav.coach")}</AHeading>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("nav.coach")}</AHeading>
+      </View>
 
       {loading ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 18 }}>…</Text>

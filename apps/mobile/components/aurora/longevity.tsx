@@ -6,7 +6,7 @@ import { fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -53,9 +53,7 @@ export default function AuroraLongevity() {
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.longevity.title")}</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.lime)} /></View>
       </View>

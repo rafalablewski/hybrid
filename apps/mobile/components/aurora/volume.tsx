@@ -11,8 +11,7 @@ import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 
@@ -59,9 +58,7 @@ export default function AuroraVolume() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
         <Pressable onPress={() => setEditing((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? t("w.analyze.vol.done") : customized ? t("w.analyze.vol.landmarksEdit") : t("w.analyze.vol.editLandmarks")}</Text>

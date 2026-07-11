@@ -11,8 +11,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
@@ -47,9 +46,7 @@ export default function AuroraVelocity() {
 
   const header = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <AuroraIcon name="back" size={20} color={C.chalk} />
-      </Pressable>
+      <ABack />
       <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vel.title")}</AHeading>
     </View>
   );

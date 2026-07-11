@@ -6,7 +6,7 @@ import { fetchSessions, fetchAssignments, type Assignment } from "../lib/api";
 import { sapi, respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-import { AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
+import { ABack, AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
 /**
@@ -46,9 +46,7 @@ export default function Notifications() {
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk }}>Notifications</Text>
         {feed.length + social.length > 0 && (
           <View style={{ marginLeft: "auto", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>

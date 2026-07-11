@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
 import { askAiCoach, type CoachNote } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
  *  fallback) and rendered note as the classic, in the rounded look.
@@ -18,7 +17,6 @@ import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const router = useRouter();
   const [note, setNote] = useState<CoachNote | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -71,9 +69,9 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
 
   return (
     <AuroraScreen>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.home.today.aiCoach")}</AHeading>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("common.back")}</Text>
       </View>
 
       <ACard style={{ marginTop: 14 }}>

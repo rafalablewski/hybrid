@@ -6,8 +6,7 @@ import { fetchSignals, importSignal, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 /** AURORA Force plate — CSV import of jump-test data into the Signal ontology +
  *  jump-height trend, reusing the exact parseForcePlateCsv + import flow. */
@@ -46,9 +45,7 @@ export default function AuroraForcePlate() {
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="back" size={20} color={C.chalk} />
-        </Pressable>
+        <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.fp.title")}</AHeading>
       </View>
 
