@@ -68,12 +68,11 @@ export interface CommentsResponse extends Degradable, ApiError {
 
 // ---- people: search, suggestions, connections ------------------------------
 
-/** A person card fed into the discover list. NOTE: /search returns `userId`
- *  (+ coachVerified/isCoach/relation); /suggestions returns `id` + `reason`
- *  only — so `userId` is genuinely optional on the merged shape. See the
- *  suggestions latent-bug note in the audit. */
+/** A person card fed into the discover list. Both /search and /suggestions
+ *  return `userId` (the discover clients key + follow on it); /suggestions also
+ *  carries the AuthorCard `id` (same value) + a `reason`. */
 export interface PersonCard {
-  userId?: string;
+  userId: string;
   id?: string;
   handle: string;
   displayName?: string | null;

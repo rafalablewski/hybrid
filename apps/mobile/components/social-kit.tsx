@@ -72,7 +72,9 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   const load = () => getProfile(handle).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const p = data?.profile;
-  const rel: string = data?.relation ?? "none";
+  // A pending follow request lives in `followState`, NOT `relation`, so fold it in
+  // — otherwise the "Requested" button + "Request pending" copy never show.
+  const rel: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
   const following = rel === "following" || rel === "friend" || rel === "close";
 
   const doBlock = () => Alert.alert("Block", `Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`, [

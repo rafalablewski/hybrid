@@ -5,9 +5,8 @@ import type { PersonCard, SearchResponse, SuggestionsResponse } from "@hybrid/co
 import { C, useSocialTheme, card, Avatar, FollowButton, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 
-// NOTE: userId is OPTIONAL — /api/social/search returns it, but /api/social/
-// suggestions returns `id` (no userId), so suggested rows currently key + follow
-// on undefined. Kept honest here (was a required-string lie); see the audit.
+// Both /api/social/search and /api/social/suggestions return a real userId
+// (the row keys + follows on it), so this shape is shared across both sources.
 type Person = PersonCard;
 
 function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpen: (h: string) => void }) {
