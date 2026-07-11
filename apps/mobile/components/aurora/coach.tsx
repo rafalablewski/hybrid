@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { sessionVolume, weeklyRecap } from "@hybrid/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import {
+  sessionVolume,
+  weeklyRecap,
+  buildMacrocycle,
+  buildTrainingWeek,
+  trainingDaysPerWeek,
+  toTrainingLog,
+} from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
   getCoachLinks,
@@ -9,14 +16,29 @@ import {
   getClientSessions,
   getNotes,
   addNote,
+  fetchRoutines,
+  getCoachLinkTags,
+  saveCoachLinkTags,
+  getCoachAssignments,
+  assignToClient,
+  enrollClientMacrocycle,
+  getCoachCheckins,
+  replyToCheckin,
   type CoachLink,
   type Person,
   type Note,
+  type Routine,
+  type Checkin,
+  type CoachAssignment,
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+
+// Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
+// coach's one-click week generator — same list as web.
+const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
 import CoachGroups from "../coach-groups";
 import CoachPrograms from "../coach-programs";
 import CoachInvite from "../coach-invite";
@@ -193,13 +215,39 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [templates, setTemplates] = useState<Routine[]>([]);
+  const [assignments, setAssignments] = useState<CoachAssignment[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [assignId, setAssignId] = useState("");
+  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [genWeek, setGenWeek] = useState(1);
+  const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);
+  const [generating, setGenerating] = useState(false);
+  const [genMsg, setGenMsg] = useState<string | null>(null);
+  const [replyFor, setReplyFor] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [body, setBody] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    setSessions(await getClientSessions(link.id));
-    setNotes(await getNotes(link.id));
+    const [s, n, c, tpls, a, tg] = await Promise.all([
+      getClientSessions(link.id),
+      getNotes(link.id),
+      getCoachCheckins(link.id),
+      fetchRoutines(),
+      getCoachAssignments(link.id),
+      getCoachLinkTags(link.id),
+    ]);
+    setSessions(s);
+    setNotes(n);
+    setCheckins(c);
+    setTemplates(tpls);
+    setAssignments(a);
+    setTags(tg);
     setLoading(false);
   }, [link.id]);
 
@@ -215,13 +263,101 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
     load();
   };
 
+  const saveTags = async (next: string[]) => {
+    setTags(next);
+    await saveCoachLinkTags(link.id, next);
+  };
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (!v || tags.includes(v)) { setTagInput(""); return; }
+    saveTags([...tags, v]);
+    setTagInput("");
+  };
+
+  // Assign a saved template as a dated workout for this client.
+  const assign = async () => {
+    const tpl = templates.find((x) => x.id === assignId);
+    if (!tpl) return;
+    const parsed = assignDate ? new Date(assignDate) : null;
+    if (!parsed || Number.isNaN(parsed.getTime())) return; // ignore a cleared/invalid date
+    await assignToClient(link.id, { templateId: tpl.id, name: tpl.name, blocks: tpl.blocks, date: parsed.toISOString() });
+    setAssignId("");
+    load();
+  };
+
+  // Generate a varied, periodized week for this client and assign it — the same
+  // reconciler the athlete's own Today uses, run on the client's real sessions.
+  // The macrocycle is PERSISTED to the client first, so their Periodize/Today
+  // show the same season the coach is programming against.
+  const generateWeek = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setGenMsg(null);
+    try {
+      const enrolled = await enrollClientMacrocycle(link.id, genGoal);
+      if (!enrolled) { setGenMsg(t("w.teams.coach.enrollFailed")); return; }
+      const days = trainingDaysPerWeek(sessions);
+      const wk = Math.max(1, Math.min(genMacro.totalWeeks, genWeek));
+      const week = buildTrainingWeek({ macro: genMacro, currentWeek: wk, log: toTrainingLog(sessions), daysPerWeek: days });
+      const results = await Promise.all(week.map((it) => assignToClient(link.id, { name: it.name, blocks: it.blocks, date: it.date })));
+      const ok = results.filter(Boolean).length;
+      setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${genGoal} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));
+      load();
+    } catch {
+      setGenMsg(t("w.teams.coach.generateFailed"));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const sendReply = async (id: string) => {
+    if (!replyText.trim()) return;
+    await replyToCheckin(id, replyText);
+    setReplyFor(null);
+    setReplyText("");
+    load();
+  };
+
+  const field = { fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 } as const;
+  const sectionLabel = (text: string, accent = false) => (
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent ? txt(C, C.lime) : C.ash, marginTop: 20, marginBottom: 10 }}>{text}</Text>
+  );
+  const selChip = (key: string, lbl: string, selected: boolean, onPress: () => void) => (
+    <Pressable key={key} onPress={onPress} style={{ borderWidth: 1, borderColor: selected ? C.lime : C.line, backgroundColor: selected ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: selected ? txt(C, C.lime) : C.ash }}>{lbl}</Text>
+    </Pressable>
+  );
+
   return (
     <AuroraScreen>
       <Pressable onPress={back} style={{ marginBottom: 10 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("coach.roster")}</Text>
       </Pressable>
       <AHeading style={{ fontSize: fs.display }}>{personName(link.client)}</AHeading>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 14 }}>{link.client?.email}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 12 }}>{link.client?.email}</Text>
+
+      {/* Roster TAGS */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 14 }}>
+        {tags.map((tg) => (
+          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
+            <Pressable accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`} onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={6}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash, lineHeight: fs.note }}>×</Text>
+            </Pressable>
+          </View>
+        ))}
+        <TextInput
+          value={tagInput}
+          onChangeText={setTagInput}
+          onSubmitEditing={addTag}
+          returnKeyType="done"
+          placeholder={t("w.teams.coach.tagPlaceholder")}
+          placeholderTextColor={C.ash}
+          accessibilityLabel={t("w.teams.coach.addTagLabel")}
+          autoCapitalize="none"
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minWidth: 96 }}
+        />
+      </View>
 
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>{t("w.teams.coach.diet")}</Text>
       <CoachDiet linkId={link.id} />
@@ -250,6 +386,117 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 16 }}>…</Text>
       ) : (
         <>
+          {/* PROGRAMMING — assign a saved template + generate a periodized week */}
+          {sectionLabel(t("w.teams.coach.programming"))}
+          <ACard>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.assignWorkout")}</Text>
+            {templates.length === 0 ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("w.teams.coach.noTemplates")}</Text>
+            ) : (
+              <>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
+                  {templates.map((tpl) => selChip(tpl.id, tpl.name, assignId === tpl.id, () => setAssignId(assignId === tpl.id ? "" : tpl.id)))}
+                </View>
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10, alignItems: "center" }}>
+                  <TextInput value={assignDate} onChangeText={setAssignDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.ash} accessibilityLabel={t("w.teams.coach.assignDateLabel")} autoCapitalize="none" style={[field, { width: 140 }]} />
+                  <APill label={t("w.teams.coach.assign")} variant={assignId ? "primary" : "soft"} onPress={assign} style={{ paddingHorizontal: 22, paddingVertical: 12 }} />
+                </View>
+              </>
+            )}
+          </ACard>
+
+          <ACard style={{ marginTop: 12 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.generatePeriodizedWeek")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 18 }}>
+              {sessions.length === 0
+                ? t("w.teams.coach.genEmptyHint")
+                : `${t("w.teams.coach.genHintPre")} (~${trainingDaysPerWeek(sessions)}/${t("w.teams.coach.wkAbbr")}), ${t("w.teams.coach.genHintPost")}`}
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
+              {GEN_GOALS.map((g) => selChip(`goal:${g}`, g, genGoal === g, () => { setGenGoal(g); setGenWeek(1); }))}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: space.xs, paddingRight: 4 }}>
+              {genMacro.blocks.flatMap((b) =>
+                b.micros.map((m) => selChip(
+                  `wk:${m.week}`,
+                  `${t("w.teams.coach.wkAbbr")} ${m.week} · ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`,
+                  genWeek === m.week,
+                  () => setGenWeek(m.week),
+                )),
+              )}
+            </ScrollView>
+            <View style={{ marginTop: 12 }}>
+              <APill
+                label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")}
+                variant={sessions.length > 0 && !generating ? "primary" : "soft"}
+                disabled={sessions.length === 0 || generating}
+                onPress={generateWeek}
+                style={{ paddingVertical: 14 }}
+              />
+            </View>
+            {genMsg && <View accessibilityLiveRegion="polite"><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{genMsg}</Text></View>}
+          </ACard>
+
+          {assignments.map((a) => (
+            <ACard key={a.id} style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{new Date(a.date).toLocaleDateString()}</Text>
+                </View>
+                <View style={{ backgroundColor: `${a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash) }}>{a.status}</Text>
+                </View>
+              </View>
+            </ACard>
+          ))}
+
+          {/* WEEKLY CHECK-INS + coach reply */}
+          {sectionLabel(t("w.teams.coach.weeklyCheckins"))}
+          {checkins.length === 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.coach.noCheckins")}</Text>
+          ) : (
+            checkins.map((c) => (
+              <ACard key={c.id} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
+                  {c.adherencePct != null && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Text>}
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
+                  {t("w.teams.coach.energy")} {c.energy ?? "—"} · {t("w.teams.coach.sleep")} {c.sleep ?? "—"} · {t("w.teams.coach.soreness")} {c.soreness ?? "—"} · {t("w.teams.coach.mood")} {c.mood ?? "—"}
+                  {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+                </Text>
+                {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{c.note}</Text> : null}
+                {c.coachReply ? (
+                  <View style={{ marginTop: 10, paddingLeft: 10 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: 20 }}>{c.coachReply}</Text>
+                  </View>
+                ) : replyFor === c.id ? (
+                  <View style={{ marginTop: 10 }}>
+                    <TextInput
+                      value={replyText}
+                      onChangeText={setReplyText}
+                      placeholder={t("w.teams.coach.replyPlaceholder")}
+                      placeholderTextColor={C.ash}
+                      accessibilityLabel={t("w.teams.coach.replyLabel")}
+                      multiline
+                      style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, minHeight: 56 }}
+                    />
+                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
+                      <APill label={t("w.teams.coach.sendReply")} variant="primary" onPress={() => sendReply(c.id)} style={{ paddingHorizontal: 20, paddingVertical: 11 }} />
+                      <APill label={t("common.cancel")} variant="soft" onPress={() => { setReplyFor(null); setReplyText(""); }} style={{ paddingHorizontal: 20, paddingVertical: 11 }} />
+                    </View>
+                  </View>
+                ) : (
+                  <View style={{ marginTop: 10, alignSelf: "flex-start" }}>
+                    <APill label={t("w.teams.coach.reply")} variant="primary" onPress={() => { setReplyFor(c.id); setReplyText(""); }} style={{ paddingHorizontal: 22, paddingVertical: 11 }} />
+                  </View>
+                )}
+              </ACard>
+            ))
+          )}
+
           {notes.map((n) => (
             <ACard key={n.id} style={{ marginTop: 12 }}>
               {n.private && (
