@@ -71,21 +71,21 @@ describe("defaultSessionTitle", () => {
 describe("block summaries", () => {
   it("conditioningSummary renders the interval (rounds × work/rest) when logged", () => {
     expect(conditioningSummary({ kind: "conditioning", name: "Row", format: "intervals", work: 40, rest: 20, rounds: 8, minutes: 8 })).toBe(
-      "intervals · 8×40/20s · 8 min",
+      "intervals, 8×40/20s, 8 min",
     );
   });
   it("conditioningSummary falls back to rounds, and adds RPE only when asked", () => {
     expect(conditioningSummary({ kind: "conditioning", name: "Metcon", rounds: 5, rpe: 9 })).toBe("5 rounds");
-    expect(conditioningSummary({ kind: "conditioning", name: "Easy", minutes: 30, rpe: 6 }, { rpe: true })).toBe("30 min · RPE 6");
+    expect(conditioningSummary({ kind: "conditioning", name: "Easy", minutes: 30, rpe: 6 }, { rpe: true })).toBe("30 min, RPE 6");
   });
   it("blockSummary formats strength sets", () => {
     expect(blockSummary({ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }, { load: "110", reps: "3" }] })).toBe(
-      "100×5 · 110×3",
+      "100×5, 110×3",
     );
   });
   it("cardioSummary shows distance and the derived pace for a run", () => {
     expect(cardioSummary({ kind: "cardio", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
-      "8 km · 50 min · 6:15 /km · RPE 6",
+      "8 km, 50 min, 6:15 /km, RPE 6",
     );
   });
 });

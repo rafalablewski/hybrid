@@ -122,7 +122,7 @@ describe("the Soviet 8-week program", () => {
     const pm = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[1]!; // Day 1 PM
     const acc = pm.lifts.filter((l) => liftKind(l) === "rpe");
     expect(acc.map((l) => l.name)).toEqual(["Clean Pull", "Snatch Balance", "Push Press", "Front Squat", "Chinese Plank"]);
-    expect(acc[0]).toMatchObject({ setsReps: "5×3", rpe: 8, prescription: "5×3 @8", note: "pulling power · @ 90–110% of clean" });
+    expect(acc[0]).toMatchObject({ setsReps: "5×3", rpe: 8, prescription: "5×3 @8", note: "pulling power, @ 90–110% of clean" });
     // they don't count toward NL, so the day total is unchanged
     expect(planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.nl).toBe(160);
     // and they vanish in later weeks
@@ -273,18 +273,18 @@ describe("conditioning (kettlebell circuit) program — same model, blocks as ca
   it("renders each block as its own card, with the round count in the title", () => {
     const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
     expect(v.days.map((d) => d.title)).toEqual([
-      "Warm-Up · 10 min",
-      "Block 1 · Core & Stability · 2 rounds",
-      "Block 2 · Leg + Glutes · 3 rounds",
-      "Block 3 · Push & Pull · 3 rounds",
-      "Block 4 · Balance & Core Burn · 2 rounds",
-      "Block 5 · Finisher · 2–3 rounds, no rest between",
-      "Cool-Down · 10 min",
+      "Warm-Up, 10 min",
+      "Block 1, Core & Stability, 2 rounds",
+      "Block 2, Leg + Glutes, 3 rounds",
+      "Block 3, Push & Pull, 3 rounds",
+      "Block 4, Balance & Core Burn, 2 rounds",
+      "Block 5, Finisher, 2–3 rounds, no rest between",
+      "Cool-Down, 10 min",
     ]);
   });
 
   it("models circuit exercises as scheme (sets×reps / time) entries — never % or paces", () => {
-    const legs = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days[2]!; // Block 2 · Leg + Glutes
+    const legs = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days[2]!; // Block 2, Leg + Glutes
     const swing = legs.sessions[0]!.lifts[1]!;
     expect(swing).toMatchObject({ name: "KB Swing", setsReps: "3 × 15", prescription: "3 × 15" });
     expect(liftKind(swing)).toBe("rpe"); // structured circuit item (sets×reps column), no % ramp
@@ -331,14 +331,14 @@ describe("kettlebell (12-week rotating split) program — hypertrophy shape, set
 
   it("rotates the split across weeks via the day titles (full body → PPL → upper/lower)", () => {
     const wk = (n: number) => planProgramView(KB_12WK_STRONG, { week: n }).days.map((d) => d.title);
-    expect(wk(1)).toEqual(["Mon · Full Body", "Wed · Full Body", "Fri · Full Body"]);
-    expect(wk(2)).toEqual(["Mon · Push", "Wed · Pull", "Thu · Legs", "Fri · Abs"]);
-    expect(wk(3)).toEqual(["Mon · Upper", "Tue · Lower", "Thu · Upper", "Fri · Lower"]);
-    expect(wk(12)[0]).toBe("Mon · Upper");
+    expect(wk(1)).toEqual(["Mon, Full Body", "Wed, Full Body", "Fri, Full Body"]);
+    expect(wk(2)).toEqual(["Mon, Push", "Wed, Pull", "Thu, Legs", "Fri, Abs"]);
+    expect(wk(3)).toEqual(["Mon, Upper", "Tue, Lower", "Thu, Upper", "Fri, Lower"]);
+    expect(wk(12)[0]).toBe("Mon, Upper");
   });
 
   it("prescribes reps as a SINGLE number (ranges collapsed to the top), per-side / holds kept", () => {
-    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon · Push
+    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon, Push
     const bench = push.sessions[0]!.lifts[0]!;
     // source "15-20" → "20" — no range survives
     expect(bench).toMatchObject({ name: "KB Bench Press", setsReps: "3 × 20", prescription: "3 × 20" });
@@ -475,7 +475,7 @@ describe("hypertrophy (bodybuilding) program — same model, sets × reps", () =
 
     // Monday = Push (Bench), first row is the main lift with its sets×reps.
     const mon = v.days[0]!;
-    expect(mon.title).toBe("Mon · Push (Bench)");
+    expect(mon.title).toBe("Mon, Push (Bench)");
     expect(mon.volume).toBe("5 exercises");
     const bench = mon.sessions[0]!.lifts[0]!;
     expect(bench).toMatchObject({ name: "Bench Press", prescription: "4×6 @9", note: "Main lift — progressive overload" });

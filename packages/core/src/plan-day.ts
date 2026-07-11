@@ -117,7 +117,7 @@ export function planDayToBlocks(items: PlanSampleItem[]): SessionBlock[] {
 export interface PlanProgramTodayRow {
   name: string;
   /** "AM" / "PM" session band, rendered as a small tag before the name (not a
-   *  "AM · " string prefix), or null for a single daily session. */
+   *  "AM, " string prefix), or null for a single daily session. */
   session: string | null;
   /** already-formatted prescription — "70%×3×3 (95kg)", "4×8 80 kg @9", or the
    *  prose workout ("3 miles easy"); reads exactly as the Plans-library card. */
@@ -130,7 +130,7 @@ export interface PlanProgramToday {
   planId: string;
   planName: string;
   discipline: PlanDiscipline;
-  /** the day's label, e.g. "Week 2 · Legs" (week prefix only for multi-week plans). */
+  /** the day's label, e.g. "Week 2, Legs" (week prefix only for multi-week plans). */
   day: string;
   /** 0-based position among the plan's TRAINING days (rest days excluded). */
   dayIndex: number;
@@ -235,7 +235,7 @@ export function planProgramToday(
     planId,
     planName: findGoalPlan(planId)?.name ?? program.id,
     discipline: program.discipline,
-    day: `${multiWeek ? `Week ${week} · ` : ""}${raw.title}`,
+    day: `${multiWeek ? `Week ${week}, ` : ""}${raw.title}`,
     dayIndex,
     totalDays: flat.length,
     kindLabel: view.kindLabel,
