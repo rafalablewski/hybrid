@@ -1,0 +1,352 @@
+<title>Go Full cards — 10 de-slopped redesigns</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --ink3:#1b1e19;
+    --line:#2a2d2a; --line2:#3a3f39;
+    --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --violet:#c9a9f0; --violet-dim:#8f74b8; --violet-ink:#1b1526;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --page:#070806;
+    --g:14px; /* pair gutter */
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{padding:52px 24px 110px}
+  ::selection{background:var(--violet);color:var(--violet-ink)}
+  a{text-decoration:none;color:inherit}
+
+  /* ---------- page chrome ---------- */
+  .page-head{max-width:1180px;margin:0 auto 30px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--violet);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--violet)}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance;max-width:20ch}
+  .page-head h1 em{font-style:normal;color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:66ch;font-size:15px;line-height:1.65}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .brief{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .tag{font:600 12px/1 var(--mono);color:var(--ash);background:var(--ink2);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .tag b{color:var(--violet);font-weight:700}
+  .gbtn{font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--chalk);background:var(--ink2);border:1px solid var(--line2);padding:10px 14px;border-radius:999px;cursor:pointer;transition:.15s}
+  .gbtn:hover{border-color:var(--violet-dim);color:var(--violet)}
+  .gbtn[aria-pressed="true"]{background:color-mix(in srgb,var(--violet) 18%,var(--ink2));border-color:var(--violet-dim);color:var(--violet)}
+
+  /* ---------- current (before) ---------- */
+  .before{max-width:1180px;margin:0 auto 46px}
+  .before .lbl{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .before .lbl::after{content:"";flex:1;height:1px;background:var(--line)}
+  .slopnote{font-size:13px;color:var(--ash);line-height:1.6;max-width:60ch;margin-top:14px}
+  .slopnote b{color:var(--violet);font-weight:600}
+  .oldwrap{max-width:600px}
+  .old{background:linear-gradient(160deg,color-mix(in srgb,var(--violet) 14%,var(--ink2)),var(--ink2));border:1px solid color-mix(in srgb,var(--violet) 22%,var(--line));border-radius:22px;padding:18px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .old .ot{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .old .od{font:400 12.5px/1.42 var(--mono);color:var(--ash);margin-top:9px}
+  .old .oc{font:400 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--violet);margin-top:14px}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:46px 40px;align-items:start}
+  .concept{width:100%;min-width:0}
+  .cap{margin:0 2px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:10px;font:700 11.5px/1 var(--mono);letter-spacing:.16em;color:var(--violet);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:24px;height:24px;border-radius:7px;background:color-mix(in srgb,var(--violet) 20%,var(--ink2));border:1px solid var(--violet-dim);color:var(--violet);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11.5px}
+  .cap h2{font-size:20px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  /* section eyebrow above each pair */
+  .eye{font:700 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin:0 2px 12px;display:flex;align-items:center;gap:8px}
+  .eye .s{color:var(--violet)}
+
+  /* ---------- SHARED ALIGNMENT SKELETON ----------
+     Every widget is a 3-row grid: header (eyebrow+title) / description(flex) / CTA.
+     The two widgets in a pair are stretched to equal height, so the title,
+     description and CTA land on the SAME baseline in both — regardless of copy. */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--g);align-items:stretch}
+  .w{display:grid;grid-template-rows:auto 1fr auto;height:100%;min-width:0}
+  .hd{display:flex;flex-direction:column;gap:7px}
+  .pt{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.02}
+  .pd{color:var(--ash);font-size:13.5px;line-height:1.46}
+  .pc{display:flex;align-items:center;gap:7px}
+  .pk{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2)}
+  .arrow{transition:transform .18s ease}
+  .w:hover .arrow{transform:translateX(3px)}
+
+  /* alignment-guide overlay (toggle) */
+  .gallery.guides .hd{outline:1px dashed color-mix(in srgb,var(--violet) 55%,transparent);outline-offset:2px;background:color-mix(in srgb,var(--violet) 7%,transparent)}
+  .gallery.guides .pd{outline:1px dashed color-mix(in srgb,var(--lime) 40%,transparent);outline-offset:2px;background:color-mix(in srgb,var(--lime) 5%,transparent)}
+  .gallery.guides .pc{outline:1px dashed color-mix(in srgb,#7fb2ff 55%,transparent);outline-offset:2px;background:color-mix(in srgb,#7fb2ff 8%,transparent)}
+
+  /* =========================================================
+     01 · LEDGER — no box. hairline rule, mono index, prose body,
+     text-link CTA. Kills the gradient-card + mono-body cliché.
+     ========================================================= */
+  .c1 .pair{gap:0;grid-template-columns:1fr 1px 1fr}
+  .c1 .div{background:var(--line)}
+  .c1 .w{padding:2px 22px 4px;border-top:2px solid var(--chalk)}
+  .c1 .w:first-child{padding-left:0}
+  .c1 .w:last-child{padding-right:0}
+  .c1 .hd{gap:9px;padding-top:14px}
+  .c1 .pk{color:var(--violet)}
+  .c1 .pt{font-size:26px;letter-spacing:-.03em}
+  .c1 .pd{margin:16px 0;font-size:14px;color:var(--ash)}
+  .c1 .pc{padding-bottom:14px;font:700 12.5px/1 var(--sans);color:var(--chalk)}
+  .c1 .pc a{display:inline-flex;align-items:center;gap:8px;padding-bottom:2px;border-bottom:1.5px solid var(--violet)}
+  .c1 .pc .arrow{color:var(--violet)}
+
+  /* =========================================================
+     02 · SPEC PLATE — neutral engineered card, no violet border.
+     mono tag chip + a right-aligned FULL badge. Feels like kit.
+     ========================================================= */
+  .c2 .w{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:16px 16px 0}
+  .c2 .hd{gap:11px}
+  .c2 .chip{align-self:flex-start;font:700 9.5px/1 var(--mono);letter-spacing:.14em;color:var(--ash);border:1px solid var(--line2);border-radius:6px;padding:5px 7px}
+  .c2 .pt{font-size:21px}
+  .c2 .pd{margin-top:12px}
+  .c2 .pc{margin-top:14px;border-top:1px solid var(--line);padding:12px 0;justify-content:space-between}
+  .c2 .pc .lk{font:700 12px/1 var(--sans);color:var(--chalk);display:inline-flex;gap:7px;align-items:center}
+  .c2 .pc .lk .arrow{color:var(--violet)}
+  .c2 .badge{font:800 9px/1 var(--mono);letter-spacing:.1em;color:var(--violet);background:color-mix(in srgb,var(--violet) 14%,transparent);border-radius:5px;padding:5px 7px}
+
+  /* =========================================================
+     03 · QUIET PANEL — flat surface, single 2px violet edge,
+     ghost-outline button. Calm, no gradient, no glow.
+     ========================================================= */
+  .c3 .w{background:var(--ink2);border-radius:16px;padding:18px;position:relative;overflow:hidden}
+  .c3 .w::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--violet)}
+  .c3 .pt{font-size:21px}
+  .c3 .pd{margin-top:10px}
+  .c3 .pc{margin-top:16px}
+  .c3 .btn{font:700 12px/1 var(--sans);color:var(--violet);border:1px solid var(--violet-dim);border-radius:10px;padding:10px 14px;display:inline-flex;gap:8px;align-items:center;transition:.15s}
+  .c3 .w:hover .btn{background:color-mix(in srgb,var(--violet) 12%,transparent)}
+
+  /* =========================================================
+     04 · POSTER — loud. oversized black title, solid violet CTA
+     button. Athletic, high-contrast, unapologetic.
+     ========================================================= */
+  .c4 .w{background:radial-gradient(120% 70% at 50% -10%,color-mix(in srgb,var(--violet) 16%,var(--ink2)),var(--ink2));border:1px solid var(--line);border-radius:18px;padding:18px}
+  .c4 .pt{font-size:30px;font-weight:800;letter-spacing:-.04em;text-transform:uppercase}
+  .c4 .pd{margin-top:11px;color:var(--ash)}
+  .c4 .pc{margin-top:16px}
+  .c4 .fill{width:100%;justify-content:center;font:800 12.5px/1 var(--sans);color:var(--violet-ink);background:var(--violet);border-radius:11px;padding:12px;display:inline-flex;gap:8px;align-items:center;transition:.15s}
+  .c4 .w:hover .fill{filter:brightness(1.06)}
+  .c4 .fill .arrow{color:var(--violet-ink)}
+
+  /* =========================================================
+     05 · LIQUID GLASS — on-brand Aurora. frosted panel, hairline
+     top highlight, soft depth. Refined, not gradient-slop.
+     ========================================================= */
+  .c5 .w{position:relative;border-radius:20px;padding:18px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(14px);box-shadow:0 18px 40px -22px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
+  .c5 .pt{font-size:22px}
+  .c5 .pd{margin-top:10px}
+  .c5 .pc{margin-top:16px;font:700 12px/1 var(--sans)}
+  .c5 .pc a{display:inline-flex;gap:8px;align-items:center;color:var(--violet)}
+
+  /* =========================================================
+     06 · DUOTONE SPLIT — content zone + a tinted footer band that
+     carries the full-width CTA. Clear structural hierarchy.
+     ========================================================= */
+  .c6 .w{background:var(--ink2);border:1px solid var(--line);border-radius:16px;overflow:hidden;grid-template-rows:auto 1fr auto}
+  .c6 .hd{padding:16px 16px 0}
+  .c6 .pt{font-size:21px}
+  .c6 .pd{padding:10px 16px 16px;margin:0}
+  .c6 .pc{background:color-mix(in srgb,var(--violet) 12%,var(--ink3));border-top:1px solid color-mix(in srgb,var(--violet) 22%,var(--line));padding:13px 16px;justify-content:space-between;font:700 12px/1 var(--sans);color:var(--violet)}
+  .c6 .pc .arrow{color:var(--violet)}
+
+  /* =========================================================
+     07 · BOARDING PASS — a physical pass. dashed perforation +
+     side notches, mono ticket labels. Playful but deliberate.
+     ========================================================= */
+  .c7 .w{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:16px 16px 0;position:relative}
+  .c7 .hd{gap:9px}
+  .c7 .pt{font-size:21px}
+  .c7 .pd{margin-top:11px;font:400 12.5px/1.45 var(--mono)}
+  .c7 .pc{margin-top:14px;padding:13px 0;border-top:1.5px dashed var(--line2);justify-content:space-between;position:relative;font:700 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--violet)}
+  .c7 .pc::before,.c7 .pc::after{content:"";position:absolute;top:-8px;width:14px;height:14px;border-radius:50%;background:var(--page)}
+  .c7 .pc::before{left:-23px}
+  .c7 .pc::after{right:-23px}
+
+  /* =========================================================
+     08 · INDEX (zero-box) — the pair as an aligned two-row list,
+     violet dot marker, CTA chevron on the right. Max restraint.
+     ========================================================= */
+  .c8 .pair{display:block}
+  .c8 .row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding:18px 4px;border-top:1px solid var(--line)}
+  .c8 .row:last-child{border-bottom:1px solid var(--line)}
+  .c8 .dot{width:9px;height:9px;border-radius:50%;background:var(--violet);box-shadow:0 0 0 4px color-mix(in srgb,var(--violet) 18%,transparent)}
+  .c8 .pt{font-size:19px;margin-bottom:5px}
+  .c8 .pd{font-size:13px}
+  .c8 .go{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;color:var(--violet);transition:.15s;flex:none}
+  .c8 .row:hover .go{background:color-mix(in srgb,var(--violet) 14%,transparent);border-color:var(--violet-dim)}
+
+  /* =========================================================
+     09 · WIREFRAME — blueprint. transparent fill, thin outline,
+     corner ticks, mono micro-labels. Technical, confident.
+     ========================================================= */
+  .c9 .w{border:1px solid var(--line2);border-radius:12px;padding:18px;position:relative}
+  .c9 .w span.tick{position:absolute;width:8px;height:8px;border-color:var(--violet-dim);border-style:solid;border-width:0}
+  .c9 .w .t1{top:6px;left:6px;border-top-width:1.5px;border-left-width:1.5px}
+  .c9 .w .t2{top:6px;right:6px;border-top-width:1.5px;border-right-width:1.5px}
+  .c9 .w .t3{bottom:6px;left:6px;border-bottom-width:1.5px;border-left-width:1.5px}
+  .c9 .w .t4{bottom:6px;right:6px;border-bottom-width:1.5px;border-right-width:1.5px}
+  .c9 .pk{color:var(--violet-dim)}
+  .c9 .pt{font-size:21px}
+  .c9 .pd{margin-top:11px}
+  .c9 .pc{margin-top:16px;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--violet)}
+  .c9 .pc a{display:inline-flex;gap:8px;align-items:center}
+
+  /* =========================================================
+     10 · GLYPH-LED — a distinct drawn mark per card (readiness
+     dial / periodisation rings), aligned. Icon carries meaning.
+     ========================================================= */
+  .c10 .w{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .c10 .hd{gap:14px}
+  .c10 .glyph{width:38px;height:38px}
+  .c10 .glyph svg{width:38px;height:38px;display:block}
+  .c10 .pt{font-size:21px}
+  .c10 .pd{margin-top:10px}
+  .c10 .pc{margin-top:16px;font:700 12px/1 var(--sans)}
+  .c10 .pc a{display:inline-flex;gap:8px;align-items:center;color:var(--violet)}
+
+  @media (max-width:520px){
+    .gallery{grid-template-columns:1fr}
+    .before .oldwrap,.pair{max-width:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="page-head">
+  <div class="kicker">Go Full · upsell pair</div>
+  <h1>Ten ways to <em>de-slop</em> the Cockpit &amp; Sport cards</h1>
+  <p>The shipped pair reads as generic AI filler — a gradient-bordered rounded card, monospace everywhere, an ALL-CAPS arrow kicker — and the two CTAs <b>don't line up</b> because Cockpit runs three lines and Sport runs two. Each idea below fixes both: a distinct, intentional treatment, and one shared grid skeleton so the title, body and CTA sit at the <b>exact same position in both widgets</b>. Same copy throughout — only the design changes.</p>
+  <div class="brief">
+    <span class="tag">brand tokens: <b>violet</b> · ink · Archivo/mono</span>
+    <span class="tag"><b>10</b> concepts</span>
+    <button class="gbtn" id="guides" aria-pressed="false">Show alignment guides</button>
+  </div>
+</header>
+
+<section class="before">
+  <div class="lbl">Current — what we're replacing</div>
+  <div class="oldwrap">
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="old"><div class="ot">Cockpit</div><div class="od">Auto-adjust every load to your recovery &amp; readiness.</div><div class="oc">Unlock with Full →</div></div>
+      <div class="old"><div class="ot">Sport</div><div class="od">Log free — periodised sport plans with Full.</div><div class="oc">Unlock with Full →</div></div>
+    </div>
+  </div>
+  <p class="slopnote">Notice the <b>UNLOCK</b> links sit at different heights, and every card is the same violet-gradient template. That's the "slop." Toggle <b>alignment guides</b> above to see how each redesign locks the rows.</p>
+</section>
+
+<main class="gallery" id="gallery">
+
+  <!-- 01 LEDGER -->
+  <article class="concept c1">
+    <div class="cap"><span class="n"><i>01</i> Ledger</span><h2>Editorial hairline</h2><p>No box at all. A rule, a mono index, a real prose sentence, a text-link CTA. <b>Restraint reads as intent.</b></p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pk">Adaptive</span><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+      <div class="div"></div>
+      <div class="w"><div class="hd"><span class="pk">Programmed</span><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+    </div>
+  </article>
+
+  <!-- 02 SPEC PLATE -->
+  <article class="concept c2">
+    <div class="cap"><span class="n"><i>02</i> Spec plate</span><h2>Engineered card</h2><p>Neutral surface — no violet gradient. A mono tag and a right-aligned <b>FULL</b> badge give it the feel of kit, not a banner.</p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="chip">AUTO-LOAD</span><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><span class="lk">Unlock with Full <span class="arrow">→</span></span><span class="badge">FULL</span></div></div>
+      <div class="w"><div class="hd"><span class="chip">PERIODISED</span><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><span class="lk">Unlock with Full <span class="arrow">→</span></span><span class="badge">FULL</span></div></div>
+    </div>
+  </article>
+
+  <!-- 03 QUIET PANEL -->
+  <article class="concept c3">
+    <div class="cap"><span class="n"><i>03</i> Quiet panel</span><h2>Flat + one edge</h2><p>A single 2px violet spine and a ghost-outline button. No glow, no gradient — <b>calm confidence.</b></p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><span class="btn">Unlock with Full <span class="arrow">→</span></span></div></div>
+      <div class="w"><div class="hd"><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><span class="btn">Unlock with Full <span class="arrow">→</span></span></div></div>
+    </div>
+  </article>
+
+  <!-- 04 POSTER -->
+  <article class="concept c4">
+    <div class="cap"><span class="n"><i>04</i> Poster</span><h2>Loud &amp; athletic</h2><p>Oversized black title, solid violet CTA button. When the bait should <b>shout</b>, not whisper.</p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><span class="fill">Unlock with Full <span class="arrow">→</span></span></div></div>
+      <div class="w"><div class="hd"><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><span class="fill">Unlock with Full <span class="arrow">→</span></span></div></div>
+    </div>
+  </article>
+
+  <!-- 05 LIQUID GLASS -->
+  <article class="concept c5">
+    <div class="cap"><span class="n"><i>05</i> Liquid glass</span><h2>On-brand Aurora</h2><p>Frosted panel with a hairline top highlight and real depth — matches the app's Liquid&nbsp;Glass system.</p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+      <div class="w"><div class="hd"><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+    </div>
+  </article>
+
+  <!-- 06 DUOTONE SPLIT -->
+  <article class="concept c6">
+    <div class="cap"><span class="n"><i>06</i> Duotone</span><h2>Footer-band CTA</h2><p>Content zone up top, a tinted band below carrying the full-width action. <b>Structure the reader can feel.</b></p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><span>Unlock with Full</span><span class="arrow">→</span></div></div>
+      <div class="w"><div class="hd"><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><span>Unlock with Full</span><span class="arrow">→</span></div></div>
+    </div>
+  </article>
+
+  <!-- 07 BOARDING PASS -->
+  <article class="concept c7">
+    <div class="cap"><span class="n"><i>07</i> Pass</span><h2>Perforated ticket</h2><p>A dashed tear-line and side notches turn the upsell into a pass you'd <b>claim</b>. Playful, still tidy.</p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="pk">Pass · 01</span><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><span>Unlock with Full</span><span class="arrow">→</span></div></div>
+      <div class="w"><div class="hd"><span class="pk">Pass · 02</span><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><span>Unlock with Full</span><span class="arrow">→</span></div></div>
+    </div>
+  </article>
+
+  <!-- 08 INDEX LIST -->
+  <article class="concept c8">
+    <div class="cap"><span class="n"><i>08</i> Index</span><h2>Zero-box list</h2><p>Drop the cards entirely. Two aligned rows, a dot marker, a chevron. <b>The columns do the aligning.</b></p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="row"><span class="dot"></span><div><div class="pt">Cockpit</div><div class="pd">Auto-adjust every load to your recovery &amp; readiness.</div></div><span class="go"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>
+      <div class="row"><span class="dot"></span><div><div class="pt">Sport</div><div class="pd">Log free — periodised sport plans with Full.</div></div><span class="go"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>
+    </div>
+  </article>
+
+  <!-- 09 WIREFRAME -->
+  <article class="concept c9">
+    <div class="cap"><span class="n"><i>09</i> Wireframe</span><h2>Blueprint outline</h2><p>Transparent fill, thin outline, corner ticks, mono labels. Reads <b>technical and intentional</b>, never busy.</p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><span class="tick t1"></span><span class="tick t2"></span><span class="tick t3"></span><span class="tick t4"></span><div class="hd"><span class="pk">Adaptive</span><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+      <div class="w"><span class="tick t1"></span><span class="tick t2"></span><span class="tick t3"></span><span class="tick t4"></span><div class="hd"><span class="pk">Programmed</span><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+    </div>
+  </article>
+
+  <!-- 10 GLYPH-LED -->
+  <article class="concept c10">
+    <div class="cap"><span class="n"><i>10</i> Glyph</span><h2>A mark per card</h2><p>A drawn readiness dial and periodisation rings carry the idea before a word is read. <b>Icon = meaning.</b></p></div>
+    <div class="eye"><span class="s">✦</span> Go Full</div>
+    <div class="pair">
+      <div class="w"><div class="hd"><span class="glyph"><svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="15" stroke="#2a2d2a" stroke-width="3"/><path d="M20 20 L20 8" stroke="#c9a9f0" stroke-width="2.4" stroke-linecap="round"/><path d="M20 20 L29 26" stroke="#c9a9f0" stroke-width="2.4" stroke-linecap="round"/><path d="M5 20a15 15 0 0 1 22-13" stroke="#c9a9f0" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="20" r="2.4" fill="#c9a9f0"/></svg></span><span class="pt">Cockpit</span></div><p class="pd">Auto-adjust every load to your recovery &amp; readiness.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+      <div class="w"><div class="hd"><span class="glyph"><svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="15" stroke="#2a2d2a" stroke-width="3"/><circle cx="20" cy="20" r="10" stroke="#3a3f39" stroke-width="3"/><circle cx="20" cy="20" r="5" stroke="#2a2d2a" stroke-width="3"/><path d="M20 5a15 15 0 0 1 13 7.5" stroke="#c9a9f0" stroke-width="3" stroke-linecap="round"/><path d="M20 10a10 10 0 0 1 8.7 5" stroke="#c9a9f0" stroke-width="3" stroke-linecap="round"/></svg></span><span class="pt">Sport</span></div><p class="pd">Log free — periodised sport plans with Full.</p><div class="pc"><a>Unlock with Full <span class="arrow">→</span></a></div></div>
+    </div>
+  </article>
+
+</main>
+
+<script>
+  var g=document.getElementById('guides'),gal=document.getElementById('gallery');
+  g.addEventListener('click',function(){
+    var on=gal.classList.toggle('guides');
+    g.setAttribute('aria-pressed',on?'true':'false');
+    g.textContent=on?'Hide alignment guides':'Show alignment guides';
+  });
+</script>
