@@ -574,6 +574,18 @@ export async function fetchFeatureFlags(): Promise<Record<string, boolean>> {
   }
 }
 
+/** Flags AND their config values (e.g. theme.premiumAccent) in one fetch. */
+export async function fetchFlagState(): Promise<{ flags: Record<string, boolean>; values: Record<string, unknown> }> {
+  try {
+    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    if (!res.ok) return { flags: {}, values: {} };
+    const data = (await res.json()) as { flags?: Record<string, boolean>; values?: Record<string, unknown> };
+    return { flags: data.flags ?? {}, values: data.values ?? {} };
+  } catch {
+    return { flags: {}, values: {} };
+  }
+}
+
 // Incoming coach invites (mutual consent) — so a client can accept/decline a
 // coach's link from anywhere, without the coach console.
 export type CoachInvite = { id: string; status: string; coach?: { name: string | null; email: string } };

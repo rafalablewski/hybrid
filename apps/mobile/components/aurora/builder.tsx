@@ -9,6 +9,7 @@ import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -20,6 +21,7 @@ const kindColor = (k: BuilderKind, C: ReturnType<typeof useTheme>["palette"]) =>
  *  it's behaviourally identical to the classic variant + /api/templates. */
 export default function AuroraBuilder() {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
@@ -144,14 +146,14 @@ export default function AuroraBuilder() {
         />
       ) : (
         // Free user — saving a routine is Full. Building/previewing stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.amber}55`, backgroundColor: `${C.amber}14`, borderRadius: RADIUS.card, padding: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: txt(C, C.amber) }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: pa.text }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
-            style={{ backgroundColor: C.amber, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
+            style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: "#141614" }}>{t("summary.routineUnlock")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: pa.ink }}>{t("summary.routineUnlock")}</Text>
           </Pressable>
         </View>
       )}

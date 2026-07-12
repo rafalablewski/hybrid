@@ -510,7 +510,7 @@ export default function AuroraLogger({
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
-          <button onClick={loadPrescribed} style={pill(isAthlete ? "lime" : "amber")}>
+          <button onClick={loadPrescribed} style={isAthlete ? pill("lime") : { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: "var(--premium-accent-text)", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
             {!isAthlete
               ? `✦ ${t("w.home.today.unlockFullBtn")}`
               : sessions.length > 0

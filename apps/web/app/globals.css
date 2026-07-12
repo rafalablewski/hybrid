@@ -149,6 +149,13 @@ html {
   --violet-text: #8ba0cc;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
+  /* PREMIUM ACCENT — the colour every "buy Full" CTA wears; DEFAULT = sand/amber.
+     Admin can override at runtime (theme.premiumAccent flag) — PremiumAccentStyle
+     restamps these on <html> from the resolved value. Premium surfaces reference
+     these, never --amber-* directly, so one setting recolours them all. */
+  --premium-accent: var(--color-amber);
+  --premium-accent-text: var(--amber-text);
+  --premium-accent-ink: #141614;
   /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
      bare `r, g, b` triple so it drops into rgba(). Theme-aware: chartreuse on
      both themes now (overridden below only for surface values) — the glow

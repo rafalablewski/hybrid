@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
@@ -108,6 +109,13 @@ export default function AdminFlags() {
                   {f.key} · default {f.defaultEnabled ? "on" : "off"}
                   {f.updatedByEmail ? ` · last by ${f.updatedByEmail}` : ""}
                 </Mono>
+                {f.key === PREMIUM_ACCENT_FLAG && (
+                  <PremiumAccentPicker
+                    value={f.value}
+                    busy={busy === f.key}
+                    onPick={(v) => upsert(f.key, { enabled: true, audience: f.audience, value: v })}
+                  />
+                )}
               </div>
 
               <div style={{ display: "flex", gap: space.sm, alignItems: "center", flexShrink: 0 }}>
@@ -178,3 +186,71 @@ const resetBtn: React.CSSProperties = {
   background: INK,
   color: txt(ASH),
 };
+
+// The dark card surface the accent-as-text sits on (palette.dark.card) — the
+// reference background for the "text on card" contrast check.
+const CARD_DARK = "#151715";
+const gradeColor = (g: WcagGrade) => (g === "AAA" ? LIME : g === "AA" ? AMBER : RED);
+
+/** Admin picker for the premium-CTA accent: palette swatches + a custom hex,
+ *  with a live WCAG readout for the two pairings that matter (accent-as-text on
+ *  the card, and the auto-picked ink on a solid accent button). */
+function PremiumAccentPicker({ value, onPick, busy }: { value: unknown; onPick: (v: string) => void; busy: boolean }) {
+  const current = normalizePremiumAccent(value);
+  const [hex, setHex] = useState(isHexColor(current) ? current : "#");
+  const r = resolvePremiumAccent(current, "dark");
+  const textR = wcagRating(r.text, CARD_DARK);
+  const inkR = wcagRating(r.ink, r.fill);
+  const hexValid = isHexColor(hex);
+  return (
+    <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
+      <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Premium CTA colour</Mono>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        {PREMIUM_ACCENT_PRESETS.map((k) => {
+          const swatch = resolvePremiumAccent(k, "dark").fill;
+          const on = current === k;
+          return (
+            <button key={k} disabled={busy} onClick={() => onPick(k)} title={k}
+              style={{ width: 30, height: 30, borderRadius: 8, background: swatch, cursor: busy ? "default" : "pointer", border: on ? `2px solid ${CHALK}` : `1px solid ${LINE}` }} />
+          );
+        })}
+        <input
+          value={hex}
+          onChange={(e) => setHex(e.target.value.trim())}
+          placeholder="#rrggbb"
+          aria-label="Custom premium accent hex"
+          style={{ ...mono, fontSize: fs.caption, width: 104, padding: "7px 9px", borderRadius: "var(--r-field)", border: `1px solid ${hex.length > 1 && !hexValid ? RED : LINE}`, background: INK, color: CHALK }}
+        />
+        <button disabled={busy || !hexValid || hex.toLowerCase() === current} onClick={() => onPick(hex.toLowerCase())} style={{ ...resetBtn, opacity: hexValid && hex.toLowerCase() !== current ? 1 : 0.45 }}>apply</button>
+      </div>
+      <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap" }}>
+        <ContrastReadout label="Accent text on card" fg={r.text} bg={CARD_DARK} ratio={textR.ratio} normal={textR.normal} />
+        <ContrastReadout label="Ink on solid button" fg={r.ink} bg={r.fill} ratio={inkR.ratio} normal={inkR.normal} />
+      </div>
+      <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 8 }} c={ASH}>
+        Current: <span style={{ color: CHALK }}>{current}</span>{current === PREMIUM_ACCENT_DEFAULT ? " (default)" : ""} · ↺ reset returns to amber
+      </Mono>
+    </div>
+  );
+}
+
+function ContrastReadout({ label, fg, bg, ratio, normal }: { label: string; fg: string; bg: string; ratio: number; normal: WcagGrade }) {
+  const aa = ratio >= 4.5;
+  const aaa = ratio >= 7;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ width: 26, height: 18, borderRadius: 4, background: bg, border: `1px solid ${LINE}`, display: "grid", placeItems: "center" }}>
+          <span style={{ color: fg, fontSize: 12, fontWeight: 800, lineHeight: 1 }}>A</span>
+        </span>
+        <Mono s={{ fontSize: fs.caption }} c={CHALK}>{ratio.toFixed(2)}:1</Mono>
+        <Chip c={gradeColor(normal)}>{normal === "fail" ? "fail" : normal}</Chip>
+      </div>
+      <div style={{ display: "flex", gap: 5, marginTop: 5 }}>
+        <Chip c={aa ? LIME : RED}>AA {aa ? "✓" : "✕"}</Chip>
+        <Chip c={aaa ? LIME : ASH}>AAA {aaa ? "✓" : "✕"}</Chip>
+      </div>
+      <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 4 }} c={ASH}>{label}</Mono>
+    </div>
+  );
+}

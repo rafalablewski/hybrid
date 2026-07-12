@@ -37,6 +37,7 @@ export const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: "nav.tactical", label: "Tactical readiness", description: "Expose the tactical / SOF readiness screen.", defaultEnabled: true },
   { key: "coach.groups", label: "Coach client groups", description: "Let coaches bundle clients into groups and assign a plan to a whole group at once (Coach Pro). Off hides the Client groups section.", defaultEnabled: true, audience: "coaches" },
   { key: "coach.programs", label: "Coach program builder", description: "Let coaches author multi-week programs and assign them to a client or group as scheduled sessions. Off hides the Programs section.", defaultEnabled: true, audience: "coaches" },
+  { key: "theme.premiumAccent", label: "Premium CTA accent colour", description: "The accent colour every 'Unlock Full' / upgrade CTA wears across the app (Go Full cards, upgrade sheet, locked-feature badges, upsell strips). Its value is a brand-palette key (amber/violet/lime/blue/red) or a custom #hex; default is amber (sand). See premium-accent.ts (resolvePremiumAccent). Set it in the admin Flags panel's colour picker.", defaultEnabled: true },
 ];
 
 /** Does a flag's audience include this role? Admins always match (god view). */

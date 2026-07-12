@@ -81,6 +81,7 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
+import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField } from "../components/aurora/kit";
@@ -184,6 +185,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 
 export default function Workout() {
   const C = useTheme().palette;
+  const pa = usePremiumAccent();
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
   const router = useRouter();
@@ -1139,9 +1141,9 @@ export default function Workout() {
             <Pressable
               onPress={loadPrescribed}
               // free users see the sand "Full" upsell accent; athletes (already unlocked) keep lime — parity with the web logger
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : C.amber, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${isAthlete ? C.lime : C.amber}14` }}
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : pa.fill, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${isAthlete ? C.lime : pa.fill}14` }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, isAthlete ? C.lime : C.amber) }}>✦ {t("train.start")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: isAthlete ? txt(C, C.lime) : pa.text }}>✦ {t("train.start")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{!isAthlete ? t("train.premium") : recent.length > 0 ? t("train.aiReadiness") : t("train.aiCoach")}</Text>
             </Pressable>
             {routines.length > 0 && (

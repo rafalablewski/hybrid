@@ -13,6 +13,7 @@ import { fs, Screen, Kicker, Mono, H1, F } from "../../lib/ui";
 import { AuroraScreen } from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { useTheme, txt, type Palette } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { useTemplate } from "../../lib/template";
 
 // ── SPRINGBOARD — the app library ───────────────────────────────────────────
@@ -76,6 +77,7 @@ type HubItem = { id: string; label: string; icon: AuroraIconName; href: Href | n
 
 export default function More() {
   const C = useTheme().palette;
+  const pa = usePremiumAccent();
   const router = useRouter();
   const { t } = useLang();
   const aurora = useTemplate().template === "aurora";
@@ -170,14 +172,14 @@ export default function More() {
       {persona === "casual" && (
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
-          style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.amber}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: C.amber, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
+          style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: pa.fill, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
         >
-          <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.amber}24` }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.amber) }}>{t("more.upgradeKicker")}</Text>
+          <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${pa.fill}24` }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: pa.text }}>{t("more.upgradeKicker")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
           <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>{t("more.upgradeBlurb")}</Mono>
-          <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.amber, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: "#141614" }}>{t("more.goFull")}</Text>
+          <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>{t("more.goFull")}</Text>
           </View>
         </Pressable>
       )}
@@ -240,7 +242,7 @@ export default function More() {
                       <Text numberOfLines={2} style={{ marginTop: 7, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 13, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
                       {it.locked && (
                         <View style={{ position: "absolute", top: 6, right: 6 }}>
-                          <AuroraIcon name="lock" size={11} color={txt(C, C.amber)} />
+                          <AuroraIcon name="lock" size={11} color={pa.text} />
                         </View>
                       )}
                       {!it.locked && !it.href && (
