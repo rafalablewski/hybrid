@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, StyleSheet } from "react-native";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -302,10 +301,11 @@ export default function AuroraHome() {
                     <View style={{ height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, backgroundColor: C.lime }} />
                   </View>
                 </View>
-                {/* Lift reveal: the first lift reads clear; the next two sit
-                    frosted (a real BlurView + fade) behind a reveal, so the card
-                    teases "there's more" at a fixed height. Expanding lifts the
-                    frost and unfolds the rest. Mirrors web today.tsx. */}
+                {/* Lift reveal: the first lift reads clear; the rest stay sharp but
+                    dissolve — a transparent→card gradient melts them into the card
+                    (no blur), so it teases "there's more" at a fixed height.
+                    Expanding clears the dissolve and unfolds the rest. Mirrors web
+                    today.tsx (which uses an alpha mask for the same effect). */}
                 {(() => {
                   const rows = plan.rows;
                   const many = rows.length > 1;
@@ -323,8 +323,7 @@ export default function AuroraHome() {
                           {rows.slice(1, 4).map((r, i) => (
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
-                          <BlurView intensity={12} tint={scheme} style={StyleSheet.absoluteFill} pointerEvents="none" />
-                          <LinearGradient colors={["transparent", C.ink2]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+                          <LinearGradient colors={["transparent", "transparent", C.ink2]} locations={[0, 0.16, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
                           <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
                             <Text style={{ fontFamily: F.mono, fontSize: 11.5, fontWeight: "600", color: txt(C, C.lime) }}>{t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →</Text>
                           </Pressable>
