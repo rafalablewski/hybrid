@@ -73,7 +73,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
             <AuroraIcon name="play" size={18} color={C("ash")} />
             <div>
               <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.train.timer.intervalSession")}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rounds} {t("w.train.timer.rounds")} · {workSec}s / {restSec}s</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rounds} {t("w.train.timer.rounds")} – {workSec}s / {restSec}s</div>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
             ? pos.done
               ? t("w.train.timer.done")
               : phase && phase.round > 0
-                ? `${kindLabel} · ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
+                ? `${kindLabel} – ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
                 : kindLabel
             : ""}
         </div>

@@ -159,7 +159,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
   return (
     <View>
       <Row2>
-        <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total · ${stats.agents.paused} paused`} color={palette.lime} />
+        <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total – ${stats.agents.paused} paused`} color={palette.lime} />
         <Stat label="Runs today" value={stats.runs.today} sub={`${stats.runs.week} this week`} />
       </Row2>
       <Row2>
@@ -168,7 +168,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
           value={stats.runs.successRate == null ? "—" : `${stats.runs.successRate}%`}
           color={stats.runs.successRate != null && stats.runs.successRate < 80 ? palette.amber : palette.lime}
         />
-        <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today · ${fmtTok(stats.tokens.week)} tok`} />
+        <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today – ${fmtTok(stats.tokens.week)} tok`} />
       </Row2>
       <Row2>
         <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} color={palette.violet} />
@@ -181,7 +181,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
 
       {/* org chart as a status list */}
       <Card>
-        <Kicker color={palette.amber}>Org chart · the executive team</Kicker>
+        <Kicker color={palette.amber}>Org chart – the executive team</Kicker>
         <View style={{ marginTop: 10 }}>
           <OrgChart agents={agents} />
         </View>
@@ -189,7 +189,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
 
       {/* 7-day activity as bar rows (recharts is web-only) */}
       <Card>
-        <Kicker color={palette.amber}>Activity · runs · last 7 days</Kicker>
+        <Kicker color={palette.amber}>Activity – runs – last 7 days</Kicker>
         <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 6 }}>
           <Legend color={palette.lime} label="ok" />
           <Legend color={palette.red} label="error" />
@@ -210,13 +210,13 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
 
       {/* recent activity feed */}
       <Card>
-        <Kicker color={palette.amber}>Recent activity · latest runs</Kicker>
+        <Kicker color={palette.amber}>Recent activity – latest runs</Kicker>
         <View style={{ marginTop: 8 }}>
           {recent.length === 0 ? (
             <Mono color={palette.ash}>No runs yet.</Mono>
           ) : (
             recent.map((r) => (
-              <FeedRow key={r.id} dot={r.status === "ok" ? palette.lime : palette.red} title={`${r.agentName} · ${r.agentRole}`} body={r.task} right={ago(r.createdAt)} />
+              <FeedRow key={r.id} dot={r.status === "ok" ? palette.lime : palette.red} title={`${r.agentName} – ${r.agentRole}`} body={r.task} right={ago(r.createdAt)} />
             ))
           )}
         </View>
@@ -224,7 +224,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
 
       {/* upcoming scheduled work */}
       <Card>
-        <Kicker color={palette.amber}>Upcoming work · next scheduled runs</Kicker>
+        <Kicker color={palette.amber}>Upcoming work – next scheduled runs</Kicker>
         <View style={{ marginTop: 8 }}>
           {upcoming.length === 0 ? (
             <Mono color={palette.ash}>Nothing scheduled.</Mono>
@@ -232,7 +232,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
             upcoming.map((u) => (
               <FeedRow
                 key={u.id}
-                title={`${u.agentName} · ${u.cadence}`}
+                title={`${u.agentName} – ${u.cadence}`}
                 body={u.task}
                 right={u.status === "active" ? until(u.nextRunAt) : "paused"}
                 rightColor={u.status === "active" ? palette.blue : palette.amber}
@@ -296,7 +296,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
           {a.name}
         </Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
-          {a.role} · {a.model.replace("claude-", "")}{a.runtime === "managed" ? " · 🧠" : ""}
+          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – 🧠" : ""}
         </Mono>
       </View>
     </View>
@@ -326,7 +326,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[s.status] ?? palette.ash }} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} · {s.model.replace("claude-", "")}{s.runtime === "managed" ? " · 🧠" : ""}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
         </View>
         <MiniChip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</MiniChip>
       </View>
@@ -345,7 +345,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <Mini label="Runs 7d" value={String(s.runs7d)} />
         <Mini label="Cost 7d" value={fmtUsd(s.cost7d)} />
       </Row2>
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>last run {s.lastRunAt ? ago(s.lastRunAt) : "—"} · {fmtTok(s.tokens7d)} tok</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>last run {s.lastRunAt ? ago(s.lastRunAt) : "—"} – {fmtTok(s.tokens7d)} tok</Mono>
 
       <Kicker color={palette.amber}>{"\n"}KPIs — target vs actual</Kicker>
       {s.kpis.length === 0 ? (
@@ -386,7 +386,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <Mono color={palette.ash} style={{ fontSize: fs.micro }}>target {targetLabel}</Mono>
       </View>
       <Mono color={actual ? (target != null ? (onTarget ? palette.lime : palette.amber) : palette.chalk) : palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>
-        {actual ? `actual ${actual.value}${pct != null ? ` · ${pct}% of target` : ""}` : "no actual logged"}
+        {actual ? `actual ${actual.value}${pct != null ? ` – ${pct}% of target` : ""}` : "no actual logged"}
       </Mono>
       {target != null && actual && (
         <View style={{ height: 5, borderRadius: 3, backgroundColor: palette.ink2, marginTop: 5, overflow: "hidden" }}>
@@ -455,7 +455,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
             {a.estimateUsd > 0 && <MiniChip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</MiniChip>}
           </View>
           <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{a.task}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
           <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
             <PillBtn label="Approve & run" disabled={busy === a.id} onPress={() => decide(a.id, "approve")} />
             <PillBtn label="Deny" outline color={palette.ash} disabled={busy === a.id} onPress={() => decide(a.id, "deny")} />
@@ -510,7 +510,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
       {list.length > 0 && (
         <Card accent={palette.red}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <Kicker color={palette.amber}>Notifications · {unread} unread</Kicker>
+            <Kicker color={palette.amber}>Notifications – {unread} unread</Kicker>
             {unread > 0 && <PillBtn label="Mark all read" outline color={palette.ash} disabled={busy} onPress={() => markRead()} />}
           </View>
           {list.map((n) => (
@@ -532,7 +532,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
       )}
       {brokenSchedules.length > 0 && (
         <Card accent={palette.amber}>
-          <Kicker color={palette.amber}>Schedules that can't fire · the agent isn't active</Kicker>
+          <Kicker color={palette.amber}>Schedules that can't fire – the agent isn't active</Kicker>
           <View style={{ marginTop: 8 }}>
             {brokenSchedules.map((b) => (
               <View key={b.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
@@ -581,7 +581,7 @@ function DigestTab() {
   return (
     <Card>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <Kicker color={palette.amber}>Daily digest · last 24h</Kicker>
+        <Kicker color={palette.amber}>Daily digest – last 24h</Kicker>
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
@@ -626,14 +626,14 @@ function CostTab() {
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <Kicker color={palette.amber}>Monthly cost · real agent spend</Kicker>
+        <Kicker color={palette.amber}>Monthly cost – real agent spend</Kicker>
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
       {[d.current, d.previous].map((m, i) => (
         <Card key={m.month}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " · MTD" : ""}</Kicker>
+            <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " – MTD" : ""}</Kicker>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: fs.display, color: palette.chalk, marginVertical: 4 }}>{fmtUsd(m.total)}</Text>
           <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{m.runs} runs</Mono>
@@ -647,7 +647,7 @@ function CostTab() {
                   <View key={p.name} style={{ marginBottom: 6 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                       <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
-                      <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} · {p.runs}r</Mono>
+                      <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} – {p.runs}r</Mono>
                     </View>
                     <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
                       <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: 3 }} />
@@ -747,7 +747,7 @@ function Reports() {
                     <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{r.output || "(no output)"}</Mono>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
-                    {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
+                    {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                   </Mono>
                 </View>
               )}

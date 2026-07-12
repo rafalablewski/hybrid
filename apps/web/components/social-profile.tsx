@@ -232,7 +232,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn></div>
         </>)}
         {editing === "bio" && (<>
-          <textarea autoFocus style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />
+          <textarea autoFocus style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete – runner – lifter…" />
           <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 10, color: bioLen >= 280 ? C("red") : C("ash"), marginTop: 6 }}>{bioLen}/280</div>
           {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 4 }}>{err}</div>}
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn></div>

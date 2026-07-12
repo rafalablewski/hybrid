@@ -21,7 +21,7 @@ function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpe
           <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
             {p.displayName || `@${p.handle}`}{p.coachVerified && <VerifiedTick />}
           </div>
-          <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>@{p.handle}{p.reason ? ` · ${p.reason}` : p.isCoach ? " · coach" : ""}</div>
+          <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>@{p.handle}{p.reason ? ` – ${p.reason}` : p.isCoach ? " – coach" : ""}</div>
         </div>
       </button>
       <FollowButton relation={p.relation ?? "none"} onFollow={follow} onUnfollow={unfollow} busy={busy.is("f")} />

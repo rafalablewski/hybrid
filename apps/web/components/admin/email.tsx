@@ -269,8 +269,8 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>{c.subject}</div>
               <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 6 }}>
                 <Chip c={statusColor[c.status] ?? CHALK}>{c.status}</Chip>
-                <Chip c={VIOLET}>{c.audience} · {c.audienceSize}</Chip>
-                {c.status === "sent" && <Chip c={LIME}>{c.sentCount} sent{c.failedCount ? ` · ${c.failedCount} failed` : ""}</Chip>}
+                <Chip c={VIOLET}>{c.audience} – {c.audienceSize}</Chip>
+                {c.status === "sent" && <Chip c={LIME}>{c.sentCount} sent{c.failedCount ? ` – ${c.failedCount} failed` : ""}</Chip>}
                 {c.scheduledAt && c.status === "scheduled" && <Chip c={ASH}>{new Date(c.scheduledAt).toLocaleString()}</Chip>}
               </div>
             </div>

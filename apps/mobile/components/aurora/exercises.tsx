@@ -124,7 +124,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       {stats.bestSet && (
         <ACard style={{ marginTop: 14 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}<Text style={{ color: C.ash }}> · {t("w.analyze.ex.e1rmLabel")} {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</Text></Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(stats.bestSet.e1rm, units)} – {fmtDate(stats.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{stats.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(stats.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(stats.bestE1rmAllTime, units)}</Text>
         </ACard>
       )}
@@ -132,7 +132,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
         <ACard style={{ marginTop: 14 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.velocityProfile")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} · {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} – {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
         </ACard>
       )}
     </>
@@ -151,7 +151,7 @@ function TrendBars({ series, color, lowerIsBetter = false, unit }: { series: num
     <View style={{ marginTop: 12 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{fmt(latest)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, good ? C.lime : C.amber) }}>{`${delta >= 0 ? "+" : "−"}${unit === "pace" ? paceClock(Math.abs(delta)) : Math.abs(delta)} · ${series.length}×`}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, good ? C.lime : C.amber) }}>{`${delta >= 0 ? "+" : "−"}${unit === "pace" ? paceClock(Math.abs(delta)) : Math.abs(delta)} – ${series.length}×`}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 44, gap: 3 }}>
         {series.map((v, i) => {

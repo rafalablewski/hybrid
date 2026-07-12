@@ -89,7 +89,7 @@ export default function CoachInvite() {
               <input readOnly value={created.url} style={{ ...input, flex: 1, minWidth: 200 }} onFocus={(e) => e.currentTarget.select()} />
               <button onClick={() => copy(created.url)} style={cta(false)}>Copy</button>
             </div>
-            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>Expires in 30 days · single use.</Mono>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>Expires in 30 days – single use.</Mono>
           </div>
         </div>
       )}

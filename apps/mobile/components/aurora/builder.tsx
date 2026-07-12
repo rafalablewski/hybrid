@@ -165,7 +165,7 @@ export default function AuroraBuilder() {
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} · {t("w.train.builder.tapToEdit")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} – {t("w.train.builder.tapToEdit")}</Text>
               </Pressable>
               <Pressable onPress={() => b.remove(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>

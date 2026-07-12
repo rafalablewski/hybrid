@@ -89,12 +89,12 @@ export default function AuroraCompetition() {
         <>
           <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{event.name} · {event.sport}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{event.name} – {event.sport}</Text>
               <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} {t("w.train.comp.weeksOut")} · {t("w.train.comp.formAtEvent")} {Math.round(plan.formAtEvent)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} {t("w.train.comp.weeksOut")} – {t("w.train.comp.formAtEvent")} {Math.round(plan.formAtEvent)}</Text>
             <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden", marginTop: 12 }}>
               {plan.macro.blocks.map((b) => (
                 <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.color }} />

@@ -368,7 +368,7 @@ export default function AppShell() {
                   key={id}
                   data-tour={`nav-${id}`}
                   onClick={onClick}
-                  title={railCollapsed ? (locked ? `${label} · Full` : label) : undefined}
+                  title={railCollapsed ? (locked ? `${label} – Full` : label) : undefined}
                   style={{
                     width: "100%",
                     display: "flex",
@@ -564,7 +564,7 @@ export default function AppShell() {
                 fontSize: fs.bodyLg,
                 flexShrink: 0,
               }}
-              title={railCollapsed ? `${session.name} · ${session.role}` : undefined}
+              title={railCollapsed ? `${session.name} – ${session.role}` : undefined}
             >
               {initial}
             </div>
@@ -748,10 +748,10 @@ export default function AppShell() {
               const acc = scope === "operator" ? AMBER : scope === "coach" ? VIOLET : LIME;
               const txt =
                 scope === "operator"
-                  ? "Operator scope · platform aggregates only — MAU, retention, content. No access to any individual's private training data."
+                  ? "Operator scope – platform aggregates only — MAU, retention, content. No access to any individual's private training data."
                   : scope === "coach"
-                    ? "Coach scope · only athletes who accepted you (mutual consent). Aggregate roster view; private athlete notes excluded."
-                    : "Client scope · your own training data only. Nothing here is visible to other athletes.";
+                    ? "Coach scope – only athletes who accepted you (mutual consent). Aggregate roster view; private athlete notes excluded."
+                    : "Client scope – your own training data only. Nothing here is visible to other athletes.";
               return (
                 <div
                   style={{

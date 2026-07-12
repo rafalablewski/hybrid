@@ -224,7 +224,7 @@ export default function AdminExercises() {
           style={{ ...mono, fontSize: fs.bodyLg, flex: 1, minWidth: 200, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: fs.body }} c={ASH}>
-          {list ? `${list.length} custom` : "…"} · + built-ins
+          {list ? `${list.length} custom` : "…"} – + built-ins
         </Mono>
         {editing === null && (
           <button onClick={openNew} style={primaryBtn}>

@@ -348,7 +348,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         </View>
         {hasPrev && (
           <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
-            {signed(recap.sessionsDelta)} {t("recap.sessions")} · {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
+            {signed(recap.sessionsDelta)} {t("recap.sessions")} – {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
           </Text>
         )}
       </View>
@@ -360,7 +360,7 @@ RecapShareCard.displayName = "RecapShareCard";
 export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg"): string {
   return [
     `\u{1F4C8} ${t("recap.title")} — HYBRID`,
-    `${recap.sessions} ${t("recap.sessions")} · ${fmtTonnage(recap.volume, units)} · ${recap.prs.length} ${t("recap.prs")}`,
+    `${recap.sessions} ${t("recap.sessions")} – ${fmtTonnage(recap.volume, units)} – ${recap.prs.length} ${t("recap.prs")}`,
     recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]

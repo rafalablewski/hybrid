@@ -412,7 +412,7 @@ export default function AdminAgents() {
                     <Chip c={a.authority === "executive" ? VIOLET : ASH}>{a.role}</Chip>
                   </div>
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
-                    {a.model.replace("claude-", "")} · effort {a.effort} · {a.kpis.length} KPIs
+                    {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
                   </Mono>
                 </div>
                 <button
@@ -639,7 +639,7 @@ export default function AdminAgents() {
                       </div>
                       {run && (run.usage.input > 0 || run.usage.output > 0) && (
                         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
-                          {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
+                          {run.usage.input.toLocaleString()} in – {run.usage.output.toLocaleString()} out tokens
                         </Mono>
                       )}
                     </div>
@@ -664,7 +664,7 @@ export default function AdminAgents() {
                       <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
                       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>
                         {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleString()}` : "never run"}
-                        {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
+                        {s.enabled && s.nextRunAt ? ` – next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
                     </div>
                     <button aria-label="Delete" style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
@@ -690,7 +690,7 @@ export default function AdminAgents() {
 
             {/* ---- activity timeline ---- */}
             {timeline.length > 0 && (
-              <Section title="Timeline" hint="config edits · runs · approvals">
+              <Section title="Timeline" hint="config edits – runs – approvals">
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {timeline.map((t) => {
                     const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : VIOLET;
@@ -703,7 +703,7 @@ export default function AdminAgents() {
                           </div>
                           {t.detail && <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
                         </div>
-                        <Mono s={{ fontSize: fs.micro, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
+                        <Mono s={{ fontSize: fs.micro, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} – {t.actor}</Mono>
                       </div>
                     );
                   })}
@@ -732,7 +732,7 @@ export default function AdminAgents() {
                         ))}
                         <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
                         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
-                          {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
+                          {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                         </Mono>
                       </div>
                     </details>
@@ -789,7 +789,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label style={{ display: "block" }}>
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
         {label}
-        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
+        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> – {hint}</span> : null}
       </Mono>
       {children}
     </label>
@@ -801,7 +801,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
       <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
         {title}
-        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
+        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> – {hint}</span> : null}
       </Mono>
       {children}
     </div>

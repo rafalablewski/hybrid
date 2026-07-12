@@ -78,7 +78,7 @@ export default function IntervalTimer() {
     const msg = pos.done
       ? t("w.train.timer.done")
       : phase && phase.round > 0
-        ? `${kindLabel} · ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
+        ? `${kindLabel} – ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
         : kindLabel;
     if (msg !== lastAnnounce.current) {
       lastAnnounce.current = msg;
@@ -96,7 +96,7 @@ export default function IntervalTimer() {
           <AuroraIcon name="play" size={18} color={C.ash} />
           <View>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{rounds} rounds · {workSec}s / {restSec}s</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{rounds} rounds – {workSec}s / {restSec}s</Text>
           </View>
         </View>
       </View>
@@ -142,7 +142,7 @@ export default function IntervalTimer() {
           <Stepper label="Work" value={workSec} onChange={(d) => setWorkSec((v) => Math.max(5, Math.min(300, v + d * 5)))} suffix="s" step={5} />
           <Stepper label="Rest" value={restSec} onChange={(d) => setRestSec((v) => Math.max(0, Math.min(300, v + d * 5)))} suffix="s" step={5} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textAlign: "center", marginTop: 4 }}>
-            Total {formatClock(total)} · 10s lead-in
+            Total {formatClock(total)} – 10s lead-in
           </Text>
         </View>
       )}

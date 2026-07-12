@@ -102,7 +102,7 @@ export default function AuroraTalent() {
           {t("w.teams.talent.headerBody")}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}>
-          {t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` · ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}
+          {t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` – ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}
         </div>
       </div>
 
@@ -152,13 +152,13 @@ export default function AuroraTalent() {
                 <div key={b.metric} style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk") }}>{METRIC_LABEL[b.metric]}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{b.value} · {t("w.teams.talent.cohort")} {b.cohortMean}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{b.value} – {t("w.teams.talent.cohort")} {b.cohortMean}</span>
                   </div>
                   <div style={{ position: "relative", height: 8, borderRadius: 999, background: C("ink"), marginTop: 4, overflow: "hidden" }}>
                     <div style={{ width: `${b.potentialPercentile}%`, height: "100%", background: `color-mix(in srgb, ${C("lime")} 40%, transparent)`, position: "absolute" }} />
                     <div style={{ width: `${b.percentile}%`, height: "100%", background: C(pctColor(b.percentile)), position: "absolute" }} />
                   </div>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{b.percentile}{t("w.teams.talent.ordinal")}{b.potentialPercentile > b.percentile ? ` · ${b.potentialPercentile}${t("w.teams.talent.ordinal")} ${t("w.teams.talent.potentialWord")}` : ""}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{b.percentile}{t("w.teams.talent.ordinal")}{b.potentialPercentile > b.percentile ? ` – ${b.potentialPercentile}${t("w.teams.talent.ordinal")} ${t("w.teams.talent.potentialWord")}` : ""}</span>
                 </div>
               ))}
             </>
@@ -187,7 +187,7 @@ export default function AuroraTalent() {
           {results.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.talent.noMatch")}</div>}
           {results.map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk") }}>{r.name} · {r.sport} · {r.sex}{r.age}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk") }}>{r.name} – {r.sport} – {r.sex}{r.age}</span>
               <div style={{ display: "flex", gap: space.xs, alignItems: "center" }}>
                 {chip(pctColor(r.percentile), `${r.percentile}${t("w.teams.talent.ordinal")}`)}
                 {r.potential > r.percentile && chip("violet", `${r.potential}${t("w.teams.talent.ordinal")} ${t("w.teams.talent.potAbbr")}`)}

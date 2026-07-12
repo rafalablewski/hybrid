@@ -67,7 +67,7 @@ export default function AdminSystem() {
 
       {/* Env presence — booleans only, no secrets */}
       <Card>
-        <Kicker>Environment · presence only — no secrets</Kicker>
+        <Kicker>Environment – presence only — no secrets</Kicker>
         <View style={{ marginTop: 8 }}>
           {Object.entries(s.env).map(([k, present]) => (
             <KV key={k} k={k} v={<Chip color={present ? palette.lime : palette.ash}>{present ? "✓ set" : "✗ unset"}</Chip>} />

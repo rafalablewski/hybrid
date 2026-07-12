@@ -381,7 +381,7 @@ export default function WorkoutBlocks({
                   sets for this lift, so progressive overload has a target to beat. */}
               {live && lastByLift?.get(b.name) && (
                 <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 8 }} c={ASH}>
-                  {t("workout.lastTime")} · {lastByLift.get(b.name)}
+                  {t("workout.lastTime")} – {lastByLift.get(b.name)}
                 </Mono>
               )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
@@ -545,7 +545,7 @@ export default function WorkoutBlocks({
                 const pl = platesPerSide(top, units);
                 return (
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-                    {pl.perSide.length ? `${t("w.train.blocks.perSide")} ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `${t("w.train.blocks.barOnly")} (${pl.bar} ${units})`}
+                    {pl.perSide.length ? `${t("w.train.blocks.perSide")} ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" – ")}${pl.remainder ? " ≈" : ""}` : `${t("w.train.blocks.barOnly")} (${pl.bar} ${units})`}
                   </Mono>
                 );
               })()}

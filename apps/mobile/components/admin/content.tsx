@@ -69,7 +69,7 @@ function Capabilities() {
         if (items.length === 0) return null;
         return (
           <View key={st} style={{ marginTop: 6 }}>
-            <Kicker color={meta[st].color}>{meta[st].label} · {items.length}</Kicker>
+            <Kicker color={meta[st].color}>{meta[st].label} – {items.length}</Kicker>
             <View style={{ marginTop: 8 }}>
               {items.map((c) => (
                 <CapRow key={c.id} cap={c} color={meta[st].color} />
@@ -80,7 +80,7 @@ function Capabilities() {
       })}
 
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 14 }}>
-        Source: packages/core/src/capabilities.ts · {CAPABILITIES.length} capabilities tracked.
+        Source: packages/core/src/capabilities.ts – {CAPABILITIES.length} capabilities tracked.
       </Mono>
     </View>
   );
@@ -130,7 +130,7 @@ function DataNet() {
   return (
     <View>
       <Card accent={palette.violet}>
-        <Kicker color={palette.violet}>Data network · benchmarking intelligence</Kicker>
+        <Kicker color={palette.violet}>Data network – benchmarking intelligence</Kicker>
         <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>
           The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
           calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
@@ -149,10 +149,10 @@ function DataNet() {
       <Card accent={d.calibration.n > 0 ? palette.lime : palette.ash}>
         <Kicker color={palette.blue}>Injury calibration</Kicker>
         <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
-          model {d.calibration.version} · {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
+          model {d.calibration.version} – {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
         </Mono>
         <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2, lineHeight: 16 }}>
-          labels: {d.calibration.positives} injured · {d.calibration.negatives} healthy · σ(a + b·score): a=
+          labels: {d.calibration.positives} injured – {d.calibration.negatives} healthy – σ(a + b·score): a=
           {d.calibration.coeffs.intercept.toFixed(2)}, b={d.calibration.coeffs.slope.toFixed(2)}
         </Mono>
       </Card>
@@ -168,11 +168,11 @@ function DataNet() {
             {d.norms.map((nrm) => (
               <View key={nrm.cohortKey} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: palette.line }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-                  <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{nrm.sport} · {nrm.sex} · {nrm.ageBand}</Mono>
+                  <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{nrm.sport} – {nrm.sex} – {nrm.ageBand}</Mono>
                   <Chip color={palette.blue}>{METRIC_LABEL[nrm.metric]}</Chip>
                 </View>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
-                  n={nrm.n} · mean {nrm.mean} · sd {nrm.sd} · P10 {nrm.p10} · P50 {nrm.p50} · P90 {nrm.p90}
+                  n={nrm.n} – mean {nrm.mean} – sd {nrm.sd} – P10 {nrm.p10} – P50 {nrm.p50} – P90 {nrm.p90}
                 </Mono>
               </View>
             ))}

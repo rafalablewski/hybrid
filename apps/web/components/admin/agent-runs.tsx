@@ -118,7 +118,7 @@ export default function AdminAgentRuns() {
                   {r.output || "(no output)"}
                 </div>
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-                  {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
+                  {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                 </Mono>
               </div>
             </details>

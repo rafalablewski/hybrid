@@ -46,7 +46,7 @@ export default function CoachApplications() {
   return (
     <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
       <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
-        Pending coach applications · {apps.length}
+        Pending coach applications – {apps.length}
       </Mono>
       <div style={{ display: "grid", gap: space.sm }}>
         {apps.map((a) => (

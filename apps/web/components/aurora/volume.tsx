@@ -126,7 +126,7 @@ function LandmarkBar({ s }: { s: MuscleVolumeStatus }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk") }}>{muscleKey ? t(muscleKey) : s.muscle}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}><span style={{ color: C(zone.c), fontWeight: 800 }}>{s.sets} {t("w.analyze.vol.sets")}</span><span style={{ color: C("ash") }}> · {t(zone.key)}</span></span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}><span style={{ color: C(zone.c), fontWeight: 800 }}>{s.sets} {t("w.analyze.vol.sets")}</span><span style={{ color: C("ash") }}> – {t(zone.key)}</span></span>
       </div>
       <div style={{ position: "relative", height: 12, background: C("ink"), borderRadius: 6, border: `1px solid ${C("line")}` }}>
         <div style={{ position: "absolute", left: pct(s.landmark.mev), width: `${Math.max(0, ((s.landmark.mavHigh - s.landmark.mev) / max) * 100)}%`, top: 0, bottom: 0, background: `color-mix(in srgb, ${C("lime")} 14%, transparent)` }} />

@@ -168,7 +168,7 @@ export default function AdminMedia() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 10 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>
-          {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} · public CDN URLs
+          {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
         </Mono>
         <div>
           <input

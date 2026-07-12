@@ -53,7 +53,7 @@ export default function AuroraConnections() {
                 <div style={{ fontWeight: 800, fontSize: fs.title }}>{p.label}</div>
                 {c ? chip(c.status === "active" ? C("lime") : C("amber"), t(`w.account.connections.status-${c.status}`)) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" · ")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" – ")}</div>
               <div style={{ marginTop: 14 }}>
                 {p.auth === "native" ? (
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.native")}</span>

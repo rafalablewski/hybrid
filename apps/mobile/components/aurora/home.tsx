@@ -465,7 +465,7 @@ export default function AuroraHome() {
       </Sheet>
 
       {/* DONE TODAY sheet — everything logged today + the full calendar. */}
-      <Sheet visible={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
+      <Sheet visible={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
         <View style={{ marginTop: 12 }}>
           {doneToday.length === 0 ? (
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t("w.home.today.doneModalEmpty")}</Text>
@@ -519,12 +519,12 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
     const p: string[] = [];
     if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
     if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" · ");
-    return s.blocks.map((b) => b.name).join(" · ");
+    if (p.length) return p.join(" – ");
+    return s.blocks.map((b) => b.name).join(" – ");
   }
   const vol = sessionVolume(s.blocks);
-  const names = s.blocks.map((b) => b.name).join(" · ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} · ${names}` : names;
+  const names = s.blocks.map((b) => b.name).join(" – ");
+  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }
 
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface

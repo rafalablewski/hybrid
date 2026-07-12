@@ -48,7 +48,7 @@ export default function CapabilitiesScreen() {
         return (
           <div key={st} style={{ marginBottom: 8 }}>
             <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "10px 0" }} c={m.color}>
-              {m.label} · {items.length}
+              {m.label} – {items.length}
             </Mono>
             <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
               {items.map((c) => (
@@ -60,7 +60,7 @@ export default function CapabilitiesScreen() {
       })}
 
       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 18 }} c={ASH}>
-        Source: packages/core/src/capabilities.ts · {CAPABILITIES.length} capabilities tracked.
+        Source: packages/core/src/capabilities.ts – {CAPABILITIES.length} capabilities tracked.
       </Mono>
     </div>
   );

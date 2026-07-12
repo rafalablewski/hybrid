@@ -79,7 +79,7 @@ export default function AuroraLongevity() {
           <div style={{ marginTop: 8 }}>
             {report.contributions.map((c) => (
               <div key={c.marker} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: `1px solid ${C("line")}` }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{c.marker} <span style={{ color: C("ash") }}>· {c.note}</span></span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{c.marker} <span style={{ color: C("ash") }}>– {c.note}</span></span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: c.deltaYears <= 0 ? C("lime") : C("amber") }}>{c.deltaYears <= 0 ? "" : "+"}{c.deltaYears} yr</span>
               </div>
             ))}

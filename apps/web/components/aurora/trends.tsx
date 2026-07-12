@@ -58,7 +58,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
         <div style={card}>{frameHead("lime", t("w.analyze.trends.weeklySets"))}
           <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={LIME_HEX} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
-        <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} · ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
+        <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} – ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
           <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} /><Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
       </div>

@@ -118,7 +118,7 @@ export default function AuroraSport() {
           <Text style={{ fontSize: 28 }}>{meta.icon}</Text>
           <View>
             <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{sport}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{meta.family} · {LEVELS[levelIdx]}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{meta.family} – {LEVELS[levelIdx]}</Text>
           </View>
         </View>
       </ACard>

@@ -72,7 +72,7 @@ export default function AuroraPerformance() {
             <View style={{ backgroundColor: `${hpiColor(state.hpi.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4, alignSelf: "flex-start" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.band}</Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.perf.limiter")} · {state.hpi.limiter}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.perf.limiter")} – {state.hpi.limiter}</Text>
           </View>
         </View>
         <View style={{ marginTop: 14, gap: space.ms }}>
@@ -120,7 +120,7 @@ export default function AuroraPerformance() {
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>-13d</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.perf.today")} · HPI {traj[traj.length - 1]?.hpi ?? "—"} · Readiness {traj[traj.length - 1]?.readiness ?? "—"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.perf.today")} – HPI {traj[traj.length - 1]?.hpi ?? "—"} – Readiness {traj[traj.length - 1]?.readiness ?? "—"}</Text>
         </View>
       </ACard>
 
@@ -201,7 +201,7 @@ function RtpPanel() {
 
   return (
     <ACard style={{ marginTop: 14 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Return-to-play · gated protocols</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Return-to-play – gated protocols</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
         {RTP_TISSUES.map((tt) => {
@@ -281,7 +281,7 @@ function RtpPanel() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>Audit trail</Text>
                   {p.audit.slice(-5).reverse().map((a, i) => (
                     <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.micro, color: a.action === "override" ? txt(C, C.red) : C.ash, marginTop: 4 }}>
-                      {new Date(a.ts).toLocaleDateString()} · {a.by} ({a.role.toLowerCase()}) · {auditText(a)}
+                      {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
                     </Text>
                   ))}
                 </View>

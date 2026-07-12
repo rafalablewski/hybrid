@@ -42,14 +42,14 @@ export default function AuroraPeriodize({
       )}
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
-          {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : ` · ${t("w.train.periodize.enrolledLabel")}`}
+          {macro.goalOrSport}{macro.model ? ` – ${macro.model}` : ` – ${t("w.train.periodize.enrolledLabel")}`}
         </div>
         <div style={{ fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
           {macro.totalWeeks}{t("w.train.periodize.macroNow")} {current.label}
         </div>
         <div style={{ display: "flex", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>
           {macro.blocks.map((b) => (
-            <div key={b.key} title={`${b.label} · ${b.weeks} ${t("w.train.periodize.wk")}`} style={{ flex: b.weeks, background: b.key === current.key ? b.color : `${b.color}40` }} />
+            <div key={b.key} title={`${b.label} – ${b.weeks} ${t("w.train.periodize.wk")}`} style={{ flex: b.weeks, background: b.key === current.key ? b.color : `${b.color}40` }} />
           ))}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: space.ms, marginTop: 12 }}>
@@ -74,7 +74,7 @@ export default function AuroraPeriodize({
               {b.micros.map((m) => (
                 <div
                   key={m.week}
-                  title={`${t("w.train.periodize.week")} ${m.week} · ${m.kind} · ${t("w.train.periodize.intensity")} ${m.intensity} / ${t("w.train.periodize.volume")} ${m.volume}`}
+                  title={`${t("w.train.periodize.week")} ${m.week} – ${m.kind} – ${t("w.train.periodize.intensity")} ${m.intensity} / ${t("w.train.periodize.volume")} ${m.volume}`}
                   style={{
                     flex: 1,
                     textAlign: "center",

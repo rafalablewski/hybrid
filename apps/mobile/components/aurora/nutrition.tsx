@@ -104,7 +104,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     setMealMsg("");
     const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit)));
     if (ok.includes(false)) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setMealMsg(`${t(p.labelKey).split(" · ")[0]} +${p.kcal} kcal`);
+    setMealMsg(`${t(p.labelKey).split(/ [·–] /)[0]} +${p.kcal} kcal`);
     revalidate.recovery();
   };
 
@@ -171,7 +171,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 <Text style={{ fontSize: 22 }}>{p.emoji}</Text>
                 {!full && <Text style={{ fontSize: 12 }}>🔒</Text>}
               </View>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{t(p.labelKey).split(" · ")[0]}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{t(p.labelKey).split(/ [·–] /)[0]}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>~{p.kcal} kcal</Text>
             </Pressable>
           ))}
@@ -298,8 +298,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                   <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
                   {!full && <Text style={{ fontSize: 12 }}>🔒</Text>}
                 </View>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>{t(p.labelKey).split(" · ")[0]}</Text>
-                {t(p.labelKey).split(" · ")[1] ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(p.labelKey).split(" · ")[1]}</Text> : null}
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>{t(p.labelKey).split(/ [·–] /)[0]}</Text>
+                {t(p.labelKey).split(/ [·–] /)[1] ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(p.labelKey).split(/ [·–] /)[1]}</Text> : null}
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{p.kcal} kcal ({p.protein}p {p.carbs}c {p.fat}f)</Text>
               </Pressable>
             ))}

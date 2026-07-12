@@ -158,7 +158,7 @@ export function SessionDetail({
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.display }}>{session.title}</div>
           <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
             {fmtDate(session.startedAt)}
-            {typeof session.readiness === "number" ? ` · readiness ${session.readiness}` : ""}
+            {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
           </Mono>
         </div>
         {/* Share this session — same branded story card as the finished workout. */}
@@ -236,7 +236,7 @@ export function SessionDetail({
         )}
 
         {series.length > 1 && (
-          <ChartFrame title={`${topLift} · e1RM`} kicker="Trend across your logs">
+          <ChartFrame title={`${topLift} – e1RM`} kicker="Trend across your logs">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={series}>
                 <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
@@ -251,7 +251,7 @@ export function SessionDetail({
       </div>
 
       {paceData.length > 1 && (
-        <ChartFrame title={`${runMove} · pace`} kicker="Lower is faster · across your logs">
+        <ChartFrame title={`${runMove} – pace`} kicker="Lower is faster – across your logs">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={paceData}>
               <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
@@ -300,7 +300,7 @@ export function SessionDetail({
                 {b.sets.map((st, j) => {
                   const sType = setType(st);
                   const sAccent = sType === "warmup" ? AMBER : sType === "cooldown" ? BLUE : sType === "drop" ? LIME : ASH;
-                  const sTag = sType === "warmup" ? " · warm-up" : sType === "cooldown" ? " · cool-down" : sType === "drop" ? " · drop" : "";
+                  const sTag = sType === "warmup" ? " – warm-up" : sType === "cooldown" ? " – cool-down" : sType === "drop" ? " – drop" : "";
                   return (
                   <div key={j} style={{ display: "flex", gap: space.lg, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
                     <Mono s={{ fontSize: fs.body, width: 22 }} c={sAccent}>{setTypeBadge(st, j)}</Mono>

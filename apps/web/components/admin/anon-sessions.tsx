@@ -89,7 +89,7 @@ export default function AdminAnonSessions() {
                   <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{s.title}</div>
                   <Mono s={{ fontSize: fs.caption }} c={ASH}>
                     {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
-                    {s.blocks.length ? ` · ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}` : ""}
+                    {s.blocks.length ? ` – ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}` : ""}
                   </Mono>
                 </td>
                 <td data-label="Platform" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>

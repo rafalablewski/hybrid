@@ -85,7 +85,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       action: "agent.run",
       targetType: "agent",
       targetId: id,
-      summary: `Ran ${def.name} (${def.role}, ${def.runtime})${result.steps.length ? ` · delegated to ${result.steps.length}` : ""}`,
+      summary: `Ran ${def.name} (${def.role}, ${def.runtime})${result.steps.length ? ` – delegated to ${result.steps.length}` : ""}`,
       metadata: { task: task.slice(0, 200), runtime: def.runtime, delegations: result.steps.map((s) => s.role), usage: result.usage },
       req: request,
     });

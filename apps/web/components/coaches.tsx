@@ -82,7 +82,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                   <div>
                     <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700 }}>{p.name}</div>
-                    <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</div>
+                    <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" – ")}</div>
                   </div>
                   {p.enrollmentStatus ? (
                     <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("ash"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</span>
@@ -104,7 +104,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                             {w.days.map((d: ProgramPreviewDay, di: number) => (
                               <div key={di} style={{ marginTop: 4 }}>
                                 <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `Day ${di + 1}`}</div>
-                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</div>
+                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</div>
                               </div>
                             ))}
                           </div>
@@ -186,11 +186,11 @@ function Storefront() {
       {!data.handle && <div style={{ ...card(aurora, { marginBottom: 16, borderColor: C("amber") }) }}>⚠ Claim a @handle on <strong>My profile</strong> first — the marketplace lists you by handle.</div>}
       <div style={card(aurora)}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 12 }}>Your storefront</div>
-        {fld("Headline", <input style={inp} value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder="Olympic weightlifting coach · 10y" />)}
+        {fld("Headline", <input style={inp} value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder="Olympic weightlifting coach – 10y" />)}
         {fld("Bio", <textarea style={{ ...inp, minHeight: 80 }} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />)}
         {fld("Specialties (comma-separated)", <input style={inp} value={form.specialties} onChange={(e) => setForm({ ...form, specialties: e.target.value })} placeholder="Strength, Olympic lifting" />)}
         {fld("Sports (comma-separated)", <input style={inp} value={form.sports} onChange={(e) => setForm({ ...form, sports: e.target.value })} placeholder="Weightlifting, CrossFit" />)}
-        {fld("Pricing note", <input style={inp} value={form.priceNote} onChange={(e) => setForm({ ...form, priceNote: e.target.value })} placeholder="Free for now · paid plans coming" />)}
+        {fld("Pricing note", <input style={inp} value={form.priceNote} onChange={(e) => setForm({ ...form, priceNote: e.target.value })} placeholder="Free for now – paid plans coming" />)}
         <div style={{ display: "flex", gap: 16, margin: "4px 0 12px", flexWrap: "wrap" }}>
           <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.acceptingClients} onChange={(e) => setForm({ ...form, acceptingClients: e.target.checked })} /> Accepting clients</label>
           <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.autoAccept} onChange={(e) => setForm({ ...form, autoAccept: e.target.checked })} /> Auto-accept enrolments</label>
@@ -219,7 +219,7 @@ function Storefront() {
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: C("chalk"), fontWeight: 600 }}>{e.client?.displayName || `@${e.client?.handle}`}</div>
-                  <div style={{ color: C("ash"), fontSize: 12 }}>{e.programName} · <span style={{ color: e.status === "active" ? C("lime") : C("ash") }}>{e.status}</span></div>
+                  <div style={{ color: C("ash"), fontSize: 12 }}>{e.programName} – <span style={{ color: e.status === "active" ? C("lime") : C("ash") }}>{e.status}</span></div>
                 </div>
                 {e.status === "requested" && (
                   <div style={{ display: "flex", gap: 6 }}>
@@ -275,9 +275,9 @@ export default function Coaches() {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{c.name || `@${c.handle}`}</span>
                         {c.coachVerified && <VerifiedTick />}
-                        {!c.acceptingClients && <span style={{ fontSize: 11, color: C("ash") }}>· full</span>}
+                        {!c.acceptingClients && <span style={{ fontSize: 11, color: C("ash") }}>– full</span>}
                       </div>
-                      <div style={{ color: C("ash"), fontSize: 13 }}>{c.headline || c.specialties.join(" · ") || `@${c.handle}`}</div>
+                      <div style={{ color: C("ash"), fontSize: 13 }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</div>
                       <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: C("ash"), fontFamily: "var(--font-mono)" }}>
                         <span>{c.programs} program{c.programs === 1 ? "" : "s"}</span>
                         <Stars rating={c.rating} size={12} />

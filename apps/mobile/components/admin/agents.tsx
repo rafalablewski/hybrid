@@ -209,7 +209,7 @@ export default function AdminAgents() {
                     <MiniChip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</MiniChip>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
-                    {a.model.replace("claude-", "")} · effort {a.effort} · {a.kpis.length} KPIs
+                    {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
                   </Mono>
                 </View>
                 <Toggle
@@ -294,7 +294,7 @@ function Editor({
         onChange={(v) => set("model", v as AgentDefinition["model"])}
       />
 
-      <FieldLabel>Effort · thinking depth / token spend</FieldLabel>
+      <FieldLabel>Effort – thinking depth / token spend</FieldLabel>
       <Segmented
         options={EFFORTS.map((e) => ({ value: e, label: e }))}
         value={draft.effort}
@@ -308,14 +308,14 @@ function Editor({
         onChange={(v) => set("authority", v as AgentDefinition["authority"])}
       />
 
-      <FieldLabel>Runtime · managed = durable memory across runs</FieldLabel>
+      <FieldLabel>Runtime – managed = durable memory across runs</FieldLabel>
       <Segmented
         options={RUNTIMES.map((r) => ({ value: r.value, label: r.value }))}
         value={draft.runtime}
         onChange={(v) => set("runtime", v as AgentDefinition["runtime"])}
       />
 
-      <Input label="Mandate · the spine of the prompt" multiline value={draft.mandate} onChangeText={(v) => set("mandate", v)} />
+      <Input label="Mandate – the spine of the prompt" multiline value={draft.mandate} onChangeText={(v) => set("mandate", v)} />
 
       <SectionHead title="Responsibilities" />
       <StringList items={draft.responsibilities} onChange={(v) => set("responsibilities", v)} placeholder="+ Add a responsibility" />
@@ -326,7 +326,7 @@ function Editor({
       <SectionHead title="Guardrails & ethics" />
       <StringList items={draft.guardrails} onChange={(v) => set("guardrails", v)} placeholder="+ Add a hard limit" />
 
-      <Input label="Escalation threshold · when to stop and ask the admin" multiline value={draft.escalationThreshold} onChangeText={(v) => set("escalationThreshold", v)} />
+      <Input label="Escalation threshold – when to stop and ask the admin" multiline value={draft.escalationThreshold} onChangeText={(v) => set("escalationThreshold", v)} />
       <Input label="Tone & communication" multiline value={draft.tone} onChangeText={(v) => set("tone", v)} />
 
       <SectionHead title="Collaborators" />
@@ -349,13 +349,13 @@ function Editor({
 
       <SectionHead title="Spend controls" hint="0 = off" />
       <Input
-        label="Approval threshold ($) · hold for a 2nd operator at/above this est. cost"
+        label="Approval threshold ($) – hold for a 2nd operator at/above this est. cost"
         keyboardType="numeric"
         value={draft.approvalThresholdUsd != null ? String(draft.approvalThresholdUsd) : ""}
         onChangeText={(v) => set("approvalThresholdUsd", v === "" ? 0 : Number(v) || 0)}
       />
       <Input
-        label="Weekly budget cap ($) · auto-pause at/above 7-day spend"
+        label="Weekly budget cap ($) – auto-pause at/above 7-day spend"
         keyboardType="numeric"
         value={draft.budgetUsd7d != null ? String(draft.budgetUsd7d) : ""}
         onChangeText={(v) => set("budgetUsd7d", v === "" ? 0 : Number(v) || 0)}
@@ -458,7 +458,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
-              {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
+              {run.usage.input.toLocaleString()} in – {run.usage.output.toLocaleString()} out tokens
             </Mono>
           )}
         </View>
@@ -532,7 +532,7 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{s.task}</Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
               {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleDateString()}` : "never run"}
-              {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleDateString()}` : ""}
+              {s.enabled && s.nextRunAt ? ` – next ${new Date(s.nextRunAt).toLocaleDateString()}` : ""}
             </Mono>
           </View>
           <Pressable onPress={() => del(s.id)} hitSlop={8}>
@@ -590,7 +590,7 @@ function History({ agentId }: { agentId: string }) {
                 ))}
                 <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{r.output}</Mono>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
-                  {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
+                  {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                 </Mono>
               </View>
             )}

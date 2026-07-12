@@ -103,7 +103,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
           templates.map((t) => (
             <div key={t.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{t.name}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t.blocks.length} {tr("w.train.builder.blocks")}{t.description ? ` · ${t.description}` : ""}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t.blocks.length} {tr("w.train.builder.blocks")}{t.description ? ` – ${t.description}` : ""}</div>
               <div style={{ display: "flex", gap: space.sm, marginTop: 8 }}>
                 <button onClick={() => loadTemplate(t)} style={smallBtn("lime")}>{tr("w.train.builder.load")}</button>
                 <button onClick={() => del(t.id)} style={smallBtn("ash")}>{tr("w.train.builder.delete")}</button>

@@ -163,7 +163,7 @@ export default function AdminAccess() {
         so lowering a feature exposes it to <i>more</i> users. Anything above casual is hidden from a free user — the
         paid upgrade is sold on the single <b style={{ color: txt(LIME) }}>Unlock Full</b> page, not as per-feature locks.
         Changes take effect on the next client load — no deploy.
-        {busy ? " · saving…" : ""}
+        {busy ? " – saving…" : ""}
       </Mono>
       <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 16 }} c={ASH}>
         {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
@@ -197,7 +197,7 @@ export default function AdminAccess() {
                         {overridden && <Chip c={AMBER}>overridden</Chip>}
                       </div>
                       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
-                        {item.id} · default: {PERSONA_LABEL[def]}
+                        {item.id} – default: {PERSONA_LABEL[def]}
                       </Mono>
                     </div>
                     <div style={{ flexShrink: 0 }}>

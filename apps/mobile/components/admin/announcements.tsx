@@ -193,7 +193,7 @@ export default function AdminAnnouncements() {
   return (
     <View>
       <Intro>
-        {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} · broadcast to the app
+        {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} – broadcast to the app
       </Intro>
 
       {editing === null && (
@@ -256,8 +256,8 @@ export default function AdminAnnouncements() {
           <Mono color={palette.ash} style={{ marginTop: 4, lineHeight: 18 }}>{a.body}</Mono>
           <Mono color={palette.ash} style={{ marginTop: 8, fontSize: fs.micro }}>
             {a.authorEmail}
-            {a.publishAt ? ` · live ${new Date(a.publishAt).toLocaleString()}` : ""}
-            {a.expiresAt ? ` · ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
+            {a.publishAt ? ` – live ${new Date(a.publishAt).toLocaleString()}` : ""}
+            {a.expiresAt ? ` – ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
           </Mono>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>

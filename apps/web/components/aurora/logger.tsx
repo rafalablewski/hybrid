@@ -448,7 +448,7 @@ export default function AuroraLogger({
           <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 18, padding: "10px 14px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
-                {over ? t("workout.restDone") : t("workout.resting")} · {clock}
+                {over ? t("workout.restDone") : t("workout.resting")} – {clock}
               </span>
               <button onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}>
                 ■ {t("workout.stopRest")}
@@ -514,11 +514,11 @@ export default function AuroraLogger({
             {!isAthlete
               ? `✦ ${t("w.home.today.unlockFullBtn")}`
               : sessions.length > 0
-                ? `✦ ${t("w.train.logger.usePrescribed")} · ${rx.readiness}`
+                ? `✦ ${t("w.train.logger.usePrescribed")} – ${rx.readiness}`
                 : `✦ ${t("w.train.logger.startSession")}`}
           </button>
           {routines.map((r) => (
-            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>
+            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" – ")}>
               {r.name}
             </button>
           ))}

@@ -434,7 +434,7 @@ export default function AuroraProfile({
                 col.map((cell, ri) => (
                   <div
                     key={`${ci}-${ri}`}
-                    title={`${cell.date} · ${cell.count} session${cell.count === 1 ? "" : "s"}`}
+                    title={`${cell.date} – ${cell.count} session${cell.count === 1 ? "" : "s"}`}
                     style={{ borderRadius: 2.5, background: heatBg(cell.level) }}
                   />
                 )),

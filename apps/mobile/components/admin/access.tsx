@@ -126,7 +126,7 @@ export default function AdminAccess() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: "queues", label: pendingCount > 0 ? `Queues · ${pendingCount}` : "Queues" },
+          { value: "queues", label: pendingCount > 0 ? `Queues – ${pendingCount}` : "Queues" },
           { value: "roles", label: "Roles (RBAC)" },
           { value: "personas", label: "Personas" },
         ]}
@@ -141,7 +141,7 @@ export default function AdminAccess() {
 
           {/* Coach applications */}
           <Card accent={palette.violet}>
-            <Kicker color={palette.violet}>Pending coach applications · {apps.length}</Kicker>
+            <Kicker color={palette.violet}>Pending coach applications – {apps.length}</Kicker>
             <View style={{ marginTop: 10 }}>
               {apps.length === 0 ? (
                 <Mono style={{ fontSize: fs.body }}>No pending applications.</Mono>
@@ -214,7 +214,7 @@ export default function AdminAccess() {
           <Intro>
             Set the minimum persona for each feature. Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂
             Admin), so lowering a feature exposes it to more users. Changes take effect on the next
-            client load — no deploy.{busy ? " · saving…" : ""}
+            client load — no deploy.{busy ? " – saving…" : ""}
           </Intro>
           <Mono color={palette.ash} style={{ marginBottom: 14, fontSize: fs.micro }}>
             {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
@@ -239,7 +239,7 @@ export default function AdminAccess() {
                         {overridden && <Chip color={palette.amber}>overridden</Chip>}
                       </View>
                       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>
-                        {item.id} · default: {PERSONA_LABEL[def]}
+                        {item.id} – default: {PERSONA_LABEL[def]}
                       </Mono>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
                         {PERSONAS.map((p) => {

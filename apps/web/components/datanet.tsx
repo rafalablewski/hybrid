@@ -53,7 +53,7 @@ export default function DataNet() {
     <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
-          Data network · benchmarking intelligence
+          Data network – benchmarking intelligence
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           The flywheel: every consented athlete sharpens the cohort norms and (with labeled
@@ -77,10 +77,10 @@ export default function DataNet() {
             <div>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Injury calibration</Mono>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={CHALK}>
-                model {cal.version} · {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"}
+                model {cal.version} – {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"}
               </Mono>
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
-                labels: {cal.positives} injured · {cal.negatives} healthy · σ(a + b·score): a={cal.coeffs.intercept.toFixed(2)}, b={cal.coeffs.slope.toFixed(2)}
+                labels: {cal.positives} injured – {cal.negatives} healthy – σ(a + b·score): a={cal.coeffs.intercept.toFixed(2)}, b={cal.coeffs.slope.toFixed(2)}
               </Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm }}>
@@ -117,7 +117,7 @@ export default function DataNet() {
                 {norms.map((nrm) => (
                   <tr key={nrm.cohortKey}>
                     <td style={{ ...mono, fontSize: fs.caption, padding: "8px 10px", color: CHALK, borderBottom: `1px solid ${LINE}` }}>
-                      {nrm.sport} · {nrm.sex} · {nrm.ageBand}
+                      {nrm.sport} – {nrm.sex} – {nrm.ageBand}
                     </td>
                     <td style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}` }}><Chip c={BLUE}>{METRIC_LABEL[nrm.metric]}</Chip></td>
                     <td style={{ ...mono, fontSize: fs.caption, padding: "8px 10px", color: CHALK, borderBottom: `1px solid ${LINE}` }}>{nrm.n}</td>

@@ -75,7 +75,7 @@ export default function AuroraTactical() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI {state!.hpi}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}</Text>
             </View>
-            {dr.limiters.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{dr.limiters.join(" · ")}</Text>}
+            {dr.limiters.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{dr.limiters.join(" – ")}</Text>}
             <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
               <Field C={C} label={t("w.teams.tactical.loadCarriage")} value={loadCarriage} onChange={setLoadCarriage} />
               <Field C={C} label={t("w.teams.tactical.workCapacity")} value={workCapacity} onChange={setWorkCapacity} />
@@ -91,7 +91,7 @@ export default function AuroraTactical() {
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, unit.go ? C.lime : C.red) }}>{t("w.teams.tactical.unitReadiness")}</Text>
             <View style={{ backgroundColor: `${unit.go ? C.lime : C.red}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, unit.go ? C.lime : C.red) }}>{unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} · {unit.pctReady}%</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, unit.go ? C.lime : C.red) }}>{unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} – {unit.pctReady}%</Text>
             </View>
           </View>
           <View style={{ marginTop: 10 }}>

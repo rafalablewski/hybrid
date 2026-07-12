@@ -135,7 +135,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string; onClose: () => v
         <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "flex-end", marginTop: 16 }}>
           {tracksDist && (
             <div style={{ flex: "1 1 96px" }}>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.dist")} · {sportDistanceUnit(sport)}</Mono>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.dist")} – {sportDistanceUnit(sport)}</Mono>
               <input value={distance} onChange={(e) => setDistance(e.target.value)} placeholder={sportDistanceUnit(sport) === "m" ? "400" : "8"} inputMode="decimal" autoFocus style={{ ...field, width: "100%" }} />
             </div>
           )}

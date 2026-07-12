@@ -52,7 +52,7 @@ export default function RtpPanel() {
   return (
     <Card style={{ borderLeft: `3px solid ${RED}` }}>
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
-        Return-to-play · gated protocols
+        Return-to-play – gated protocols
       </Mono>
 
       <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center" }}>
@@ -110,7 +110,7 @@ export default function RtpPanel() {
                   <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Audit trail</Mono>
                   {p.audit.slice(-5).reverse().map((a, i) => (
                     <Mono key={i} s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={a.action === "override" ? RED : ASH}>
-                      {new Date(a.ts).toLocaleDateString()} · {a.by} ({a.role.toLowerCase()}) · {auditText(a)}
+                      {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
                     </Mono>
                   ))}
                 </div>

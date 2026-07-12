@@ -201,7 +201,7 @@ function ClassicLoginPage() {
             HYBRID<span style={{ color: txt(LIME) }}>.</span>
           </div>
           <Mono s={{ fontSize: fs.caption, letterSpacing: ".25em", textTransform: "uppercase", marginTop: 6 }} c={LIME}>
-            Strength · Conditioning
+            Strength – Conditioning
           </Mono>
         </div>
 
@@ -408,7 +408,7 @@ function ClassicLoginPage() {
 
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 24, textAlign: "center", lineHeight: 1.5 }}>
           {live
-            ? "Real auth · Supabase (Apple · Google · email)."
+            ? "Real auth – Supabase (Apple – Google – email)."
             : "Demo sign-in. Add Supabase keys to switch on real Apple / Google / email auth."}
         </Mono>
         </>

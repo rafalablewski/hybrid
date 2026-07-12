@@ -171,7 +171,7 @@ export default function AuroraOrg() {
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           {orgs.map((o) => (
             <button key={o.id} onClick={() => setSelected(o.id)} style={orgChip(o.id === selected)}>
-              {o.name} · {o.role.toLowerCase()}
+              {o.name} – {o.role.toLowerCase()}
             </button>
           ))}
           {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.org.noOrgs")}</span>}
@@ -185,7 +185,7 @@ export default function AuroraOrg() {
       {detail && (
         <>
           <div style={card}>
-            <div style={kicker("blue")}>{t("w.teams.org.yourAccess")} · {detail.myRole.toLowerCase()}</div>
+            <div style={kicker("blue")}>{t("w.teams.org.yourAccess")} – {detail.myRole.toLowerCase()}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, color: C("chalk") }}>{roleScope(detail.myRole)}</div>
           </div>
 
@@ -230,7 +230,7 @@ export default function AuroraOrg() {
                         ) : (
                           m.name
                         )}
-                        {m.email ? <span style={{ color: C("ash") }}> · {m.email}</span> : null}
+                        {m.email ? <span style={{ color: C("ash") }}> – {m.email}</span> : null}
                       </span>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{teamName(m.teamId)}</span>
                     </div>
@@ -267,7 +267,7 @@ export default function AuroraOrg() {
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.teams.org.pendingInvites")}</div>
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} · {iv.role.toLowerCase()}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} – {iv.role.toLowerCase()}</span>
                       <span role="button" tabIndex={0} aria-label={`${t("w.teams.org.revoke")} ${iv.email}`} style={{ cursor: "pointer", color: C("red"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); revokeInvite(iv.id); } }}>{t("w.teams.org.revoke")}</span>
                     </div>
                   ))}
@@ -279,14 +279,14 @@ export default function AuroraOrg() {
           {athlete && (
             <div style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={kicker("blue")}>{t("w.teams.org.athleteTwin")} · {athlete.name}</div>
+                <div style={kicker("blue")}>{t("w.teams.org.athleteTwin")} – {athlete.name}</div>
                 <span role="button" tabIndex={0} aria-label={t("common.close")} style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAthlete(null); } }}>✕</span>
               </div>
               <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>
                 <div>
                   {chip(hpiColor(athlete.hpi.band), athlete.hpi.band)}
-                  {chip("amber", `${t("w.teams.org.limiter")} · ${athlete.hpi.limiter}`)}
+                  {chip("amber", `${t("w.teams.org.limiter")} – ${athlete.hpi.limiter}`)}
                   {chip(athlete.injury.flaggedCount ? "red" : "lime", `${t("w.teams.org.injury")} ${athlete.injury.overall}/100`)}
                 </div>
               </div>

@@ -88,7 +88,7 @@ export default function AuroraLongevity() {
               ))}
             </View>
           )}
-          {report.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 10, lineHeight: 18 }}>{report.flags.join(" · ")}</Text>}
+          {report.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 10, lineHeight: 18 }}>{report.flags.join(" – ")}</Text>}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>{t("w.recovery.longevity.model")} {report.modelVersion}</Text>
         </ACard>
       ) : (

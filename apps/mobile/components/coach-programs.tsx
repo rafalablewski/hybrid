@@ -65,7 +65,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           <TextInput value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholderTextColor={C.ash} style={[inp, { flex: 1, fontSize: fs.note }]} />
           <Button label="Save" onPress={save} />
         </View>
-        <Mono style={{ marginTop: 6, fontSize: fs.micro }}>{draft.weeks.length} wk · {sessionsOf(draft.weeks)} session{sessionsOf(draft.weeks) === 1 ? "" : "s"}</Mono>
+        <Mono style={{ marginTop: 6, fontSize: fs.micro }}>{draft.weeks.length} wk – {sessionsOf(draft.weeks)} session{sessionsOf(draft.weeks) === 1 ? "" : "s"}</Mono>
 
         {draft.weeks.map((w, wi) => (
           <View key={wi} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 10, marginTop: 10 }}>
@@ -164,7 +164,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{program.name}</Text>
-          <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{program.weeks.length} wk · {sessions} session{sessions === 1 ? "" : "s"}</Mono>
+          <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{program.weeks.length} wk – {sessions} session{sessions === 1 ? "" : "s"}</Mono>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm }}>
           <Pressable onPress={onEdit}><Mono color={txt(C, C.lime)} style={{ fontSize: fs.caption }}>Edit</Mono></Pressable>

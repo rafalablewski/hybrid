@@ -406,7 +406,7 @@ export default function Workout() {
         const m = await fetchMacrocycle();
         const today = planProgramToday(m?.planId, sessions.length, readPlanMaxes());
         if (today) {
-          setTitle(`${today.planName} · ${today.day}`);
+          setTitle(`${today.planName} – ${today.day}`);
           setExercises(blocksToExercises(today.blocks));
         }
       } else if (source === "sport" && sport) {
@@ -832,7 +832,7 @@ export default function Workout() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <Mono style={{ flex: 1 }}>
             {exercises.length
-              ? `${exercises.length} ${t("workout.exercises")} · ${t("workout.tapAsYouGo")}`
+              ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
               : t("workout.firstExercise")}
           </Mono>
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
@@ -884,7 +884,7 @@ export default function Workout() {
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
-                  {done ? t("workout.restDone") : t("workout.resting")} · {clock}
+                  {done ? t("workout.restDone") : t("workout.resting")} – {clock}
                 </Text>
                 <Pressable
                   onPress={() => setRestSince(null)}
@@ -971,7 +971,7 @@ export default function Workout() {
                   const last = lastByLift.get(x.name);
                   return last ? (
                     <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginBottom: 8 }}>
-                      {t("workout.lastTime")} · {blockSummary(last)}
+                      {t("workout.lastTime")} – {blockSummary(last)}
                     </Text>
                   ) : null;
                 })()}
@@ -1080,7 +1080,7 @@ export default function Workout() {
                         const pl = platesPerSide(loadKg, prefs.units);
                         return (
                           <Mono style={{ fontSize: fs.micro }}>
-                            {pl.perSide.length ? `Per side: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${prefs.units})`}
+                            {pl.perSide.length ? `Per side: ${pl.perSide.join(" – ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${prefs.units})`}
                           </Mono>
                         );
                       })()}
@@ -1394,7 +1394,7 @@ function Summary({
   const shareText = [
     firstEver ? t("share.firstWorkout") : null,
     `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
-    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(summary.volume, units)}`,
+    `${summary.minutes} min – ${summary.sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(summary.volume, units)}`,
     prs[0]
       ? `\u{1F3C6} ${prLine(prs[0])}`
       : cardioPrs[0]

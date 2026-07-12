@@ -107,7 +107,7 @@ export default function SessionDetail() {
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min · ` : ""}${sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(sessionVolume(session.blocks), units)}`,
+    `${minutes ? `${minutes} min – ` : ""}${sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(sessionVolume(session.blocks), units)}`,
     prs[0] ? `\u{1F3C6} ${prLine(prs[0], t, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]
@@ -120,8 +120,8 @@ export default function SessionDetail() {
 
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
       <Mono style={{ marginTop: 4 }}>
-        {fmtDate(session.startedAt)} · {fmtTime(session.startedAt)}
-        {session.readiness != null ? ` · ${t("home.readiness")} ${session.readiness}` : ""}
+        {fmtDate(session.startedAt)} – {fmtTime(session.startedAt)}
+        {session.readiness != null ? ` – ${t("home.readiness")} ${session.readiness}` : ""}
       </Mono>
 
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
@@ -195,7 +195,7 @@ export default function SessionDetail() {
                 {b.sets.map((s, j) => {
                   const st = setType(s);
                   const stAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : C.ash;
-                  const stTag = st === "warmup" ? " · warm-up" : st === "cooldown" ? " · cool-down" : st === "drop" ? " · drop" : "";
+                  const stTag = st === "warmup" ? " – warm-up" : st === "cooldown" ? " – cool-down" : st === "drop" ? " – drop" : "";
                   return (
                   <View key={j} style={{ flexDirection: "row", gap: space.md, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
                     <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
@@ -295,7 +295,7 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <Kicker>{t("session.trend")}</Kicker>
         <Mono color={delta >= 0 ? C.lime : C.amber}>
-          {delta >= 0 ? "+" : ""}{delta} kg · {series.length}×
+          {delta >= 0 ? "+" : ""}{delta} kg – {series.length}×
         </Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
@@ -330,7 +330,7 @@ function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <Kicker>{t("session.paceTrend")}</Kicker>
         <Mono color={delta <= 0 ? C.lime : C.amber}>
-          {sign}{paceClock(Math.abs(delta))} /km · {series.length}×
+          {sign}{paceClock(Math.abs(delta))} /km – {series.length}×
         </Mono>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>

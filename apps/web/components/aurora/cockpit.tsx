@@ -76,7 +76,7 @@ export default function AuroraCockpit({
       <div>
         <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-.02em" }}>{t("w.home.cockpit.commandCenter")}</h1>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
-          {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
+          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
         </p>
         {macro && (
           <div style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
@@ -95,7 +95,7 @@ export default function AuroraCockpit({
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI – {state.hpi.band} – {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
                   <div style={{ marginTop: 6, maxWidth: 220 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function AuroraCockpit({
                 <span style={{ width: 9, height: 9, borderRadius: 5, background: calm ? C("lime") : C("red") }} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: calm ? C("ash") : C("red") }}>{t("w.home.today.injuryRisk")}</span>
               </span>
-              <span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{cap(risk.band)} · {risk.overall}</span>
+              <span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{cap(risk.band)} – {risk.overall}</span>
             </div>
             {calm ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 10 }}>{t("w.home.today.noTissues")}</div>
@@ -183,7 +183,7 @@ export default function AuroraCockpit({
                 {recap.prs.slice(0, 4).map((p) => (
                   <div key={p.lift} style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 0", borderTop: `1px solid ${C("line")}` }}>
                     <span>{p.lift} e1RM</span>
-                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.e1rm}kg{p.previous == null ? "" : ` · +${p.e1rm - p.previous}`}</span>
+                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.e1rm}kg{p.previous == null ? "" : ` – +${p.e1rm - p.previous}`}</span>
                   </div>
                 ))}
               </div>
@@ -200,9 +200,9 @@ export default function AuroraCockpit({
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.horizon")}</span>
           </span>
-          <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} · ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
+          <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
           <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
-          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
+          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
         </div>
 
         {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
@@ -217,7 +217,7 @@ export default function AuroraCockpit({
             {macro ? (
               <>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{macro.goalOrSport}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} – ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
               </>
             ) : <div style={{ fontSize: fs.caption, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
           </div>
@@ -316,7 +316,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {tab === "sport" && (
           sport ? (
             <>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} – {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
               <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}>{t("w.home.cockpit.sport")} →</button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>

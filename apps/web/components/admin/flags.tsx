@@ -90,7 +90,7 @@ export default function AdminFlags() {
       )}
 
       <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 14 }} c={ASH}>
-        {flags ? `${flags.length} flags` : "…"} · toggles take effect on the next client load — no deploy.
+        {flags ? `${flags.length} flags` : "…"} – toggles take effect on the next client load — no deploy.
       </Mono>
 
       <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
@@ -106,8 +106,8 @@ export default function AdminFlags() {
                 <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{f.label}</div>
                 <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 2 }} c={ASH}>{f.description}</Mono>
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
-                  {f.key} · default {f.defaultEnabled ? "on" : "off"}
-                  {f.updatedByEmail ? ` · last by ${f.updatedByEmail}` : ""}
+                  {f.key} – default {f.defaultEnabled ? "on" : "off"}
+                  {f.updatedByEmail ? ` – last by ${f.updatedByEmail}` : ""}
                 </Mono>
                 {f.key === PREMIUM_ACCENT_FLAG && (
                   <PremiumAccentPicker
@@ -228,7 +228,7 @@ function PremiumAccentPicker({ value, onPick, busy }: { value: unknown; onPick: 
         <ContrastReadout label="Ink on solid button" fg={r.ink} bg={r.fill} ratio={inkR.ratio} normal={inkR.normal} />
       </div>
       <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 8 }} c={ASH}>
-        Current: <span style={{ color: CHALK }}>{current}</span>{current === PREMIUM_ACCENT_DEFAULT ? " (default)" : ""} · ↺ reset returns to amber
+        Current: <span style={{ color: CHALK }}>{current}</span>{current === PREMIUM_ACCENT_DEFAULT ? " (default)" : ""} – ↺ reset returns to amber
       </Mono>
     </div>
   );
