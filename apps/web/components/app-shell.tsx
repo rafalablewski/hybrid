@@ -450,7 +450,6 @@ export default function AppShell() {
                       <div key={group} style={{ marginTop: 18 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 10 }}>
                           <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
-                          <Mono s={{ fontSize: 9, marginLeft: "auto" }} c={ASH}>{items.length}</Mono>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8 }}>
                           {items.map(({ item, locked }) => {

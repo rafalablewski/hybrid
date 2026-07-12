@@ -227,7 +227,6 @@ export default function More() {
             <View key={group} style={{ marginTop: 20 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
-                <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{items.length}</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>
                 {items.map((it) => (
