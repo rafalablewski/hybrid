@@ -62,6 +62,8 @@ export default function AuroraProfile() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabId>("overview");
+  // Long-press curation on the Overview grid: which tile's Hide/Show menu is open.
+  const [menuFor, setMenuFor] = useState<string | null>(null);
   // Hidden highlights — the PR/badge keys the owner keeps off the public grid.
   // Loaded once; the Private tab toggles them and the Overview grid honours them.
   const [hidden, setHidden] = useState<string[]>([]);
@@ -101,6 +103,18 @@ export default function AuroraProfile() {
   // Lifetime tonnage — total load × reps across every logged session, formatted
   // to the athlete's units (tonnes for kg, total lb for lb).
   const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
+  // This-week snapshot — sessions logged + tonnage moved in the last 7 days. A
+  // current-focus band above the tiles; distinct from the lifetime tiles and the
+  // 26-week Activity heatmap, so it adds signal without duplicating them.
+  const thisWeek = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let count = 0, vol = 0;
+    for (const s of sessions) {
+      const ts = Date.parse(s.startedAt);
+      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks); }
+    }
+    return { count, vol };
+  }, [sessions]);
 
   const initials = useMemo(() => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -148,18 +162,18 @@ export default function AuroraProfile() {
   const publicTiles = useMemo(() => {
     // Each tile type → an apt EXISTING AuroraIconName (identical mapping on web):
     // PR/lift = arrow-up, streak = check-circle, sessions = calendar-event,
-    // tonnage = list-check, badges = verified.
-    const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
-    for (const [lift, e1rm] of topPrs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) {
-      out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR`, icon: "arrow-up" });
-    }
-    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
-    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
-    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
-    if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified" });
+    // tonnage = list-check, badges = verified. Each carries a stable `hkey` so
+    // the owner can hide/show it (long-press on Overview). Per-lift detail lives
+    // in the PRs tab, so only the single best lift is surfaced here.
+    const out: { v: string; k: string; icon: AuroraIconName; hkey: string }[] = [];
+    const topPr = topPrs[0];
+    if (topPr) out.push({ v: fmtWeight(topPr[1], prefs.units), k: `${topPr[0]} PR`, icon: "arrow-up", hkey: `pr:${topPr[0]}` });
+    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle", hkey: "streak" });
+    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
+    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check", hkey: "tonnage" });
+    if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified", hkey: "badges" });
     return out.slice(0, 6);
-  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
+  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -275,15 +289,62 @@ export default function AuroraProfile() {
 
       {/* TAB CONTENT */}
       {tab === "overview" && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 16 }}>
-          {publicTiles.length > 0 ? (
-            publicTiles.map((tile, i) => (
-              <View key={`${tile.k}-${i}`} style={{ width: "31.5%", aspectRatio: 1, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, marginBottom: 9 }}>
-                <AuroraIcon name={tile.icon} size={22} color={C.lime} />
-                <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
+        <View style={{ marginTop: 16 }}>
+          {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
+          {thisWeek.count > 0 && (
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 9 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.ov-tw")}</Text>
+              <View style={{ flexDirection: "row", gap: 26, marginTop: 8 }}>
+                {[{ v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
+                  <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+                    <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, letterSpacing: -0.4 }}>{s.v}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, textTransform: "uppercase" }}>{s.k}</Text>
+                  </View>
+                ))}
               </View>
-            ))
+            </View>
+          )}
+
+          {publicTiles.length > 0 ? (
+            <>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+                {publicTiles.map((tile, i) => {
+                  const isHidden = hidden.includes(tile.hkey);
+                  const open = menuFor === tile.hkey;
+                  return (
+                    <Pressable
+                      key={`${tile.hkey}-${i}`}
+                      onLongPress={() => setMenuFor(tile.hkey)}
+                      onPress={() => { if (menuFor) setMenuFor(null); }}
+                      delayLongPress={400}
+                      accessibilityRole="button"
+                      accessibilityLabel={tile.k}
+                      style={{ width: "31.5%", aspectRatio: 1, borderWidth: 1, borderColor: open ? C.lime : C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, marginBottom: 9, opacity: isHidden ? 0.4 : 1, overflow: "hidden" }}
+                    >
+                      <AuroraIcon name={tile.icon} size={22} color={C.lime} />
+                      <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
+                      {isHidden && (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 5 }}>
+                          <AuroraIcon name="eye" size={10} color={C.ash} />
+                          <Text style={{ fontFamily: F.mono, fontSize: 7.5, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.ov-hidden")}</Text>
+                        </View>
+                      )}
+                      {open && (
+                        <Pressable
+                          onPress={() => { toggleHidden(tile.hkey, !isHidden); setMenuFor(null); }}
+                          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.ink}d9`, alignItems: "center", justifyContent: "center", gap: 4 }}
+                        >
+                          <AuroraIcon name="eye" size={18} color={txt(C, C.lime)} />
+                          <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "700", color: txt(C, C.lime) }}>{isHidden ? t("w.account.profile.priv-show") : t("w.account.profile.priv-hide")}</Text>
+                        </Pressable>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 1, letterSpacing: 0.2 }}>{t("w.account.profile.ov-hint")}</Text>
+            </>
           ) : (
             <View style={{ width: "100%", padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
@@ -385,17 +446,10 @@ export default function AuroraProfile() {
       )}
 
       {/* PRIVATE tab — the interactive owner-only surface (Cockpit link, Body &
-          progress, Journal, Hidden highlights, Visibility). HPI/readiness/risk
-          are NOT duplicated — the Command-center row links to the Cockpit. */}
-      {tab === "private" && (
-        <PrivateTab
-          isFull={showHpi}
-          earnedPrs={topPrs}
-          achievements={achievements}
-          hidden={hidden}
-          onToggleHidden={toggleHidden}
-        />
-      )}
+          progress, Journal, privacy & visibility → Settings). HPI/readiness/risk
+          are NOT duplicated — the Command-center row links to the Cockpit.
+          Curating the public grid lives on Overview (long-press a card). */}
+      {tab === "private" && <PrivateTab isFull={showHpi} />}
 
       <View style={{ height: 8 }} />
     </AuroraScreen>

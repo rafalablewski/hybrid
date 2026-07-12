@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   trainingHeatmap,
@@ -70,6 +70,11 @@ export default function AuroraProfile({
   const showHpi = canSeeHPI(usePersona());
 
   const [tab, setTab] = useState<TabId>("overview");
+  // Long-press curation on the Overview grid: which tile's Hide/Show menu is open.
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPress = useCallback(() => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } }, []);
+  const startPress = useCallback((key: string) => { clearPress(); pressTimer.current = setTimeout(() => setMenuFor(key), 450); }, [clearPress]);
 
   const name = session?.name ?? t("w.account.profile.athlete-fallback");
   const email = session?.email ?? "";
@@ -176,22 +181,37 @@ export default function AuroraProfile({
 
   const streakLabel = dayStreak.current > 0 ? `${dayStreak.current}d` : weekStreak > 0 ? `${weekStreak}w` : "—";
 
+  // This-week snapshot — sessions logged + tonnage moved in the last 7 days.
+  // A current-focus band above the tiles; distinct from the lifetime tiles and
+  // the 26-week Activity heatmap, so it adds signal without duplicating them.
+  const thisWeek = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let count = 0, vol = 0;
+    for (const s of sessions) {
+      const ts = Date.parse(s.startedAt);
+      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks); }
+    }
+    return { count, vol };
+  }, [sessions]);
+
   // PUBLIC highlight tiles — everything a follower is allowed to see. HPI is
   // intentionally NOT here. Built from real logged data; empty data → the tile
-  // is omitted rather than faked.
+  // is omitted rather than faked. Each tile carries a stable `hkey` so the owner
+  // can hide/show it (long-press on Overview). Per-lift detail lives in the PRs
+  // tab, so only the single best lift is surfaced here (no duplication).
   const publicTiles = useMemo(() => {
     // Each tile type → an apt EXISTING AuroraIconName (identical mapping on
     // mobile): PR/lift = arrow-up, streak = check-circle, sessions =
     // calendar-event, tonnage = list-check, badges = verified.
-    const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
-    for (const [lift, e1rm] of prs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
-    if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
-    if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
-    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
-    if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified" });
+    const out: { v: string; k: string; icon: AuroraIconName; hkey: string }[] = [];
+    const topPr = prs[0];
+    if (topPr) out.push({ v: fmtWeight(topPr[1], units), k: `${topPr[0]} PR`, icon: "arrow-up", hkey: `pr:${topPr[0]}` });
+    if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle", hkey: "streak" });
+    if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
+    if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check", hkey: "tonnage" });
+    if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified", hkey: "badges" });
     return out.slice(0, 6);
-  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
+  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -306,21 +326,72 @@ export default function AuroraProfile({
 
       {/* TAB CONTENT */}
       {tab === "overview" && (
-        publicTiles.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: space.sm, marginTop: 16 }}>
-            {publicTiles.map((tile, i) => (
-              <div key={`${tile.k}-${i}`} style={{ aspectRatio: "1", border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center" }}>
-                <AuroraIcon name={tile.icon} size={22} color={C("lime")} />
-                <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", marginTop: 6 }}>{tile.v}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
+        <div style={{ marginTop: 16 }}>
+          {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
+          {thisWeek.count > 0 && (
+            <div style={{ border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), padding: "12px 14px", marginBottom: space.sm }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
+              <div style={{ display: "flex", gap: 26, marginTop: 8 }}>
+                {[{ v: String(thisWeek.count), k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
+                  <div key={s.k} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                    <span style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.02em" }}>{s.v}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", color: C("ash"), textTransform: "uppercase" }}>{s.k}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ ...card, padding: 16, marginTop: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-            {t("w.account.profile.pr-empty")}
-          </div>
-        )
+            </div>
+          )}
+
+          {publicTiles.length > 0 ? (
+            <>
+              {/* Outside-click catcher — closes any open tile menu. */}
+              {menuFor && <div onClick={() => setMenuFor(null)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: space.sm }}>
+                {publicTiles.map((tile, i) => {
+                  const isHidden = hidden.includes(tile.hkey);
+                  const open = menuFor === tile.hkey;
+                  return (
+                    <div
+                      key={`${tile.hkey}-${i}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={tile.k}
+                      onPointerDown={() => startPress(tile.hkey)}
+                      onPointerUp={clearPress}
+                      onPointerLeave={clearPress}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMenuFor(tile.hkey); } }}
+                      onContextMenu={(e) => { e.preventDefault(); setMenuFor(tile.hkey); }}
+                      style={{ position: "relative", zIndex: open ? 50 : undefined, aspectRatio: "1", border: `1px solid ${open ? C("lime") : C("line")}`, borderRadius: 14, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center", cursor: "pointer", opacity: isHidden ? 0.4 : 1, userSelect: "none", touchAction: "manipulation" }}
+                    >
+                      <AuroraIcon name={tile.icon} size={22} color={C("lime")} />
+                      <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", marginTop: 6 }}>{tile.v}</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
+                      {isHidden && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 7.5, letterSpacing: ".08em", color: C("ash"), textTransform: "uppercase" }}>
+                          <AuroraIcon name="eye" size={10} color={C("ash")} />{t("w.account.profile.ov-hidden")}
+                        </div>
+                      )}
+                      {open && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleHidden(tile.hkey, !isHidden); setMenuFor(null); }}
+                          style={{ position: "absolute", inset: 0, borderRadius: 14, border: `1px solid ${C("lime")}`, background: "color-mix(in srgb, var(--color-ink) 82%, transparent)", display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--lime-text)", gap: 4 }}
+                        >
+                          <AuroraIcon name="eye" size={18} color="var(--lime-text)" />
+                          {isHidden ? t("w.account.profile.priv-show") : t("w.account.profile.priv-hide")}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 10, letterSpacing: ".02em" }}>{t("w.account.profile.ov-hint")}</div>
+            </>
+          ) : (
+            <div style={{ ...card, padding: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+              {t("w.account.profile.pr-empty")}
+            </div>
+          )}
+        </div>
       )}
 
       {tab === "prs" && (
@@ -414,15 +485,12 @@ export default function AuroraProfile({
           PRIVATE tab — identity & self-tracking with no other home. HPI /
           readiness / injury-risk are NOT duplicated; the Command-center row LINKS
           to the Cockpit. Body & Journal are Full features (locked teaser for
-          free). Visibility summarises what only you vs followers can see. */}
+          free). Curating the public grid lives on Overview (press & hold a card);
+          privacy & visibility are managed in Settings. */}
       {tab === "private" && (
         <PrivateTab
           isFull={showHpi}
           units={units}
-          earnedPrs={prs}
-          achievements={achievements}
-          hidden={hidden}
-          onToggleHidden={toggleHidden}
           nav={(screen) => go(screen, `/${screen}`)()}
         />
       )}
