@@ -28,7 +28,7 @@ const LEVELS: { key: string; dot: string; rating: number; mouth: string }[] = [
  *  accent colour. No enclosing ring (mirrors the mobile plain-View face). */
 function Face({ color, mouth }: { color: string; mouth: string }) {
   return (
-    <svg width={30} height={30} viewBox="0 0 40 40" fill="none" aria-hidden style={{ flexShrink: 0 }}>
+    <svg width={34} height={34} viewBox="0 0 40 40" fill="none" aria-hidden style={{ flexShrink: 0 }}>
       <circle cx={13} cy={16} r={2.3} fill={color} />
       <circle cx={27} cy={16} r={2.3} fill={color} />
       <path d={mouth} stroke={color} strokeWidth={2.8} strokeLinecap="round" fill="none" />

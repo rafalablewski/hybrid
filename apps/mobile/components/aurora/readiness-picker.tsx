@@ -22,27 +22,39 @@ const LEVELS: { key: string; dot: (C: P) => string; rating: number; mouth: Mouth
   { key: "wrecked", dot: (C) => C.red, rating: 2, mouth: "frown" },
 ];
 
-/** Minimal readiness face — two eyes + a mood-shaped mouth, built from plain
- *  Views (no react-native-svg dep, matching the rest of the app). The mouth arc
- *  is a full-radius box with a single coloured border edge (bottom = smile, top =
- *  frown) and the other edges transparent — the reliable cross-platform arc trick
- *  (a single-side border + partial radius mis-renders on Android). Mirrors the web
- *  <Face> SVG. */
+/** The mood-shaped mouth, built from plain Views (no react-native-svg dep). The
+ *  curves are a CLIPPED RING — a bordered circle inside an overflow:hidden box
+ *  that reveals only its bottom arc (smile) or top arc (frown). That renders a
+ *  real, reliable curve on iOS + Android; a single-side border + radius collapses
+ *  to a flat line on device. Mirrors the web <Face> SVG mouth paths. */
+function Mouth({ color, mouth }: { color: string; mouth: Mouth }) {
+  if (mouth === "flat") {
+    return <View style={{ width: 15, height: 2.6, backgroundColor: color, borderRadius: 1.3 }} />;
+  }
+  const D = 20; // ring diameter; the visible slice is the arc of a circle this big
+  const bw = 2.6; // stroke weight (matches the eyes / web stroke)
+  const h = mouth === "grin" ? 9 : mouth === "frown" ? 8 : 7; // slice height = curve depth
+  // smile shows the ring's BOTTOM arc (push the circle up so only its base peeks);
+  // frown shows the TOP arc (align the circle's top with the clip box).
+  const marginTop = mouth === "frown" ? 0 : -(D - h);
+  return (
+    <View style={{ width: D, height: h, overflow: "hidden", alignItems: "center" }}>
+      <View style={{ width: D, height: D, borderRadius: D / 2, borderWidth: bw, borderColor: color, marginTop }} />
+    </View>
+  );
+}
+
+/** Minimal readiness face — two eyes + a mood-shaped mouth (no ring). Mirrors the
+ *  web <Face> SVG. */
 function Face({ color, mouth }: { color: string; mouth: Mouth }) {
   const eye = { width: 4.5, height: 4.5, borderRadius: 2.25, backgroundColor: color } as const;
-  const mouthStyle =
-    mouth === "flat"
-      ? { width: 16, height: 2.8, backgroundColor: color, borderRadius: 1.4 }
-      : mouth === "frown"
-      ? { width: 16, height: 8, borderWidth: 2.8, borderColor: "transparent", borderTopColor: color, borderRadius: 9 }
-      : { width: 16, height: mouth === "grin" ? 9 : 6, borderWidth: 2.8, borderColor: "transparent", borderBottomColor: color, borderRadius: 9 };
   return (
-    <View style={{ width: 30, height: 30, alignItems: "center", justifyContent: "center", gap: 4 }}>
-      <View style={{ flexDirection: "row", gap: 8 }}>
+    <View style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center", gap: 5 }}>
+      <View style={{ flexDirection: "row", gap: 9 }}>
         <View style={eye} />
         <View style={eye} />
       </View>
-      <View style={mouthStyle} />
+      <Mouth color={color} mouth={mouth} />
     </View>
   );
 }
