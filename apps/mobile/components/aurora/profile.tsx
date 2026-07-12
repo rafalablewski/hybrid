@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable, Image, StyleSheet, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -62,19 +62,27 @@ export default function AuroraProfile() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabId>("overview");
-  // Long-press curation on the Overview grid: which tile's Hide/Show menu is open.
-  const [menuFor, setMenuFor] = useState<string | null>(null);
-  // Hidden highlights — the PR/badge keys the owner keeps off the public grid.
-  // Loaded once; the Private tab toggles them and the Overview grid honours them.
+  // Highlight curation — the owner's private arrangement of the public Overview
+  // grid: which tiles are hidden, and the order they sit in. Loaded once; the
+  // grid's edit mode (long-press) drives both and persists to /api/highlights.
   const [hidden, setHidden] = useState<string[]>([]);
+  const [order, setOrder] = useState<string[]>([]);
   useEffect(() => {
     let alive = true;
-    sapi<{ hidden?: string[] }>("/api/highlights").then((d) => { if (alive) setHidden(d.hidden ?? []); }).catch(() => {});
+    sapi<{ hidden?: string[]; order?: string[] }>("/api/highlights").then((d) => {
+      if (!alive) return;
+      setHidden(d.hidden ?? []);
+      setOrder(d.order ?? []);
+    }).catch(() => {});
     return () => { alive = false; };
   }, []);
   const toggleHidden = useCallback((key: string, next: boolean) => {
     setHidden((h) => (next ? [...new Set([...h, key])] : h.filter((k) => k !== key)));
     sapi<{ hidden?: string[] }>("/api/highlights", "POST", { key, hidden: next }).then((d) => { if (d.hidden) setHidden(d.hidden); }).catch(() => {});
+  }, []);
+  const persistOrder = useCallback((keys: string[]) => {
+    setOrder(keys);
+    sapi<{ order?: string[] }>("/api/highlights", "POST", { order: keys }).then((d) => { if (d.order) setOrder(d.order); }).catch(() => {});
   }, []);
 
   const load = useCallback(() => {
@@ -306,45 +314,15 @@ export default function AuroraProfile() {
           )}
 
           {publicTiles.length > 0 ? (
-            <>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
-                {publicTiles.map((tile, i) => {
-                  const isHidden = hidden.includes(tile.hkey);
-                  const open = menuFor === tile.hkey;
-                  return (
-                    <Pressable
-                      key={`${tile.hkey}-${i}`}
-                      onLongPress={() => setMenuFor(tile.hkey)}
-                      onPress={() => { if (menuFor) setMenuFor(null); }}
-                      delayLongPress={400}
-                      accessibilityRole="button"
-                      accessibilityLabel={tile.k}
-                      style={{ width: "31.5%", aspectRatio: 1, borderWidth: 1, borderColor: open ? C.lime : C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, marginBottom: 9, opacity: isHidden ? 0.4 : 1, overflow: "hidden" }}
-                    >
-                      <AuroraIcon name={tile.icon} size={22} color={C.lime} />
-                      <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
-                      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
-                      {isHidden && (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 5 }}>
-                          <AuroraIcon name="eye" size={10} color={C.ash} />
-                          <Text style={{ fontFamily: F.mono, fontSize: 7.5, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.ov-hidden")}</Text>
-                        </View>
-                      )}
-                      {open && (
-                        <Pressable
-                          onPress={() => { toggleHidden(tile.hkey, !isHidden); setMenuFor(null); }}
-                          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.ink}d9`, alignItems: "center", justifyContent: "center", gap: 4 }}
-                        >
-                          <AuroraIcon name="eye" size={18} color={txt(C, C.lime)} />
-                          <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "700", color: txt(C, C.lime) }}>{isHidden ? t("w.account.profile.priv-show") : t("w.account.profile.priv-hide")}</Text>
-                        </Pressable>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 1, letterSpacing: 0.2 }}>{t("w.account.profile.ov-hint")}</Text>
-            </>
+            <HighlightGrid
+              C={C}
+              tiles={publicTiles}
+              hidden={hidden}
+              order={order}
+              onToggleHidden={toggleHidden}
+              onPersistOrder={persistOrder}
+              t={t}
+            />
           ) : (
             <View style={{ width: "100%", padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
@@ -485,6 +463,242 @@ function monthLabels(heat: HeatCell[][]): string[] {
   }
   out.push("NOW");
   return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIGHLIGHT GRID (mobile) — the public Overview tiles with Apple-style edit mode,
+// at parity with the web grid. Long-press a tile → edit mode (tiles wiggle, a "–"
+// appears); drag to reorder (persisted); tap "–" to hide → it drops into the
+// restore tray; tap a chip to restore; Done to leave. A plain tap never hides a
+// tile. Built on the RN built-ins (PanResponder + Animated) — no gesture-handler
+// / reanimated dependency. Reorder mirrors web: snapshot each tile's slot at
+// grab, translate neighbours toward the vacated slot, commit the order on drop.
+// ─────────────────────────────────────────────────────────────────────────────
+type HlTile = { v: string; k: string; icon: AuroraIconName; hkey: string };
+type Slot = { key: string; x: number; y: number; w: number; h: number };
+
+function HighlightGrid({
+  C, tiles, hidden, order, onToggleHidden, onPersistOrder, t,
+}: {
+  C: P;
+  tiles: HlTile[];
+  hidden: string[];
+  order: string[];
+  onToggleHidden: (key: string, next: boolean) => void;
+  onPersistOrder: (keys: string[]) => void;
+  t: (k: string) => string;
+}) {
+  const tileMap = useMemo(() => new Map(tiles.map((x) => [x.hkey, x])), [tiles]);
+  const presentKeys = useMemo(() => tiles.map((x) => x.hkey), [tiles]);
+  const reconcile = useCallback((ord: string[]) => {
+    const known = new Set(presentKeys);
+    const inOrder = ord.filter((k) => known.has(k));
+    const seen = new Set(inOrder);
+    return [...inOrder, ...presentKeys.filter((k) => !seen.has(k))];
+  }, [presentKeys]);
+
+  const [localOrder, setLocalOrder] = useState<string[]>(() => reconcile(order));
+  const [editMode, setEditMode] = useState(false);
+  const [dragKey, setDragKey] = useState<string | null>(null);
+
+  const draggingRef = useRef(false);
+  useEffect(() => { if (!draggingRef.current) setLocalOrder(reconcile(order)); }, [order, reconcile]);
+
+  const editModeRef = useRef(editMode); editModeRef.current = editMode;
+  const localOrderRef = useRef(localOrder); localOrderRef.current = localOrder;
+  const hiddenRef = useRef(hidden); hiddenRef.current = hidden;
+  const persistRef = useRef(onPersistOrder); persistRef.current = onPersistOrder;
+
+  const visibleKeys = localOrder.filter((k) => !hidden.includes(k));
+  const hiddenKeys = localOrder.filter((k) => hidden.includes(k));
+
+  // Per-tile layout (relative to the grid) + a persistent translate value.
+  const layouts = useRef(new Map<string, { x: number; y: number; w: number; h: number }>());
+  const translates = useRef(new Map<string, Animated.ValueXY>());
+  const getTr = (k: string) => {
+    let v = translates.current.get(k);
+    if (!v) { v = new Animated.ValueXY({ x: 0, y: 0 }); translates.current.set(k, v); }
+    return v;
+  };
+  const scale = useRef(new Animated.Value(1)).current;
+
+  // Grid origin in window coords — to map absolute touches to grid-local space.
+  const gridRef = useRef<View | null>(null);
+  const origin = useRef({ x: 0, y: 0 });
+  const measure = () => { gridRef.current?.measureInWindow((x, y) => { origin.current = { x, y }; }); };
+
+  const drag = useRef<null | { key: string; slots: Slot[]; dragIndex: number; targetIndex: number; baseX: number; baseY: number }>(null);
+
+  const layoutShifts = () => {
+    const d = drag.current; if (!d) return;
+    d.slots.forEach((s, i) => {
+      if (i === d.dragIndex) return;
+      let to = i;
+      if (d.dragIndex < d.targetIndex && i > d.dragIndex && i <= d.targetIndex) to = i - 1;
+      else if (d.targetIndex < d.dragIndex && i >= d.targetIndex && i < d.dragIndex) to = i + 1;
+      Animated.timing(getTr(s.key), {
+        toValue: { x: d.slots[to]!.x - s.x, y: d.slots[to]!.y - s.y },
+        duration: 160, useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (e, g) => {
+        if (!editModeRef.current) return false;
+        if (Math.abs(g.dx) < 6 && Math.abs(g.dy) < 6) return false;
+        const relX = e.nativeEvent.pageX - origin.current.x;
+        const relY = e.nativeEvent.pageY - origin.current.y;
+        const visible = localOrderRef.current.filter((k) => !hiddenRef.current.includes(k));
+        return visible.some((k) => {
+          const l = layouts.current.get(k);
+          return !!l && relX >= l.x && relX <= l.x + l.w && relY >= l.y && relY <= l.y + l.h;
+        });
+      },
+      onPanResponderGrant: (e, g) => {
+        const relX = e.nativeEvent.pageX - origin.current.x;
+        const relY = e.nativeEvent.pageY - origin.current.y;
+        const visible = localOrderRef.current.filter((k) => !hiddenRef.current.includes(k));
+        const slots: Slot[] = visible.map((k) => { const l = layouts.current.get(k)!; return { key: k, x: l.x, y: l.y, w: l.w, h: l.h }; });
+        const di = slots.findIndex((s) => relX >= s.x && relX <= s.x + s.w && relY >= s.y && relY <= s.y + s.h);
+        if (di < 0) return;
+        drag.current = { key: slots[di]!.key, slots, dragIndex: di, targetIndex: di, baseX: relX - g.dx, baseY: relY - g.dy };
+        draggingRef.current = true;
+        setDragKey(slots[di]!.key);
+        getTr(slots[di]!.key).setValue({ x: g.dx, y: g.dy });
+        scale.setValue(1);
+        Animated.spring(scale, { toValue: 1.06, useNativeDriver: true, friction: 6 }).start();
+      },
+      onPanResponderMove: (_e, g) => {
+        const d = drag.current; if (!d) return;
+        getTr(d.key).setValue({ x: g.dx, y: g.dy });
+        const curX = d.baseX + g.dx, curY = d.baseY + g.dy;
+        let best = d.dragIndex, bestDist = Infinity;
+        d.slots.forEach((s, i) => {
+          const dist = (curX - (s.x + s.w / 2)) ** 2 + (curY - (s.y + s.h / 2)) ** 2;
+          if (dist < bestDist) { bestDist = dist; best = i; }
+        });
+        if (best !== d.targetIndex) { d.targetIndex = best; layoutShifts(); }
+      },
+      onPanResponderRelease: () => endDrag(),
+      onPanResponderTerminate: () => endDrag(),
+    }),
+  ).current;
+
+  const endDrag = () => {
+    const d = drag.current; if (!d) { setDragKey(null); return; }
+    drag.current = null;
+    const visible = d.slots.map((s) => s.key);
+    const newVisible = [...visible];
+    newVisible.splice(d.dragIndex, 1);
+    newVisible.splice(d.targetIndex, 0, d.key);
+    const changed = newVisible.join(" ") !== visible.join(" ");
+    const q = [...newVisible];
+    const newFull = localOrderRef.current.map((k) => (hiddenRef.current.includes(k) ? k : q.shift()!));
+    d.slots.forEach((s) => getTr(s.key).setValue({ x: 0, y: 0 }));
+    scale.setValue(1);
+    draggingRef.current = false;
+    setDragKey(null);
+    if (changed) { setLocalOrder(newFull); persistRef.current(newFull); }
+  };
+
+  // Wiggle loop while editing.
+  const wig = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!editMode) { wig.stopAnimation(); wig.setValue(0); return; }
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(wig, { toValue: 1, duration: 170, useNativeDriver: true }),
+      Animated.timing(wig, { toValue: -1, duration: 170, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [editMode, wig]);
+  const rotate = wig.interpolate({ inputRange: [-1, 1], outputRange: ["-0.9deg", "0.9deg"] });
+
+  return (
+    <>
+      <View
+        ref={gridRef}
+        onLayout={measure}
+        {...pan.panHandlers}
+        style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}
+      >
+        {visibleKeys.map((key) => {
+          const tile = tileMap.get(key)!;
+          const isDrag = dragKey === key;
+          const tr = getTr(key);
+          const transform: Array<{ translateX: Animated.Value } | { translateY: Animated.Value } | { scale: Animated.Value }> = [{ translateX: tr.x }, { translateY: tr.y }];
+          if (isDrag) transform.push({ scale });
+          return (
+            <Animated.View
+              key={key}
+              onLayout={(e) => { const { x, y, width, height } = e.nativeEvent.layout; layouts.current.set(key, { x, y, w: width, h: height }); }}
+              style={{ width: "31.5%", aspectRatio: 1, marginBottom: 9, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, transform }}
+            >
+              <Pressable
+                onLongPress={() => setEditMode(true)}
+                delayLongPress={450}
+                accessibilityRole="button"
+                accessibilityLabel={tile.k}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate }] : [] }}>
+                  <AuroraIcon name={tile.icon} size={22} color={C.lime} />
+                  <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
+                </Animated.View>
+              </Pressable>
+              {editMode && (
+                <Pressable
+                  onPress={() => onToggleHidden(key, true)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("w.account.profile.priv-hide")}
+                  style={{ position: "absolute", top: -7, left: -7, width: 24, height: 24, borderRadius: 12, backgroundColor: "#e8e8e8", borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center", zIndex: 6 }}
+                >
+                  <View style={{ width: 11, height: 2.5, borderRadius: 2, backgroundColor: "#111" }} />
+                </Pressable>
+              )}
+            </Animated.View>
+          );
+        })}
+      </View>
+
+      {/* HIDDEN — restore tray. */}
+      {hiddenKeys.length > 0 && (
+        <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", paddingTop: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 }}>
+            <AuroraIcon name="eye" size={12} color={C.ash} />
+            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.ov-restore")}</Text>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+            {hiddenKeys.map((key) => {
+              const tile = tileMap.get(key)!;
+              return (
+                <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 7, paddingLeft: 8, paddingRight: 11, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink2 }}>
+                  <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontFamily: F.black, fontSize: 15, lineHeight: 17, color: C.ink }}>+</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.4, color: C.ash, textTransform: "uppercase" }}>{tile.k}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, letterSpacing: 0.2, flex: 1 }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</Text>
+        {editMode && (
+          <Pressable onPress={() => setEditMode(false)} accessibilityRole="button" style={{ backgroundColor: C.chalk, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 20 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase", color: C.ink }}>{t("w.account.profile.ov-done")}</Text>
+          </Pressable>
+        )}
+      </View>
+    </>
+  );
 }
 
 function SectionHeader({ C, title, action }: { C: P; title: string; action: string }) {

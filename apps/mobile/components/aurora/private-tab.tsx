@@ -6,6 +6,7 @@ import { sapi } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
@@ -208,6 +209,9 @@ function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconNam
 }
 
 function LockedRow({ C, icon, title, sub, onUpgrade }: { C: Palette; icon: AuroraIconName; title: string; sub: string; onUpgrade: () => void }) {
+  // The "✦ Full" pill wears the admin-set premium (sand) accent — matching the
+  // Today "Go Full" cards and the upgrade sheet, not the lime action colour.
+  const pa = usePremiumAccent();
   return (
     <Pressable onPress={onUpgrade} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 13, backgroundColor: C.ink2 }}>
       <IconChip C={C} icon={icon} />
@@ -215,8 +219,8 @@ function LockedRow({ C, icon, title, sub, onUpgrade }: { C: Palette; icon: Auror
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
         <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
       </View>
-      <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>✦ Full</Text>
+      <View style={{ borderWidth: 1, borderColor: `${pa.fill}73`, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: pa.text }}>✦ Full</Text>
       </View>
     </Pressable>
   );

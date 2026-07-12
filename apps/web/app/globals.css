@@ -439,6 +439,17 @@ html {
 .spin { animation: spin .7s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 1.6s; } }
 
+/* Highlight-grid edit mode (Profile → Overview) — Apple-style "jiggle" when the
+   owner long-presses a tile to rearrange or hide it. The wiggle lives on an
+   inner wrapper so the outer tile's drag/FLIP transform never fights it. The
+   tile being dragged drops the wiggle (.hl-tile.dragging .hl-wig). */
+@keyframes hlWiggle { 0% { transform: rotate(-.9deg); } 50% { transform: rotate(.9deg); } 100% { transform: rotate(-.9deg); } }
+.hl-tile.edit .hl-wig { animation: hlWiggle .34s infinite ease-in-out; }
+.hl-tile.edit:nth-child(3n) .hl-wig { animation-duration: .3s; animation-delay: -.12s; }
+.hl-tile.edit:nth-child(3n-1) .hl-wig { animation-duration: .38s; animation-delay: -.2s; }
+.hl-tile.dragging .hl-wig { animation: none; }
+@media (prefers-reduced-motion: reduce) { .hl-tile.edit .hl-wig { animation: none; } }
+
 .cmd-scrim {
   position: fixed;
   inset: 0;

@@ -189,7 +189,7 @@ function LockedRow({ icon, title, sub, onUpgrade }: { icon: AuroraIconName; titl
         <span style={{ display: "block", fontWeight: 700, fontSize: 14, color: C("chalk") }}>{title}</span>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
       </span>
-      <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: 10, color: LIME, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>
+      <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>
     </button>
   );
 }
