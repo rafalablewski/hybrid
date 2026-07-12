@@ -27,7 +27,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
-import { getMyProfile, getConnections, getLeaderboard } from "../../lib/social-api";
+import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
+import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -61,6 +62,18 @@ export default function AuroraProfile() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabId>("overview");
+  // Hidden highlights — the PR/badge keys the owner keeps off the public grid.
+  // Loaded once; the Private tab toggles them and the Overview grid honours them.
+  const [hidden, setHidden] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    sapi<{ hidden?: string[] }>("/api/highlights").then((d) => { if (alive) setHidden(d.hidden ?? []); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const toggleHidden = useCallback((key: string, next: boolean) => {
+    setHidden((h) => (next ? [...new Set([...h, key])] : h.filter((k) => k !== key)));
+    sapi<{ hidden?: string[] }>("/api/highlights", "POST", { key, hidden: next }).then((d) => { if (d.hidden) setHidden(d.hidden); }).catch(() => {});
+  }, []);
 
   const load = useCallback(() => {
     setRefreshing(true);
@@ -137,7 +150,8 @@ export default function AuroraProfile() {
     // PR/lift = arrow-up, streak = check-circle, sessions = calendar-event,
     // tonnage = list-check, badges = verified.
     const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    for (const [lift, e1rm] of topPrs.slice(0, 2)) {
+    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
+    for (const [lift, e1rm] of topPrs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) {
       out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR`, icon: "arrow-up" });
     }
     if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
@@ -145,7 +159,7 @@ export default function AuroraProfile() {
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
     if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
-  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
+  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -370,61 +384,17 @@ export default function AuroraProfile() {
         </View>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE tab — identity & self-tracking that has no other home. HPI /
-          readiness / injury-risk are NOT duplicated here; the Command-center row
-          LINKS to the Cockpit instead. Body & Journal are Full features (locked
-          teaser for free). Visibility reads the real public-profile setting. */}
+      {/* PRIVATE tab — the interactive owner-only surface (Cockpit link, Body &
+          progress, Journal, Hidden highlights, Visibility). HPI/readiness/risk
+          are NOT duplicated — the Command-center row links to the Cockpit. */}
       {tab === "private" && (
-        <View style={{ marginTop: 16, gap: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginHorizontal: 2, marginBottom: 2 }}>{t("w.account.profile.priv-intro")}</Text>
-
-          {/* Command center — link out, no duplicate analytics */}
-          <PrivBlock C={C} icon="navigation" tint={C.blue} title={t("w.account.profile.priv-cockpit-t")} sub={t("w.account.profile.priv-cockpit-s")} onPress={() => router.push("/(tabs)/cockpit")} />
-
-          {/* Body & progress — Full feature, not yet built (see capabilities). */}
-          <PrivBlock
-            C={C} icon="user-square" tint={C.lime}
-            title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}
-            badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"}
-            onPress={showHpi ? undefined : () => router.push("/upgrade")}
-          />
-
-          {/* Journal — Full feature, not yet built. */}
-          <PrivBlock
-            C={C} icon="edit" tint={C.violet}
-            title={t("w.account.profile.priv-journal-t")} sub={t("w.account.profile.priv-journal-s")}
-            badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"}
-            onPress={showHpi ? undefined : () => router.push("/upgrade")}
-          />
-
-          {/* Hidden highlights — curation model not built yet. */}
-          <PrivBlock
-            C={C} icon="eye" tint={C.amber}
-            title={t("w.account.profile.priv-hidden-t")} sub={t("w.account.profile.priv-hidden-s")}
-            badge={t("w.account.profile.priv-soon")}
-          />
-
-          {/* Visibility at a glance — real, from the public-profile setting. */}
-          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14, backgroundColor: C.ink2 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginBottom: 12 }}>{t("w.account.profile.priv-vis-t")}</Text>
-            <View style={{ flexDirection: "row", gap: 9, marginBottom: 9 }}>
-              <Text style={{ width: 70, fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", color: lime }}>{t("w.account.profile.priv-vis-only")}</Text>
-              <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                {["HPI", "Body", "Journal"].map((s) => <VTag key={s} C={C} label={s} />)}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", gap: 9 }}>
-              <Text style={{ width: 70, fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-vis-followers")}</Text>
-              <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                {["PRs", t("w.account.profile.spec-streak"), t("w.account.profile.id-sessions")].map((s) => <VTag key={s} C={C} label={s} />)}
-              </View>
-            </View>
-            <Pressable onPress={() => router.push("/settings")} hitSlop={8} style={{ marginTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-vis-manage")} →</Text>
-            </Pressable>
-          </View>
-        </View>
+        <PrivateTab
+          isFull={showHpi}
+          earnedPrs={topPrs}
+          achievements={achievements}
+          hidden={hidden}
+          onToggleHidden={toggleHidden}
+        />
       )}
 
       <View style={{ height: 8 }} />
@@ -472,35 +442,3 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
   );
 }
 
-// A Private-tab row: tinted icon chip + title/sub + either a chevron (link) or a
-// status badge ("Coming soon" / "✦ Full"). Pressable only when onPress is given.
-function PrivBlock({ C, icon, tint, title, sub, badge, onPress }: { C: P; icon: AuroraIconName; tint: string; title: string; sub: string; badge?: string; onPress?: () => void }) {
-  const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 13, backgroundColor: C.ink2 }}>
-      <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: `${tint}22`, alignItems: "center", justifyContent: "center" }}>
-        <AuroraIcon name={icon} size={19} color={txt(C, tint)} />
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
-      </View>
-      {badge ? (
-        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{badge}</Text>
-        </View>
-      ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
-      )}
-    </View>
-  );
-  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>{body}</Pressable> : body;
-}
-
-// A small bordered "what's visible" tag used in the Visibility summary.
-function VTag({ C, label }: { C: P; label: string }) {
-  return (
-    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: 10, color: C.chalk }}>{label}</Text>
-    </View>
-  );
-}

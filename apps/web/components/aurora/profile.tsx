@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   trainingHeatmap,
@@ -25,6 +25,7 @@ import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import PrivateTab from "./private-tab";
 
 /**
  * AURORA Profile · "You" (web) — the SOCIAL layout: a cover banner, an
@@ -76,6 +77,20 @@ export default function AuroraProfile({
   const tier = paid ? "FULL" : "FREE";
 
   const go = (screen: string, route: string) => () => (onNavigate ? onNavigate(screen) : router.push(route));
+
+  // Hidden highlights — PR/badge keys kept off the public grid. Loaded once; the
+  // Private tab toggles them and the Overview grid honours them.
+  const [hidden, setHidden] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/highlights").then((r) => r.json()).then((d) => { if (alive) setHidden(d.hidden ?? []); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const toggleHidden = useCallback((key: string, next: boolean) => {
+    setHidden((h) => (next ? [...new Set([...h, key])] : h.filter((k) => k !== key)));
+    fetch("/api/highlights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, hidden: next }) })
+      .then((r) => r.json()).then((d) => { if (d.hidden) setHidden(d.hidden); }).catch(() => {});
+  }, []);
 
   // ----- real data, computed from logged sessions -----
   // HPI / readiness / injury-risk belong to the Cockpit — the Private tab LINKS
@@ -169,13 +184,14 @@ export default function AuroraProfile({
     // mobile): PR/lift = arrow-up, streak = check-circle, sessions =
     // calendar-event, tonnage = list-check, badges = verified.
     const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    for (const [lift, e1rm] of prs.slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
+    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
+    for (const [lift, e1rm] of prs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
     if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
     if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
     if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
-  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
+  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -400,59 +416,19 @@ export default function AuroraProfile({
           to the Cockpit. Body & Journal are Full features (locked teaser for
           free). Visibility summarises what only you vs followers can see. */}
       {tab === "private" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), margin: "0 2px 2px" }}>{t("w.account.profile.priv-intro")}</div>
-
-          <PrivBlock icon="navigation" tint="blue" title={t("w.account.profile.priv-cockpit-t")} sub={t("w.account.profile.priv-cockpit-s")} onClick={go("cockpit", "/cockpit")} />
-          <PrivBlock icon="user-square" tint="lime" title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")} badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"} onClick={showHpi ? undefined : go("upgrade", "/upgrade")} />
-          <PrivBlock icon="edit" tint="violet" title={t("w.account.profile.priv-journal-t")} sub={t("w.account.profile.priv-journal-s")} badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"} onClick={showHpi ? undefined : go("upgrade", "/upgrade")} />
-          <PrivBlock icon="eye" tint="amber" title={t("w.account.profile.priv-hidden-t")} sub={t("w.account.profile.priv-hidden-s")} badge={t("w.account.profile.priv-soon")} />
-
-          {/* Visibility at a glance */}
-          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, background: C("ink2") }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash"), marginBottom: 12 }}>{t("w.account.profile.priv-vis-t")}</div>
-            <div style={{ display: "flex", gap: 9, marginBottom: 9 }}>
-              <div style={{ width: 70, flex: "none", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.account.profile.priv-vis-only")}</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{["HPI", "Body", "Journal"].map((s) => <VTag key={s} label={s} />)}</div>
-            </div>
-            <div style={{ display: "flex", gap: 9 }}>
-              <div style={{ width: 70, flex: "none", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-vis-followers")}</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{["PRs", t("w.account.profile.spec-streak"), t("w.account.profile.id-sessions")].map((s) => <VTag key={s} label={s} />)}</div>
-            </div>
-            <button onClick={go("settings", "/settings")} style={{ marginTop: 12, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)" }}>{t("w.account.profile.priv-vis-manage")} →</button>
-          </div>
-        </div>
+        <PrivateTab
+          isFull={showHpi}
+          units={units}
+          earnedPrs={prs}
+          achievements={achievements}
+          hidden={hidden}
+          onToggleHidden={toggleHidden}
+          nav={(screen) => go(screen, `/${screen}`)()}
+        />
       )}
 
     </div>
   );
-}
-
-// A Private-tab row: tinted icon chip + title/sub + either a chevron (link) or a
-// status badge ("Coming soon" / "✦ Full"). A button only when onClick is given.
-function PrivBlock({ icon, tint, title, sub, badge, onClick }: { icon: AuroraIconName; tint: string; title: string; sub: string; badge?: string; onClick?: () => void }) {
-  const inner = (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, border: `1px solid ${C("line")}`, borderRadius: 16, padding: 13, background: C("ink2"), width: "100%", textAlign: "left" }}>
-      <span style={{ width: 38, height: 38, borderRadius: 11, flex: "none", display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)` }}>
-        <AuroraIcon name={icon} size={19} color={C(tint)} />
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{title}</span>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
-      </span>
-      {badge ? (
-        <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{badge}</span>
-      ) : (
-        <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
-      )}
-    </div>
-  );
-  return onClick ? <button onClick={onClick} aria-label={title} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}>{inner}</button> : inner;
-}
-
-// A small bordered "what's visible" tag used in the Visibility summary.
-function VTag({ label }: { label: string }) {
-  return <span style={{ fontSize: 10, color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "2px 7px" }}>{label}</span>;
 }
 
 // ----- helpers -----

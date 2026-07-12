@@ -80,6 +80,10 @@ model User {
   talentProfile TalentProfile?
   riskOutcomes  RiskOutcome[]
   checkins      Checkin[]
+  // ---- Profile "Private" tab (owner-only self-tracking) ----
+  bodyMetrics      BodyMetric[]
+  journalEntries   JournalEntry[]
+  hiddenHighlights HiddenHighlight[]
   templates       WorkoutTemplate[]
   assignments     Assignment[]     @relation("assignmentAthlete")
   assignmentsMade Assignment[]     @relation("assignmentCoach")
@@ -425,6 +429,55 @@ model Checkin {
   @@index([userId, weekOf])
   // Coach views read a client's SHARED check-ins.
   @@index([userId, sharedWithCoach])
+}
+
+// ── Profile "Private" tab (owner-only; RLS in reference/sql-private-tab.sql) ──
+
+// Dated body-composition + tape measurements (the "Body & progress" block).
+// Bodyweight is also captured via Checkin/Signal; this is the measurements store.
+model BodyMetric {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  measuredAt DateTime @default(now())
+  weightKg   Float?
+  bodyFatPct Float?
+  neckCm     Float?
+  chestCm    Float?
+  waistCm    Float?
+  hipsCm     Float?
+  thighCm    Float?
+  armCm      Float?
+  calfCm     Float?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, measuredAt])
+}
+
+// Private free-text notes/reflections (the "Journal" block). Owner-only.
+model JournalEntry {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+// The set of earned PRs/badges the owner keeps OFF the public grid. `key` is the
+// highlight's stable id, e.g. "pr:deadlift", "badge:100-day-streak".
+model HiddenHighlight {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  key       String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([userId])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
