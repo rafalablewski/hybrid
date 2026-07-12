@@ -554,7 +554,12 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
       {/* soft sand fill (premium upsell accent) under the content */}
       <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: `${C.amber}12` }} />
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{sub}</Text>
+      {/* sub region grows so the CTA pins to the bottom — both cards stretch to
+          equal height (row alignItems:stretch), so title, sub-start and CTA line
+          up across the pair regardless of how many lines the copy runs */}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{sub}</Text>
+      </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 10 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
     </Pressable>
   );
