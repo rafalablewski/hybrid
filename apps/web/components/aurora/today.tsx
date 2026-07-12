@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
@@ -255,36 +255,47 @@ export default function AuroraToday({
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.day")} {plan.dayIndex + 1} / {plan.totalDays}</span>
                 <span style={{ flex: 1, height: 2, background: C("line"), borderRadius: 2, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.min(100, Math.round(((plan.dayIndex + 1) / plan.totalDays) * 100))}%`, background: C("lime") }} /></span>
               </div>
-              {/* Lift reveal: the first lift reads clear; the next two sit frosted
-                  behind a reveal so the card teases "there's more" at a fixed
-                  height instead of a bare text toggle. Expanding lifts the frost
-                  and unfolds the rest. */}
+              {/* Lift reveal: the first lift reads clear; the rest stay sharp but
+                  dissolve — an opacity gradient (mask, no blur) melts them into the
+                  card so it teases "there's more" at a fixed height. Expanding
+                  clears the dissolve and unfolds the rest. */}
               {(() => {
                 const rows = plan.rows;
                 const many = rows.length > 1;
-                const TEASER = 4; // first clear + up to three frosted
+                const TEASER = 4; // first clear + up to three dissolving
                 const shown = liftsOpen ? rows : rows.slice(0, TEASER);
+                // Sharp text faded by an alpha mask: clear at the top, gone by the
+                // bottom. Keep the first hidden row legible, dissolve downward.
+                const dissolve = "linear-gradient(180deg, #000 0%, #000 14%, rgba(0,0,0,.28) 68%, transparent 100%)";
+                const cells = (r: (typeof rows)[number]) => (
+                  <>
+                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
+                  </>
+                );
+                const rowStyle = (i: number): CSSProperties => ({ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" });
+                if (many && !liftsOpen) {
+                  const [lead, ...rest] = shown;
+                  return (
+                    <>
+                      <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
+                        {lead && <div style={rowStyle(0)}>{cells(lead)}</div>}
+                        <div style={{ display: "flex", flexDirection: "column", gap: space.xs, WebkitMaskImage: dissolve, maskImage: dissolve }}>
+                          {rest.map((r, i) => (
+                            <div key={i} aria-hidden style={{ ...rowStyle(i + 1), userSelect: "none", pointerEvents: "none" }}>{cells(r)}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
+                        {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
+                      </button>
+                    </>
+                  );
+                }
                 return (
                   <>
-                    <div style={{ position: "relative" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
-                        {shown.map((r, i) => {
-                          const frosted = !liftsOpen && i >= 1;
-                          return (
-                            <div key={i} aria-hidden={frosted || undefined} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none", filter: frosted ? "blur(3px)" : undefined, opacity: frosted ? 0.6 : 1, pointerEvents: frosted ? "none" : undefined, userSelect: frosted ? "none" : undefined, transition: "filter .28s ease, opacity .28s ease" }}>
-                              <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {many && !liftsOpen && (
-                        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 96, display: "flex", justifyContent: "center", alignItems: "flex-end", background: `linear-gradient(transparent, ${C("ink2")})`, pointerEvents: "none" }}>
-                          <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ pointerEvents: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
-                            {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
-                          </button>
-                        </div>
-                      )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
+                      {shown.map((r, i) => (<div key={i} style={rowStyle(i)}>{cells(r)}</div>))}
                     </div>
                     {many && liftsOpen && (
                       <button ref={hideLiftsRef} onClick={() => toggleLifts(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
