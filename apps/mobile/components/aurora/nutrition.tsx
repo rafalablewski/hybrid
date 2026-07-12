@@ -133,9 +133,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
           <QuadTile field="kcal" label={t("w.recovery.nutrition.tabCalories")} unit="kcal" color={C.chalk} value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} />
-          <QuadTile field="protein" label={t("w.recovery.nutrition.protein")} unit="g" color={C.lime} value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} />
-          <QuadTile field="carbs" label={t("w.recovery.nutrition.carbs")} unit="g" color={C.blue} value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} />
-          <QuadTile field="fat" label={t("w.recovery.nutrition.fat")} unit="g" color={C.amber} value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} />
+          <QuadTile field="protein" label={t("w.recovery.nutrition.protein")} unit="g" color={C.chalk} value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} />
+          <QuadTile field="carbs" label={t("w.recovery.nutrition.carbs")} unit="g" color={C.chalk} value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} />
+          <QuadTile field="fat" label={t("w.recovery.nutrition.fat")} unit="g" color={C.chalk} value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} />
         </View>
         {(() => {
           const macroKcal = Math.round((parseFloat(f.protein) || 0) * 4 + (parseFloat(f.carbs) || 0) * 4 + (parseFloat(f.fat) || 0) * 9);
