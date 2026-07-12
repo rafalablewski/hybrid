@@ -9,7 +9,7 @@ import {
   Archivo_700Bold,
   Archivo_900Black,
 } from "@expo-google-fonts/archivo";
-import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
+import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
 // Japandi (light) hero headings use a Fraunces serif (parity with web's
 // --font-heading); Aurora keeps Archivo. Loaded here, applied via serifIf().
 import { Fraunces_500Medium, Fraunces_600SemiBold, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
@@ -56,6 +56,7 @@ export default function RootLayout() {
     Archivo_700Bold,
     Archivo_900Black,
     JetBrainsMono_400Regular,
+    JetBrainsMono_700Bold,
     Fraunces_500Medium,
     Fraunces_600SemiBold,
     Fraunces_700Bold,

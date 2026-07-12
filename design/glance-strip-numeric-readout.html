@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Glance strip — numeric readout</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f;
+    --blue:#3c787e; --violet:#c9a9f0;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Archivo",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ink); color:var(--chalk);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    padding:40px 20px 80px;
+  }
+  .wrap{max-width:520px;margin:0 auto}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+  .lead{color:var(--ash);font-size:13.5px;line-height:1.5;margin:0 0 28px}
+  .lead b{color:var(--chalk);font-weight:700}
+
+  .card{
+    border:1px solid var(--line); border-radius:18px;
+    background:var(--ink2); padding:18px 18px 20px; margin-bottom:20px;
+  }
+  .kicker{
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ash);margin:0 0 10px;
+  }
+  .why{color:var(--ash);font-size:12.5px;line-height:1.5;margin:14px 2px 0}
+  .why b{color:var(--chalk);font-weight:600}
+
+  .strip{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    background:var(--ink);border:1px solid var(--line);
+    border-radius:16px;overflow:hidden;
+  }
+  .col{padding:14px 6px;text-align:center;border-right:1px solid var(--line)}
+  .col:last-child{border-right:none}
+  .lab{
+    font-family:var(--mono);font-size:9px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ash);margin-top:5px;
+  }
+  .val{font-family:var(--mono);font-weight:800;font-size:17px;color:var(--chalk);line-height:1}
+  .val.lime{color:var(--lime)}
+  .val.dim{color:var(--ash)}
+  .tick{color:var(--lime);margin-right:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Numeric readout — tick in Done</h1>
+  <p class="lead">Idea&nbsp;#3, same shape across all three: <b>value + mono label</b>.
+  The word “Log” only survives as a label. Done now leads with the <b>✓ tick</b>.</p>
+
+  <div class="card">
+    <p class="kicker">Today — glance strip</p>
+    <div class="strip">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log session</div></div>
+      <div class="col"><div class="val dim">—</div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="tick">✓</span>0</div><div class="lab">Done today</div></div>
+    </div>
+    <p class="why">Every column reads as a value over a mono label. <b>＋</b> = tap to log a workout,
+    <b>—</b> = readiness not rated yet (shows the score once rated), <b>✓ 0</b> = sessions done today.
+    No column repeats “Log” as a verb.</p>
+  </div>
+
+</div>
+</body>
+</html>
