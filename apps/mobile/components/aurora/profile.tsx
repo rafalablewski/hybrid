@@ -3,15 +3,11 @@ import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
-  computePerformanceState,
-  performanceTrajectory,
   trainingHeatmap,
   computeAchievements,
   bestE1rmMap,
   longestWeekStreak,
   streak,
-  toTrainingLog,
-  toBiometrics,
   fmtWeight,
   fmtTonnage,
   sessionVolume,
@@ -22,25 +18,20 @@ import {
   type HeatCell,
   type AuroraIconName,
 } from "@hybrid/core";
-import {
-  fetchSessions,
-  fetchSignals,
-  type CoreSignal,
-} from "../../lib/api";
+import { fetchSessions } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, RADIUS, Ring, Spark } from "./kit";
+import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard } from "../../lib/social-api";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
-type TabId = "overview" | "prs" | "activity";
+type TabId = "overview" | "prs" | "activity" | "private";
 
 /**
  * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
@@ -60,7 +51,6 @@ type TabId = "overview" | "prs" | "activity";
  */
 export default function AuroraProfile() {
   const { palette: C } = useTheme();
-  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
@@ -69,46 +59,21 @@ export default function AuroraProfile() {
   const showHpi = canSeeHPI(usePersona());
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabId>("overview");
 
   const load = useCallback(() => {
     setRefreshing(true);
-    // allSettled, not all: these endpoints are independent, so a single failing
-    // one shouldn't blank the whole profile.
-    Promise.allSettled([fetchSessions(), fetchSignals()])
-      .then(([s, sig]) => {
-        if (s.status === "fulfilled") setSessions(s.value);
-        if (sig.status === "fulfilled") setSignals(sig.value);
-      })
+    fetchSessions()
+      .then((s) => setSessions(s))
+      .catch(() => {})
       .finally(() => setRefreshing(false));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // --- Real computed metrics (the same engines Home/Cockpit run) ---
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  const hpi = state.hpi;
-
-  // HPI 12-point trace (oldest→today) + a 30-day delta from the trajectory —
-  // SAME window + semantics as the web client (30-day trajectory, down-sampled
-  // to 12 points, delta = current score − oldest point in the window).
-  const traj = useMemo(() => [...performanceTrajectory(log, 30)].sort((a, b) => b.daysAgo - a.daysAgo), [log]);
-  const hpiTrace = useMemo(() => {
-    const series = traj.map((p) => p.hpi);
-    if (series.length <= 12) return series;
-    // down-sample to 12 evenly-spaced points (latest always kept last).
-    const out: number[] = [];
-    for (let i = 0; i < 12; i++) out.push(series[Math.round((i * (series.length - 1)) / 11)]!);
-    return out;
-  }, [traj]);
-  const hpiDelta = useMemo(() => {
-    if (traj.length < 2) return 0;
-    return hpi.score - traj[0]!.hpi;
-  }, [traj, hpi.score]);
-
+  // HPI / readiness / injury-risk are the Cockpit's job — the Private tab LINKS
+  // there rather than recomputing them here, so the profile never duplicates the
+  // command center. The metrics below feed the PUBLIC grid (PRs, streak, tonnage).
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions), [sessions]);
   const prMap = useMemo(() => bestE1rmMap(sessions), [sessions]);
@@ -281,11 +246,13 @@ export default function AuroraProfile() {
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
+          // 4th, owner-only tab — this screen is always your own profile.
+          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
             <Pressable key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
               {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
             </Pressable>
           );
@@ -404,51 +371,59 @@ export default function AuroraProfile() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
-          lives here, clearly marked private and visible only to the owner. */}
-      <SectionHeader C={C} title={t("w.account.profile.private-title")} action="🔒" />
-      {showHpi ? (
-        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            {/* No training yet → honest empty state (unrated band + "—"), never a
-                fabricated score. Same gating as the web client. */}
-            <Ring value={hasData ? hpi.score : 0} size={64} color={C.lime} track={C.line}>
-              <Text style={{ fontFamily: F.black, fontSize: 19, color: hasData ? C.chalk : C.ash }}>{hasData ? hpi.score : "—"}</Text>
-            </Ring>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hasData ? hpi.band : t("w.account.profile.unrated")}</Text>
-                </View>
-                {hasData && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>{hpiDelta >= 0 ? `▲ +${hpiDelta}` : `▼ ${hpiDelta}`}</Text>}
+          PRIVATE tab — identity & self-tracking that has no other home. HPI /
+          readiness / injury-risk are NOT duplicated here; the Command-center row
+          LINKS to the Cockpit instead. Body & Journal are Full features (locked
+          teaser for free). Visibility reads the real public-profile setting. */}
+      {tab === "private" && (
+        <View style={{ marginTop: 16, gap: 10 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginHorizontal: 2, marginBottom: 2 }}>{t("w.account.profile.priv-intro")}</Text>
+
+          {/* Command center — link out, no duplicate analytics */}
+          <PrivBlock C={C} icon="navigation" tint={C.blue} title={t("w.account.profile.priv-cockpit-t")} sub={t("w.account.profile.priv-cockpit-s")} onPress={() => router.push("/(tabs)/cockpit")} />
+
+          {/* Body & progress — Full feature, not yet built (see capabilities). */}
+          <PrivBlock
+            C={C} icon="user-square" tint={C.lime}
+            title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}
+            badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"}
+            onPress={showHpi ? undefined : () => router.push("/upgrade")}
+          />
+
+          {/* Journal — Full feature, not yet built. */}
+          <PrivBlock
+            C={C} icon="edit" tint={C.violet}
+            title={t("w.account.profile.priv-journal-t")} sub={t("w.account.profile.priv-journal-s")}
+            badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"}
+            onPress={showHpi ? undefined : () => router.push("/upgrade")}
+          />
+
+          {/* Hidden highlights — curation model not built yet. */}
+          <PrivBlock
+            C={C} icon="eye" tint={C.amber}
+            title={t("w.account.profile.priv-hidden-t")} sub={t("w.account.profile.priv-hidden-s")}
+            badge={t("w.account.profile.priv-soon")}
+          />
+
+          {/* Visibility at a glance — real, from the public-profile setting. */}
+          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14, backgroundColor: C.ink2 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginBottom: 12 }}>{t("w.account.profile.priv-vis-t")}</Text>
+            <View style={{ flexDirection: "row", gap: 9, marginBottom: 9 }}>
+              <Text style={{ width: 70, fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", color: lime }}>{t("w.account.profile.priv-vis-only")}</Text>
+              <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                {["HPI", "Body", "Journal"].map((s) => <VTag key={s} C={C} label={s} />)}
               </View>
             </View>
-          </View>
-          {hasData && (
-            <View style={{ marginTop: 14 }}>
-              <Spark series={hpiTrace} color={C.lime} height={34} />
+            <View style={{ flexDirection: "row", gap: 9 }}>
+              <Text style={{ width: 70, fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-vis-followers")}</Text>
+              <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                {["PRs", t("w.account.profile.spec-streak"), t("w.account.profile.id-sessions")].map((s) => <VTag key={s} C={C} label={s} />)}
+              </View>
             </View>
-          )}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: hasData ? 10 : 14, lineHeight: 17 }}>
-            {hasData
-              ? `${t("w.account.profile.comp-strength")} ${hpi.components.strength} · ${t("w.account.profile.comp-engine")} ${hpi.components.endurance} · ${t("w.account.profile.comp-recovery")} ${hpi.components.recovery >= 0 ? "+" : ""}${hpi.components.recovery}`
-              : t("w.account.profile.hpi-empty")}
-          </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 8, opacity: 0.85 }}>
-            {t("w.account.profile.private-note")}
-          </Text>
-        </View>
-      ) : (
-        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontSize: 11 }}>🔒</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-locked-title")}</Text>
+            <Pressable onPress={() => router.push("/settings")} hitSlop={8} style={{ marginTop: 12 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-vis-manage")} →</Text>
+            </Pressable>
           </View>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
-          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
-          </Pressable>
         </View>
       )}
 
@@ -493,6 +468,39 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 13, marginHorizontal: 2 }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
       {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
+    </View>
+  );
+}
+
+// A Private-tab row: tinted icon chip + title/sub + either a chevron (link) or a
+// status badge ("Coming soon" / "✦ Full"). Pressable only when onPress is given.
+function PrivBlock({ C, icon, tint, title, sub, badge, onPress }: { C: P; icon: AuroraIconName; tint: string; title: string; sub: string; badge?: string; onPress?: () => void }) {
+  const body = (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 13, backgroundColor: C.ink2 }}>
+      <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: `${tint}22`, alignItems: "center", justifyContent: "center" }}>
+        <AuroraIcon name={icon} size={19} color={txt(C, tint)} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
+      </View>
+      {badge ? (
+        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{badge}</Text>
+        </View>
+      ) : (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
+      )}
+    </View>
+  );
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>{body}</Pressable> : body;
+}
+
+// A small bordered "what's visible" tag used in the Visibility summary.
+function VTag({ C, label }: { C: P; label: string }) {
+  return (
+    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: 10, color: C.chalk }}>{label}</Text>
     </View>
   );
 }

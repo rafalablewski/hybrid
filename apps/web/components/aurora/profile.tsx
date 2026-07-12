@@ -7,9 +7,6 @@ import { fs, space,
   computeAchievements,
   longestWeekStreak,
   streak,
-  computePerformanceState,
-  performanceTrajectory,
-  toTrainingLog,
   bestE1rmMap,
   fmtWeight,
   fmtTonnage,
@@ -49,7 +46,7 @@ const C = (v: string) => `var(--color-${v})`;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-type TabId = "overview" | "prs" | "activity";
+type TabId = "overview" | "prs" | "activity" | "private";
 
 export default function AuroraProfile({
   sessions,
@@ -81,24 +78,10 @@ export default function AuroraProfile({
   const go = (screen: string, route: string) => () => (onNavigate ? onNavigate(screen) : router.push(route));
 
   // ----- real data, computed from logged sessions -----
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // HPI / readiness / injury-risk belong to the Cockpit — the Private tab LINKS
+  // there instead of recomputing them, so the profile never duplicates the
+  // command center. Everything below feeds the PUBLIC grid (PRs, streak, tonnage).
   const hasData = sessions.length > 0;
-
-  // HPI 12-point trace (oldest→today) + a 30-day delta from the trajectory.
-  const traj = useMemo(() => [...performanceTrajectory(log, 30)].sort((a, b) => b.daysAgo - a.daysAgo), [log]);
-  const hpiTrace = useMemo(() => {
-    const series = traj.map((p) => p.hpi);
-    if (series.length <= 12) return series;
-    // down-sample to 12 evenly-spaced points (latest always kept last).
-    const out: number[] = [];
-    for (let i = 0; i < 12; i++) out.push(series[Math.round((i * (series.length - 1)) / 11)]!);
-    return out;
-  }, [traj]);
-  const hpiDelta = useMemo(() => {
-    if (traj.length < 2) return 0;
-    return state.hpi.score - traj[0]!.hpi;
-  }, [traj, state.hpi.score]);
 
   const weekStreak = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
@@ -286,6 +269,8 @@ export default function AuroraProfile({
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
+          // 4th, owner-only tab — this screen is always your own profile.
+          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -294,7 +279,7 @@ export default function AuroraProfile({
               role="tab"
               aria-selected={on}
               onClick={() => setTab(tb.id)}
-              style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, color: on ? C("chalk") : C("ash") }}
+              style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, whiteSpace: "nowrap", color: on ? C("chalk") : C("ash") }}
             >
               {tb.label}
               {on && <span style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, background: C("lime") }} />}
@@ -410,46 +395,64 @@ export default function AuroraProfile({
       )}
 
       {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
-          lives here, clearly marked private and visible only to the owner. */}
-      {sectionHead(t("w.account.profile.private-title"), "🔒")}
-      {showHpi ? (
-        <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
-            <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--lime-text)", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", textTransform: "uppercase" }}>
-              {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
-            </span>
+          PRIVATE tab — identity & self-tracking with no other home. HPI /
+          readiness / injury-risk are NOT duplicated; the Command-center row LINKS
+          to the Cockpit. Body & Journal are Full features (locked teaser for
+          free). Visibility summarises what only you vs followers can see. */}
+      {tab === "private" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), margin: "0 2px 2px" }}>{t("w.account.profile.priv-intro")}</div>
+
+          <PrivBlock icon="navigation" tint="blue" title={t("w.account.profile.priv-cockpit-t")} sub={t("w.account.profile.priv-cockpit-s")} onClick={go("cockpit", "/cockpit")} />
+          <PrivBlock icon="user-square" tint="lime" title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")} badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"} onClick={showHpi ? undefined : go("upgrade", "/upgrade")} />
+          <PrivBlock icon="edit" tint="violet" title={t("w.account.profile.priv-journal-t")} sub={t("w.account.profile.priv-journal-s")} badge={showHpi ? t("w.account.profile.priv-soon") : "✦ Full"} onClick={showHpi ? undefined : go("upgrade", "/upgrade")} />
+          <PrivBlock icon="eye" tint="amber" title={t("w.account.profile.priv-hidden-t")} sub={t("w.account.profile.priv-hidden-s")} badge={t("w.account.profile.priv-soon")} />
+
+          {/* Visibility at a glance */}
+          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, background: C("ink2") }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash"), marginBottom: 12 }}>{t("w.account.profile.priv-vis-t")}</div>
+            <div style={{ display: "flex", gap: 9, marginBottom: 9 }}>
+              <div style={{ width: 70, flex: "none", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.account.profile.priv-vis-only")}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{["HPI", "Body", "Journal"].map((s) => <VTag key={s} label={s} />)}</div>
+            </div>
+            <div style={{ display: "flex", gap: 9 }}>
+              <div style={{ width: 70, flex: "none", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-vis-followers")}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{["PRs", t("w.account.profile.spec-streak"), t("w.account.profile.id-sessions")].map((s) => <VTag key={s} label={s} />)}</div>
+            </div>
+            <button onClick={go("settings", "/settings")} style={{ marginTop: 12, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)" }}>{t("w.account.profile.priv-vis-manage")} →</button>
           </div>
-          <BigNumber value={hasData ? state.hpi.score : null} />
-          <Trace series={hpiTrace} />
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
-            {hasData ? (
-              <>
-                <span style={{ color: "var(--lime-text)" }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
-              </>
-            ) : (
-              t("w.account.profile.hpi-empty")
-            )}
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 8, opacity: 0.85 }}>
-            {t("w.account.profile.private-note")}
-          </div>
-        </div>
-      ) : (
-        <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>
-            <span>🔒</span>{t("w.account.profile.hpi-locked-title")}
-          </div>
-          <p style={{ fontSize: fs.body, lineHeight: 1.55, color: C("chalk"), marginTop: 12 }}>{t("w.account.profile.hpi-locked-body")}</p>
-          <button onClick={go("upgrade", "/upgrade")} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, border: "none", borderRadius: 999, background: "var(--premium-accent)", padding: "11px 20px", fontWeight: 800, fontSize: fs.body, color: "var(--premium-accent-ink)", cursor: "pointer" }}>
-            ✦ {t("w.account.profile.hpi-locked-cta")} →
-          </button>
         </div>
       )}
 
     </div>
   );
+}
+
+// A Private-tab row: tinted icon chip + title/sub + either a chevron (link) or a
+// status badge ("Coming soon" / "✦ Full"). A button only when onClick is given.
+function PrivBlock({ icon, tint, title, sub, badge, onClick }: { icon: AuroraIconName; tint: string; title: string; sub: string; badge?: string; onClick?: () => void }) {
+  const inner = (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, border: `1px solid ${C("line")}`, borderRadius: 16, padding: 13, background: C("ink2"), width: "100%", textAlign: "left" }}>
+      <span style={{ width: 38, height: 38, borderRadius: 11, flex: "none", display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)` }}>
+        <AuroraIcon name={icon} size={19} color={C(tint)} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{title}</span>
+        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
+      </span>
+      {badge ? (
+        <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{badge}</span>
+      ) : (
+        <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
+      )}
+    </div>
+  );
+  return onClick ? <button onClick={onClick} aria-label={title} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}>{inner}</button> : inner;
+}
+
+// A small bordered "what's visible" tag used in the Visibility summary.
+function VTag({ label }: { label: string }) {
+  return <span style={{ fontSize: 10, color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "2px 7px" }}>{label}</span>;
 }
 
 // ----- helpers -----
@@ -464,31 +467,3 @@ function heatBg(level: HeatCell["level"]): string {
   }
 }
 
-function BigNumber({ value }: { value: number | null }) {
-  const s = value == null ? "—" : String(value);
-  const head = s.slice(0, -1);
-  const last = s.slice(-1);
-  return (
-    <div style={{ fontWeight: 900, fontSize: 64, lineHeight: 0.9, letterSpacing: "-.05em", marginTop: 12 }}>
-      {head}
-      <span style={{ color: C("lime") }}>{last}</span>
-    </div>
-  );
-}
-
-function Trace({ series }: { series: number[] }) {
-  // 12 bars; the last is highlighted lime. Heights are scaled within the window.
-  const bars = series.length >= 2 ? series : Array(12).fill(0);
-  const max = Math.max(1, ...bars);
-  const min = Math.min(...bars);
-  const range = max - min || 1;
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
-      {bars.map((v, i) => {
-        const pct = series.length >= 2 ? 30 + ((v - min) / range) * 64 : 22;
-        const isLast = i === bars.length - 1;
-        return <div key={i} style={{ flex: 1, borderRadius: 2, height: `${pct}%`, background: isLast && series.length >= 2 ? C("lime") : C("line") }} />;
-      })}
-    </div>
-  );
-}
