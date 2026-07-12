@@ -10,14 +10,40 @@ type P = ReturnType<typeof useTheme>["palette"];
 
 // Four readiness levels → a representative 1–5 rating written to the SAME daily
 // check-in the full form logs (energy/sleep/soreness/mood), so a quick tap still
-// lands in check-in history + weekly compliance and reaches a linked coach. The
-// dot colour follows the semantic spectrum (green→blue→amber→terracotta).
-const LEVELS: { key: string; dot: (C: P) => string; rating: number }[] = [
-  { key: "primed", dot: (C) => C.lime, rating: 5 },
-  { key: "good", dot: (C) => C.blue, rating: 4 },
-  { key: "flat", dot: (C) => C.amber, rating: 3 },
-  { key: "wrecked", dot: (C) => C.red, rating: 2 },
+// lands in check-in history + weekly compliance and reaches a linked coach. Each
+// level shows a minimal face (eyes + mouth, no ring) whose expression reads the
+// feeling — grin → smile → flat → frown — in the semantic accent colour
+// (green→blue→amber→terracotta).
+type Mouth = "grin" | "smile" | "flat" | "frown";
+const LEVELS: { key: string; dot: (C: P) => string; rating: number; mouth: Mouth }[] = [
+  { key: "primed", dot: (C) => C.lime, rating: 5, mouth: "grin" },
+  { key: "good", dot: (C) => C.blue, rating: 4, mouth: "smile" },
+  { key: "flat", dot: (C) => C.amber, rating: 3, mouth: "flat" },
+  { key: "wrecked", dot: (C) => C.red, rating: 2, mouth: "frown" },
 ];
+
+/** Minimal readiness face — two eyes + a mood-shaped mouth, built from plain
+ *  Views (no react-native-svg dep, matching the rest of the app). The mouth arc
+ *  is a bordered box: bottom border = smile, top border = frown. Mirrors the web
+ *  <Face> SVG. */
+function Face({ color, mouth }: { color: string; mouth: Mouth }) {
+  const eye = { width: 4.5, height: 4.5, borderRadius: 2.25, backgroundColor: color } as const;
+  const mouthStyle =
+    mouth === "flat"
+      ? { width: 16, height: 0, borderTopWidth: 2.8, borderColor: color, borderRadius: 2 }
+      : mouth === "frown"
+      ? { width: 16, height: 8, borderTopWidth: 2.8, borderColor: color, borderTopLeftRadius: 9, borderTopRightRadius: 9 }
+      : { width: 16, height: mouth === "grin" ? 9 : 6, borderBottomWidth: 2.8, borderColor: color, borderBottomLeftRadius: 9, borderBottomRightRadius: 9 };
+  return (
+    <View style={{ width: 30, height: 30, alignItems: "center", justifyContent: "center", gap: 4 }}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={eye} />
+        <View style={eye} />
+      </View>
+      <View style={mouthStyle} />
+    </View>
+  );
+}
 
 /**
  * AURORA Readiness picker — the compact "How ready do you feel?" quick action
@@ -57,7 +83,7 @@ export default function ReadinessPicker({ onDone }: { onDone?: () => void }) {
           accessibilityLabel={`${t(`w.recovery.readiness.${l.key}`)} — ${t(`w.recovery.readiness.${l.key}Sub`)}`}
           style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16, opacity: busy && busy !== l.key ? 0.5 : 1 }}
         >
-          <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: l.dot(C) }} />
+          <Face color={l.dot(C)} mouth={l.mouth} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t(`w.recovery.readiness.${l.key}`)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 3 }}>{t(`w.recovery.readiness.${l.key}Sub`)}</Text>
