@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Glance strip — equal columns · 5 ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f;
+    --blue:#3c787e; --violet:#c9a9f0;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Archivo",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ink); color:var(--chalk);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    padding:40px 20px 80px;
+  }
+  .wrap{max-width:520px;margin:0 auto}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+  .lead{color:var(--ash);font-size:13.5px;line-height:1.5;margin:0 0 28px}
+  .lead b{color:var(--chalk);font-weight:700}
+
+  .card{
+    border:1px solid var(--line); border-radius:18px;
+    background:var(--ink2); padding:18px 18px 20px; margin-bottom:20px;
+  }
+  .card.before{border-color:#4a2b2b;background:#1a1413}
+  .kicker{
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ash);margin:0 0 3px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:6px;font-family:var(--mono);
+    font-size:11px;font-weight:700;background:var(--lime);color:var(--ink);
+  }
+  .before .num{background:#c0533f;color:#fff}
+  .title{font-size:15px;font-weight:700;margin:0 0 2px}
+  .why{color:var(--ash);font-size:12.5px;line-height:1.5;margin:6px 2px 14px}
+  .why b{color:var(--chalk);font-weight:600}
+
+  /* ── the strip itself (matches today.tsx) ── */
+  .strip{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    background:var(--ink2);border:1px solid var(--line);
+    border-radius:16px;overflow:hidden;
+  }
+  .card .strip{background:var(--ink)} /* sit a touch darker on the card */
+  .col{
+    padding:14px 6px;text-align:center;position:relative;
+    border-right:1px solid var(--line);
+  }
+  .col:last-child{border-right:none}
+  .big{font-weight:700;font-size:15px;color:var(--chalk);line-height:1.15}
+  .lab{
+    font-family:var(--mono);font-size:9px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ash);margin-top:5px;
+  }
+  .arrow{color:var(--ash);font-weight:600}
+  .badge{
+    display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
+    padding:0 4px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:700;
+    background:var(--line);color:var(--chalk);margin-left:5px;vertical-align:1px;
+  }
+  .badge.on{background:var(--lime);color:var(--ink)}
+  .ico{font-size:16px;line-height:1;display:block;margin-bottom:5px;color:var(--ash)}
+  .sub{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ash);margin-top:4px}
+  .val{font-family:var(--mono);font-weight:800;font-size:17px;color:var(--chalk);line-height:1}
+  .valpre .val{color:var(--lime)}
+  .dim{color:var(--ash)}
+
+  .flag{
+    display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:#e0866f;border:1px solid #4a2b2b;border-radius:6px;
+    padding:2px 6px;margin-left:6px;
+  }
+  .foot{color:var(--ash);font-size:12px;line-height:1.6;margin-top:26px;
+    border-top:1px solid var(--line);padding-top:18px}
+  .foot b{color:var(--chalk)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Glance strip — three equal columns</h1>
+  <p class="lead">The row on Today (<b>Quick Log · Readiness · Done today</b>). Goal: every column
+  the same shape, and the word <b>“Log”</b> used only once. Below: the current version, then 5 directions.
+  Rendered in the real Aurora palette.</p>
+
+  <!-- BEFORE -->
+  <div class="card before">
+    <p class="kicker"><span class="num">!</span> Today — current</p>
+    <div class="strip">
+      <div class="col"><div class="big">＋ Log</div><div class="lab">Quick log</div></div>
+      <div class="col"><div class="big">Log <span class="arrow">→</span></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="big">✓ 0</div><div class="lab">Done today</div></div>
+    </div>
+    <p class="why" style="margin-top:14px">Three different shapes — <b>verb</b>, <b>verb + arrow</b>, <b>count</b>.
+    And <b>“Log” appears twice</b> meaning two different things: log a <i>workout</i> (col 1) vs. save a
+    <i>readiness rating</i> (col 2). <span class="flag">the confusion</span></p>
+  </div>
+
+
+  <!-- IDEA 1 -->
+  <div class="card">
+    <p class="kicker"><span class="num">1</span> Distinct verbs</p>
+    <h2 class="title">Log · Rate · Review</h2>
+    <p class="why">Each column keeps a single imperative verb + mono noun. The double “Log” dies —
+    readiness becomes <b>Rate</b>, the tally becomes <b>Review</b> with the count as a chip. Same rhythm across all three.</p>
+    <div class="strip">
+      <div class="col"><div class="big">＋ Log</div><div class="lab">Workout</div></div>
+      <div class="col"><div class="big">◎ Rate</div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="big">✓ Review<span class="badge">0</span></div><div class="lab">Today</div></div>
+    </div>
+  </div>
+
+  <!-- IDEA 2 -->
+  <div class="card">
+    <p class="kicker"><span class="num">2</span> Noun + live state</p>
+    <h2 class="title">Category on top, status underneath</h2>
+    <p class="why">The big line is just the <b>thing</b> (Workout / Readiness / Done); the mono line reports its
+    <b>current state</b>. Perfectly parallel, and it shows real status at a glance instead of a bare CTA. No verb collides.</p>
+    <div class="strip">
+      <div class="col"><div class="big">Workout</div><div class="sub">Tap to log</div></div>
+      <div class="col"><div class="big">Readiness</div><div class="sub">Not rated</div></div>
+      <div class="col"><div class="big">Done</div><div class="sub">0 today</div></div>
+    </div>
+  </div>
+
+  <!-- IDEA 3 -->
+  <div class="card">
+    <p class="kicker"><span class="num">3</span> Numeric readout</p>
+    <h2 class="title">A metrics strip — value over label</h2>
+    <p class="why">Make all three the same shape as <i>Done today</i> already is: a <b>value + mono label</b>.
+    Sessions logged, readiness score, done count. “Log” disappears entirely; the whole row reads as glanceable numbers.</p>
+    <div class="strip">
+      <div class="col valpre"><div class="val">＋</div><div class="lab">Log session</div></div>
+      <div class="col"><div class="val dim">—</div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val">0</div><div class="lab">Done today</div></div>
+    </div>
+  </div>
+
+  <!-- IDEA 4 -->
+  <div class="card">
+    <p class="kicker"><span class="num">4</span> Icon-led, one word</p>
+    <h2 class="title">Train · Feel · Done</h2>
+    <p class="why">An icon leads each column, one word beneath, count as a superscript. Drops the word “Log”
+    altogether and stays quiet and symmetric — the most minimal option.</p>
+    <div class="strip">
+      <div class="col"><span class="ico">＋</span><div class="big">Train</div></div>
+      <div class="col"><span class="ico">♦</span><div class="big">Feel</div></div>
+      <div class="col"><span class="ico">✓</span><div class="big">Done <span class="badge on">0</span></div></div>
+    </div>
+  </div>
+
+  <!-- IDEA 5 -->
+  <div class="card">
+    <p class="kicker"><span class="num">5</span> Consistent arrows</p>
+    <h2 class="title">Everything opens — so every column says so</h2>
+    <p class="why">The arrow signals “this opens a sheet.” Right now only col 2 has one. Put it on all three,
+    with distinct verbs, and the row is instantly parallel. Closest to today’s look — smallest change.</p>
+    <div class="strip">
+      <div class="col"><div class="big">Log <span class="arrow">→</span></div><div class="lab">Workout</div></div>
+      <div class="col"><div class="big">Rate <span class="arrow">→</span></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="big">View <span class="arrow">→</span></div><div class="lab">Done · 0</div></div>
+    </div>
+  </div>
+
+  <p class="foot">Each column maps to the same action as today: <b>col 1</b> opens the quick sport-log carousel,
+  <b>col 2</b> opens the readiness check-in, <b>col 3</b> opens the “logged today” list.
+  Only the copy + structure change — no behaviour changes. My pick: <b>#2</b> (honest live status, fully parallel)
+  or <b>#5</b> (smallest diff). Tell me which and I’ll wire it into <code>today.tsx</code> + the mobile mirror + i18n (EN/PL/DE).</p>
+
+</div>
+</body>
+</html>
