@@ -6,7 +6,7 @@
  */
 
 // Brand color constants used by the goal tree (hex literals).
-const VIOLET = "#c9a9f0";
+const VIOLET = "#8296c4"; // steel/slate — coach & non-premium 5th accent (was #c9a9f0 lavender)
 const LIME = "#c6f84f";
 const BLUE = "#3c787e";
 const AMBER = "#d0cd94";

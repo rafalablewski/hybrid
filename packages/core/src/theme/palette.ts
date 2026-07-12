@@ -72,8 +72,9 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     onAccent: "#0c0d0c",
     gold: "#e6c34e", // bright gold on the dark card
     // SPECTRUM accent-text: chartreuse + sand read on dark as-is; teal/terracotta
-    // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; violet unchanged.
-    accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
+    // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; `violet` (now a
+    // steel/slate blue coach accent) is lifted to #8ba0cc for the same reason.
+    accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#8ba0cc", amber: "#d0cd94", red: "#e58a5c" },
   },
   // JAPANDI · CLAY & SAGE — the warm light theme. Surfaces run as an OAT ramp:
   // ground #eae3d4 → raised #f2ecdf → near-white card #f9f5ec, each a clear step
@@ -95,6 +96,6 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     accent: "#a4543a", // clay — the primary action fill
     onAccent: "#faf6ef", // warm paper ink on the clay fill
     gold: "#b58a24", // deep antique gold — reads as gold on the oat card
-    accentText: { lime: "#8f4a30", blue: "#4f5c3a", violet: "#6a4885", amber: "#875427", red: "#973a30" },
+    accentText: { lime: "#8f4a30", blue: "#4f5c3a", violet: "#4c5a78", amber: "#875427", red: "#973a30" },
   },
 };

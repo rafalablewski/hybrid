@@ -8,7 +8,7 @@
  *
  *   go       → lime    — positive / on-track / "push" (high readiness, low risk)
  *   info     → blue    — neutral-good / informational (conditioning, "ok")
- *   premium  → violet  — AI coach / paid / programming
+ *   premium  → amber   — paid / Full-upgrade cue (sand; was violet — see premium-accent-sand)
  *   caution  → amber   — watch it / deload / moderate risk
  *   danger   → red     — hold back / flagged / high risk
  *   neutral  → ash     — muted / not-yet / no data
@@ -26,7 +26,7 @@ export type AccentKey = "lime" | "blue" | "violet" | "amber" | "red" | "ash";
 export const ROLE_COLOR: Record<SemanticRole, AccentKey> = {
   go: "lime",
   info: "blue",
-  premium: "violet",
+  premium: "amber",
   caution: "amber",
   danger: "red",
   neutral: "ash",

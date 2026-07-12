@@ -13,13 +13,15 @@ export const colors = {
   // sand / terracotta), layered over the unchanged dark surfaces. Each daily
   // Today section maps onto one accent (see semantic.ts SECTION_COLOR), so the
   // app reads as a guided gradient rather than one flat lime. Surfaces above are
-  // untouched. (violet has no palette member; it stays for the premium/coach slot.)
+  // untouched. (The `violet` KEY is a legacy name: it now holds a steel/slate
+  // BLUE and is the coach / non-premium 5th accent — the premium-upgrade cue
+  // moved to sand/amber, see premium-accent-sand + coach-accent-steel.)
   lime: "#c6f84f", // chartreuse — the primary accent (action / "go" / Train)
   chalk: "#f3f4ef", // primary text
   ash: "#8b8f86", // muted text
   blue: "#3c787e", // teal — conditioning / info accent (Feel)
-  violet: "#c9a9f0", // coach / premium accent
-  amber: "#d0cd94", // sand — sport / caution accent (Plan)
+  violet: "#8296c4", // steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender)
+  amber: "#d0cd94", // sand — sport / caution accent (Plan) + the premium-upgrade cue
   red: "#d56f3e", // terracotta — alert / injury / streak (Connect)
 } as const;
 

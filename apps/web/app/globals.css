@@ -14,7 +14,7 @@
   --color-chalk: #f3f4ef;
   --color-ash: #8b8f86;
   --color-blue: #3c787e;
-  --color-violet: #c9a9f0;
+  --color-violet: #8296c4; /* steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender; premium cue moved to amber) */
   --color-amber: #d0cd94;
   --color-red: #d56f3e;
   --color-gold: #e6c34e; /* rating gold (coach ★) — bright on the dark card */
@@ -146,7 +146,7 @@ html {
      packages/core/src/theme/palette.ts THEMES.dark.accentText). */
   --lime-text: #c6f84f;
   --blue-text: #6cb6bd;
-  --violet-text: #c9a9f0;
+  --violet-text: #8ba0cc;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
   /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
@@ -200,7 +200,7 @@ html {
      `blue` = sage (secondary); violet/amber/red keep their darkened hues. */
   --lime-text: #8f4a30;
   --blue-text: #4f5c3a;
-  --violet-text: #6a4885;
+  --violet-text: #4c5a78;
   --amber-text: #875427;
   --red-text: #973a30;
   --glass-glow-rgb: 164, 84, 58; /* clay — matches the primary accent fill */

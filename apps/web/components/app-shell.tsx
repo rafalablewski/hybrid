@@ -467,7 +467,7 @@ export default function AppShell() {
                                 <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
                                 {locked && (
                                   <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
-                                    <AuroraIcon name="lock" size={11} color="var(--violet-text)" strokeWidth={2.4} />
+                                    <AuroraIcon name="lock" size={11} color="var(--amber-text)" strokeWidth={2.4} />
                                   </span>
                                 )}
                               </button>
