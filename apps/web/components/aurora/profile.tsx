@@ -359,6 +359,7 @@ export default function AuroraProfile({
                       onPointerDown={() => startPress(tile.hkey)}
                       onPointerUp={clearPress}
                       onPointerLeave={clearPress}
+                      onPointerCancel={clearPress}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMenuFor(tile.hkey); } }}
                       onContextMenu={(e) => { e.preventDefault(); setMenuFor(tile.hkey); }}
                       style={{ position: "relative", zIndex: open ? 50 : undefined, aspectRatio: "1", border: `1px solid ${open ? C("lime") : C("line")}`, borderRadius: 14, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center", cursor: "pointer", opacity: isHidden ? 0.4 : 1, userSelect: "none", touchAction: "manipulation" }}
