@@ -442,7 +442,7 @@ export default function AuroraProfile({
             <span>🔒</span>{t("w.account.profile.hpi-locked-title")}
           </div>
           <p style={{ fontSize: fs.body, lineHeight: 1.55, color: C("chalk"), marginTop: 12 }}>{t("w.account.profile.hpi-locked-body")}</p>
-          <button onClick={go("upgrade", "/upgrade")} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, border: "none", borderRadius: 999, background: C("lime"), padding: "11px 20px", fontWeight: 800, fontSize: fs.body, color: "var(--on-accent)", cursor: "pointer" }}>
+          <button onClick={go("upgrade", "/upgrade")} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, border: "none", borderRadius: 999, background: C("amber"), padding: "11px 20px", fontWeight: 800, fontSize: fs.body, color: "#141614", cursor: "pointer" }}>
             ✦ {t("w.account.profile.hpi-locked-cta")} →
           </button>
         </div>

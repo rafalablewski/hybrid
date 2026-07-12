@@ -340,9 +340,9 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, padding: 11, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.lime}66` }}
+                    style={{ marginTop: 12, padding: 11, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.amber}66` }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: txt(C, C.lime) }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: txt(C, C.amber) }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}

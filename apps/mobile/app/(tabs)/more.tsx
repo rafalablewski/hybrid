@@ -170,14 +170,14 @@ export default function More() {
       {persona === "casual" && (
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
-          style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: C.lime, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
+          style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.amber}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: C.amber, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
         >
-          <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.lime}24` }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.lime) }}>{t("more.upgradeKicker")}</Text>
+          <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.amber}24` }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.amber) }}>{t("more.upgradeKicker")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
           <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>{t("more.upgradeBlurb")}</Mono>
-          <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("more.goFull")}</Text>
+          <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.amber, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: "#141614" }}>{t("more.goFull")}</Text>
           </View>
         </Pressable>
       )}
