@@ -29,11 +29,13 @@ const LEVELS: { key: string; dot: (C: P) => string; rating: number; mouth: Mouth
  *  to a flat line on device. Mirrors the web <Face> SVG mouth paths. */
 function Mouth({ color, mouth }: { color: string; mouth: Mouth }) {
   if (mouth === "flat") {
-    return <View style={{ width: 15, height: 2.6, backgroundColor: color, borderRadius: 1.3 }} />;
+    return <View style={{ width: 14, height: 2.6, backgroundColor: color, borderRadius: 1.3 }} />;
   }
-  const D = 20; // ring diameter; the visible slice is the arc of a circle this big
+  const D = 16; // ring diameter; the visible slice is the arc of a circle this big.
+  // Kept narrower than the eyes' span (matching the web face) so the mouth reads
+  // in proportion.
   const bw = 2.6; // stroke weight (matches the eyes / web stroke)
-  const h = mouth === "grin" ? 9 : mouth === "frown" ? 8 : 7; // slice height = curve depth
+  const h = mouth === "grin" ? 7 : mouth === "frown" ? 6 : 5; // slice height = curve depth
   // smile shows the ring's BOTTOM arc (push the circle up so only its base peeks);
   // frown shows the TOP arc (align the circle's top with the clip box).
   const marginTop = mouth === "frown" ? 0 : -(D - h);
