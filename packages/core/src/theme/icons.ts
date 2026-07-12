@@ -49,7 +49,8 @@ export type AuroraIconName =
   | "user-square"
   | "download"
   | "copy"
-  | "edit";
+  | "edit"
+  | "grid";
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -125,6 +126,14 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   copy: ["M9 48V12C9 8.68629 11.6863 6 15 6H45M27 66H54C57.3137 66 60 63.3137 60 60V24C60 20.6863 57.3137 18 54 18H27C23.6863 18 21 20.6863 21 24V60C21 63.3137 23.6863 66 27 66Z"],
   // Pencil / "edit profile" — distinct from the `settings` gear so the two
   // aren't confused next to an avatar. Kept in lockstep with the mobile PNG.
+  // A 2x2 rounded-square springboard grid — the "More / everything else" hub
+  // glyph, deliberately distinct from the settings cog.
+  grid: [
+    "M16 12h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z",
+    "M44 12h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H44a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z",
+    "M16 40h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V44a4 4 0 0 1 4-4z",
+    "M44 40h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H44a4 4 0 0 1-4-4V44a4 4 0 0 1 4-4z",
+  ],
   edit: ["M51 9L63 21L22.5 61.5L6 66L10.5 49.5Z", "M44 16L56 28"],
 };
 

@@ -141,11 +141,10 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
               return (
               <div key={g.group} style={{ marginBottom: 18 }}>
-                {/* Cluster header — accent marker + label + count (parity with the mobile More tab + the drawer). */}
+                {/* Cluster header — accent marker + label (no count; parity with the mobile More tab + the drawer). */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <span style={{ width: 6, height: 6, borderRadius: 2, background: accent, flex: "none" }} />
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{groupName}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginLeft: "auto" }}>{g.items.length}</span>
                 </div>
                 {/* Springboard grid — 4-col neutral bordered cells (icon + label inside),
                     section colour on the header marker, sand lock for premium. */}
@@ -191,7 +190,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             <PillButton key={tab.id} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
-          <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton icon="grid" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
           <PillButton icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { feedCardView } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 // The CONNECT feed — full-width post cards (avatar header, prose body, stat
 // pills, kudos/comments/share), the latest few of your circle's activity.
@@ -19,10 +20,11 @@ function initials(name?: string | null, handle?: string) {
 interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
 
 export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
+  const { t } = useLang();
   const [feed, setFeed] = useState<Item[] | null>(null);
   useEffect(() => {
     let alive = true;
-    fetch("/api/social/feed").then((r) => r.json()).then((d) => { if (alive) setFeed((d.feed ?? []).slice(0, horizontal ? 8 : 4)); }).catch(() => { if (alive) setFeed([]); });
+    fetch("/api/social/feed").then((r) => r.json()).then((d) => { if (alive) setFeed((d.feed ?? []).slice(0, horizontal ? 6 : 4)); }).catch(() => { if (alive) setFeed([]); });
     return () => { alive = false; };
   }, [horizontal]);
 
@@ -111,6 +113,18 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
           </button>
         );
       })}
+      {/* Threads-style trailing "See all" card — the slider caps at 6, so this
+          nudges people into the full feed instead of scrolling an endless rail. */}
+      {horizontal && (
+        <button
+          onClick={onOpen}
+          aria-label={t("w.explore.seeAll")}
+          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: "var(--lime-text)" }}
+        >
+          <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid var(--lime-text)`, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>→</span>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5 }}>{t("w.explore.seeAll")}</span>
+        </button>
+      )}
     </div>
   );
 }

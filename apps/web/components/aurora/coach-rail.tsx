@@ -27,7 +27,10 @@ function Stars({ rating }: { rating: number | null }) {
   );
 }
 
-export default function CoachRail({ onOpen }: { onOpen: () => void }) {
+// `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
+// parent (Explore) can supply the shared, unified SectionHead instead. Today
+// keeps the default header.
+export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
   const [followed, setFollowed] = useState<Record<string, boolean>>({});
 
@@ -49,14 +52,16 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
   };
 
   return (
-    <div style={{ marginTop: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
+    <div style={{ marginTop: headerless ? 0 : 18 }}>
+      {!headerless && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
+          </div>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("lime"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>Browse all →</button>
         </div>
-        <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("lime"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>Browse all →</button>
-      </div>
+      )}
 
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 4 }}>
         {items.map((c, i) => {

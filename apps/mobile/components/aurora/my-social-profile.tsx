@@ -6,6 +6,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
 import { SButton, SPill } from "../social-kit";
+import { ABack } from "./kit";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
 // (with branded presets) on top, then a tap-a-row list. Tapping a row opens a
@@ -79,10 +80,12 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     const titles: Record<FieldKey, string> = { name: "Your name", handle: "Username", displayName: "Display name", bio: "Bio", email: "Email", visibility: "Who can see your results" };
     return (
       <Card>
-        <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
-          <Text style={{ color: C.chalk, fontSize: 20 }}>‹</Text>
+        {/* Boxed ABack — the same back affordance the rest of the app uses, so the
+            focused editor no longer shows a lone ‹ chevron. */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <ABack onPress={back} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
-        </Pressable>
+        </View>
 
         {editing === "name" && (<>
           <TextInput value={acct.name} onChangeText={acct.setName} placeholder="Your name" placeholderTextColor={C.ash} style={inp} autoFocus />

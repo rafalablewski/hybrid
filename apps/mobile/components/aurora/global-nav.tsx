@@ -24,7 +24,7 @@ const LEFT: Side[] = [
   { id: "explore", glyph: "globe", labelKey: "nav.explore", href: "/explore", seg: "explore" },
 ];
 const RIGHT: Side[] = [
-  { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
+  { id: "more", glyph: "grid", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", href: "/(tabs)/you", seg: "you" },
 ];
 // The centre Train action opens the Train launcher hub (start today's session,

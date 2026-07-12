@@ -3,15 +3,11 @@ import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
-  computePerformanceState,
-  performanceTrajectory,
   trainingHeatmap,
   computeAchievements,
   bestE1rmMap,
   longestWeekStreak,
   streak,
-  toTrainingLog,
-  toBiometrics,
   fmtWeight,
   fmtTonnage,
   sessionVolume,
@@ -22,25 +18,21 @@ import {
   type HeatCell,
   type AuroraIconName,
 } from "@hybrid/core";
-import {
-  fetchSessions,
-  fetchSignals,
-  type CoreSignal,
-} from "../../lib/api";
+import { fetchSessions } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, RADIUS, Ring, Spark } from "./kit";
-import { getMyProfile, getConnections, getLeaderboard } from "../../lib/social-api";
+import { AuroraScreen, RADIUS } from "./kit";
+import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
+import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
-type TabId = "overview" | "prs" | "activity";
+type TabId = "overview" | "prs" | "activity" | "private";
 
 /**
  * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
@@ -60,7 +52,6 @@ type TabId = "overview" | "prs" | "activity";
  */
 export default function AuroraProfile() {
   const { palette: C } = useTheme();
-  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
@@ -69,46 +60,33 @@ export default function AuroraProfile() {
   const showHpi = canSeeHPI(usePersona());
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabId>("overview");
+  // Hidden highlights — the PR/badge keys the owner keeps off the public grid.
+  // Loaded once; the Private tab toggles them and the Overview grid honours them.
+  const [hidden, setHidden] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    sapi<{ hidden?: string[] }>("/api/highlights").then((d) => { if (alive) setHidden(d.hidden ?? []); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const toggleHidden = useCallback((key: string, next: boolean) => {
+    setHidden((h) => (next ? [...new Set([...h, key])] : h.filter((k) => k !== key)));
+    sapi<{ hidden?: string[] }>("/api/highlights", "POST", { key, hidden: next }).then((d) => { if (d.hidden) setHidden(d.hidden); }).catch(() => {});
+  }, []);
 
   const load = useCallback(() => {
     setRefreshing(true);
-    // allSettled, not all: these endpoints are independent, so a single failing
-    // one shouldn't blank the whole profile.
-    Promise.allSettled([fetchSessions(), fetchSignals()])
-      .then(([s, sig]) => {
-        if (s.status === "fulfilled") setSessions(s.value);
-        if (sig.status === "fulfilled") setSignals(sig.value);
-      })
+    fetchSessions()
+      .then((s) => setSessions(s))
+      .catch(() => {})
       .finally(() => setRefreshing(false));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // --- Real computed metrics (the same engines Home/Cockpit run) ---
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  const hpi = state.hpi;
-
-  // HPI 12-point trace (oldest→today) + a 30-day delta from the trajectory —
-  // SAME window + semantics as the web client (30-day trajectory, down-sampled
-  // to 12 points, delta = current score − oldest point in the window).
-  const traj = useMemo(() => [...performanceTrajectory(log, 30)].sort((a, b) => b.daysAgo - a.daysAgo), [log]);
-  const hpiTrace = useMemo(() => {
-    const series = traj.map((p) => p.hpi);
-    if (series.length <= 12) return series;
-    // down-sample to 12 evenly-spaced points (latest always kept last).
-    const out: number[] = [];
-    for (let i = 0; i < 12; i++) out.push(series[Math.round((i * (series.length - 1)) / 11)]!);
-    return out;
-  }, [traj]);
-  const hpiDelta = useMemo(() => {
-    if (traj.length < 2) return 0;
-    return hpi.score - traj[0]!.hpi;
-  }, [traj, hpi.score]);
-
+  // HPI / readiness / injury-risk are the Cockpit's job — the Private tab LINKS
+  // there rather than recomputing them here, so the profile never duplicates the
+  // command center. The metrics below feed the PUBLIC grid (PRs, streak, tonnage).
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions), [sessions]);
   const prMap = useMemo(() => bestE1rmMap(sessions), [sessions]);
@@ -172,7 +150,8 @@ export default function AuroraProfile() {
     // PR/lift = arrow-up, streak = check-circle, sessions = calendar-event,
     // tonnage = list-check, badges = verified.
     const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    for (const [lift, e1rm] of topPrs.slice(0, 2)) {
+    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
+    for (const [lift, e1rm] of topPrs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) {
       out.push({ v: fmtWeight(e1rm, prefs.units), k: `${lift} PR`, icon: "arrow-up" });
     }
     if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
@@ -180,7 +159,7 @@ export default function AuroraProfile() {
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
     if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
-  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
+  }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -281,11 +260,13 @@ export default function AuroraProfile() {
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
+          // 4th, owner-only tab — this screen is always your own profile.
+          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
             <Pressable key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
               {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
             </Pressable>
           );
@@ -403,53 +384,17 @@ export default function AuroraProfile() {
         </View>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
-          lives here, clearly marked private and visible only to the owner. */}
-      <SectionHeader C={C} title={t("w.account.profile.private-title")} action="🔒" />
-      {showHpi ? (
-        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            {/* No training yet → honest empty state (unrated band + "—"), never a
-                fabricated score. Same gating as the web client. */}
-            <Ring value={hasData ? hpi.score : 0} size={64} color={C.lime} track={C.line}>
-              <Text style={{ fontFamily: F.black, fontSize: 19, color: hasData ? C.chalk : C.ash }}>{hasData ? hpi.score : "—"}</Text>
-            </Ring>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hasData ? hpi.band : t("w.account.profile.unrated")}</Text>
-                </View>
-                {hasData && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>{hpiDelta >= 0 ? `▲ +${hpiDelta}` : `▼ ${hpiDelta}`}</Text>}
-              </View>
-            </View>
-          </View>
-          {hasData && (
-            <View style={{ marginTop: 14 }}>
-              <Spark series={hpiTrace} color={C.lime} height={34} />
-            </View>
-          )}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: hasData ? 10 : 14, lineHeight: 17 }}>
-            {hasData
-              ? `${t("w.account.profile.comp-strength")} ${hpi.components.strength} · ${t("w.account.profile.comp-engine")} ${hpi.components.endurance} · ${t("w.account.profile.comp-recovery")} ${hpi.components.recovery >= 0 ? "+" : ""}${hpi.components.recovery}`
-              : t("w.account.profile.hpi-empty")}
-          </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, marginTop: 8, opacity: 0.85 }}>
-            {t("w.account.profile.private-note")}
-          </Text>
-        </View>
-      ) : (
-        <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontSize: 11 }}>🔒</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-locked-title")}</Text>
-          </View>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
-          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
-          </Pressable>
-        </View>
+      {/* PRIVATE tab — the interactive owner-only surface (Cockpit link, Body &
+          progress, Journal, Hidden highlights, Visibility). HPI/readiness/risk
+          are NOT duplicated — the Command-center row links to the Cockpit. */}
+      {tab === "private" && (
+        <PrivateTab
+          isFull={showHpi}
+          earnedPrs={topPrs}
+          achievements={achievements}
+          hidden={hidden}
+          onToggleHidden={toggleHidden}
+        />
       )}
 
       <View style={{ height: 8 }} />
@@ -496,3 +441,4 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
     </View>
   );
 }
+

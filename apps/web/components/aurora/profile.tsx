@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   trainingHeatmap,
   computeAchievements,
   longestWeekStreak,
   streak,
-  computePerformanceState,
-  performanceTrajectory,
-  toTrainingLog,
   bestE1rmMap,
   fmtWeight,
   fmtTonnage,
@@ -28,6 +25,7 @@ import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import PrivateTab from "./private-tab";
 
 /**
  * AURORA Profile · "You" (web) — the SOCIAL layout: a cover banner, an
@@ -49,7 +47,7 @@ const C = (v: string) => `var(--color-${v})`;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-type TabId = "overview" | "prs" | "activity";
+type TabId = "overview" | "prs" | "activity" | "private";
 
 export default function AuroraProfile({
   sessions,
@@ -80,25 +78,25 @@ export default function AuroraProfile({
 
   const go = (screen: string, route: string) => () => (onNavigate ? onNavigate(screen) : router.push(route));
 
-  // ----- real data, computed from logged sessions -----
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  const hasData = sessions.length > 0;
+  // Hidden highlights — PR/badge keys kept off the public grid. Loaded once; the
+  // Private tab toggles them and the Overview grid honours them.
+  const [hidden, setHidden] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/highlights").then((r) => r.json()).then((d) => { if (alive) setHidden(d.hidden ?? []); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const toggleHidden = useCallback((key: string, next: boolean) => {
+    setHidden((h) => (next ? [...new Set([...h, key])] : h.filter((k) => k !== key)));
+    fetch("/api/highlights", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, hidden: next }) })
+      .then((r) => r.json()).then((d) => { if (d.hidden) setHidden(d.hidden); }).catch(() => {});
+  }, []);
 
-  // HPI 12-point trace (oldest→today) + a 30-day delta from the trajectory.
-  const traj = useMemo(() => [...performanceTrajectory(log, 30)].sort((a, b) => b.daysAgo - a.daysAgo), [log]);
-  const hpiTrace = useMemo(() => {
-    const series = traj.map((p) => p.hpi);
-    if (series.length <= 12) return series;
-    // down-sample to 12 evenly-spaced points (latest always kept last).
-    const out: number[] = [];
-    for (let i = 0; i < 12; i++) out.push(series[Math.round((i * (series.length - 1)) / 11)]!);
-    return out;
-  }, [traj]);
-  const hpiDelta = useMemo(() => {
-    if (traj.length < 2) return 0;
-    return state.hpi.score - traj[0]!.hpi;
-  }, [traj, state.hpi.score]);
+  // ----- real data, computed from logged sessions -----
+  // HPI / readiness / injury-risk belong to the Cockpit — the Private tab LINKS
+  // there instead of recomputing them, so the profile never duplicates the
+  // command center. Everything below feeds the PUBLIC grid (PRs, streak, tonnage).
+  const hasData = sessions.length > 0;
 
   const weekStreak = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
@@ -186,13 +184,14 @@ export default function AuroraProfile({
     // mobile): PR/lift = arrow-up, streak = check-circle, sessions =
     // calendar-event, tonnage = list-check, badges = verified.
     const out: { v: string; k: string; icon: AuroraIconName }[] = [];
-    for (const [lift, e1rm] of prs.slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
+    // PRs the owner has HIDDEN (Private tab) never reach the public grid.
+    for (const [lift, e1rm] of prs.filter(([lift]) => !hidden.includes(`pr:${lift}`)).slice(0, 2)) out.push({ v: fmtWeight(e1rm, units), k: `${lift} PR`, icon: "arrow-up" });
     if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle" });
     if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event" });
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check" });
     if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified" });
     return out.slice(0, 6);
-  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
+  }, [prs, units, weekStreak, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, hidden, t]);
 
   const socialCounts = useMemo(() => {
     const out = [
@@ -286,6 +285,8 @@ export default function AuroraProfile({
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
+          // 4th, owner-only tab — this screen is always your own profile.
+          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -294,7 +295,7 @@ export default function AuroraProfile({
               role="tab"
               aria-selected={on}
               onClick={() => setTab(tb.id)}
-              style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, color: on ? C("chalk") : C("ash") }}
+              style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, whiteSpace: "nowrap", color: on ? C("chalk") : C("ash") }}
             >
               {tb.label}
               {on && <span style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, background: C("lime") }} />}
@@ -410,42 +411,20 @@ export default function AuroraProfile({
       )}
 
       {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE · ONLY YOU — HPI never appears on the public grid above; it
-          lives here, clearly marked private and visible only to the owner. */}
-      {sectionHead(t("w.account.profile.private-title"), "🔒")}
-      {showHpi ? (
-        <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
-            <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--lime-text)", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", textTransform: "uppercase" }}>
-              {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
-            </span>
-          </div>
-          <BigNumber value={hasData ? state.hpi.score : null} />
-          <Trace series={hpiTrace} />
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
-            {hasData ? (
-              <>
-                <span style={{ color: "var(--lime-text)" }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
-              </>
-            ) : (
-              t("w.account.profile.hpi-empty")
-            )}
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 8, opacity: 0.85 }}>
-            {t("w.account.profile.private-note")}
-          </div>
-        </div>
-      ) : (
-        <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>
-            <span>🔒</span>{t("w.account.profile.hpi-locked-title")}
-          </div>
-          <p style={{ fontSize: fs.body, lineHeight: 1.55, color: C("chalk"), marginTop: 12 }}>{t("w.account.profile.hpi-locked-body")}</p>
-          <button onClick={go("upgrade", "/upgrade")} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, border: "none", borderRadius: 999, background: "var(--premium-accent)", padding: "11px 20px", fontWeight: 800, fontSize: fs.body, color: "var(--premium-accent-ink)", cursor: "pointer" }}>
-            ✦ {t("w.account.profile.hpi-locked-cta")} →
-          </button>
-        </div>
+          PRIVATE tab — identity & self-tracking with no other home. HPI /
+          readiness / injury-risk are NOT duplicated; the Command-center row LINKS
+          to the Cockpit. Body & Journal are Full features (locked teaser for
+          free). Visibility summarises what only you vs followers can see. */}
+      {tab === "private" && (
+        <PrivateTab
+          isFull={showHpi}
+          units={units}
+          earnedPrs={prs}
+          achievements={achievements}
+          hidden={hidden}
+          onToggleHidden={toggleHidden}
+          nav={(screen) => go(screen, `/${screen}`)()}
+        />
       )}
 
     </div>
@@ -464,31 +443,3 @@ function heatBg(level: HeatCell["level"]): string {
   }
 }
 
-function BigNumber({ value }: { value: number | null }) {
-  const s = value == null ? "—" : String(value);
-  const head = s.slice(0, -1);
-  const last = s.slice(-1);
-  return (
-    <div style={{ fontWeight: 900, fontSize: 64, lineHeight: 0.9, letterSpacing: "-.05em", marginTop: 12 }}>
-      {head}
-      <span style={{ color: C("lime") }}>{last}</span>
-    </div>
-  );
-}
-
-function Trace({ series }: { series: number[] }) {
-  // 12 bars; the last is highlighted lime. Heights are scaled within the window.
-  const bars = series.length >= 2 ? series : Array(12).fill(0);
-  const max = Math.max(1, ...bars);
-  const min = Math.min(...bars);
-  const range = max - min || 1;
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
-      {bars.map((v, i) => {
-        const pct = series.length >= 2 ? 30 + ((v - min) / range) * 64 : 22;
-        const isLast = i === bars.length - 1;
-        return <div key={i} style={{ flex: 1, borderRadius: 2, height: `${pct}%`, background: isLast && series.length >= 2 ? C("lime") : C("line") }} />;
-      })}
-    </div>
-  );
-}

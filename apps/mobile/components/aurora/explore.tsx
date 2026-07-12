@@ -40,19 +40,19 @@ export default function AuroraExplore() {
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.explore.search")}</Text>
       </Pressable>
 
-      {/* COACHES — CoachRail renders its OWN "Follow a coach" header + Browse all */}
-      <View style={{ marginTop: 20 }}>
-        <CoachRail onOpen={() => router.push("/coaches")} />
-      </View>
+      {/* COACHES — headerless rail under the SHARED SectionHead, so all three
+          sections share one title + one "See all" CTA (no bespoke "Browse all"). */}
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.coaches")} onAction={() => router.push("/coaches")} />
+      <CoachRail onOpen={() => router.push("/coaches")} headerless />
 
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
-      <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} action={t("w.explore.all")} onAction={() => router.push("/(tabs)/plans")} />
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} onAction={() => router.push("/(tabs)/plans")} />
       <View style={{ gap: 10 }}>
         {PLAN_PREVIEWS.map((p) => (
           <Pressable
             key={p.plan.id}
             onPress={() => router.push("/(tabs)/plans")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 }}
           >
             <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: `${p.color}22`, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontSize: 22, color: p.color }}>{p.icon}</Text>
@@ -66,19 +66,23 @@ export default function AuroraExplore() {
         ))}
       </View>
 
-      {/* COMMUNITY */}
-      <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} action={t("w.explore.feed")} onAction={() => router.push("/feed")} />
-      <FeedPreview onOpen={() => router.push("/feed")} />
+      {/* COMMUNITY — a left/right slider (max 6) with a trailing "See all" card,
+          Threads-style, instead of an ever-growing stacked wall. */}
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} onAction={() => router.push("/feed")} />
+      <FeedPreview onOpen={() => router.push("/feed")} horizontal />
     </AuroraScreen>
   );
 }
 
-function SectionHead({ C, scheme, title, action, onAction }: { C: P; scheme: "light" | "dark"; title: string; action: string; onAction: () => void }) {
+// ONE section header for every Explore section — a title + a single unified
+// "See all →" CTA. Kills the old mix of "Browse all" / "All plans" / "Feed".
+function SectionHead({ C, scheme, title, onAction }: { C: P; scheme: "light" | "dark"; title: string; onAction: () => void }) {
+  const { t } = useLang();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
       <Pressable onPress={onAction} hitSlop={8}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{action} →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} →</Text>
       </Pressable>
     </View>
   );
