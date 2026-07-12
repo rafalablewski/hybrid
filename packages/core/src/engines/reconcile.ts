@@ -220,7 +220,7 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
         reps: 0,
         format: dailyCond.kind === "conditioning" ? dailyCond.format : "Steady",
         scheme: distance
-          ? `${distance} km${paceTarget ? ` @ ${paceTarget}` : ""} · ${minutes} min`
+          ? `${distance} km${paceTarget ? ` @ ${paceTarget}` : ""} – ${minutes} min`
           : `${minutes} min`,
       });
     }
@@ -311,7 +311,7 @@ function datedAssignment(plan: ReconciledPlan, start: Date, off: number): Schedu
   d.setDate(d.getDate() + off);
   d.setHours(12, 0, 0, 0);
   return {
-    name: `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`,
+    name: `${plan.phase.label} – ${plan.blocks[0]?.name ?? "Session"}`,
     blocks: reconciledToSessionBlocks(plan.blocks),
     date: d.toISOString(),
   };

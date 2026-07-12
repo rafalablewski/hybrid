@@ -3,7 +3,7 @@ import { athleteId } from "./athlete-id";
 
 describe("athleteId", () => {
   it("renders the 0xHHHH·NN shape", () => {
-    expect(athleteId("a@b.com")).toMatch(/^0x[0-9A-F]{4}·\d{2}$/);
+    expect(athleteId("a@b.com")).toMatch(/^0x[0-9A-F]{4}–\d{2}$/);
   });
 
   it("is stable for the same seed", () => {
