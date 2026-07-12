@@ -82,7 +82,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
   };
 
   const summary = latest
-    ? [latest.weightKg != null ? fmtWeight(latest.weightKg, units) : null, latest.waistCm != null ? `${t("w.account.profile.priv-waist")} ${Math.round(latest.waistCm)}cm` : null].filter(Boolean).join("  ·  ")
+    ? [latest.weightKg != null ? fmtWeight(latest.weightKg, units) : null, latest.waistCm != null ? `${t("w.account.profile.priv-waist")} ${Math.round(latest.waistCm)}cm` : null].filter(Boolean).join("    ")
     : t("w.account.profile.priv-body-empty");
 
   return (
@@ -169,7 +169,10 @@ function JournalBlock({ C }: { C: Palette }) {
             <View key={e.id} style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 19 }}>{e.body}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 5 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{relativeTime(Date.parse(e.createdAt))} · {t("w.account.profile.priv-vis-only")}</Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{relativeTime(Date.parse(e.createdAt))}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</Text>
+                </View>
                 <Pressable onPress={() => del(e.id)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{t("common.delete")}</Text></Pressable>
               </View>
             </View>

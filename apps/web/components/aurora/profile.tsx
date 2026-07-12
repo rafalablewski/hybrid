@@ -284,7 +284,7 @@ export default function AuroraProfile({
       <div style={{ marginTop: 7, padding: "0 4px" }}>
         {!!bioText && <div style={{ fontSize: 13.5, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".02em", lineHeight: 1.6 }}>
-          <div>HYBRID ID · {athleteId}</div>
+          <div><span style={{ opacity: 0.75 }}>HYBRID ID</span>&nbsp;&nbsp;{athleteId}</div>
           <div style={{ opacity: 0.75 }}>{t("w.account.profile.member-since")} {memberSince}</div>
         </div>
       </div>

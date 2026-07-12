@@ -84,3 +84,10 @@ In plan exercise names, abbreviate "Kettlebell" to **`KB`** (`KB Swing`, not
 same lift never appears under two spellings. This is for exercise NAMES only —
 plan titles, goal names, prose and source credits keep the full word
 ("12-Week Kettlebell", the Kettlebell goal).
+
+## RULE: never use `·` (middle dot) as a separator (always)
+The middot reads as AI slop. Do NOT join inline items with `·` (nor a `•`
+bullet or a `|` pipe used as filler) in any UI copy or i18n string, on either
+client. Separate values with real layout instead — flex/grid gaps, distinct
+type weight or colour, or put them on their own line. `—` (em dash) is fine as
+genuine prose punctuation, not as a list separator.

@@ -72,7 +72,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
   };
 
   const summary = latest
-    ? [latest.weightKg != null ? fmtWeight(latest.weightKg, units) : null, latest.waistCm != null ? `${t("w.account.profile.priv-waist")} ${Math.round(latest.waistCm)}cm` : null].filter(Boolean).join("  ·  ")
+    ? [latest.weightKg != null ? fmtWeight(latest.weightKg, units) : null, latest.waistCm != null ? `${t("w.account.profile.priv-waist")} ${Math.round(latest.waistCm)}cm` : null].filter(Boolean).join("    ")
     : t("w.account.profile.priv-body-empty");
 
   return (
@@ -143,7 +143,10 @@ function JournalBlock() {
             <div key={e.id} style={{ borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
               <div style={{ fontSize: 12.5, color: C("chalk"), lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{e.body}</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash") }}>{relativeTime(Date.parse(e.createdAt))} · {t("w.account.profile.priv-vis-only")}</span>
+                <span style={{ display: "inline-flex", gap: 8, fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash") }}>
+                  <span>{relativeTime(Date.parse(e.createdAt))}</span>
+                  <span style={{ opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</span>
+                </span>
                 <button onClick={() => del(e.id)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash") }}>{t("common.delete")}</button>
               </div>
             </div>

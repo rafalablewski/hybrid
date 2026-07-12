@@ -253,7 +253,7 @@ export default function AuroraProfile() {
           <Text style={{ fontFamily: F.reg, fontSize: 13.5, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
         )}
         <View style={{ marginTop: bioText ? 6 : 0, gap: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>HYBRID ID · {athleteId(email || name || "")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}><Text style={{ opacity: 0.75 }}>HYBRID ID</Text>{"  "}{athleteId(email || name || "")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, opacity: 0.75 }}>{t("w.account.profile.member-since")} {createdYear}</Text>
         </View>
       </View>
