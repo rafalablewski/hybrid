@@ -1,21 +1,29 @@
 /**
- * Readiness feeling ↔ emoji — the shared mapping for the Today glance strip's
- * middle column. The quick Readiness picker offers four feelings
+ * Readiness feeling — the shared model behind the Readiness picker AND the Today
+ * glance strip's middle column. The quick picker offers four feelings
  * (primed / good / flat / wrecked, written as a 1–5 rating into the daily
- * check-in); the strip reflects TODAY's chosen feeling as an emoji rather than
- * a computed score. Consumed by both clients so the mapping lives in one place.
+ * check-in); the strip reflects TODAY's chosen feeling as the SAME minimal face
+ * the picker draws (eyes + mood mouth, in the semantic accent colour) rather
+ * than a computed score. The face geometry is per-client (web SVG / native
+ * Views), but the expression + accent mapping lives here so both agree.
  */
 
 /** Ordered worst → best, matching the readiness picker's four levels. */
 export const READINESS_FEELINGS = ["wrecked", "flat", "good", "primed"] as const;
 export type ReadinessFeeling = (typeof READINESS_FEELINGS)[number];
 
-/** The glanceable face for each feeling — a clear happy→struggling gradient. */
-export const READINESS_EMOJI: Record<ReadinessFeeling, string> = {
-  primed: "😃",
-  good: "🙂",
-  flat: "😐",
-  wrecked: "😫",
+/** The mood-shaped mouth for a feeling's face. */
+export type ReadinessMouth = "grin" | "smile" | "flat" | "frown";
+/** Semantic accent tone (palette key) a feeling's face is drawn in. */
+export type ReadinessAccent = "lime" | "blue" | "amber" | "red";
+
+/** Face expression + accent per feeling — one source of truth for both the
+ *  picker and the glance strip, on web and native. */
+export const READINESS_FACE: Record<ReadinessFeeling, { mouth: ReadinessMouth; accent: ReadinessAccent }> = {
+  primed: { mouth: "grin", accent: "lime" },
+  good: { mouth: "smile", accent: "blue" },
+  flat: { mouth: "flat", accent: "amber" },
+  wrecked: { mouth: "frown", accent: "red" },
 };
 
 type CheckinScores = {
@@ -45,8 +53,8 @@ export function feelingFromRating(rating: number): ReadinessFeeling {
   return "wrecked";
 }
 
-/** The emoji for a daily check-in, or null if it carries no usable score. */
-export function checkinEmoji(c: CheckinScores | null | undefined): string | null {
+/** The feeling for a daily check-in, or null if it carries no usable score. */
+export function checkinFeeling(c: CheckinScores | null | undefined): ReadinessFeeling | null {
   const rating = checkinRating(c);
-  return rating == null ? null : READINESS_EMOJI[feelingFromRating(rating)];
+  return rating == null ? null : feelingFromRating(rating);
 }
