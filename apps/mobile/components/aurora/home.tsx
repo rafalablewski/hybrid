@@ -98,10 +98,16 @@ export default function AuroraHome() {
   // check in today; refreshed on focus, pull-to-refresh, and after the sheet saves.
   const [feelingEmoji, setFeelingEmoji] = useState<string | null>(null);
   const loadFeeling = useCallback(async () => {
-    const checkins = await fetchCheckins();
-    const today = new Date().toDateString();
-    const todays = checkins.find((c) => new Date(c.weekOf).toDateString() === today);
-    setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+    // Self-contained try/catch: this runs inside the home-load Promise.all, so a
+    // throw here must never block sessions/assignments/macrocycle from loading.
+    try {
+      const checkins = await fetchCheckins();
+      const today = new Date().toDateString();
+      const todays = checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
+      setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+    } catch (err) {
+      console.error("Failed to load readiness feeling:", err);
+    }
   }, []);
 
   const load = useCallback(() => {

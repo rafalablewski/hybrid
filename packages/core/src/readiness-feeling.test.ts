@@ -21,4 +21,11 @@ describe("readiness-feeling", () => {
     expect(checkinEmoji({})).toBeNull();
     expect(checkinRating({ energy: 5, sleep: null, soreness: undefined, mood: 3 })).toBe(4);
   });
+
+  it("handles a null/undefined check-in without throwing", () => {
+    expect(checkinRating(null)).toBeNull();
+    expect(checkinRating(undefined)).toBeNull();
+    expect(checkinEmoji(null)).toBeNull();
+    expect(checkinEmoji(undefined)).toBeNull();
+  });
 });

@@ -28,7 +28,8 @@ type CheckinScores = {
 /** Average the four 1–5 sub-scores of a daily check-in into one rating (or
  *  null when none are present). The quick picker sets all four equal, so this
  *  round-trips the picked level; the full weekly form can mix them. */
-export function checkinRating(c: CheckinScores): number | null {
+export function checkinRating(c: CheckinScores | null | undefined): number | null {
+  if (!c) return null;
   const vals = [c.energy, c.sleep, c.soreness, c.mood].filter(
     (v): v is number => typeof v === "number",
   );
@@ -45,7 +46,7 @@ export function feelingFromRating(rating: number): ReadinessFeeling {
 }
 
 /** The emoji for a daily check-in, or null if it carries no usable score. */
-export function checkinEmoji(c: CheckinScores): string | null {
+export function checkinEmoji(c: CheckinScores | null | undefined): string | null {
   const rating = checkinRating(c);
   return rating == null ? null : READINESS_EMOJI[feelingFromRating(rating)];
 }

@@ -146,9 +146,9 @@ export default function AuroraToday({
     try {
       const r = await fetch("/api/checkins");
       if (!r.ok) return;
-      const d = (await r.json()) as { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] };
+      const d = (await r.json()) as { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] } | null;
       const today = new Date().toDateString();
-      const todays = (d.checkins ?? []).find((c) => new Date(c.weekOf).toDateString() === today);
+      const todays = (d?.checkins ?? []).find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
       setFeelingEmoji(todays ? checkinEmoji(todays) : null);
     } catch { /* leave as-is */ }
   }, []);
