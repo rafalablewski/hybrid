@@ -140,9 +140,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
           {([
             { k: "kcal", label: t("w.recovery.nutrition.tabCalories"), unit: "kcal", color: C("chalk"), max: 1000 },
-            { k: "protein", label: t("w.recovery.nutrition.protein"), unit: "g", color: C("lime"), max: 60 },
-            { k: "carbs", label: t("w.recovery.nutrition.carbs"), unit: "g", color: C("blue"), max: 120 },
-            { k: "fat", label: t("w.recovery.nutrition.fat"), unit: "g", color: C("amber"), max: 50 },
+            { k: "protein", label: t("w.recovery.nutrition.protein"), unit: "g", color: C("chalk"), max: 60 },
+            { k: "carbs", label: t("w.recovery.nutrition.carbs"), unit: "g", color: C("chalk"), max: 120 },
+            { k: "fat", label: t("w.recovery.nutrition.fat"), unit: "g", color: C("chalk"), max: 50 },
           ] as const).map((tile) => {
             const raw = f[tile.k];
             return (
