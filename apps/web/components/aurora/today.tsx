@@ -18,7 +18,8 @@ import { fs, space,
   FUNNEL,
   ROLE_COLOR,
   readinessRole,
-  checkinEmoji,
+  checkinFeeling,
+  type ReadinessFeeling,
   type SemanticRole,
   type LoggedSession,
   type Biometrics,
@@ -39,6 +40,7 @@ import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import ReadinessFace from "./readiness-face";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -141,7 +143,7 @@ export default function AuroraToday({
   // check-in (primed/good/flat/wrecked), not a computed score. null until they
   // check in today; refetched when the Readiness sheet saves. Client-only fetch
   // so the today-comparison never mismatches the server clock on hydration.
-  const [feelingEmoji, setFeelingEmoji] = useState<string | null>(null);
+  const [feeling, setFeeling] = useState<ReadinessFeeling | null>(null);
   const loadFeeling = useCallback(async () => {
     try {
       const r = await fetch("/api/checkins");
@@ -149,7 +151,7 @@ export default function AuroraToday({
       const d = (await r.json()) as { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] } | null;
       const today = new Date().toDateString();
       const todays = (d?.checkins ?? []).find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
-      setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+      setFeeling(todays ? checkinFeeling(todays) : null);
     } catch { /* leave as-is */ }
   }, []);
   useEffect(() => { loadFeeling(); }, [loadFeeling]);
@@ -354,7 +356,7 @@ export default function AuroraToday({
           <div style={glanceLab}>{t("w.home.today.glanceQuickLog")}</div>
         </button>
         <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ ...glanceCell, borderRight: `1px solid ${C("line")}` }}>
-          <div style={{ ...glanceVal, fontSize: feelingEmoji ? 16 : 17, color: feelingEmoji ? C("chalk") : C("ash") }}>{feelingEmoji ?? "—"}</div>
+          <div style={{ ...glanceVal, color: C("ash") }}>{feeling ? <ReadinessFace feeling={feeling} size={26} /> : "—"}</div>
           <div style={glanceLab}>{t("w.home.today.glanceReadiness")}</div>
         </button>
         <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={glanceCell}>

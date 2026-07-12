@@ -16,7 +16,8 @@ import {
   toBiometrics,
   velocityProfiles,
   readinessRole,
-  checkinEmoji,
+  checkinFeeling,
+  type ReadinessFeeling,
   sessionsOnDay,
   sessionShape,
   sessionCardioTotals,
@@ -46,6 +47,7 @@ import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
 import ReadinessPicker from "./readiness-picker";
+import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -96,7 +98,7 @@ export default function AuroraHome() {
   // Today's readiness FEELING — the emoji the athlete picked in the quick
   // check-in (primed/good/flat/wrecked), not a computed score. null until they
   // check in today; refreshed on focus, pull-to-refresh, and after the sheet saves.
-  const [feelingEmoji, setFeelingEmoji] = useState<string | null>(null);
+  const [feeling, setFeeling] = useState<ReadinessFeeling | null>(null);
   const loadFeeling = useCallback(async () => {
     // Self-contained try/catch: this runs inside the home-load Promise.all, so a
     // throw here must never block sessions/assignments/macrocycle from loading.
@@ -104,7 +106,7 @@ export default function AuroraHome() {
       const checkins = await fetchCheckins();
       const today = new Date().toDateString();
       const todays = checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
-      setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+      setFeeling(todays ? checkinFeeling(todays) : null);
     } catch (err) {
       console.error("Failed to load readiness feeling:", err);
     }
@@ -398,7 +400,7 @@ export default function AuroraHome() {
           </Pressable>
           <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
             <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.monoBold, fontSize: feelingEmoji ? 16 : 17, color: feelingEmoji ? C.chalk : C.ash }}>{feelingEmoji ?? "—"}</Text>
+              {feeling ? <ReadinessFace feeling={feeling} scale={0.72} /> : <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.ash }}>—</Text>}
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceReadiness")}</Text>
           </Pressable>

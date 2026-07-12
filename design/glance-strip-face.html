@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Glance strip — readiness face (not emoji)</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f;
+    --lime-text:#c6f84f; --blue-text:#6cb6bd; --amber-text:#d0cd94; --red-text:#e58a5c;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Archivo",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:36px 20px 70px}
+  .wrap{max-width:520px;margin:0 auto}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+  .lead{color:var(--ash);font-size:13px;line-height:1.5;margin:0 0 26px}
+  .lead b{color:var(--chalk)}
+  .kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:22px 0 8px}
+  .why{color:var(--ash);font-size:12px;line-height:1.5;margin:12px 2px 0}
+  .why b{color:var(--chalk);font-weight:600}
+
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink2);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .col{padding:13px 6px;display:flex;flex-direction:column;align-items:center;border-right:1px solid var(--line)}
+  .col:last-child{border-right:none}
+  .val{height:22px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:17px;line-height:1}
+  .lime{color:var(--lime)}
+  .dim{color:var(--ash)}
+  .lab{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);margin-top:6px}
+
+  .row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .row .tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);width:96px;flex:none}
+  .mini{flex:1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .mini .col{padding:10px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Readiness = the brand face, not an emoji</h1>
+  <p class="lead">The middle column now draws the <b>same minimal face the picker uses</b> — two eyes + a mood
+  mouth, in the feeling's accent colour (lime / blue / amber / terracotta) — instead of an OS emoji.
+  Still <b>—</b> until you check in. Columns stay aligned on the shared baseline.</p>
+
+  <div class="kicker">After — you feel “primed”</div>
+  <div class="strip">
+    <div class="col"><div class="val lime">＋</div><div class="lab">Log session</div></div>
+    <div class="col"><div class="val">
+      <svg width="26" height="26" viewBox="0 0 40 40" fill="none"><circle cx="13" cy="16" r="2.3" fill="var(--lime-text)"/><circle cx="27" cy="16" r="2.3" fill="var(--lime-text)"/><path d="M12 23 Q20 31 28 23" stroke="var(--lime-text)" stroke-width="2.8" stroke-linecap="round" fill="none"/></svg>
+    </div><div class="lab">Readiness</div></div>
+    <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done today</div></div>
+  </div>
+
+  <div class="kicker">Readiness column — every state</div>
+
+  <div class="row"><span class="tag">Not checked in</span>
+    <div class="mini">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div>
+      <div class="col"><div class="val dim">—</div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div>
+    </div>
+  </div>
+  <div class="row"><span class="tag">Primed · lime</span>
+    <div class="mini">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div>
+      <div class="col"><div class="val"><svg width="24" height="24" viewBox="0 0 40 40"><circle cx="13" cy="16" r="2.3" fill="var(--lime-text)"/><circle cx="27" cy="16" r="2.3" fill="var(--lime-text)"/><path d="M12 23 Q20 31 28 23" stroke="var(--lime-text)" stroke-width="2.8" stroke-linecap="round" fill="none"/></svg></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div>
+    </div>
+  </div>
+  <div class="row"><span class="tag">Good · blue</span>
+    <div class="mini">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div>
+      <div class="col"><div class="val"><svg width="24" height="24" viewBox="0 0 40 40"><circle cx="13" cy="16" r="2.3" fill="var(--blue-text)"/><circle cx="27" cy="16" r="2.3" fill="var(--blue-text)"/><path d="M13 23 Q20 30 27 23" stroke="var(--blue-text)" stroke-width="2.8" stroke-linecap="round" fill="none"/></svg></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div>
+    </div>
+  </div>
+  <div class="row"><span class="tag">Flat · amber</span>
+    <div class="mini">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div>
+      <div class="col"><div class="val"><svg width="24" height="24" viewBox="0 0 40 40"><circle cx="13" cy="16" r="2.3" fill="var(--amber-text)"/><circle cx="27" cy="16" r="2.3" fill="var(--amber-text)"/><path d="M13 25 L27 25" stroke="var(--amber-text)" stroke-width="2.8" stroke-linecap="round" fill="none"/></svg></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div>
+    </div>
+  </div>
+  <div class="row"><span class="tag">Wrecked · terracotta</span>
+    <div class="mini">
+      <div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div>
+      <div class="col"><div class="val"><svg width="24" height="24" viewBox="0 0 40 40"><circle cx="13" cy="16" r="2.3" fill="var(--red-text)"/><circle cx="27" cy="16" r="2.3" fill="var(--red-text)"/><path d="M13 28 Q20 21 27 28" stroke="var(--red-text)" stroke-width="2.8" stroke-linecap="round" fill="none"/></svg></div><div class="lab">Readiness</div></div>
+      <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div>
+    </div>
+  </div>
+
+  <p class="why">Exactly the same face + colour the “How ready do you feel?” picker shows, so tapping a feeling
+  there and glancing at the strip read as one thing. One shared source: <code>ReadinessFace</code> (web SVG /
+  native Views), keyed by feeling from <code>@hybrid/core</code>.</p>
+</div>
+</body>
+</html>
