@@ -82,6 +82,7 @@ const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: f
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
 const AuroraExplore = dynamic(() => import("./aurora/explore"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
+import PremiumAccentStyle from "./premium-accent-style";
 import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
@@ -258,6 +259,8 @@ export default function AppShell() {
   const initial = session.name.charAt(0).toUpperCase();
 
   return (
+    <>
+    <PremiumAccentStyle />
     <div
       style={{
         ...disp,
@@ -467,7 +470,7 @@ export default function AppShell() {
                                 <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
                                 {locked && (
                                   <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
-                                    <AuroraIcon name="lock" size={11} color="var(--amber-text)" strokeWidth={2.4} />
+                                    <AuroraIcon name="lock" size={11} color="var(--premium-accent-text)" strokeWidth={2.4} />
                                   </span>
                                 )}
                               </button>
@@ -928,6 +931,7 @@ export default function AppShell() {
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
     </div>
+    </>
   );
 }
 

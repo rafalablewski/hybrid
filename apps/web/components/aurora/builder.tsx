@@ -87,10 +87,10 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
           </button>
         ) : (
           // Free user — saving a routine is Full. Building/previewing stays free.
-          <div style={{ border: `1px solid color-mix(in srgb, ${C("amber")} 45%, transparent)`, background: `color-mix(in srgb, ${C("amber")} 8%, transparent)`, borderRadius: 16, padding: 14 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--amber-text)" }}>✦ {tr("w.train.logger.routineFullTitle")}</div>
+          <div style={{ border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, background: `color-mix(in srgb, var(--premium-accent) 8%, transparent)`, borderRadius: 16, padding: 14 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)" }}>✦ {tr("w.train.logger.routineFullTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{tr("w.train.logger.routineFullBlurb")}</div>
-            <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("amber"), color: "#141614", border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
+            <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
           </div>
         )}
       </div>

@@ -33,6 +33,7 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS, Ring, Spark } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard } from "../../lib/social-api";
@@ -59,6 +60,7 @@ type TabId = "overview" | "prs" | "activity";
  */
 export default function AuroraProfile() {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
@@ -444,8 +446,8 @@ export default function AuroraProfile() {
             <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-locked-title")}</Text>
           </View>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
-          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: C.amber, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: "#141614" }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
+          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
           </Pressable>
         </View>
       )}

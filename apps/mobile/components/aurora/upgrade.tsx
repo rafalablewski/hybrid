@@ -11,6 +11,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
 // Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
@@ -24,6 +25,7 @@ const BENEFITS = FULL_BENEFITS.map((b) => ({ t: b.title, d: b.desc }));
  */
 export default function AuroraUpgrade() {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
   const router = useRouter();
   const { t } = useLang();
   const insets = useSafeAreaInsets();
@@ -99,8 +101,8 @@ export default function AuroraUpgrade() {
 
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* badge */}
-          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.amber}24`, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 6 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.amber) }}>✦ Full</Text>
+          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 6 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
           </View>
 
           <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk, textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</Text>
@@ -110,7 +112,7 @@ export default function AuroraUpgrade() {
           <View style={{ marginTop: 18 }}>
             {BENEFITS.map((b, i) => (
               <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <Text style={{ fontSize: 15, color: txt(C, C.amber), marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+                <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: 14.5, color: C.chalk }}>{b.t}</Text>
                   <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
@@ -132,10 +134,9 @@ export default function AuroraUpgrade() {
           )}
         </ScrollView>
 
-        {/* CTA */}
-        {/* sand (#d0cd94) is a theme-fixed LIGHT fill, so its ink is a fixed near-black (not C.ink, which flips light in the light theme) */}
-        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
-          {busy ? <ActivityIndicator color="#141614" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: "#141614" }}>{t("w.account.upgrade.start-trial")}</Text>}
+        {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
+        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 17, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+          {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
         </Pressable>
         <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 14, marginTop: 4 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.upgrade.maybe-later")}</Text>

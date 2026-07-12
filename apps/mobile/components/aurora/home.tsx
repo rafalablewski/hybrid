@@ -37,6 +37,7 @@ import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
@@ -67,6 +68,7 @@ const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
  */
 export default function AuroraHome() {
   const { palette: C, scheme } = useTheme();
+  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   const { name } = useSession();
@@ -340,9 +342,9 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, padding: 11, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.amber}66` }}
+                    style={{ marginTop: 12, padding: 11, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${pa.fill}66` }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: txt(C, C.amber) }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
@@ -414,7 +416,7 @@ export default function AuroraHome() {
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}><Text style={{ color: txt(C, C.amber) }}>✦</Text> {t("w.home.today.goFull")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
@@ -548,11 +550,12 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; sub: string; locked: boolean; onPress: () => void }) {
   const { scheme } = useTheme();
+  const pa = usePremiumAccent();
   const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.amber}3d`, borderRadius: 22, padding: 16, overflow: "hidden" }}>
-      {/* soft sand fill (premium upsell accent) under the content */}
-      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: `${C.amber}12` }} />
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}3d`, borderRadius: 22, padding: 16, overflow: "hidden" }}>
+      {/* soft premium-accent fill (admin-set) under the content */}
+      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: `${pa.fill}12` }} />
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
       {/* sub region grows so the CTA pins to the bottom — both cards stretch to
           equal height (row alignItems:stretch), so title, sub-start and CTA line
@@ -560,7 +563,7 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{sub}</Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 10 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: pa.text, marginTop: 10 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
     </Pressable>
   );
 }

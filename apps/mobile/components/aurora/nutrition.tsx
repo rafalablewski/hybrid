@@ -21,6 +21,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -39,6 +40,7 @@ const GOALS: { id: NutritionGoal; labelKey: string }[] = [
  *  screen. `onNavigateFull` deep-links from the sheet to that full tracker. */
 export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade }: { compact?: boolean; onNavigateFull?: () => void; onUpgrade?: () => void } = {}) {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
   // Free (casual) users log macros manually; scanning a label and saving
@@ -147,10 +149,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 17, fontWeight: "500" }}>＋</Text>
             <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: fs.body, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
           </Pressable>
-          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: `${C.amber}8c`, backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
-            <Text style={{ color: txt(C, C.amber), fontSize: 12 }}>✦</Text>
+          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: `${pa.fill}8c`, backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
+            <Text style={{ color: pa.text, fontSize: 12 }}>✦</Text>
             <Text style={{ fontFamily: F.bold, fontWeight: "700", fontSize: fs.caption, color: C.chalk }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
-            {!full && <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", borderWidth: 1, borderColor: `${C.amber}66`, color: txt(C, C.amber), borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 }}>{t("w.account.settings.full")}</Text>}
+            {!full && <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", borderWidth: 1, borderColor: `${pa.fill}66`, color: pa.text, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 }}>{t("w.account.settings.full")}</Text>}
           </Pressable>
         </View>
         {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {mealMsg}</Text> : null}
@@ -163,7 +165,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               onPress={() => (!full && onUpgrade ? onUpgrade() : logPreset(p))}
               accessibilityRole="button"
               accessibilityLabel={t(p.labelKey)}
-              style={{ flexGrow: 1, flexBasis: "45%", backgroundColor: full ? C.ink2 : `${C.amber}12`, borderWidth: 1, borderColor: full ? C.line : `${C.amber}3d`, borderRadius: 16, padding: 14, opacity: full ? 1 : 0.9 }}
+              style={{ flexGrow: 1, flexBasis: "45%", backgroundColor: full ? C.ink2 : `${pa.fill}12`, borderWidth: 1, borderColor: full ? C.line : `${pa.fill}3d`, borderRadius: 16, padding: 14, opacity: full ? 1 : 0.9 }}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontSize: 22 }}>{p.emoji}</Text>
@@ -277,8 +279,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.quickMeals")}</Text>
             {!full && (
-              <View style={{ backgroundColor: `${C.amber}28`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.amber) }}>✦ FULL</Text>
+              <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: pa.text }}>✦ FULL</Text>
               </View>
             )}
           </View>
@@ -290,7 +292,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 onPress={() => logPreset(p)}
                 accessibilityRole="button"
                 accessibilityLabel={t(p.labelKey)}
-                style={{ width: "47%", flexGrow: 1, backgroundColor: full ? C.ink : `${C.amber}14`, borderWidth: 1, borderColor: full ? C.line : `${C.amber}4d`, borderRadius: 15, padding: 13, opacity: full ? 1 : 0.85 }}
+                style={{ width: "47%", flexGrow: 1, backgroundColor: full ? C.ink : `${pa.fill}14`, borderWidth: 1, borderColor: full ? C.line : `${pa.fill}4d`, borderRadius: 15, padding: 13, opacity: full ? 1 : 0.85 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
@@ -335,12 +337,13 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 // Add-a-meal sheet.
 function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 18, marginBottom: 12 }}>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash }}>{label}</Text>
-        {tier ? <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${C.amber}73` : C.line, color: premium ? txt(C, C.amber) : C.ash }}>{tier}</Text> : null}
+        {tier ? <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.6, textTransform: "uppercase", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${pa.fill}73` : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
     </View>
