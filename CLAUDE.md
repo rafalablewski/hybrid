@@ -88,6 +88,12 @@ plan titles, goal names, prose and source credits keep the full word
 ## RULE: never use `·` (middle dot) as a separator (always)
 The middot reads as AI slop. Do NOT join inline items with `·` (nor a `•`
 bullet or a `|` pipe used as filler) in any UI copy or i18n string, on either
-client. Separate values with real layout instead — flex/grid gaps, distinct
-type weight or colour, or put them on their own line. `—` (em dash) is fine as
-genuine prose punctuation, not as a list separator.
+client. Replace it by context:
+- **In components** (JSX / rendered nodes): prefer real layout — flex/grid gaps,
+  distinct type weight or colour, or values on their own line. Where a string
+  separator is unavoidable (e.g. a `.join(...)` meta line, since HTML collapses
+  runs of spaces), use a **spaced en dash** `" – "`.
+- **In flat strings** (i18n copy that is one value): reword, use a comma, or a
+  spaced en/em dash (`–`/`—`) — never a middot.
+A standalone `·` used as content (e.g. an empty-avatar placeholder glyph) is not
+a separator — leave those.
