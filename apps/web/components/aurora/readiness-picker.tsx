@@ -6,12 +6,17 @@ import { useRevalidate } from "@/lib/use-invalidate";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
+// Accent-as-foreground token — the theme-aware, AA-guarded tone for an accent
+// rendered as text/thin strokes (globals.css --*-text; see palette.ts accentText).
+const AT = (v: string) => `var(--${v}-text)`;
 
 // Four readiness levels → a representative 1–5 rating written to the SAME daily
 // check-in the full form logs, so a quick tap still lands in check-in history +
 // weekly compliance and reaches a linked coach. Each level shows a minimal face
 // (eyes + mouth, no ring) whose expression reads the feeling — grin → smile →
-// flat → frown — in the semantic accent colour (green→blue→amber→terracotta).
+// flat → frown — in the semantic accent colour (green→blue→amber→terracotta). The
+// face is a thin foreground stroke, so it uses the accent-TEXT tone (AT) rather
+// than the raw fill, keeping it legible on both the dark and light themes.
 const LEVELS: { key: string; dot: string; rating: number; mouth: string }[] = [
   { key: "primed", dot: "lime", rating: 5, mouth: "M12 23 Q20 31 28 23" },
   { key: "good", dot: "blue", rating: 4, mouth: "M13 23 Q20 30 27 23" },
@@ -69,7 +74,7 @@ export default function ReadinessPicker({ onDone }: { onDone?: () => void }) {
           aria-label={`${t(`w.recovery.readiness.${l.key}`)} — ${t(`w.recovery.readiness.${l.key}Sub`)}`}
           style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, cursor: busy ? "default" : "pointer", color: C("chalk"), opacity: busy && busy !== l.key ? 0.5 : 1 }}
         >
-          <Face color={C(l.dot)} mouth={l.mouth} />
+          <Face color={AT(l.dot)} mouth={l.mouth} />
           <span style={{ flex: 1 }}>
             <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{t(`w.recovery.readiness.${l.key}`)}</span>
             <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash"), marginTop: 3 }}>{t(`w.recovery.readiness.${l.key}Sub`)}</span>

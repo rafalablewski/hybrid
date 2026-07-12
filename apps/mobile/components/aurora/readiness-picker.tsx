@@ -3,7 +3,7 @@ import { View, Text, Pressable, Alert } from "react-native";
 import { createCheckin } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -24,16 +24,18 @@ const LEVELS: { key: string; dot: (C: P) => string; rating: number; mouth: Mouth
 
 /** Minimal readiness face — two eyes + a mood-shaped mouth, built from plain
  *  Views (no react-native-svg dep, matching the rest of the app). The mouth arc
- *  is a bordered box: bottom border = smile, top border = frown. Mirrors the web
+ *  is a full-radius box with a single coloured border edge (bottom = smile, top =
+ *  frown) and the other edges transparent — the reliable cross-platform arc trick
+ *  (a single-side border + partial radius mis-renders on Android). Mirrors the web
  *  <Face> SVG. */
 function Face({ color, mouth }: { color: string; mouth: Mouth }) {
   const eye = { width: 4.5, height: 4.5, borderRadius: 2.25, backgroundColor: color } as const;
   const mouthStyle =
     mouth === "flat"
-      ? { width: 16, height: 0, borderTopWidth: 2.8, borderColor: color, borderRadius: 2 }
+      ? { width: 16, height: 2.8, backgroundColor: color, borderRadius: 1.4 }
       : mouth === "frown"
-      ? { width: 16, height: 8, borderTopWidth: 2.8, borderColor: color, borderTopLeftRadius: 9, borderTopRightRadius: 9 }
-      : { width: 16, height: mouth === "grin" ? 9 : 6, borderBottomWidth: 2.8, borderColor: color, borderBottomLeftRadius: 9, borderBottomRightRadius: 9 };
+      ? { width: 16, height: 8, borderWidth: 2.8, borderColor: "transparent", borderTopColor: color, borderRadius: 9 }
+      : { width: 16, height: mouth === "grin" ? 9 : 6, borderWidth: 2.8, borderColor: "transparent", borderBottomColor: color, borderRadius: 9 };
   return (
     <View style={{ width: 30, height: 30, alignItems: "center", justifyContent: "center", gap: 4 }}>
       <View style={{ flexDirection: "row", gap: 8 }}>
@@ -83,7 +85,7 @@ export default function ReadinessPicker({ onDone }: { onDone?: () => void }) {
           accessibilityLabel={`${t(`w.recovery.readiness.${l.key}`)} — ${t(`w.recovery.readiness.${l.key}Sub`)}`}
           style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16, opacity: busy && busy !== l.key ? 0.5 : 1 }}
         >
-          <Face color={l.dot(C)} mouth={l.mouth} />
+          <Face color={txt(C, l.dot(C))} mouth={l.mouth} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t(`w.recovery.readiness.${l.key}`)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 3 }}>{t(`w.recovery.readiness.${l.key}Sub`)}</Text>
