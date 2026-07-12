@@ -48,5 +48,13 @@ export default function ReadinessFace({ feeling, scale = 1 }: { feeling: Readine
   const { mouth, accent } = READINESS_FACE[feeling];
   const color = txt(C, C[accent]);
   const face = <Face color={color} mouth={mouth} />;
-  return scale === 1 ? face : <View style={{ transform: [{ scale }] }}>{face}</View>;
+  if (scale === 1) return face;
+  // transform:scale is visual only — the layout box stays 34×34 — so wrap it in
+  // a container sized to the scaled dimensions, keeping the layout footprint honest.
+  const size = 34 * scale;
+  return (
+    <View style={{ width: size, height: size, justifyContent: "center", alignItems: "center" }}>
+      <View style={{ transform: [{ scale }] }}>{face}</View>
+    </View>
+  );
 }
