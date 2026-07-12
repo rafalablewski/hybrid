@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Glance strip — aligned + readiness emoji</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Archivo",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:36px 20px 70px}
+  .wrap{max-width:520px;margin:0 auto}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+  .lead{color:var(--ash);font-size:13px;line-height:1.5;margin:0 0 26px}
+  .lead b{color:var(--chalk)}
+  .kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:22px 0 8px}
+  .why{color:var(--ash);font-size:12px;line-height:1.5;margin:10px 2px 0}
+  .why b{color:var(--chalk);font-weight:600}
+
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink2);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .col{padding:13px 6px;display:flex;flex-direction:column;align-items:center;border-right:1px solid var(--line)}
+  .col:last-child{border-right:none}
+  /* fixed-height, centred value row → every value + label aligns across cards */
+  .val{height:22px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:17px;line-height:1}
+  .val.emoji{font-size:16px}
+  .lime{color:var(--lime)}
+  .dim{color:var(--ash)}
+  .lab{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);margin-top:6px}
+
+  .row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .row .tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);width:92px;flex:none}
+  .mini{flex:1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .mini .col{padding:10px 4px}
+
+  .before{border:1px dashed #4a2b2b;border-radius:12px;padding:12px;background:#160f0e}
+  .guide{position:relative}
+  .guide::after{content:"";position:absolute;left:0;right:0;top:34px;border-top:1px dashed #c0533f66;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fixed: equal alignment + readiness emoji</h1>
+  <p class="lead"><b>1.</b> Every column's value sits in a fixed-height, centred row, so the three values —
+  and the labels under them — line up exactly. <b>2.</b> The middle column now shows the <b>feeling you picked</b>
+  as an emoji, not a computed score.</p>
+
+  <div class="kicker">After — you feel “primed” today</div>
+  <div class="strip guide">
+    <div class="col"><div class="val lime">＋</div><div class="lab">Log session</div></div>
+    <div class="col"><div class="val emoji">😃</div><div class="lab">Readiness</div></div>
+    <div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done today</div></div>
+  </div>
+  <p class="why">The dashed line shows the shared baseline — ＋, the emoji and ✓ 0 now sit at one height (before, the ＋ floated higher than the number).</p>
+
+  <div class="kicker">Readiness column — every state</div>
+
+  <div class="row"><span class="tag">Not checked in</span>
+    <div class="mini"><div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div><div class="col"><div class="val dim">—</div><div class="lab">Readiness</div></div><div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div></div>
+  </div>
+  <div class="row"><span class="tag">Primed</span>
+    <div class="mini"><div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div><div class="col"><div class="val emoji">😃</div><div class="lab">Readiness</div></div><div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div></div>
+  </div>
+  <div class="row"><span class="tag">Good</span>
+    <div class="mini"><div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div><div class="col"><div class="val emoji">🙂</div><div class="lab">Readiness</div></div><div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div></div>
+  </div>
+  <div class="row"><span class="tag">Flat</span>
+    <div class="mini"><div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div><div class="col"><div class="val emoji">😐</div><div class="lab">Readiness</div></div><div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div></div>
+  </div>
+  <div class="row"><span class="tag">Wrecked</span>
+    <div class="mini"><div class="col"><div class="val lime">＋</div><div class="lab">Log</div></div><div class="col"><div class="val emoji">😫</div><div class="lab">Readiness</div></div><div class="col"><div class="val"><span class="lime" style="margin-right:3px">✓</span>0</div><div class="lab">Done</div></div></div>
+  </div>
+
+  <p class="why">Picker → emoji: <b>primed 😃 · good 🙂 · flat 😐 · wrecked 😫</b>. The value is `—` until you check in;
+  tapping the column still opens “How ready do you feel?”, and picking a feeling swaps in its face immediately.</p>
+</div>
+</body>
+</html>

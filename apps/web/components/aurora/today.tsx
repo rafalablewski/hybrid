@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
@@ -18,6 +18,7 @@ import { fs, space,
   FUNNEL,
   ROLE_COLOR,
   readinessRole,
+  checkinEmoji,
   type SemanticRole,
   type LoggedSession,
   type Biometrics,
@@ -136,6 +137,23 @@ export default function AuroraToday({
   );
   const notifCount = useMemo(() => buildActivityFeed({ sessions }).length, [sessions]);
 
+  // Today's readiness FEELING — the emoji the athlete picked in the quick
+  // check-in (primed/good/flat/wrecked), not a computed score. null until they
+  // check in today; refetched when the Readiness sheet saves. Client-only fetch
+  // so the today-comparison never mismatches the server clock on hydration.
+  const [feelingEmoji, setFeelingEmoji] = useState<string | null>(null);
+  const loadFeeling = useCallback(async () => {
+    try {
+      const r = await fetch("/api/checkins");
+      if (!r.ok) return;
+      const d = (await r.json()) as { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] };
+      const today = new Date().toDateString();
+      const todays = (d.checkins ?? []).find((c) => new Date(c.weekOf).toDateString() === today);
+      setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+    } catch { /* leave as-is */ }
+  }, []);
+  useEffect(() => { loadFeeling(); }, [loadFeeling]);
+
   // Time-of-day greeting + date — computed on the client (in an effect) so the
   // server-rendered markup doesn't mismatch the clock on hydration.
   const [greeting, setGreeting] = useState("");
@@ -148,6 +166,11 @@ export default function AuroraToday({
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
+  // Glance-strip cell: a flex column so every column's value row + label sit at
+  // the SAME height and position across the three cards.
+  const glanceCell = { padding: "13px 6px", background: "none", border: "none", cursor: "pointer", color: C("chalk"), display: "flex", flexDirection: "column", alignItems: "center" } as const;
+  const glanceVal = { height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 17, lineHeight: 1 } as const;
+  const glanceLab = { fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 6 } as const;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>
@@ -326,17 +349,17 @@ export default function AuroraToday({
           now); it opens the sport-log carousel, Readiness opens the daily check-in,
           and Done today opens a pop-up of everything logged today + the calendar. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
-        <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 17, lineHeight: 1, color: "var(--lime-text)" }}>＋</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 5 }}>{t("w.home.today.glanceQuickLog")}</div>
+        <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ ...glanceCell, borderRight: `1px solid ${C("line")}` }}>
+          <div style={{ ...glanceVal, color: "var(--lime-text)" }}>＋</div>
+          <div style={glanceLab}>{t("w.home.today.glanceQuickLog")}</div>
         </button>
-        <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 17, lineHeight: 1, color: hasData ? C("chalk") : C("ash") }}>{hasData ? rx.readiness : "—"}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 5 }}>{t("w.home.today.glanceReadiness")}</div>
+        <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ ...glanceCell, borderRight: `1px solid ${C("line")}` }}>
+          <div style={{ ...glanceVal, fontSize: feelingEmoji ? 16 : 17, color: feelingEmoji ? C("chalk") : C("ash") }}>{feelingEmoji ?? "—"}</div>
+          <div style={glanceLab}>{t("w.home.today.glanceReadiness")}</div>
         </button>
-        <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", cursor: "pointer", color: C("chalk") }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 17, lineHeight: 1, color: C("chalk") }}><span style={{ color: "var(--lime-text)", marginRight: 3 }}>✓</span>{doneToday.length}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 5 }}>{t("w.home.today.glanceDone")}</div>
+        <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={glanceCell}>
+          <div style={glanceVal}><span style={{ color: "var(--lime-text)", marginRight: 3 }}>✓</span>{doneToday.length}</div>
+          <div style={glanceLab}>{t("w.home.today.glanceDone")}</div>
         </button>
       </div>
 
@@ -376,7 +399,7 @@ export default function AuroraToday({
 
       {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
       <Sheet open={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
-        <ReadinessPicker onDone={() => setReadyOpen(false)} />
+        <ReadinessPicker onDone={() => { setReadyOpen(false); loadFeeling(); }} />
       </Sheet>
 
       {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}

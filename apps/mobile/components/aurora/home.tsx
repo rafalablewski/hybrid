@@ -16,6 +16,7 @@ import {
   toBiometrics,
   velocityProfiles,
   readinessRole,
+  checkinEmoji,
   sessionsOnDay,
   sessionShape,
   sessionCardioTotals,
@@ -27,7 +28,7 @@ import {
   type Equipment,
   type AuroraIconName,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, type Assignment } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, fetchCheckins, type Assignment } from "../../lib/api";
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
@@ -92,17 +93,27 @@ export default function AuroraHome() {
   // Plan hero: lead with the first lift; the rest collapse behind a toggle so
   // the card reads at a glance instead of a wall of percentage schemes.
   const [liftsOpen, setLiftsOpen] = useState(false);
+  // Today's readiness FEELING — the emoji the athlete picked in the quick
+  // check-in (primed/good/flat/wrecked), not a computed score. null until they
+  // check in today; refreshed on focus, pull-to-refresh, and after the sheet saves.
+  const [feelingEmoji, setFeelingEmoji] = useState<string | null>(null);
+  const loadFeeling = useCallback(async () => {
+    const checkins = await fetchCheckins();
+    const today = new Date().toDateString();
+    const todays = checkins.find((c) => new Date(c.weekOf).toDateString() === today);
+    setFeelingEmoji(todays ? checkinEmoji(todays) : null);
+  }, []);
 
   const load = useCallback(() => {
     setRefreshing(true);
-    Promise.all([fetchAssignments(), fetchMacrocycle(), refetchSessions(), refetchSignals()])
+    Promise.all([fetchAssignments(), fetchMacrocycle(), refetchSessions(), refetchSignals(), loadFeeling()])
       .then(([a, m]) => {
         setAssignments(a);
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
       })
       .catch((err) => console.error("Failed to load home data:", err))
       .finally(() => setRefreshing(false));
-  }, []);
+  }, [loadFeeling]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Subtle entrance — content fades + rises each time Today gains focus, matching
@@ -371,17 +382,25 @@ export default function AuroraHome() {
             now); it opens the sport-log carousel, Readiness opens the daily check-in,
             and Done today opens a pop-up of everything logged today + the calendar. */}
         <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
+          {/* Each column: a fixed-height value row + label, so all three values
+              and labels sit at the SAME height and position across the cards. */}
           <Pressable onPress={() => setQuickOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: txt(C, C.lime) }}>＋</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceQuickLog")}</Text>
+            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: txt(C, C.lime) }}>＋</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceQuickLog")}</Text>
           </Pressable>
           <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: hasData ? C.chalk : C.ash }}>{hasData ? rx.readiness : "—"}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceReadiness")}</Text>
+            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.monoBold, fontSize: feelingEmoji ? 16 : 17, color: feelingEmoji ? C.chalk : C.ash }}>{feelingEmoji ?? "—"}</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceReadiness")}</Text>
           </Pressable>
           <Pressable onPress={() => setDoneOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flex: 1, paddingVertical: 13, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.chalk }}><Text style={{ color: txt(C, C.lime) }}>✓ </Text>{doneToday.length}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceDone")}</Text>
+            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.chalk }}><Text style={{ color: txt(C, C.lime) }}>✓ </Text>{doneToday.length}</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceDone")}</Text>
           </Pressable>
         </View>
 
@@ -418,7 +437,7 @@ export default function AuroraHome() {
 
       {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
       <Sheet visible={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
-        <ReadinessPicker onDone={() => setReadyOpen(false)} />
+        <ReadinessPicker onDone={() => { setReadyOpen(false); loadFeeling(); }} />
       </Sheet>
 
       {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
