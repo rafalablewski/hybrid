@@ -144,14 +144,14 @@ export default function AuroraBuilder() {
         />
       ) : (
         // Free user — saving a routine is Full. Building/previewing stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: txt(C, C.lime) }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.amber}55`, backgroundColor: `${C.amber}14`, borderRadius: RADIUS.card, padding: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: txt(C, C.amber) }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
-            style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
+            style={{ backgroundColor: C.amber, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.routineUnlock")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: "#141614" }}>{t("summary.routineUnlock")}</Text>
           </Pressable>
         </View>
       )}
