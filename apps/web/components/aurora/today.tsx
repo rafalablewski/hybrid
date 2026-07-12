@@ -365,9 +365,9 @@ export default function AuroraToday({
         </button>
       </div>
 
-      {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
+      {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}><span style={{ color: "var(--violet-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}><span style={{ color: "var(--amber-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <AccessCard
@@ -519,11 +519,11 @@ function AccessCard({ title, sub, locked, onClick }: { title: string; sub: strin
     <button
       onClick={onClick}
       aria-label={title}
-      style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", textAlign: "left", background: `linear-gradient(160deg, color-mix(in srgb, ${C("violet")} 14%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid color-mix(in srgb, ${C("violet")} 22%, ${C("line")})`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+      style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", textAlign: "left", background: `linear-gradient(160deg, color-mix(in srgb, ${C("amber")} 14%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid color-mix(in srgb, ${C("amber")} 22%, ${C("line")})`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20 }}>{title}</span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.4, color: C("ash") }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--violet-text)", marginTop: 2 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--amber-text)", marginTop: 2 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
     </button>
   );
 }

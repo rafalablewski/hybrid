@@ -12,7 +12,7 @@ describe("semantic colour vocabulary", () => {
   it("maps every role to a brand accent", () => {
     expect(ROLE_COLOR.go).toBe("lime");
     expect(ROLE_COLOR.info).toBe("blue");
-    expect(ROLE_COLOR.premium).toBe("violet");
+    expect(ROLE_COLOR.premium).toBe("amber");
     expect(ROLE_COLOR.caution).toBe("amber");
     expect(ROLE_COLOR.danger).toBe("red");
     expect(ROLE_COLOR.neutral).toBe("ash");

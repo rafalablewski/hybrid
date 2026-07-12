@@ -51,7 +51,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
     <Sheet open={open} onClose={onClose} maxWidth={440} label={t("w.account.upgrade.sheet-title")}>
       {/* badge */}
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--violet-text)", background: `color-mix(in srgb, ${C("violet")} 16%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>✦ Full</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--amber-text)", background: `color-mix(in srgb, ${C("amber")} 16%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>✦ Full</span>
       </div>
 
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26, letterSpacing: "-.02em", color: C("chalk"), textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</div>
@@ -61,7 +61,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       <div style={{ marginTop: 18 }}>
         {BENEFITS.map((b, i) => (
           <div key={b.t} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-            <span style={{ fontSize: 15, color: "var(--violet-text)", marginTop: 1 }}>{paid ? "✓" : "✦"}</span>
+            <span style={{ fontSize: 15, color: "var(--amber-text)", marginTop: 1 }}>{paid ? "✓" : "✦"}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14.5, color: C("chalk") }}>{b.t}</div>
               <div style={{ fontSize: 12.5, color: C("ash"), marginTop: 1, lineHeight: 1.4 }}>{b.d}</div>
@@ -84,7 +84,8 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       <button
         onClick={act}
         disabled={busy}
-        style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, color: "#fff", background: C("violet"), border: "none", borderRadius: 16, padding: "16px", marginTop: 16, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+        // sand (#d0cd94) is a theme-fixed LIGHT fill, so the ink on it is a fixed near-black (not --color-ink, which flips light in the light theme)
+        style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, color: "#141614", background: C("amber"), border: "none", borderRadius: 16, padding: "16px", marginTop: 16, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
       >
         {busy ? t("w.account.upgrade.starting") : paid ? `${t("w.account.upgrade.switch-full")}` : t("w.account.upgrade.start-trial")}
       </button>

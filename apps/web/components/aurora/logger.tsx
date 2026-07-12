@@ -510,7 +510,7 @@ export default function AuroraLogger({
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
-          <button onClick={loadPrescribed} style={pill(isAthlete ? "lime" : "violet")}>
+          <button onClick={loadPrescribed} style={pill(isAthlete ? "lime" : "amber")}>
             {!isAthlete
               ? `✦ ${t("w.home.today.unlockFullBtn")}`
               : sessions.length > 0
