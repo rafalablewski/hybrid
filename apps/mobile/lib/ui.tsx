@@ -107,6 +107,7 @@ export const F = {
   bold: "Archivo_700Bold",
   black: "Archivo_900Black",
   mono: "JetBrainsMono_400Regular",
+  monoBold: "JetBrainsMono_700Bold",
   // Japandi (light) serif display — Fraunces. Used for hero headings via serifIf.
   serifMed: "Fraunces_500Medium",
   serifSemi: "Fraunces_600SemiBold",

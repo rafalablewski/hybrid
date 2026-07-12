@@ -372,16 +372,16 @@ export default function AuroraHome() {
             and Done today opens a pop-up of everything logged today + the calendar. */}
         <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
           <Pressable onPress={() => setQuickOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>＋ {t("w.home.today.glanceLog")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: txt(C, C.lime) }}>＋</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceQuickLog")}</Text>
           </Pressable>
           <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("w.home.today.glanceReadinessCta")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: hasData ? C.chalk : C.ash }}>{hasData ? rx.readiness : "—"}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceReadiness")}</Text>
           </Pressable>
           <Pressable onPress={() => setDoneOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flex: 1, paddingVertical: 13, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>✓ {doneToday.length}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceDone")}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.chalk }}><Text style={{ color: txt(C, C.lime) }}>✓ </Text>{doneToday.length}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 5 }}>{t("w.home.today.glanceDone")}</Text>
           </Pressable>
         </View>
 
