@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, Animated, Easing, useWindowDimension
 import { feedCardView } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 
@@ -12,13 +13,14 @@ import { Avatar } from "../social-kit";
 // stacked. Renders nothing when the feed is empty. Mirrors the web feed-preview.
 export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
   const C = useTheme().palette;
+  const { t } = useLang();
   const { width } = useWindowDimensions();
   const cardW = Math.min(320, width * 0.82);
   const [feed, setFeed] = useState<any[] | null>(null);
   const pulse = useRef(new Animated.Value(0.6)).current;
   useEffect(() => {
     let alive = true;
-    getFeed().then((r: any) => { if (alive) setFeed((r.feed ?? []).slice(0, horizontal ? 8 : 4)); }).catch(() => { if (alive) setFeed([]); });
+    getFeed().then((r: any) => { if (alive) setFeed((r.feed ?? []).slice(0, horizontal ? 6 : 4)); }).catch(() => { if (alive) setFeed([]); });
     return () => { alive = false; };
   }, [horizontal]);
   useEffect(() => {
@@ -112,6 +114,21 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
           </Pressable>
         );
       })}
+      {/* Threads-style trailing "See all" card — the slider caps at 6, so this
+          nudges people into the full feed instead of scrolling an endless rail. */}
+      {horizontal && (
+        <Pressable
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.explore.seeAll")}
+          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 }}
+        >
+          <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18 }}>→</Text>
+          </View>
+          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontWeight: "700", fontSize: 12.5, textAlign: "center" }}>{t("w.explore.seeAll")}</Text>
+        </Pressable>
+      )}
     </Wrap>
   );
 }

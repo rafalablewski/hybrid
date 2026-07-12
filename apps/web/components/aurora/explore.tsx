@@ -33,13 +33,13 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
         {t("w.explore.search")}
       </button>
 
-      {/* COACHES — CoachRail renders its OWN "Follow a coach" header + Browse all */}
-      <div style={{ marginTop: 20 }}>
-        <CoachRail onOpen={() => go("coaches")} />
-      </div>
+      {/* COACHES — headerless rail under the SHARED SectionHead, so all three
+          sections share one title + one "See all" CTA (no bespoke "Browse all"). */}
+      <SectionHead title={t("w.explore.coaches")} onAction={() => go("coaches")} />
+      <CoachRail onOpen={() => go("coaches")} headerless />
 
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
-      <SectionHead title={t("w.explore.plans")} action={t("w.explore.all")} onAction={() => go("plans")} />
+      <SectionHead title={t("w.explore.plans")} onAction={() => go("plans")} />
       <div style={{ display: "grid", gap: 10 }}>
         {PLAN_PREVIEWS.map((p) => (
           <button
@@ -57,18 +57,22 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
         ))}
       </div>
 
-      {/* COMMUNITY */}
-      <SectionHead title={t("w.explore.community")} action={t("w.explore.feed")} onAction={() => go("feed")} />
-      <FeedPreview onOpen={() => go("feed")} />
+      {/* COMMUNITY — a left/right slider (max 6) with a trailing "See all" card,
+          Threads-style, instead of an ever-growing stacked wall. */}
+      <SectionHead title={t("w.explore.community")} onAction={() => go("feed")} />
+      <FeedPreview onOpen={() => go("feed")} horizontal />
     </div>
   );
 }
 
-function SectionHead({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {
+// ONE section header for every Explore section — a title + a single unified
+// "See all →" CTA. Kills the old mix of "Browse all" / "All plans" / "Feed".
+function SectionHead({ title, onAction }: { title: string; onAction: () => void }) {
+  const { t } = useLang();
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 2px 12px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
-      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{action} →</button>
+      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.explore.seeAll")} →</button>
     </div>
   );
 }
