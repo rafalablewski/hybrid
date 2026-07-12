@@ -183,10 +183,10 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
 function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T }) {
   return (
     <Pressable onPress={onPress} style={{ marginTop: 16 }}>
-      <ACard style={{ borderColor: withAlpha(C.violet, 0.27) }}>
+      <ACard style={{ borderColor: withAlpha(C.amber, 0.27) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{t("train.aiCoach")}</Text>
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("w.home.today.unlockFullBtn")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.amber) }}>{t("train.aiCoach")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.amber) }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
@@ -246,8 +246,8 @@ function ListRow({
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
-          <View style={{ borderWidth: 1, borderColor: withAlpha(C.violet, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.violet) }}>{t("train.premium")}</Text>
+          <View style={{ borderWidth: 1, borderColor: withAlpha(C.amber, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.amber) }}>{t("train.premium")}</Text>
           </View>
         )}
         {right}

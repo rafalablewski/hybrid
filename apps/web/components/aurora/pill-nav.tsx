@@ -148,7 +148,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginLeft: "auto" }}>{g.items.length}</span>
                 </div>
                 {/* Springboard grid — 4-col neutral bordered cells (icon + label inside),
-                    section colour on the header marker, violet lock for premium. */}
+                    section colour on the header marker, sand lock for premium. */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: space.xs }}>
                   {g.items.map(({ item: { id, label: fb }, locked }) => {
                     const name = label(id, fb);
@@ -159,7 +159,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
                         {locked && (
                           <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
-                            <AuroraIcon name="lock" size={11} strokeWidth={2.4} color="var(--violet-text)" />
+                            <AuroraIcon name="lock" size={11} strokeWidth={2.4} color="var(--amber-text)" />
                           </span>
                         )}
                       </button>

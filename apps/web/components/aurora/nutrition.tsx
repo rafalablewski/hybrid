@@ -165,10 +165,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10, marginTop: 12 }}>
           <button onClick={add} disabled={saving} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><span aria-hidden style={{ fontSize: 17, fontWeight: 500 }}>＋</span>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, ${C("violet")} 55%, transparent)`, borderRadius: 999, padding: "14px 12px", cursor: scanning ? "default" : "pointer", color: C("chalk"), fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
-            <span aria-hidden style={{ color: "var(--violet-text)", fontSize: 12 }}>✦</span>
+          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, ${C("amber")} 55%, transparent)`, borderRadius: 999, padding: "14px 12px", cursor: scanning ? "default" : "pointer", color: C("chalk"), fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-display)", opacity: scanning ? 0.6 : 1 }}>
+            <span aria-hidden style={{ color: "var(--amber-text)", fontSize: 12 }}>✦</span>
             {scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
-            {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".1em", textTransform: "uppercase", border: `1px solid color-mix(in srgb, ${C("violet")} 40%, transparent)`, color: "var(--violet-text)", borderRadius: 999, padding: "2px 6px" }}>{t("w.account.settings.full")}</span>}
+            {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".1em", textTransform: "uppercase", border: `1px solid color-mix(in srgb, ${C("amber")} 40%, transparent)`, color: "var(--amber-text)", borderRadius: 999, padding: "2px 6px" }}>{t("w.account.settings.full")}</span>}
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file); e.target.value = ""; }} />
@@ -178,7 +178,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} tier={t("w.account.settings.full")} premium />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {MEAL_PRESETS.map((p) => (
-            <button key={p.id} onClick={() => logPreset(p)} style={{ textAlign: "left", background: full ? C("ink2") : `color-mix(in srgb, ${C("violet")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, transparent)`}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk"), opacity: full ? 1 : 0.92 }}>
+            <button key={p.id} onClick={() => logPreset(p)} style={{ textAlign: "left", background: full ? C("ink2") : `color-mix(in srgb, ${C("amber")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("amber")} 30%, transparent)`}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk"), opacity: full ? 1 : 0.92 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 22 }}>{p.emoji}</span>
                 {!full && <span style={{ fontSize: 12 }}>🔒</span>}
@@ -300,7 +300,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ marginTop: 14, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.recovery.nutrition.quickMeals")}</div>
-            {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--violet-text)", background: `color-mix(in srgb, ${C("violet")} 16%, transparent)`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>}
+            {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--amber-text)", background: `color-mix(in srgb, ${C("amber")} 16%, transparent)`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>}
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{full ? t("w.recovery.nutrition.quickMealsSub") : t("w.recovery.nutrition.quickMealsLocked")}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
@@ -309,9 +309,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 key={p.id}
                 onClick={() => logPreset(p)}
                 aria-label={t(p.labelKey)}
-                style={{ position: "relative", display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start", textAlign: "left", padding: 14, borderRadius: 15, cursor: "pointer", color: C("chalk"), background: full ? C("ink") : `linear-gradient(135deg, color-mix(in srgb, ${C("violet")} 12%, ${C("ink")}), ${C("ink")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, ${C("line")})`}`, opacity: full ? 1 : 0.82 }}
+                style={{ position: "relative", display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start", textAlign: "left", padding: 14, borderRadius: 15, cursor: "pointer", color: C("chalk"), background: full ? C("ink") : `linear-gradient(135deg, color-mix(in srgb, ${C("amber")} 12%, ${C("ink")}), ${C("ink")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("amber")} 30%, ${C("line")})`}`, opacity: full ? 1 : 0.82 }}
               >
-                {!full && <span style={{ position: "absolute", top: 10, right: 11, fontSize: 12, color: "var(--violet-text)" }}>🔒</span>}
+                {!full && <span style={{ position: "absolute", top: 10, right: 11, fontSize: 12, color: "var(--amber-text)" }}>🔒</span>}
                 <span style={{ fontSize: 22 }}>{p.emoji}</span>
                 <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[0]}</span>
                 {t(p.labelKey).split(" · ")[1] && <span style={{ fontSize: fs.caption, color: C("ash"), lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[1]}</span>}
@@ -349,7 +349,7 @@ function CDivider({ label, tier, premium }: { label: string; tier?: string; prem
       <span style={{ flex: 1, height: 1, background: C("line") }} />
       <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") }}>{label}</span>
-        {tier && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 999, border: `1px solid ${premium ? `color-mix(in srgb, ${C("violet")} 45%, transparent)` : C("line")}`, color: premium ? "var(--violet-text)" : C("ash") }}>{tier}</span>}
+        {tier && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 999, border: `1px solid ${premium ? `color-mix(in srgb, ${C("amber")} 45%, transparent)` : C("line")}`, color: premium ? "var(--amber-text)" : C("ash") }}>{tier}</span>}
       </span>
       <span style={{ flex: 1, height: 1, background: C("line") }} />
     </div>

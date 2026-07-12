@@ -169,11 +169,11 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
   return (
     <button
       onClick={onUpsell}
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--color-violet) 40%, transparent)`, borderRadius: 22, padding: 18, marginTop: 18 }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--color-amber) 40%, transparent)`, borderRadius: 22, padding: 18, marginTop: 18 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", color: "var(--violet-text)" }}>{t("train.aiCoach")}</span>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: "var(--violet-text)" }}>{t("w.home.today.unlockFullBtn")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", color: "var(--amber-text)" }}>{t("train.aiCoach")}</span>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: "var(--amber-text)" }}>{t("w.home.today.unlockFullBtn")}</span>
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("train.aiLockedTitle")}</div>
       <div style={{ fontSize: fs.body, color: C("chalk"), marginTop: 6, lineHeight: 1.5 }}>{t("train.aiLockedBlurb")}</div>
@@ -231,7 +231,7 @@ function ListRow({
       </span>
       <span style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
         {premium && (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--violet-text)", border: `1px solid color-mix(in srgb, var(--color-violet) 45%, transparent)`, borderRadius: 6, padding: "4px 6px" }}>{t("train.premium")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--amber-text)", border: `1px solid color-mix(in srgb, var(--color-amber) 45%, transparent)`, borderRadius: 6, padding: "4px 6px" }}>{t("train.premium")}</span>
         )}
         {right}
       </span>

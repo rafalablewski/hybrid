@@ -1138,9 +1138,10 @@ export default function Workout() {
           <View style={{ marginTop: 12, gap: space.sm }}>
             <Pressable
               onPress={loadPrescribed}
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
+              // free users see the sand "Full" upsell accent; athletes (already unlocked) keep lime — parity with the web logger
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : C.amber, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${isAthlete ? C.lime : C.amber}14` }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, isAthlete ? C.lime : C.amber) }}>✦ {t("train.start")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{!isAthlete ? t("train.premium") : recent.length > 0 ? t("train.aiReadiness") : t("train.aiCoach")}</Text>
             </Pressable>
             {routines.length > 0 && (

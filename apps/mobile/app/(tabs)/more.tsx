@@ -22,7 +22,7 @@ import { useTemplate } from "../../lib/template";
 // straight to that feature; the search field filters tiles by label. The tool set
 // AND its gating come from the SHARED nav model (groupedNavWithLocks) — the exact
 // same source the web menu uses, so the two clients can't drift. Premium (Full)
-// tools a free user hasn't unlocked wear a premium (violet) LOCK badge and route to /upgrade;
+// tools a free user hasn't unlocked wear a premium (sand) LOCK badge and route to /upgrade;
 // tools that only exist on the web app show a small blue dot and open the web app.
 
 // Mobile route for each nav id. Ids the user has access to but that AREN'T here
@@ -240,7 +240,7 @@ export default function More() {
                       <Text numberOfLines={2} style={{ marginTop: 7, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 13, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
                       {it.locked && (
                         <View style={{ position: "absolute", top: 6, right: 6 }}>
-                          <AuroraIcon name="lock" size={11} color={txt(C, C.violet)} />
+                          <AuroraIcon name="lock" size={11} color={txt(C, C.amber)} />
                         </View>
                       )}
                       {!it.locked && !it.href && (
