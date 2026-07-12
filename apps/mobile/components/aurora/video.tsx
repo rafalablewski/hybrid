@@ -55,7 +55,7 @@ export default function AuroraVideo() {
               {m.minKneeAngle != null && chip(C.ash, `${t("w.analyze.vid.depth")} ${Math.round(m.minKneeAngle)}°`)}
               {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `${t("w.analyze.vid.lr")} ${Math.round(m.kneeAsymmetryPct)}%`)}
             </View>
-            {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{m.flags.join(" · ")}</Text>}
+            {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{m.flags.join(" – ")}</Text>}
           </ACard>
         );
       })}

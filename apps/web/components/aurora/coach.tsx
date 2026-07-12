@@ -435,7 +435,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} aria-label={t("w.teams.coach.weekLabel")} style={{ fontSize: fs.bodyLg, minWidth: 150 }}>
               {genMacro.blocks.flatMap((b) =>
                 b.micros.map((m) => (
-                  <option key={m.week} value={m.week}>{`${t("w.teams.coach.wkAbbr")} ${m.week} · ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`}</option>
+                  <option key={m.week} value={m.week}>{`${t("w.teams.coach.wkAbbr")} ${m.week} – ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`}</option>
                 )),
               )}
             </Select>
@@ -467,8 +467,8 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Mono>}
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
-                {t("w.teams.coach.energy")} {c.energy ?? "—"} · {t("w.teams.coach.sleep")} {c.sleep ?? "—"} · {t("w.teams.coach.soreness")} {c.soreness ?? "—"} · {t("w.teams.coach.mood")} {c.mood ?? "—"}
-                {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+                {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.soreness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
+                {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
               </Mono>
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
@@ -554,13 +554,13 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
             </div>
             {hasPrev && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? C("lime") : C("amber")}>
-                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("w.teams.coach.sessionsWord")} · {r.volumeDelta >= 0 ? "+" : ""}
+                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("w.teams.coach.sessionsWord")} – {r.volumeDelta >= 0 ? "+" : ""}
                 {r.volumeDelta.toLocaleString()} {t("w.teams.coach.kgVsLastWeek")}
               </Mono>
             )}
             {r.prs.length > 0 && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
-                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.teams.coach.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.teams.coach.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" – ")}
               </Mono>
             )}
           </>

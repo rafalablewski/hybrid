@@ -145,7 +145,7 @@ function AccountsTab() {
       {data && data.pages > 1 && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
           <Mono color={palette.ash}>
-            {data.total.toLocaleString()} · page {data.page}/{data.pages}
+            {data.total.toLocaleString()} – page {data.page}/{data.pages}
           </Mono>
           <View style={{ flexDirection: "row", gap: space.sm }}>
             <PillBtn label="← Prev" outline color={palette.chalk} disabled={page <= 1} onPress={() => setPage((p) => Math.max(1, p - 1))} />
@@ -199,7 +199,7 @@ function UserDetail({
     const res = await adminSend<Detail>("PATCH", `/api/admin/users/${id}`, { role, language });
     if (res.ok) {
       setD((prev) => (prev ? { ...prev, role, language } : prev));
-      setMsg({ ok: true, text: "Saved · recorded in the audit log." });
+      setMsg({ ok: true, text: "Saved – recorded in the audit log." });
       onSaved();
     } else {
       // Surface the server rail (self-demote / last-admin / etc.).

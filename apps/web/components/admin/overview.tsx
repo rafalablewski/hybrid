@@ -57,7 +57,7 @@ export default function AdminOverview() {
       <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} c={CHALK} />
       <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} c={LIME} />
 
-      <ChartFrame span={4} title="Growth" kicker="Last 12 weeks · signups vs sessions" c={LIME}>
+      <ChartFrame span={4} title="Growth" kicker="Last 12 weeks – signups vs sessions" c={LIME}>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={s.growth}>
             <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />

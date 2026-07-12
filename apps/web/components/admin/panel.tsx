@@ -94,7 +94,7 @@ export default function AdminPanel() {
   if (!allowed) {
     return (
       <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: INK }}>
-        <Mono c={ASH}>{ready ? "Restricted · admin only — redirecting…" : "Checking access…"}</Mono>
+        <Mono c={ASH}>{ready ? "Restricted – admin only — redirecting…" : "Checking access…"}</Mono>
       </main>
     );
   }
@@ -303,7 +303,7 @@ export default function AdminPanel() {
                 background: CARD,
               }}
             >
-              Restricted · admin only
+              Restricted – admin only
             </div>
           )}
         </header>

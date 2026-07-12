@@ -151,7 +151,7 @@ export default function More() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{name || t("nav.you")}</Text>
-            <Mono style={{ marginTop: 3, fontSize: fs.micro }}>{[role.toUpperCase(), entitlement === "paid" ? "FULL" : "FREE"].join(" · ")}</Mono>
+            <Mono style={{ marginTop: 3, fontSize: fs.micro }}>{[role.toUpperCase(), entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</Mono>
           </View>
         </Pressable>
         <Pressable onPress={() => router.push("/settings")} hitSlop={10} style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
@@ -192,7 +192,7 @@ export default function More() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>Admin console</Text>
-            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>users · moderation · agents · CMS</Mono>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>users – moderation – agents – CMS</Mono>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.amber) }}>→</Text>
         </Pressable>

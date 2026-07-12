@@ -112,7 +112,7 @@ export default function AdminOnboarding() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: space.md, flexWrap: "wrap" }}>
         <Mono s={{ fontSize: fs.caption }} c={ASH}>
-          {questions ? `${questions.length} questions` : "…"} · changes take effect on the next sign-up — no deploy. Both web & mobile.
+          {questions ? `${questions.length} questions` : "…"} – changes take effect on the next sign-up — no deploy. Both web & mobile.
         </Mono>
         <button onClick={() => { setAdding((a) => !a); setEditing(null); }} style={primaryBtn}>{adding ? "Cancel" : "+ Add question"}</button>
       </div>
@@ -145,7 +145,7 @@ export default function AdminOnboarding() {
                     <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{q.title}</div>
                     {q.subtitle && <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 2 }} c={ASH}>{q.subtitle}</Mono>}
                     {q.choices && q.choices.length > 0 && q.kind !== "goal" && (
-                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>{q.choices.map((c) => c.label).join(" · ")}</Mono>
+                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>{q.choices.map((c) => c.label).join(" – ")}</Mono>
                     )}
                     {q.kind === "number" && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>{q.min ?? 1}–{q.max ?? 7}, step {q.step ?? 1}, default {String(q.defaultValue ?? q.min ?? 1)}</Mono>}
                     {q.kind === "goal" && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>options come from the plan library (goal tree)</Mono>}
@@ -209,7 +209,7 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
           </Select>
         </Field>
       )}
-      {lockedKind && <Mono s={{ fontSize: fs.micro, display: "block", margin: "4px 0 8px" }} c={ASH}>type: {d.kind}{d.engineKey ? ` · feeds → ${d.engineKey}` : ""} (locked — built-in)</Mono>}
+      {lockedKind && <Mono s={{ fontSize: fs.micro, display: "block", margin: "4px 0 8px" }} c={ASH}>type: {d.kind}{d.engineKey ? ` – feeds → ${d.engineKey}` : ""} (locked — built-in)</Mono>}
 
       {isPersonaOrGoal ? (
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>

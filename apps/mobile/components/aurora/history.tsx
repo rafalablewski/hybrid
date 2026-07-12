@@ -81,7 +81,7 @@ export default function AuroraHistory() {
                   {/* Sport-aware headline chip — a run/match has no tonnage, so
                       cardio sessions read distance·time, not "0 kg" (#4). */}
                   {sessionShape(s) === "cardio"
-                    ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" · ") || t("history.block")); })()
+                    ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" – ") || t("history.block")); })()
                     : chip(C.ash, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
                   {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
                   {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}

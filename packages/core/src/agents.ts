@@ -165,7 +165,7 @@ export function summarizeRuns(runs: { agentName: string; status: string; cost: n
 export function digestText(s: DigestSummary, label: string): string {
   const lines = [
     `*Agent digest — ${label}*`,
-    `${s.total} runs · ${s.successRate == null ? "—" : `${s.successRate}% success`} · $${s.costUsd.toFixed(2)} spend`,
+    `${s.total} runs – ${s.successRate == null ? "—" : `${s.successRate}% success`} – $${s.costUsd.toFixed(2)} spend`,
   ];
   if (s.topAgents.length) {
     lines.push("", "Top agents:");

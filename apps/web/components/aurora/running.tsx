@@ -61,7 +61,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
           <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {paceData.length > 1 && (
-          <div style={card}>{head("blue", `${active} · ${t("w.train.running.paceLowerFaster")}`)}
+          <div style={card}>{head("blue", `${active} – ${t("w.train.running.paceLowerFaster")}`)}
             <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
           </div>
         )}
@@ -74,7 +74,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
             {([["easy", split.easy, C("lime")], ["moderate", split.moderate, C("amber")], ["hard", split.hard, C("red")]] as const).map(([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />)}
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
-            <Legend c={C("lime")} label={`${t("w.train.running.easy")} · ${split.easy} ${t("w.train.running.min")}`} /><Legend c={C("amber")} label={`${t("w.train.running.steady")} · ${split.moderate} ${t("w.train.running.min")}`} /><Legend c={C("red")} label={`${t("w.train.running.hard")} · ${split.hard} ${t("w.train.running.min")}`} />
+            <Legend c={C("lime")} label={`${t("w.train.running.easy")} – ${split.easy} ${t("w.train.running.min")}`} /><Legend c={C("amber")} label={`${t("w.train.running.steady")} – ${split.moderate} ${t("w.train.running.min")}`} /><Legend c={C("red")} label={`${t("w.train.running.hard")} – ${split.hard} ${t("w.train.running.min")}`} />
           </div>
         </div>
       )}

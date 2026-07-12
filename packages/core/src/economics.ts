@@ -349,9 +349,9 @@ export interface PlanColumn {
 
 export const PLAN_COLUMNS: PlanColumn[] = [
   { id: "free", label: "Free", price: "$0", who: "Guest & casual — track and share" },
-  { id: "pro", label: "Pro", price: "$12.99/mo · $99/yr", who: "The individual athlete (paid)" },
+  { id: "pro", label: "Pro", price: "$12.99/mo – $99/yr", who: "The individual athlete (paid)" },
   { id: "coach", label: "Coach", price: "$29–199/mo seat", who: "Coach + their roster (Pro included)" },
-  { id: "org", label: "Org", price: "Custom / athlete / yr", who: "Clubs · federations · units" },
+  { id: "org", label: "Org", price: "Custom / athlete / yr", who: "Clubs – federations – units" },
 ];
 
 /** A cell: false = not included, true = included, string = included with a qualifier. */
@@ -382,7 +382,7 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   { group: "Log & basics (free forever)", feature: "Export your own data (GDPR)", free: true, pro: true, coach: true, org: true },
 
   // Intelligence — the paid Pro layer
-  { group: "Intelligence (Pro)", feature: "Performance State · HPI", free: false, pro: true, coach: true, org: true },
+  { group: "Intelligence (Pro)", feature: "Performance State – HPI", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "Future Self projection & goal ETA", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "AI coach (Claude)", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "Tissue-level injury risk", free: false, pro: true, coach: true, org: "Medical-tier" },
@@ -395,7 +395,7 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   { group: "Training depth (Pro)", feature: "Template builder", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Competition peaking", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Sport-specific S&C", free: false, pro: true, coach: true, org: true },
-  { group: "Training depth (Pro)", feature: "Velocity (VBT) · force plate · video", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Velocity (VBT) – force plate – video", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Adaptive nutrition & longevity", free: false, pro: true, coach: true, org: true },
 
   // Coaching & teams — the coach seat
@@ -637,7 +637,7 @@ export interface MetricGuide {
 }
 
 export const METRIC_GUIDE: MetricGuide[] = [
-  { id: "mrr", label: "MRR / ARR", what: "Predictable subscription revenue per month (MRR) and per year (ARR) — the headline size of the business.", formula: "MRR = Σ revenue per stream · ARR = MRR × 12", benchmark: "Grow it; everything else is a ratio on top." },
+  { id: "mrr", label: "MRR / ARR", what: "Predictable subscription revenue per month (MRR) and per year (ARR) — the headline size of the business.", formula: "MRR = Σ revenue per stream – ARR = MRR × 12", benchmark: "Grow it; everything else is a ratio on top." },
   { id: "arpu", label: "Blended ARPU", what: "Average monthly revenue per paying customer across all streams.", formula: "total MRR ÷ paying units", benchmark: "Higher ARPU makes CAC easier to pay back." },
   { id: "margin", label: "Gross margin", what: "Share of revenue left after the cost to serve (AI, infra, payments, support).", formula: "(revenue − COGS) ÷ revenue", benchmark: "Software SaaS: 75–85%+." },
   { id: "ltv", label: "LTV", what: "Lifetime gross-profit a customer throws off before they churn.", formula: "ARPU × gross margin ÷ monthly churn", benchmark: "Compare to CAC, not in isolation." },
@@ -649,7 +649,7 @@ export const METRIC_GUIDE: MetricGuide[] = [
   { id: "grr", label: "Gross revenue retention", what: "Revenue you keep from existing customers — no expansion credit. The pure stickiness number.", formula: "(1 − churn)¹²", benchmark: "> 90% (SMB) to > 95% (enterprise)." },
   { id: "quickratio", label: "Quick ratio", what: "How fast you add revenue versus how fast you bleed it.", formula: "(new + expansion MRR) ÷ churned MRR", benchmark: "≥ 4 is efficient growth." },
   { id: "magic", label: "Magic number", what: "Sales efficiency — new ARR generated per dollar of acquisition spend.", formula: "net-new ARR ÷ S&M spend", benchmark: "≥ 0.75 means lean in on spend." },
-  { id: "burnmultiple", label: "Burn multiple", what: "Dollars burned for every dollar of net-new recurring revenue added.", formula: "net burn ÷ net-new MRR", benchmark: "< 1 great · 1–2 ok · > 2 inefficient." },
+  { id: "burnmultiple", label: "Burn multiple", what: "Dollars burned for every dollar of net-new recurring revenue added.", formula: "net burn ÷ net-new MRR", benchmark: "< 1 great – 1–2 ok – > 2 inefficient." },
   { id: "runway", label: "Runway", what: "Months until the cash runs out at the current burn.", formula: "cash on hand ÷ monthly burn", benchmark: "Raise/cut before it drops under ~6 months." },
   { id: "breakeven", label: "Break-even", what: "The point the business stops losing money — both as a subscriber count today and as a month in the forecast.", formula: "fixed cost ÷ per-unit contribution", benchmark: "Sooner = less capital needed." },
 ];

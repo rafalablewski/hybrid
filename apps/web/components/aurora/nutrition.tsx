@@ -99,7 +99,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
       }
-      setMealMsg(`${t(p.labelKey).split(" · ")[0]} +${p.kcal} kcal`);
+      setMealMsg(`${t(p.labelKey).split(/ [·–] /)[0]} +${p.kcal} kcal`);
       await load(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
@@ -183,7 +183,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 <span style={{ fontSize: 22 }}>{p.emoji}</span>
                 {!full && <span style={{ fontSize: 12 }}>🔒</span>}
               </div>
-              <div style={{ fontWeight: 700, fontSize: fs.body, marginTop: 8 }}>{t(p.labelKey).split(" · ")[0]}</div>
+              <div style={{ fontWeight: 700, fontSize: fs.body, marginTop: 8 }}>{t(p.labelKey).split(/ [·–] /)[0]}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash"), marginTop: 3 }}>~{p.kcal} kcal</div>
             </button>
           ))}
@@ -313,8 +313,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               >
                 {!full && <span style={{ position: "absolute", top: 10, right: 11, fontSize: 12, color: "var(--premium-accent-text)" }}>🔒</span>}
                 <span style={{ fontSize: 22 }}>{p.emoji}</span>
-                <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[0]}</span>
-                {t(p.labelKey).split(" · ")[1] && <span style={{ fontSize: fs.caption, color: C("ash"), lineHeight: 1.2 }}>{t(p.labelKey).split(" · ")[1]}</span>}
+                <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey).split(/ [·–] /)[0]}</span>
+                {t(p.labelKey).split(/ [·–] /)[1] && <span style={{ fontSize: fs.caption, color: C("ash"), lineHeight: 1.2 }}>{t(p.labelKey).split(/ [·–] /)[1]}</span>}
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{p.kcal} kcal ({p.protein}p {p.carbs}c {p.fat}f)</span>
               </button>
             ))}

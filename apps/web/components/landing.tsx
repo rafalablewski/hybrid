@@ -41,7 +41,7 @@ function ClassicLanding() {
             ))}
           </div>
         </section>
-        <footer className="mt-20 flex items-center gap-2 border-t border-line pt-8"><span className="h-2 w-2 rounded-full bg-lime" /><span className="font-mono text-xs text-ash">{brand.web} · @hybrid/core {CORE_VERSION}</span></footer>
+        <footer className="mt-20 flex items-center gap-2 border-t border-line pt-8"><span className="h-2 w-2 rounded-full bg-lime" /><span className="font-mono text-xs text-ash">{brand.web} – @hybrid/core {CORE_VERSION}</span></footer>
       </main>
     </>
   );
@@ -131,7 +131,7 @@ function AuroraLanding() {
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-8">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-lime" />
-            <span className="font-mono text-xs text-ash">{brand.web} · @hybrid/core {CORE_VERSION}</span>
+            <span className="font-mono text-xs text-ash">{brand.web} – @hybrid/core {CORE_VERSION}</span>
           </div>
           <div className="flex gap-4 font-display text-sm font-bold text-ash">
             <Link href="/timer" className="underline">Interval timer</Link>

@@ -51,8 +51,8 @@ export default function AdminDirectory() {
     <View>
       <Segmented<View2>
         options={[
-          { value: "orgs", label: `Orgs${orgs ? ` · ${orgs.length}` : ""}` },
-          { value: "coaching", label: `Coaching${links ? ` · ${links.length}` : ""}` },
+          { value: "orgs", label: `Orgs${orgs ? ` – ${orgs.length}` : ""}` },
+          { value: "coaching", label: `Coaching${links ? ` – ${links.length}` : ""}` },
         ]}
         value={view}
         onChange={setView}
@@ -87,7 +87,7 @@ export default function AdminDirectory() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 12 }}>
               {counts.map((c) => (
                 <Chip key={c.status} color={statusColor[c.status] ?? palette.chalk}>
-                  {c.status} · {c.n}
+                  {c.status} – {c.n}
                 </Chip>
               ))}
             </View>

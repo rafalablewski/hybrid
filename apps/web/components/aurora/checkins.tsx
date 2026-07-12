@@ -81,7 +81,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 6 }}>
           {compliance.completedThisWeek}<span style={{ color: C("ash"), fontSize: fs.title }}>/{compliance.target} {t("w.recovery.checkins.sessions")}</span>
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{compliance.pct}% {t("w.recovery.checkins.ofPlan")} · {compliance.compliantWeeks}{t("w.recovery.checkins.weekStreak")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{compliance.pct}% {t("w.recovery.checkins.ofPlan")} – {compliance.compliantWeeks}{t("w.recovery.checkins.weekStreak")}</div>
 
         {RATINGS.map((r) => (
           <div key={r.key} style={{ marginTop: 16 }}>
@@ -139,7 +139,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
               </div>
             </div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6 }}>
-              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} · {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} · {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} · {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} – {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} – {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} – {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
             </div>
             {c.note && <div style={{ fontSize: fs.bodyLg, lineHeight: 1.5, marginTop: 6 }}>{c.note}</div>}
             {c.coachReply && (

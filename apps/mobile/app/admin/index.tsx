@@ -23,7 +23,7 @@ export default function AdminHome() {
       </View>
       <H1>Admin console</H1>
       <Mono color={palette.ash} style={{ marginTop: 4, marginBottom: 18 }}>
-        Signed in as {name} · restricted to admins
+        Signed in as {name} – restricted to admins
       </Mono>
 
       {ADMIN_GROUPS.map((group) => (

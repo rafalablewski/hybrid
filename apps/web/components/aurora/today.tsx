@@ -415,7 +415,7 @@ export default function AuroraToday({
       </Sheet>
 
       {/* DONE TODAY sheet — everything logged today + the full calendar. */}
-      <Sheet open={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
+      <Sheet open={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
         {doneToday.length === 0 ? (
           <div style={{ fontSize: fs.body, color: C("ash"), lineHeight: 1.5, padding: "8px 0" }}>{t("w.home.today.doneModalEmpty")}</div>
         ) : (
@@ -486,12 +486,12 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
     const p: string[] = [];
     if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
     if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" · ");
-    return s.blocks.map((b) => b.name).join(" · ");
+    if (p.length) return p.join(" – ");
+    return s.blocks.map((b) => b.name).join(" – ");
   }
   const vol = sessionVolume(s.blocks);
-  const names = s.blocks.map((b) => b.name).join(" · ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} · ${names}` : names;
+  const names = s.blocks.map((b) => b.name).join(" – ");
+  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦

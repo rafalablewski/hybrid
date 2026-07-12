@@ -59,7 +59,7 @@ export function roleScope(role: OrgRole): string {
     tiers.includes("medical") ? "medical" : null,
     tiers.includes("admin") ? "admin/reporting" : null,
   ].filter(Boolean);
-  const manage = canManageOrg(role) ? " · can manage teams & staff" : "";
+  const manage = canManageOrg(role) ? " – can manage teams & staff" : "";
   return `${parts.join(" + ") || "no roster access"}${manage}`;
 }
 

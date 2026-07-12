@@ -66,7 +66,7 @@ export default function AdminOverview() {
       {/* Growth — the web line chart's underlying numbers as paired bar rows. */}
       <Card>
         <Kicker color={palette.lime}>Growth</Kicker>
-        <Mono color={palette.ash} style={{ marginTop: 2, marginBottom: 10 }}>Last 12 weeks · signups vs sessions</Mono>
+        <Mono color={palette.ash} style={{ marginTop: 2, marginBottom: 10 }}>Last 12 weeks – signups vs sessions</Mono>
         <View style={{ flexDirection: "row", gap: space.md, marginBottom: 8 }}>
           <Legend color={palette.lime} label="signups" />
           <Legend color={palette.blue} label="sessions" />
@@ -85,7 +85,7 @@ export default function AdminOverview() {
 
       {s.planPopularity.length > 0 && (
         <Card>
-          <Kicker color={palette.lime}>Plans enrolled · by goal</Kicker>
+          <Kicker color={palette.lime}>Plans enrolled – by goal</Kicker>
           <View style={{ marginTop: 10 }}>
             {(() => {
               const max = Math.max(1, ...s.planPopularity.map((p) => p.n));
@@ -105,7 +105,7 @@ export default function AdminOverview() {
 
       <Row2>
         <Card style={{ flex: 1 }}>
-          <Kicker color={palette.amber}>Roles · user base</Kicker>
+          <Kicker color={palette.amber}>Roles – user base</Kicker>
           <View style={{ marginTop: 8 }}>
             {s.roleSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>No users yet.</Mono>}
             {s.roleSplit.map((r) => (
@@ -117,7 +117,7 @@ export default function AdminOverview() {
           </View>
         </Card>
         <Card style={{ flex: 1 }}>
-          <Kicker color={palette.blue}>Languages · by locale</Kicker>
+          <Kicker color={palette.blue}>Languages – by locale</Kicker>
           <View style={{ marginTop: 8 }}>
             {s.langSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>—</Mono>}
             {s.langSplit.map((l) => (

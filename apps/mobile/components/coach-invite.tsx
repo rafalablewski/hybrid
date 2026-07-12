@@ -87,7 +87,7 @@ export default function CoachInvite() {
           <QrMatrix url={created} />
           <Mono style={{ marginTop: 8, textAlign: "center" }}>{created}</Mono>
           <View style={{ marginTop: 8, width: "100%" }}><Button label="Share invite link" color={C.lime} onPress={() => share(created)} /></View>
-          <Mono color={C.ash} style={{ marginTop: 6 }}>Expires in 30 days · single use.</Mono>
+          <Mono color={C.ash} style={{ marginTop: 6 }}>Expires in 30 days – single use.</Mono>
         </View>
       )}
 

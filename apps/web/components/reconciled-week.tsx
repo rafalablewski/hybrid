@@ -209,7 +209,7 @@ export default function ReconciledWeek({
       <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
       {reconciled.dropped.length > 0 && (
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-          {t("w.home.recweek.dropped")} {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
+          {t("w.home.recweek.dropped")} {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" – ")}
         </Mono>
       )}
     </Card>

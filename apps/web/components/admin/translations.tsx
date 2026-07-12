@@ -124,7 +124,7 @@ export default function AdminTranslations() {
         </Select>
       </div>
       <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 14 }} c={ASH}>
-        {loaded ? `${keys.length} keys · ${overrideCount} override${overrideCount === 1 ? "" : "s"}` : "…"} · edits layer
+        {loaded ? `${keys.length} keys – ${overrideCount} override${overrideCount === 1 ? "" : "s"}` : "…"} – edits layer
         over the shipped strings live — empty a field to revert to baseline.
       </Mono>
 

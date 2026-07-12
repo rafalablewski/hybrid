@@ -91,7 +91,7 @@ function Full() {
         <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
-        {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
+        {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
       </Text>
       {macro && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -2 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
@@ -108,7 +108,7 @@ function Full() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI – {state.hpi.band} – {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
                 <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
               </View>
             </View>
@@ -142,7 +142,7 @@ function Full() {
               <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: calm ? C.lime : C.red }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: calm ? C.ash : txt(C, C.red) }}>{t("w.home.today.injuryRisk")}</Text>
             </View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} · {risk.overall}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} – {risk.overall}</Text>
           </View>
           {calm ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>{t("w.home.today.noTissues")}</Text>
@@ -199,7 +199,7 @@ function Full() {
                 {recap.prs.slice(0, 4).map((p) => (
                   <View key={p.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.lift} e1RM</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{p.e1rm}kg{p.previous == null ? "" : ` · +${p.e1rm - p.previous}`}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{p.e1rm}kg{p.previous == null ? "" : ` – +${p.e1rm - p.previous}`}</Text>
                   </View>
                 ))}
               </View>
@@ -217,9 +217,9 @@ function Full() {
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.home.cockpit.horizon")}</Text>
         </View>
-        <Mod C={C} dot={C.amber} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} · ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/(tabs)/sport")} />
+        <Mod C={C} dot={C.amber} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/(tabs)/sport")} />
         <Mod C={C} dot={C.blue} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/(tabs)/velocity")} />
-        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onPress={() => router.push("/(tabs)/running")} last />
+        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onPress={() => router.push("/(tabs)/running")} last />
       </ACard>
 
       {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
@@ -233,7 +233,7 @@ function Full() {
           {macro ? (
             <>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} – ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</Text>
             </>
           ) : (
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>{t("w.home.cockpit.noSeason")}</Text>
@@ -330,7 +330,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
         {tab === "sport" && (
           sport ? (
             <>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} – {LEVELS[sport.levelIdx]}</Text>
               <Pressable onPress={() => onOpen("/(tabs)/sport")} style={{ marginTop: 12 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.sport")} →</Text></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.sportEmpty")}</Text>

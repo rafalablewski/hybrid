@@ -23,7 +23,7 @@ export default function LeaderboardScreen() {
     <Screen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <ABack />
-        <View><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Leaderboard</Text><Text style={{ color: C.ash, fontSize: 13 }}>This week · your friends.</Text></View>
+        <View><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Leaderboard</Text><Text style={{ color: C.ash, fontSize: 13 }}>This week – your friends.</Text></View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>
         {LEADERBOARD_METRICS.map((m) => <SPill key={m.key} label={m.label} active={metric === m.key} onPress={() => setMetric(m.key as LeaderboardMetric)} />)}

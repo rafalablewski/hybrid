@@ -70,7 +70,7 @@ export default function AuroraTactical() {
             </div>
           )}
           {hasData ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · {t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}/100</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} – {t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}/100</div>
           ) : (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.teams.tactical.logToCompute")}</div>
           )}
@@ -89,7 +89,7 @@ export default function AuroraTactical() {
         <div style={{ ...card, }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <div style={kicker("ash")}>{t("w.teams.tactical.unitReadiness")}</div>
-            {unit && chip(unit.go ? "lime" : "red", `${unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} · ${unit.pctReady}% ${t("w.teams.tactical.deployable")}`)}
+            {unit && chip(unit.go ? "lime" : "red", `${unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} – ${unit.pctReady}% ${t("w.teams.tactical.deployable")}`)}
           </div>
           <div style={{ marginTop: 12 }}>
             {unit?.members.map((m) => (

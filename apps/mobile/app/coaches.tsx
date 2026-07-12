@@ -58,7 +58,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{p.name}</Text>
-                        <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</Text>
+                        <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" – ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</Text>
                         : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { Alert.alert("Error", r.error); return; } load(); }} />}
@@ -75,7 +75,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                                 {w.days.map((d: ProgramPreviewDay, di: number) => (
                                   <View key={di} style={{ marginTop: 4 }}>
                                     <Text style={{ color: C.chalk, fontSize: 12.5, fontFamily: F.bold }}>{d.day || `Day ${di + 1}`}</Text>
-                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</Text>
+                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</Text>
                                   </View>
                                 ))}
                               </View>
@@ -173,7 +173,7 @@ function Storefront() {
             {enroll.incoming.map((e: EnrollmentRow) => (
               <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
-                <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} · {e.status}</Text></View>
+                <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} – {e.status}</Text></View>
                 {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label="Accept" small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label="Decline" ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
               </View>
             ))}
@@ -201,7 +201,7 @@ export default function CoachesScreen() {
     <Screen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <ABack />
-        <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Coaches</Text><Text style={{ color: C.ash, fontSize: 13 }}>Find a coach · start a program.</Text></View>
+        <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Coaches</Text><Text style={{ color: C.ash, fontSize: 13 }}>Find a coach – start a program.</Text></View>
       </View>
       {isCoach && (
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
@@ -219,8 +219,8 @@ export default function CoachesScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> · full</Text> : null}</Text>
-                    <Text style={{ color: C.ash, fontSize: 13 }}>{c.headline || c.specialties.join(" · ") || `@${c.handle}`}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> – full</Text> : null}</Text>
+                    <Text style={{ color: C.ash, fontSize: 13 }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</Text>
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4, alignItems: "center" }}>
                       <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>{c.programs} program{c.programs === 1 ? "" : "s"}</Text>
                       <Stars rating={c.rating} size={12} />

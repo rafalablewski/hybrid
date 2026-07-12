@@ -264,7 +264,7 @@ function AccountsTab() {
       {data && data.pages > 1 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
           <Mono s={{ fontSize: fs.body }} c={ASH}>
-            {data.total.toLocaleString()} users · page {data.page} / {data.pages}
+            {data.total.toLocaleString()} users – page {data.page} / {data.pages}
           </Mono>
           <div style={{ display: "flex", gap: space.sm }}>
             <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>← Prev</PageBtn>
@@ -479,7 +479,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       const body = await res.json().catch(() => ({}));
       if (res.ok) {
         setD((prev) => (prev ? { ...prev, role, language, entitlement, coachVerified } : prev));
-        setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
+        setMsg({ ok: true, text: "Saved – change recorded in the audit log." });
         onSaved();
       } else {
         setMsg({ ok: false, text: body.error ?? "Update failed." });

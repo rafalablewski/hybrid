@@ -37,7 +37,7 @@ export function shareText(stats: ShareStats, units: WeightUnit, t: (k: string) =
   const top = stats.bests[0];
   return [
     stats.firstEver ? "My first HYBRID workout 💪" : `💪 ${stats.title || "Workout"} — done.`,
-    `${stats.minutes} min · ${stats.sets} ${t("w.train.logger.sets")} · ${fmtTonnage(stats.volume, units)}`,
+    `${stats.minutes} min – ${stats.sets} ${t("w.train.logger.sets")} – ${fmtTonnage(stats.volume, units)}`,
     top ? `🏆 ${top.name} ${fmtWeight(top.e1rm, units)}` : null,
     "Tracked with HYBRID.",
   ]

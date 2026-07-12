@@ -103,7 +103,7 @@ export default function AdminModeration() {
   return (
     <div>
       <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
-        {([["profiles", `Pending profiles${pCount ? ` · ${pCount}` : ""}`], ["reports", `Reports${rCount ? ` · ${rCount}` : ""}`]] as const).map(([id, label]) => (
+        {([["profiles", `Pending profiles${pCount ? ` – ${pCount}` : ""}`], ["reports", `Reports${rCount ? ` – ${rCount}` : ""}`]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -149,7 +149,7 @@ export default function AdminModeration() {
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{p.name}</div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>{p.email}</Mono>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={ASH}>
-                {Object.entries(p.metrics ?? {}).map(([k, v]) => `${k}: ${v}`).join("  ·  ") || "no metrics"}
+                {Object.entries(p.metrics ?? {}).map(([k, v]) => `${k}: ${v}`).join("  –  ") || "no metrics"}
               </Mono>
               <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
                 <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
@@ -174,11 +174,11 @@ export default function AdminModeration() {
                 {r.target && <Chip c={r.target.moderationStatus === "approved" ? LIME : AMBER}>{r.target.moderationStatus}</Chip>}
               </div>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.note }}>
-                {r.target ? `${r.target.name} · ${r.target.sport}` : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
+                {r.target ? `${r.target.name} – ${r.target.sport}` : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
               </div>
               {r.detail && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
-                reported by {r.reporterEmail} · {new Date(r.createdAt).toLocaleDateString()}
+                reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
               </Mono>
               <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
                 <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>

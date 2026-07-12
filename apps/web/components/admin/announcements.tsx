@@ -184,7 +184,7 @@ export default function AdminAnnouncements() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>
-          {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} · broadcast to the app
+          {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} – broadcast to the app
         </Mono>
         {editing === null && (
           <button onClick={openNew} style={primaryBtn}>
@@ -305,8 +305,8 @@ export default function AdminAnnouncements() {
                 </Mono>
                 <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={ASH}>
                   {a.authorEmail}
-                  {a.publishAt ? ` · live ${new Date(a.publishAt).toLocaleString()}` : ""}
-                  {a.expiresAt ? ` · ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
+                  {a.publishAt ? ` – live ${new Date(a.publishAt).toLocaleString()}` : ""}
+                  {a.expiresAt ? ` – ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
                 </Mono>
               </div>
             </div>

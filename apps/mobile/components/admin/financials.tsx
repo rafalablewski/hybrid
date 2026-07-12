@@ -152,7 +152,7 @@ function RevenueTab({
       <PillBtn label={showGlossary ? "Hide glossary" : "What do these terms mean?"} color={palette.amber} outline onPress={() => setShowGlossary(!showGlossary)} />
       {showGlossary && <Glossary />}
 
-      <SectionLabel kicker="Revenue streams · who pays" title="How HYBRID makes money" />
+      <SectionLabel kicker="Revenue streams – who pays" title="How HYBRID makes money" />
       {REVENUE_STREAMS.map((stream) => {
         const color = streamColor[stream.id];
         const monthly = stream.id === "b2c" ? r.revenue.b2c : stream.id === "coach" ? r.revenue.coach : stream.id === "org" ? r.revenue.org : null;
@@ -165,21 +165,21 @@ function RevenueTab({
             </View>
             {monthly != null ? (
               <Mono color={color} style={{ fontSize: fs.body, marginTop: 2 }}>
-                {usdFull(monthly)}/mo modeled{share != null ? ` · ${share.toFixed(0)}% of MRR` : ""}
+                {usdFull(monthly)}/mo modeled{share != null ? ` – ${share.toFixed(0)}% of MRR` : ""}
               </Mono>
             ) : (
               <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>not in live margin</Mono>
             )}
             <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{stream.whoPays}</Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
-              {stream.tiers.map((t) => <Chip key={t.name} color={color}>{t.name} · {t.price}</Chip>)}
+              {stream.tiers.map((t) => <Chip key={t.name} color={color}>{t.name} – {t.price}</Chip>)}
             </View>
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 10, lineHeight: 17 }}>{stream.howItWorks}</Mono>
           </Card>
         );
       })}
 
-      <SectionLabel kicker={`Localized price · FX ${PRICING_REF_DATE}`} title="Focus markets & pricing" />
+      <SectionLabel kicker={`Localized price – FX ${PRICING_REF_DATE}`} title="Focus markets & pricing" />
       {MARKET_PRICING.map((m) => {
         const isPLN = m.currency === "PLN";
         const loc = (n: number) => (isPLN ? `${Math.round(n)} zł` : `${m.symbol}${Number.isInteger(n) ? n : n.toFixed(2)}`);
@@ -188,21 +188,21 @@ function RevenueTab({
           <Card key={m.id}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{m.flag} {m.market}</Text>
-              <Chip color={palette.blue}>{m.currency} · {Math.round(m.priceIndex * 100)}% of US</Chip>
+              <Chip color={palette.blue}>{m.currency} – {Math.round(m.priceIndex * 100)}% of US</Chip>
             </View>
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 8 }}>
-              Pro {loc(m.proMonthly)}/mo ({eq(m.proMonthly)}) · {loc(m.proAnnual)}/yr
+              Pro {loc(m.proMonthly)}/mo ({eq(m.proMonthly)}) – {loc(m.proAnnual)}/yr
             </Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
-              Coach {loc(m.coachStarter)}·{loc(m.coachPro)}·{loc(m.coachBusiness)}/mo · Org {loc(m.orgLow)}–{loc(m.orgHigh)}/athlete/yr
+              Coach {loc(m.coachStarter)} – {loc(m.coachPro)} – {loc(m.coachBusiness)}/mo – Org {loc(m.orgLow)}–{loc(m.orgHigh)}/athlete/yr
             </Mono>
-            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>{m.tax} · Stripe {m.stripeFee}</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>{m.tax} – Stripe {m.stripeFee}</Mono>
             <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{m.rationale}</Mono>
           </Card>
         );
       })}
 
-      <SectionLabel kicker="Entitlement matrix · free → org" title="What each plan includes" />
+      <SectionLabel kicker="Entitlement matrix – free → org" title="What each plan includes" />
       <PlanMatrix />
     </View>
   );
@@ -259,7 +259,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
         <Card accent={palette.blue}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>Actual AI agent spend</Text>
-            <Chip color={palette.blue}>real · 30d</Chip>
+            <Chip color={palette.blue}>real – 30d</Chip>
           </View>
           <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
             {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
@@ -282,7 +282,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{c.rate}</Mono>
             {live != null && (
               <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>
-                ≈ {usdFull(live)}/mo{share != null ? ` · ${share.toFixed(0)}% of revenue` : ""}
+                ≈ {usdFull(live)}/mo{share != null ? ` – ${share.toFixed(0)}% of revenue` : ""}
               </Mono>
             )}
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{c.note}</Mono>
@@ -319,7 +319,7 @@ function FixedOpexBreakdown() {
       )}
       {extras.map((i) => (
         <View key={i.label} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, gap: space.sm }}>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }}>{i.note ? `${i.label} · ${i.note}` : i.label}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }}>{i.note ? `${i.label} – ${i.note}` : i.label}</Mono>
           <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{i.billed}</Mono>
         </View>
       ))}
@@ -343,7 +343,7 @@ function CalcTab({
   return (
     <View>
       <SectionLabel
-        kicker={seedErr ? "Live counts unavailable — model defaults" : seed ? `Seeded: ${seed.totalUsers.toLocaleString()} users · ${seed.coaches} coaches` : "Loading…"}
+        kicker={seedErr ? "Live counts unavailable — model defaults" : seed ? `Seeded: ${seed.totalUsers.toLocaleString()} users – ${seed.coaches} coaches` : "Loading…"}
         title="Unit-economics calculator"
       />
       <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 12 }}>
@@ -464,7 +464,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
         <SegMetric label="LTV : CAC" value={x1(seg.ltvToCac)} c={ratioOk ? palette.lime : palette.amber} />
       </View>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10 }}>
-        {Math.round(seg.monthlyChurn * 1000) / 10}% monthly churn · ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo avg lifetime
+        {Math.round(seg.monthlyChurn * 1000) / 10}% monthly churn – ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo avg lifetime
       </Mono>
     </Card>
   );
@@ -520,7 +520,7 @@ function ForecastTab({
       </View>
 
       <Card>
-        <Kicker color={palette.lime}>MRR vs cumulative cash · next 12 months</Kicker>
+        <Kicker color={palette.lime}>MRR vs cumulative cash – next 12 months</Kicker>
         <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 8 }}>
           <Legend color={palette.lime} label="MRR" />
           <Legend color={palette.blue} label="cum. cash" />
@@ -532,7 +532,7 @@ function ForecastTab({
             <View key={p.month} style={{ marginBottom: 8 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>M{p.month}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{usd(p.mrr)} · {usd(p.cumulativeCash)}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{usd(p.mrr)} – {usd(p.cumulativeCash)}</Mono>
               </View>
               <BarRow value={mrrPct} color={palette.lime} />
               <BarRow value={cashPct} color={p.cumulativeCash < 0 ? palette.red : palette.blue} />

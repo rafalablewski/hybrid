@@ -141,7 +141,7 @@ export default function AuroraCalendar() {
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}
     </AuroraScreen>

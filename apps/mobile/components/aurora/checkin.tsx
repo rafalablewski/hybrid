@@ -76,7 +76,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
       <ACard style={{ marginTop: embedded ? 0 : 18 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.checkins.trainingVolumeWeek")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>
-          {compliance.completedThisWeek}/{compliance.target} {t("w.recovery.checkins.sessions")} · {compliance.pct}% {t("w.recovery.checkins.ofPlan")} · {compliance.status}
+          {compliance.completedThisWeek}/{compliance.target} {t("w.recovery.checkins.sessions")} – {compliance.pct}% {t("w.recovery.checkins.ofPlan")} – {compliance.status}
         </Text>
 
         {RATINGS.map((r) => (
@@ -154,7 +154,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{c.adherencePct != null ? `${c.adherencePct}% ${t("w.recovery.checkins.adherence")}` : ""}</Text>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
-              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} · {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} · {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} · {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} – {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} – {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} – {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
             </Text>
             {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{c.note}</Text> : null}
             {c.coachReply ? (

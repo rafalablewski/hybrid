@@ -8,7 +8,7 @@ import TemplateSync from "@/components/template-sync";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `${brand.name} · ${brand.web}`,
+  title: `${brand.name} – ${brand.web}`,
   description: brand.tagline,
 };
 

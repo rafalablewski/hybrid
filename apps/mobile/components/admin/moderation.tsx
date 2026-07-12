@@ -107,8 +107,8 @@ export default function AdminModeration() {
     <View>
       <Segmented<Tab>
         options={[
-          { value: "profiles", label: `Pending profiles${pCount ? ` · ${pCount}` : ""}` },
-          { value: "reports", label: `Reports${rCount ? ` · ${rCount}` : ""}` },
+          { value: "profiles", label: `Pending profiles${pCount ? ` – ${pCount}` : ""}` },
+          { value: "reports", label: `Reports${rCount ? ` – ${rCount}` : ""}` },
         ]}
         value={tab}
         onChange={setTab}
@@ -137,7 +137,7 @@ export default function AdminModeration() {
                 <Mono color={palette.ash} style={{ marginTop: 6, lineHeight: 18 }}>
                   {Object.entries(p.metrics ?? {})
                     .map(([k, v]) => `${k}: ${v}`)
-                    .join("  ·  ") || "no metrics"}
+                    .join(" – ") || "no metrics"}
                 </Mono>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
                   <PillBtn
@@ -188,7 +188,7 @@ export default function AdminModeration() {
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>
                   {r.target
-                    ? `${r.target.name} · ${r.target.sport}`
+                    ? `${r.target.name} – ${r.target.sport}`
                     : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
                 </Text>
                 {r.detail ? (
@@ -197,7 +197,7 @@ export default function AdminModeration() {
                   </Mono>
                 ) : null}
                 <Mono color={palette.ash} style={{ marginTop: 6 }}>
-                  reported by {r.reporterEmail} · {new Date(r.createdAt).toLocaleDateString()}
+                  reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
                 </Mono>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
                   <PillBtn

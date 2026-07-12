@@ -58,7 +58,7 @@ export default function AdminDirectory() {
         <SectionTitle title="Coaching relationships" kicker="Coach ↔ client links" c={VIOLET} />
         <div style={{ display: "flex", gap: space.sm, marginBottom: 12, flexWrap: "wrap" }}>
           {counts.map((c) => (
-            <Chip key={c.status} c={statusColor[c.status] ?? CHALK}>{c.status} · {c.n}</Chip>
+            <Chip key={c.status} c={statusColor[c.status] ?? CHALK}>{c.status} – {c.n}</Chip>
           ))}
         </div>
         <Card style={{ padding: 0, overflow: "hidden" }}>

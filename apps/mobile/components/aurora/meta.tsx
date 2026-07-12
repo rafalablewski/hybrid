@@ -6,13 +6,14 @@ import { F, fs } from "../../lib/ui";
 /**
  * A meta line whose facts are separated by a thin vertical HAIRLINE rule
  * instead of a middot — the mobile twin of the web MetaLine, so both clients
- * divide inline facts the same way. Pass `parts` (falsy dropped) OR a `·`-joined
- * `text` string. `textStyle` sets the font/size/colour of each fact; the rule
+ * divide inline facts the same way. Pass `parts` (falsy dropped) OR a
+ * dash/middot-joined `text` string (split on " – " or " · "). `textStyle` sets
+ * the font/size/colour of each fact; the rule
  * matches the text colour at low opacity.
  */
 export function MetaLine({ parts, text, textStyle }: { parts?: (string | null | undefined | false)[]; text?: string; textStyle?: TextStyle }) {
   const { palette: C } = useTheme();
-  const items = (parts ?? (text ? text.split(" · ") : [])).filter(Boolean) as string[];
+  const items = (parts ?? (text ? text.split(/ [·–] /) : [])).filter(Boolean) as string[];
   const ts: TextStyle = { fontFamily: F.mono, fontSize: fs.micro, color: C.ash, ...textStyle };
   const ruleColor = ts.color ?? C.ash;
   return (

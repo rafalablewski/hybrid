@@ -116,7 +116,7 @@ export default function AdminMedia() {
   return (
     <View>
       <Mono color={palette.ash} style={{ marginBottom: 6, lineHeight: 18 }}>
-        {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} · public CDN URLs
+        {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
       </Mono>
       <Banner tone="amber" title="Uploading is web-only">
         Add new clips/images from the web admin console — mobile uploads aren&apos;t in v1. You can manage, edit, and

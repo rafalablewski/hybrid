@@ -53,7 +53,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
 
   return (
     <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
-      <Kicker color={C.lime}>Assign diet · daily macros</Kicker>
+      <Kicker color={C.lime}>Assign diet – daily macros</Kicker>
       <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
         {field("kcal", "kcal")}
         {field("protein g", "protein")}

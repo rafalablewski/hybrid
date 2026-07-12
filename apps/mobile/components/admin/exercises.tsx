@@ -234,7 +234,7 @@ export default function AdminExercises() {
   return (
     <View>
       <Intro>
-        {list ? `${list.length} custom` : "…"} · merge over the 9 built-ins by name. Search + edit additions here.
+        {list ? `${list.length} custom` : "…"} – merge over the 9 built-ins by name. Search + edit additions here.
       </Intro>
 
       <Input value={q} onChangeText={setQ} placeholder="Search the library…" />

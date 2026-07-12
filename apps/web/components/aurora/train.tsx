@@ -108,7 +108,7 @@ export default function AuroraTrainWeb({
                 icon="list-check"
                 iconColor={C("ash")}
                 title={r.name}
-                meta={r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}
+                meta={r.blocks.map((b) => b.name).slice(0, 3).join(" – ")}
                 right={<Chevron />}
                 onClick={() => onStart(r.blocks)}
               />

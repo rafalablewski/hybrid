@@ -11,5 +11,5 @@ export function athleteId(seed: string): string {
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   const hex = (h & 0xffff).toString(16).toUpperCase().padStart(4, "0");
   const tail = ((h >>> 16) % 100).toString().padStart(2, "0");
-  return `0x${hex}·${tail}`;
+  return `0x${hex}–${tail}`;
 }

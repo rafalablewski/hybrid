@@ -98,7 +98,7 @@ export default function AuroraRunning() {
 
       {paceMoves.length > 0 && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("session.paceTrend")} · {active}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("session.paceTrend")} – {active}</Text>
           {paceMoves.length > 1 && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
               {paceMoves.map((m) => { const on = active === m; return (
@@ -140,7 +140,7 @@ function PaceBars({ series }: { series: number[] }) {
     <View style={{ marginTop: 12 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{`${paceClock(series[series.length - 1]!)} /km`}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, delta <= 0 ? C.lime : C.amber) }}>{`${delta <= 0 ? "−" : "+"}${paceClock(Math.abs(delta))} · ${series.length}×`}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, delta <= 0 ? C.lime : C.amber) }}>{`${delta <= 0 ? "−" : "+"}${paceClock(Math.abs(delta))} – ${series.length}×`}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 40, gap: 3 }}>
         {series.map((v, i) => <View key={i} style={{ flex: 1, height: 8 + ((max - v) / range) * 30, borderRadius: 3, backgroundColor: i === series.length - 1 ? C.blue : `${C.blue}55` }} />)}

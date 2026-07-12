@@ -77,7 +77,7 @@ export default function AdminSecurity() {
 
       {/* Live runtime checks */}
       <Card>
-        <Kicker color={palette.blue}>Live runtime checks · this deployment</Kicker>
+        <Kicker color={palette.blue}>Live runtime checks – this deployment</Kicker>
         <View style={{ marginTop: 10, gap: space.sm }}>
           {d.runtime.map((r) => {
             const c = r.ok === null ? palette.ash : r.ok ? palette.lime : palette.red;
@@ -97,7 +97,7 @@ export default function AdminSecurity() {
         const items = d.controls.filter((c) => c.category === cat);
         return (
           <View key={cat} style={{ marginTop: 8 }}>
-            <Kicker>{cat} · {items.filter((i) => i.status === "pass").length}/{items.length}</Kicker>
+            <Kicker>{cat} – {items.filter((i) => i.status === "pass").length}/{items.length}</Kicker>
             <View style={{ marginTop: 8 }}>
               {items.map((c) => (
                 <Card key={c.id} accent={statusColor(c.status)}>
@@ -121,7 +121,7 @@ export default function AdminSecurity() {
       })}
 
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
-        Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} · green controls are enforced by tests in CI.
+        Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} – green controls are enforced by tests in CI.
       </Mono>
     </View>
   );

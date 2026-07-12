@@ -72,7 +72,7 @@ export default function AuroraTalent() {
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
           {t("w.teams.talent.headerBody")}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` · ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` – ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}</Text>
       </ACard>
 
       {/* profile */}
@@ -132,7 +132,7 @@ export default function AuroraTalent() {
               <View key={b.metric} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{METRIC_LABEL[b.metric as BenchmarkMetric] ?? b.metric}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{b.value} · {t("w.teams.talent.cohort")} {b.cohortMean}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{b.value} – {t("w.teams.talent.cohort")} {b.cohortMean}</Text>
                 </View>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, marginTop: 6, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${b.potentialPercentile}%`, backgroundColor: `${C.violet}55` }} />
@@ -169,7 +169,7 @@ export default function AuroraTalent() {
           ) : (
             results.map((r) => (
               <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, flex: 1 }}>{r.name} · {r.sport} · {r.sex}{r.age}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, flex: 1 }}>{r.name} – {r.sport} – {r.sex}{r.age}</Text>
                 <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                   <View style={{ backgroundColor: `${pctColor(r.percentile, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, pctColor(r.percentile, C)) }}>{r.percentile}{t("w.teams.talent.ordinal")}</Text>

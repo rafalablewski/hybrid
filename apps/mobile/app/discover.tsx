@@ -18,7 +18,7 @@ function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; o
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{p.displayName || `@${p.handle}`}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
-          <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{p.handle}{p.reason ? ` · ${p.reason}` : p.isCoach ? " · coach" : ""}</Text>
+          <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{p.handle}{p.reason ? ` – ${p.reason}` : p.isCoach ? " – coach" : ""}</Text>
         </View>
       </Pressable>
       {rel !== "self" && (rel === "requested"

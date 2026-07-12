@@ -95,7 +95,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                   <span style={{ width: 42, height: 42, borderRadius: 21, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
-                    <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" · ")}</span>
+                    <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</span>
                   </span>
                 </button>
                 <button onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>

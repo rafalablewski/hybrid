@@ -422,7 +422,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               {genMacro.blocks.flatMap((b) =>
                 b.micros.map((m) => selChip(
                   `wk:${m.week}`,
-                  `${t("w.teams.coach.wkAbbr")} ${m.week} · ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`,
+                  `${t("w.teams.coach.wkAbbr")} ${m.week} – ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`,
                   genWeek === m.week,
                   () => setGenWeek(m.week),
                 )),
@@ -466,8 +466,8 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   {c.adherencePct != null && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
-                  {t("w.teams.coach.energy")} {c.energy ?? "—"} · {t("w.teams.coach.sleep")} {c.sleep ?? "—"} · {t("w.teams.coach.soreness")} {c.soreness ?? "—"} · {t("w.teams.coach.mood")} {c.mood ?? "—"}
-                  {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+                  {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.soreness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
+                  {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
                 </Text>
                 {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{c.note}</Text> : null}
                 {c.coachReply ? (
@@ -568,13 +568,13 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
             </View>
             {hasPrev && (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, r.volumeDelta >= 0 ? C.lime : C.amber), marginTop: 14 }}>
-                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("recap.sessions")} · {r.volumeDelta >= 0 ? "+" : ""}
+                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("recap.sessions")} – {r.volumeDelta >= 0 ? "+" : ""}
                 {r.volumeDelta.toLocaleString()} kg {t("recap.vsLastWeek")}
               </Text>
             )}
             {r.prs.length > 0 && (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 10, lineHeight: 18 }}>
-                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" – ")}
               </Text>
             )}
           </>

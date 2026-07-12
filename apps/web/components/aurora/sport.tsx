@@ -109,7 +109,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
           <span style={{ fontSize: 28 }}>{meta.icon}</span>
           <div>
             <div style={{ fontWeight: 800, fontSize: fs.heading }}>{sport}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} · {LEVELS[levelIdx]}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} – {LEVELS[levelIdx]}</div>
           </div>
         </div>
         <div style={{ marginTop: 14 }}>

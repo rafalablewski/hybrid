@@ -67,7 +67,7 @@ export default function AdminSecurity() {
       {/* live runtime checks */}
       <Card style={{ marginBottom: 20 }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={BLUE}>
-          Live runtime checks · this deployment
+          Live runtime checks – this deployment
         </Mono>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap: space.ms }}>
           {d.runtime.map((r) => (
@@ -88,7 +88,7 @@ export default function AdminSecurity() {
         return (
           <div key={cat} style={{ marginBottom: 22 }}>
             <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
-              {cat} · {items.filter((i) => i.status === "pass").length}/{items.length}
+              {cat} – {items.filter((i) => i.status === "pass").length}/{items.length}
             </Mono>
             <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
               {items.map((c) => (
@@ -115,7 +115,7 @@ export default function AdminSecurity() {
       })}
 
       <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={ASH}>
-        Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} · green controls are enforced
+        Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} – green controls are enforced
         by tests in CI.
       </Mono>
     </div>

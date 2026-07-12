@@ -603,7 +603,7 @@ export default function AccountSettings() {
   const summary = (id: SettingsCategoryId): string => {
     switch (id) {
       case "account": return session?.name ?? "";
-      case "preferences": return `${theme === "light" ? "Japandi" : "Aurora"} · ${lang.toUpperCase()} · ${prefs.units}`;
+      case "preferences": return `${theme === "light" ? "Japandi" : "Aurora"} – ${lang.toUpperCase()} – ${prefs.units}`;
       case "logger": return prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple");
       case "notifications": return `${Object.values(notif).filter(Boolean).length}/${Object.keys(notif).length}`;
       case "privacy": return `${Object.values(priv).filter(Boolean).length}/${Object.keys(priv).length}`;

@@ -128,7 +128,7 @@ export const web_teams = {
 
     // tactical.tsx
     "w.teams.tactical.you": "You",
-    "w.teams.tactical.headerKicker": "Tactical / SOF · deployment readiness",
+    "w.teams.tactical.headerKicker": "Tactical / SOF – deployment readiness",
     "w.teams.tactical.headerBody": "Not “are you fit?” but “are you deployable?” — the same Performance State signals (HPI, injury risk) fused with occupational capacity into a Deployment Readiness Index and a unit go/no-go.",
     "w.teams.tactical.deploymentReadiness": "Deployment readiness",
     "w.teams.tactical.injuryRisk": "injury risk",
@@ -140,7 +140,7 @@ export const web_teams = {
     "w.teams.tactical.noGo": "NO-GO",
     "w.teams.tactical.deployable": "deployable",
     "w.teams.tactical.dri": "DRI",
-    "w.teams.tactical.rollupNote": "Unit roll-up shows your own readiness · connect a real unit through the Org Graph.",
+    "w.teams.tactical.rollupNote": "Unit roll-up shows your own readiness – connect a real unit through the Org Graph.",
 
     // team-compare.tsx
     "w.teams.compare.metricE1rm": "Best e1RM",
@@ -207,7 +207,7 @@ export const web_teams = {
     "w.teams.org.athleteTwin": "Performance State",
     "w.teams.org.limiter": "limiter",
     "w.teams.org.injury": "injury",
-    "w.teams.org.tissuesFlagged": "tissue(s) flagged · tissue-level detail is medical-tier",
+    "w.teams.org.tissuesFlagged": "tissue(s) flagged – tissue-level detail is medical-tier",
     "w.teams.org.sessionsLogged": "sessions logged",
     "w.teams.talent.kickerTalentGraph": "Talent graph",
     "w.teams.talent.headingBenchmarksDiscovery": "Benchmarks & discovery",
@@ -342,7 +342,7 @@ export const web_teams = {
 
     // tactical.tsx
     "w.teams.tactical.you": "Ty",
-    "w.teams.tactical.headerKicker": "Taktyczny / SOF · gotowość do działań",
+    "w.teams.tactical.headerKicker": "Taktyczny / SOF – gotowość do działań",
     "w.teams.tactical.headerBody": "Nie „czy jesteś sprawny?”, lecz „czy jesteś zdolny do działań?” — te same sygnały stanu formy (HPI, ryzyko kontuzji) połączone z wydolnością zawodową w Indeks Gotowości do Działań i decyzję jednostki go/no-go.",
     "w.teams.tactical.deploymentReadiness": "Gotowość do działań",
     "w.teams.tactical.injuryRisk": "ryzyko kontuzji",
@@ -354,7 +354,7 @@ export const web_teams = {
     "w.teams.tactical.noGo": "NO-GO",
     "w.teams.tactical.deployable": "zdolnych do działań",
     "w.teams.tactical.dri": "DRI",
-    "w.teams.tactical.rollupNote": "Zestawienie jednostki pokazuje Twoją własną gotowość · połącz prawdziwą jednostkę przez Graf Organizacji.",
+    "w.teams.tactical.rollupNote": "Zestawienie jednostki pokazuje Twoją własną gotowość – połącz prawdziwą jednostkę przez Graf Organizacji.",
 
     // team-compare.tsx
     "w.teams.compare.metricE1rm": "Najlepsze e1RM",
@@ -421,7 +421,7 @@ export const web_teams = {
     "w.teams.org.athleteTwin": "Stan formy",
     "w.teams.org.limiter": "ogranicznik",
     "w.teams.org.injury": "kontuzja",
-    "w.teams.org.tissuesFlagged": "tkanka(-i) oznaczona(-e) · szczegóły na poziomie tkanki to poziom medyczny",
+    "w.teams.org.tissuesFlagged": "tkanka(-i) oznaczona(-e) – szczegóły na poziomie tkanki to poziom medyczny",
     "w.teams.org.sessionsLogged": "zalogowanych sesji",
     "w.teams.talent.kickerTalentGraph": "Graf talentów",
     "w.teams.talent.headingBenchmarksDiscovery": "Benchmarki i odkrywanie",
@@ -556,7 +556,7 @@ export const web_teams = {
 
     // tactical.tsx
     "w.teams.tactical.you": "Du",
-    "w.teams.tactical.headerKicker": "Taktisch / SOF · Einsatzbereitschaft",
+    "w.teams.tactical.headerKicker": "Taktisch / SOF – Einsatzbereitschaft",
     "w.teams.tactical.headerBody": "Nicht „bist du fit?“, sondern „bist du einsatzbereit?“ — dieselben Leistungszustand-Signale (HPI, Verletzungsrisiko) verschmolzen mit beruflicher Kapazität zu einem Einsatzbereitschaftsindex und einem Einheiten-Go/No-Go.",
     "w.teams.tactical.deploymentReadiness": "Einsatzbereitschaft",
     "w.teams.tactical.injuryRisk": "Verletzungsrisiko",
@@ -568,7 +568,7 @@ export const web_teams = {
     "w.teams.tactical.noGo": "NO-GO",
     "w.teams.tactical.deployable": "einsatzbereit",
     "w.teams.tactical.dri": "DRI",
-    "w.teams.tactical.rollupNote": "Die Einheitsübersicht zeigt deine eigene Bereitschaft · verbinde eine echte Einheit über den Org-Graph.",
+    "w.teams.tactical.rollupNote": "Die Einheitsübersicht zeigt deine eigene Bereitschaft – verbinde eine echte Einheit über den Org-Graph.",
 
     // team-compare.tsx
     "w.teams.compare.metricE1rm": "Bestes e1RM",
@@ -635,7 +635,7 @@ export const web_teams = {
     "w.teams.org.athleteTwin": "Leistungszustand",
     "w.teams.org.limiter": "Limiter",
     "w.teams.org.injury": "Verletzung",
-    "w.teams.org.tissuesFlagged": "Gewebe markiert · Details auf Gewebeebene sind medizinische Stufe",
+    "w.teams.org.tissuesFlagged": "Gewebe markiert – Details auf Gewebeebene sind medizinische Stufe",
     "w.teams.org.sessionsLogged": "geloggte Einheiten",
     "w.teams.talent.kickerTalentGraph": "Talent-Graph",
     "w.teams.talent.headingBenchmarksDiscovery": "Benchmarks & Entdeckung",

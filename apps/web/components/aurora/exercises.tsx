@@ -61,7 +61,7 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
             return (
               <button key={e.name} onClick={() => setSelected(e.name)} style={{ textAlign: "left", background: on ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 14, padding: "9px 12px", cursor: "pointer", color: C("chalk") }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, fontWeight: on ? 700 : 400 }}>{e.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{e.kind} · {e.count}×</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{e.kind} – {e.count}×</div>
               </button>
             );
           })}
@@ -124,7 +124,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       {stats.bestSet && (
         <div style={card}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.analyze.ex.bestSet")}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps} <span style={{ color: C("ash") }}>· {t("w.analyze.ex.e1rmLabel")} {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</span></div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps} <span style={{ color: C("ash") }}>– {t("w.analyze.ex.e1rmLabel")} {fmtWeight(stats.bestSet.e1rm, units)} – {fmtDate(stats.bestSet.when)}</span></div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{stats.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(stats.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(stats.bestE1rmAllTime, units)}</div>
         </div>
       )}
@@ -132,7 +132,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
         <div style={card}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.ex.velocityProfile")}</div>
           <div style={{ fontWeight: 800, fontSize: 22, color: "var(--lime-text)", marginTop: 8 }}>{fmtWeight(stats.velocity.e1rm, units)}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} · {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} – {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</div>
         </div>
       )}
     </>

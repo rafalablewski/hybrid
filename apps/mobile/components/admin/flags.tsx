@@ -86,7 +86,7 @@ export default function AdminFlags() {
       {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       <Mono color={palette.ash} style={{ marginBottom: 14, lineHeight: 18 }}>
-        {flags ? `${flags.length} flags` : "…"} · toggles take effect on the next client load — no deploy.
+        {flags ? `${flags.length} flags` : "…"} – toggles take effect on the next client load — no deploy.
       </Mono>
 
       {flags?.map((f) => (
@@ -99,8 +99,8 @@ export default function AdminFlags() {
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{f.label}</Text>
           <Mono color={palette.ash} style={{ marginTop: 2, lineHeight: 18 }}>{f.description}</Mono>
           <Mono color={palette.ash} style={{ marginTop: 6, fontSize: fs.micro }}>
-            {f.key} · default {f.defaultEnabled ? "on" : "off"}
-            {f.updatedByEmail ? ` · last by ${f.updatedByEmail}` : ""}
+            {f.key} – default {f.defaultEnabled ? "on" : "off"}
+            {f.updatedByEmail ? ` – last by ${f.updatedByEmail}` : ""}
           </Mono>
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 10, marginBottom: 6 }}>Audience</Text>

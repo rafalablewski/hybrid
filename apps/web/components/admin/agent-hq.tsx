@@ -169,10 +169,10 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
       {/* metrics */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: space.md }}>
-        <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total · ${stats.agents.paused} paused`} c={LIME} />
+        <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total – ${stats.agents.paused} paused`} c={LIME} />
         <Stat label="Runs today" value={stats.runs.today} sub={`${stats.runs.week} this week`} />
         <Stat label="Success rate 7d" value={stats.runs.successRate == null ? "—" : `${stats.runs.successRate}%`} c={stats.runs.successRate != null && stats.runs.successRate < 80 ? AMBER : LIME} />
-        <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today · ${fmtTok(stats.tokens.week)} tok`} />
+        <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today – ${fmtTok(stats.tokens.week)} tok`} />
         <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} c={VIOLET} />
         {stats.attention > 0 && <Stat label="Needs attention" value={stats.attention} sub="see Inbox" c={RED} />}
       </div>
@@ -186,7 +186,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
 
         {/* 7-day activity */}
         <Card>
-          <SectionHead title="Activity" kicker="runs · last 7 days" />
+          <SectionHead title="Activity" kicker="runs – last 7 days" />
           <div style={{ height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
@@ -217,8 +217,8 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                   <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? LIME : RED, flexShrink: 0, marginTop: 5 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>
-                      {r.agentName} <span style={{ color: txt(ASH), fontWeight: 400 }}>· {r.agentRole}</span>
-                      {r.delegations > 0 && <span style={{ color: txt(VIOLET), fontSize: fs.caption }}> · {r.delegations} delegated</span>}
+                      {r.agentName} <span style={{ color: txt(ASH), fontWeight: 400 }}>– {r.agentRole}</span>
+                      {r.delegations > 0 && <span style={{ color: txt(VIOLET), fontSize: fs.caption }}> – {r.delegations} delegated</span>}
                     </div>
                     <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{r.task}</Mono>
                   </div>
@@ -309,7 +309,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
           {a.name}
         </div>
         <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>
-          {a.role} · {a.model.replace("claude-", "")}{a.runtime === "managed" ? " · 🧠" : ""}
+          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – 🧠" : ""}
         </Mono>
       </div>
     </div>
@@ -491,7 +491,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <span style={{ width: 9, height: 9, borderRadius: 99, background: DOT[s.status] ?? ASH, flexShrink: 0 }} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-          <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{s.role} · {s.model.replace("claude-", "")}{s.runtime === "managed" ? " · 🧠" : ""}</Mono>
+          <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
         </div>
         <Chip c={s.authority === "executive" ? VIOLET : ASH}>{s.authority}</Chip>
       </div>
@@ -585,7 +585,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, alignItems: "baseline", marginTop: 2 }}>
         <Mono s={{ fontSize: fs.body }} c={actual ? (target != null ? (onTarget ? LIME : AMBER) : CHALK) : ASH}>
-          {actual ? `actual ${actual.value}${pct != null ? ` · ${pct}% of target` : ""}` : "no actual logged"}
+          {actual ? `actual ${actual.value}${pct != null ? ` – ${pct}% of target` : ""}` : "no actual logged"}
         </Mono>
         {actual && actual.history.length > 1 && <Spark values={[...actual.history].reverse()} up={onTarget} />}
       </div>
@@ -712,7 +712,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
                 {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={VIOLET}>est ${a.estimateUsd.toFixed(2)}</Chip>}
               </div>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 2, whiteSpace: "pre-wrap" }} c={ASH}>{a.task}</Mono>
-              <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
+              <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
               <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
@@ -755,7 +755,7 @@ function DigestCard() {
   return (
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <SectionHead title="Daily digest" kicker="last 24h · auto-posts to Slack via cron" />
+        <SectionHead title="Daily digest" kicker="last 24h – auto-posts to Slack via cron" />
         <button disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack now"}
         </button>
@@ -801,7 +801,7 @@ function MonthlyCostCard() {
   return (
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <SectionHead title="Monthly cost" kicker="real agent spend · auto-reports on the 1st" />
+        <SectionHead title="Monthly cost" kicker="real agent spend – auto-reports on the 1st" />
         <button disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack"}
         </button>
@@ -813,7 +813,7 @@ function MonthlyCostCard() {
           {[d.current, d.previous].map((m, i) => (
             <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " · MTD" : ""}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " – MTD" : ""}</Mono>
                 <a href={csv(m.month)} style={link}>⬇ CSV</a>
               </div>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, color: CHALK, margin: "4px 0" }}>{fmtUsd(m.total)}</div>
@@ -878,7 +878,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
       {list.length > 0 && (
         <Card style={{ borderLeft: `3px solid ${RED}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <SectionHead title="Notifications" kicker={`${unread} unread · ${list.length} recent`} />
+            <SectionHead title="Notifications" kicker={`${unread} unread – ${list.length} recent`} />
             {unread > 0 && (
               <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
                 Mark all read

@@ -86,7 +86,7 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
       <AStat label={t("w.home.analytics.lastReadiness")} value={lastReadiness ?? "—"} accent="blue" />
 
       {series.length > 0 && (
-        <AFrame title={`${topLift} · e1RM`} kicker={t("w.home.analytics.fromLogs")} span={2}>
+        <AFrame title={`${topLift} – e1RM`} kicker={t("w.home.analytics.fromLogs")} span={2}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={series}>
               <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />

@@ -60,7 +60,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
 
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Assign diet · daily macros</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Assign diet – daily macros</Mono>
       <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
         {field("kcal", "kcal", "kcal")}
         {field("protein", "protein", "g")}

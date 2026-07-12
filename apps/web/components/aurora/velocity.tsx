@@ -60,7 +60,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         <div style={card}>
           {head("ash", t("w.analyze.vel.est1rm"))}
           <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1.05, margin: "8px 0 2px" }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<span style={{ fontSize: fs.heading, color: C("ash") }}> kg</span></div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{resolved ? `${t("w.analyze.vel.lineCrossesPre")} ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{resolved ? `${t("w.analyze.vel.lineCrossesPre")} ${mvt} m/s – v₀ ${profile.v0.toFixed(2)} – r² ${profile.r2.toFixed(2)} – ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</div>
         </div>
         <div style={card}>
           {head("ash", t("w.analyze.vel.aiLoad"))}
@@ -79,7 +79,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
       </div>
 
       <div style={{ ...card, marginTop: 16 }}>
-        {head("ash", `${t("w.analyze.vel.profile")} · ${active}`)}
+        {head("ash", `${t("w.analyze.vel.profile")} – ${active}`)}
         <div style={{ marginTop: 10 }}>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
@@ -92,7 +92,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <Scatter data={points} dataKey="velocity" fill={LIME_HEX} line={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} · <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} – <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>
         </div>
       </div>
 

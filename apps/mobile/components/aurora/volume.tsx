@@ -137,7 +137,7 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{ml(s.muscle)}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption }}>
           <Text style={{ color: txt(C, zone.c), fontWeight: "700" }}>{s.sets} {t("w.analyze.vol.sets")}</Text>
-          <Text style={{ color: C.ash }}> · {zone.label}</Text>
+          <Text style={{ color: C.ash }}> – {zone.label}</Text>
         </Text>
       </View>
       <View style={{ height: 12, backgroundColor: C.ink, borderRadius: 6, borderWidth: 1, borderColor: C.line }}>

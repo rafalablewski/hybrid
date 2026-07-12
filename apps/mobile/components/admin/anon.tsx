@@ -83,7 +83,7 @@ export default function AdminAnon() {
             <Mono color={palette.ash} style={{ marginTop: 2 }}>
               {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
               {s.blocks.length
-                ? ` · ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}`
+                ? ` – ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}`
                 : ""}
             </Mono>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
