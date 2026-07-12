@@ -522,7 +522,10 @@ function AccessCard({ title, sub, locked, onClick }: { title: string; sub: strin
       style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", textAlign: "left", background: `linear-gradient(160deg, color-mix(in srgb, ${C("amber")} 14%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid color-mix(in srgb, ${C("amber")} 22%, ${C("line")})`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20 }}>{title}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.4, color: C("ash") }}>{sub}</span>
+      {/* sub grows so the CTA pins to the card bottom — both cards stretch to equal
+          height (grid 1fr/1fr), so the title, sub-start and CTA line up across the
+          pair no matter how many lines the copy runs */}
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.4, color: C("ash"), flexGrow: 1 }}>{sub}</span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--amber-text)", marginTop: 2 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
     </button>
   );
