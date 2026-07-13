@@ -15,6 +15,7 @@ export * from "./rtp";
 export * from "./video";
 export * from "./peaking";
 export * from "./session";
+export * from "./session-signal";
 export * from "./running";
 export * from "./records";
 export * from "./landmarks";

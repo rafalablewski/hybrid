@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, canSaveRoutine, FUNNEL } from "@hybrid/core";
+import { fs, space, canSaveRoutine, FUNNEL, sessionSignal, fmtTonnage } from "@hybrid/core";
 
-import type { SessionBlock } from "@hybrid/core";
+import type { SessionBlock, WeightUnit } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
 
@@ -16,10 +17,13 @@ const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background:
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
-/** AURORA Builder (web) — workout template editor + library, reusing the exact
- *  WorkoutBlocks editor and /api/templates persistence. */
+/** AURORA Builder (web) — the SIGNAL BOARD workout editor: a live session
+ *  pulse (est. duration, tonnage, strength ⇄ endurance balance) over the shared
+ *  WorkoutBlocks editor in signal mode (collapsible metric cards, per-set
+ *  control), persisted via /api/templates. Twin of the mobile Builder. */
 export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void }) {
   const { t: tr } = useLang();
+  const prefs = useLoggerPrefs();
   // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
   const allowedSave = canSaveRoutine(usePersona());
   const goUpgrade = () => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "builder-save" }); onUpgrade?.(); };
@@ -72,11 +76,17 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr("w.train.builder.descriptionPh")}
           style={{ ...input, width: "100%", marginBottom: 14 }} />
 
+        <SessionPulse blocks={blocks} units={prefs.units} />
+
         <WorkoutBlocks
           blocks={blocks}
           setBlocks={setBlocks}
           emptyHint={tr("w.train.builder.emptyHint")}
           reorder
+          signal
+          rirMode={prefs.rpeAsRir}
+          units={prefs.units}
+          plateCalc={prefs.plateCalc}
         />
 
         {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
@@ -111,6 +121,45 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The session pulse — the signal board's live summary strip. Every value is
+ * derived (core sessionSignal) from the blocks being edited: estimated
+ * duration, working tonnage, block count, and the strength ⇄ conditioning ⇄
+ * endurance time balance. Modality is encoded in the bar segments' colours
+ * (lime / violet / teal) — information, not decoration; no accent rails.
+ */
+function SessionPulse({ blocks, units }: { blocks: EditableBlock[]; units: WeightUnit }) {
+  const { t: tr } = useLang();
+  const sig = sessionSignal(blocks);
+  const tonnage = sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : "—";
+  const cellStyle = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "9px 12px" } as const;
+  const label = { fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), display: "block", marginBottom: 3 } as const;
+  const value = { fontFamily: "var(--font-mono)", fontSize: fs.subtitle, fontWeight: 700, color: C("chalk"), fontVariantNumeric: "tabular-nums" } as const;
+  const segs = [
+    { pct: sig.split.strength, color: C("lime"), text: `${sig.split.strength}% ${tr("w.train.signal.str")}`, textColor: "var(--lime-text)" },
+    { pct: sig.split.conditioning, color: C("violet"), text: `${sig.split.conditioning}% ${tr("w.train.signal.cond")}`, textColor: "var(--violet-text)" },
+    { pct: sig.split.endurance, color: C("blue"), text: `${sig.split.endurance}% ${tr("w.train.signal.end")}`, textColor: "var(--blue-text)" },
+  ];
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+      <div style={cellStyle}><span style={label}>{tr("w.train.signal.estTime")}</span><span style={value}>{sig.minutes} min</span></div>
+      <div style={cellStyle}><span style={label}>{tr("w.train.signal.tonnage")}</span><span style={value}>{tonnage}</span></div>
+      <div style={cellStyle}><span style={label}>{tr("w.train.signal.moves")}</span><span style={value}>{sig.moves}</span></div>
+      <div style={{ ...cellStyle, gridColumn: "1 / -1" }}>
+        <span style={label}>{tr("w.train.signal.balance")}</span>
+        <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: C("ink"), margin: "6px 0 5px" }}>
+          {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.color }} />)}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          {segs.map((s, i) => (
+            <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: s.textColor }}>{s.text}</span>
+          ))}
+        </div>
       </div>
     </div>
   );

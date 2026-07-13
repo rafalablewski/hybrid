@@ -165,6 +165,12 @@ export interface StrengthBlock {
   sets: StrengthSet[];
   note?: string;
   /**
+   * PLANNED rest between working sets, in seconds — a builder/routine
+   * prescription. Distinct from StrengthSet.rest, which is the ACTUAL rest the
+   * live logger measured before a set. Optional + additive.
+   */
+  restSec?: number;
+  /**
    * Superset group key — strength blocks sharing the same `group` are performed
    * together (no rest between exercises), shown as A1/A2/A3… The key is stable
    * (a uid), so a group survives reordering and can hold 3+ exercises.
@@ -184,6 +190,12 @@ export interface CardioBlock {
   distance?: number;
   minutes?: number;
   rpe?: number;
+  /** Treadmill incline, percent (shown only for treadmill-style activities). */
+  incline?: number;
+  /** Swim stroke — Free, Breast, Back, Fly, IM… (shown only for swim activities). */
+  stroke?: string;
+  /** Target heart-rate zone, 1–5. */
+  zone?: number;
 }
 
 export interface ConditioningBlock {
