@@ -6,52 +6,36 @@ import {
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
-  type PlanDayStatus,
   type PlanDaySession,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
 // The date-anchored replacement for the count-based "Your plan today". A
-// horizontally-scrollable strip where every day wears its status (done / missed
-// / skipped / today / upcoming / rest); tapping a day opens a state-aware card
-// that decides what you can do (Start, Do it now, View, Undo skip). Mirrors the
-// web component (aurora/week-rail.tsx) exactly — same props, same states, same
-// engine (@hybrid/core planSchedule) + usePlanOverrides for skips. Glyphs are
-// text characters (the mobile icon idiom — no SVG dep, matching kit.tsx). Renders
+// horizontally-scrollable strip flowing into a state-aware session on ONE surface
+// (no nested detail card). The rail is a single tonal system: state reads from
+// weight + glyph, not a palette. Colour is attention — chartreuse means "act now"
+// (today, start, active session), terracotta means "you missed this"; every
+// settled or upcoming day is greyscale, ranked by presence. Mirrors the web
+// component (aurora/week-rail.tsx) exactly — same props, states, engine
+// (@hybrid/core planSchedule) + usePlanOverrides for skips. Glyphs are text
+// characters (the mobile icon idiom — no SVG dep, matching kit.tsx). Renders
 // nothing (caller falls back) unless a program plan + start date resolve.
 
 type Pal = ReturnType<typeof useTheme>["palette"];
 
-const CHIP_W = 44;
-const CHIP_GAP = 6;
+const CHIP_W = 46;
+const CHIP_GAP = 4;
 const STEP = CHIP_W + CHIP_GAP;
 // Leading inset of the rail's content (clears the edge pager); the centering
 // math must add it so the selected chip lands truly centred, not ~30px off.
 const RAIL_PAD = 34;
-
-/** The accent hue that carries a status (ring / tint / text), resolved from the
- *  theme palette so web + mobile can't drift on meaning. */
-function statusHue(s: PlanDayStatus, C: Pal): string {
-  switch (s) {
-    case "done":
-      return C.lime;
-    case "missed":
-      return C.amber;
-    case "skipped":
-      return C.blue;
-    case "postponed":
-      return C.violet;
-    case "today":
-      return C.lime;
-    default: // upcoming / rest
-      return C.ash;
-  }
-}
+// How many lifts show before the fading "Show more" disclosure kicks in.
+const PEEK = 4;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
  *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
@@ -67,6 +51,27 @@ function fmtKey(key: string): string {
   const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${WD[dt.getDay()]} ${dt.getDate()} ${MO[dt.getMonth()]}`;
+}
+
+/** One rendered load step: the % is the anchor (bright), the scheme its caption. */
+type LoadStep = { load: string; scheme: string };
+/** Split a ramped-percentage prescription ("60%×3×3, 70%×3×4") into steps so the
+ *  load line can be laid out, not crammed into one mono string. Returns null for
+ *  any prescription that isn't %/BW-led (RPE, sets×reps, prose runs) — those fall
+ *  back to the raw detail text, untouched. */
+function parseLoadSteps(detail: string): LoadStep[] | null {
+  const parts = detail.split(",").map((s) => s.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const steps: LoadStep[] = [];
+  for (const p of parts) {
+    const ix = p.indexOf("×");
+    if (ix < 0) return null;
+    const load = p.slice(0, ix).trim();
+    const scheme = p.slice(ix + 1).trim();
+    if (!/^(\d+%|BW)$/.test(load)) return null;
+    steps.push({ load, scheme });
+  }
+  return steps;
 }
 
 export default function AuroraWeekRail({
@@ -151,7 +156,7 @@ export default function AuroraWeekRail({
 
       {/* the day rail — natively swipeable, with edge fades + round pagers hugging
           the edges so the strip visibly runs past them (the "swipe" affordance) */}
-      <View style={{ position: "relative", marginTop: 14, marginBottom: 4 }}>
+      <View style={{ position: "relative", marginTop: 14, marginBottom: 0 }}>
         <ScrollView
           ref={railRef}
           horizontal
@@ -159,7 +164,7 @@ export default function AuroraWeekRail({
           onScroll={onScroll}
           scrollEventThrottle={16}
           onLayout={(e) => setRailW(e.nativeEvent.layout.width)}
-          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: RAIL_PAD, paddingVertical: 4 }}
+          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: RAIL_PAD, paddingVertical: 2 }}
         >
           {schedule.days.map((d, i) => (
             <DayChip key={d.dateKey} C={C} day={d} selected={i === selectedIndex} onSelect={() => setPicked(i)} t={t} />
@@ -175,15 +180,10 @@ export default function AuroraWeekRail({
         </View>
       </View>
 
-      {/* legend */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-        <LegendDot C={C} color={C.lime} label={t("w.home.rail.done")} />
-        <LegendDot C={C} color={C.amber} label={t("w.home.rail.missed")} />
-        <LegendDot C={C} color={C.blue} label={t("w.home.rail.skipped")} />
-        <LegendDot C={C} color={C.lime} outline label={t("w.home.rail.today")} />
-      </View>
+      {/* full-bleed hairline — the only separator between week and session */}
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 14 }} />
 
-      {/* state-aware detail card */}
+      {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
         key={sel.dateKey}
         C={C}
@@ -218,96 +218,85 @@ function PagerBtn({ C, dir, label, onPress }: { C: Pal; dir: "l" | "r"; label: s
   );
 }
 
-function LegendDot({ C, color, label, outline }: { C: Pal; color: string; label: string; outline?: boolean }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginRight: 14 }}>
-      <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: outline ? "transparent" : color, borderWidth: outline ? 1 : 0, borderColor: color }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-    </View>
-  );
+/** The single glyph a day wears in the rail, by status (text chars — the mobile
+ *  idiom). Upcoming/today carry none (a plain day IS a training day; today's disc
+ *  is its own mark). done ✓, missed ✕, skipped », postponed ↦, rest ☾. */
+function chipGlyphChar(day: ScheduledDay): string | null {
+  if (day.isRest) return "☾";
+  switch (day.status) {
+    case "done": return "✓";
+    case "missed": return "✕";
+    case "skipped": return "»";
+    case "postponed": return "↦";
+    default: return null; // upcoming / today
+  }
 }
-
-/** The status glyph that sits in a chip / pill. done ✓, missed ✕, skipped »,
- *  postponed ↦ (moved to a later bar), rest ☾ — text chars (the mobile icon
- *  idiom), tinted per status. */
-function StatusGlyph({ status, color, size }: { status: PlanDayStatus; color: string; size: number }) {
-  const ch = status === "done" ? "✓" : status === "missed" ? "✕" : status === "skipped" ? "»" : status === "postponed" ? "↦" : status === "rest" ? "☾" : null;
-  if (!ch) return null;
-  return <Text style={{ fontFamily: F.mono, fontSize: size, lineHeight: size + 1, color }}>{ch}</Text>;
+function chipGlyphColor(day: ScheduledDay, C: Pal): string {
+  if (day.isRest) return C.ash;
+  if (day.status === "done") return C.chalk;
+  if (day.status === "missed") return txt(C, C.red);
+  return C.ash;
+}
+function chipNumColor(day: ScheduledDay, C: Pal): string {
+  if (day.isRest) return C.ash;
+  if (day.status === "done") return C.chalk;
+  if (day.status === "missed") return txt(C, C.red);
+  return C.ash; // upcoming / skipped / postponed
 }
 
 function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay; selected: boolean; onSelect: () => void; t: (k: string) => string }) {
-  const hue = statusHue(day.status, C);
-  const filled = day.status === "done";
-  // Border by status: skipped → dashed blue; today → lime rim; done/missed/
-  // postponed → accent tint; rest/upcoming → hairline.
-  const tinted = day.status === "done" || day.status === "missed" || day.status === "postponed";
-  const borderColor =
-    day.status === "skipped" ? `${C.blue}73` : day.status === "today" ? C.lime : tinted ? `${hue}8c` : C.line;
-  const glyphColor = filled ? C.onAccent : day.status === "rest" ? C.ash : txt(C, hue);
-
+  const isTodayDisc = day.isToday;
+  const glyph = chipGlyphChar(day);
   return (
     <Pressable
       onPress={onSelect}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
-      style={{
-        width: CHIP_W,
-        alignItems: "center",
-        gap: 4,
-        paddingTop: 8,
-        paddingBottom: 7,
-        borderRadius: 13,
-        borderWidth: 1,
-        borderStyle: day.status === "skipped" ? "dashed" : "solid",
-        borderColor,
-        backgroundColor: filled ? C.lime : tinted ? `${hue}24` : C.ink,
-        opacity: day.isRest ? 0.6 : 1,
-        transform: selected ? [{ translateY: -2 }] : undefined,
-        ...(selected
-          ? { shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 9, shadowOffset: { width: 0, height: 6 }, elevation: 5 }
-          : {}),
-      }}
+      style={{ width: CHIP_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.5 : 1 }}
     >
-      {/* chalk selection ring — an overlay so the status border stays visible */}
-      {selected && (
-        <View pointerEvents="none" style={{ position: "absolute", top: -3, left: -3, right: -3, bottom: -3, borderRadius: 16, borderWidth: 2, borderColor: C.chalk }} />
-      )}
-      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.3, textTransform: "uppercase", color: filled ? C.onAccent : C.ash }}>{day.weekdayShort}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 13, lineHeight: 14, color: filled ? C.onAccent : C.chalk, textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
-      <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
-        {day.status === "done" || day.status === "missed" || day.status === "skipped" || day.status === "postponed" || day.isRest ? (
-          <StatusGlyph status={day.isRest ? "rest" : day.status} color={glyphColor} size={day.status === "skipped" ? 11 : 10} />
+      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
+          hairline disc (preview cue); otherwise a bare tonal number. */}
+      <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
+        {isTodayDisc ? (
+          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.onAccent }}>{day.dayOfMonth}</Text>
+          </View>
+        ) : selected ? (
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{day.dayOfMonth}</Text>
+          </View>
         ) : (
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: day.isToday ? C.lime : "transparent", borderWidth: day.isToday ? 0 : 1.5, borderColor: C.ash }} />
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: chipNumColor(day, C), textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
         )}
+      </View>
+      <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
+        {glyph ? <Text style={{ fontFamily: F.mono, fontSize: day.status === "skipped" ? 11 : 10, lineHeight: 12, color: chipGlyphColor(day, C), opacity: day.status === "done" ? 0.7 : 1 }}>{glyph}</Text> : null}
       </View>
     </Pressable>
   );
 }
 
-function StatePill({ C, status, t }: { C: Pal; status: PlanDayStatus; t: (k: string) => string }) {
-  const hue = statusHue(status, C);
-  const isUpcoming = status === "upcoming";
-  const color = status === "rest" || isUpcoming ? C.ash : txt(C, hue);
+function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; session?: string | null; detail: string; note?: string | null }; showSession: boolean; first: boolean }) {
+  const steps = parseLoadSteps(r.detail);
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-        backgroundColor: isUpcoming ? "transparent" : `${hue}24`,
-        borderWidth: 1,
-        borderColor: isUpcoming ? C.line : `${hue}66`,
-        borderRadius: RADIUS.pill,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-      }}
-    >
-      {status === "today" && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.lime }} />}
-      <StatusGlyph status={status} color={color} size={status === "skipped" ? 11 : 9} />
-      <Text style={{ fontFamily: F.mono, fontSize: 9.5, fontWeight: "600", letterSpacing: 1, textTransform: "uppercase", color }}>{t(`w.home.rail.${status}`)}</Text>
+    <View style={{ paddingVertical: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginBottom: 8 }}>
+        {showSession && r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}
+        {r.name}
+        {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}
+      </Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+        {steps ? steps.map((s, i) => (
+          <View key={i} style={{ flexDirection: "row", alignItems: "baseline", marginRight: 18, marginBottom: 4 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.load}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: 6 }}>{s.scheme}</Text>
+          </View>
+        )) : (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{r.detail}</Text>
+        )}
+      </View>
     </View>
   );
 }
@@ -326,9 +315,8 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
 }) {
   const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
   // Group the day into sessions so a multi-session day (AM + PM, or several
-  // untimed trainings) draws one TAB per session — the title stays welded to its
-  // own lifts. Single-session days fall back to the day's flat rows/blocks. The
-  // detail card is keyed by dateKey, so switching days resets the active tab.
+  // untimed trainings) draws one tab per session — the title stays welded to its
+  // own lifts. Single-session days fall back to the day's flat rows/blocks.
   const sessions = day.sessions ?? [];
   const multi = sessions.length > 1;
   const [active, setActive] = useState(0);
@@ -337,112 +325,119 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
   const rows = activeSession?.rows ?? day.rows;
   const startBlocks = activeSession?.blocks ?? day.blocks;
 
+  // Fading show-more disclosure — reset whenever the visible session changes.
+  const [open, setOpen] = useState(false);
+  useEffect(() => { setOpen(false); }, [activeIdx, day.dateKey]);
+  const hasMore = rows.length > PEEK;
+  const shown = open || !hasMore ? rows : rows.slice(0, PEEK);
+
+  if (day.isRest) {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 24, lineHeight: 26, color: C.ash }}>☾</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 17 }}>{t("w.home.rail.restNote")}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16, backgroundColor: C.ink }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
-        <StatePill C={C} status={day.status} t={t} />
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 20, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{day.title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
       </View>
 
-      {day.isRest ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 20, lineHeight: 22, color: C.ash }}>☾</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 17 }}>{t("w.home.rail.restNote")}</Text>
-          </View>
-        </View>
-      ) : (
-        <>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 20, letterSpacing: -0.4, color: C.chalk }}>{day.title}</Text>
-          {day.status === "postponed" ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 5, lineHeight: 17 }}>
-              {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
-            </Text>
-          ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t(`w.home.rail.${day.status}Note`)}</Text>
-          ) : null}
-          {/* session tabs — only when the day holds more than one training. The
-              tab label is the plan's time-of-day (AM/PM) or "Training N". */}
-          {multi && (
-            <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 5, marginTop: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 4 }}>
-              {sessions.map((s, i) => {
-                const on = i === activeIdx;
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={() => setActive(i)}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: on }}
-                    accessibilityLabel={sessionLabel(s, t)}
-                    style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 8, borderRadius: 9, backgroundColor: on ? `${C.lime}24` : "transparent" }}
-                  >
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11.5, fontWeight: "600", letterSpacing: 0.3, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-          <View style={{ marginTop: 11 }}>
-            {rows.map((r, i) => (
-              <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.md, paddingTop: 6, marginTop: i ? 6 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flex: 1 }}>
-                  {!multi && r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}
-                  {r.name}
-                  {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}
-                </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
-              </View>
-            ))}
-          </View>
+      {day.status === "postponed" ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>
+          {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
+        </Text>
+      ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: day.status === "missed" ? txt(C, C.red) : C.ash, marginTop: 5, lineHeight: 17 }}>{t(`w.home.rail.${day.status}Note`)}</Text>
+      ) : null}
 
-          {/* actions by state */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-            {day.status === "today" && (
-              <>
-                <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(startBlocks)} />
-                <GhostBtn C={C} color={C.blue} label={t("w.home.rail.skip")} onPress={onSkip} />
-                {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
-              </>
-            )}
-            {day.status === "missed" && (
-              <>
-                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
-                <GhostBtn C={C} color={C.blue} label={t("w.home.rail.skip")} onPress={onSkip} />
-                {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
-              </>
-            )}
-            {day.status === "skipped" && <GhostBtn C={C} color={C.ash} label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
-            {day.status === "upcoming" && (
-              <>
-                <GhostBtn C={C} color={C.lime} label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} flex={2} />
-                {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
-              </>
-            )}
-            {day.status === "postponed" && (
-              <>
-                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
-                <GhostBtn C={C} color={C.ash} label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
-              </>
-            )}
-            {day.status === "done" && <GhostBtn C={C} color={C.ash} label={t("w.home.rail.viewHistory")} onPress={onHistory} flex1 />}
-          </View>
-        </>
+      {/* session toggle — an underlined text switch (no boxed segment), only when
+          the day holds more than one training. Label = time-of-day or "Training N". */}
+      {multi && (
+        <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20, marginTop: 14, marginBottom: 2 }}>
+          {sessions.map((s, i) => {
+            const on = i === activeIdx;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => setActive(i)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={sessionLabel(s, t)}
+                style={{ paddingBottom: 7, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.4, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       )}
+
+      <View style={{ position: "relative", marginTop: multi ? 4 : 8 }}>
+        {shown.map((r, i) => (
+          <LiftRow key={i} C={C} r={r} showSession={!multi} first={i === 0} />
+        ))}
+        {hasMore && !open && (
+          <LinearGradient pointerEvents="none" colors={[`${C.ink2}00`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 40 }} />
+        )}
+      </View>
+      {hasMore && (
+        <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.4, color: C.ash }}>{t(open ? "w.home.rail.showLess" : "w.home.rail.showMore")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{open ? "⌃" : "⌄"}</Text>
+        </Pressable>
+      )}
+
+      {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 16 }}>
+        {day.status === "today" && (
+          <>
+            <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(startBlocks)} />
+            <IconBtn C={C} glyph="»" label={t("w.home.rail.skip")} onPress={onSkip} />
+            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+          </>
+        )}
+        {day.status === "missed" && (
+          <>
+            <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
+            <IconBtn C={C} glyph="»" label={t("w.home.rail.skip")} onPress={onSkip} />
+            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+          </>
+        )}
+        {day.status === "skipped" && <GhostBtn C={C} tone="neutral" label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
+        {day.status === "upcoming" && (
+          <>
+            <GhostBtn C={C} tone="lime" label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} flex={1} />
+            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+          </>
+        )}
+        {day.status === "postponed" && (
+          <>
+            <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
+            <GhostBtn C={C} tone="neutral" label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
+          </>
+        )}
+        {day.status === "done" && <GhostBtn C={C} tone="neutral" label={t("w.home.rail.viewHistory")} onPress={onHistory} flex1 />}
+      </View>
 
       {/* Sessions postponed ONTO this date — a light catch-up list. */}
       {day.postponedIn.length > 0 && (
-        <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, C.violet), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</Text>
+        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.home.rail.catchUp")}</Text>
           {day.postponedIn.map((it, i) => (
             <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
               <View style={{ flex: 1 }}>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
               </View>
-              <GhostBtn C={C} color={C.violet} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
+              <GhostBtn C={C} tone="neutral" label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
             </View>
           ))}
         </View>
@@ -453,13 +448,30 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
 
 function PrimaryBtn({ C, label, onPress }: { C: Pal; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ flex: 2, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{label}</Text>
+    <Pressable onPress={onPress} style={{ flex: 2, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center" }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{label}</Text>
     </Pressable>
   );
 }
 
-function GhostBtn({ C, color, label, onPress, flex1, flex, auto }: { C: Pal; color: string; label: string; onPress: () => void; flex1?: boolean; flex?: number; auto?: boolean }) {
+/** Compact glyph button for rare secondary actions (skip / postpone). */
+function IconBtn({ C, glyph, label, onPress }: { C: Pal; glyph: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{ width: 48, height: 48, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
+    >
+      <Text style={{ fontFamily: F.mono, fontSize: 16, lineHeight: 18, color: C.ash }}>{glyph}</Text>
+    </Pressable>
+  );
+}
+
+/** Secondary text pill. tone "lime" = the outlined "go" (start early); "neutral"
+ *  = greyscale (undo / history / unpostpone). No second accent colour. */
+function GhostBtn({ C, tone, label, onPress, flex1, flex, auto }: { C: Pal; tone: "lime" | "neutral"; label: string; onPress: () => void; flex1?: boolean; flex?: number; auto?: boolean }) {
+  const lime = tone === "lime";
   return (
     <Pressable
       onPress={onPress}
@@ -468,14 +480,14 @@ function GhostBtn({ C, color, label, onPress, flex1, flex, auto }: { C: Pal; col
         minWidth: flex1 || auto ? undefined : 0,
         backgroundColor: "transparent",
         borderWidth: 1,
-        borderColor: `${color}73`,
+        borderColor: lime ? `${C.lime}73` : C.line,
         borderRadius: RADIUS.pill,
-        paddingVertical: auto ? 8 : 11,
+        paddingVertical: auto ? 8 : lime ? 12 : 12,
         paddingHorizontal: auto ? 14 : undefined,
         alignItems: "center",
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, color) }}>{label}</Text>
+      <Text style={{ fontFamily: lime ? F.bold : F.mono, fontSize: lime ? fs.bodyLg : 11, color: lime ? txt(C, C.lime) : C.ash }}>{label}</Text>
     </Pressable>
   );
 }

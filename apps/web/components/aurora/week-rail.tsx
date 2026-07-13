@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import {
   planSchedule,
   fs,
-  space,
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
@@ -16,39 +15,24 @@ import { useLang } from "@/lib/i18n";
 
 // ── AURORA Week rail (web) ──────────────────────────────────────────────────
 // The date-anchored replacement for the count-based "Your plan today". A
-// scrollable seven-day strip where every day wears its status (done / missed /
-// skipped / today / upcoming / rest); tapping a day opens a state-aware card that
-// decides what you can do (Start, Do it now, View, Undo skip). Pure data comes
-// from @hybrid/core's planSchedule; skips persist via usePlanOverrides. Mirrored
-// on mobile (aurora/week-rail.tsx). Renders nothing (caller falls back) unless a
+// scrollable seven-day strip flowing into a state-aware session on ONE surface
+// (no nested detail card). The rail is a single tonal system: state reads from
+// weight + glyph, not a palette. Colour is attention — chartreuse means "act
+// now" (today, start, active tab), terracotta means "you missed this"; every
+// settled or upcoming day is greyscale, ranked by presence. Pure data comes from
+// @hybrid/core's planSchedule; skips persist via usePlanOverrides. Mirrored on
+// mobile (aurora/week-rail.tsx). Renders nothing (caller falls back) unless a
 // program plan + start date resolve a schedule.
 
 const C = (v: string) => `var(--color-${v})`;
 
-type Palette = { text: string; ring: string; soft: string };
-function statusPalette(s: PlanDayStatus): Palette {
-  switch (s) {
-    case "done":
-      return { text: "var(--lime-text)", ring: C("lime"), soft: `color-mix(in srgb, ${C("lime")} 16%, transparent)` };
-    case "missed":
-      return { text: "var(--amber-text)", ring: C("amber"), soft: `color-mix(in srgb, ${C("amber")} 14%, transparent)` };
-    case "skipped":
-      return { text: "var(--blue-text)", ring: C("blue"), soft: `color-mix(in srgb, ${C("blue")} 12%, transparent)` };
-    case "postponed":
-      return { text: "var(--violet-text)", ring: C("violet"), soft: `color-mix(in srgb, ${C("violet")} 13%, transparent)` };
-    case "today":
-      return { text: "var(--lime-text)", ring: C("lime"), soft: `color-mix(in srgb, ${C("lime")} 12%, transparent)` };
-    case "rest":
-      return { text: C("ash"), ring: C("line"), soft: "transparent" };
-    default: // upcoming
-      return { text: C("chalk"), ring: C("line"), soft: "transparent" };
-  }
-}
+// How many lifts show before the fading "Show more" disclosure kicks in.
+const PEEK = 4;
 
-const Check = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
+const Check = ({ c = "currentColor", s = 11 }: { c?: string; s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 6.3 5 8.6 9.5 3.4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
 );
-const Cross = ({ c = "currentColor", s = 10 }: { c?: string; s?: number }) => (
+const Cross = ({ c = "currentColor", s = 9 }: { c?: string; s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 12 12" fill="none" aria-hidden><path d="M3 3l6 6M9 3l-6 6" stroke={c} strokeWidth="1.8" strokeLinecap="round" /></svg>
 );
 const SkipGlyph = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
@@ -57,14 +41,43 @@ const SkipGlyph = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) =
 const Moon = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 14 14" fill="none" aria-hidden><path d="M11 8.2A4.2 4.2 0 1 1 5.8 3a3.3 3.3 0 0 0 5.2 5.2Z" stroke={c} strokeWidth="1.2" strokeLinejoin="round" /></svg>
 );
-const PostponeGlyph = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
-  <svg width={s} height={s} viewBox="0 0 14 12" fill="none" aria-hidden><path d="M2 6h8M6.5 2.5 10.5 6l-4 3.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M12.5 2v8" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></svg>
+const PostponeGlyph = ({ c = "currentColor", s = 16 }: { c?: string; s?: number }) => (
+  <svg width={s} height={s * 0.86} viewBox="0 0 14 12" fill="none" aria-hidden><path d="M2 6h8M6.5 2.5 10.5 6l-4 3.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M12.5 2v8" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></svg>
 );
 const Chevron = ({ dir }: { dir: "l" | "r" }) => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
     <path d={dir === "l" ? "M7.5 3 4 6l3.5 3" : "M4.5 3 8 6l-3.5 3"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+const Caret = ({ open }: { open: boolean }) => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>
+    <path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** The single glyph a day wears in the rail, by status. Scheduled days upcoming
+ *  carry NO mark (a plain day is a training day — a dot there says nothing);
+ *  today carries none either (its chartreuse disc is the mark). */
+function chipGlyph(day: ScheduledDay): React.ReactNode {
+  if (day.isRest) return <Moon c={C("ash")} />;
+  switch (day.status) {
+    case "done": return <Check c={C("chalk")} s={10} />;
+    case "missed": return <Cross c="var(--red-text)" s={9} />;
+    case "skipped": return <SkipGlyph c={C("ash")} s={11} />;
+    case "postponed": return <PostponeGlyph c={C("ash")} s={12} />;
+    default: return null; // upcoming / today
+  }
+}
+
+/** The number's tone — greyscale, ranked by presence; red only for a miss. */
+function chipNumColor(day: ScheduledDay): string {
+  if (day.isRest) return C("ash");
+  switch (day.status) {
+    case "done": return C("chalk");
+    case "missed": return "var(--red-text)";
+    default: return C("ash"); // upcoming / skipped / postponed
+  }
+}
 
 export default function AuroraWeekRail({
   planId,
@@ -125,10 +138,10 @@ export default function AuroraWeekRail({
 
       {/* the seven-day rail — flanked by round pagers that hug the edges, with an
           edge fade so the strip visibly runs past them (swipe-forward affordance) */}
-      <div style={{ position: "relative", margin: "14px 0 4px" }}>
+      <div style={{ position: "relative", margin: "14px 0 0" }}>
         <button onClick={() => pageBy(-1)} aria-label={t("w.home.rail.earlier")} style={pagerEdge("left")}><Chevron dir="l" /></button>
         <div style={{ WebkitMaskImage: RAIL_FADE, maskImage: RAIL_FADE }}>
-          <div ref={railRef} style={{ display: "flex", gap: 6, overflowX: "auto", scrollSnapType: "x proximity", padding: "4px 34px 8px", scrollbarWidth: "none" }}>
+          <div ref={railRef} style={{ display: "flex", gap: 4, overflowX: "auto", scrollSnapType: "x proximity", padding: "2px 34px 4px", scrollbarWidth: "none" }}>
             {schedule.days.map((d, i) => (
               <DayChip
                 key={d.dateKey}
@@ -144,15 +157,10 @@ export default function AuroraWeekRail({
         <button onClick={() => pageBy(1)} aria-label={t("w.home.rail.later")} style={pagerEdge("right")}><Chevron dir="r" /></button>
       </div>
 
-      {/* legend */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", margin: "2px 2px 0" }}>
-        <LegendDot color={C("lime")} label={t("w.home.rail.done")} />
-        <LegendDot color={C("amber")} label={t("w.home.rail.missed")} />
-        <LegendDot color={C("blue")} label={t("w.home.rail.skipped")} />
-        <LegendDot color={C("lime")} outline label={t("w.home.rail.today")} />
-      </div>
+      {/* full-bleed hairline — the only separator between week and session */}
+      <div style={{ height: 1, background: C("line"), margin: "16px -22px 14px" }} />
 
-      {/* state-aware detail card */}
+      {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
         key={sel.dateKey}
         day={sel}
@@ -176,62 +184,37 @@ export default function AuroraWeekRail({
 const RAIL_FADE = "linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%)";
 // A round pager that hugs a rail edge (vertically centred on the chip band).
 const pagerEdge = (side: "left" | "right"): CSSProperties => ({
-  position: "absolute", top: "calc(50% - 2px)", [side]: -4, transform: "translateY(-50%)", zIndex: 3,
+  position: "absolute", top: "calc(50% - 1px)", [side]: -4, transform: "translateY(-50%)", zIndex: 3,
   width: 32, height: 32, borderRadius: "50%", background: `color-mix(in srgb, ${C("ink")} 82%, #000)`,
   border: `1px solid ${C("line")}`, color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer",
   boxShadow: "0 4px 12px -4px rgba(0,0,0,.6)",
 });
 
-function LegendDot({ color, label, outline }: { color: string; label: string; outline?: boolean }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>
-      <span style={{ width: 9, height: 9, borderRadius: 3, background: outline ? "transparent" : color, border: outline ? `1px solid ${color}` : "none" }} />
-      {label}
-    </span>
-  );
-}
-
 function DayChip({ day, selected, onSelect, innerRef, t }: { day: ScheduledDay; selected: boolean; onSelect: () => void; innerRef: (el: HTMLButtonElement | null) => void; t: (k: string) => string }) {
-  const p = statusPalette(day.status);
-  const filled = day.status === "done";
+  const isTodayDisc = day.isToday;
+  const numColor = chipNumColor(day);
+  // The number lives in a 28px slot. Today = a filled chartreuse disc (the one
+  // point of focus). A tapped, non-today day = a hairline disc (preview cue).
+  const numInner: CSSProperties = isTodayDisc
+    ? { width: 28, height: 28, borderRadius: 999, background: C("lime"), color: "var(--on-accent)", fontWeight: 800, fontSize: 14, display: "grid", placeItems: "center" }
+    : selected
+      ? { width: 28, height: 28, borderRadius: 999, border: `1px solid color-mix(in srgb, ${C("chalk")} 32%, ${C("line")})`, color: C("chalk"), fontWeight: 700, fontSize: 15, display: "grid", placeItems: "center" }
+      : { fontWeight: 700, fontSize: 15, color: numColor, textDecoration: day.status === "skipped" ? "line-through" : "none" };
+
   const base: CSSProperties = {
-    flex: "0 0 44px", scrollSnapAlign: "center", cursor: "pointer",
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-    padding: "8px 0 7px", borderRadius: 13, position: "relative",
-    border: `1px solid ${day.status === "skipped" ? "transparent" : p.ring === C("line") ? C("line") : `color-mix(in srgb, ${p.ring} 55%, transparent)`}`,
-    background: filled ? C("lime") : p.soft || C("ink"),
-    color: filled ? "var(--on-accent)" : p.text,
-    opacity: day.isRest ? 0.6 : 1,
-    boxShadow: selected ? `0 8px 18px -8px rgba(0,0,0,.6), 0 0 0 2px ${C("chalk")}` : day.isToday ? `0 0 0 1px ${C("lime")}` : "none",
-    transform: selected ? "translateY(-2px)" : "none",
-    transition: "transform .16s ease, box-shadow .16s ease",
-    ...(day.status === "skipped" ? { borderStyle: "dashed", borderColor: `color-mix(in srgb, ${C("blue")} 45%, transparent)` } : {}),
+    flex: "0 0 46px", scrollSnapAlign: "center", cursor: "pointer",
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+    padding: "6px 0 5px", border: "none", background: "transparent",
+    opacity: day.isRest ? 0.5 : 1,
   };
   return (
     <button ref={innerRef} onClick={onSelect} aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`} aria-pressed={selected} style={base}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".04em", textTransform: "uppercase", opacity: 0.8 }}>{day.weekdayShort}</span>
-      <span style={{ fontWeight: 800, fontSize: 13, lineHeight: 1, textDecoration: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</span>
-      <span style={{ height: 12, display: "grid", placeItems: "center" }}>
-        {day.status === "done" ? <Check c="var(--on-accent)" /> :
-         day.status === "missed" ? <Cross /> :
-         day.status === "skipped" ? <SkipGlyph /> :
-         day.status === "postponed" ? <PostponeGlyph /> :
-         day.isRest ? <Moon c={C("ash")} /> :
-         <span style={{ width: 6, height: 6, borderRadius: "50%", background: day.isToday ? C("lime") : "transparent", border: day.isToday ? "none" : `1.5px solid ${C("ash")}` }} />}
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), opacity: 0.8 }}>{day.weekdayShort}</span>
+      <span style={{ height: 28, display: "grid", placeItems: "center", fontFamily: "var(--font-display)" }}>
+        <span style={numInner}>{day.dayOfMonth}</span>
       </span>
+      <span style={{ height: 12, display: "grid", placeItems: "center", color: C("ash"), opacity: day.status === "done" ? 0.7 : 1 }}>{chipGlyph(day)}</span>
     </button>
-  );
-}
-
-function StatePill({ status, t }: { status: PlanDayStatus; t: (k: string) => string }) {
-  const p = statusPalette(status);
-  const icon = status === "done" ? <Check s={9} /> : status === "missed" ? <Cross s={8} /> : status === "skipped" ? <SkipGlyph s={10} /> : status === "postponed" ? <PostponeGlyph s={11} /> : status === "rest" ? <Moon s={10} /> : null;
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: p.text, background: status === "upcoming" ? "transparent" : p.soft, border: `1px solid ${status === "upcoming" ? C("line") : `color-mix(in srgb, ${p.ring} 40%, transparent)`}`, borderRadius: 999, padding: "4px 10px" }}>
-      {status === "today" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: C("lime") }} />}
-      {icon}
-      {t(`w.home.rail.${status}`)}
-    </span>
   );
 }
 
@@ -251,6 +234,50 @@ function sessionLabel(s: PlanDaySession, t: (k: string) => string): string {
   return s.timeOfDay ?? `${t("w.home.rail.session")} ${s.ordinal}`;
 }
 
+/** One rendered load step: the % is the anchor (bright), the scheme its caption. */
+type LoadStep = { load: string; scheme: string };
+/** Split a ramped-percentage prescription ("60%×3×3, 70%×3×4") into steps so the
+ *  load line can be laid out, not crammed into one mono string. Returns null for
+ *  any prescription that isn't %/BW-led (RPE, sets×reps, prose runs) — those fall
+ *  back to the raw detail text, untouched. */
+function parseLoadSteps(detail: string): LoadStep[] | null {
+  const parts = detail.split(",").map((s) => s.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const steps: LoadStep[] = [];
+  for (const p of parts) {
+    const ix = p.indexOf("×");
+    if (ix < 0) return null;
+    const load = p.slice(0, ix).trim();
+    const scheme = p.slice(ix + 1).trim();
+    if (!/^(\d+%|BW)$/.test(load)) return null;
+    steps.push({ load, scheme });
+  }
+  return steps;
+}
+
+function LiftRow({ r, showSession, first }: { r: { name: string; session?: string | null; detail: string; note?: string | null }; showSession: boolean; first: boolean }) {
+  const steps = parseLoadSteps(r.detail);
+  return (
+    <div style={{ padding: "12px 0", borderTop: first ? "none" : `1px solid ${C("line")}` }}>
+      <div style={{ fontWeight: 600, fontSize: fs.bodyLg, letterSpacing: "-.01em", marginBottom: 8 }}>
+        {showSession && r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}
+        {r.name}
+        {r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontWeight: 400 }}> ({r.note})</span> : null}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 18px" }}>
+        {steps ? steps.map((s, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
+            <b style={{ fontWeight: 600, fontSize: fs.bodyLg, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{s.load}</b>
+            <i style={{ fontFamily: "var(--font-mono)", fontStyle: "normal", fontSize: fs.micro, color: C("ash") }}>{s.scheme}</i>
+          </span>
+        )) : (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{r.detail}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
   onStart: (b?: SessionBlock[]) => void;
@@ -263,9 +290,8 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
 }) {
   const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
   // Group the day into sessions so a multi-session day (AM + PM, or several
-  // untimed trainings) draws one TAB per session — the title stays welded to its
-  // own lifts. Single-session days fall back to the day's flat rows/blocks. The
-  // detail card is keyed by dateKey, so switching days resets the active tab.
+  // untimed trainings) draws one tab per session — the title stays welded to its
+  // own lifts. Single-session days fall back to the day's flat rows/blocks.
   const sessions = day.sessions ?? [];
   const multi = sessions.length > 1;
   const [active, setActive] = useState(0);
@@ -274,93 +300,105 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
   const rows = activeSession?.rows ?? day.rows;
   const startBlocks = activeSession?.blocks ?? day.blocks;
 
+  // Fading show-more disclosure — reset whenever the visible session changes.
+  const [open, setOpen] = useState(false);
+  useEffect(() => { setOpen(false); }, [activeIdx, day.dateKey]);
+  const hasMore = rows.length > PEEK;
+  const shown = open || !hasMore ? rows : rows.slice(0, PEEK);
+
+  if (day.isRest) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+        <span style={{ color: C("ash"), display: "grid", placeItems: "center", flexShrink: 0 }}><Moon c={C("ash")} s={26} /></span>
+        <div>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 18, padding: 16, background: C("ink") }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
-        <StatePill status={day.status} t={t} />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap" }}>{dateLine}</span>
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em" }}>{day.title}</div>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
       </div>
 
-      {day.isRest ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${C("ash")} 12%, transparent)`, border: `1px solid ${C("line")}`, color: C("ash"), display: "grid", placeItems: "center", flexShrink: 0 }}><Moon c={C("ash")} s={20} /></span>
-          <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16 }}>{t("w.home.rail.restDay")}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
-          </div>
+      {day.status === "postponed" ? (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
+          {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
         </div>
-      ) : (
-        <>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em" }}>{day.title}</div>
-          {day.status === "postponed" ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--violet-text)", margin: "5px 0 0", lineHeight: 1.5 }}>
-              {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
-            </div>
-          ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
-              {t(`w.home.rail.${day.status}Note`)}
-            </div>
-          ) : null}
-          {/* session tabs — only when the day holds more than one training. The
-              tab label is the plan's time-of-day (AM/PM) or "Training N". */}
-          {multi && (
-            <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 5, marginTop: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: 4 }}>
-              {sessions.map((s, i) => {
-                const on = i === activeIdx;
-                return (
-                  <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
-                    style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: "none", background: on ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : "transparent", color: on ? "var(--lime-text)" : C("ash"), fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600, letterSpacing: ".03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {sessionLabel(s, t)}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: space.xs, marginTop: 11 }}>
-            {rows.map((r, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                <span style={{ fontWeight: 600, fontSize: fs.body }}>{!multi && r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
-              </div>
-            ))}
-          </div>
+      ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.status === "missed" ? "var(--red-text)" : C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
+          {t(`w.home.rail.${day.status}Note`)}
+        </div>
+      ) : null}
 
-          {/* actions by state */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-            {(day.status === "today" || day.status === "missed") && (<>
-              <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
-              <button onClick={onSkip} style={ghostBtn(C("blue"))}>{t("w.home.rail.skip")}</button>
-              {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
-            </>)}
-            {day.status === "upcoming" && (<>
-              <button onClick={() => onStart(startBlocks)} style={{ ...ghostBtn(C("lime")), flex: 2 }}>{t("w.home.rail.startEarly")}</button>
-              {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
-            </>)}
-            {day.status === "skipped" && (
-              <button onClick={onUnskip} style={{ ...ghostBtn(C("ash")), flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
-            )}
-            {day.status === "postponed" && (<>
-              <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
-              <button onClick={onUnskip} style={ghostBtn(C("ash"))}>{t("w.home.rail.unpostpone")}</button>
-            </>)}
-            {day.status === "done" && (
-              <button onClick={onHistory} style={{ ...ghostBtn(C("ash")), flex: 1 }}>{t("w.home.rail.viewHistory")}</button>
-            )}
-          </div>
-        </>
+      {/* session toggle — an underlined text switch (no boxed segment), only when
+          the day holds more than one training. Label = time-of-day or "Training N". */}
+      {multi && (
+        <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 20, margin: "14px 0 2px" }}>
+          {sessions.map((s, i) => {
+            const on = i === activeIdx;
+            return (
+              <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 7px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".05em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
+                {sessionLabel(s, t)}
+                {on && <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: C("lime"), borderRadius: 2 }} />}
+              </button>
+            );
+          })}
+        </div>
       )}
+
+      <div style={{ position: "relative", marginTop: multi ? 4 : 8 }}>
+        {shown.map((r, i) => (
+          <LiftRow key={i} r={r} showSession={!multi} first={i === 0} />
+        ))}
+        {hasMore && (
+          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".04em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {!open && <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: "100%", height: 40, pointerEvents: "none", background: `linear-gradient(to top, ${C("ink2")} 14%, transparent)` }} />}
+            {t(open ? "w.home.rail.showLess" : "w.home.rail.showMore")}
+            <Caret open={open} />
+          </button>
+        )}
+      </div>
+
+      {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 9, marginTop: 16 }}>
+        {(day.status === "today" || day.status === "missed") && (<>
+          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
+          <button onClick={onSkip} aria-label={t("w.home.rail.skip")} title={t("w.home.rail.skip")} style={iconBtn}><SkipGlyph /></button>
+          {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
+        </>)}
+        {day.status === "upcoming" && (<>
+          <button onClick={() => onStart(startBlocks)} style={limeGhostBtn}>{t("w.home.rail.startEarly")}</button>
+          {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
+        </>)}
+        {day.status === "skipped" && (
+          <button onClick={onUnskip} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
+        )}
+        {day.status === "postponed" && (<>
+          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
+          <button onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
+        </>)}
+        {day.status === "done" && (
+          <button onClick={onHistory} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.viewHistory")}</button>
+        )}
+      </div>
 
       {/* Sessions postponed ONTO this date — a light catch-up list. */}
       {day.postponedIn.length > 0 && (
-        <div style={{ marginTop: 14, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--violet-text)", marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
+        <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
           {day.postponedIn.map((it, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
               </span>
-              <button onClick={() => onStart(it.blocks)} style={{ ...ghostBtn(C("violet")), flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+              <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
             </div>
           ))}
         </div>
@@ -369,7 +407,11 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
   );
 }
 
-const primaryBtn: CSSProperties = { flex: 2, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, cursor: "pointer" };
-function ghostBtn(color: string): CSSProperties {
-  return { flex: 1, background: "transparent", border: `1px solid color-mix(in srgb, ${color} 45%, ${C("line")})`, color, borderRadius: 999, padding: "11px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" };
-}
+const primaryBtn: CSSProperties = { flex: 2, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, letterSpacing: "-.01em", cursor: "pointer" };
+// Start-early: still a "go" action, so it keeps the accent — but outlined, so it
+// doesn't out-shout starting today. The only other place chartreuse appears.
+const limeGhostBtn: CSSProperties = { flex: 1, background: "transparent", border: `1px solid color-mix(in srgb, ${C("lime")} 45%, ${C("line")})`, color: "var(--lime-text)", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" };
+// Neutral secondary — undo / history / unpostpone. No second accent colour.
+const neutralGhostBtn: CSSProperties = { flex: 1, background: "transparent", border: `1px solid ${C("line")}`, color: C("ash"), borderRadius: 999, padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" };
+// Compact glyph button for rare secondary actions (skip / postpone).
+const iconBtn: CSSProperties = { flex: "0 0 auto", width: 48, height: 48, borderRadius: 999, background: "transparent", border: `1px solid ${C("line")}`, color: C("ash"), display: "grid", placeItems: "center", cursor: "pointer" };
