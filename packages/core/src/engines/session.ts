@@ -196,6 +196,8 @@ export interface CardioBlock {
   stroke?: string;
   /** Target heart-rate zone, 1–5. */
   zone?: number;
+  /** Elevation gain, metres (outdoor climb sports — runs, rides, hikes). */
+  elevation?: number;
 }
 
 export interface ConditioningBlock {

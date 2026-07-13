@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, cardioExtras, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
@@ -306,7 +306,7 @@ export default function WorkoutBlocks({
     );
   const setCondNum = (
     u: string,
-    key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance" | "incline" | "zone",
+    key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance" | "incline" | "zone" | "elevation",
     val: string,
   ) => {
     setCondDrafts((d) => ({ ...d, [`${u}:${key}`]: val }));
@@ -632,24 +632,30 @@ export default function WorkoutBlocks({
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
               </div>
               )}
-              {/* Modality extras — the fields follow the activity: incline for
-                  treadmill-style work, stroke for swims, HR zone for any cardio.
-                  A squat never sees pace; a swim never sees incline. */}
+              {/* Modality extras — the exercise-profile model decides the
+                  fields: incline for treadmill-style work, stroke for swims,
+                  elevation gain for outdoor climb sports, HR zone for any
+                  cardio. A squat never sees pace; a swim never sees incline. */}
               {(() => {
-                const ext = cardioExtras(b.name);
-                const cols = 1 + (ext.incline ? 1 : 0) + (ext.stroke ? 1 : 0);
+                const has = (f: string) => exerciseProfile(b.name).fields.includes(f as never);
+                const extras: { key: "incline" | "elevation" | "zone"; label: string; ph: string }[] = [
+                  ...(has("incline") ? [{ key: "incline" as const, label: t("w.train.blocks.inclinePct"), ph: "1.5" }] : []),
+                  ...(has("elevation") ? [{ key: "elevation" as const, label: t("w.train.blocks.elevation"), ph: "120" }] : []),
+                  { key: "zone" as const, label: t("w.train.blocks.zone"), ph: "2" },
+                ];
+                const stroke = has("stroke");
                 return (
-                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: space.xs, marginTop: 8 }}>
-                    {ext.incline && <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.inclinePct")}</Mono>}
-                    {ext.stroke && <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.stroke")}</Mono>}
-                    <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.zone")}</Mono>
-                    {ext.incline && (
-                      <input value={condVal(b.uid, "incline", b.incline)} onChange={(e) => setCondNum(b.uid, "incline", e.target.value)} placeholder="1.5" style={input} />
-                    )}
-                    {ext.stroke && (
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${extras.length + (stroke ? 1 : 0)}, 1fr)`, gap: space.xs, marginTop: 8 }}>
+                    {stroke && <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.stroke")}</Mono>}
+                    {extras.map((x) => (
+                      <Mono key={x.key} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{x.label}</Mono>
+                    ))}
+                    {stroke && (
                       <input value={b.stroke ?? ""} onChange={(e) => setStroke(b.uid, e.target.value)} placeholder="Free" style={input} />
                     )}
-                    <input value={condVal(b.uid, "zone", b.zone)} onChange={(e) => setCondNum(b.uid, "zone", e.target.value)} placeholder="2" style={input} />
+                    {extras.map((x) => (
+                      <input key={x.key} value={condVal(b.uid, x.key, b[x.key])} onChange={(e) => setCondNum(b.uid, x.key, e.target.value)} placeholder={x.ph} style={input} />
+                    ))}
                   </div>
                 );
               })()}

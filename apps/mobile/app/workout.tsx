@@ -21,6 +21,7 @@ import {
   inferBlockKind,
   migrateBlocks,
   olympicSportsByCategory,
+  exerciseProfile,
   timedSportOnly,
   sportDistanceUnit,
   displaySportDistance,
@@ -130,6 +131,13 @@ type WExercise = {
   minutes: string;
   rpe: string;
   distance: string;
+  /** Cardio extras — which of these SHOW is decided by the exercise-profile
+   *  model (incline for treadmill work, stroke for swims, elevation for
+   *  outdoor climb sports, HR zone for any cardio). Held as raw text. */
+  incline: string;
+  stroke: string;
+  elevation: string;
+  zone: string;
   /** Superset group key — exercises sharing it are performed together (A1/A2…). */
   group?: string;
 };
@@ -150,6 +158,10 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
   minutes: "",
   rpe: "",
   distance: "",
+  incline: "",
+  stroke: "",
+  elevation: "",
+  zone: "",
 });
 
 
@@ -505,7 +517,7 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
     );
-  const condField = (u: string, k: "minutes" | "rpe" | "distance", v: string) =>
+  const condField = (u: string, k: "minutes" | "rpe" | "distance" | "incline" | "stroke" | "elevation" | "zone", v: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
   // Quick +/- the last set's load by the chosen increment (in display units).
   const bumpLastLoad = (u: string, deltaDisplay: number) =>
@@ -679,11 +691,21 @@ export default function Workout() {
         // rowing); convert to the stored km here so the math stays single-unit.
         const distance = parseSportDistance(x.distance, x.name);
         if (!Number.isFinite(minutes) && distance == null) continue;
+        // `?? ""` guards: a resumed pre-upgrade draft deserializes without the
+        // new extras fields.
+        const incline = parseFloat(x.incline ?? "");
+        const elevation = parseFloat(x.elevation ?? "");
+        const zone = parseFloat(x.zone ?? "");
+        const stroke = (x.stroke ?? "").trim();
         blocks.push({
           kind: "cardio",
           name: x.name,
           ...(distance != null ? { distance } : {}),
           ...(Number.isFinite(minutes) ? { minutes } : {}),
+          ...(Number.isFinite(incline) ? { incline } : {}),
+          ...(stroke ? { stroke } : {}),
+          ...(Number.isFinite(elevation) ? { elevation } : {}),
+          ...(Number.isFinite(zone) ? { zone } : {}),
         });
       } else if (x.kind === "conditioning") {
         const minutes = parseFloat(x.minutes);
@@ -1104,6 +1126,38 @@ export default function Workout() {
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                   </View>
                 </View>
+                {/* Modality extras — the exercise-profile model decides the
+                    fields (incline / stroke / elevation / HR zone), matching
+                    the Builder and the web logger. */}
+                {(() => {
+                  const has = (f: string) => exerciseProfile(x.name).fields.includes(f as never);
+                  return (
+                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
+                      {has("incline") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.inclinePct")}</ColHead>
+                          <Cell value={x.incline ?? ""} onChange={(v) => condField(x.uid, "incline", v)} />
+                        </View>
+                      )}
+                      {has("stroke") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.stroke")}</ColHead>
+                          <Cell value={x.stroke ?? ""} onChange={(v) => condField(x.uid, "stroke", v)} keyboard="default" />
+                        </View>
+                      )}
+                      {has("elevation") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.elevation")}</ColHead>
+                          <Cell value={x.elevation ?? ""} onChange={(v) => condField(x.uid, "elevation", v)} />
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <ColHead>{t("w.train.blocks.zone")}</ColHead>
+                        <Cell value={x.zone ?? ""} onChange={(v) => condField(x.uid, "zone", v)} />
+                      </View>
+                    </View>
+                  );
+                })()}
                 {(() => {
                   const pace = cardioPace({ name: x.name, distance: parseSportDistance(x.distance, x.name), minutes: parseFloat(x.minutes) });
                   return pace ? (
@@ -1704,6 +1758,10 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           minutes: "",
           rpe: "",
           distance: "",
+          incline: "",
+          stroke: "",
+          elevation: "",
+          zone: "",
           ...(b.group ? { group: b.group } : {}),
         }
       : {
@@ -1715,6 +1773,10 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           rpe: b.rpe != null ? String(b.rpe) : "",
           // Stored km → the sport's display unit (metres for swimming/rowing).
           distance: b.kind === "cardio" && b.distance != null ? displaySportDistance(b.distance, b.name) : "",
+          incline: b.kind === "cardio" && b.incline != null ? String(b.incline) : "",
+          stroke: (b.kind === "cardio" && b.stroke) || "",
+          elevation: b.kind === "cardio" && b.elevation != null ? String(b.elevation) : "",
+          zone: b.kind === "cardio" && b.zone != null ? String(b.zone) : "",
         },
   );
 }
@@ -1790,13 +1852,13 @@ function LiveStat({ C, label, value }: { C: Palette; label: string; value: strin
   );
 }
 
-function Cell({ value, onChange, done }: { value: string; onChange: (v: string) => void; done?: boolean }) {
+function Cell({ value, onChange, done, keyboard = "numeric" }: { value: string; onChange: (v: string) => void; done?: boolean; keyboard?: "numeric" | "default" }) {
   const C = useTheme().palette;
   return (
     <TextInput
       value={value}
       onChangeText={onChange}
-      keyboardType="numeric"
+      keyboardType={keyboard}
       style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 10 }}
     />
   );

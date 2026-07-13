@@ -21,6 +21,7 @@ export * from "./plan-programs";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
+export * from "./exercise-profile";
 export * from "./capabilities";
 export * from "./rpe";
 export * from "./agents";

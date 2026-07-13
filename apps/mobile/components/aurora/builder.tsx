@@ -17,7 +17,7 @@ import {
   strengthBlockStats,
   blockSignalSummary,
   estimateBlockMinutes,
-  cardioExtras,
+  exerciseProfile,
   setType,
   setTypeBadge,
   rpeRirSwap,
@@ -457,12 +457,16 @@ function CardioEditor({ b, C, builder, field, label }: {
   const [distDraft, setDistDraft] = useState<string | null>(null);
   const [minDraft, setMinDraft] = useState<string | null>(null);
   const [inclineDraft, setInclineDraft] = useState<string | null>(null);
+  const [elevDraft, setElevDraft] = useState<string | null>(null);
   const [zoneDraft, setZoneDraft] = useState<string | null>(null);
   const num = (v: string) => {
     const n = parseFloat(v);
     return v.trim() === "" || !Number.isFinite(n) ? undefined : n;
   };
-  const ext = cardioExtras(b.name);
+  // The exercise-profile model decides this activity's fields — incline for
+  // treadmill work, stroke for swims, elevation for outdoor climb sports.
+  const prof = exerciseProfile(b.name);
+  const has = (f: string) => prof.fields.includes(f as never);
   const timed = timedSportOnly(b.name);
   const pace = cardioPace(b);
   return (
@@ -489,7 +493,7 @@ function CardioEditor({ b, C, builder, field, label }: {
       </View>
       {/* Modality extras — a swim never sees incline; a treadmill never sees stroke. */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>
-        {ext.incline && (
+        {has("incline") && (
           <View style={{ flex: 1 }}>
             {label(t("w.train.blocks.inclinePct"))}
             <TextInput
@@ -499,13 +503,23 @@ function CardioEditor({ b, C, builder, field, label }: {
             />
           </View>
         )}
-        {ext.stroke && (
+        {has("stroke") && (
           <View style={{ flex: 1 }}>
             {label(t("w.train.blocks.stroke"))}
             <TextInput
               value={b.stroke ?? ""}
               onChangeText={(v) => builder.setField(b.uid, "stroke", v || undefined)}
               placeholder="Free" placeholderTextColor={C.ash} style={field}
+            />
+          </View>
+        )}
+        {has("elevation") && (
+          <View style={{ flex: 1 }}>
+            {label(t("w.train.blocks.elevation"))}
+            <TextInput
+              value={elevDraft ?? (b.elevation == null ? "" : String(b.elevation))}
+              onChangeText={(v) => { setElevDraft(v); builder.setField(b.uid, "elevation", num(v)); }}
+              keyboardType="numeric" placeholder="120" placeholderTextColor={C.ash} style={field}
             />
           </View>
         )}

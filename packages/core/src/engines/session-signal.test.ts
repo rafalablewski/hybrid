@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  cardioExtras,
   estimateBlockMinutes,
   sessionSignal,
   strengthBlockStats,
@@ -19,22 +18,6 @@ const squat = (over: Partial<StrengthBlock> = {}): StrengthBlock => ({
     { load: "122.5", reps: "5" },
   ],
   ...over,
-});
-
-describe("cardioExtras", () => {
-  it("shows incline only for treadmill-style activities", () => {
-    expect(cardioExtras("Treadmill Run").incline).toBe(true);
-    expect(cardioExtras("Incline Walk").incline).toBe(true);
-    expect(cardioExtras("Run").incline).toBe(false);
-    expect(cardioExtras("Swimming").incline).toBe(false);
-  });
-  it("shows stroke only for swim activities", () => {
-    expect(cardioExtras("Swimming").stroke).toBe(true);
-    expect(cardioExtras("Open Water Swim").stroke).toBe(true);
-    expect(cardioExtras("Freestyle Intervals").stroke).toBe(true);
-    expect(cardioExtras("Treadmill Run").stroke).toBe(false);
-    expect(cardioExtras("Row Erg").stroke).toBe(false);
-  });
 });
 
 describe("estimateBlockMinutes", () => {

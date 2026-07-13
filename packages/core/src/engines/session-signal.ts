@@ -9,26 +9,6 @@ import { formatSportDistance } from "../olympic-sports";
 // prescription it summarises. Shared by web + mobile so the two Builders can't
 // drift on what the same session "adds up to".
 
-/**
- * Which EXTRA prescription fields a cardio block's editor shows, decided by the
- * activity name (the block's modality is data, not decoration — a swim never
- * shows incline, a treadmill never shows stroke). One source of truth for both
- * clients' editors.
- */
-export interface CardioExtras {
-  /** Treadmill-style: show the incline (%) field. */
-  incline: boolean;
-  /** Swim-style: show the stroke field. */
-  stroke: boolean;
-}
-
-const TREADMILL_RE = /\b(treadmill|incline walk)\b/i;
-const SWIM_RE = /\b(swim|swimming|freestyle|breaststroke|backstroke|butterfly|open water)\b/i;
-
-export function cardioExtras(name: string): CardioExtras {
-  return { incline: TREADMILL_RE.test(name), stroke: SWIM_RE.test(name) };
-}
-
 /** Fallback planned rest between working sets when a block doesn't set one, seconds. */
 export const DEFAULT_REST_SEC = 150;
 
