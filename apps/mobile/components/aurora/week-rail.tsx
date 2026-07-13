@@ -30,6 +30,9 @@ type Pal = ReturnType<typeof useTheme>["palette"];
 const CHIP_W = 44;
 const CHIP_GAP = 6;
 const STEP = CHIP_W + CHIP_GAP;
+// Leading inset of the rail's content (clears the edge pager); the centering
+// math must add it so the selected chip lands truly centred, not ~30px off.
+const RAIL_PAD = 34;
 
 /** The accent hue that carries a status (ring / tint / text), resolved from the
  *  theme palette so web + mobile can't drift on meaning. */
@@ -101,7 +104,7 @@ export default function AuroraWeekRail({
   // Centre the selected (or today) chip on first paint + whenever focus changes.
   const planKey = schedule?.planId;
   useEffect(() => {
-    const x = Math.max(0, selectedIndex * STEP - railW / 2 + CHIP_W / 2);
+    const x = Math.max(0, RAIL_PAD + selectedIndex * STEP - railW / 2 + CHIP_W / 2);
     railRef.current?.scrollTo({ x, animated: true });
   }, [planKey, selectedIndex, railW]);
 
@@ -156,7 +159,7 @@ export default function AuroraWeekRail({
           onScroll={onScroll}
           scrollEventThrottle={16}
           onLayout={(e) => setRailW(e.nativeEvent.layout.width)}
-          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: 34, paddingVertical: 4 }}
+          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: RAIL_PAD, paddingVertical: 4 }}
         >
           {schedule.days.map((d, i) => (
             <DayChip key={d.dateKey} C={C} day={d} selected={i === selectedIndex} onSelect={() => setPicked(i)} t={t} />
