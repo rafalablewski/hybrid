@@ -9,6 +9,7 @@ import {
   type SessionBlock,
   type ScheduledDay,
   type PlanDayStatus,
+  type PlanDaySession,
 } from "@hybrid/core";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { useLang } from "@/lib/i18n";
@@ -114,32 +115,33 @@ export default function AuroraWeekRail({
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>
-      {/* header: plan name + progress + week pager */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{schedule.planName}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-            {sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest")}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          <button onClick={() => pageBy(-1)} aria-label={t("w.home.rail.earlier")} style={pagerBtn}><Chevron dir="l" /></button>
-          <button onClick={() => pageBy(1)} aria-label={t("w.home.rail.later")} style={pagerBtn}><Chevron dir="r" /></button>
+      {/* header: plan name + progress (the week pager moved onto the rail edges) */}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{schedule.planName}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+          {sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest")}
         </div>
       </div>
 
-      {/* the seven-day rail */}
-      <div ref={railRef} style={{ display: "flex", gap: 6, overflowX: "auto", scrollSnapType: "x mandatory", margin: "14px -4px 4px", padding: "4px 4px 8px", scrollbarWidth: "none" }}>
-        {schedule.days.map((d, i) => (
-          <DayChip
-            key={d.dateKey}
-            day={d}
-            selected={i === selectedIndex}
-            onSelect={() => setPicked(i)}
-            innerRef={(el) => { chipRefs.current[i] = el; }}
-            t={t}
-          />
-        ))}
+      {/* the seven-day rail — flanked by round pagers that hug the edges, with an
+          edge fade so the strip visibly runs past them (swipe-forward affordance) */}
+      <div style={{ position: "relative", margin: "14px 0 4px" }}>
+        <button onClick={() => pageBy(-1)} aria-label={t("w.home.rail.earlier")} style={pagerEdge("left")}><Chevron dir="l" /></button>
+        <div style={{ WebkitMaskImage: RAIL_FADE, maskImage: RAIL_FADE }}>
+          <div ref={railRef} style={{ display: "flex", gap: 6, overflowX: "auto", scrollSnapType: "x proximity", padding: "4px 34px 8px", scrollbarWidth: "none" }}>
+            {schedule.days.map((d, i) => (
+              <DayChip
+                key={d.dateKey}
+                day={d}
+                selected={i === selectedIndex}
+                onSelect={() => setPicked(i)}
+                innerRef={(el) => { chipRefs.current[i] = el; }}
+                t={t}
+              />
+            ))}
+          </div>
+        </div>
+        <button onClick={() => pageBy(1)} aria-label={t("w.home.rail.later")} style={pagerEdge("right")}><Chevron dir="r" /></button>
       </div>
 
       {/* legend */}
@@ -169,7 +171,16 @@ export default function AuroraWeekRail({
   );
 }
 
-const pagerBtn: CSSProperties = { width: 30, height: 30, borderRadius: 10, background: C("ink"), border: `1px solid ${C("line")}`, color: C("ash"), display: "grid", placeItems: "center", cursor: "pointer" };
+// Horizontal-only fade so the rail dissolves under the edge pagers — the strip
+// clearly continues past them, which is the "there's more, swipe" cue.
+const RAIL_FADE = "linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%)";
+// A round pager that hugs a rail edge (vertically centred on the chip band).
+const pagerEdge = (side: "left" | "right"): CSSProperties => ({
+  position: "absolute", top: "calc(50% - 2px)", [side]: -4, transform: "translateY(-50%)", zIndex: 3,
+  width: 32, height: 32, borderRadius: "50%", background: `color-mix(in srgb, ${C("ink")} 82%, #000)`,
+  border: `1px solid ${C("line")}`, color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer",
+  boxShadow: "0 4px 12px -4px rgba(0,0,0,.6)",
+});
 
 function LegendDot({ color, label, outline }: { color: string; label: string; outline?: boolean }) {
   return (
@@ -234,6 +245,12 @@ function fmtKey(key: string): string {
   return `${WD[dt.getDay()]} ${dt.getDate()} ${MO[dt.getMonth()]}`;
 }
 
+/** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
+ *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
+function sessionLabel(s: PlanDaySession, t: (k: string) => string): string {
+  return s.timeOfDay ?? `${t("w.home.rail.session")} ${s.ordinal}`;
+}
+
 function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
   onStart: (b?: SessionBlock[]) => void;
@@ -244,11 +261,21 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const p = statusPalette(day.status);
   const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // Group the day into sessions so a multi-session day (AM + PM, or several
+  // untimed trainings) draws one TAB per session — the title stays welded to its
+  // own lifts. Single-session days fall back to the day's flat rows/blocks. The
+  // detail card is keyed by dateKey, so switching days resets the active tab.
+  const sessions = day.sessions ?? [];
+  const multi = sessions.length > 1;
+  const [active, setActive] = useState(0);
+  const activeIdx = Math.min(active, sessions.length - 1);
+  const activeSession = multi ? sessions[activeIdx] : sessions[0];
+  const rows = activeSession?.rows ?? day.rows;
+  const startBlocks = activeSession?.blocks ?? day.blocks;
 
   return (
-    <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderLeft: `3px solid ${day.status === "upcoming" ? C("ash") : p.ring}`, borderRadius: 18, padding: 16, background: C("ink") }}>
+    <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 18, padding: 16, background: C("ink") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
         <StatePill status={day.status} t={t} />
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap" }}>{dateLine}</span>
@@ -274,10 +301,25 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
               {t(`w.home.rail.${day.status}Note`)}
             </div>
           ) : null}
+          {/* session tabs — only when the day holds more than one training. The
+              tab label is the plan's time-of-day (AM/PM) or "Training N". */}
+          {multi && (
+            <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 5, marginTop: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: 4 }}>
+              {sessions.map((s, i) => {
+                const on = i === activeIdx;
+                return (
+                  <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
+                    style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: "none", background: on ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : "transparent", color: on ? "var(--lime-text)" : C("ash"), fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600, letterSpacing: ".03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {sessionLabel(s, t)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: space.xs, marginTop: 11 }}>
-            {day.rows.map((r, i) => (
+            {rows.map((r, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                <span style={{ fontWeight: 600, fontSize: fs.body }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
+                <span style={{ fontWeight: 600, fontSize: fs.body }}>{!multi && r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
               </div>
             ))}
@@ -286,19 +328,19 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           {/* actions by state */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
             {(day.status === "today" || day.status === "missed") && (<>
-              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
+              <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
               <button onClick={onSkip} style={ghostBtn(C("blue"))}>{t("w.home.rail.skip")}</button>
               {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
             </>)}
             {day.status === "upcoming" && (<>
-              <button onClick={() => onStart(day.blocks)} style={{ ...ghostBtn(C("lime")), flex: 2 }}>{t("w.home.rail.startEarly")}</button>
+              <button onClick={() => onStart(startBlocks)} style={{ ...ghostBtn(C("lime")), flex: 2 }}>{t("w.home.rail.startEarly")}</button>
               {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
             </>)}
             {day.status === "skipped" && (
               <button onClick={onUnskip} style={{ ...ghostBtn(C("ash")), flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
             )}
             {day.status === "postponed" && (<>
-              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
+              <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
               <button onClick={onUnskip} style={ghostBtn(C("ash"))}>{t("w.home.rail.unpostpone")}</button>
             </>)}
             {day.status === "done" && (

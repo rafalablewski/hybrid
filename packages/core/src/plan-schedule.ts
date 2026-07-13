@@ -1,4 +1,4 @@
-import { programCalendarDays, type PlanProgramTodayRow } from "./plan-day";
+import { programCalendarDays, type PlanProgramTodayRow, type PlanDaySession } from "./plan-day";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
 // ============================================================
@@ -42,6 +42,8 @@ export interface PostponedItem {
   title: string;
   rows: PlanProgramTodayRow[];
   blocks: SessionBlock[];
+  /** the moved day's content grouped by session (mirrors ScheduledDay.sessions). */
+  sessions: PlanDaySession[];
 }
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -89,6 +91,9 @@ export interface ScheduledDay {
   kindLabel: string | null;
   rows: PlanProgramTodayRow[];
   blocks: SessionBlock[];
+  /** the day's content grouped by session (AM/PM or untimed trainings) — drives
+   *  the week rail's session tabs. One entry for a single-session day. */
+  sessions: PlanDaySession[];
   /** the logged session that fulfilled a done day (first on that date), else null. */
   sessionId: string | null;
   /** when THIS day was postponed, the date its session moved to; else null. */
@@ -185,6 +190,7 @@ export function planSchedule(opts: {
       kindLabel: d.kindLabel,
       rows: d.rows,
       blocks: d.blocks,
+      sessions: d.sessions,
       sessionId: d.isTraining ? doneId : null,
       postponedTo: status === "postponed" && ov?.status === "postponed" ? ov.toDateKey : null,
       postponedIn: [],
@@ -199,7 +205,7 @@ export function planSchedule(opts: {
   for (const d of days) {
     if (d.status !== "postponed" || !d.postponedTo) continue;
     const target = byKey.get(d.postponedTo);
-    if (target) target.postponedIn.push({ fromDateKey: d.dateKey, title: d.title, rows: d.rows, blocks: d.blocks });
+    if (target) target.postponedIn.push({ fromDateKey: d.dateKey, title: d.title, rows: d.rows, blocks: d.blocks, sessions: d.sessions });
   }
 
   let todayIndex = days.findIndex((d) => d.isToday);

@@ -63,6 +63,26 @@ describe("planSchedule", () => {
     expect(day.sessionId).toBe("sess-1");
   });
 
+  it("groups each training day's content into sessions (flat rows/blocks preserved)", () => {
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const training = r.days.filter((d) => !d.isRest);
+    // every training day has at least one session; rest days have none
+    expect(training.every((d) => d.sessions.length >= 1)).toBe(true);
+    expect(r.days.filter((d) => d.isRest).every((d) => d.sessions.length === 0)).toBe(true);
+    // ordinals are contiguous 1..n and the grouped rows/blocks re-flatten to the
+    // day's flat arrays (order preserved) — the tabs can never drift from the day.
+    for (const d of training) {
+      expect(d.sessions.map((s) => s.ordinal)).toEqual(d.sessions.map((_, i) => i + 1));
+      expect(d.sessions.flatMap((s) => s.rows)).toEqual(d.rows);
+      expect(d.sessions.flatMap((s) => s.blocks)).toEqual(d.blocks);
+    }
+    // the Soviet program authors AM/PM days — at least one day is multi-session,
+    // carrying the plan's time-of-day band through to timeOfDay.
+    const multi = training.filter((d) => d.sessions.length > 1);
+    expect(multi.length).toBeGreaterThan(0);
+    expect(multi.some((d) => d.sessions.some((s) => s.timeOfDay === "AM"))).toBe(true);
+  });
+
   it("marks a day skipped from an override without touching adherence penalty", () => {
     const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
     const target = base.days.filter((d) => !d.isRest && d.status === "missed")[1]!;
