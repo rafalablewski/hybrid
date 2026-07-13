@@ -28,7 +28,7 @@ const C = (v: string) => `var(--color-${v})`;
 
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
-const PEEK = 4;
+const PEEK = 2;
 
 const Check = ({ c = "currentColor", s = 11 }: { c?: string; s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 6.3 5 8.6 9.5 3.4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>

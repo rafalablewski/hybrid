@@ -31,7 +31,7 @@ type Pal = ReturnType<typeof useTheme>["palette"];
 
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
-const PEEK = 4;
+const PEEK = 2;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
  *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
