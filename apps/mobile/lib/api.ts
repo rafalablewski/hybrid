@@ -501,7 +501,7 @@ type MacroRow = { id: string; goal: string; planId?: string | null; blocks: Macr
 // The athlete's active (latest) enrolled macrocycle reconstructed into the
 // engine shape, plus which week of it is "this week" (derived from startedAt)
 // and the enrolled named-plan id (when they picked a real plan).
-export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null } | null> {
+export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null; planStartedAt: string | null } | null> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
     if (!res.ok) return null;
@@ -515,6 +515,9 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
       macro: { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks },
       currentWeek: Math.max(1, Math.min(totalWeeks, elapsed)),
       planId: row.planId ?? null,
+      // The plan's start date (Day 1 anchor) — the date-anchored week rail pins
+      // the program onto consecutive calendar dates from here.
+      planStartedAt: row.startedAt ?? null,
     };
   } catch {
     return null;

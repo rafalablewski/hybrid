@@ -23,6 +23,7 @@ import {
   sessionVolume,
   fmtTonnage,
   type LoggedSession,
+  type SessionBlock,
   type Macrocycle,
   type Experience,
   type Equipment,
@@ -51,6 +52,7 @@ import ReadinessPicker from "./readiness-picker";
 import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
+import AuroraWeekRail from "./week-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -82,6 +84,7 @@ export default function AuroraHome() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [planId, setPlanId] = useState<string | null>(null);
+  const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,7 +122,7 @@ export default function AuroraHome() {
     Promise.all([fetchAssignments(), fetchMacrocycle(), refetchSessions(), refetchSignals(), loadFeeling()])
       .then(([a, m]) => {
         setAssignments(a);
-        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
+        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null);
       })
       .catch((err) => console.error("Failed to load home data:", err))
       .finally(() => setRefreshing(false));
@@ -188,6 +191,26 @@ export default function AuroraHome() {
   // an empty start. AI is paid-only, so casual/guests never get source=ai here.
   const startPrescribed = () =>
     router.push(plan ? "/workout?source=plan" : isAthlete && (hasData || phase) ? "/workout?source=ai" : "/workout?source=empty");
+
+  // Start a SPECIFIC rail day: stash its exact (date-anchored) blocks so the
+  // logger prefills the day you tapped — not the count-based today. Falls back to
+  // the plan start when no blocks are supplied.
+  const startPlanDay = useCallback((blocks?: SessionBlock[]) => {
+    if (blocks && blocks.length) {
+      AsyncStorage.setItem("hybrid.pendingPlanSession", JSON.stringify({ title: plan?.planName ?? "Plan", blocks }))
+        .then(() => router.push("/workout?source=plan-day"))
+        .catch(() => startPrescribed());
+      return;
+    }
+    startPrescribed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan?.planName]);
+
+  // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
+  // enrolled program + a start date resolve (parity with web home). The shared
+  // engine (planSchedule) reconciles each calendar date against logged sessions
+  // and skips; the classic "Your plan today" card stays the fallback otherwise.
+  const useRail = !!(plan && planId && planStartedAt);
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,
@@ -273,7 +296,21 @@ export default function AuroraHome() {
 
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
             eyebrow: the screen is already today's training and the plan names
-            itself — the interface shouldn't narrate what the athlete can see. */}
+            itself — the interface shouldn't narrate what the athlete can see.
+            When enrolled in a dated program the count-based hero gives way to the
+            date-anchored WEEK RAIL (parity with web). */}
+        {useRail ? (
+          <View style={{ marginTop: 14 }}>
+            <AuroraWeekRail
+              planId={planId!}
+              planStartedAt={planStartedAt!}
+              sessions={sessions}
+              maxes={planMaxes}
+              onStart={(blocks) => startPlanDay(blocks)}
+              onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+            />
+          </View>
+        ) : (
         <ACard style={{ marginTop: 14 }}>
             {/* On a plan, Start becomes the full-width action BELOW the note; the
                 top row then carries only the readiness dial (athlete). Other
@@ -387,6 +424,7 @@ export default function AuroraHome() {
               </>
             )}
           </ACard>
+        )}
 
         {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
             Quick Log takes the day-streak's old slot (the streak lives in the header

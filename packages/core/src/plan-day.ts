@@ -4,6 +4,7 @@ import {
   planProgramView,
   stepKg,
   type PlanDay,
+  type PlanDayKind,
   type PlanEntry,
   type PlanLift,
   type PlanDiscipline,
@@ -193,33 +194,15 @@ function entryToBlock(entry: PlanEntry, maxes?: Record<string, number>): Session
  * the day's loads are derived (kg shown + prefilled); without it the prescription
  * shows % / scheme and the prefilled loads are blank to fill in live.
  */
-export function planProgramToday(
-  planId: string | null | undefined,
-  sessionsLogged: number,
+// ── Shared day-builder ──────────────────────────────────────────────────────
+// One program day's DISPLAY rows + PREFILL blocks. Extracted so the session-count
+// "today" (planProgramToday) and the date-anchored week rail (planSchedule) build
+// a day's content identically — the two can never drift.
+function dayContent(
+  view: ProgramDayView,
+  raw: PlanDay,
   maxes?: Record<string, number>,
-): PlanProgramToday | null {
-  const program = programFor(planId);
-  if (!program || !planId) return null;
-  const multiWeek = program.weeks.length > 1;
-
-  // Flatten the program's TRAINING days, pairing each raw day (for prefill) with
-  // its formatted view (for display) so the two can't drift.
-  const flat: { week: number; raw: PlanDay; view: ProgramDayView }[] = [];
-  for (const w of program.weeks) {
-    const wv = planProgramView(program, { week: w.index, maxes });
-    w.days.forEach((raw, i) => {
-      const view = wv.days[i];
-      if (!view || raw.kind === "rest") return;
-      const hasContent = raw.sessions.some((s) => (s.lifts?.length ?? 0) + (s.entries?.length ?? 0) > 0);
-      if (hasContent) flat.push({ week: w.index, raw, view });
-    });
-  }
-  if (!flat.length) return null;
-
-  const n = Number.isFinite(sessionsLogged) ? Math.max(0, Math.floor(sessionsLogged)) : 0;
-  const dayIndex = n % flat.length;
-  const { week, raw, view } = flat[dayIndex]!;
-
+): { rows: PlanProgramTodayRow[]; blocks: SessionBlock[] } {
   const rows: PlanProgramTodayRow[] = [];
   const blocks: SessionBlock[] = [];
   view.sessions.forEach((sv, si) => {
@@ -230,16 +213,101 @@ export function planProgramToday(
       for (const e of rawSession.entries ?? []) blocks.push(entryToBlock(e, maxes));
     }
   });
+  return { rows, blocks };
+}
 
+/** One calendar-ordered day of a discipline-shaped program — EVERY day, including
+ *  rest/active-rest, so the day list maps 1:1 onto consecutive calendar dates.
+ *  `isTraining` is false for rest days (and any content-less day); those carry
+ *  empty rows/blocks. Training days number themselves via the caller. */
+export interface ProgramCalendarDay {
+  week: number;
+  title: string;
+  kind: PlanDayKind;
+  /** "Active rest" / "Competition" for a non-ordinary day, else null. */
+  kindLabel: string | null;
+  isTraining: boolean;
+  rows: PlanProgramTodayRow[];
+  blocks: SessionBlock[];
+}
+
+export interface ProgramCalendar {
+  planId: string;
+  planName: string;
+  discipline: PlanDiscipline;
+  /** every day of the program in order (train + rest), one per calendar date. */
+  days: ProgramCalendarDay[];
+  /** count of training days (rest excluded) — the "/ N" in "day X / N". */
+  trainingCount: number;
+}
+
+/** Walk a program's weeks→days in order and return EVERY day (training and rest)
+ *  with its display rows + prefill blocks. The single source of truth both the
+ *  session-count "today" and the date-anchored schedule build on. Null unless
+ *  planId resolves to a real PlanProgram. */
+export function programCalendarDays(
+  planId: string | null | undefined,
+  maxes?: Record<string, number>,
+): ProgramCalendar | null {
+  const program = programFor(planId);
+  if (!program || !planId) return null;
+
+  const days: ProgramCalendarDay[] = [];
+  let trainingCount = 0;
+  for (const w of program.weeks) {
+    const wv = planProgramView(program, { week: w.index, maxes });
+    w.days.forEach((raw, i) => {
+      const view = wv.days[i];
+      const hasContent = raw.sessions.some((s) => (s.lifts?.length ?? 0) + (s.entries?.length ?? 0) > 0);
+      const isTraining = raw.kind !== "rest" && hasContent;
+      if (isTraining) trainingCount++;
+      const { rows, blocks } = isTraining && view ? dayContent(view, raw, maxes) : { rows: [], blocks: [] };
+      days.push({
+        week: w.index,
+        title: raw.title,
+        kind: raw.kind,
+        kindLabel: view?.kindLabel ?? null,
+        isTraining,
+        rows,
+        blocks,
+      });
+    });
+  }
   return {
     planId,
     planName: findGoalPlan(planId)?.name ?? program.id,
     discipline: program.discipline,
-    day: `${multiWeek ? `Week ${week}, ` : ""}${raw.title}`,
+    days,
+    trainingCount,
+  };
+}
+
+export function planProgramToday(
+  planId: string | null | undefined,
+  sessionsLogged: number,
+  maxes?: Record<string, number>,
+): PlanProgramToday | null {
+  const cal = programCalendarDays(planId, maxes);
+  if (!cal) return null;
+  const program = programFor(planId)!;
+  const multiWeek = program.weeks.length > 1;
+
+  const training = cal.days.filter((d) => d.isTraining);
+  if (!training.length) return null;
+
+  const n = Number.isFinite(sessionsLogged) ? Math.max(0, Math.floor(sessionsLogged)) : 0;
+  const dayIndex = n % training.length;
+  const d = training[dayIndex]!;
+
+  return {
+    planId: cal.planId,
+    planName: cal.planName,
+    discipline: cal.discipline,
+    day: `${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`,
     dayIndex,
-    totalDays: flat.length,
-    kindLabel: view.kindLabel,
-    rows,
-    blocks,
+    totalDays: training.length,
+    kindLabel: d.kindLabel,
+    rows: d.rows,
+    blocks: d.blocks,
   };
 }

@@ -120,7 +120,7 @@ type WSet = { uid: string; reps: string; load: string; rpe: string; vel?: string
 const DEFAULT_REST = 90;
 // Sources that are always a deliberate fresh start (so we can show the get-ready
 // count-in from the first frame). An empty source may instead resume a draft.
-const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan", "sport"]);
+const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan", "plan-day", "sport"]);
 // One-time "how logging works" coach tip — shown until the athlete completes
 // their first-ever set or dismisses it.
 const TIP_KEY = "hybrid.workoutTipSeen";
@@ -424,6 +424,24 @@ export default function Workout() {
         if (today) {
           setTitle(`${today.planName} – ${today.day}`);
           setExercises(blocksToExercises(today.blocks));
+        }
+      } else if (source === "plan-day") {
+        // The week rail's selected day (its EXACT date-anchored blocks) prefills
+        // the session — handed off via AsyncStorage so "Do it now" / "Start early"
+        // launch the day you tapped, not the count-based today.
+        await clearDraft();
+        try {
+          const raw = await AsyncStorage.getItem("hybrid.pendingPlanSession");
+          if (raw) {
+            const p = JSON.parse(raw) as { title?: string; blocks?: SessionBlock[] };
+            if (p.blocks?.length) {
+              if (p.title) setTitle(p.title);
+              setExercises(blocksToExercises(p.blocks));
+            }
+            await AsyncStorage.removeItem("hybrid.pendingPlanSession");
+          }
+        } catch {
+          /* fall back to an empty session */
         }
       } else if (source === "sport" && sport) {
         // Manual sport session from the Sport tab — seed a cardio activity

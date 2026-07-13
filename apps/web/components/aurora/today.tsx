@@ -35,6 +35,7 @@ import { usePersona } from "@/lib/persona";
 import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
 import QuickSportLog from "../quick-sport";
+import AuroraWeekRail from "./week-rail";
 import Sheet from "./sheet";
 import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
@@ -65,6 +66,7 @@ export default function AuroraToday({
   macro,
   currentWeek = 1,
   planId,
+  planStartedAt,
   onStart,
   onNavigate,
   onSaved,
@@ -75,6 +77,8 @@ export default function AuroraToday({
   macro?: Macrocycle | null;
   currentWeek?: number;
   planId?: string | null;
+  /** The enrolled plan's start date (Macrocycle.startedAt) — anchors the week rail. */
+  planStartedAt?: string | null;
   onStart: (planBlocks?: SessionBlock[]) => void;
   /** In-shell navigation (keeps the sidebar); falls back to a route push. */
   onNavigate?: (screen: string) => void;
@@ -126,6 +130,9 @@ export default function AuroraToday({
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
+  // When enrolled in a discipline-shaped program with a start-date anchor, the
+  // date-based week rail supersedes the count-based plan card entirely.
+  const useRail = !!(plan && planId && planStartedAt);
   const hasData = sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
@@ -225,7 +232,19 @@ export default function AuroraToday({
 
       {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
           eyebrow: the screen is already today's training and the plan names
-          itself — the interface shouldn't narrate what the athlete can see. */}
+          itself — the interface shouldn't narrate what the athlete can see.
+          When enrolled in a program with a start date, the date-anchored week
+          rail replaces this whole block (done/missed/skipped/today at a glance). */}
+      {useRail ? (
+        <AuroraWeekRail
+          planId={planId!}
+          planStartedAt={planStartedAt!}
+          sessions={sessions}
+          maxes={planMaxes}
+          onStart={onStart}
+          onNavigate={onNavigate}
+        />
+      ) : (
       <div data-tour="today-plan" style={{ ...card }}>
           {(() => {
             // On a plan, Start becomes the full-width action BELOW the note; the
@@ -358,6 +377,7 @@ export default function AuroraToday({
             </>
           )}
         </div>
+      )}
 
       {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
           Quick Log takes the day-streak's old slot (the streak lives in the header

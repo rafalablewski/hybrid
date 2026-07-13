@@ -1,0 +1,213 @@
+import { programCalendarDays, type PlanProgramTodayRow } from "./plan-day";
+import type { LoggedSession, SessionBlock } from "./engines/session";
+
+// ============================================================
+//  Plan schedule — the date-anchored week rail.
+//
+//  The classic "Your plan today" advances by a COUNT (sessions logged % training
+//  days), so finishing a workout instantly rolls the card to the next day and no
+//  day can ever be "missed" or "skipped". This engine replaces the count with a
+//  CALENDAR: it pins the program's days onto consecutive dates from the plan's
+//  start, then reconciles each date against the athlete's logged sessions and
+//  their explicit skip overrides to give every day a readable STATUS.
+//
+//  Pure and client-agnostic: web + mobile render the same rail from the same
+//  result. Persistence of the start date lives on the Macrocycle (`startedAt`);
+//  skip overrides are supplied by the caller (localStorage today, a table later).
+// ============================================================
+
+/** The state a single plan day can be in — drives the rail chip + the detail card. */
+export type PlanDayStatus =
+  | "done" // a session was logged on this date
+  | "missed" // a training day in the past with nothing logged and not skipped
+  | "skipped" // the athlete explicitly skipped it (no adherence penalty)
+  | "today" // this date is today and it's still open (not yet done/skipped)
+  | "upcoming" // a future training day
+  | "rest"; // a rest / active-rest day (never counts against adherence)
+
+/** A per-day override the athlete sets by hand. Only `skipped` for v1 —
+ *  postpone (moving a day to a later date) is a planned follow-up. */
+export type PlanOverride = { status: "skipped" };
+
+/** Overrides keyed by the day's local date key (yyyy-mm-dd). */
+export type PlanOverrides = Record<string, PlanOverride>;
+
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+/** Local yyyy-mm-dd for a timestamp — the stable key we reconcile dates on
+ *  (avoids UTC drift so a session logged at 11pm lands on the right day). */
+export function dateKeyOf(ts: number): string {
+  const d = new Date(ts);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Local midnight for a timestamp. */
+function localMidnight(ts: number): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Add whole calendar days to a local-midnight timestamp (handles month/DST rollover). */
+function addDays(ts: number, n: number): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n).getTime();
+}
+
+export interface ScheduledDay {
+  /** position in the schedule (0-based, includes rest days). */
+  index: number;
+  /** local yyyy-mm-dd — the reconcile + override key. */
+  dateKey: string;
+  /** local-midnight timestamp. */
+  ts: number;
+  weekdayShort: string; // "Mon"
+  dayOfMonth: number; // 13
+  monthShort: string; // "Jul"
+  isToday: boolean;
+  isRest: boolean;
+  status: PlanDayStatus;
+  /** 1-based number among TRAINING days (the "11" in "day 11 / 37"); null for rest. */
+  trainingDayNumber: number | null;
+  totalTrainingDays: number;
+  week: number;
+  title: string;
+  kindLabel: string | null;
+  rows: PlanProgramTodayRow[];
+  blocks: SessionBlock[];
+  /** the logged session that fulfilled a done day (first on that date), else null. */
+  sessionId: string | null;
+}
+
+export interface PlanScheduleResult {
+  planId: string;
+  planName: string;
+  totalTrainingDays: number;
+  /** every program day mapped to a calendar date, in order. */
+  days: ScheduledDay[];
+  /** index into `days` for today (exact match); else the next upcoming day; else
+   *  the last day. The rail opens focused here. */
+  todayIndex: number;
+}
+
+/**
+ * Build the date-anchored schedule for an enrolled program. Returns null unless
+ * `planId` resolves to a real PlanProgram AND a `startedAt` anchor is known — the
+ * classic count-based "today" stays the fallback otherwise.
+ */
+export function planSchedule(opts: {
+  planId: string | null | undefined;
+  /** the plan's start date (Macrocycle.startedAt). Day 1 lands on this date. */
+  startedAt: string | number | Date | null | undefined;
+  sessions: LoggedSession[];
+  overrides?: PlanOverrides;
+  maxes?: Record<string, number>;
+  /** injectable clock for tests; defaults to now. */
+  now?: number;
+}): PlanScheduleResult | null {
+  const cal = programCalendarDays(opts.planId, opts.maxes);
+  if (!cal || opts.startedAt == null) return null;
+
+  const startRaw = new Date(opts.startedAt).getTime();
+  if (!Number.isFinite(startRaw)) return null;
+  const startTs = localMidnight(startRaw);
+
+  const now = opts.now ?? Date.now();
+  const todayTs = localMidnight(now);
+  const todayKey = dateKeyOf(todayTs);
+  const overrides = opts.overrides ?? {};
+
+  // Dates that carry at least one logged session → "done". First id per date wins
+  // (the session that fulfilled the day).
+  const doneByDate = new Map<string, string>();
+  for (const s of opts.sessions) {
+    const k = dateKeyOf(new Date(s.startedAt).getTime());
+    if (!doneByDate.has(k)) doneByDate.set(k, s.id);
+  }
+
+  const totalTrainingDays = cal.trainingCount;
+  let trainingSeen = 0;
+
+  const days: ScheduledDay[] = cal.days.map((d, i) => {
+    const ts = addDays(startTs, i);
+    const dateKey = dateKeyOf(ts);
+    const dt = new Date(ts);
+    const isToday = dateKey === todayKey;
+    const isRest = !d.isTraining;
+    if (d.isTraining) trainingSeen++;
+
+    const doneId = doneByDate.get(dateKey) ?? null;
+    const skipped = overrides[dateKey]?.status === "skipped";
+
+    let status: PlanDayStatus;
+    if (isRest) status = "rest";
+    else if (skipped) status = "skipped";
+    else if (doneId) status = "done";
+    else if (ts < todayTs) status = "missed";
+    else if (isToday) status = "today";
+    else status = "upcoming";
+
+    return {
+      index: i,
+      dateKey,
+      ts,
+      weekdayShort: WEEKDAY[dt.getDay()]!,
+      dayOfMonth: dt.getDate(),
+      monthShort: MONTH[dt.getMonth()]!,
+      isToday,
+      isRest,
+      status,
+      trainingDayNumber: d.isTraining ? trainingSeen : null,
+      totalTrainingDays,
+      week: d.week,
+      title: d.title,
+      kindLabel: d.kindLabel,
+      rows: d.rows,
+      blocks: d.blocks,
+      sessionId: d.isTraining ? doneId : null,
+    };
+  });
+
+  let todayIndex = days.findIndex((d) => d.isToday);
+  if (todayIndex < 0) todayIndex = days.findIndex((d) => d.ts > todayTs);
+  if (todayIndex < 0) todayIndex = days.length - 1;
+
+  return {
+    planId: cal.planId,
+    planName: cal.planName,
+    totalTrainingDays,
+    days,
+    todayIndex: Math.max(0, todayIndex),
+  };
+}
+
+/** A count of each status across the schedule + an adherence %. Powers the
+ *  "78% adherence" readout and any progress summary; shared so web + mobile agree. */
+export interface PlanAdherence {
+  done: number;
+  missed: number;
+  skipped: number;
+  /** training days still ahead (today + upcoming). */
+  remaining: number;
+  /** done / (done + missed) as a 0-100 int; 100 when nothing is due yet. */
+  percent: number;
+}
+
+export function planAdherence(result: PlanScheduleResult): PlanAdherence {
+  let done = 0;
+  let missed = 0;
+  let skipped = 0;
+  let remaining = 0;
+  for (const d of result.days) {
+    if (d.isRest) continue;
+    if (d.status === "done") done++;
+    else if (d.status === "missed") missed++;
+    else if (d.status === "skipped") skipped++;
+    else remaining++; // today + upcoming
+  }
+  const due = done + missed;
+  const percent = due === 0 ? 100 : Math.round((done / due) * 100);
+  return { done, missed, skipped, remaining, percent };
+}

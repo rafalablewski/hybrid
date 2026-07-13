@@ -28,6 +28,7 @@ export function useMacrocycle() {
   let macro: Macrocycle | null = null;
   let currentWeek = 1;
   let planId: string | null = null;
+  let planStartedAt: string | null = null;
 
   if (row) {
     const blocks = row.blocks;
@@ -38,8 +39,10 @@ export function useMacrocycle() {
       : 1;
     currentWeek = Math.max(1, Math.min(totalWeeks, elapsed));
     planId = row.planId ?? null;
+    // The anchor date the week rail pins the plan's day 1 onto (Macrocycle.startedAt).
+    planStartedAt = row.startedAt ?? null;
     macro = { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks };
   }
 
-  return { macro, currentWeek, planId, refresh: () => q.refetch() };
+  return { macro, currentWeek, planId, planStartedAt, refresh: () => q.refetch() };
 }
