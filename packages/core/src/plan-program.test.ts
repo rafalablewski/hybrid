@@ -12,6 +12,7 @@ import {
   rpeColor,
   workoutColor,
   conditioningColor,
+  sessionColor,
   repZoneColor,
   isGymLift,
   isProseLift,
@@ -20,7 +21,7 @@ import {
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, KB_12WK_STRONG, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, KB_12WK_STRONG, HYBRID_ENGINE_BASE, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -118,6 +119,19 @@ describe("the Soviet 8-week program", () => {
     expect(SOVIET_OWL_8WK.weeks[0]!.days[2]!.kind).toBe("active-rest");
   });
 
+  it("sessionColor gives AM/MID/PM fixed hues and cycles untimed sessions by ordinal", () => {
+    // timed bands are distinct + stable regardless of position
+    expect(sessionColor("AM", 0)).toBe("lime");
+    expect(sessionColor("MID", 1)).toBe("amber");
+    expect(sessionColor("PM", 2)).toBe("blue");
+    // an untimed multi-session day ("Training 1/2/3") still reads as three
+    // distinct blocks — colours cycle by ordinal, not collapse to one
+    const untimed = [0, 1, 2].map((i) => sessionColor(null, i));
+    expect(untimed).toEqual(["lime", "amber", "blue"]);
+    expect(new Set(untimed).size).toBe(3);
+    expect(sessionColor(null, 3)).toBe("lime"); // wraps for a 4th
+  });
+
   it("carries the week-1 accessory block as RPE-kind gym entries (not % lifts)", () => {
     const pm = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[1]!; // Day 1 PM
     const acc = pm.lifts.filter((l) => liftKind(l) === "rpe");
@@ -138,6 +152,35 @@ describe("the Soviet 8-week program", () => {
       .filter((l) => l.name === "Back Squat")
       .flatMap((l) => l.steps);
     expect(allSteps.some((s) => (s.pct ?? 0) > 100)).toBe(true);
+  });
+});
+
+describe("the Hybrid Base program", () => {
+  it("is registered and resolvable by its plan id", () => {
+    expect(programFor("hybrid-engine-base")).toBe(HYBRID_ENGINE_BASE);
+    expect(Object.keys(PLAN_PROGRAMS)).toContain("hybrid-engine-base");
+  });
+
+  it("authors three-a-day AM/MID/PM days (and a two-a-day) to exercise the session model", () => {
+    const days = HYBRID_ENGINE_BASE.weeks[0]!.days;
+    const training = days.filter((d) => d.kind === "train");
+    // two three-a-day days, labelled AM / MID / PM in order
+    const threes = training.filter((d) => d.sessions.length === 3);
+    expect(threes).toHaveLength(2);
+    expect(threes.every((d) => d.sessions.map((s) => s.label).join() === "AM,MID,PM")).toBe(true);
+    // a two-a-day (AM/PM) and single-session days both exist
+    expect(training.some((d) => d.sessions.map((s) => s.label).join() === "AM,PM")).toBe(true);
+    expect(training.some((d) => d.sessions.length === 1 && d.sessions[0]!.label == null)).toBe(true);
+  });
+
+  it("keeps every rep a single number (no ranges) per the plan-authoring rule", () => {
+    const schemes = HYBRID_ENGINE_BASE.weeks[0]!.days
+      .flatMap((d) => d.sessions)
+      .flatMap((s) => s.entries ?? [])
+      .map((e) => e.scheme)
+      .filter((x): x is string => !!x);
+    // a "N–M" range would trip this; per-side/time notations are fine
+    expect(schemes.every((s) => !/\d+\s*[–—-]\s*\d/.test(s))).toBe(true);
   });
 });
 

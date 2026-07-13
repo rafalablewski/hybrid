@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
+import { rpeColor, workoutColor, sessionColor, isProseLift, liftKind, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
 // The HYBRID plan day view — one card+table style that adapts per CONTENT (not
@@ -56,7 +56,7 @@ function DayCard({ day }: { day: ProgramDayView }) {
     <Card>
       <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} />
       {day.sessions.map((s, si) => (
-        <SessionBlock key={si} s={s} si={si} />
+        <SessionBlock key={si} s={s} si={si} count={day.sessions.length} />
       ))}
     </Card>
   );
@@ -83,15 +83,19 @@ function bandFor(kind: LiftKind, n: number, hasPercent: boolean): { label: strin
   return { label: `${hasPercent ? "Accessories" : "Strength"} (${ex})`, color: LIME };
 }
 
-function SessionBlock({ s, si }: { s: ProgramSessionView; si: number }) {
+function SessionBlock({ s, si, count }: { s: ProgramSessionView; si: number; count: number }) {
   const groups = groupByKind(s.lifts);
   const mixed = groups.length > 1; // ≥2 content kinds in this session → label blocks
   const hasPercent = groups.some((g) => g.kind === "percent");
+  // A multi-session day gets one marker per session: the plan's time-of-day
+  // (AM/MID/PM) when set, else a plain "Training N" from the ordinal — so an
+  // untimed two/three-a-day is distinguished, not silently merged.
+  const marker = s.label ?? (count > 1 ? `Training ${si + 1}` : null);
   return (
     <>
-      {s.label && <Band label={s.volume ? `${s.label} (${s.volume})` : s.label} color={s.label === "PM" ? BLUE : LIME} topBorder={si > 0} />}
+      {marker && <Band label={s.volume ? `${marker} (${s.volume})` : marker} color={HEX[sessionColor(s.label, si)]} topBorder={si > 0} />}
       {groups.map((g, gi) => {
-        const topBorder = gi > 0 || !!s.label || si > 0;
+        const topBorder = gi > 0 || !!marker || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent);
         const rowTop = (i: number) => (i > 0 ? `1px solid ${HAIR}` : "none");
         return (

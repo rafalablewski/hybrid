@@ -117,7 +117,9 @@ export const GOAL_TREE: GoalNode[] = [
   { id: "crossfit", name: "CrossFit", icon: "✚", color: AMBER, category: "Functional & Sport", blurb: "Constantly varied, high-intensity functional fitness. Be ready for anything.",
     plans: [] },
   { id: "hybrid", name: "Hybrid Athlete", icon: "▲", color: LIME, category: "Functional & Sport", blurb: "Lift heavy and train your sport. Strength that carries over to running, combat, court, or crag.",
-    plans: [] },
+    plans: [
+      { id: "hybrid-engine-base", name: "Hybrid Base — Strength & Engine", weeks: 1, sessions: 5, tag: "Repeat weekly", desc: "A hybrid base week that carries heavy barbell strength AND an aerobic engine, run on repeat. Two key days are three-a-day — a morning strength session, a midday conditioning piece and an easy evening run — with speed and tempo runs midweek and a long-run-plus-lifting Saturday. Add weight when the lifts feel easy, keep the easy runs easy.", focus: ["Strength", "Endurance"], hot: true },
+    ] },
   { id: "calisthenics", name: "Calisthenics", icon: "◯", color: LIME, category: "Functional & Sport", blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
     plans: [] },
   { id: "kettlebell", name: "Kettlebell", icon: "◔", color: AMBER, category: "Functional & Sport", blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",

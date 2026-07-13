@@ -127,6 +127,24 @@ export interface PlanProgramTodayRow {
   note: string | null;
 }
 
+/** One session WITHIN a plan day, grouped so a multi-session day (AM + PM, or
+ *  several untimed trainings) can render one block per session — the "session
+ *  tabs" the week rail draws. A single-session day yields a single entry with
+ *  `timeOfDay: null`. */
+export interface PlanDaySession {
+  /** the plan's time-of-day band ("AM" / "PM"), or null when the plan sets none.
+   *  When null on a multi-session day the client labels it "Training {ordinal}" —
+   *  the ordinal, not a fabricated time, is the anchor. */
+  timeOfDay: string | null;
+  /** 1-based position among the day's sessions (the stable label fallback + the
+   *  order tabs appear in). */
+  ordinal: number;
+  /** this session's display rows (its lifts only). */
+  rows: PlanProgramTodayRow[];
+  /** this session's prefill blocks — so "Start" can open just this session. */
+  blocks: SessionBlock[];
+}
+
 export interface PlanProgramToday {
   planId: string;
   planName: string;
@@ -202,18 +220,27 @@ function dayContent(
   view: ProgramDayView,
   raw: PlanDay,
   maxes?: Record<string, number>,
-): { rows: PlanProgramTodayRow[]; blocks: SessionBlock[] } {
+): { rows: PlanProgramTodayRow[]; blocks: SessionBlock[]; sessions: PlanDaySession[] } {
   const rows: PlanProgramTodayRow[] = [];
   const blocks: SessionBlock[] = [];
+  const sessions: PlanDaySession[] = [];
   view.sessions.forEach((sv, si) => {
-    for (const l of sv.lifts) rows.push({ name: l.name, session: sv.label ?? null, detail: l.prescription, note: l.note });
+    const sRows: PlanProgramTodayRow[] = [];
+    const sBlocks: SessionBlock[] = [];
+    for (const l of sv.lifts) sRows.push({ name: l.name, session: sv.label ?? null, detail: l.prescription, note: l.note });
     const rawSession = raw.sessions[si];
     if (rawSession) {
-      for (const l of rawSession.lifts ?? []) blocks.push(liftToBlock(l, maxes));
-      for (const e of rawSession.entries ?? []) blocks.push(entryToBlock(e, maxes));
+      for (const l of rawSession.lifts ?? []) sBlocks.push(liftToBlock(l, maxes));
+      for (const e of rawSession.entries ?? []) sBlocks.push(entryToBlock(e, maxes));
     }
+    // Drop an empty session so it never becomes a phantom tab; the ordinal counts
+    // only sessions that carry content, so tabs read 1..n with no gaps.
+    if (!sRows.length && !sBlocks.length) return;
+    rows.push(...sRows);
+    blocks.push(...sBlocks);
+    sessions.push({ timeOfDay: sv.label ?? null, ordinal: sessions.length + 1, rows: sRows, blocks: sBlocks });
   });
-  return { rows, blocks };
+  return { rows, blocks, sessions };
 }
 
 /** One calendar-ordered day of a discipline-shaped program — EVERY day, including
@@ -229,6 +256,9 @@ export interface ProgramCalendarDay {
   isTraining: boolean;
   rows: PlanProgramTodayRow[];
   blocks: SessionBlock[];
+  /** the day's content grouped by session (AM/PM or untimed trainings). One entry
+   *  for a single-session day; empty for rest days. */
+  sessions: PlanDaySession[];
 }
 
 export interface ProgramCalendar {
@@ -261,7 +291,7 @@ export function programCalendarDays(
       const hasContent = raw.sessions.some((s) => (s.lifts?.length ?? 0) + (s.entries?.length ?? 0) > 0);
       const isTraining = raw.kind !== "rest" && hasContent;
       if (isTraining) trainingCount++;
-      const { rows, blocks } = isTraining && view ? dayContent(view, raw, maxes) : { rows: [], blocks: [] };
+      const { rows, blocks, sessions } = isTraining && view ? dayContent(view, raw, maxes) : { rows: [], blocks: [], sessions: [] };
       days.push({
         week: w.index,
         title: raw.title,
@@ -270,6 +300,7 @@ export function programCalendarDays(
         isTraining,
         rows,
         blocks,
+        sessions,
       });
     });
   }

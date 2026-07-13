@@ -88,9 +88,15 @@ export type ConditioningEffort = "recover" | "easy" | "moderate" | "hard" | "max
 
 export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
 
+/** A session's time-of-day band. "AM" / "MID" / "PM" for a two- or three-a-day;
+ *  omitted when the plan doesn't split a day by clock (an untimed day's sessions
+ *  are distinguished by ORDINAL instead — "Training 1 / 2 / 3"). */
+export type SessionTimeOfDay = "AM" | "MID" | "PM";
+
 export interface PlanSession {
-  /** "AM" / "PM" — omitted for a single daily session. */
-  label?: "AM" | "PM";
+  /** "AM" / "MID" / "PM" — omitted for a single daily session, or for an untimed
+   *  multi-session day (which the UI numbers "Training 1/2/3" from the ordinal). */
+  label?: SessionTimeOfDay;
   /** strength-percent content (% of 1RM lifts). */
   lifts?: PlanLift[];
   /** endurance / conditioning content (prose workouts). */
@@ -253,6 +259,17 @@ export function workoutColor(label: string): LoadColor {
   if (s.includes("long")) return "red";
   if (/tempo|interval|hill|speed|race|threshold|fartlek/.test(s)) return "amber";
   return "blue";
+}
+
+/** The accent colour for a day's session marker — so the SAME session reads in
+ *  the same hue on every surface (the Plans program table + the Today week-rail
+ *  can't drift). AM/MID/PM get fixed hues; an untimed session cycles by ordinal
+ *  so a "Training 1 / 2 / 3" day still reads as three distinct blocks. */
+export function sessionColor(label: string | null | undefined, index: number): LoadColor {
+  if (label === "AM") return "lime";
+  if (label === "MID") return "amber";
+  if (label === "PM") return "blue";
+  return (["lime", "amber", "blue"] as const)[index % 3]!;
 }
 
 /** Map a conditioning effort tier to its intensity colour — the circuit's wave,

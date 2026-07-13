@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, Dimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   planSchedule,
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
   type PlanDayStatus,
+  type PlanDaySession,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -28,6 +30,9 @@ type Pal = ReturnType<typeof useTheme>["palette"];
 const CHIP_W = 44;
 const CHIP_GAP = 6;
 const STEP = CHIP_W + CHIP_GAP;
+// Leading inset of the rail's content (clears the edge pager); the centering
+// math must add it so the selected chip lands truly centred, not ~30px off.
+const RAIL_PAD = 34;
 
 /** The accent hue that carries a status (ring / tint / text), resolved from the
  *  theme palette so web + mobile can't drift on meaning. */
@@ -46,6 +51,12 @@ function statusHue(s: PlanDayStatus, C: Pal): string {
     default: // upcoming / rest
       return C.ash;
   }
+}
+
+/** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
+ *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
+function sessionLabel(s: PlanDaySession, t: (k: string) => string): string {
+  return s.timeOfDay ?? `${t("w.home.rail.session")} ${s.ordinal}`;
 }
 
 // Format a local date key (yyyy-mm-dd) as "Wed 15 Jul" for the postpone target.
@@ -93,7 +104,7 @@ export default function AuroraWeekRail({
   // Centre the selected (or today) chip on first paint + whenever focus changes.
   const planKey = schedule?.planId;
   useEffect(() => {
-    const x = Math.max(0, selectedIndex * STEP - railW / 2 + CHIP_W / 2);
+    const x = Math.max(0, RAIL_PAD + selectedIndex * STEP - railW / 2 + CHIP_W / 2);
     railRef.current?.scrollTo({ x, animated: true });
   }, [planKey, selectedIndex, railW]);
 
@@ -126,7 +137,7 @@ export default function AuroraWeekRail({
         elevation: 3,
       }}
     >
-      {/* header: plan name + progress + prev/next pager */}
+      {/* header: plan name + progress (the pager moved onto the rail edges) */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <View style={{ flex: 1 }}>
           <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>
@@ -136,27 +147,33 @@ export default function AuroraWeekRail({
             {sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest")}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 6 }}>
+      </View>
+
+      {/* the day rail — natively swipeable, with edge fades + round pagers hugging
+          the edges so the strip visibly runs past them (the "swipe" affordance) */}
+      <View style={{ position: "relative", marginTop: 14, marginBottom: 4 }}>
+        <ScrollView
+          ref={railRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onLayout={(e) => setRailW(e.nativeEvent.layout.width)}
+          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: RAIL_PAD, paddingVertical: 4 }}
+        >
+          {schedule.days.map((d, i) => (
+            <DayChip key={d.dateKey} C={C} day={d} selected={i === selectedIndex} onSelect={() => setPicked(i)} t={t} />
+          ))}
+        </ScrollView>
+        <LinearGradient pointerEvents="none" colors={[C.ink2, `${C.ink2}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 42 }} />
+        <LinearGradient pointerEvents="none" colors={[`${C.ink2}00`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 42 }} />
+        <View style={{ position: "absolute", left: -4, top: 0, bottom: 0, justifyContent: "center" }}>
           <PagerBtn C={C} dir="l" label={t("w.home.rail.earlier")} onPress={() => pageBy(-1)} />
+        </View>
+        <View style={{ position: "absolute", right: -4, top: 0, bottom: 0, justifyContent: "center" }}>
           <PagerBtn C={C} dir="r" label={t("w.home.rail.later")} onPress={() => pageBy(1)} />
         </View>
       </View>
-
-      {/* the day rail */}
-      <ScrollView
-        ref={railRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        onLayout={(e) => setRailW(e.nativeEvent.layout.width)}
-        style={{ marginHorizontal: -4, marginTop: 14, marginBottom: 4 }}
-        contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: 4, paddingVertical: 4 }}
-      >
-        {schedule.days.map((d, i) => (
-          <DayChip key={d.dateKey} C={C} day={d} selected={i === selectedIndex} onSelect={() => setPicked(i)} t={t} />
-        ))}
-      </ScrollView>
 
       {/* legend */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
@@ -194,9 +211,9 @@ function PagerBtn({ C, dir, label, onPress }: { C: Pal; dir: "l" | "r"; label: s
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}
-      style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
+      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.ash }}>{dir === "l" ? "‹" : "›"}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>{dir === "l" ? "‹" : "›"}</Text>
     </Pressable>
   );
 }
@@ -307,12 +324,21 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const hue = statusHue(day.status, C);
-  const accent = day.status === "upcoming" ? C.ash : hue;
   const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // Group the day into sessions so a multi-session day (AM + PM, or several
+  // untimed trainings) draws one TAB per session — the title stays welded to its
+  // own lifts. Single-session days fall back to the day's flat rows/blocks. The
+  // detail card is keyed by dateKey, so switching days resets the active tab.
+  const sessions = day.sessions ?? [];
+  const multi = sessions.length > 1;
+  const [active, setActive] = useState(0);
+  const activeIdx = Math.min(active, sessions.length - 1);
+  const activeSession = multi ? sessions[activeIdx] : sessions[0];
+  const rows = activeSession?.rows ?? day.rows;
+  const startBlocks = activeSession?.blocks ?? day.blocks;
 
   return (
-    <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: accent, borderRadius: 18, padding: 16, backgroundColor: C.ink }}>
+    <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16, backgroundColor: C.ink }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
         <StatePill C={C} status={day.status} t={t} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
@@ -338,11 +364,32 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
           ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t(`w.home.rail.${day.status}Note`)}</Text>
           ) : null}
+          {/* session tabs — only when the day holds more than one training. The
+              tab label is the plan's time-of-day (AM/PM) or "Training N". */}
+          {multi && (
+            <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 5, marginTop: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 4 }}>
+              {sessions.map((s, i) => {
+                const on = i === activeIdx;
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => setActive(i)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={sessionLabel(s, t)}
+                    style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 8, borderRadius: 9, backgroundColor: on ? `${C.lime}24` : "transparent" }}
+                  >
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11.5, fontWeight: "600", letterSpacing: 0.3, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           <View style={{ marginTop: 11 }}>
-            {day.rows.map((r, i) => (
+            {rows.map((r, i) => (
               <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.md, paddingTop: 6, marginTop: i ? 6 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flex: 1 }}>
-                  {r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}
+                  {!multi && r.session ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r.session}  </Text> : null}
                   {r.name}
                   {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> ({r.note})</Text> : null}
                 </Text>
@@ -355,14 +402,14 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
             {day.status === "today" && (
               <>
-                <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(day.blocks)} />
+                <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(startBlocks)} />
                 <GhostBtn C={C} color={C.blue} label={t("w.home.rail.skip")} onPress={onSkip} />
                 {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
               </>
             )}
             {day.status === "missed" && (
               <>
-                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(day.blocks)} />
+                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
                 <GhostBtn C={C} color={C.blue} label={t("w.home.rail.skip")} onPress={onSkip} />
                 {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
               </>
@@ -370,13 +417,13 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
             {day.status === "skipped" && <GhostBtn C={C} color={C.ash} label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
             {day.status === "upcoming" && (
               <>
-                <GhostBtn C={C} color={C.lime} label={t("w.home.rail.startEarly")} onPress={() => onStart(day.blocks)} flex={2} />
+                <GhostBtn C={C} color={C.lime} label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} flex={2} />
                 {canPostpone && <GhostBtn C={C} color={C.violet} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
               </>
             )}
             {day.status === "postponed" && (
               <>
-                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(day.blocks)} />
+                <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
                 <GhostBtn C={C} color={C.ash} label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
               </>
             )}

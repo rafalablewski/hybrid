@@ -74,6 +74,7 @@ export const web_home = {
     "w.home.rail.movedTo": "Moved to",
     "w.home.rail.movedFrom": "from",
     "w.home.rail.catchUp": "Catch up",
+    "w.home.rail.session": "Training", // "{Training} 1" — untimed multi-session label
     "w.home.today.wk": "wk",
     "w.home.today.followingAsWritten1": "Following as written. ",
     "w.home.today.unlockFull": "Unlock Full",
@@ -451,6 +452,7 @@ export const web_home = {
     "w.home.rail.movedTo": "Przeniesiono na",
     "w.home.rail.movedFrom": "z",
     "w.home.rail.catchUp": "Nadrób",
+    "w.home.rail.session": "Trening", // "{Trening} 1" — untimed multi-session label
     "w.home.today.wk": "tydz.",
     "w.home.today.followingAsWritten1": "Realizujesz jak zapisano. ",
     "w.home.today.unlockFull": "Odblokuj Full",
