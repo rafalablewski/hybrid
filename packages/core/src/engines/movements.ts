@@ -1,4 +1,5 @@
 import type { MuscleGroup, Movement } from "./types";
+import { GYM_MOVEMENTS, GYM_CATEGORY_BY_NAME } from "../exercise-db";
 
 /** All trackable muscle groups, in display order. */
 export const ALL_MUSCLES: MuscleGroup[] = [
@@ -11,9 +12,13 @@ export const ALL_MUSCLES: MuscleGroup[] = [
   "triceps",
 ];
 
-/** Muscle groups + energy systems each movement touches. Ported from the
- *  prototype's MOVEMENTS map — the engine reads this to attribute fatigue. */
+/** Muscle groups + energy systems each movement touches. The full exercise
+ *  DATABASE (exercise-db.ts — every gym exercise with its own property sheet)
+ *  derives an engine Movement per entry and folds in FIRST; the hand-tuned
+ *  entries below OVERRIDE their DB twins so long-standing engine behaviour
+ *  (baseLoads the prescription engine anchors on) is unchanged. */
 export const MOVEMENTS: Record<string, Movement> = {
+  ...GYM_MOVEMENTS,
   "Back Squat": { pattern: "squat", muscles: ["quads", "glutes", "back"], baseLoad: 100, system: null },
   "Front Squat": { pattern: "squat", muscles: ["quads", "glutes"], baseLoad: 85, system: null },
   Deadlift: { pattern: "hinge", muscles: ["posterior", "back", "glutes"], baseLoad: 140, system: null },
@@ -56,8 +61,9 @@ const PATTERN_TO_CATEGORY = (pattern: string): ExerciseCategory =>
     ? pattern
     : "other";
 
-/** Display order for the admin library's muscle-group `category` sections (the
- *  headings the seeded catalog uses). Unknown categories sort A–Z after these. */
+/** Display order for the muscle-group `category` sections — the built-in
+ *  exercise DB's headings plus the admin library's. Unknown categories sort
+ *  A–Z after these. */
 export const LIBRARY_CATEGORY_ORDER = [
   "Chest",
   "Back",
@@ -69,6 +75,8 @@ export const LIBRARY_CATEGORY_ORDER = [
   "Biceps",
   "Triceps",
   "Abs & Core",
+  "Olympic & Power",
+  "Carries & Conditioning",
 ];
 
 /** A picker section. Pattern buckets carry an i18n `labelKey`; admin-library
@@ -94,10 +102,13 @@ export function exercisesByCategory(
   extraNames: string[] = [],
   categoryByName: Record<string, string> = {},
 ): ExerciseSection[] {
+  // Every built-in DB exercise carries its muscle-group heading; the admin
+  // library's categories layer on top (and can override).
+  const catByName: Record<string, string> = { ...GYM_CATEGORY_BY_NAME, ...categoryByName };
   const patternBuckets = new Map<ExerciseCategory, Set<string>>();
   const libBuckets = new Map<string, Set<string>>();
   const place = (name: string, pattern?: string) => {
-    const lib = categoryByName[name]?.trim();
+    const lib = catByName[name]?.trim();
     if (lib) {
       if (!libBuckets.has(lib)) libBuckets.set(lib, new Set());
       libBuckets.get(lib)!.add(name);

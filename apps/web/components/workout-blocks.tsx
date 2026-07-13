@@ -13,21 +13,6 @@ import { useDialog } from "../lib/use-dialog";
 // shape — keeping one editor here is the single source of truth so the two can't
 // drift (catalog, set grid, conditioning fields, overflow fixes, …).
 
-// Lifts the editors have always offered for autocomplete. Some aren't in core's
-// MOVEMENTS map (e.g. Deadlift, Pull-up) so we keep them here and merge the
-// admin-managed library (useExercises) on top.
-const BASE_CATALOG = [
-  "Back Squat",
-  "Front Squat",
-  "Deadlift",
-  "Bench Press",
-  "Overhead Press",
-  "Barbell Row",
-  "Romanian Deadlift",
-  "Pull-up",
-  "Power Clean",
-];
-
 const SET_TYPE_TITLE_KEY: Record<string, string> = {
   working: "w.train.blocks.workingSet",
   warmup: "w.train.blocks.warmupSet",
@@ -132,9 +117,10 @@ export default function WorkoutBlocks({
 }) {
   const { t } = useLang();
   const { catalog: libraryCatalog = [], aliases = new Set<string>(), categoryByName = {} } = useExercises();
-  // Hide any name a custom entry aliases (incl. superseded built-ins / BASE_CATALOG
-  // quick-picks) so the same lift never shows twice — it still resolves via merge.
-  const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])]
+  // The full built-in exercise DB (via MOVEMENTS) + the admin library. Hide any
+  // name a custom entry aliases (incl. superseded built-ins) so the same lift
+  // never shows twice — it still resolves via merge.
+  const catalog = [...new Set([...Object.keys(MOVEMENTS), ...libraryCatalog])]
     .filter((n) => !aliases.has(n))
     .sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
@@ -434,10 +420,18 @@ export default function WorkoutBlocks({
               )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <div style={{ minWidth: detailed ? 360 : 240 }}>
+              {/* The exercise DB drives how THIS lift's sets read: a plank
+                  counts seconds, a carry counts metres, a pull-up's load is
+                  BW + added weight. */}
               <div style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
                 <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.reps")}</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
+                  {(() => {
+                    const m = exerciseProfile(b.name).strength?.measure;
+                    return t(m === "time" ? "w.train.blocks.secs" : m === "distance" ? "w.train.blocks.distM" : "w.train.blocks.reps");
+                  })()}
+                </Mono>
                 {detailed && (
                   <>
                     <button
@@ -482,8 +476,21 @@ export default function WorkoutBlocks({
                       </button>
                     );
                   })()}
-                  <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={units === "lb" ? "225" : "100"} style={input} />
-                  <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
+                  {(() => {
+                    const sp = exerciseProfile(b.name).strength;
+                    const loadPh =
+                      sp?.loadMode === "bodyweight" ? "BW"
+                      : sp?.loadMode === "bodyweight-plus" ? `+${units}`
+                      : sp?.loadMode === "assisted" ? `−${units}`
+                      : units === "lb" ? "225" : "100";
+                    const repsPh = sp?.measure === "time" ? "30" : sp?.measure === "distance" ? "20" : "5";
+                    return (
+                      <>
+                        <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
+                        <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder={repsPh} style={input} />
+                      </>
+                    );
+                  })()}
                   {detailed && (
                     <>
                       <input value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />

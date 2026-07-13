@@ -1000,7 +1000,12 @@ export default function Workout() {
                 <View style={{ flexDirection: "row", gap: space.xs, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
                   <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
-                  <ColHead>REPS</ColHead>
+                  {/* The exercise DB decides the measure: a plank counts
+                      seconds, a carry counts metres. */}
+                  <ColHead>{(() => {
+                    const m = exerciseProfile(x.name).strength?.measure;
+                    return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
+                  })()}</ColHead>
                   {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
                   {prefs.detailed && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />

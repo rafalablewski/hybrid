@@ -1,6 +1,7 @@
 import type { BlockKind } from "./engines/session";
 import { inferBlockKind } from "./engines/session";
 import { olympicSport, timedSportOnly, sportDistanceUnit, sportPacePerMeters } from "./olympic-sports";
+import { gymExercise, type LoadMode, type Measure, type GymEquipment } from "./exercise-db";
 
 // THE per-exercise property model. Every exercise/sport tracks its OWN values:
 // a run has pace + distance + time (per km), a swim has a different pace split
@@ -14,6 +15,20 @@ import { olympicSport, timedSportOnly, sportDistanceUnit, sportPacePerMeters } f
 
 /** An input field a cardio activity's editor shows, in display order. */
 export type CardioField = "distance" | "duration" | "incline" | "stroke" | "elevation" | "zone";
+
+/** How a STRENGTH exercise's set editor reads, from the exercise DB. */
+export interface StrengthProfile {
+  /** What a set counts — reps, seconds (holds), or metres (carries/sleds). */
+  measure: Measure;
+  /** How the load field reads — external kg, BW, BW+added, or assisted. */
+  loadMode: LoadMode;
+  /** One side at a time (lunges, single-arm work) — reps read per side. */
+  unilateral: boolean;
+  /** Equipment, or null for a custom lift the DB doesn't know. */
+  equipment: GymEquipment | null;
+}
+
+const DEFAULT_STRENGTH: StrengthProfile = { measure: "reps", loadMode: "external", unilateral: false, equipment: null };
 
 export interface ExerciseProfile {
   /** The block kind this exercise logs as (strength | cardio | conditioning). */
@@ -30,6 +45,8 @@ export interface ExerciseProfile {
   distanceUnit: "km" | "m";
   /** The sport's pace split label — "/km", "/100m" (swim), "/500m" (row/canoe). */
   paceLabel: string;
+  /** Present for strength exercises — how the set editor reads for THIS lift. */
+  strength?: StrengthProfile;
 }
 
 const TREADMILL_RE = /\b(treadmill|incline walk)\b/i;
@@ -41,15 +58,27 @@ const ELEVATION_RE = /\b(run|running|trail|hike|hiking|ruck|rucking|cycling|bike
 
 /** Resolve the property model for an exercise/sport name. */
 export function exerciseProfile(name: string): ExerciseProfile {
-  // A catalog sport ALWAYS logs as a cardio activity (that's how the sport
-  // picker adds it) — the keyword heuristic only matches whole words ("Run"
-  // but not "Running"), so the catalog must win before inference.
-  const kind: BlockKind = olympicSport(name) ? "cardio" : inferBlockKind(name);
+  // Resolution order: the exercise DATABASE wins (every gym exercise carries
+  // its own property sheet), then a catalog sport ALWAYS logs as a cardio
+  // activity (that's how the sport picker adds it — and the keyword heuristic
+  // only matches whole words, "Run" but not "Running"), then inference.
+  const g = gymExercise(name);
+  const kind: BlockKind = g ? "strength" : olympicSport(name) ? "cardio" : inferBlockKind(name);
   const per = sportPacePerMeters(name);
   const base = {
     distanceUnit: sportDistanceUnit(name),
     paceLabel: per === 1000 ? "/km" : `/${per}m`,
   } as const;
+  if (kind === "strength")
+    return {
+      kind,
+      fields: [],
+      pace: false,
+      ...base,
+      strength: g
+        ? { measure: g.measure, loadMode: g.loadMode, unilateral: !!g.unilateral, equipment: g.equipment }
+        : DEFAULT_STRENGTH,
+    };
   if (kind !== "cardio") return { kind, fields: [], pace: false, ...base };
 
   // Timed sports (tennis, judo, …) track duration only — plus an HR zone,
