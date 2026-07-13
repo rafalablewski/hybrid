@@ -92,3 +92,25 @@ drop policy if exists hidden_own on "HiddenHighlight";
 create policy hidden_own on "HiddenHighlight" for all
   using ("userId" = public.app_user_id())
   with check ("userId" = public.app_user_id());
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 4) HighlightOrder — the owner's chosen ARRANGEMENT of the public Overview
+--    tiles (Apple-style drag-to-reorder in edit mode). One row per user holding
+--    the ordered list of tile keys (same stable ids as HiddenHighlight). The
+--    grid reconciles this against the tiles that currently have data: known keys
+--    render in this order; any newly-earned key not yet listed appends at the
+--    end. Owner-only, like the rest of this surface.
+-- ────────────────────────────────────────────────────────────────────────────
+create table if not exists "HighlightOrder" (
+  "id"        text primary key default gen_random_uuid()::text,
+  "userId"    text not null unique references "User"("id"),
+  "keys"      text[] not null default '{}',
+  "updatedAt" timestamp(3) not null default now()
+);
+
+alter table "HighlightOrder" enable row level security;
+
+drop policy if exists highlightorder_own on "HighlightOrder";
+create policy highlightorder_own on "HighlightOrder" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());

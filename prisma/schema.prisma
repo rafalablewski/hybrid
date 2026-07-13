@@ -84,6 +84,7 @@ model User {
   bodyMetrics      BodyMetric[]
   journalEntries   JournalEntry[]
   hiddenHighlights HiddenHighlight[]
+  highlightOrder   HighlightOrder?
   templates       WorkoutTemplate[]
   assignments     Assignment[]     @relation("assignmentAthlete")
   assignmentsMade Assignment[]     @relation("assignmentCoach")
@@ -478,6 +479,19 @@ model HiddenHighlight {
 
   @@unique([userId, key])
   @@index([userId])
+}
+
+// The owner's chosen arrangement of the public Overview highlight tiles. A single
+// row per user holding the ordered list of tile keys (same stable ids as
+// HiddenHighlight, e.g. "pr:deadlift", "streak"). The grid reconciles this
+// against the tiles that currently have data: known keys render in this order,
+// any newly-earned key not yet listed appends at the end.
+model HighlightOrder {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  keys      String[]
+  updatedAt DateTime @updatedAt
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
