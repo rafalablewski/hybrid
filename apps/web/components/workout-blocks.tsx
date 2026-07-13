@@ -302,9 +302,15 @@ export default function WorkoutBlocks({
   };
 
   const ssLabels = supersetLabels(blocks);
-  // Set-row grid: the base columns (badge · load · reps [· rpe · m/s] · move ·
-  // remove) gain a ✓-to-bank column at the end in live mode.
-  const strengthCols = `${detailed ? "26px 1fr 1fr 1fr 1fr" : "26px 1fr 1fr"} 22px 28px${live ? " 40px" : ""}`;
+  // A plain-bodyweight lift (Pull-Up, Dip, Pistol Squat…) has NO load column —
+  // the set is just BW × reps. "Weighted X" variants keep it (BW + added).
+  const bwLift = (name: string) => exerciseProfile(name).strength?.loadMode === "bodyweight";
+  // Set-row grid: the base columns (badge, load unless bodyweight, reps
+  // [, rpe, m/s], move, remove) gain a ✓-to-bank column at the end in live mode.
+  const strengthCols = (name: string) => {
+    const inputs = (detailed ? 3 : 1) + (bwLift(name) ? 0 : 1);
+    return `26px${" 1fr".repeat(inputs)} 22px 28px${live ? " 40px" : ""}`;
+  };
 
   return (
     <>
@@ -423,9 +429,11 @@ export default function WorkoutBlocks({
               {/* The exercise DB drives how THIS lift's sets read: a plank
                   counts seconds, a carry counts metres, a pull-up's load is
                   BW + added weight. */}
-              <div style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
+                {!bwLift(b.name) && (
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
+                )}
                 <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                   {(() => {
                     const m = exerciseProfile(b.name).strength?.measure;
@@ -451,7 +459,7 @@ export default function WorkoutBlocks({
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 6, alignItems: "center" }}
+                  style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 6, alignItems: "center" }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -479,14 +487,15 @@ export default function WorkoutBlocks({
                   {(() => {
                     const sp = exerciseProfile(b.name).strength;
                     const loadPh =
-                      sp?.loadMode === "bodyweight" ? "BW"
-                      : sp?.loadMode === "bodyweight-plus" ? `+${units}`
+                      sp?.loadMode === "bodyweight-plus" ? `+${units}`
                       : sp?.loadMode === "assisted" ? `−${units}`
                       : units === "lb" ? "225" : "100";
                     const repsPh = sp?.measure === "time" ? "30" : sp?.measure === "distance" ? "20" : "5";
                     return (
                       <>
-                        <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
+                        {sp?.loadMode !== "bodyweight" && (
+                          <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
+                        )}
                         <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder={repsPh} style={input} />
                       </>
                     );
@@ -835,10 +844,16 @@ function SignalMetrics({ b, units }: { b: EditableBlock; units: WeightUnit }) {
     b.kind === "strength"
       ? (() => {
           const s = strengthBlockStats(b);
+          // A plain-bodyweight lift has no load — its signal is scheme + time.
+          const bw = exerciseProfile(b.name).strength?.loadMode === "bodyweight";
           return [
             cell(`${t("w.train.blocks.setCol")} × ${t("w.train.blocks.reps")}`, s.scheme),
-            cell(`${t("w.train.blocks.load")} (${units})`, s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"),
-            cell(t("w.train.signal.tonnage"), s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—", LIME),
+            ...(bw
+              ? []
+              : [
+                  cell(`${t("w.train.blocks.load")} (${units})`, s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"),
+                  cell(t("w.train.signal.tonnage"), s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—", LIME),
+                ]),
             cell(t("w.train.signal.estTime"), `${minutes} min`),
           ];
         })()

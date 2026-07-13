@@ -113,8 +113,15 @@ describe("strength profiles (per-exercise editor behaviour)", () => {
     expect(p.strength).toMatchObject({ measure: "time", loadMode: "bodyweight" });
   });
 
-  it("a pull-up reads BW + added load", () => {
-    expect(exerciseProfile("Pull-Up").strength?.loadMode).toBe("bodyweight-plus");
+  it("load modes: deadlift is kg, pull-up is plain BW (no load), weighted pull-up is BW + added", () => {
+    // Deadlift 100 kg × 7 / Pull-Up bodyweight × 7 / Weighted Pull-Up BW + plates × 7.
+    expect(exerciseProfile("Deadlift").strength?.loadMode).toBe("external");
+    expect(exerciseProfile("Pull-Up").strength?.loadMode).toBe("bodyweight");
+    expect(exerciseProfile("Weighted Pull-Up").strength?.loadMode).toBe("bodyweight-plus");
+    expect(exerciseProfile("Dip").strength?.loadMode).toBe("bodyweight");
+    expect(exerciseProfile("Weighted Dip").strength?.loadMode).toBe("bodyweight-plus");
+    expect(exerciseProfile("Chin-Up").strength?.loadMode).toBe("bodyweight");
+    expect(exerciseProfile("Weighted Chin-Up").strength?.loadMode).toBe("bodyweight-plus");
   });
 
   it("a farmer carry is measured in metres", () => {

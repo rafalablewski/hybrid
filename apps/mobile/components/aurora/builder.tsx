@@ -336,11 +336,17 @@ function BlockCard({ b, index, count, C, units, rirMode, builder }: {
         {b.kind === "strength" ? (
           (() => {
             const s = strengthBlockStats(b);
+            // A plain-bodyweight lift has no load — its signal is scheme + time.
+            const bw = exerciseProfile(b.name).strength?.loadMode === "bodyweight";
             return (
               <>
                 <Metric C={C} label={`${t("w.train.blocks.setCol")} × ${t("w.train.blocks.reps")}`} value={s.scheme} />
-                <Metric C={C} label={`${t("w.train.blocks.load")} (${units})`} value={s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"} />
-                <Metric C={C} label={t("w.train.signal.tonnage")} value={s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—"} c={C.lime} />
+                {!bw && (
+                  <>
+                    <Metric C={C} label={`${t("w.train.blocks.load")} (${units})`} value={s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"} />
+                    <Metric C={C} label={t("w.train.signal.tonnage")} value={s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—"} c={C.lime} />
+                  </>
+                )}
                 <Metric C={C} label={t("w.train.signal.estTime")} value={`${minutes} min`} />
               </>
             );
@@ -394,10 +400,12 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
   // The exercise DB drives how THIS lift's sets read: a plank counts seconds,
   // a carry counts metres, a pull-up's load is BW + added weight.
   const sp = exerciseProfile(b.name).strength;
+  // A plain-bodyweight lift (Pull-Up, Dip…) has NO load column — the set is
+  // just BW × reps. "Weighted X" variants keep it (BW + added).
+  const showLoad = sp?.loadMode !== "bodyweight";
   const repsLabel = t(sp?.measure === "time" ? "w.train.blocks.secs" : sp?.measure === "distance" ? "w.train.blocks.distM" : "w.train.blocks.reps");
   const loadPh =
-    sp?.loadMode === "bodyweight" ? "BW"
-    : sp?.loadMode === "bodyweight-plus" ? `+${units}`
+    sp?.loadMode === "bodyweight-plus" ? `+${units}`
     : sp?.loadMode === "assisted" ? `−${units}`
     : units === "lb" ? "225" : "100";
   const repsPh = sp?.measure === "time" ? "30" : sp?.measure === "distance" ? "20" : "5";
@@ -405,7 +413,7 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
     <View style={{ marginTop: 12 }}>
       <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 4 }}>
         <View style={{ width: 34 }}>{label(t("w.train.blocks.setCol"))}</View>
-        <View style={{ flex: 1 }}>{label(`${t("w.train.blocks.load")} (${units})`)}</View>
+        {showLoad && <View style={{ flex: 1 }}>{label(`${t("w.train.blocks.load")} (${units})`)}</View>}
         <View style={{ flex: 1 }}>{label(repsLabel)}</View>
         <View style={{ flex: 1 }}>{label(rirMode ? "RIR" : "RPE")}</View>
         <View style={{ width: 28 }} />
@@ -423,7 +431,9 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
             </Pressable>
-            <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
+            {showLoad && (
+              <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
+            )}
             <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
             <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
             <Pressable onPress={() => builder.removeSet(b.uid, i)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t("common.delete")} style={{ width: 28, height: 38, alignItems: "center", justifyContent: "center" }}>

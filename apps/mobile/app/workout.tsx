@@ -999,9 +999,12 @@ export default function Workout() {
                 })()}
                 <View style={{ flexDirection: "row", gap: space.xs, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
-                  <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
-                  {/* The exercise DB decides the measure: a plank counts
-                      seconds, a carry counts metres. */}
+                  {/* The exercise DB decides the columns: a plain-bodyweight
+                      lift (Pull-Up, Dip…) has no load column at all; a plank
+                      counts seconds, a carry counts metres. */}
+                  {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
+                    <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
+                  )}
                   <ColHead>{(() => {
                     const m = exerciseProfile(x.name).strength?.measure;
                     return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
@@ -1028,7 +1031,9 @@ export default function Workout() {
                         </Pressable>
                       );
                     })()}
-                    <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
+                    {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
+                      <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
+                    )}
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     {prefs.detailed && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
