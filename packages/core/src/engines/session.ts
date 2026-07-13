@@ -1,5 +1,6 @@
 import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS } from "./movements";
+import { gymExercise } from "../exercise-db";
 import { sportPacePerMeters, formatSportDistance } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
@@ -581,18 +582,53 @@ export function toggleSuperset<T extends { kind: string; group?: string; superse
 }
 
 /**
- * Tonnage (load × reps) summed across a session's strength sets. Working sets
- * only by default; pass `includeWarmups` to count warm-up/cool-down sets too
- * (the user volume setting).
+ * The EFFECTIVE load of a strength set in kg, honouring the exercise's load
+ * mode from the exercise DB: external = the entered load; bodyweight = the
+ * athlete's bodyweight (10 pull-ups at 70 kg BW = 700 kg of work);
+ * bodyweight-plus = BW + the entered added weight (+10 kg → 80 kg per rep);
+ * assisted = BW − the entered assistance. When the bodyweight isn't known
+ * (guest, never logged), it degrades to the entered number — exactly the
+ * pre-bodyweight behaviour, so nothing regresses without data.
  */
-export function sessionVolume(blocks: SessionBlock[], includeWarmups = false): number {
+export function effectiveSetLoadKg(
+  exerciseName: string,
+  load: string,
+  bodyweightKg?: number | null,
+): number {
+  const n = parseFloat(load);
+  const entered = Number.isFinite(n) ? n : 0;
+  const bw = bodyweightKg != null && bodyweightKg > 0 ? bodyweightKg : 0;
+  const mode = gymExercise(exerciseName)?.loadMode ?? "external";
+  if (mode === "bodyweight") return bw;
+  if (mode === "bodyweight-plus") return bw + entered;
+  if (mode === "assisted") return Math.max(0, bw - entered);
+  return entered;
+}
+
+/**
+ * Tonnage (effective load × reps) summed across a session's strength sets.
+ * Working sets only by default; pass `includeWarmups` to count warm-up /
+ * cool-down sets too (the user volume setting). Pass the athlete's
+ * `bodyweightKg` so bodyweight lifts count their true work (see
+ * effectiveSetLoadKg). Sets measured in seconds or metres (planks, carries)
+ * are never tonnage.
+ */
+export function sessionVolume(
+  blocks: SessionBlock[],
+  includeWarmups = false,
+  bodyweightKg?: number | null,
+): number {
   let v = 0;
   for (const b of blocks) {
     if (!isStrength(b)) continue;
+    // A hold or carry's "reps" are seconds/metres — multiplying them by a
+    // load isn't tonnage; skip the block entirely.
+    const measure = gymExercise(b.name)?.measure ?? "reps";
+    if (measure !== "reps") continue;
     for (const s of setsForVolume(b, includeWarmups)) {
-      const load = num(s.load);
       const reps = num(s.reps);
-      if (!Number.isNaN(load) && !Number.isNaN(reps)) v += load * reps;
+      if (Number.isNaN(reps)) continue;
+      v += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
     }
   }
   return Math.round(v);

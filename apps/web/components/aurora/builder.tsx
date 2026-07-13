@@ -7,6 +7,7 @@ import type { SessionBlock, WeightUnit } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
+import { useBodyweight } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -24,6 +25,8 @@ type Template = { id: string; name: string; description: string | null; blocks: 
 export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void }) {
   const { t: tr } = useLang();
   const prefs = useLoggerPrefs();
+  // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
+  const bodyweightKg = useBodyweight();
   // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
   const allowedSave = canSaveRoutine(usePersona());
   const goUpgrade = () => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "builder-save" }); onUpgrade?.(); };
@@ -76,7 +79,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr("w.train.builder.descriptionPh")}
           style={{ ...input, width: "100%", marginBottom: 14 }} />
 
-        <SessionPulse blocks={blocks} units={prefs.units} />
+        <SessionPulse blocks={blocks} units={prefs.units} bodyweightKg={bodyweightKg} />
 
         <WorkoutBlocks
           blocks={blocks}
@@ -87,6 +90,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
           rirMode={prefs.rpeAsRir}
           units={prefs.units}
           plateCalc={prefs.plateCalc}
+          bodyweightKg={bodyweightKg}
         />
 
         {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
@@ -133,9 +137,9 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
  * endurance time balance. Modality is encoded in the bar segments' colours
  * (lime / violet / teal) — information, not decoration; no accent rails.
  */
-function SessionPulse({ blocks, units }: { blocks: EditableBlock[]; units: WeightUnit }) {
+function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]; units: WeightUnit; bodyweightKg?: number | null }) {
   const { t: tr } = useLang();
-  const sig = sessionSignal(blocks);
+  const sig = sessionSignal(blocks, { bodyweightKg });
   const tonnage = sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : "—";
   const cellStyle = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "9px 12px" } as const;
   const label = { fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), display: "block", marginBottom: 3 } as const;

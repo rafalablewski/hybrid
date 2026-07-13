@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useBodyweight } from "../lib/use-bodyweight";
 import {
   prescribeSession,
   toTrainingLog,
@@ -217,6 +218,8 @@ export default function Workout() {
     return false;
   };
   const prefs = useLoggerPrefs();
+  // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
+  const bodyweightKg = useBodyweight();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
   // Auto-titled — no name input while logging; a name is only entered on the
@@ -736,7 +739,7 @@ export default function Workout() {
   // Live in-session scoreboard — running exercises / sets / volume / PRs off the
   // shared core helper (same numbers the finish summary + share card show).
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current), [exercises]);
+  const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current, { bodyweightKg }), [exercises, bodyweightKg]);
 
   const finish = async () => {
     const blocks = buildBlocks();
@@ -803,7 +806,7 @@ export default function Workout() {
       sessionId,
       title: payload.title,
       blocks,
-      volume: sessionVolume(blocks),
+      volume: sessionVolume(blocks, false, bodyweightKg),
       sets,
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
       guest,

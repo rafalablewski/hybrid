@@ -1,5 +1,6 @@
 import type { SessionBlock, StrengthBlock, CardioBlock, ConditioningBlock } from "./session";
-import { workingSets, cardioPace, sessionVolume } from "./session";
+import { workingSets, cardioPace, sessionVolume, effectiveSetLoadKg } from "./session";
+import { gymExercise } from "../exercise-db";
 import { formatSportDistance } from "../olympic-sports";
 
 // The Builder's "signal board" math — the live session summary both clients
@@ -59,8 +60,13 @@ export interface SessionSignal {
   split: Record<SignalBucket, number>;
 }
 
-/** The live session summary: duration, tonnage, and the modality balance. */
-export function sessionSignal(blocks: SessionBlock[]): SessionSignal {
+/** The live session summary: duration, tonnage, and the modality balance.
+ *  Pass the athlete's bodyweight so bodyweight lifts count their true work
+ *  (10 pull-ups at 70 kg BW = 700 kg; +10 kg added = 800 kg). */
+export function sessionSignal(
+  blocks: SessionBlock[],
+  opts: { bodyweightKg?: number | null } = {},
+): SessionSignal {
   const mins: Record<SignalBucket, number> = { strength: 0, conditioning: 0, endurance: 0 };
   for (const b of blocks) mins[signalBucket(b)] += estimateBlockMinutes(b);
   const total = mins.strength + mins.conditioning + mins.endurance;
@@ -72,7 +78,7 @@ export function sessionSignal(blocks: SessionBlock[]): SessionSignal {
   }
   return {
     minutes: Math.round(total),
-    tonnageKg: sessionVolume(blocks),
+    tonnageKg: sessionVolume(blocks, false, opts.bodyweightKg),
     moves: blocks.length,
     split,
   };
@@ -85,21 +91,29 @@ const num = (s: string | undefined): number => {
 
 /**
  * The metric row a STRENGTH block shows on its signal card — scheme (working
- * sets × modal reps), top working load, and working tonnage. All derived.
+ * sets × modal reps), top ENTERED load, and working tonnage. Tonnage is
+ * bodyweight-aware when `bodyweightKg` is passed (effectiveSetLoadKg); the top
+ * load stays the entered number so it always matches the input field. Holds
+ * and carries (time/distance measures) report no tonnage.
  */
-export function strengthBlockStats(b: StrengthBlock): {
+export function strengthBlockStats(
+  b: StrengthBlock,
+  bodyweightKg?: number | null,
+): {
   scheme: string;
   topKg: number;
   volumeKg: number;
 } {
   const working = workingSets(b).filter((s) => !s.drop);
+  const countsTonnage = (gymExercise(b.name)?.measure ?? "reps") === "reps";
   let top = 0;
   let volume = 0;
   for (const s of workingSets(b)) {
     const load = num(s.load);
     const reps = num(s.reps);
     if (!Number.isNaN(load)) top = Math.max(top, load);
-    if (!Number.isNaN(load) && !Number.isNaN(reps)) volume += load * reps;
+    if (countsTonnage && !Number.isNaN(reps))
+      volume += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
   }
   const reps = working[0]?.reps ?? "";
   return {

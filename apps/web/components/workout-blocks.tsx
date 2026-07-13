@@ -80,6 +80,7 @@ export default function WorkoutBlocks({
   plateCalc = false,
   live = false,
   signal = false,
+  bodyweightKg,
   lastByLift,
   onToggleDone,
 }: {
@@ -96,6 +97,9 @@ export default function WorkoutBlocks({
    * strength blocks gain a planned-rest stepper. The Logger stays as-is.
    */
   signal?: boolean;
+  /** The athlete's bodyweight (kg) — bodyweight lifts count it as tonnage
+   *  (core effectiveSetLoadKg). Null/absent degrades to entered-load math. */
+  bodyweightKg?: number | null;
   /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
   detailed?: boolean;
   /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
@@ -413,7 +417,7 @@ export default function WorkoutBlocks({
               (scheme, top load, tonnage / distance, pace / format, rounds, and
               the block's estimated minutes). Visible collapsed or expanded, so
               editing a set is immediately reflected above. */}
-          {signal && <SignalMetrics b={b} units={units} />}
+          {signal && <SignalMetrics b={b} units={units} bodyweightKg={bodyweightKg} />}
 
           {!isCollapsed(b.uid) && (b.kind === "strength" ? (
             <>
@@ -831,7 +835,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
  * prescription: edit a set below, watch the number move above. Modality is
  * carried by which metrics exist and the accent on the key one — no rails.
  */
-function SignalMetrics({ b, units }: { b: EditableBlock; units: WeightUnit }) {
+function SignalMetrics({ b, units, bodyweightKg }: { b: EditableBlock; units: WeightUnit; bodyweightKg?: number | null }) {
   const { t } = useLang();
   const minutes = Math.round(estimateBlockMinutes(b));
   const cell = (label: string, value: string, c?: string) => (
@@ -843,14 +847,18 @@ function SignalMetrics({ b, units }: { b: EditableBlock; units: WeightUnit }) {
   const cells =
     b.kind === "strength"
       ? (() => {
-          const s = strengthBlockStats(b);
-          // A plain-bodyweight lift has no load — its signal is scheme + time.
+          const s = strengthBlockStats(b, bodyweightKg);
+          // A plain-bodyweight lift shows no load cell (nothing was entered) —
+          // but with a known bodyweight its TONNAGE is real (BW × reps), so
+          // the tonnage cell stays whenever it has a value.
           const bw = exerciseProfile(b.name).strength?.loadMode === "bodyweight";
           return [
             cell(`${t("w.train.blocks.setCol")} × ${t("w.train.blocks.reps")}`, s.scheme),
-            ...(bw
+            ...(bw && s.volumeKg <= 0
               ? []
-              : [
+              : bw
+                ? [cell(t("w.train.signal.tonnage"), fmtTonnage(s.volumeKg, units), LIME)]
+                : [
                   cell(`${t("w.train.blocks.load")} (${units})`, s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"),
                   cell(t("w.train.signal.tonnage"), s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—", LIME),
                 ]),

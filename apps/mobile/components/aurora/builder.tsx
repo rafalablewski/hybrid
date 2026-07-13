@@ -31,6 +31,7 @@ import {
 } from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useExercises } from "../../lib/queries";
+import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
@@ -60,6 +61,8 @@ export default function AuroraBuilder() {
   const { t } = useLang();
   const router = useRouter();
   const prefs = useLoggerPrefs();
+  // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
+  const bodyweightKg = useBodyweight();
   // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
   const allowedSave = canSaveRoutine(usePersona());
   const b = useRoutineBuilder();
@@ -94,7 +97,7 @@ export default function AuroraBuilder() {
         style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 }}
       />
 
-      <SessionPulse items={b.items} units={prefs.units} C={C} />
+      <SessionPulse items={b.items} units={prefs.units} C={C} bodyweightKg={bodyweightKg} />
 
       {b.items.map((x, i) => (
         <BlockCard
@@ -105,6 +108,7 @@ export default function AuroraBuilder() {
           C={C}
           units={prefs.units}
           rirMode={prefs.rpeAsRir}
+          bodyweightKg={bodyweightKg}
           builder={b}
         />
       ))}
@@ -229,9 +233,9 @@ export default function AuroraBuilder() {
  * the strength ⇄ conditioning ⇄ endurance time balance. Modality is encoded
  * in the bar segments' colours — no accent rails.
  */
-function SessionPulse({ items, units, C }: { items: EditableBlock[]; units: WeightUnit; C: Palette }) {
+function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[]; units: WeightUnit; C: Palette; bodyweightKg?: number | null }) {
   const { t } = useLang();
-  const sig = sessionSignal(items);
+  const sig = sessionSignal(items, { bodyweightKg });
   const cell = (label: string, value: string) => (
     <View key={label} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 11, paddingVertical: 9 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 3 }}>{label}</Text>
@@ -282,13 +286,14 @@ type Builder = ReturnType<typeof useRoutineBuilder>;
  * reorder, collapse chevron, remove) + an always-visible metric row derived
  * from the editable fields + the per-modality editor body when expanded.
  */
-function BlockCard({ b, index, count, C, units, rirMode, builder }: {
+function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }: {
   b: EditableBlock;
   index: number;
   count: number;
   C: Palette;
   units: WeightUnit;
   rirMode: boolean;
+  bodyweightKg?: number | null;
   builder: Builder;
 }) {
   const { t } = useLang();
@@ -335,17 +340,18 @@ function BlockCard({ b, index, count, C, units, rirMode, builder }: {
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
         {b.kind === "strength" ? (
           (() => {
-            const s = strengthBlockStats(b);
-            // A plain-bodyweight lift has no load — its signal is scheme + time.
+            const s = strengthBlockStats(b, bodyweightKg);
+            // A plain-bodyweight lift shows no load cell (nothing was entered)
+            // — but with a known bodyweight its TONNAGE is real (BW × reps).
             const bw = exerciseProfile(b.name).strength?.loadMode === "bodyweight";
             return (
               <>
                 <Metric C={C} label={`${t("w.train.blocks.setCol")} × ${t("w.train.blocks.reps")}`} value={s.scheme} />
                 {!bw && (
-                  <>
-                    <Metric C={C} label={`${t("w.train.blocks.load")} (${units})`} value={s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"} />
-                    <Metric C={C} label={t("w.train.signal.tonnage")} value={s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—"} c={C.lime} />
-                  </>
+                  <Metric C={C} label={`${t("w.train.blocks.load")} (${units})`} value={s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"} />
+                )}
+                {(!bw || s.volumeKg > 0) && (
+                  <Metric C={C} label={t("w.train.signal.tonnage")} value={s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—"} c={C.lime} />
                 )}
                 <Metric C={C} label={t("w.train.signal.estTime")} value={`${minutes} min`} />
               </>

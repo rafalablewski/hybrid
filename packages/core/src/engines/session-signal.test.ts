@@ -6,6 +6,7 @@ import {
   blockSignalSummary,
   DEFAULT_REST_SEC,
 } from "./session-signal";
+import { effectiveSetLoadKg, sessionVolume } from "./session";
 import type { SessionBlock, StrengthBlock } from "./session";
 
 const squat = (over: Partial<StrengthBlock> = {}): StrengthBlock => ({
@@ -104,5 +105,42 @@ describe("blockSignalSummary", () => {
       "1500 m – 28 min",
     );
     expect(blockSignalSummary({ kind: "cardio", name: "Rowing", distance: 2 })).toContain("2000 m");
+  });
+});
+
+describe("bodyweight-aware tonnage", () => {
+  it("effective set load: external kg, BW, BW + added, assisted", () => {
+    expect(effectiveSetLoadKg("Deadlift", "100", 70)).toBe(100);
+    expect(effectiveSetLoadKg("Pull-Up", "", 70)).toBe(70);
+    expect(effectiveSetLoadKg("Weighted Pull-Up", "10", 70)).toBe(80);
+    expect(effectiveSetLoadKg("Assisted Pull-Up", "20", 70)).toBe(50);
+    // No known bodyweight → degrade to the entered number (pre-BW behaviour).
+    expect(effectiveSetLoadKg("Pull-Up", "", null)).toBe(0);
+    expect(effectiveSetLoadKg("Weighted Pull-Up", "10", null)).toBe(10);
+  });
+
+  it("10 bodyweight pull-ups at 70 kg BW = 700 kg; +10 kg per rep adds 100 kg", () => {
+    const pullUps = (name: string, load: string): SessionBlock => ({
+      kind: "strength",
+      name,
+      sets: [{ load, reps: "10" }],
+    });
+    expect(sessionVolume([pullUps("Pull-Up", "")], false, 70)).toBe(700);
+    expect(sessionVolume([pullUps("Weighted Pull-Up", "10")], false, 70)).toBe(800);
+    // Without a bodyweight, behaviour is unchanged from before.
+    expect(sessionVolume([pullUps("Pull-Up", "")])).toBe(0);
+  });
+
+  it("holds and carries never count as tonnage", () => {
+    const plank: SessionBlock = { kind: "strength", name: "Plank", sets: [{ load: "", reps: "45" }] };
+    const carry: SessionBlock = { kind: "strength", name: "Farmer Carry", sets: [{ load: "32", reps: "40" }] };
+    expect(sessionVolume([plank, carry], false, 70)).toBe(0);
+  });
+
+  it("sessionSignal and block stats take the bodyweight through", () => {
+    const b: StrengthBlock = { kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "10" }] };
+    expect(sessionSignal([b], { bodyweightKg: 70 }).tonnageKg).toBe(700);
+    expect(strengthBlockStats(b, 70).volumeKg).toBe(700);
+    expect(strengthBlockStats(b).volumeKg).toBe(0);
   });
 });

@@ -29,9 +29,14 @@ const filled = (v: unknown): boolean => typeof v === "string" && v.trim().length
 /**
  * Compute the live scoreboard for an in-progress (or just-finished) session.
  * `prior` is the athlete's previous sessions, used only for PR counts — pass an
- * empty array (the default) when you just want exercises/sets/volume.
+ * empty array (the default) when you just want exercises/sets/volume. Pass the
+ * athlete's `bodyweightKg` so bodyweight lifts count their true tonnage.
  */
-export function liveSessionStats(blocks: SessionBlock[], prior: LoggedSession[] = []): LiveStats {
+export function liveSessionStats(
+  blocks: SessionBlock[],
+  prior: LoggedSession[] = [],
+  opts: { bodyweightKg?: number | null } = {},
+): LiveStats {
   let exercises = 0;
   let sets = 0;
   for (const b of blocks) {
@@ -55,7 +60,7 @@ export function liveSessionStats(blocks: SessionBlock[], prior: LoggedSession[] 
     }
   }
 
-  const volume = sessionVolume(blocks);
+  const volume = sessionVolume(blocks, false, opts.bodyweightKg);
 
   // PRs need a LoggedSession shape; the live blocks ARE that session-in-progress.
   const live: LoggedSession = {
