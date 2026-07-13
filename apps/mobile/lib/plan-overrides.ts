@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { PlanOverride, PlanOverrides } from "@hybrid/core";
+import { fetchPlanOverrides, savePlanOverride } from "./api";
 
-// Per-day plan overrides the athlete sets by hand — today just "skipped" — keyed
-// by the day's local date (yyyy-mm-dd), scoped per plan. The mobile twin of web
-// lib/plan-overrides.ts, backed by AsyncStorage instead of localStorage. The
-// shared engine (planSchedule) consumes this map, so the two clients stay in
-// lockstep; swapping in a server table later is a drop-in with no UI change.
+// Per-day plan overrides the athlete sets by hand (skip / postpone) — keyed by
+// the day's local date (yyyy-mm-dd), scoped per plan. The mobile twin of web
+// lib/plan-overrides.ts, server-backed exactly like it. Two tiers:
+//   1. AsyncStorage — the immediate, offline-first cache (no flash, no network).
+//   2. /api/plan-days — the source of truth that syncs across devices.
+// The shared engine (planSchedule) consumes this map, so the two clients stay in
+// lockstep.
 //
-// AsyncStorage is async, so overrides live in React state: load on mount (per
-// planId) and, on setOverride, write to AsyncStorage AND update local state at
-// once (optimistic) so the rail re-renders immediately.
+// On mount (per planId) we load the AsyncStorage cache AND fetch the server's
+// overrides, merging the server result in (server wins). On setOverride we write
+// to AsyncStorage AND update local state at once (optimistic) so the rail
+// re-renders immediately, then POST to the server fire-and-forget.
 
 const KEY = (planId: string) => `hybrid.plan-overrides.${planId}`;
 const EMPTY: PlanOverrides = {};
@@ -48,6 +52,16 @@ export function usePlanOverrides(planId: string | null | undefined): {
       .catch(() => {
         if (alive) setOverrides(EMPTY);
       });
+    // Then reconcile with the server (source of truth). A late resolve landing
+    // after the plan flipped is ignored (alive guard); the server map wins and is
+    // written back into the AsyncStorage cache.
+    fetchPlanOverrides(planId)
+      .then((server) => {
+        if (!alive || !server || typeof server !== "object") return;
+        setOverrides(server);
+        AsyncStorage.setItem(KEY(planId), JSON.stringify(server)).catch(() => {});
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -63,6 +77,9 @@ export function usePlanOverrides(planId: string | null | undefined): {
         // Persist (fire-and-forget) — local state is already updated so the rail
         // re-renders at once; a failed write (quota / private mode) is a no-op.
         AsyncStorage.setItem(KEY(planId), JSON.stringify(next)).catch(() => {});
+        // Write through to the server (fire-and-forget; the cache keeps it if
+        // that fails, and a later successful write re-syncs).
+        void savePlanOverride(planId, dateKey, override);
         return next;
       });
     },

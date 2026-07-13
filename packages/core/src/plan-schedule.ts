@@ -21,16 +21,28 @@ export type PlanDayStatus =
   | "done" // a session was logged on this date
   | "missed" // a training day in the past with nothing logged and not skipped
   | "skipped" // the athlete explicitly skipped it (no adherence penalty)
+  | "postponed" // the athlete moved this day's session to a later date (no penalty)
   | "today" // this date is today and it's still open (not yet done/skipped)
   | "upcoming" // a future training day
   | "rest"; // a rest / active-rest day (never counts against adherence)
 
-/** A per-day override the athlete sets by hand. Only `skipped` for v1 —
- *  postpone (moving a day to a later date) is a planned follow-up. */
-export type PlanOverride = { status: "skipped" };
+/** A per-day override the athlete sets by hand: skip it, or postpone it to a
+ *  later date (which relocates its session onto that date's card). */
+export type PlanOverride =
+  | { status: "skipped" }
+  | { status: "postponed"; toDateKey: string };
 
 /** Overrides keyed by the day's local date key (yyyy-mm-dd). */
 export type PlanOverrides = Record<string, PlanOverride>;
+
+/** A session that was postponed FROM another date onto this one — surfaced on the
+ *  target day's card so a moved workout is visible where it now lives. */
+export interface PostponedItem {
+  fromDateKey: string;
+  title: string;
+  rows: PlanProgramTodayRow[];
+  blocks: SessionBlock[];
+}
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
@@ -79,6 +91,10 @@ export interface ScheduledDay {
   blocks: SessionBlock[];
   /** the logged session that fulfilled a done day (first on that date), else null. */
   sessionId: string | null;
+  /** when THIS day was postponed, the date its session moved to; else null. */
+  postponedTo: string | null;
+  /** sessions postponed FROM other dates onto THIS date (surfaced as catch-up). */
+  postponedIn: PostponedItem[];
 }
 
 export interface PlanScheduleResult {
@@ -139,12 +155,15 @@ export function planSchedule(opts: {
     if (d.isTraining) trainingSeen++;
 
     const doneId = doneByDate.get(dateKey) ?? null;
-    const skipped = overrides[dateKey]?.status === "skipped";
+    const ov = overrides[dateKey];
 
+    // Actual completion beats an explicit override — if a session was logged that
+    // date, the day is done even if it was earlier skipped/postponed.
     let status: PlanDayStatus;
     if (isRest) status = "rest";
-    else if (skipped) status = "skipped";
     else if (doneId) status = "done";
+    else if (ov?.status === "skipped") status = "skipped";
+    else if (ov?.status === "postponed") status = "postponed";
     else if (ts < todayTs) status = "missed";
     else if (isToday) status = "today";
     else status = "upcoming";
@@ -167,8 +186,21 @@ export function planSchedule(opts: {
       rows: d.rows,
       blocks: d.blocks,
       sessionId: d.isTraining ? doneId : null,
+      postponedTo: status === "postponed" && ov?.status === "postponed" ? ov.toDateKey : null,
+      postponedIn: [],
     };
   });
+
+  // Second pass: relocate each postponed day's session onto its target date's
+  // card (only when the target is within the schedule window and the source
+  // wasn't since completed). Keyed by dateKey for an O(days) attach.
+  const byKey = new Map<string, ScheduledDay>();
+  for (const d of days) byKey.set(d.dateKey, d);
+  for (const d of days) {
+    if (d.status !== "postponed" || !d.postponedTo) continue;
+    const target = byKey.get(d.postponedTo);
+    if (target) target.postponedIn.push({ fromDateKey: d.dateKey, title: d.title, rows: d.rows, blocks: d.blocks });
+  }
 
   let todayIndex = days.findIndex((d) => d.isToday);
   if (todayIndex < 0) todayIndex = days.findIndex((d) => d.ts > todayTs);
@@ -189,9 +221,11 @@ export interface PlanAdherence {
   done: number;
   missed: number;
   skipped: number;
+  postponed: number;
   /** training days still ahead (today + upcoming). */
   remaining: number;
-  /** done / (done + missed) as a 0-100 int; 100 when nothing is due yet. */
+  /** done / (done + missed) as a 0-100 int; 100 when nothing is due yet.
+   *  Skipped + postponed are deliberate choices and never count against it. */
   percent: number;
 }
 
@@ -199,15 +233,17 @@ export function planAdherence(result: PlanScheduleResult): PlanAdherence {
   let done = 0;
   let missed = 0;
   let skipped = 0;
+  let postponed = 0;
   let remaining = 0;
   for (const d of result.days) {
     if (d.isRest) continue;
     if (d.status === "done") done++;
     else if (d.status === "missed") missed++;
     else if (d.status === "skipped") skipped++;
+    else if (d.status === "postponed") postponed++;
     else remaining++; // today + upcoming
   }
   const due = done + missed;
   const percent = due === 0 ? 100 : Math.round((done / due) * 100);
-  return { done, missed, skipped, remaining, percent };
+  return { done, missed, skipped, postponed, remaining, percent };
 }

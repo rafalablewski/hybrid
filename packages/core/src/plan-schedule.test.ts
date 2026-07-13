@@ -94,4 +94,41 @@ describe("planSchedule", () => {
     // percent = done / (done + missed), skipped excluded
     expect(a.percent).toBe(Math.round((a.done / (a.done + a.missed)) * 100));
   });
+
+  it("postpones a day: marks the source postponed and relocates its session onto the target date", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const source = base.days.find((d) => !d.isRest && d.status === "missed")!;
+    const target = base.days.find((d) => d.index > source.index && d.dateKey !== source.dateKey)!;
+    const r = planSchedule({
+      planId: PLAN,
+      startedAt: start,
+      sessions: [],
+      overrides: { [source.dateKey]: { status: "postponed", toDateKey: target.dateKey } },
+      now,
+    })!;
+    // source is postponed (no penalty) and points at the target
+    expect(r.days[source.index]!.status).toBe("postponed");
+    expect(r.days[source.index]!.postponedTo).toBe(target.dateKey);
+    // the moved session surfaces on the target date
+    const tgt = r.days[target.index]!;
+    expect(tgt.postponedIn.length).toBe(1);
+    expect(tgt.postponedIn[0]!.fromDateKey).toBe(source.dateKey);
+    expect(tgt.postponedIn[0]!.title).toBe(source.title);
+    // postponed is excluded from the adherence penalty
+    const a = planAdherence(r);
+    expect(a.postponed).toBe(1);
+  });
+
+  it("lets actual completion win over a stale skip/postpone override", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const day = base.days.find((d) => !d.isRest && d.status === "missed")!;
+    const r = planSchedule({
+      planId: PLAN,
+      startedAt: start,
+      sessions: [sessionOn(day.ts, "s1")],
+      overrides: { [day.dateKey]: { status: "skipped" } },
+      now,
+    })!;
+    expect(r.days[day.index]!.status).toBe("done");
+  });
 });

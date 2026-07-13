@@ -86,6 +86,7 @@ model User {
   hiddenHighlights HiddenHighlight[]
   highlightOrder   HighlightOrder?
   templates       WorkoutTemplate[]
+  planDayOverrides PlanDayOverride[]
   assignments     Assignment[]     @relation("assignmentAthlete")
   assignmentsMade Assignment[]     @relation("assignmentCoach")
   coachLinks    CoachLink[]     @relation("asClient")
@@ -528,6 +529,28 @@ model Assignment {
   @@index([athleteId])
   @@index([athleteId, date])
   @@index([assignedById])
+}
+
+// A per-day override the athlete sets on their enrolled plan's week rail: a day
+// they SKIPPED, or POSTPONED to a later date. "done" and "missed" stay DERIVED
+// (from logged sessions + the calendar) — only explicit intent is persisted here,
+// so this table is small and never fights the reconciliation engine. `date` and
+// `postponedTo` are the client's LOCAL date keys (yyyy-mm-dd) stored verbatim, so
+// the server never has to reason about the athlete's timezone. One row per
+// (user, plan, date); the engine (planSchedule) consumes them as its override map.
+model PlanDayOverride {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  planId      String
+  date        String // local date key yyyy-mm-dd
+  status      String // "skipped" | "postponed"
+  postponedTo String? // target local date key when postponed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, planId, date])
+  @@index([userId, planId])
 }
 
 model CoachNote {

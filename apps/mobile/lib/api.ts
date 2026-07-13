@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
@@ -549,6 +549,34 @@ export async function savePlanMaxes(maxes: Record<string, number>): Promise<bool
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// Per-day plan overrides (skip / postpone) for the enrolled-plan week rail —
+// the server source of truth that syncs across devices. The mobile store
+// (lib/plan-overrides.ts) hydrates its AsyncStorage cache from this on mount and
+// writes through on every change. Both soft-degrade (empty / no-op) when signed
+// out or the table isn't migrated, so the local cache alone keeps the rail working.
+export async function fetchPlanOverrides(planId: string): Promise<PlanOverrides> {
+  try {
+    const res = await fetch(`${API_URL}/api/plan-days?planId=${encodeURIComponent(planId)}`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const d = (await res.json()) as { overrides?: PlanOverrides };
+    return d.overrides ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export async function savePlanOverride(planId: string, date: string, override: PlanOverride | null): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/plan-days`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ planId, date, override }),
+    });
+  } catch {
+    /* stays in the local cache; re-synced on the next successful write */
   }
 }
 

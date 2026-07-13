@@ -33,6 +33,8 @@ function statusPalette(s: PlanDayStatus): Palette {
       return { text: "var(--amber-text)", ring: C("amber"), soft: `color-mix(in srgb, ${C("amber")} 14%, transparent)` };
     case "skipped":
       return { text: "var(--blue-text)", ring: C("blue"), soft: `color-mix(in srgb, ${C("blue")} 12%, transparent)` };
+    case "postponed":
+      return { text: "var(--violet-text)", ring: C("violet"), soft: `color-mix(in srgb, ${C("violet")} 13%, transparent)` };
     case "today":
       return { text: "var(--lime-text)", ring: C("lime"), soft: `color-mix(in srgb, ${C("lime")} 12%, transparent)` };
     case "rest":
@@ -53,6 +55,9 @@ const SkipGlyph = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) =
 );
 const Moon = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 14 14" fill="none" aria-hidden><path d="M11 8.2A4.2 4.2 0 1 1 5.8 3a3.3 3.3 0 0 0 5.2 5.2Z" stroke={c} strokeWidth="1.2" strokeLinejoin="round" /></svg>
+);
+const PostponeGlyph = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 14 12" fill="none" aria-hidden><path d="M2 6h8M6.5 2.5 10.5 6l-4 3.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M12.5 2v8" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></svg>
 );
 const Chevron = ({ dir }: { dir: "l" | "r" }) => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
@@ -152,6 +157,11 @@ export default function AuroraWeekRail({
         onStart={onStart}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
+        onPostpone={() => {
+          const next = schedule.days[sel.index + 1];
+          if (next) setOverride(sel.dateKey, { status: "postponed", toDateKey: next.dateKey });
+        }}
+        canPostpone={!!schedule.days[sel.index + 1]}
         onHistory={() => (onNavigate ? onNavigate("history") : undefined)}
         t={t}
       />
@@ -194,6 +204,7 @@ function DayChip({ day, selected, onSelect, innerRef, t }: { day: ScheduledDay; 
         {day.status === "done" ? <Check c="var(--on-accent)" /> :
          day.status === "missed" ? <Cross /> :
          day.status === "skipped" ? <SkipGlyph /> :
+         day.status === "postponed" ? <PostponeGlyph /> :
          day.isRest ? <Moon c={C("ash")} /> :
          <span style={{ width: 6, height: 6, borderRadius: "50%", background: day.isToday ? C("lime") : "transparent", border: day.isToday ? "none" : `1.5px solid ${C("ash")}` }} />}
       </span>
@@ -203,7 +214,7 @@ function DayChip({ day, selected, onSelect, innerRef, t }: { day: ScheduledDay; 
 
 function StatePill({ status, t }: { status: PlanDayStatus; t: (k: string) => string }) {
   const p = statusPalette(status);
-  const icon = status === "done" ? <Check s={9} /> : status === "missed" ? <Cross s={8} /> : status === "skipped" ? <SkipGlyph s={10} /> : status === "rest" ? <Moon s={10} /> : null;
+  const icon = status === "done" ? <Check s={9} /> : status === "missed" ? <Cross s={8} /> : status === "skipped" ? <SkipGlyph s={10} /> : status === "postponed" ? <PostponeGlyph s={11} /> : status === "rest" ? <Moon s={10} /> : null;
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: p.text, background: status === "upcoming" ? "transparent" : p.soft, border: `1px solid ${status === "upcoming" ? C("line") : `color-mix(in srgb, ${p.ring} 40%, transparent)`}`, borderRadius: 999, padding: "4px 10px" }}>
       {status === "today" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: C("lime") }} />}
@@ -213,11 +224,23 @@ function StatePill({ status, t }: { status: PlanDayStatus; t: (k: string) => str
   );
 }
 
-function DayDetail({ day, onStart, onSkip, onUnskip, onHistory, t }: {
+// Format a local date key (yyyy-mm-dd) as "Wed 15 Jul" for the postpone target.
+function fmtKey(key: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  if (!y || !m || !d) return key;
+  const dt = new Date(y, m - 1, d);
+  const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${WD[dt.getDay()]} ${dt.getDate()} ${MO[dt.getMonth()]}`;
+}
+
+function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
+  onPostpone: () => void;
+  canPostpone: boolean;
   onHistory: () => void;
   t: (k: string) => string;
 }) {
@@ -242,11 +265,15 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onHistory, t }: {
       ) : (
         <>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em" }}>{day.title}</div>
-          {(day.status === "missed" || day.status === "skipped" || day.status === "upcoming") && (
+          {day.status === "postponed" ? (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--violet-text)", margin: "5px 0 0", lineHeight: 1.5 }}>
+              {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
+            </div>
+          ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
               {t(`w.home.rail.${day.status}Note`)}
             </div>
-          )}
+          ) : null}
           <div style={{ display: "flex", flexDirection: "column", gap: space.xs, marginTop: 11 }}>
             {day.rows.map((r, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
@@ -257,26 +284,44 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onHistory, t }: {
           </div>
 
           {/* actions by state */}
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            {day.status === "today" && (<>
-              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t("w.home.today.start")}</button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+            {(day.status === "today" || day.status === "missed") && (<>
+              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
               <button onClick={onSkip} style={ghostBtn(C("blue"))}>{t("w.home.rail.skip")}</button>
+              {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
             </>)}
-            {day.status === "missed" && (<>
-              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
-              <button onClick={onSkip} style={ghostBtn(C("blue"))}>{t("w.home.rail.skip")}</button>
+            {day.status === "upcoming" && (<>
+              <button onClick={() => onStart(day.blocks)} style={{ ...ghostBtn(C("lime")), flex: 2 }}>{t("w.home.rail.startEarly")}</button>
+              {canPostpone && <button onClick={onPostpone} style={ghostBtn(C("violet"))}>{t("w.home.rail.postpone")}</button>}
             </>)}
             {day.status === "skipped" && (
               <button onClick={onUnskip} style={{ ...ghostBtn(C("ash")), flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
             )}
-            {day.status === "upcoming" && (
-              <button onClick={() => onStart(day.blocks)} style={{ ...ghostBtn(C("lime")), flex: 1 }}>{t("w.home.rail.startEarly")}</button>
-            )}
+            {day.status === "postponed" && (<>
+              <button onClick={() => onStart(day.blocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
+              <button onClick={onUnskip} style={ghostBtn(C("ash"))}>{t("w.home.rail.unpostpone")}</button>
+            </>)}
             {day.status === "done" && (
               <button onClick={onHistory} style={{ ...ghostBtn(C("ash")), flex: 1 }}>{t("w.home.rail.viewHistory")}</button>
             )}
           </div>
         </>
+      )}
+
+      {/* Sessions postponed ONTO this date — a light catch-up list. */}
+      {day.postponedIn.length > 0 && (
+        <div style={{ marginTop: 14, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--violet-text)", marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
+          {day.postponedIn.map((it, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
+              </span>
+              <button onClick={() => onStart(it.blocks)} style={{ ...ghostBtn(C("violet")), flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
