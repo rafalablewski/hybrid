@@ -37,6 +37,7 @@ import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
@@ -109,6 +110,9 @@ export default function AuroraLogger({
   // payoff, so instead of silently navigating away we land on a win screen.
   const [done, setDone] = useState<FinishData | null>(null);
   const prefs = useLoggerPrefs();
+  // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
+  const bw = useBodyweightLookup();
+  const bodyweightKg = bw();
   // Live workout clock — starts the moment you enter to log (after the get-ready
   // count-in), so the saved session records real training time. Web twin of the
   // mobile live logger's timer.
@@ -212,7 +216,7 @@ export default function AuroraLogger({
 
   // Live in-session scoreboard — running exercises / sets / volume / PRs, off the
   // shared core helper so it matches the finish summary and the mobile logger.
-  const live = useMemo(() => liveSessionStats(blocks as SessionBlock[], sessions), [blocks, sessions]);
+  const live = useMemo(() => liveSessionStats(blocks as SessionBlock[], sessions, { bodyweightKg }), [blocks, sessions, bodyweightKg]);
 
   // Pause/resume: shift the running rest forward by the held time too, so it
   // doesn't jump when the clock wakes back up (the elapsed clock is shifted in
@@ -365,14 +369,14 @@ export default function AuroraLogger({
         completedAt: payload.completedAt,
         blocks: cleanBlocks,
       };
-      const prs = newPrsInSession(finished, sessions);
+      const prs = newPrsInSession(finished, sessions, bw);
       const cardioPrs = newCardioPrsInSession(finished, sessions);
       // Per-lift est-1RM bests (PR-marked) for the share card — same shape mobile uses.
       const prSet = new Set(prs.map((p) => p.lift));
       const bestMap = new Map<string, number>();
       for (const b of cleanBlocks)
         if (b.kind === "strength") {
-          const e = Math.round(blockBestE1rm(b));
+          const e = Math.round(blockBestE1rm(b, bodyweightKg));
           if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
         }
       const bests: ShareBest[] = [...bestMap.entries()]
@@ -387,7 +391,7 @@ export default function AuroraLogger({
         title: payload.title,
         blocks: cleanBlocks,
         sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
-        volume: sessionVolume(cleanBlocks),
+        volume: sessionVolume(cleanBlocks, false, bodyweightKg),
         minutes,
         bests,
         prs,
@@ -734,6 +738,7 @@ function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySli
 function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void; onUpgrade?: () => void }) {
   const { t } = useLang();
   const router = useRouter();
+  const bodyweightKg = useBodyweightLookup()();
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(data.title);
@@ -758,7 +763,7 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(blocks);
   const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(blocks);
+  const funFact = sessionFunFact(blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prLine(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioLine(p), right: "", hot: true })),

@@ -1,5 +1,7 @@
 import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS } from "./movements";
+import { gymExercise } from "../exercise-db";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
@@ -165,6 +167,12 @@ export interface StrengthBlock {
   sets: StrengthSet[];
   note?: string;
   /**
+   * PLANNED rest between working sets, in seconds — a builder/routine
+   * prescription. Distinct from StrengthSet.rest, which is the ACTUAL rest the
+   * live logger measured before a set. Optional + additive.
+   */
+  restSec?: number;
+  /**
    * Superset group key — strength blocks sharing the same `group` are performed
    * together (no rest between exercises), shown as A1/A2/A3… The key is stable
    * (a uid), so a group survives reordering and can hold 3+ exercises.
@@ -184,6 +192,14 @@ export interface CardioBlock {
   distance?: number;
   minutes?: number;
   rpe?: number;
+  /** Treadmill incline, percent (shown only for treadmill-style activities). */
+  incline?: number;
+  /** Swim stroke — Free, Breast, Back, Fly, IM… (shown only for swim activities). */
+  stroke?: string;
+  /** Target heart-rate zone, 1–5. */
+  zone?: number;
+  /** Elevation gain, metres (outdoor climb sports — runs, rides, hikes). */
+  elevation?: number;
 }
 
 export interface ConditioningBlock {
@@ -227,13 +243,20 @@ export function e1rm(load: number, reps: number): number {
   return reps <= 0 ? 0 : load * (1 + reps / 30);
 }
 
-/** Best estimated 1RM across a strength block's WORKING sets (warm-ups excluded). */
-export function blockBestE1rm(b: StrengthBlock): number {
+/**
+ * Best estimated 1RM across a strength block's WORKING sets (warm-ups
+ * excluded). Pass the athlete's `bodyweightKg` (at the session's date) so
+ * bodyweight lifts rank on their EFFECTIVE load — a +20 kg weighted pull-up at
+ * 70 kg BW is a 90 kg×reps effort, not a 20 kg one. Holds/carries (time or
+ * distance measures) have no meaningful 1RM and return 0.
+ */
+export function blockBestE1rm(b: StrengthBlock, bodyweightKg?: number | null): number {
+  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return 0;
   let best = 0;
   for (const s of workingSets(b)) {
-    const load = num(s.load);
+    const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
     const reps = num(s.reps);
-    if (!Number.isNaN(load) && !Number.isNaN(reps)) best = Math.max(best, e1rm(load, reps));
+    if (load > 0 && !Number.isNaN(reps)) best = Math.max(best, e1rm(load, reps));
   }
   return best;
 }
@@ -567,25 +590,62 @@ export function toggleSuperset<T extends { kind: string; group?: string; superse
 }
 
 /**
- * Tonnage (load × reps) summed across a session's strength sets. Working sets
- * only by default; pass `includeWarmups` to count warm-up/cool-down sets too
- * (the user volume setting).
+ * The EFFECTIVE load of a strength set in kg, honouring the exercise's load
+ * mode from the exercise DB: external = the entered load; bodyweight = the
+ * athlete's bodyweight (10 pull-ups at 70 kg BW = 700 kg of work);
+ * bodyweight-plus = BW + the entered added weight (+10 kg → 80 kg per rep);
+ * assisted = BW − the entered assistance. When the bodyweight isn't known
+ * (guest, never logged), it degrades to the entered number — exactly the
+ * pre-bodyweight behaviour, so nothing regresses without data.
  */
-export function sessionVolume(blocks: SessionBlock[], includeWarmups = false): number {
+export function effectiveSetLoadKg(
+  exerciseName: string,
+  load: string,
+  bodyweightKg?: number | null,
+): number {
+  const n = parseFloat(load);
+  const entered = Number.isFinite(n) ? n : 0;
+  const bw = bodyweightKg != null && bodyweightKg > 0 ? bodyweightKg : 0;
+  const mode = gymExercise(exerciseName)?.loadMode ?? "external";
+  if (mode === "bodyweight") return bw;
+  if (mode === "bodyweight-plus") return bw + entered;
+  if (mode === "assisted") return Math.max(0, bw - entered);
+  return entered;
+}
+
+/**
+ * Tonnage (effective load × reps) summed across a session's strength sets.
+ * Working sets only by default; pass `includeWarmups` to count warm-up /
+ * cool-down sets too (the user volume setting). Pass the athlete's
+ * `bodyweightKg` so bodyweight lifts count their true work (see
+ * effectiveSetLoadKg). Sets measured in seconds or metres (planks, carries)
+ * are never tonnage.
+ */
+export function sessionVolume(
+  blocks: SessionBlock[],
+  includeWarmups = false,
+  bodyweightKg?: number | null,
+): number {
   let v = 0;
   for (const b of blocks) {
     if (!isStrength(b)) continue;
+    // A hold or carry's "reps" are seconds/metres — multiplying them by a
+    // load isn't tonnage; skip the block entirely.
+    const measure = gymExercise(b.name)?.measure ?? "reps";
+    if (measure !== "reps") continue;
     for (const s of setsForVolume(b, includeWarmups)) {
-      const load = num(s.load);
       const reps = num(s.reps);
-      if (!Number.isNaN(load) && !Number.isNaN(reps)) v += load * reps;
+      if (Number.isNaN(reps)) continue;
+      v += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
     }
   }
   return Math.round(v);
 }
 
-export function totalVolume(sessions: LoggedSession[]): number {
-  return sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0);
+/** Lifetime tonnage across sessions — bodyweight-aware when `bw` is passed
+ *  (a dated lookup resolves each session at ITS OWN date). */
+export function totalVolume(sessions: LoggedSession[], bw?: BodyweightInput): number {
+  return sessions.reduce((sum, s) => sum + sessionVolume(s.blocks, false, bwAt(bw, s.startedAt)), 0);
 }
 
 /** Distinct strength lift names seen across sessions, most-frequent first. */
@@ -602,8 +662,9 @@ export interface E1rmPoint {
   e1rm: number;
 }
 
-/** e1RM over time for one lift, oldest → newest. */
-export function e1rmSeries(sessions: LoggedSession[], lift: string): E1rmPoint[] {
+/** e1RM over time for one lift, oldest → newest — bodyweight-aware when `bw`
+ *  is passed (each point uses the athlete's weight at that session's date). */
+export function e1rmSeries(sessions: LoggedSession[], lift: string, bw?: BodyweightInput): E1rmPoint[] {
   const sorted = [...sessions].sort(
     (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
   );
@@ -611,7 +672,7 @@ export function e1rmSeries(sessions: LoggedSession[], lift: string): E1rmPoint[]
   for (const s of sorted)
     for (const b of s.blocks)
       if (isStrength(b) && b.name === lift) {
-        const best = blockBestE1rm(b);
+        const best = blockBestE1rm(b, bwAt(bw, s.startedAt));
         if (best > 0) pts.push({ date: s.startedAt, e1rm: Math.round(best) });
       }
   return pts;
@@ -623,13 +684,14 @@ export interface PrRow {
   when: string;
 }
 
-/** Best e1RM per lift (all-time PRs), strongest first. */
-export function bestE1rmByLift(sessions: LoggedSession[]): PrRow[] {
+/** Best e1RM per lift (all-time PRs), strongest first — bodyweight-aware when
+ *  `bw` is passed (each session resolves at its own date). */
+export function bestE1rmByLift(sessions: LoggedSession[], bw?: BodyweightInput): PrRow[] {
   const map = new Map<string, { e1rm: number; when: string }>();
   for (const s of sessions)
     for (const b of s.blocks)
       if (isStrength(b)) {
-        const best = Math.round(blockBestE1rm(b));
+        const best = Math.round(blockBestE1rm(b, bwAt(bw, s.startedAt)));
         const cur = map.get(b.name);
         if (best > 0 && (!cur || best > cur.e1rm)) map.set(b.name, { e1rm: best, when: s.startedAt });
       }

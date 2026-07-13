@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, categoriesByName, type LibraryMovement } from "./movements";
 
+// A name that is NOT in the built-in exercise DB (Zercher Squat now is).
 const custom: LibraryMovement[] = [
-  { name: "Zercher Squat", pattern: "squat", muscles: ["quads", "glutes"], baseLoad: 80, system: null, aliases: ["Zerchers"] },
+  { name: "Jefferson Curl", pattern: "hinge", muscles: ["posterior"], baseLoad: 20, system: null, aliases: ["Jeffersons"] },
 ];
 
 describe("mergeMovements", () => {
@@ -14,8 +15,8 @@ describe("mergeMovements", () => {
 
   it("adds a custom exercise and resolves its aliases to the same movement", () => {
     const merged = mergeMovements(MOVEMENTS, custom);
-    expect(merged["Zercher Squat"]).toMatchObject({ pattern: "squat", baseLoad: 80 });
-    expect(merged["Zerchers"]).toBe(merged["Zercher Squat"]);
+    expect(merged["Jefferson Curl"]).toMatchObject({ pattern: "hinge", baseLoad: 20 });
+    expect(merged["Jeffersons"]).toBe(merged["Jefferson Curl"]);
   });
 
   it("lets a custom exercise override a built-in of the same name", () => {
@@ -35,15 +36,15 @@ describe("mergeMovements", () => {
 
   it("does not mutate the built-in map", () => {
     mergeMovements(MOVEMENTS, custom);
-    expect(MOVEMENTS["Zercher Squat"]).toBeUndefined();
+    expect(MOVEMENTS["Jefferson Curl"]).toBeUndefined();
   });
 });
 
 describe("catalogNames", () => {
   it("lists built-ins + custom primary names, excluding aliases", () => {
     const names = catalogNames(MOVEMENTS, custom);
-    expect(names).toContain("Zercher Squat");
-    expect(names).not.toContain("Zerchers"); // alias resolves but isn't pickable
+    expect(names).toContain("Jefferson Curl");
+    expect(names).not.toContain("Jeffersons"); // alias resolves but isn't pickable
     expect(names).toContain("Back Squat"); // untouched built-in still shown
   });
 
@@ -80,26 +81,31 @@ describe("aliasNames", () => {
       { name: "Barbell Bench Press", pattern: "push", muscles: ["chest"], baseLoad: 100, system: null, aliases: ["Bench Press"] },
       ...custom,
     ]);
-    expect([...set].sort()).toEqual(["Bench Press", "Zerchers"]);
+    expect([...set].sort()).toEqual(["Bench Press", "Jeffersons"]);
   });
 });
 
 describe("exercisesByCategory", () => {
-  it("buckets built-ins by pattern, A–Z, in the fixed display order", () => {
-    const order = ["squat", "hinge", "push", "pull", "cond", "other"];
+  it("groups the built-in DB under muscle headings, pattern buckets first, A–Z inside", () => {
     const groups = exercisesByCategory(MOVEMENTS);
     const cats = groups.map((g) => g.category);
-    expect(cats).toEqual([...cats].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
-    const squat = groups.find((g) => g.category === "squat")!;
-    expect(squat.names).toContain("Back Squat");
-    expect(squat.names).toEqual([...squat.names].sort((a, b) => a.localeCompare(b)));
-    expect(squat.labelKey).toBe("exercise.cat.squat");
+    // The conditioning built-ins (Row Intervals, Assault Bike, …) keep their
+    // pattern bucket; every DB exercise gets its muscle-group heading.
+    const cond = groups.find((g) => g.category === "cond")!;
+    expect(cond.labelKey).toBe("exercise.cat.cond");
+    expect(cats.indexOf("cond")).toBeLessThan(cats.indexOf("Chest"));
+    const quads = groups.find((g) => g.category === "Quads & Glutes")!;
+    expect(quads.names).toContain("Back Squat");
+    expect(quads.names).toEqual([...quads.names].sort((a, b) => a.localeCompare(b)));
+    // Muscle headings follow LIBRARY_CATEGORY_ORDER.
+    expect(cats.indexOf("Chest")).toBeLessThan(cats.indexOf("Biceps"));
+    expect(cats.indexOf("Abs & Core")).toBeLessThan(cats.indexOf("Olympic & Power"));
   });
 
   it("drops empty buckets", () => {
     const groups = exercisesByCategory({ "Back Squat": MOVEMENTS["Back Squat"]! });
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.category).toBe("squat");
+    expect(groups[0]!.category).toBe("Quads & Glutes");
   });
 
   it("falls unknown patterns + free-typed extras into 'other'", () => {
@@ -114,19 +120,21 @@ describe("exercisesByCategory", () => {
   it("groups library exercises by their category, after the pattern buckets", () => {
     const groups = exercisesByCategory(
       MOVEMENTS,
-      ["Barbell Curl", "Cable Crossover"],
-      { "Barbell Curl": "Biceps", "Cable Crossover": "Chest" },
+      ["My Curl Variant", "Cable Crossover"],
+      { "My Curl Variant": "Biceps", "Cable Crossover": "Chest" },
     );
     const cats = groups.map((g) => g.category);
     // pattern buckets keep their i18n key; library sections carry a raw label
-    const squat = groups.find((g) => g.category === "squat")!;
-    expect(squat.labelKey).toBe("exercise.cat.squat");
+    const cond = groups.find((g) => g.category === "cond")!;
+    expect(cond.labelKey).toBe("exercise.cat.cond");
     const chest = groups.find((g) => g.category === "Chest")!;
-    expect(chest).toMatchObject({ label: "Chest", names: ["Cable Crossover"] });
+    expect(chest.label).toBe("Chest");
+    expect(chest.names).toContain("Cable Crossover");
     expect(chest.labelKey).toBeUndefined();
+    expect(groups.find((g) => g.category === "Biceps")!.names).toContain("My Curl Variant");
     // Chest is ordered before Biceps (LIBRARY_CATEGORY_ORDER) and both trail the patterns
     expect(cats.indexOf("Chest")).toBeLessThan(cats.indexOf("Biceps"));
-    expect(cats.indexOf("squat")).toBeLessThan(cats.indexOf("Chest"));
+    expect(cats.indexOf("cond")).toBeLessThan(cats.indexOf("Chest"));
     // a library-categorised name does NOT also appear in a pattern bucket
     expect(groups.find((g) => g.category === "other")).toBeUndefined();
   });

@@ -8,6 +8,7 @@ import { fs, space,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import AuroraOnboarding from "./onboarding";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
@@ -48,13 +49,14 @@ export default function AuroraCockpit({
     if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
   }, []);
 
+  const bw = useBodyweightLookup();
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
-  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
 

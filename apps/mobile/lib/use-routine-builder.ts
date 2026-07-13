@@ -1,91 +1,40 @@
 import { useEffect, useState } from "react";
-import { inferBlockKind, displaySportDistance, parseSportDistance, type SessionBlock } from "@hybrid/core";
+import {
+  inferBlockKind,
+  cycleSetType,
+  moveItem,
+  DEFAULT_REST_SEC,
+  type SessionBlock,
+  type StrengthSet,
+  type BlockKind,
+} from "@hybrid/core";
 import { fetchRoutines, createRoutine, deleteRoutine, type Routine } from "./api";
 
 const uid = () => Math.random().toString(36).slice(2);
 
-export type BuilderKind = "strength" | "cardio" | "conditioning";
+/** An editable routine block — the REAL SessionBlock shape plus a list key, so
+ *  the Builder prescribes per-set (load × reps × effort each) instead of the
+ *  old flattened "N sets of R" summary. What you save is what the logger runs. */
+export type EditableBlock = SessionBlock & { uid: string };
 
-/** An editable routine exercise — a target prescription (not a live log). */
-export type BuilderItem = {
-  uid: string;
-  name: string;
-  kind: BuilderKind;
-  sets: number;
-  reps: string;
-  load: string;
-  minutes: string;
-  distance: string;
+const emptySet = (): StrengthSet => ({ load: "", reps: "8" });
+
+export const newBlock = (name: string, kind: BlockKind = inferBlockKind(name)): EditableBlock => {
+  if (kind === "strength")
+    return { uid: uid(), kind: "strength", name, sets: [emptySet(), emptySet(), emptySet()] };
+  if (kind === "cardio") return { uid: uid(), kind: "cardio", name };
+  return { uid: uid(), kind: "conditioning", name };
 };
 
-export const newBuilderItem = (name: string, kind: BuilderKind = inferBlockKind(name) as BuilderKind): BuilderItem => ({
-  uid: uid(),
-  name,
-  kind,
-  sets: 3,
-  reps: "8",
-  load: "",
-  minutes: "",
-  distance: "",
-});
+// Deep-copy stored blocks into editable state (JSON round-trip — blocks are
+// plain persisted data, and Hermes' structuredClone isn't guaranteed).
+const cloneBlock = (b: SessionBlock): EditableBlock => ({ ...(JSON.parse(JSON.stringify(b)) as SessionBlock), uid: uid() });
 
-const itemsFromBlocks = (blocks: SessionBlock[]): BuilderItem[] =>
-  blocks.map((b) =>
-    b.kind === "strength"
-      ? {
-          uid: uid(),
-          name: b.name,
-          kind: "strength" as const,
-          sets: Math.max(1, b.sets.length || 3),
-          reps: String(b.sets[0]?.reps ?? "8"),
-          load: String(b.sets[0]?.load ?? ""),
-          minutes: "",
-          distance: "",
-        }
-      : {
-          uid: uid(),
-          name: b.name,
-          kind: b.kind,
-          sets: 3,
-          reps: "8",
-          load: "",
-          minutes: b.minutes != null ? String(b.minutes) : "",
-          // Distance shows in the sport's natural unit (metres for swimming/
-          // rowing, km otherwise); storage stays km.
-          distance: b.kind === "cardio" && b.distance != null ? displaySportDistance(b.distance, b.name) : "",
-        },
-  );
-
-const buildBlocks = (items: BuilderItem[]): SessionBlock[] => {
-  const blocks: SessionBlock[] = [];
-  for (const x of items) {
-    if (x.kind === "strength") {
-      const n = Math.max(1, x.sets);
-      const set = { load: x.load.trim(), reps: x.reps.trim() || "8" };
-      blocks.push({ kind: "strength", name: x.name, sets: Array.from({ length: n }, () => ({ ...set })) });
-    } else if (x.kind === "cardio") {
-      // The editor holds distance in the sport's unit; store as km.
-      const distance = parseSportDistance(x.distance, x.name);
-      const minutes = parseFloat(x.minutes);
-      blocks.push({
-        kind: "cardio",
-        name: x.name,
-        ...(distance != null ? { distance } : {}),
-        ...(Number.isFinite(minutes) ? { minutes } : {}),
-      });
-    } else {
-      const minutes = parseFloat(x.minutes);
-      blocks.push({ kind: "conditioning", name: x.name, ...(Number.isFinite(minutes) ? { minutes } : {}) });
-    }
-  }
-  return blocks;
-};
-
-/** Shared routine-builder state + persistence, used by both the classic and the
- *  Aurora mobile Builder so the two variants stay behaviourally identical. */
+/** Shared routine-builder state + persistence for the mobile Builder — full
+ *  per-set editing over the same /api/templates persistence as the web twin. */
 export function useRoutineBuilder() {
   const [name, setName] = useState("New routine");
-  const [items, setItems] = useState<BuilderItem[]>([]);
+  const [items, setItems] = useState<EditableBlock[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -93,20 +42,56 @@ export function useRoutineBuilder() {
   const load = () => fetchRoutines().then(setRoutines).catch(() => {});
   useEffect(() => { load(); }, []);
 
-  const addExercise = (exName: string, kind?: BuilderKind) => {
+  const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
+    setItems((xs) => xs.map((x) => (x.uid === u ? fn(x) : x)));
+
+  const addExercise = (exName: string, kind?: BlockKind) => {
     const clean = exName.trim();
     if (!clean) return;
-    setItems((xs) => [...xs, newBuilderItem(clean, kind)]);
+    setItems((xs) => [...xs, newBlock(clean, kind)]);
   };
   const removeItem = (u: string) => setItems((xs) => xs.filter((x) => x.uid !== u));
-  const patchItem = (u: string, patch: Partial<BuilderItem>) =>
-    setItems((xs) => xs.map((x) => (x.uid === u ? { ...x, ...patch } : x)));
-  const bumpSets = (u: string, delta: number) =>
-    setItems((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: Math.max(1, x.sets + delta) } : x)));
+  const moveBlock = (u: string, dir: -1 | 1) =>
+    setItems((xs) => moveItem(xs, xs.findIndex((x) => x.uid === u), dir));
+
+  // ----- strength: per-set control -----
+  const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
+    patch(u, (b) =>
+      b.kind === "strength"
+        ? { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, [key]: val } as StrengthSet) : s)) }
+        : b,
+    );
+  // New set carries the previous set's load/reps forward (same behaviour as the
+  // live logger's carry-over) so a straight-sets scheme is one tap per set.
+  const addSet = (u: string) =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const last = b.sets[b.sets.length - 1];
+      return { ...b, sets: [...b.sets, { load: last?.load ?? "", reps: last?.reps ?? "8" }] };
+    });
+  const removeSet = (u: string, i: number) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
+  // Tap the set badge to cycle its role: working → warm-up → cool-down → drop.
+  const cycleType = (u: string, i: number) =>
+    patch(u, (b) =>
+      b.kind === "strength" ? { ...b, sets: b.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) } : b,
+    );
+  // Planned rest between working sets, 15 s steps (a prescription — the live
+  // logger measures actual rest separately).
+  const bumpRest = (u: string, delta: number) =>
+    patch(u, (b) =>
+      b.kind === "strength"
+        ? { ...b, restSec: Math.min(600, Math.max(15, (b.restSec ?? DEFAULT_REST_SEC) + delta)) }
+        : b,
+    );
+
+  // ----- cardio / conditioning fields -----
+  const setField = (u: string, key: string, val: string | number | undefined) =>
+    patch(u, (b) => ({ ...b, [key]: val }) as EditableBlock);
 
   const loadRoutine = (r: Routine) => {
     setName(r.name);
-    setItems(itemsFromBlocks(r.blocks));
+    setItems(r.blocks.map(cloneBlock));
     setMsg(null);
   };
 
@@ -114,7 +99,8 @@ export function useRoutineBuilder() {
     if (!items.length) return;
     setSaving(true);
     setMsg(null);
-    const ok = await createRoutine(name.trim() || "Routine", buildBlocks(items));
+    const blocks = items.map(({ uid: _u, ...b }) => b as SessionBlock);
+    const ok = await createRoutine(name.trim() || "Routine", blocks);
     setSaving(false);
     setMsg(ok ? { text: "Routine saved.", ok: true } : { text: "Couldn't save — sign in and try again.", ok: false });
     if (ok) await load();
@@ -125,5 +111,10 @@ export function useRoutineBuilder() {
     await load();
   };
 
-  return { name, setName, items, routines, saving, msg, addExercise, removeItem, patchItem, bumpSets, loadRoutine, save, remove };
+  return {
+    name, setName, items, routines, saving, msg,
+    addExercise, removeItem, moveBlock,
+    updateSet, addSet, removeSet, cycleType, bumpRest, setField,
+    loadRoutine, save, remove,
+  };
 }

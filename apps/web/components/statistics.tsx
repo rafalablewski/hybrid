@@ -4,6 +4,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
@@ -27,7 +28,8 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
   const { sessions } = useSessions();
   const [range, setRange] = useState<StatRange>("week");
   const buckets = useMemo(() => sessionBuckets(sessions, range), [sessions, range]);
-  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const bw = useBodyweightLookup();
+  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const hasData = sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
   const C = (v: string) => `var(--color-${v})`;

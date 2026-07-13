@@ -27,6 +27,7 @@ import { fs, space,
   type SessionBlock,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { track } from "@/lib/track";
@@ -127,6 +128,7 @@ export default function AuroraToday({
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
   const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
   // Sessions logged TODAY — the confirmation loop. A finished prescribed session
   // and a quick sport log both land here the moment they save, so Today shows
   // "you did this" instead of forever prompting "Start".
@@ -436,7 +438,7 @@ export default function AuroraToday({
                 <span style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, background: `color-mix(in srgb, ${C("lime")} 18%, transparent)`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", color: "var(--lime-text)", fontWeight: 800 }}>✓</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units)}</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units, bw(s.startedAt))}</span>
                 </span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}>›</span>
               </button>
@@ -491,7 +493,7 @@ function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: s
 
 // One-line meta for a session logged today — sport-adaptive so a run/match reads
 // as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
+function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
   if (sessionShape(s) !== "strength") {
     const ct = sessionCardioTotals(s.blocks);
     const p: string[] = [];
@@ -500,7 +502,7 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
     if (p.length) return p.join(" – ");
     return s.blocks.map((b) => b.name).join(" – ");
   }
-  const vol = sessionVolume(s.blocks);
+  const vol = sessionVolume(s.blocks, false, bw);
   const names = s.blocks.map((b) => b.name).join(" – ");
   return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }

@@ -29,6 +29,7 @@ import {
   type AuroraIconName,
 } from "@hybrid/core";
 import { fetchAssignments, fetchMacrocycle, fetchCheckins, type Assignment } from "../../lib/api";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
@@ -156,6 +157,7 @@ export default function AuroraHome() {
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
   const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
   // Sessions logged TODAY — the confirmation loop (a finished session OR a quick
   // sport log both land here the moment they save).
   const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
@@ -479,7 +481,7 @@ export default function AuroraHome() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units)}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
@@ -512,7 +514,7 @@ function ChooserRow({ C, title, sub, badge, color, onPress }: { C: P; title: str
 
 // One-line meta for a session logged today — sport-adaptive so a run/match reads
 // as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
+function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
   if (sessionShape(s) !== "strength") {
     const ct = sessionCardioTotals(s.blocks);
     const p: string[] = [];
@@ -521,7 +523,7 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb"): string {
     if (p.length) return p.join(" – ");
     return s.blocks.map((b) => b.name).join(" – ");
   }
-  const vol = sessionVolume(s.blocks);
+  const vol = sessionVolume(s.blocks, false, bw);
   const names = s.blocks.map((b) => b.name).join(" – ");
   return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }

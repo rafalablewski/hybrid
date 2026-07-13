@@ -31,6 +31,7 @@ import {
   type CardioPrHit,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -48,6 +49,8 @@ export default function SessionDetail() {
   const router = useRouter();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
+  // Bodyweight-aware tonnage/e1RM — the athlete's weight AT this session's date.
+  const bw = useBodyweightLookup();
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
   const [all, setAll] = useState<LoggedSession[] | null>(null);
@@ -67,6 +70,7 @@ export default function SessionDetail() {
   }
 
   const session = all.find((s) => s.id === id);
+  const bwHere = session ? bw(session.startedAt) : null;
   if (!session) {
     return wrap(
       <>
@@ -78,7 +82,7 @@ export default function SessionDetail() {
     );
   }
 
-  const prs = prsForSession(all, session.id);
+  const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
   const cardioPrMoves = new Set(cardioPrs.map((p) => p.move));
@@ -98,7 +102,7 @@ export default function SessionDetail() {
   const bestMap = new Map<string, number>();
   for (const b of session.blocks)
     if (b.kind === "strength") {
-      const e = Math.round(blockBestE1rm(b));
+      const e = Math.round(blockBestE1rm(b, bwHere));
       if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
     }
   const bests: ShareBest[] = [...bestMap.entries()]
@@ -107,7 +111,7 @@ export default function SessionDetail() {
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min – ` : ""}${sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(sessionVolume(session.blocks), units)}`,
+    `${minutes ? `${minutes} min – ` : ""}${sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)}`,
     prs[0] ? `\u{1F3C6} ${prLine(prs[0], t, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]
@@ -135,7 +139,7 @@ export default function SessionDetail() {
           <>
             <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
             <Metric label={t("summary.sets")} value={String(sets)} />
-            <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
+            <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)} />
           </>
         )}
       </View>
@@ -183,9 +187,9 @@ export default function SessionDetail() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
-              {b.kind === "strength" && blockBestE1rm(b) > 0 && (
+              {b.kind === "strength" && blockBestE1rm(b, bwHere) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>
-                  {fmtWeight(blockBestE1rm(b), units)} e1RM
+                  {fmtWeight(blockBestE1rm(b, bwHere), units)} e1RM
                 </Text>
               )}
             </View>
@@ -206,7 +210,7 @@ export default function SessionDetail() {
                   </View>
                   );
                 })}
-                <Trend series={e1rmSeries(all, b.name).map((p) => Math.round(kgToUnit(p.e1rm, units)))} t={t} />
+                <Trend series={e1rmSeries(all, b.name, bw).map((p) => Math.round(kgToUnit(p.e1rm, units)))} t={t} />
               </View>
             ) : b.kind === "cardio" ? (
               <>
@@ -224,7 +228,7 @@ export default function SessionDetail() {
           workout (P5), not just strength ones. */}
       <>
         <View style={{ marginTop: 6 }}>
-          <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? cardioMin ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
+          <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? cardioMin ?? 0, sets, volume: sessionVolume(session.blocks, false, bwHere), bests }} />
         </View>
         <Pressable
           onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}

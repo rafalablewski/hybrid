@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useBodyweightLookup } from "../lib/use-bodyweight";
 import {
   prescribeSession,
   toTrainingLog,
@@ -21,6 +22,7 @@ import {
   inferBlockKind,
   migrateBlocks,
   olympicSportsByCategory,
+  exerciseProfile,
   timedSportOnly,
   sportDistanceUnit,
   displaySportDistance,
@@ -130,6 +132,13 @@ type WExercise = {
   minutes: string;
   rpe: string;
   distance: string;
+  /** Cardio extras — which of these SHOW is decided by the exercise-profile
+   *  model (incline for treadmill work, stroke for swims, elevation for
+   *  outdoor climb sports, HR zone for any cardio). Held as raw text. */
+  incline: string;
+  stroke: string;
+  elevation: string;
+  zone: string;
   /** Superset group key — exercises sharing it are performed together (A1/A2…). */
   group?: string;
 };
@@ -150,6 +159,10 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
   minutes: "",
   rpe: "",
   distance: "",
+  incline: "",
+  stroke: "",
+  elevation: "",
+  zone: "",
 });
 
 
@@ -205,6 +218,9 @@ export default function Workout() {
     return false;
   };
   const prefs = useLoggerPrefs();
+  // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
+  const bw = useBodyweightLookup();
+  const bodyweightKg = bw();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
   // Auto-titled — no name input while logging; a name is only entered on the
@@ -505,7 +521,7 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
     );
-  const condField = (u: string, k: "minutes" | "rpe" | "distance", v: string) =>
+  const condField = (u: string, k: "minutes" | "rpe" | "distance" | "incline" | "stroke" | "elevation" | "zone", v: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
   // Quick +/- the last set's load by the chosen increment (in display units).
   const bumpLastLoad = (u: string, deltaDisplay: number) =>
@@ -679,11 +695,21 @@ export default function Workout() {
         // rowing); convert to the stored km here so the math stays single-unit.
         const distance = parseSportDistance(x.distance, x.name);
         if (!Number.isFinite(minutes) && distance == null) continue;
+        // `?? ""` guards: a resumed pre-upgrade draft deserializes without the
+        // new extras fields.
+        const incline = parseFloat(x.incline ?? "");
+        const elevation = parseFloat(x.elevation ?? "");
+        const zone = parseFloat(x.zone ?? "");
+        const stroke = (x.stroke ?? "").trim();
         blocks.push({
           kind: "cardio",
           name: x.name,
           ...(distance != null ? { distance } : {}),
           ...(Number.isFinite(minutes) ? { minutes } : {}),
+          ...(Number.isFinite(incline) ? { incline } : {}),
+          ...(stroke ? { stroke } : {}),
+          ...(Number.isFinite(elevation) ? { elevation } : {}),
+          ...(Number.isFinite(zone) ? { zone } : {}),
         });
       } else if (x.kind === "conditioning") {
         const minutes = parseFloat(x.minutes);
@@ -714,7 +740,7 @@ export default function Workout() {
   // Live in-session scoreboard — running exercises / sets / volume / PRs off the
   // shared core helper (same numbers the finish summary + share card show).
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current), [exercises]);
+  const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current, { bodyweightKg }), [exercises, bodyweightKg]);
 
   const finish = async () => {
     const blocks = buildBlocks();
@@ -764,13 +790,13 @@ export default function Workout() {
       completedAt: payload.completedAt,
       blocks,
     };
-    const prs = newPrsInSession(finished, prior.current);
+    const prs = newPrsInSession(finished, prior.current, bw);
     const cardioPrs = newCardioPrsInSession(finished, prior.current);
     const prSet = new Set(prs.map((p) => p.lift));
     const bestMap = new Map<string, number>();
     for (const b of blocks)
       if (b.kind === "strength") {
-        const e = Math.round(blockBestE1rm(b));
+        const e = Math.round(blockBestE1rm(b, bodyweightKg));
         if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
       }
     const bests: ShareBest[] = [...bestMap.entries()]
@@ -781,7 +807,7 @@ export default function Workout() {
       sessionId,
       title: payload.title,
       blocks,
-      volume: sessionVolume(blocks),
+      volume: sessionVolume(blocks, false, bodyweightKg),
       sets,
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
       guest,
@@ -977,8 +1003,16 @@ export default function Workout() {
                 })()}
                 <View style={{ flexDirection: "row", gap: space.xs, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
-                  <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
-                  <ColHead>REPS</ColHead>
+                  {/* The exercise DB decides the columns: a plain-bodyweight
+                      lift (Pull-Up, Dip…) has no load column at all; a plank
+                      counts seconds, a carry counts metres. */}
+                  {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
+                    <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
+                  )}
+                  <ColHead>{(() => {
+                    const m = exerciseProfile(x.name).strength?.measure;
+                    return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
+                  })()}</ColHead>
                   {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
                   {prefs.detailed && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />
@@ -1001,7 +1035,9 @@ export default function Workout() {
                         </Pressable>
                       );
                     })()}
-                    <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
+                    {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
+                      <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
+                    )}
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     {prefs.detailed && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
@@ -1104,6 +1140,38 @@ export default function Workout() {
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                   </View>
                 </View>
+                {/* Modality extras — the exercise-profile model decides the
+                    fields (incline / stroke / elevation / HR zone), matching
+                    the Builder and the web logger. */}
+                {(() => {
+                  const has = (f: string) => exerciseProfile(x.name).fields.includes(f as never);
+                  return (
+                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
+                      {has("incline") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.inclinePct")}</ColHead>
+                          <Cell value={x.incline ?? ""} onChange={(v) => condField(x.uid, "incline", v)} />
+                        </View>
+                      )}
+                      {has("stroke") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.stroke")}</ColHead>
+                          <Cell value={x.stroke ?? ""} onChange={(v) => condField(x.uid, "stroke", v)} keyboard="default" />
+                        </View>
+                      )}
+                      {has("elevation") && (
+                        <View style={{ flex: 1 }}>
+                          <ColHead>{t("w.train.blocks.elevation")}</ColHead>
+                          <Cell value={x.elevation ?? ""} onChange={(v) => condField(x.uid, "elevation", v)} />
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <ColHead>{t("w.train.blocks.zone")}</ColHead>
+                        <Cell value={x.zone ?? ""} onChange={(v) => condField(x.uid, "zone", v)} />
+                      </View>
+                    </View>
+                  );
+                })()}
                 {(() => {
                   const pace = cardioPace({ name: x.name, distance: parseSportDistance(x.distance, x.name), minutes: parseFloat(x.minutes) });
                   return pace ? (
@@ -1338,6 +1406,7 @@ function Summary({
   const C = useTheme().palette;
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
+  const bodyweightKg = useBodyweightLookup()();
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
@@ -1410,7 +1479,7 @@ function Summary({
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(summary.blocks);
   const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(summary.blocks);
+  const funFact = sessionFunFact(summary.blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
@@ -1704,6 +1773,10 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           minutes: "",
           rpe: "",
           distance: "",
+          incline: "",
+          stroke: "",
+          elevation: "",
+          zone: "",
           ...(b.group ? { group: b.group } : {}),
         }
       : {
@@ -1715,6 +1788,10 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           rpe: b.rpe != null ? String(b.rpe) : "",
           // Stored km → the sport's display unit (metres for swimming/rowing).
           distance: b.kind === "cardio" && b.distance != null ? displaySportDistance(b.distance, b.name) : "",
+          incline: b.kind === "cardio" && b.incline != null ? String(b.incline) : "",
+          stroke: (b.kind === "cardio" && b.stroke) || "",
+          elevation: b.kind === "cardio" && b.elevation != null ? String(b.elevation) : "",
+          zone: b.kind === "cardio" && b.zone != null ? String(b.zone) : "",
         },
   );
 }
@@ -1790,13 +1867,13 @@ function LiveStat({ C, label, value }: { C: Palette; label: string; value: strin
   );
 }
 
-function Cell({ value, onChange, done }: { value: string; onChange: (v: string) => void; done?: boolean }) {
+function Cell({ value, onChange, done, keyboard = "numeric" }: { value: string; onChange: (v: string) => void; done?: boolean; keyboard?: "numeric" | "default" }) {
   const C = useTheme().palette;
   return (
     <TextInput
       value={value}
       onChangeText={onChange}
-      keyboardType="numeric"
+      keyboardType={keyboard}
       style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 10 }}
     />
   );

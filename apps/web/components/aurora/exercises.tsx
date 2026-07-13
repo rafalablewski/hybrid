@@ -7,6 +7,7 @@ import {
   type LoggedSession, type ExercisePeriod, type ExerciseStats, type WeightUnit,
 } from "@hybrid/core";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
@@ -37,8 +38,9 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
   const { countWarmupsInVolume: iw, units } = useLoggerPrefs();
+  const bw = useBodyweightLookup();
   const isMobile = useIsMobile();
-  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null), [sessions, active, period, iw]);
+  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw, bw) : null), [sessions, active, period, iw, bw]);
   const input = { fontFamily: "var(--font-mono)", fontSize: fs.body, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 12px", width: "100%", boxSizing: "border-box" as const };
 
   if (history.length === 0) {

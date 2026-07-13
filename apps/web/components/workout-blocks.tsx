@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
@@ -12,21 +12,6 @@ import { useDialog } from "../lib/use-dialog";
 // template Builder (builder.tsx). Both screens edit the SAME SessionBlock[]
 // shape — keeping one editor here is the single source of truth so the two can't
 // drift (catalog, set grid, conditioning fields, overflow fixes, …).
-
-// Lifts the editors have always offered for autocomplete. Some aren't in core's
-// MOVEMENTS map (e.g. Deadlift, Pull-up) so we keep them here and merge the
-// admin-managed library (useExercises) on top.
-const BASE_CATALOG = [
-  "Back Squat",
-  "Front Squat",
-  "Deadlift",
-  "Bench Press",
-  "Overhead Press",
-  "Barbell Row",
-  "Romanian Deadlift",
-  "Pull-up",
-  "Power Clean",
-];
 
 const SET_TYPE_TITLE_KEY: Record<string, string> = {
   working: "w.train.blocks.workingSet",
@@ -94,6 +79,8 @@ export default function WorkoutBlocks({
   units = "kg",
   plateCalc = false,
   live = false,
+  signal = false,
+  bodyweightKg,
   lastByLift,
   onToggleDone,
 }: {
@@ -103,6 +90,16 @@ export default function WorkoutBlocks({
   emptyHint: string;
   /** Show per-block move/duplicate controls (the Builder wants them). */
   reorder?: boolean;
+  /**
+   * SIGNAL mode (the Builder): each block becomes a collapsible signal card —
+   * a live metric row (derived from the editable sets, via @hybrid/core's
+   * session-signal) stays visible while the editor body folds away, and
+   * strength blocks gain a planned-rest stepper. The Logger stays as-is.
+   */
+  signal?: boolean;
+  /** The athlete's bodyweight (kg) — bodyweight lifts count it as tonnage
+   *  (core effectiveSetLoadKg). Null/absent degrades to entered-load math. */
+  bodyweightKg?: number | null;
   /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
   detailed?: boolean;
   /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
@@ -124,9 +121,10 @@ export default function WorkoutBlocks({
 }) {
   const { t } = useLang();
   const { catalog: libraryCatalog = [], aliases = new Set<string>(), categoryByName = {} } = useExercises();
-  // Hide any name a custom entry aliases (incl. superseded built-ins / BASE_CATALOG
-  // quick-picks) so the same lift never shows twice — it still resolves via merge.
-  const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])]
+  // The full built-in exercise DB (via MOVEMENTS) + the admin library. Hide any
+  // name a custom entry aliases (incl. superseded built-ins) so the same lift
+  // never shows twice — it still resolves via merge.
+  const catalog = [...new Set([...Object.keys(MOVEMENTS), ...libraryCatalog])]
     .filter((n) => !aliases.has(n))
     .sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
@@ -139,6 +137,17 @@ export default function WorkoutBlocks({
   const [sportPicker, setSportPicker] = useState(false);
   // The block currently being dragged by its grip handle (for drop reordering).
   const [dragUid, setDragUid] = useState<string | null>(null);
+  // SIGNAL mode: blocks folded down to their header + metric row. New blocks
+  // start expanded; the set survives reorders (keyed by uid).
+  const [collapsedUids, setCollapsedUids] = useState<Set<string>>(new Set());
+  const isCollapsed = (u: string) => signal && collapsedUids.has(u);
+  const toggleCollapsed = (u: string) =>
+    setCollapsedUids((s) => {
+      const next = new Set(s);
+      if (next.has(u)) next.delete(u);
+      else next.add(u);
+      return next;
+    });
   // Raw text buffer for the conditioning number fields so a mid-typed decimal
   // ("8." or "8.5") survives — the block stores a number, but binding the input
   // straight to String(number) would strip the trailing dot as you type.
@@ -275,9 +284,19 @@ export default function WorkoutBlocks({
 
   const setCondStr = (u: string, key: "format", val: string) =>
     patch(u, (b) => (b.kind === "conditioning" ? ({ ...b, [key]: val } as EditableBlock) : b));
+  // Swim stroke — a cardio-only string field (empty clears it).
+  const setStroke = (u: string, val: string) =>
+    patch(u, (b) => (b.kind === "cardio" ? ({ ...b, stroke: val || undefined } as EditableBlock) : b));
+  // Planned rest between working sets (builder prescription), 15 s steps.
+  const bumpRest = (u: string, delta: number) =>
+    patch(u, (b) =>
+      b.kind === "strength"
+        ? { ...b, restSec: Math.min(600, Math.max(15, (b.restSec ?? DEFAULT_REST_SEC) + delta)) }
+        : b,
+    );
   const setCondNum = (
     u: string,
-    key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance",
+    key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance" | "incline" | "zone" | "elevation",
     val: string,
   ) => {
     setCondDrafts((d) => ({ ...d, [`${u}:${key}`]: val }));
@@ -287,9 +306,15 @@ export default function WorkoutBlocks({
   };
 
   const ssLabels = supersetLabels(blocks);
-  // Set-row grid: the base columns (badge · load · reps [· rpe · m/s] · move ·
-  // remove) gain a ✓-to-bank column at the end in live mode.
-  const strengthCols = `${detailed ? "26px 1fr 1fr 1fr 1fr" : "26px 1fr 1fr"} 22px 28px${live ? " 40px" : ""}`;
+  // A plain-bodyweight lift (Pull-Up, Dip, Pistol Squat…) has NO load column —
+  // the set is just BW × reps. "Weighted X" variants keep it (BW + added).
+  const bwLift = (name: string) => exerciseProfile(name).strength?.loadMode === "bodyweight";
+  // Set-row grid: the base columns (badge, load unless bodyweight, reps
+  // [, rpe, m/s], move, remove) gain a ✓-to-bank column at the end in live mode.
+  const strengthCols = (name: string) => {
+    const inputs = (detailed ? 3 : 1) + (bwLift(name) ? 0 : 1);
+    return `26px${" 1fr".repeat(inputs)} 22px 28px${live ? " 40px" : ""}`;
+  };
 
   return (
     <>
@@ -344,7 +369,10 @@ export default function WorkoutBlocks({
               onChange={(e) => rename(b.uid, e.target.value)}
               style={{ ...input, ...disp, fontWeight: 700, flex: 1 }}
             />
-            {reorder && (
+            {isCollapsed(b.uid) && (
+              <Mono s={{ fontSize: fs.micro, whiteSpace: "nowrap" }}>{blockSignalSummary(b)}</Mono>
+            )}
+            {reorder && !isCollapsed(b.uid) && (
               <>
                 <button aria-label={t("common.moveUp")} onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
                   ↑
@@ -357,7 +385,7 @@ export default function WorkoutBlocks({
                 </button>
               </>
             )}
-            {b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
+            {!isCollapsed(b.uid) && b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
               <button
                 onClick={() => supersetWithPrev(b.uid)}
                 title={t("w.train.blocks.supersetTitle")}
@@ -370,12 +398,28 @@ export default function WorkoutBlocks({
                 ⛓ {isSupersettedWithPrev(blocks, idx) ? t("w.train.blocks.joined") : t("w.train.blocks.superset")}
               </button>
             )}
+            {signal && (
+              <button
+                aria-label={isCollapsed(b.uid) ? t("w.train.blocks.expand") : t("w.train.blocks.collapse")}
+                aria-expanded={!isCollapsed(b.uid)}
+                onClick={() => toggleCollapsed(b.uid)}
+                style={{ ...iconBtn(ASH), transition: "transform .15s", transform: isCollapsed(b.uid) ? "none" : "rotate(180deg)" }}
+              >
+                ▾
+              </button>
+            )}
             <button aria-label={t("common.delete")} onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
               ✕
             </button>
           </div>
 
-          {b.kind === "strength" ? (
+          {/* SIGNAL metric row — live projections of the editable data below
+              (scheme, top load, tonnage / distance, pace / format, rounds, and
+              the block's estimated minutes). Visible collapsed or expanded, so
+              editing a set is immediately reflected above. */}
+          {signal && <SignalMetrics b={b} units={units} bodyweightKg={bodyweightKg} />}
+
+          {!isCollapsed(b.uid) && (b.kind === "strength" ? (
             <>
               {/* "Last time" reference (live mode) — the most recent prior session's
                   sets for this lift, so progressive overload has a target to beat. */}
@@ -386,10 +430,20 @@ export default function WorkoutBlocks({
               )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <div style={{ minWidth: detailed ? 360 : 240 }}>
-              <div style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 4, alignItems: "center" }}>
+              {/* The exercise DB drives how THIS lift's sets read: a plank
+                  counts seconds, a carry counts metres, a pull-up's load is
+                  BW + added weight. */}
+              <div style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.reps")}</Mono>
+                {!bwLift(b.name) && (
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
+                )}
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
+                  {(() => {
+                    const m = exerciseProfile(b.name).strength?.measure;
+                    return t(m === "time" ? "w.train.blocks.secs" : m === "distance" ? "w.train.blocks.distM" : "w.train.blocks.reps");
+                  })()}
+                </Mono>
                 {detailed && (
                   <>
                     <button
@@ -409,7 +463,7 @@ export default function WorkoutBlocks({
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 6, alignItems: "center" }}
+                  style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 6, alignItems: "center" }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -434,8 +488,22 @@ export default function WorkoutBlocks({
                       </button>
                     );
                   })()}
-                  <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={units === "lb" ? "225" : "100"} style={input} />
-                  <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
+                  {(() => {
+                    const sp = exerciseProfile(b.name).strength;
+                    const loadPh =
+                      sp?.loadMode === "bodyweight-plus" ? `+${units}`
+                      : sp?.loadMode === "assisted" ? `−${units}`
+                      : units === "lb" ? "225" : "100";
+                    const repsPh = sp?.measure === "time" ? "30" : sp?.measure === "distance" ? "20" : "5";
+                    return (
+                      <>
+                        {sp?.loadMode !== "bodyweight" && (
+                          <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
+                        )}
+                        <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder={repsPh} style={input} />
+                      </>
+                    );
+                  })()}
                   {detailed && (
                     <>
                       <input value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
@@ -539,6 +607,18 @@ export default function WorkoutBlocks({
                   </>
                 )}
               </div>
+              {/* SIGNAL: planned rest between working sets — a routine
+                  prescription (the live logger measures actual rest per set). */}
+              {signal && (
+                <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12 }}>
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{t("w.train.blocks.restBetween")}</Mono>
+                  <button aria-label={t("common.decrease")} onClick={() => bumpRest(b.uid, -15)} style={iconBtn(ASH)}>−</button>
+                  <Mono s={{ fontSize: fs.body, fontWeight: 700, minWidth: 44, textAlign: "center" }} c={CHALK}>
+                    {b.restSec ?? DEFAULT_REST_SEC} s
+                  </Mono>
+                  <button aria-label={t("common.increase")} onClick={() => bumpRest(b.uid, 15)} style={iconBtn(LIME)}>+</button>
+                </div>
+              )}
               {plateCalc && (() => {
                 const top = [...b.sets].map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => y - x)[0];
                 if (!top) return null;
@@ -572,6 +652,33 @@ export default function WorkoutBlocks({
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
               </div>
               )}
+              {/* Modality extras — the exercise-profile model decides the
+                  fields: incline for treadmill-style work, stroke for swims,
+                  elevation gain for outdoor climb sports, HR zone for any
+                  cardio. A squat never sees pace; a swim never sees incline. */}
+              {(() => {
+                const has = (f: string) => exerciseProfile(b.name).fields.includes(f as never);
+                const extras: { key: "incline" | "elevation" | "zone"; label: string; ph: string }[] = [
+                  ...(has("incline") ? [{ key: "incline" as const, label: t("w.train.blocks.inclinePct"), ph: "1.5" }] : []),
+                  ...(has("elevation") ? [{ key: "elevation" as const, label: t("w.train.blocks.elevation"), ph: "120" }] : []),
+                  { key: "zone" as const, label: t("w.train.blocks.zone"), ph: "2" },
+                ];
+                const stroke = has("stroke");
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${extras.length + (stroke ? 1 : 0)}, 1fr)`, gap: space.xs, marginTop: 8 }}>
+                    {stroke && <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.stroke")}</Mono>}
+                    {extras.map((x) => (
+                      <Mono key={x.key} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{x.label}</Mono>
+                    ))}
+                    {stroke && (
+                      <input value={b.stroke ?? ""} onChange={(e) => setStroke(b.uid, e.target.value)} placeholder="Free" style={input} />
+                    )}
+                    {extras.map((x) => (
+                      <input key={x.key} value={condVal(b.uid, x.key, b[x.key])} onChange={(e) => setCondNum(b.uid, x.key, e.target.value)} placeholder={x.ph} style={input} />
+                    ))}
+                  </div>
+                );
+              })()}
               {cardioPace(b) && (
                 <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={BLUE}>
                   {t("w.train.blocks.pace")} {cardioPace(b)}
@@ -593,7 +700,7 @@ export default function WorkoutBlocks({
               <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
             </div>
             </div>
-          )}
+          ))}
         </Card>
         </div>
       ))}
@@ -720,6 +827,58 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
       </div>
     </div>
   );
+}
+
+/**
+ * The signal card's metric row — every value is DERIVED from the block's
+ * editable fields (core session-signal), so the board can't disagree with the
+ * prescription: edit a set below, watch the number move above. Modality is
+ * carried by which metrics exist and the accent on the key one — no rails.
+ */
+function SignalMetrics({ b, units, bodyweightKg }: { b: EditableBlock; units: WeightUnit; bodyweightKg?: number | null }) {
+  const { t } = useLang();
+  const minutes = Math.round(estimateBlockMinutes(b));
+  const cell = (label: string, value: string, c?: string) => (
+    <div key={label}>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.note, fontWeight: 700 }} c={c ?? CHALK}>{value}</Mono>
+    </div>
+  );
+  const cells =
+    b.kind === "strength"
+      ? (() => {
+          const s = strengthBlockStats(b, bodyweightKg);
+          // A plain-bodyweight lift shows no load cell (nothing was entered) —
+          // but with a known bodyweight its TONNAGE is real (BW × reps), so
+          // the tonnage cell stays whenever it has a value.
+          const bw = exerciseProfile(b.name).strength?.loadMode === "bodyweight";
+          return [
+            cell(`${t("w.train.blocks.setCol")} × ${t("w.train.blocks.reps")}`, s.scheme),
+            ...(bw && s.volumeKg <= 0
+              ? []
+              : bw
+                ? [cell(t("w.train.signal.tonnage"), fmtTonnage(s.volumeKg, units), LIME)]
+                : [
+                  cell(`${t("w.train.blocks.load")} (${units})`, s.topKg > 0 ? displayLoad(String(s.topKg), units) : "—"),
+                  cell(t("w.train.signal.tonnage"), s.volumeKg > 0 ? fmtTonnage(s.volumeKg, units) : "—", LIME),
+                ]),
+            cell(t("w.train.signal.estTime"), `${minutes} min`),
+          ];
+        })()
+      : b.kind === "cardio"
+        ? [
+            ...(timedSportOnly(b.name)
+              ? []
+              : [cell(sportDistanceUnit(b.name) === "m" ? t("w.train.blocks.distM") : t("w.train.blocks.distKm"), displaySportDistance(b.distance, b.name) || "—")]),
+            cell(t("w.train.blocks.pace"), cardioPace(b) ?? "—", BLUE),
+            cell(t("w.train.blocks.minutes"), b.minutes ? String(b.minutes) : "—"),
+          ]
+        : [
+            cell(t("w.train.blocks.format"), b.format || "—"),
+            cell(t("w.train.blocks.roundsCol"), b.rounds ? String(b.rounds) : "—"),
+            cell(t("w.train.signal.estTime"), `${minutes} min`, VIOLET),
+          ];
+  return <div style={{ display: "flex", gap: 20, flexWrap: "wrap", margin: "0 2px 12px" }}>{cells}</div>;
 }
 
 // The RPE cheatsheet — the same scale (from @hybrid/core) the mobile logger shows.

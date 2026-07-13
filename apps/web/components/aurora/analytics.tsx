@@ -9,6 +9,7 @@ import { fs, space,
   kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
 } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 import type { RosterRow } from "@/lib/use-roster";
 
@@ -67,14 +68,15 @@ const axis = { stroke: colors.ash, style: { ...mono, fontSize: fs.micro } } as c
 export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[] }) {
   const { t } = useLang();
   const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
   if (sessions.length === 0)
     return <AEmpty title={t("w.home.analytics.noAnalytics")} body={t("w.home.analytics.noAnalyticsBody")} />;
 
-  const vol = totalVolume(sessions);
-  const prs = bestE1rmByLift(sessions).slice(0, 6);
+  const vol = totalVolume(sessions, bw);
+  const prs = bestE1rmByLift(sessions, bw).slice(0, 6);
   const topLift = liftNames(sessions)[0];
-  const series = topLift ? e1rmSeries(sessions, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
-  const volSeries = [...sessions].slice(0, 8).reverse().map((s) => ({ w: fmtDate(s.startedAt), vol: Math.round(kgToUnit(sessionVolume(s.blocks), units)) }));
+  const series = topLift ? e1rmSeries(sessions, topLift, bw).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
+  const volSeries = [...sessions].slice(0, 8).reverse().map((s) => ({ w: fmtDate(s.startedAt), vol: Math.round(kgToUnit(sessionVolume(s.blocks, false, bw(s.startedAt)), units)) }));
   const lastReadiness = sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null;
   const best = prs[0];
 

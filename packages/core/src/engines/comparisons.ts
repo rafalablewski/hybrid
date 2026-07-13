@@ -87,7 +87,7 @@ export function workoutFunFact(input: { volume: number; reps: number; distanceKm
 }
 
 /** Totals → fun fact, computed straight from a session's blocks. */
-export function sessionFunFact(blocks: SessionBlock[]): FunFact | null {
+export function sessionFunFact(blocks: SessionBlock[], bodyweightKg?: number | null): FunFact | null {
   let reps = 0;
   let distanceKm = 0;
   for (const b of blocks) {
@@ -101,7 +101,7 @@ export function sessionFunFact(blocks: SessionBlock[]): FunFact | null {
       if (typeof b.distance === "number" && Number.isFinite(b.distance)) distanceKm += b.distance;
     }
   }
-  return workoutFunFact({ volume: sessionVolume(blocks), reps, distanceKm: Math.round(distanceKm * 10) / 10 });
+  return workoutFunFact({ volume: sessionVolume(blocks, false, bodyweightKg), reps, distanceKm: Math.round(distanceKm * 10) / 10 });
 }
 
 /** The formatted amount for a fun fact (tonnage for volume, km, or a rep count). */

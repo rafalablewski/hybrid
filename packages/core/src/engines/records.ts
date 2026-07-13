@@ -1,5 +1,6 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
 import { blockBestE1rm, setsForVolume } from "./session";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { MOVEMENTS } from "./movements";
 import type { MuscleGroup } from "./types";
 
@@ -17,24 +18,26 @@ export interface PrHit {
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";
 
-/** Best estimated 1RM per lift across a set of sessions (kg, rounded). */
-export function bestE1rmMap(sessions: LoggedSession[]): Map<string, number> {
+/** Best estimated 1RM per lift across a set of sessions (kg, rounded) —
+ *  bodyweight-aware when `bw` is passed (per-session dated resolution). */
+export function bestE1rmMap(sessions: LoggedSession[], bw?: BodyweightInput): Map<string, number> {
   const map = new Map<string, number>();
   for (const s of sessions)
     for (const b of s.blocks)
       if (isStrength(b)) {
-        const best = Math.round(blockBestE1rm(b));
+        const best = Math.round(blockBestE1rm(b, bwAt(bw, s.startedAt)));
         if (best > 0) map.set(b.name, Math.max(map.get(b.name) ?? 0, best));
       }
   return map;
 }
 
 /** Best estimated 1RM per lift within a single session (kg, rounded). */
-function bestE1rmInSession(session: LoggedSession): Map<string, number> {
+function bestE1rmInSession(session: LoggedSession, bw?: BodyweightInput): Map<string, number> {
   const map = new Map<string, number>();
+  const kg = bwAt(bw, session.startedAt);
   for (const b of session.blocks)
     if (isStrength(b)) {
-      const best = Math.round(blockBestE1rm(b));
+      const best = Math.round(blockBestE1rm(b, kg));
       if (best > 0) map.set(b.name, Math.max(map.get(b.name) ?? 0, best));
     }
   return map;
@@ -43,11 +46,13 @@ function bestE1rmInSession(session: LoggedSession): Map<string, number> {
 /**
  * New e1RM personal records set in `session`, compared with everything done
  * BEFORE it (`prior`). A lift never trained before counts as a "first"
- * (previous = null). Ordered by improvement, biggest first.
+ * (previous = null). Ordered by improvement, biggest first. Pass a dated
+ * bodyweight lookup so bodyweight lifts PR on their effective load — with the
+ * SAME basis on both sides of the comparison.
  */
-export function newPrsInSession(session: LoggedSession, prior: LoggedSession[]): PrHit[] {
-  const before = bestE1rmMap(prior);
-  const here = bestE1rmInSession(session);
+export function newPrsInSession(session: LoggedSession, prior: LoggedSession[], bw?: BodyweightInput): PrHit[] {
+  const before = bestE1rmMap(prior, bw);
+  const here = bestE1rmInSession(session, bw);
   const hits: PrHit[] = [];
   for (const [lift, e1rm] of here) {
     const prev = before.get(lift) ?? null;
@@ -62,12 +67,12 @@ const e1rm_gain = (h: PrHit) => h.e1rm - (h.previous ?? 0);
  * The PRs newly set in the session with `id`, taken from a full session list.
  * Prior = every session that started strictly before the target.
  */
-export function prsForSession(all: LoggedSession[], id: string): PrHit[] {
+export function prsForSession(all: LoggedSession[], id: string, bw?: BodyweightInput): PrHit[] {
   const target = all.find((s) => s.id === id);
   if (!target) return [];
   const t = new Date(target.startedAt).getTime();
   const prior = all.filter((s) => s.id !== id && new Date(s.startedAt).getTime() < t);
-  return newPrsInSession(target, prior);
+  return newPrsInSession(target, prior, bw);
 }
 
 /**

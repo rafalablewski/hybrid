@@ -32,12 +32,16 @@ describe("prescribeForSport", () => {
   });
 
   it("treats movements with no load source as bodyweight/tempo", () => {
-    // Bulgarian Split Squat isn't a known barbell base load and isn't logged.
+    // "Calf Raise (slow)" is neither in the exercise DB nor logged — no load source.
     const rx = prescribeForSport("Running", 0, {});
+    const bw = rx.blocks.find((b) => b.name === "Calf Raise (slow)")!;
+    expect(bw.bodyweight).toBe(true);
+    expect(bw.load).toBeUndefined();
+    expect(bw.scheme).not.toContain("kg");
+    // …while Bulgarian Split Squat now HAS a DB base load, so it gets a real
+    // starting estimate instead of a bodyweight fallback.
     const bss = rx.blocks.find((b) => b.name === "Bulgarian Split Squat")!;
-    expect(bss.bodyweight).toBe(true);
-    expect(bss.load).toBeUndefined();
-    expect(bss.scheme).not.toContain("kg");
+    expect(bss.load).toBeGreaterThan(0);
   });
 
   it("doses fewer reps as the level rises", () => {

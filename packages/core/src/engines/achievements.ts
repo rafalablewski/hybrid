@@ -8,6 +8,7 @@
  */
 
 import type { LoggedSession } from "./session";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionVolume } from "./session";
 import { bestE1rmMap, lifetimePrCount } from "./records";
 
@@ -79,9 +80,9 @@ function badgesFor(c: Cat): Achievement[] {
  * The athlete's achievement set — earned badges first (most recent tier per
  * category), then the next locked tier in each category with its progress.
  */
-export function computeAchievements(sessions: LoggedSession[]): Achievement[] {
-  const tonnage = sessions.reduce((n, s) => n + sessionVolume(s.blocks), 0);
-  const maxE1rm = Math.max(0, ...bestE1rmMap(sessions).values());
+export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightInput): Achievement[] {
+  const tonnage = sessions.reduce((n, s) => n + sessionVolume(s.blocks, false, bwAt(bw, s.startedAt)), 0);
+  const maxE1rm = Math.max(0, ...bestE1rmMap(sessions, bw).values());
   const prs = lifetimePrCount(sessions);
   const weekRun = longestWeekStreak(sessions);
   const runKm = longestRunKm(sessions);

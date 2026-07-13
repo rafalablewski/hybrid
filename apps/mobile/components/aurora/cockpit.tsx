@@ -9,6 +9,7 @@ import {
   type LoggedSession, type Macrocycle, type AcwrBand,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
@@ -73,7 +74,8 @@ function Full() {
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
-  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const bw = useBodyweightLookup();
+  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const hasData = sessions.length > 0;

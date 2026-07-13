@@ -6,6 +6,7 @@ import {
   type LoggedSession, type ExercisePeriod, type TrendDir, type MuscleGroup, type ExerciseTableRow,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
@@ -34,8 +35,9 @@ export default function AuroraTrends() {
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume, units = prefs.units, fr = prefs.fractionalVolume;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
-  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
-  const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
+  const bw = useBodyweightLookup();
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw, bw), [sessions, iw, bw]);
+  const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw, bw), [sessions, period, iw, bw]);
   const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
   const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
   const trained = muscles.some((m) => m.sets > 0);

@@ -3,6 +3,7 @@ import { View, Text, Pressable, Alert, Animated, PanResponder } from "react-nati
 import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, type LoggedSession, type AuroraIconName } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
@@ -22,6 +23,7 @@ type SwipeAction = { key: string; label: string; color: string; onPress: () => v
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const bw = useBodyweightLookup();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export default function AuroraHistory() {
                       cardio sessions read distance·time, not "0 kg" (#4). */}
                   {sessionShape(s) === "cardio"
                     ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" – ") || t("history.block")); })()
-                    : chip(C.ash, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
+                    : chip(C.ash, `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}
                   {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
                   {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
                 </View>

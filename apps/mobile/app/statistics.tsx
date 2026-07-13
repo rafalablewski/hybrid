@@ -11,6 +11,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
+import { useBodyweightLookup } from "../lib/use-bodyweight";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
 import { ABack, AuroraScreen, ACard, ASegment, AHeading, RADIUS } from "../components/aurora/kit";
@@ -41,7 +42,8 @@ export default function Statistics() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const buckets = useMemo(() => sessionBuckets(sessions, range), [sessions, range]);
-  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const bw = useBodyweightLookup();
+  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const state = useMemo(() => {
     const bio = toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]);
     return computePerformanceState(toTrainingLog(sessions), bio);
