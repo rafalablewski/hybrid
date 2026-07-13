@@ -1,32 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useEffect, useState, type CSSProperties } from "react";
 import {
   planSchedule,
   fs,
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
-  type PlanDayStatus,
   type PlanDaySession,
 } from "@hybrid/core";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { useLang } from "@/lib/i18n";
 
 // ── AURORA Week rail (web) ──────────────────────────────────────────────────
-// The date-anchored replacement for the count-based "Your plan today". A
-// scrollable seven-day strip flowing into a state-aware session on ONE surface
-// (no nested detail card). The rail is a single tonal system: state reads from
-// weight + glyph, not a palette. Colour is attention — chartreuse means "act
-// now" (today, start, active tab), terracotta means "you missed this"; every
-// settled or upcoming day is greyscale, ranked by presence. Pure data comes from
-// @hybrid/core's planSchedule; skips persist via usePlanOverrides. Mirrored on
-// mobile (aurora/week-rail.tsx). Renders nothing (caller falls back) unless a
-// program plan + start date resolve a schedule.
+// The date-anchored replacement for the count-based "Your plan today". A static
+// seven-day week flowing into a state-aware session on ONE surface (no nested
+// detail card). The rail is a single tonal system: state reads from weight + a
+// glyph, not a palette. Colour is attention — chartreuse means "act now" (today,
+// start, active session), terracotta means "you missed this"; every settled or
+// upcoming day is greyscale, ranked by presence. The week is a sliding window
+// centred on the selected day, so tapping an edge day walks through the plan
+// (no scroll strip / pagers). Pure data from @hybrid/core's planSchedule; skips
+// persist via usePlanOverrides. Mirrored on mobile (aurora/week-rail.tsx).
+// Renders nothing (caller falls back) unless a program plan + start date resolve.
 
 const C = (v: string) => `var(--color-${v})`;
 
-// How many lifts show before the fading "Show more" disclosure kicks in.
+// Days shown at once, and how many lifts show before the fading disclosure.
+const WINDOW = 7;
 const PEEK = 4;
 
 const Check = ({ c = "currentColor", s = 11 }: { c?: string; s?: number }) => (
@@ -43,11 +44,6 @@ const Moon = ({ c = "currentColor", s = 12 }: { c?: string; s?: number }) => (
 );
 const PostponeGlyph = ({ c = "currentColor", s = 16 }: { c?: string; s?: number }) => (
   <svg width={s} height={s * 0.86} viewBox="0 0 14 12" fill="none" aria-hidden><path d="M2 6h8M6.5 2.5 10.5 6l-4 3.5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M12.5 2v8" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></svg>
-);
-const Chevron = ({ dir }: { dir: "l" | "r" }) => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-    <path d={dir === "l" ? "M7.5 3 4 6l3.5 3" : "M4.5 3 8 6l-3.5 3"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
 );
 const Caret = ({ open }: { open: boolean }) => (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>
@@ -106,59 +102,36 @@ export default function AuroraWeekRail({
   const [picked, setPicked] = useState<number | null>(null);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
-  const railRef = useRef<HTMLDivElement>(null);
-  const chipRefs = useRef<Record<number, HTMLButtonElement | null>>({});
-
-  // Centre today (or the picked day) on first paint + whenever the focus changes.
-  useEffect(() => {
-    const el = chipRefs.current[selectedIndex];
-    if (el) el.scrollIntoView({ inline: "center", block: "nearest" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule?.planId, selectedIndex]);
-
-  const pageBy = useCallback((dir: number) => {
-    const r = railRef.current;
-    if (r) r.scrollBy({ left: dir * Math.round(r.clientWidth * 0.8), behavior: "smooth" });
-  }, []);
-
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
+  // The visible week: a WINDOW-day slice centred on the selected day, clamped to
+  // the plan. Tapping an edge day re-centres it, walking through the schedule.
+  const total = schedule.days.length;
+  const winStart = Math.max(0, Math.min(selectedIndex - Math.floor(WINDOW / 2), Math.max(0, total - WINDOW)));
+  const windowDays = schedule.days.slice(winStart, winStart + WINDOW);
+
+  const dayLine = sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest");
+
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>
-      {/* header: plan name + progress (the week pager moved onto the rail edges) */}
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{schedule.planName}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-          {sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest")}
-        </div>
+      {/* header: plan name + progress on one baseline row */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 21, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{schedule.planName}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{dayLine}</div>
       </div>
 
-      {/* the seven-day rail — flanked by round pagers that hug the edges, with an
-          edge fade so the strip visibly runs past them (swipe-forward affordance) */}
-      <div style={{ position: "relative", margin: "14px 0 0" }}>
-        <button onClick={() => pageBy(-1)} aria-label={t("w.home.rail.earlier")} style={pagerEdge("left")}><Chevron dir="l" /></button>
-        <div style={{ WebkitMaskImage: RAIL_FADE, maskImage: RAIL_FADE }}>
-          <div ref={railRef} style={{ display: "flex", gap: 4, overflowX: "auto", scrollSnapType: "x proximity", padding: "2px 34px 4px", scrollbarWidth: "none" }}>
-            {schedule.days.map((d, i) => (
-              <DayChip
-                key={d.dateKey}
-                day={d}
-                selected={i === selectedIndex}
-                onSelect={() => setPicked(i)}
-                innerRef={(el) => { chipRefs.current[i] = el; }}
-                t={t}
-              />
-            ))}
-          </div>
-        </div>
-        <button onClick={() => pageBy(1)} aria-label={t("w.home.rail.later")} style={pagerEdge("right")}><Chevron dir="r" /></button>
+      {/* the seven-day week — no boxes, no dots; a single tonal system */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+        {windowDays.map((d) => (
+          <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => setPicked(d.index)} t={t} />
+        ))}
       </div>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <div style={{ height: 1, background: C("line"), margin: "16px -22px 14px" }} />
+      <div style={{ height: 1, background: C("line"), margin: "18px -20px 16px" }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
@@ -179,18 +152,7 @@ export default function AuroraWeekRail({
   );
 }
 
-// Horizontal-only fade so the rail dissolves under the edge pagers — the strip
-// clearly continues past them, which is the "there's more, swipe" cue.
-const RAIL_FADE = "linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%)";
-// A round pager that hugs a rail edge (vertically centred on the chip band).
-const pagerEdge = (side: "left" | "right"): CSSProperties => ({
-  position: "absolute", top: "calc(50% - 1px)", [side]: -4, transform: "translateY(-50%)", zIndex: 3,
-  width: 32, height: 32, borderRadius: "50%", background: `color-mix(in srgb, ${C("ink")} 82%, #000)`,
-  border: `1px solid ${C("line")}`, color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer",
-  boxShadow: "0 4px 12px -4px rgba(0,0,0,.6)",
-});
-
-function DayChip({ day, selected, onSelect, innerRef, t }: { day: ScheduledDay; selected: boolean; onSelect: () => void; innerRef: (el: HTMLButtonElement | null) => void; t: (k: string) => string }) {
+function DayChip({ day, selected, onSelect, t }: { day: ScheduledDay; selected: boolean; onSelect: () => void; t: (k: string) => string }) {
   const isTodayDisc = day.isToday;
   const numColor = chipNumColor(day);
   // The number lives in a 28px slot. Today = a filled chartreuse disc (the one
@@ -202,13 +164,13 @@ function DayChip({ day, selected, onSelect, innerRef, t }: { day: ScheduledDay; 
       : { fontWeight: 700, fontSize: 15, color: numColor, textDecoration: day.status === "skipped" ? "line-through" : "none" };
 
   const base: CSSProperties = {
-    flex: "0 0 46px", scrollSnapAlign: "center", cursor: "pointer",
+    flex: 1, cursor: "pointer",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
     padding: "6px 0 5px", border: "none", background: "transparent",
-    opacity: day.isRest ? 0.5 : 1,
+    opacity: day.isRest ? 0.45 : 1,
   };
   return (
-    <button ref={innerRef} onClick={onSelect} aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`} aria-pressed={selected} style={base}>
+    <button onClick={onSelect} aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`} aria-pressed={selected} style={base}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), opacity: 0.8 }}>{day.weekdayShort}</span>
       <span style={{ height: 28, display: "grid", placeItems: "center", fontFamily: "var(--font-display)" }}>
         <span style={numInner}>{day.dayOfMonth}</span>
@@ -321,15 +283,16 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em" }}>{day.title}</div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>{day.title}</div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
       </div>
 
+      {/* a short state note only where it carries meaning (moved / missed / skipped) */}
       {day.status === "postponed" ? (
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
           {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
         </div>
-      ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
+      ) : (day.status === "missed" || day.status === "skipped") ? (
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.status === "missed" ? "var(--red-text)" : C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>
           {t(`w.home.rail.${day.status}Note`)}
         </div>
@@ -359,7 +322,7 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
         {hasMore && (
           <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".04em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {!open && <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: "100%", height: 40, pointerEvents: "none", background: `linear-gradient(to top, ${C("ink2")} 14%, transparent)` }} />}
-            {t(open ? "w.home.rail.showLess" : "w.home.rail.showMore")}
+            {open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}
             <Caret open={open} />
           </button>
         )}
@@ -373,7 +336,7 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "upcoming" && (<>
-          <button onClick={() => onStart(startBlocks)} style={limeGhostBtn}>{t("w.home.rail.startEarly")}</button>
+          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.startEarly")}</button>
           {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "skipped" && (
@@ -407,10 +370,7 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
   );
 }
 
-const primaryBtn: CSSProperties = { flex: 2, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, letterSpacing: "-.01em", cursor: "pointer" };
-// Start-early: still a "go" action, so it keeps the accent — but outlined, so it
-// doesn't out-shout starting today. The only other place chartreuse appears.
-const limeGhostBtn: CSSProperties = { flex: 1, background: "transparent", border: `1px solid color-mix(in srgb, ${C("lime")} 45%, ${C("line")})`, color: "var(--lime-text)", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" };
+const primaryBtn: CSSProperties = { flex: 1, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, letterSpacing: "-.01em", cursor: "pointer" };
 // Neutral secondary — undo / history / unpostpone. No second accent colour.
 const neutralGhostBtn: CSSProperties = { flex: 1, background: "transparent", border: `1px solid ${C("line")}`, color: C("ash"), borderRadius: 999, padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" };
 // Compact glyph button for rare secondary actions (skip / postpone).

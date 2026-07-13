@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, Dimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planSchedule,
@@ -15,26 +15,22 @@ import { RADIUS } from "./kit";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
-// The date-anchored replacement for the count-based "Your plan today". A
-// horizontally-scrollable strip flowing into a state-aware session on ONE surface
-// (no nested detail card). The rail is a single tonal system: state reads from
-// weight + glyph, not a palette. Colour is attention — chartreuse means "act now"
-// (today, start, active session), terracotta means "you missed this"; every
-// settled or upcoming day is greyscale, ranked by presence. Mirrors the web
-// component (aurora/week-rail.tsx) exactly — same props, states, engine
-// (@hybrid/core planSchedule) + usePlanOverrides for skips. Glyphs are text
-// characters (the mobile icon idiom — no SVG dep, matching kit.tsx). Renders
+// The date-anchored replacement for the count-based "Your plan today". A static
+// seven-day week flowing into a state-aware session on ONE surface (no nested
+// detail card). The rail is a single tonal system: state reads from weight + a
+// glyph, not a palette. Colour is attention — chartreuse means "act now" (today,
+// start, active session), terracotta means "you missed this"; every settled or
+// upcoming day is greyscale, ranked by presence. The week is a sliding window
+// centred on the selected day, so tapping an edge day walks through the plan
+// (no scroll strip / pagers). Mirrors the web component (aurora/week-rail.tsx)
+// exactly — same props, states, engine + usePlanOverrides for skips. Glyphs are
+// text characters (the mobile idiom — no SVG dep, matching kit.tsx). Renders
 // nothing (caller falls back) unless a program plan + start date resolve.
 
 type Pal = ReturnType<typeof useTheme>["palette"];
 
-const CHIP_W = 46;
-const CHIP_GAP = 4;
-const STEP = CHIP_W + CHIP_GAP;
-// Leading inset of the rail's content (clears the edge pager); the centering
-// math must add it so the selected chip lands truly centred, not ~30px off.
-const RAIL_PAD = 34;
-// How many lifts show before the fading "Show more" disclosure kicks in.
+// Days shown at once, and how many lifts show before the fading disclosure.
+const WINDOW = 7;
 const PEEK = 4;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
@@ -102,30 +98,16 @@ export default function AuroraWeekRail({
   const [picked, setPicked] = useState<number | null>(null);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
-  const railRef = useRef<ScrollView>(null);
-  const [railW, setRailW] = useState(Dimensions.get("window").width - 84);
-  const scrollX = useRef(0);
-
-  // Centre the selected (or today) chip on first paint + whenever focus changes.
-  const planKey = schedule?.planId;
-  useEffect(() => {
-    const x = Math.max(0, RAIL_PAD + selectedIndex * STEP - railW / 2 + CHIP_W / 2);
-    railRef.current?.scrollTo({ x, animated: true });
-  }, [planKey, selectedIndex, railW]);
-
-  const pageBy = useCallback(
-    (dir: number) => {
-      const x = Math.max(0, scrollX.current + dir * Math.round(railW * 0.8));
-      railRef.current?.scrollTo({ x, animated: true });
-    },
-    [railW],
-  );
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollX.current = e.nativeEvent.contentOffset.x;
-  }, []);
-
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
+
+  // The visible week: a WINDOW-day slice centred on the selected day, clamped to
+  // the plan. Tapping an edge day re-centres it, walking through the schedule.
+  const total = schedule.days.length;
+  const winStart = Math.max(0, Math.min(selectedIndex - Math.floor(WINDOW / 2), Math.max(0, total - WINDOW)));
+  const windowDays = schedule.days.slice(winStart, winStart + WINDOW);
+
+  const dayLine = sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest");
 
   return (
     <View
@@ -133,7 +115,7 @@ export default function AuroraWeekRail({
         backgroundColor: C.ink2,
         borderWidth: 1,
         borderColor: C.line,
-        borderRadius: RADIUS.card,
+        borderRadius: 24,
         padding: 20,
         shadowColor: "#000",
         shadowOpacity: 0.18,
@@ -142,46 +124,23 @@ export default function AuroraWeekRail({
         elevation: 3,
       }}
     >
-      {/* header: plan name + progress (the pager moved onto the rail edges) */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>
-            {schedule.planName}
-          </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>
-            {sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest")}
-          </Text>
-        </View>
+      {/* header: plan name + progress on one baseline row */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.4, color: C.chalk }}>
+          {schedule.planName}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11.5, letterSpacing: 0.4, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
       </View>
 
-      {/* the day rail — natively swipeable, with edge fades + round pagers hugging
-          the edges so the strip visibly runs past them (the "swipe" affordance) */}
-      <View style={{ position: "relative", marginTop: 14, marginBottom: 0 }}>
-        <ScrollView
-          ref={railRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          onLayout={(e) => setRailW(e.nativeEvent.layout.width)}
-          contentContainerStyle={{ gap: CHIP_GAP, paddingHorizontal: RAIL_PAD, paddingVertical: 2 }}
-        >
-          {schedule.days.map((d, i) => (
-            <DayChip key={d.dateKey} C={C} day={d} selected={i === selectedIndex} onSelect={() => setPicked(i)} t={t} />
-          ))}
-        </ScrollView>
-        <LinearGradient pointerEvents="none" colors={[C.ink2, `${C.ink2}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 42 }} />
-        <LinearGradient pointerEvents="none" colors={[`${C.ink2}00`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 42 }} />
-        <View style={{ position: "absolute", left: -4, top: 0, bottom: 0, justifyContent: "center" }}>
-          <PagerBtn C={C} dir="l" label={t("w.home.rail.earlier")} onPress={() => pageBy(-1)} />
-        </View>
-        <View style={{ position: "absolute", right: -4, top: 0, bottom: 0, justifyContent: "center" }}>
-          <PagerBtn C={C} dir="r" label={t("w.home.rail.later")} onPress={() => pageBy(1)} />
-        </View>
+      {/* the seven-day week — no boxes, no dots; a single tonal system */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
+        {windowDays.map((d) => (
+          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => setPicked(d.index)} t={t} />
+        ))}
       </View>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 14 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 18, marginBottom: 16 }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
@@ -201,20 +160,6 @@ export default function AuroraWeekRail({
         t={t}
       />
     </View>
-  );
-}
-
-function PagerBtn({ C, dir, label, onPress }: { C: Pal; dir: "l" | "r"; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={6}
-      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
-    >
-      <Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>{dir === "l" ? "‹" : "›"}</Text>
-    </Pressable>
   );
 }
 
@@ -253,7 +198,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
-      style={{ width: CHIP_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.5 : 1 }}
+      style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.45 : 1 }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
@@ -346,15 +291,16 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 20, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{day.title}</Text>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{day.title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
       </View>
 
+      {/* a short state note only where it carries meaning (moved / missed / skipped) */}
       {day.status === "postponed" ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>
           {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
         </Text>
-      ) : (day.status === "missed" || day.status === "skipped" || day.status === "upcoming") ? (
+      ) : (day.status === "missed" || day.status === "skipped") ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: day.status === "missed" ? txt(C, C.red) : C.ash, marginTop: 5, lineHeight: 17 }}>{t(`w.home.rail.${day.status}Note`)}</Text>
       ) : null}
 
@@ -390,7 +336,7 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
       </View>
       {hasMore && (
         <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.4, color: C.ash }}>{t(open ? "w.home.rail.showLess" : "w.home.rail.showMore")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.4, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{open ? "⌃" : "⌄"}</Text>
         </Pressable>
       )}
@@ -411,20 +357,20 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
             {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
           </>
         )}
-        {day.status === "skipped" && <GhostBtn C={C} tone="neutral" label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
+        {day.status === "skipped" && <GhostBtn C={C} label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
         {day.status === "upcoming" && (
           <>
-            <GhostBtn C={C} tone="lime" label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} flex={1} />
+            <PrimaryBtn C={C} label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} />
             {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
           </>
         )}
         {day.status === "postponed" && (
           <>
             <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
-            <GhostBtn C={C} tone="neutral" label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
+            <GhostBtn C={C} label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
           </>
         )}
-        {day.status === "done" && <GhostBtn C={C} tone="neutral" label={t("w.home.rail.viewHistory")} onPress={onHistory} flex1 />}
+        {day.status === "done" && <GhostBtn C={C} label={t("w.home.rail.viewHistory")} onPress={onHistory} flex1 />}
       </View>
 
       {/* Sessions postponed ONTO this date — a light catch-up list. */}
@@ -437,7 +383,7 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
               </View>
-              <GhostBtn C={C} tone="neutral" label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
+              <GhostBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
             </View>
           ))}
         </View>
@@ -448,7 +394,7 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
 
 function PrimaryBtn({ C, label, onPress }: { C: Pal; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ flex: 2, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center" }}>
+    <Pressable onPress={onPress} style={{ flex: 1, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center" }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{label}</Text>
     </Pressable>
   );
@@ -468,26 +414,24 @@ function IconBtn({ C, glyph, label, onPress }: { C: Pal; glyph: string; label: s
   );
 }
 
-/** Secondary text pill. tone "lime" = the outlined "go" (start early); "neutral"
- *  = greyscale (undo / history / unpostpone). No second accent colour. */
-function GhostBtn({ C, tone, label, onPress, flex1, flex, auto }: { C: Pal; tone: "lime" | "neutral"; label: string; onPress: () => void; flex1?: boolean; flex?: number; auto?: boolean }) {
-  const lime = tone === "lime";
+/** Neutral secondary text pill — undo / history / unpostpone. No second accent. */
+function GhostBtn({ C, label, onPress, flex1, auto }: { C: Pal; label: string; onPress: () => void; flex1?: boolean; auto?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       style={{
-        flex: auto ? 0 : flex ?? 1,
+        flex: auto ? 0 : 1,
         minWidth: flex1 || auto ? undefined : 0,
         backgroundColor: "transparent",
         borderWidth: 1,
-        borderColor: lime ? `${C.lime}73` : C.line,
+        borderColor: C.line,
         borderRadius: RADIUS.pill,
-        paddingVertical: auto ? 8 : lime ? 12 : 12,
+        paddingVertical: auto ? 8 : 12,
         paddingHorizontal: auto ? 14 : undefined,
         alignItems: "center",
       }}
     >
-      <Text style={{ fontFamily: lime ? F.bold : F.mono, fontSize: lime ? fs.bodyLg : 11, color: lime ? txt(C, C.lime) : C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{label}</Text>
     </Pressable>
   );
 }
