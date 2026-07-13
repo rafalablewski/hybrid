@@ -19,6 +19,8 @@ import { fs, space,
   ROLE_COLOR,
   readinessRole,
   checkinFeeling,
+  READINESS_FEELINGS,
+  READINESS_FACE,
   type ReadinessFeeling,
   type SemanticRole,
   type LoggedSession,
@@ -37,7 +39,6 @@ import { readIntake, type Intake } from "@/lib/intake";
 import QuickSportLog from "../quick-sport";
 import AuroraWeekRail from "./week-rail";
 import Sheet from "./sheet";
-import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
@@ -101,8 +102,8 @@ export default function AuroraToday({
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
   // TIER-3 quick actions, now slide-up sheets (not full-screen nav): the
-  // readiness check-in, the nutrition tracker, and Follow-a-coach.
-  const [readyOpen, setReadyOpen] = useState(false);
+  // nutrition tracker and Follow-a-coach. (Readiness is now set inline on the
+  // feeling card, so it no longer opens a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle.
@@ -177,11 +178,6 @@ export default function AuroraToday({
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
-  // Glance-strip cell: a flex column so every column's value row + label sit at
-  // the SAME height and position across the three cards.
-  const glanceCell = { padding: "13px 6px", background: "none", border: "none", cursor: "pointer", color: C("chalk"), display: "flex", flexDirection: "column", alignItems: "center" } as const;
-  const glanceVal = { height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 17, lineHeight: 1 } as const;
-  const glanceLab = { fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 6 } as const;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>
@@ -379,24 +375,16 @@ export default function AuroraToday({
         </div>
       )}
 
-      {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
-          Quick Log takes the day-streak's old slot (the streak lives in the header
-          now); it opens the sport-log carousel, Readiness opens the daily check-in,
-          and Done today opens a pop-up of everything logged today + the calendar. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
-        <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ ...glanceCell, borderRight: `1px solid ${C("line")}` }}>
-          <div style={{ ...glanceVal, color: "var(--lime-text)" }}>＋</div>
-          <div style={glanceLab}>{t("w.home.today.glanceQuickLog")}</div>
-        </button>
-        <button onClick={() => setReadyOpen(true)} aria-label={t("w.home.today.glanceReadiness")} style={{ ...glanceCell, borderRight: `1px solid ${C("line")}` }}>
-          <div style={{ ...glanceVal, color: C("ash") }}>{feeling ? <ReadinessFace feeling={feeling} size={26} /> : "—"}</div>
-          <div style={glanceLab}>{t("w.home.today.glanceReadiness")}</div>
-        </button>
-        <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={glanceCell}>
-          <div style={glanceVal}><span style={{ color: "var(--lime-text)", marginRight: 3 }}>✓</span>{doneToday.length}</div>
-          <div style={glanceLab}>{t("w.home.today.glanceDone")}</div>
-        </button>
-      </div>
+      {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The four
+          faces set today's readiness inline (one tap, no sheet); the footer keeps
+          the two secondary affordances — log a session, and the day's done count. */}
+      <FeelingCard
+        feeling={feeling}
+        doneCount={doneToday.length}
+        onLog={() => setQuickOpen(true)}
+        onDone={() => setDoneOpen(true)}
+        onPicked={loadFeeling}
+      />
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
@@ -430,11 +418,6 @@ export default function AuroraToday({
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
-      </Sheet>
-
-      {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
-      <Sheet open={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
-        <ReadinessPicker onDone={() => { setReadyOpen(false); loadFeeling(); }} />
       </Sheet>
 
       {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
@@ -543,6 +526,57 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
       </span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
     </button>
+  );
+}
+
+// The feeling-led daily card — "How ready do you feel?" with the four faces set
+// today's readiness inline (one tap → POST /api/checkins, the same write the full
+// check-in makes), and a quiet footer: log a session, and the day's done count.
+// The picked face lights in its own semantic feeling colour.
+function FeelingCard({ feeling, doneCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; doneCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+  const { t } = useLang();
+  const [busy, setBusy] = useState(false);
+  const pick = async (rating: number) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/checkins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekOf: new Date().toISOString(), energy: rating, sleep: rating, soreness: rating, mood: rating }),
+      });
+      if (res.ok) onPicked();
+    } catch {
+      // a failed tap simply doesn't set — the athlete can tap again
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: `linear-gradient(180deg, ${C("ink2")}, ${C("ink")})` }}>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{t("w.recovery.readiness.title")}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0" }}>
+        {READINESS_FEELINGS.map((key, i) => {
+          const on = feeling === key;
+          const at = `var(--${READINESS_FACE[key].accent}-text)`;
+          return (
+            <button key={key} onClick={() => pick(i + 2)} disabled={busy} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "10px 0", borderRadius: 16, cursor: busy ? "default" : "pointer", background: on ? `color-mix(in srgb, ${at} 12%, transparent)` : "transparent", border: on ? `1px solid color-mix(in srgb, ${at} 40%, transparent)` : "1px solid transparent", opacity: busy && !on ? 0.55 : 1, transition: "background .15s, opacity .15s" }}>
+              <ReadinessFace feeling={key} size={36} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: on ? at : C("ash") }}>{t(`w.recovery.readiness.${key}`)}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
+        <button onClick={onLog} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>
+          <span style={{ fontSize: 15, lineHeight: 1 }}>＋</span> {t("w.home.today.glanceQuickLog")}
+        </button>
+        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>
+          <b style={{ color: C("chalk"), fontWeight: 700 }}>{doneCount}</b> {t("w.home.today.glanceDone")}
+        </button>
+      </div>
+    </div>
   );
 }
 

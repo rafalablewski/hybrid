@@ -16,6 +16,8 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  READINESS_FEELINGS,
+  READINESS_FACE,
   type ReadinessFeeling,
   sessionsOnDay,
   sessionShape,
@@ -29,9 +31,9 @@ import {
   type Equipment,
   type AuroraIconName,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, fetchCheckins, type Assignment } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
+import { useSessionsQuery, useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -48,7 +50,6 @@ import { MetaLine } from "./meta";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
-import ReadinessPicker from "./readiness-picker";
 import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
@@ -93,8 +94,8 @@ export default function AuroraHome() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
   // TIER-3 quick actions, now slide-up sheets (not full-screen routes): the
-  // readiness check-in, the nutrition tracker, and Follow-a-coach.
-  const [readyOpen, setReadyOpen] = useState(false);
+  // nutrition tracker and Follow-a-coach. (Readiness is now set inline on the
+  // feeling card, so it no longer opens a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle so
@@ -426,32 +427,17 @@ export default function AuroraHome() {
           </ACard>
         )}
 
-        {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
-            Quick Log takes the day-streak's old slot (the streak lives in the header
-            now); it opens the sport-log carousel, Readiness opens the daily check-in,
-            and Done today opens a pop-up of everything logged today + the calendar. */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
-          {/* Each column: a fixed-height value row + label, so all three values
-              and labels sit at the SAME height and position across the cards. */}
-          <Pressable onPress={() => setQuickOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: txt(C, C.lime) }}>＋</Text>
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceQuickLog")}</Text>
-          </Pressable>
-          <Pressable onPress={() => setReadyOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
-            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
-              {feeling ? <ReadinessFace feeling={feeling} scale={0.72} /> : <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.ash }}>—</Text>}
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceReadiness")}</Text>
-          </Pressable>
-          <Pressable onPress={() => setDoneOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flex: 1, paddingVertical: 13, alignItems: "center" }}>
-            <View style={{ height: 22, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.monoBold, fontSize: 17, color: C.chalk }}><Text style={{ color: txt(C, C.lime) }}>✓ </Text>{doneToday.length}</Text>
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 6 }}>{t("w.home.today.glanceDone")}</Text>
-          </Pressable>
-        </View>
+        {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
+            four faces set today's readiness inline (one tap, no sheet); the footer
+            keeps the two secondary affordances — log a session, and the done count. */}
+        <FeelingCard
+          C={C}
+          feeling={feeling}
+          doneCount={doneToday.length}
+          onLog={() => setQuickOpen(true)}
+          onDone={() => setDoneOpen(true)}
+          onPicked={loadFeeling}
+        />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
@@ -482,11 +468,6 @@ export default function AuroraHome() {
         <View style={{ marginTop: 14 }}>
           <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
         </View>
-      </Sheet>
-
-      {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
-      <Sheet visible={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
-        <ReadinessPicker onDone={() => { setReadyOpen(false); loadFeeling(); }} />
       </Sheet>
 
       {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
@@ -587,6 +568,55 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.
+// The feeling-led daily card — "How ready do you feel?" with the four faces set
+// today's readiness inline (one tap → createCheckin, the same write the full
+// check-in makes), and a quiet footer: log a session, and the day's done count.
+// The picked face lights in its own semantic feeling colour.
+function FeelingCard({ C, feeling, doneCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; doneCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+  const { t } = useLang();
+  const revalidate = useRevalidate();
+  const [busy, setBusy] = useState(false);
+  const pick = async (rating: number) => {
+    if (busy) return;
+    setBusy(true);
+    const ok = await createCheckin({
+      weekOf: new Date().toISOString(),
+      bodyMassKg: null,
+      energy: rating, sleep: rating, soreness: rating, mood: rating,
+      adherencePct: null, note: null, sharedWithCoach: false,
+    });
+    setBusy(false);
+    if (ok) { revalidate.recovery(); onPicked(); }
+  };
+  return (
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: 16 }}>
+        {READINESS_FEELINGS.map((key, i) => {
+          const on = feeling === key;
+          const accent = txt(C, C[READINESS_FACE[key].accent]);
+          return (
+            <Pressable key={key} onPress={() => pick(i + 2)} disabled={busy} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: busy && !on ? 0.55 : 1 }}>
+              <ReadinessFace feeling={key} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={{ fontFamily: F.monoBold, fontSize: 15, color: txt(C, C.lime) }}>＋</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.glanceQuickLog")}</Text>
+        </Pressable>
+        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}><Text style={{ fontFamily: F.monoBold, color: C.chalk }}>{doneCount}</Text> {t("w.home.today.glanceDone")}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; sub: string; locked: boolean; onPress: () => void }) {
   const { scheme } = useTheme();
   const pa = usePremiumAccent();
