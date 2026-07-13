@@ -11,6 +11,7 @@ describe("plansForGoal", () => {
       bb: ["bb-ppl-6day"],
       fatloss: ["fatloss-kb-saturday"],
       kettlebell: ["kb-12wk-strong"],
+      hybrid: ["hybrid-engine-base"],
     };
     for (const node of GOAL_TREE) {
       expect(plansForGoal(node.name).map((p) => p.id)).toEqual(authored[node.id] ?? []);

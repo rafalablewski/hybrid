@@ -18,6 +18,7 @@ import {
   type PlanLift,
   type PlanEntry,
   type PlanSession,
+  type SessionTimeOfDay,
   type ConditioningEffort,
 } from "./plan-program";
 
@@ -1436,6 +1437,119 @@ export const KB_12WK_STRONG: PlanProgram = buildKBProgram(
   KB_WEEKS,
 );
 
+// ============================================================
+//  HYBRID ATHLETE — a strength + engine base. The hybrid case the other four
+//  plans don't cover: a single week that carries BOTH heavy barbell work and an
+//  aerobic engine, run on repeat. Its point of difference is the DAY SHAPE — the
+//  two key days are THREE-A-DAY (AM strength / MID conditioning / PM easy run)
+//  and Saturday is a two-a-day (AM long run / PM full-body). Each session is a
+//  single content kind, so a day reads as clean, separately-startable blocks —
+//  and it exercises the AM/MID/PM session model end to end. Built as a direct
+//  PlanProgram (mixed content per session, so no single %/circuit/run builder
+//  fits); discipline `hypertrophy` for the working-weight worksheet + exercise
+//  count. Reps are single numbers (project rule); kettlebell work uses the KB
+//  prefix. Source: a general hybrid strength-and-conditioning template.
+// ============================================================
+
+// A day's strength lift (fills the athlete's working kg when `ref` is set), a
+// conditioning item (carries an effort tier → the shared intensity colour), or a
+// prose run (label + written prescription). Each maps to a PlanEntry.
+type HybStrength = { name: string; sets: number; reps: number; rpe: number; ref?: string; note?: string };
+type HybCond = { name: string; scheme: string; effort: ConditioningEffort; note?: string };
+type HybProse = { name: string; detail: string; note?: string };
+
+const hStr = (x: HybStrength): PlanEntry => ({ label: x.name, detail: "", sets: x.sets, reps: x.reps, rpe: x.rpe, ...(x.ref ? { weightRef: x.ref } : {}), ...(x.note ? { note: x.note } : {}) });
+const hCond = (x: HybCond): PlanEntry => ({ label: x.name, detail: "", scheme: x.scheme, effort: x.effort, ...(x.note ? { note: x.note } : {}) });
+const hRun = (x: HybProse): PlanEntry => ({ label: x.name, detail: x.detail, ...(x.note ? { note: x.note } : {}) });
+const hSess = (label: SessionTimeOfDay | undefined, entries: PlanEntry[]): PlanSession => ({ ...(label ? { label } : {}), entries });
+const hTrain = (index: number, title: string, sessions: PlanSession[]): PlanDay => ({ index, kind: "train", title, sessions });
+const hRest = (index: number, title: string, kind: Extract<PlanDayKind, "rest" | "active-rest"> = "rest"): PlanDay => ({ index, kind, title, sessions: [] });
+
+const HYBRID_WEEK: PlanDay[] = [
+  // Mon — three-a-day: heavy lower, a short erg/KB engine, an easy shakeout run.
+  hTrain(1, "Mon, Lower + Engine", [
+    hSess("AM", [
+      hStr({ name: "Back Squat", sets: 4, reps: 5, rpe: 7, ref: "squat" }),
+      hStr({ name: "Romanian Deadlift", sets: 3, reps: 8, rpe: 8, ref: "deadlift" }),
+      hStr({ name: "Walking Lunge", sets: 3, reps: 10, rpe: 7, note: "per leg" }),
+    ]),
+    hSess("MID", [
+      hCond({ name: "KB Swing", scheme: "5 × 20", effort: "hard" }),
+      hCond({ name: "Row Erg", scheme: "5 × 250 m", effort: "hard", note: "90 s rest between" }),
+      hCond({ name: "Hollow Hold", scheme: "3 × 30 s", effort: "moderate" }),
+    ]),
+    hSess("PM", [
+      hRun({ name: "Easy Run", detail: "30 min zone 2", note: "conversational pace" }),
+    ]),
+  ]),
+  // Tue — a single running quality session (speed).
+  hTrain(2, "Tue, Intervals", [
+    hSess(undefined, [
+      hRun({ name: "Intervals", detail: "6 × 400 m at 5K pace", note: "90 s jog recovery" }),
+      hRun({ name: "Strides", detail: "4 × 20 s", note: "relaxed and fast" }),
+    ]),
+  ]),
+  hRest(3, "Wed, Active recovery", "active-rest"),
+  // Thu — three-a-day: heavy upper, a hard interval engine, an easy run.
+  hTrain(4, "Thu, Upper + Engine", [
+    hSess("AM", [
+      hStr({ name: "Bench Press", sets: 4, reps: 6, rpe: 7, ref: "bench" }),
+      hStr({ name: "Weighted Pull-Up", sets: 4, reps: 6, rpe: 8 }),
+      hStr({ name: "Overhead Press", sets: 3, reps: 8, rpe: 7, ref: "ohp" }),
+    ]),
+    hSess("MID", [
+      hCond({ name: "Assault Bike", scheme: "6 × 20 s", effort: "max", note: "100 s easy spin between" }),
+      hCond({ name: "KB Clean & Press", scheme: "4 × 8", effort: "hard", note: "per side" }),
+      hCond({ name: "Plank", scheme: "3 × 45 s", effort: "moderate" }),
+    ]),
+    hSess("PM", [
+      hRun({ name: "Easy Run", detail: "25 min zone 2" }),
+    ]),
+  ]),
+  // Fri — a single tempo run.
+  hTrain(5, "Fri, Tempo", [
+    hSess(undefined, [
+      hRun({ name: "Tempo Run", detail: "20 min tempo", note: "comfortably hard" }),
+    ]),
+  ]),
+  // Sat — two-a-day: the long run in the morning, full-body strength later.
+  hTrain(6, "Sat, Long + Full Body", [
+    hSess("AM", [
+      hRun({ name: "Long Run", detail: "60 min easy", note: "flat or rolling" }),
+    ]),
+    hSess("PM", [
+      hStr({ name: "Deadlift", sets: 3, reps: 5, rpe: 7, ref: "deadlift" }),
+      hStr({ name: "Push Press", sets: 3, reps: 6, rpe: 8, ref: "ohp" }),
+      hStr({ name: "Chin-Up", sets: 3, reps: 8, rpe: 8 }),
+      hStr({ name: "Ab Wheel", sets: 3, reps: 12, rpe: 8 }),
+    ]),
+  ]),
+  hRest(7, "Sun, Rest"),
+];
+
+export const HYBRID_ENGINE_BASE: PlanProgram = {
+  id: "hybrid-engine-base",
+  discipline: "hypertrophy",
+  inputsTitle: "Your working weights (kg) — fills into the strength prescriptions",
+  inputs: [
+    { key: "squat", label: "Back Squat", kind: "number", derives: true },
+    { key: "bench", label: "Bench Press", kind: "number", derives: true },
+    { key: "deadlift", label: "Deadlift", kind: "number", derives: true },
+    { key: "ohp", label: "Overhead Press", kind: "number", derives: true },
+  ],
+  progression:
+    "A hybrid base week — heavy strength AND an aerobic engine in the same seven days, run on repeat. The two key days are " +
+    "THREE-A-DAY: a morning STRENGTH session (AM), a short CONDITIONING piece a few hours later (MID), and an easy RUN in the " +
+    "evening (PM), spaced out so the hard work doesn't bleed together. Tuesday and Friday are single running days (speed, then " +
+    "tempo), Saturday pairs a long run with full-body lifting, and the week has two rest points (Wed active recovery, Sun off). " +
+    "PROGRESSION: keep the lifts at the listed RPE and add a little weight whenever a session feels easier than its target; hold " +
+    "the runs at an easy, conversational effort except the marked interval and tempo work, and stretch the long run by 5 to 10 " +
+    "minutes every couple of weeks. Spread the three-a-day sessions across the day when you can; if you can only train once, do " +
+    "the AM strength and tack the easy run onto another day. Fuel and sleep are the real progression driver here.",
+  source: "A general hybrid strength-and-conditioning base template.",
+  weeks: [{ index: 1, days: HYBRID_WEEK }],
+};
+
 // ---- registry ----------------------------------------------------------------
 
 /** Every encoded program, keyed by the GoalPlan id that surfaces it. */
@@ -1445,6 +1559,7 @@ export const PLAN_PROGRAMS: Record<string, PlanProgram> = {
   [BB_PPL_6DAY.id]: BB_PPL_6DAY,
   [FATLOSS_KB_SATURDAY.id]: FATLOSS_KB_SATURDAY,
   [KB_12WK_STRONG.id]: KB_12WK_STRONG,
+  [HYBRID_ENGINE_BASE.id]: HYBRID_ENGINE_BASE,
 };
 
 /** The rich, discipline-shaped program behind a plan id (null when the plan uses
