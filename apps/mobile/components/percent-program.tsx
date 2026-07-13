@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
-import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, sessionColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
@@ -189,7 +189,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
         <View key={di} style={card}>
           <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} C={C} />
           {day.sessions.map((s, si) => (
-            <SessionBlock key={si} s={s} si={si} C={C} />
+            <SessionBlock key={si} s={s} si={si} count={day.sessions.length} C={C} />
           ))}
         </View>
       ))}
@@ -224,15 +224,19 @@ function ColHeader({ C }: { C: Palette }) {
   );
 }
 
-function SessionBlock({ s, si, C }: { s: ProgramSessionView; si: number; C: Palette }) {
+function SessionBlock({ s, si, count, C }: { s: ProgramSessionView; si: number; count: number; C: Palette }) {
   const groups = groupByKind(s.lifts);
   const mixed = groups.length > 1;
   const hasPercent = groups.some((g) => g.kind === "percent");
+  // A multi-session day gets one marker per session: the plan's time-of-day
+  // (AM/MID/PM) when set, else a plain "Training N" from the ordinal — so an
+  // untimed two/three-a-day is distinguished, not silently merged.
+  const marker = s.label ?? (count > 1 ? `Training ${si + 1}` : null);
   return (
     <View>
-      {!!s.label && <Band label={s.volume ? `${s.label} (${s.volume})` : s.label} color={s.label === "PM" ? C.blue : C.lime} topBorder={si > 0} C={C} />}
+      {!!marker && <Band label={s.volume ? `${marker} (${s.volume})` : marker} color={loadHex(C, sessionColor(s.label, si))} topBorder={si > 0} C={C} />}
       {groups.map((g, gi) => {
-        const topBorder = gi > 0 || !!s.label || si > 0;
+        const topBorder = gi > 0 || !!marker || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent, C);
         return (
           <View key={gi}>
