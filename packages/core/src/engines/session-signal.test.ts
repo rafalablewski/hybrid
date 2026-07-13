@@ -116,4 +116,10 @@ describe("blockSignalSummary", () => {
     expect(sums[2]).toBe("EMOM – 8×40/20s");
     for (const s of sums) expect(s.includes("·")).toBe(false);
   });
+  it("renders metre-sport distances in metres, not km", () => {
+    expect(blockSignalSummary({ kind: "cardio", name: "Swimming", distance: 1.5, minutes: 28 })).toBe(
+      "1500 m – 28 min",
+    );
+    expect(blockSignalSummary({ kind: "cardio", name: "Rowing", distance: 2 })).toContain("2000 m");
+  });
 });

@@ -1,5 +1,6 @@
 import type { SessionBlock, StrengthBlock, CardioBlock, ConditioningBlock } from "./session";
 import { workingSets, cardioPace, sessionVolume } from "./session";
+import { formatSportDistance } from "../olympic-sports";
 
 // The Builder's "signal board" math — the live session summary both clients
 // show while a routine is being assembled (estimated duration, tonnage, and the
@@ -140,7 +141,9 @@ export function blockSignalSummary(b: SessionBlock): string {
   }
   if (b.kind === "cardio") {
     const parts: string[] = [];
-    if (b.distance) parts.push(`${b.distance} km`);
+    // Distance renders in the sport's natural unit ("1500 m" for a swim,
+    // "8 km" for a run) — driven by the block name; storage stays km.
+    if (b.distance) parts.push(formatSportDistance(b.distance, b.name));
     if (b.minutes) parts.push(`${b.minutes} min`);
     const pace = cardioPace(b);
     if (pace && parts.length < 2) parts.push(pace);
