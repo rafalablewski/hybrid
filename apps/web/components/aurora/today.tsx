@@ -552,14 +552,15 @@ function AccessCard({ title, sub, locked, onClick }: { title: string; sub: strin
     <button
       onClick={onClick}
       aria-label={title}
-      style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", textAlign: "left", background: `linear-gradient(160deg, color-mix(in srgb, var(--premium-accent) 14%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 22%, ${C("line")})`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minHeight: 220, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 12%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
-      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20 }}>{title}</span>
-      {/* sub grows so the CTA pins to the card bottom — both cards stretch to equal
-          height (grid 1fr/1fr), so the title, sub-start and CTA line up across the
-          pair no matter how many lines the copy runs */}
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.4, color: C("ash"), flexGrow: 1 }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 2 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, letterSpacing: "-.02em" }}>{title}</span>
+      {/* body grows so the CTA pins to the card bottom — both cards stretch to equal
+          height (grid 1fr/1fr), so the title, body-start and CTA line up across the
+          pair no matter how many lines the copy runs. Body is the display face
+          (per tokens: display = headings + body, mono = labels/numbers). */}
+      <span style={{ fontSize: fs.bodyLg, lineHeight: 1.5, letterSpacing: "-.005em", color: C("ash"), flexGrow: 1, marginTop: 10 }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", paddingTop: 18 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
     </button>
   );
 }

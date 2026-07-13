@@ -592,17 +592,19 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
   const pa = usePremiumAccent();
   const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}3d`, borderRadius: 22, padding: 16, overflow: "hidden" }}>
-      {/* soft premium-accent fill (admin-set) under the content */}
-      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: `${pa.fill}12` }} />
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
-      {/* sub region grows so the CTA pins to the bottom — both cards stretch to
-          equal height (row alignItems:stretch), so title, sub-start and CTA line
-          up across the pair regardless of how many lines the copy runs */}
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, minHeight: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
+      {/* premium-accent glow (admin-set) blooming from the top-right corner */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
+      <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, letterSpacing: -0.4, color: C.chalk }}>{title}</Text>
+      {/* body grows so the CTA pins to the bottom — both cards stretch to equal
+          height (row alignItems:stretch), so title, body-start and CTA line up
+          across the pair regardless of how many lines the copy runs. Body is the
+          display face (per tokens: display = headings + body, mono = labels). */}
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{sub}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 10, lineHeight: 20 }}>{sub}</Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: pa.text, marginTop: 10 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: pa.text, marginTop: 18 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
     </Pressable>
   );
 }
