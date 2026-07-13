@@ -9,6 +9,7 @@
 
 import type { LoggedSession } from "./session";
 import { sessionVolume } from "./session";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionLoad } from "./load";
 
 const DAY = 86_400_000;
@@ -24,14 +25,14 @@ export interface DaySummary {
 }
 
 /** Group sessions by UTC day with summed load, volume and titles. */
-export function sessionsByDay(sessions: LoggedSession[]): Record<string, DaySummary> {
+export function sessionsByDay(sessions: LoggedSession[], bw?: BodyweightInput): Record<string, DaySummary> {
   const out: Record<string, DaySummary> = {};
   for (const s of sessions) {
     const d = dayKey(s.startedAt);
     const row = out[d] ?? { date: d, count: 0, load: 0, volume: 0, titles: [] };
     row.count += 1;
     row.load += sessionLoad(s);
-    row.volume += sessionVolume(s.blocks);
+    row.volume += sessionVolume(s.blocks, false, bwAt(bw, s.startedAt));
     row.titles.push(s.title);
     out[d] = row;
   }

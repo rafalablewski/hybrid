@@ -30,6 +30,7 @@ import { fs, space,
   txt,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
@@ -82,7 +83,10 @@ export function SessionDetail({
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const isMobile = useIsMobile();
-  const prs = prsForSession(all, session.id);
+  // Bodyweight-aware tonnage/e1RM — the athlete's weight AT this session's date.
+  const bw = useBodyweightLookup();
+  const bwHere = bw(session.startedAt);
+  const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
   const ssLabels = supersetLabels(session.blocks);
@@ -106,7 +110,7 @@ export function SessionDetail({
     setSharing(true);
     setShareMsg("");
     const bests = session.blocks
-      .flatMap((b) => (b.kind === "strength" ? [{ name: b.name, e1rm: blockBestE1rm(b), pr: prSet.has(b.name) }] : []))
+      .flatMap((b) => (b.kind === "strength" ? [{ name: b.name, e1rm: blockBestE1rm(b, bwHere), pr: prSet.has(b.name) }] : []))
       .filter((b) => b.e1rm > 0)
       .sort((a, b) => b.e1rm - a.e1rm)
       .slice(0, 3);
@@ -114,7 +118,7 @@ export function SessionDetail({
       title: session.title,
       minutes: minutes ?? cardio.minutes ?? 0,
       sets,
-      volume: sessionVolume(session.blocks),
+      volume: sessionVolume(session.blocks, false, bwHere),
       bests,
       firstEver: false,
     };
@@ -130,9 +134,9 @@ export function SessionDetail({
   // The session's heaviest lift → its e1RM trend across all history.
   const topLift = session.blocks
     .filter((b) => b.kind === "strength")
-    .map((b) => ({ name: b.name, e: blockBestE1rm(b) }))
+    .map((b) => ({ name: b.name, e: blockBestE1rm(b, bwHere) }))
     .sort((a, b) => b.e - a.e)[0]?.name;
-  const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
+  const series = topLift ? e1rmSeries(all, topLift, bw).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
 
   // The session's headline run → its pace (sec/km) trend across all history.
   const runMove = headlineRunMove(session.blocks);
@@ -181,7 +185,7 @@ export function SessionDetail({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
           <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
           <Stat label="Sets" value={sets} />
-          <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
+          <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)} c={LIME} />
           {shape === "mixed" && cardio.distanceKm > 0 && <Stat label="Distance" value={formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "")} c={BLUE} />}
         </div>
       )}
@@ -291,8 +295,8 @@ export function SessionDetail({
                 )}
                 {ssLabels[i] && <span style={{ ...mono, fontSize: fs.micro, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
-              {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Mono s={{ fontSize: fs.body }} c={LIME}>{fmtWeight(blockBestE1rm(b), units)} e1RM</Mono>
+              {b.kind === "strength" && blockBestE1rm(b, bwHere) > 0 && (
+                <Mono s={{ fontSize: fs.body }} c={LIME}>{fmtWeight(blockBestE1rm(b, bwHere), units)} e1RM</Mono>
               )}
             </div>
             {b.kind === "strength" ? (

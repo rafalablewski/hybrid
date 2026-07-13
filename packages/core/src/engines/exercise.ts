@@ -1,5 +1,7 @@
 import type { LoggedSession } from "./session";
-import { e1rm, blockBestE1rm, setsForVolume, isWorkingSet, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
+import { e1rm, blockBestE1rm, effectiveSetLoadKg, setsForVolume, isWorkingSet, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
+import { gymExercise } from "../exercise-db";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { runStats } from "./running";
 import { velocityProfileFor } from "./velocity";
 
@@ -99,6 +101,7 @@ export function exerciseDashboard(
   period: ExercisePeriod = "all",
   now = Date.now(),
   includeWarmups = false,
+  bw?: BodyweightInput,
 ): ExerciseStats {
   const cutoff = periodCutoff(period, now);
   const win = inWindow(sessions, cutoff, now);
@@ -133,20 +136,25 @@ export function exerciseDashboard(
   let last: string | undefined;
   for (const s of win) {
     let trainedHere = false;
+    const kg = bwAt(bw, s.startedAt);
+    // Holds/carries (time or distance measures) have no tonnage or e1RM.
+    const countsTonnage = (gymExercise(name)?.measure ?? "reps") === "reps";
     for (const b of s.blocks) {
       if (b.kind !== "strength" || b.name !== name) continue;
       trainedHere = true;
       for (const set of setsForVolume(b, includeWarmups)) {
-        const load = num(set.load);
+        const load = effectiveSetLoadKg(name, set.load, kg);
         const reps = num(set.reps);
-        if (Number.isNaN(load) || Number.isNaN(reps) || reps <= 0) continue;
+        if (Number.isNaN(reps) || reps <= 0) continue;
         setCount += 1;
         totalReps += reps;
-        volume += load * reps;
-        heaviestLoad = Math.max(heaviestLoad, load);
+        if (countsTonnage) {
+          volume += load * reps;
+          heaviestLoad = Math.max(heaviestLoad, load);
+        }
         // e1RM / best-set stay warm-up-excluded regardless of the volume setting
         // (a light ramp can't be your best set).
-        if (isWorkingSet(set)) {
+        if (countsTonnage && isWorkingSet(set) && load > 0) {
           const est = e1rm(load, reps);
           if (est > bestE1rm) {
             bestE1rm = est;
@@ -163,7 +171,7 @@ export function exerciseDashboard(
 
   // All-time best for context (independent of the window).
   let bestAll = 0;
-  for (const s of sessions) for (const b of s.blocks) if (b.kind === "strength" && b.name === name) bestAll = Math.max(bestAll, blockBestE1rm(b));
+  for (const s of sessions) for (const b of s.blocks) if (b.kind === "strength" && b.name === name) bestAll = Math.max(bestAll, blockBestE1rm(b, bwAt(bw, s.startedAt)));
 
   // Load–velocity profile from logged bar speed in the window (needs ≥2 loads).
   const lv = velocityProfileFor(win, name);
@@ -181,7 +189,7 @@ export function exerciseDashboard(
     bestE1rmAllTime: Math.round(bestAll),
     heaviestLoad,
     bestSet,
-    e1rm: e1rmSeries(win, name),
+    e1rm: e1rmSeries(win, name, bw),
     velocity,
     lastPerformed: last,
   };

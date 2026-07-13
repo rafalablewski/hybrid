@@ -1,5 +1,6 @@
 import type { LoggedSession, SessionBlock } from "./session";
 import { sessionVolume } from "./session";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import {
   newPrsInSession,
   newCardioPrsInSession,
@@ -93,7 +94,7 @@ export function weekAdherence(sessions: LoggedSession[], target = 3, now = Date.
   return { days, done: trained.size, target: Math.max(target, trained.size) };
 }
 
-export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): WeeklyRecap {
+export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): WeeklyRecap {
   const within = (s: LoggedSession, from: number, to: number) => ms(s.startedAt) >= from && ms(s.startedAt) < to;
   const thisWeek = sessions.filter((s) => within(s, now - WEEK, now + 1));
   const prevWeek = sessions.filter((s) => within(s, now - 2 * WEEK, now - WEEK));
@@ -106,7 +107,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
   const lifts = new Set<string>();
   const blocks: SessionBlock[] = [];
   for (const s of thisWeek) {
-    volume += sessionVolume(s.blocks);
+    volume += sessionVolume(s.blocks, false, bwAt(bw, s.startedAt));
     days.add(s.startedAt.slice(0, 10));
     for (const b of s.blocks) {
       blocks.push(b);
@@ -145,7 +146,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
   }
   const cardioPrs = [...cardioMap.values()];
 
-  const prevVolume = prevWeek.reduce((v, s) => v + sessionVolume(s.blocks), 0);
+  const prevVolume = prevWeek.reduce((v, s) => v + sessionVolume(s.blocks, false, bwAt(bw, s.startedAt)), 0);
 
   return {
     start: new Date(now - WEEK).toISOString(),

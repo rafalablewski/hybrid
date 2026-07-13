@@ -7,7 +7,7 @@ import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useBodyweight } from "../lib/use-bodyweight";
+import { useBodyweightLookup } from "../lib/use-bodyweight";
 import {
   prescribeSession,
   toTrainingLog,
@@ -219,7 +219,8 @@ export default function Workout() {
   };
   const prefs = useLoggerPrefs();
   // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
-  const bodyweightKg = useBodyweight();
+  const bw = useBodyweightLookup();
+  const bodyweightKg = bw();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
   // Auto-titled — no name input while logging; a name is only entered on the
@@ -789,13 +790,13 @@ export default function Workout() {
       completedAt: payload.completedAt,
       blocks,
     };
-    const prs = newPrsInSession(finished, prior.current);
+    const prs = newPrsInSession(finished, prior.current, bw);
     const cardioPrs = newCardioPrsInSession(finished, prior.current);
     const prSet = new Set(prs.map((p) => p.lift));
     const bestMap = new Map<string, number>();
     for (const b of blocks)
       if (b.kind === "strength") {
-        const e = Math.round(blockBestE1rm(b));
+        const e = Math.round(blockBestE1rm(b, bodyweightKg));
         if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
       }
     const bests: ShareBest[] = [...bestMap.entries()]
@@ -1405,6 +1406,7 @@ function Summary({
   const C = useTheme().palette;
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
+  const bodyweightKg = useBodyweightLookup()();
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
@@ -1477,7 +1479,7 @@ function Summary({
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(summary.blocks);
   const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(summary.blocks);
+  const funFact = sessionFunFact(summary.blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),

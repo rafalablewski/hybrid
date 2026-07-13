@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
 import { fetchEvents, fetchAssignments, updateAssignment, type EventRow, type Assignment } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
@@ -41,7 +42,8 @@ export default function AuroraCalendar() {
   useRefreshOnFocus(refetch);
   const markDone = async (id: string) => { await updateAssignment(id, "completed"); loadAssignments(); };
 
-  const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
+  const bw = useBodyweightLookup();
+  const byDay = useMemo(() => sessionsByDay(sessions, bw), [sessions, bw]);
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);
   const matrix = useMemo(() => monthMatrix(year, month), [year, month]);
   const eventsByDay = useMemo(() => { const m: Record<string, EventRow[]> = {}; for (const e of events) (m[e.date] ??= []).push(e); return m; }, [events]);
@@ -141,7 +143,7 @@ export default function AuroraCalendar() {
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}
     </AuroraScreen>

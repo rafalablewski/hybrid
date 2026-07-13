@@ -3,6 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioTotals, type LoggedSession } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 
@@ -24,6 +25,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
   const [archived, setArchived] = useState<LoggedSession[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
 
   const loadArchived = async () => {
     try { const res = await fetch("/api/sessions?archived=1"); setArchived(res.ok ? ((await res.json()) as { sessions?: LoggedSession[] }).sessions ?? [] : []); } catch { setArchived([]); }
@@ -85,7 +87,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
                       cardio sessions read distance·pace, not "0 kg" (#4). */}
                   {sessionShape(s) === "cardio"
                     ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C("blue"), parts.join(" – ") || t("w.analyze.hist.block")); })()
-                    : chip(C("ash"), fmtTonnage(sessionVolume(s.blocks), units))}
+                    : chip(C("ash"), fmtTonnage(sessionVolume(s.blocks, false, bw(s.startedAt)), units))}
                   {chip(C("ash"), `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`)}
                   {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}
                   {prCount > 0 && chip(C("lime"), `🏆 ${prCount} ${t("w.analyze.hist.pr")}`)}

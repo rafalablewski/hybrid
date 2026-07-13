@@ -6,6 +6,7 @@ import {
   type LoggedSession, type ExercisePeriod, type ExerciseStats, type WeightUnit,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -39,7 +40,8 @@ export default function AuroraExercises() {
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
   const { countWarmupsInVolume: iw, units } = useLoggerPrefs();
-  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null), [sessions, active, period, iw]);
+  const bw = useBodyweightLookup();
+  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw, bw) : null), [sessions, active, period, iw, bw]);
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>

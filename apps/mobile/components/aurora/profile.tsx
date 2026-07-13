@@ -11,6 +11,7 @@ import {
   fmtWeight,
   fmtTonnage,
   sessionVolume,
+  totalVolume,
   athleteId,
   canSeeHPI,
   type LoggedSession,
@@ -19,6 +20,7 @@ import {
   type AuroraIconName,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
@@ -89,9 +91,10 @@ export default function AuroraProfile() {
   // HPI / readiness / injury-risk are the Cockpit's job — the Private tab LINKS
   // there rather than recomputing them here, so the profile never duplicates the
   // command center. The metrics below feed the PUBLIC grid (PRs, streak, tonnage).
+  const bw = useBodyweightLookup();
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
-  const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions), [sessions]);
-  const prMap = useMemo(() => bestE1rmMap(sessions), [sessions]);
+  const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions, bw), [sessions, bw]);
+  const prMap = useMemo(() => bestE1rmMap(sessions, bw), [sessions, bw]);
   const topPrs = useMemo(
     () => [...prMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3),
     [prMap],
@@ -102,7 +105,7 @@ export default function AuroraProfile() {
   const earnedCount = useMemo(() => achievements.filter((a) => a.earned).length, [achievements]);
   // Lifetime tonnage — total load × reps across every logged session, formatted
   // to the athlete's units (tonnes for kg, total lb for lb).
-  const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
+  const lifetimeTonnage = useMemo(() => totalVolume(sessions, bw), [sessions, bw]);
   // This-week snapshot — sessions logged + tonnage moved in the last 7 days. A
   // current-focus band above the tiles; distinct from the lifetime tiles and the
   // 26-week Activity heatmap, so it adds signal without duplicating them.
@@ -111,7 +114,7 @@ export default function AuroraProfile() {
     let count = 0, vol = 0;
     for (const s of sessions) {
       const ts = Date.parse(s.startedAt);
-      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks); }
+      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks, false, bw(s.startedAt)); }
     }
     return { count, vol };
   }, [sessions]);

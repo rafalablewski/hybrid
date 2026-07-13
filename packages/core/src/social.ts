@@ -7,6 +7,7 @@
  * Nothing here touches the DB or fabricates data: the API computes each
  * athlete's real sessions and hands them in; these helpers only shape + rank.
  */
+import { type BodyweightInput } from "./bodyweight";
 import {
   weeklyRecap,
   streak,
@@ -481,10 +482,10 @@ export interface ProfileStats {
   topLifts: { lift: string; e1rm: number }[];
 }
 
-export function profileStats(sessions: LoggedSession[], now = Date.now()): ProfileStats {
+export function profileStats(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): ProfileStats {
   return {
     totalSessions: sessions.length,
-    totalVolumeKg: Math.round(totalVolume(sessions)),
+    totalVolumeKg: Math.round(totalVolume(sessions, bw)),
     currentStreak: streak(sessions, 1, now).current,
     topLifts: bestE1rmByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, e1rm: r.e1rm })),
   };

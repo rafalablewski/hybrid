@@ -11,6 +11,7 @@ import { fs, space,
   fmtWeight,
   fmtTonnage,
   sessionVolume,
+  totalVolume,
   athleteId as makeAthleteId,
   canSeeHPI,
   type Achievement,
@@ -21,6 +22,7 @@ import { fs, space,
   type AuroraIconName,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
@@ -103,11 +105,12 @@ export default function AuroraProfile({
   // command center. Everything below feeds the PUBLIC grid (PRs, streak, tonnage).
   const hasData = sessions.length > 0;
 
+  const bw = useBodyweightLookup();
   const weekStreak = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   // Lifetime tonnage — total load × reps across every logged session (kg-domain,
   // formatted to the athlete's units: tonnes for kg, total lb for lb).
-  const lifetimeTonnage = useMemo(() => sessions.reduce((sum, s) => sum + sessionVolume(s.blocks), 0), [sessions]);
+  const lifetimeTonnage = useMemo(() => totalVolume(sessions, bw), [sessions, bw]);
 
   // Member-since year — the earliest session, or this year for a fresh account.
   const memberSince = useMemo(() => {
@@ -142,7 +145,7 @@ export default function AuroraProfile({
     return labels;
   }, [heat]);
 
-  const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions), [sessions]);
+  const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions, bw), [sessions, bw]);
   const earnedCount = useMemo(() => achievements.filter((a) => a.earned).length, [achievements]);
 
   // Top personal records — best e1RM per lift, descending, top 3.
@@ -189,7 +192,7 @@ export default function AuroraProfile({
     let count = 0, vol = 0;
     for (const s of sessions) {
       const ts = Date.parse(s.startedAt);
-      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks); }
+      if (!Number.isNaN(ts) && ts >= cutoff) { count++; vol += sessionVolume(s.blocks, false, bw(s.startedAt)); }
     }
     return { count, vol };
   }, [sessions]);

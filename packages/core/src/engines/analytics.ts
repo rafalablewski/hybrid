@@ -1,6 +1,8 @@
 import type { LoggedSession, PacePoint } from "./session";
 import type { MuscleGroup } from "./types";
-import { setsForVolume } from "./session";
+import { setsForVolume, effectiveSetLoadKg } from "./session";
+import { gymExercise } from "../exercise-db";
+import { bwAt, type BodyweightInput } from "../bodyweight";
 import { MOVEMENTS } from "./movements";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, type ExercisePeriod } from "./exercise";
@@ -30,7 +32,7 @@ export interface WeekVolume {
  * Overall weekly WORKING-set count + tonnage over the last `weeks` (rolling
  * 7-day windows ending now), oldest → newest — the volume-trend chart's data.
  */
-export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Date.now(), includeWarmups = false): WeekVolume[] {
+export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Date.now(), includeWarmups = false, bw?: BodyweightInput): WeekVolume[] {
   const out: WeekVolume[] = [];
   for (let w = weeks - 1; w >= 0; w--) {
     const to = now - w * WEEK;
@@ -40,14 +42,16 @@ export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Da
     for (const s of sessions) {
       const t = ms(s.startedAt);
       if (t < from || t >= to) continue;
+      const kg = bwAt(bw, s.startedAt);
       for (const b of s.blocks) {
         if (b.kind !== "strength") continue;
+        // Holds/carries (time or distance measures) count sets, never tonnage.
+        const countsTonnage = (gymExercise(b.name)?.measure ?? "reps") === "reps";
         for (const set of setsForVolume(b, includeWarmups)) {
           const reps = num(set.reps);
           if (!Number.isFinite(reps) || reps <= 0) continue;
           sets += 1;
-          const load = num(set.load);
-          if (Number.isFinite(load)) tonnage += load * reps;
+          if (countsTonnage) tonnage += effectiveSetLoadKg(b.name, set.load, kg) * reps;
         }
       }
     }
@@ -127,10 +131,11 @@ export function exerciseTable(
   period: ExercisePeriod = "all",
   now = Date.now(),
   includeWarmups = false,
+  bw?: BodyweightInput,
 ): ExerciseTableRow[] {
   return exerciseHistory(sessions)
     .map((e) => {
-      const d = exerciseDashboard(sessions, e.name, period, now, includeWarmups);
+      const d = exerciseDashboard(sessions, e.name, period, now, includeWarmups, bw);
       if (d.kind === "cardio") {
         return {
           name: e.name,

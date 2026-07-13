@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 
 const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
@@ -32,7 +33,8 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   }, []);
   const markDone = async (id: string) => { await fetch(`/api/assignments/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "completed" }) }); loadAssignments(); };
 
-  const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
+  const bw = useBodyweightLookup();
+  const byDay = useMemo(() => sessionsByDay(sessions, bw), [sessions, bw]);
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);
   const matrix = useMemo(() => monthMatrix(year, month), [year, month]);
   const eventsByDay = useMemo(() => { const m: Record<string, EventRow[]> = {}; for (const e of events) (m[e.date] ??= []).push(e); return m; }, [events]);
@@ -90,7 +92,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
         ) : selSessions.map((s) => (
           <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
             <div style={{ fontWeight: 700, fontSize: fs.note }}>{s.title}</div>
-            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("ash"), `${t("w.analyze.cal.load")} ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} ${t("w.analyze.cal.blocks")}`)}{typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.cal.readiness")} ${s.readiness}`)}</div>
+            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}{chip(C("ash"), `${t("w.analyze.cal.load")} ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} ${t("w.analyze.cal.blocks")}`)}{typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.cal.readiness")} ${s.readiness}`)}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" – ")}</div>
           </div>
         ))}
