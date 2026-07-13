@@ -546,6 +546,9 @@ function HighlightGrid({
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
+      // Once we own the drag, don't let the parent ScrollView (AuroraScreen)
+      // reclaim the gesture on a vertical move and terminate the reorder.
+      onPanResponderTerminationRequest: () => false,
       onMoveShouldSetPanResponder: (e, g) => {
         if (!editModeRef.current) return false;
         if (Math.abs(g.dx) < 6 && Math.abs(g.dy) < 6) return false;
@@ -561,6 +564,10 @@ function HighlightGrid({
         const relX = e.nativeEvent.pageX - origin.current.x;
         const relY = e.nativeEvent.pageY - origin.current.y;
         const visible = localOrderRef.current.filter((k) => !hiddenRef.current.includes(k));
+        // Don't start a drag until every visible tile has a measured layout —
+        // otherwise a missing rect would crash here, and dropping unmeasured
+        // tiles from `slots` would desync the order rebuild in endDrag.
+        if (!visible.every((k) => layouts.current.has(k))) return;
         const slots: Slot[] = visible.map((k) => { const l = layouts.current.get(k)!; return { key: k, x: l.x, y: l.y, w: l.w, h: l.h }; });
         const di = slots.findIndex((s) => relX >= s.x && relX <= s.x + s.w && relY >= s.y && relY <= s.y + s.h);
         if (di < 0) return;
@@ -597,7 +604,9 @@ function HighlightGrid({
     const changed = newVisible.join(" ") !== visible.join(" ");
     const q = [...newVisible];
     const newFull = localOrderRef.current.map((k) => (hiddenRef.current.includes(k) ? k : q.shift()!));
-    d.slots.forEach((s) => getTr(s.key).setValue({ x: 0, y: 0 }));
+    // Stop any in-flight neighbour-shift animations before zeroing, or they'd
+    // fight the reset and glitch tiles back toward their animated targets.
+    d.slots.forEach((s) => { const tr = getTr(s.key); tr.stopAnimation(); tr.setValue({ x: 0, y: 0 }); });
     scale.setValue(1);
     draggingRef.current = false;
     setDragKey(null);
@@ -622,6 +631,7 @@ function HighlightGrid({
       <View
         ref={gridRef}
         onLayout={measure}
+        onTouchStart={measure}
         {...pan.panHandlers}
         style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}
       >

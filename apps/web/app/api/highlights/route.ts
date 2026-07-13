@@ -50,7 +50,8 @@ export async function POST(request: Request) {
       // session (the client already applied it) without persisting.
       return NextResponse.json({ order: keys });
     }
-    return NextResponse.json({ order: await readOrder(me.id) });
+    // We just wrote `keys` — return it directly rather than re-reading it.
+    return NextResponse.json({ order: keys });
   }
 
   // Hide / show one tile.
