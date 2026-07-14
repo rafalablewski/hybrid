@@ -70,7 +70,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
         const a = it.author as { displayName: string | null; handle: string; avatarUrl: string | null; coachVerified?: boolean };
         return (
           <button key={it.id} onClick={onOpen} style={postStyle}>
-            <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, background: "#2c302c", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk"), overflow: "hidden" }}>
+            <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, color: C("ash"), overflow: "hidden" }}>
               {a.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.avatarUrl} alt="" width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -80,12 +80,12 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
               {/* header line — name, verified, @handle, time */}
               <span style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 14 }}>
                 <span style={{ fontWeight: 800 }}>{v.name}</span>
-                {a.coachVerified && <span style={{ color: "var(--lime-text)", fontSize: 12 }}>✓</span>}
+                {a.coachVerified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle}  ` : ""}{v.when}</span>
               </span>
 
               {/* body prose */}
-              {v.body && <span style={{ display: "block", fontSize: 14, lineHeight: 1.45, marginTop: 2 }}>{it.kind === "pr" ? "🏆 " : ""}{v.body}</span>}
+              {v.body && <span style={{ display: "block", fontSize: 14, lineHeight: 1.45, marginTop: 2 }}>{v.body}</span>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
@@ -102,12 +102,12 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
                 </span>
               )}
 
-              {/* action row */}
-              <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 288, marginTop: 11, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
-                <span>💬 {it.comments}</span>
-                <span>🔁 {(it as { reposts?: number }).reposts ?? 0}</span>
-                <span>♡ {it.kudos}</span>
-                <span>↗</span>
+              {/* action row — monochrome glyphs (no coloured emoji) */}
+              <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 288, marginTop: 12, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M3 4.5h10v6H7l-3 2.5v-2.5H3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.comments}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M4 6 2 8l2 2M2 8h9M12 10l2-2-2-2M14 8H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>{(it as { reposts?: number }).reposts ?? 0}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M8 13S2.5 9.5 2.5 5.8A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5.8C13.5 9.5 8 13 8 13Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.kudos}</span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M5 11 11 5M6 5h5v5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
             </span>
           </button>
@@ -119,10 +119,10 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
         <button
           onClick={onOpen}
           aria-label={t("w.explore.seeAll")}
-          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: "var(--lime-text)" }}
+          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash") }}
         >
-          <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid var(--lime-text)`, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>→</span>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5 }}>{t("w.explore.seeAll")}</span>
+          <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeAll")}</span>
         </button>
       )}
     </div>

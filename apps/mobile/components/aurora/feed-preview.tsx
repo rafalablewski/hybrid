@@ -81,12 +81,12 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
               {/* header line — name, verified, @handle, time */}
               <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
-                {it.author?.coachVerified ? <Text style={{ color: txt(C, C.lime), fontSize: 12 }}>✓</Text> : null}
+                {it.author?.coachVerified ? <Text style={{ color: txt(C, C.blue), fontSize: 12 }}>✓</Text> : null}
                 <Text numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle}  ` : ""}{v.when}</Text>
               </View>
 
               {/* body prose */}
-              {!!v.body && <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 20, marginTop: 2 }}>{it.kind === "pr" ? "🏆 " : ""}{v.body}</Text>}
+              {!!v.body && <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 20, marginTop: 2 }}>{v.body}</Text>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
@@ -103,12 +103,12 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
                 </View>
               )}
 
-              {/* action row */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 288, marginTop: 11 }}>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>💬 {it.comments ?? 0}</Text>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>🔁 {it.reposts ?? 0}</Text>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡ {it.kudos ?? 0}</Text>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↗</Text>
+              {/* action row — monochrome glyphs (no coloured emoji) */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 288, marginTop: 12 }}>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↩  {it.comments ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>⇄  {it.reposts ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡  {it.kudos ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>↗</Text>
               </View>
             </View>
           </Pressable>
@@ -123,10 +123,10 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
           accessibilityLabel={t("w.explore.seeAll")}
           style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 }}
         >
-          <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18 }}>→</Text>
+          <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
           </View>
-          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontWeight: "700", fontSize: 12.5, textAlign: "center" }}>{t("w.explore.seeAll")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeAll")}</Text>
         </Pressable>
       )}
     </Wrap>
