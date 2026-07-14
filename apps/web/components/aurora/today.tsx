@@ -255,8 +255,10 @@ export default function AuroraToday({
           {(() => {
             // On a plan, Start becomes the full-width action BELOW the note; the
             // top row then carries only the readiness ring (athlete). Other
-            // states keep the compact top-right Start.
-            const showRing = isAthlete && (hasData || plan || phase);
+            // states keep the compact top-right Start. The ring only shows when
+            // there's logged history — a bare macrocycle phase (auto-created at
+            // onboarding) must never surface a fabricated readiness score.
+            const showRing = isAthlete && hasData;
             // While the first sessions/enrollment fetch is in flight we don't
             // yet know if they're on a plan — hold the top Start back so it
             // doesn't flash in and vanish once the plan (or rail) resolves.
@@ -267,7 +269,7 @@ export default function AuroraToday({
                 {showRing ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
                 {showTopStart && (
                   <button
-                    onClick={() => onStart(isAthlete && (hasData || phase) ? (rx.blocks as SessionBlock[]) : undefined)}
+                    onClick={() => onStart(isAthlete && hasData ? (rx.blocks as SessionBlock[]) : undefined)}
                     style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
                   >
                     {t("w.home.today.start")}
@@ -361,10 +363,11 @@ export default function AuroraToday({
               <div style={{ height: 24, width: "60%", borderRadius: 8, background: C("line"), opacity: 0.5, margin: "8px 0 10px" }} />
               <div style={{ height: 12, width: "90%", borderRadius: 6, background: C("line"), opacity: 0.35 }} />
             </>
-          ) : isAthlete && (hasData || phase) ? (
-            // PREMIUM only — the real readiness-driven AI prescription. Casual
-            // users fall through to the encouraging chooser (no fabricated
-            // session presented as their plan).
+          ) : isAthlete && hasData ? (
+            // PREMIUM only — the real readiness-driven AI prescription, and ONLY
+            // when grounded in logged history. Casual users and no-data accounts
+            // (even with an onboarding-created macrocycle phase) fall through to
+            // the encouraging chooser — no fabricated session presented as theirs.
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}

@@ -199,12 +199,15 @@ export default function AuroraHome() {
   }, [t]);
   const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
 
-  const planReadiness = hasData || plan || phase;
+  // Readiness (and the AI prescription it feeds) is only real when there's
+  // logged history — a bare macrocycle phase (auto-created at onboarding) must
+  // never surface a fabricated score/session, so this gates on hasData alone.
+  const planReadiness = hasData;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
   // named plan's day), then the AI-prescribed session for PREMIUM athletes, then
   // an empty start. AI is paid-only, so casual/guests never get source=ai here.
   const startPrescribed = () =>
-    router.push(plan ? "/workout?source=plan" : isAthlete && (hasData || phase) ? "/workout?source=ai" : "/workout?source=empty");
+    router.push(plan ? "/workout?source=plan" : isAthlete && hasData ? "/workout?source=ai" : "/workout?source=empty");
 
   // Start a SPECIFIC rail day: stash its exact (date-anchored) blocks so the
   // logger prefills the day you tapped — not the count-based today. Falls back to
@@ -413,10 +416,12 @@ export default function AuroraHome() {
                 <View style={{ height: 24, width: "60%", borderRadius: 8, backgroundColor: C.line, opacity: 0.5, marginTop: 8, marginBottom: 10 }} />
                 <View style={{ height: 12, width: "90%", borderRadius: 6, backgroundColor: C.line, opacity: 0.35 }} />
               </>
-            ) : isAthlete && (hasData || phase) ? (
-              /* PREMIUM only — the real readiness-driven AI prescription. Casual
-                 and guests fall through to the encouraging chooser below (no
-                 fabricated Back-Squat/Assault-Bike session presented as theirs). */
+            ) : isAthlete && hasData ? (
+              /* PREMIUM only — the real readiness-driven AI prescription, and
+                 ONLY when grounded in logged history. Casual users, guests and
+                 no-data accounts (even with an onboarding-created macrocycle
+                 phase) fall through to the encouraging chooser below — no
+                 fabricated Back-Squat/Row-Intervals session presented as theirs. */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
