@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, FlatList, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -244,6 +244,45 @@ export default function Workout() {
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
+
+  // Exercise-picker rows, flattened + memoized so the whole movement catalog
+  // isn't rebuilt and re-rendered on every keystroke. Rendered by a FlatList
+  // (below) so only the visible rows mount. Header/subheader labels carry their
+  // raw key and are translated at render time, keeping this memo independent of
+  // `t` (which changes identity per render).
+  type PickItem =
+    | { t: "header"; key: string; tKey?: string; raw?: string }
+    | { t: "subheader"; key: string; raw: string }
+    | { t: "row"; key: string; name: string; kind: WKind; icon?: string };
+  const picker = useMemo(() => {
+    const q = custom.trim().toLowerCase();
+    const match = (n: string) => !q || n.toLowerCase().includes(q);
+    const recentNames = new Set(recent.map((r) => r.name));
+    const recentShown = recent.filter((r) => match(r.name)).slice(0, 12);
+    const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
+      .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n) && !aliases.has(n)) }))
+      .filter((g) => g.names.length > 0);
+    const sportGroups = olympicSportsByCategory()
+      .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
+      .filter((g) => g.sports.length > 0);
+    const exact = [...recentNames, ...catalog].some((n) => n.toLowerCase() === q);
+
+    const items: PickItem[] = [];
+    if (recentShown.length > 0) {
+      items.push({ t: "header", key: "h-recent", tKey: "workout.yourLifts" });
+      for (const r of recentShown) items.push({ t: "row", key: `r-${r.name}`, name: r.name, kind: r.kind });
+    }
+    for (const g of exGroups) {
+      items.push({ t: "header", key: `h-${g.category}`, tKey: g.labelKey, raw: g.label ?? g.category });
+      for (const n of g.names) items.push({ t: "row", key: `e-${n}`, name: n, kind: inferBlockKind(n) });
+    }
+    if (sportGroups.length > 0) items.push({ t: "header", key: "h-sports", tKey: "workout.sports" });
+    for (const g of sportGroups) {
+      items.push({ t: "subheader", key: `sh-${g.category}`, raw: g.category });
+      for (const s of g.sports) items.push({ t: "row", key: `s-${s.name}`, name: s.name, kind: "cardio", icon: s.icon });
+    }
+    return { items, q, exact };
+  }, [custom, recent, catalog, categoryByName, aliases]);
   // Saved routines for the empty-state quick-load (parity with the web logger,
   // which offers AI-prescribe + your routines right on the logging screen).
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -1281,63 +1320,40 @@ export default function Workout() {
                   style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
                 />
               </View>
-              <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
-                {(() => {
-                  const q = custom.trim().toLowerCase();
-                  const match = (n: string) => !q || n.toLowerCase().includes(q);
-                  const recentNames = new Set(recent.map((r) => r.name));
-                  const recentShown = recent.filter((r) => match(r.name)).slice(0, 12);
-                  // Library exercises group under their muscle-group heading; built-ins by
-                  // pattern. Aliased/superseded + already-shown-recent names are dropped.
-                  const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
-                    .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n) && !aliases.has(n)) }))
-                    .filter((g) => g.names.length > 0);
-                  const sportGroups = olympicSportsByCategory()
-                    .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
-                    .filter((g) => g.sports.length > 0);
-                  const exact = [...recentNames, ...catalog].some((n) => n.toLowerCase() === q);
-                  const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
-                  const head = (label: string) => (
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{label}</Text>
-                  );
-                  const row = (name: string, kind: WKind, key: string, icon?: string) => (
-                    <Pressable key={key} onPress={() => addExercise(name, kind)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-                      {icon
-                        ? <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{icon}</Text>
-                        : <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: kindColor(kind) }} /></View>}
-                      <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{name}</Text>
+              <FlatList
+                style={{ flex: 1, marginTop: 6 }}
+                data={picker.items}
+                keyExtractor={(it) => it.key}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}
+                initialNumToRender={16}
+                windowSize={11}
+                removeClippedSubviews
+                renderItem={({ item }) => {
+                  if (item.t === "header")
+                    return <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{item.tKey ? t(item.tKey) : item.raw ?? ""}</Text>;
+                  if (item.t === "subheader")
+                    return <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8, marginBottom: 2 }}>{item.raw}</Text>;
+                  const dot = item.kind === "strength" ? C.lime : item.kind === "cardio" ? C.blue : C.violet;
+                  return (
+                    <Pressable onPress={() => addExercise(item.name, item.kind)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
+                      {item.icon
+                        ? <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{item.icon}</Text>
+                        : <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} /></View>}
+                      <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{item.name}</Text>
                     </Pressable>
                   );
-                  return (
-                    <>
-                      {recentShown.length > 0 && (
-                        <>
-                          {head(t("workout.yourLifts"))}
-                          {recentShown.map((r) => row(r.name, r.kind, `r-${r.name}`))}
-                        </>
-                      )}
-                      {exGroups.map((g) => (
-                        <View key={g.category}>
-                          {head(g.labelKey ? t(g.labelKey) : g.label ?? g.category)}
-                          {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
-                        </View>
-                      ))}
-                      {sportGroups.length > 0 && head(t("workout.sports"))}
-                      {sportGroups.map((g) => (
-                        <View key={g.category}>
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8, marginBottom: 2 }}>{g.category}</Text>
-                          {g.sports.map((s) => row(s.name, "cardio", `s-${s.name}`, s.icon))}
-                        </View>
-                      ))}
-                      {q.length > 0 && !exact && (
-                        <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 16, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-                          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{custom.trim()}”</Text>
-                        </Pressable>
-                      )}
-                    </>
-                  );
-                })()}
-              </ScrollView>
+                }}
+                ListFooterComponent={
+                  picker.q.length > 0 && !picker.exact ? (
+                    <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 16, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{custom.trim()}”</Text>
+                    </Pressable>
+                  ) : null
+                }
+              />
             </Pressable>
           </Pressable>
         </Modal>
