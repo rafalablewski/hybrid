@@ -2,7 +2,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { PLAN_PREVIEWS } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -52,16 +52,16 @@ export default function AuroraExplore() {
           <Pressable
             key={p.plan.id}
             onPress={() => router.push("/(tabs)/plans")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16 }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: `${p.color}22`, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontSize: 22, color: p.color }}>{p.icon}</Text>
+            <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 20, color: C.ash }}>{p.icon}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{p.plan.name}</Text>
-              <View style={{ marginTop: 2 }}><MetaLine parts={[p.goalName, p.plan.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }} /></View>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{p.plan.name}</Text>
+              <View style={{ marginTop: 4 }}><MetaLine parts={[p.goalName, p.plan.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }} /></View>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
           </Pressable>
         ))}
       </View>
@@ -82,7 +82,7 @@ function SectionHead({ C, scheme, title, onAction }: { C: P; scheme: "light" | "
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
       <Pressable onPress={onAction} hitSlop={8}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")} →</Text>
       </Pressable>
     </View>
   );

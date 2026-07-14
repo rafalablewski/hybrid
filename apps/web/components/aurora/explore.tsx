@@ -45,14 +45,14 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
           <button
             key={p.plan.id}
             onClick={() => go("plans")}
-            style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}
+            style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "15px 16px", cursor: "pointer", color: C("chalk") }}
           >
-            <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${p.color} 16%, transparent)`, fontSize: 22, color: p.color }}>{p.icon}</span>
+            <span style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink"), border: `1px solid ${C("line")}`, fontSize: 20, color: C("ash") }}>{p.icon}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{p.plan.name}</span>
-              <MetaLine parts={[p.goalName, p.plan.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }} />
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{p.plan.name}</span>
+              <MetaLine parts={[p.goalName, p.plan.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, textTransform: "uppercase", letterSpacing: ".04em" }} />
             </span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
           </button>
         ))}
       </div>
@@ -72,7 +72,7 @@ function SectionHead({ title, onAction }: { title: string; onAction: () => void 
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 2px 12px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
-      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.explore.seeAll")} →</button>
+      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.explore.seeAll")} →</button>
     </div>
   );
 }

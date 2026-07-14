@@ -59,7 +59,7 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
             <div style={{ fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("lime"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>Browse all →</button>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>Browse all →</button>
         </div>
       )}
 
@@ -72,10 +72,10 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
               style={{ scrollSnapAlign: "start", flex: "0 0 auto", width: 216, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={onOpen} aria-label={`Open ${c.name}`} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${C("line")}`, background: `linear-gradient(135deg, ${C("lime")}33, ${C("ink2")})`, color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>{initials(c.name)}</button>
+                <button onClick={onOpen} aria-label={`Open ${c.name}`} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("ash"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0 }}>{initials(c.name)}</button>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {c.name}{c.verified && <span style={{ color: "var(--lime-text)", fontSize: 12 }}>✓</span>}
+                    {c.name}{c.verified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
                   </div>
                   <div style={{ marginTop: 2 }}><Stars rating={c.rating} /></div>
                 </div>
@@ -88,7 +88,7 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
               </div>
               <button
                 onClick={() => follow(c)}
-                style={{ marginTop: 12, width: "100%", padding: "8px 0", borderRadius: 999, border: `1px solid ${isFollowing ? C("line") : C("lime")}`, background: isFollowing ? "transparent" : C("lime"), color: isFollowing ? C("chalk") : "var(--on-accent)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                style={{ marginTop: 12, width: "100%", padding: "9px 0", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isFollowing ? C("ash") : C("chalk"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer" }}
               >
                 {isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}
               </button>

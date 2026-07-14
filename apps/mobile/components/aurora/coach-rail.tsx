@@ -29,7 +29,6 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
   }, []);
 
   const items = coaches ?? coachRailItems(null);
-  const accent = (a: string) => (a === "blue" ? C.blue : a === "violet" ? C.violet : a === "amber" ? C.amber : C.lime);
 
   const doFollow = async (c: DiscoverCoach) => {
     if (!c.userId) { onOpen(); return; }
@@ -45,7 +44,7 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
             <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 17 }}>Follow a coach</Text>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>Swipe to find a coach for your goal</Text>
           </View>
-          <Pressable onPress={onOpen}><Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>Browse all →</Text></Pressable>
+          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>Browse all →</Text></Pressable>
         </View>
       )}
 
@@ -55,11 +54,11 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
           return (
             <View key={c.userId ?? c.handle ?? String(i)} style={{ width: 216, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <Pressable onPress={onOpen} style={{ width: 48, height: 48, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: `${accent(c.accent)}33`, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 16 }}>{initials(c.name)}</Text>
+                <Pressable onPress={onOpen} style={{ width: 48, height: 48, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontWeight: "700", fontSize: 14 }}>{initials(c.name)}</Text>
                 </Pressable>
                 <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
+                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
                   <Text style={{ fontSize: 11, marginTop: 2 }}>
                     {c.rating == null ? <Text style={{ color: C.ash, fontFamily: F.mono }}>New</Text> : (
                       <Text><Text style={{ color: C.gold }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
@@ -73,8 +72,8 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
                   <View key={s} style={{ paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.chalk, fontSize: 11 }}>{s}</Text></View>
                 ))}
               </View>
-              <Pressable onPress={() => doFollow(c)} style={{ marginTop: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: isFollowing ? C.line : C.lime, backgroundColor: isFollowing ? "transparent" : C.lime, alignItems: "center" }}>
-                <Text style={{ color: isFollowing ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: 13 }}>{isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}</Text>
+              <Pressable onPress={() => doFollow(c)} style={{ marginTop: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: "transparent", alignItems: "center" }}>
+                <Text style={{ color: isFollowing ? C.ash : C.chalk, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase" }}>{isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}</Text>
               </Pressable>
             </View>
           );
