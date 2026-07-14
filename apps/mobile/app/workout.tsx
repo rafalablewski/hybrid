@@ -1723,16 +1723,11 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
 
   const save = async () => {
     setState("saving");
-    const ok = await createRoutine(name.trim() || "Routine", blocks);
-    if (ok) { setState("saved"); return; }
-    // A free save can fail because a stale count let it through the gate —
-    // re-check: at the limit it's the upsell, otherwise back to idle.
-    if (isFree) {
-      const fresh = await fetchRoutines().catch(() => null);
-      if (fresh) setSavedCount(fresh.length);
-      if (fresh && !canSaveRoutine(persona, fresh.length)) { setState("upsell"); return; }
-    }
-    setState("idle");
+    const res = await createRoutine(name.trim() || "Routine", blocks);
+    if (res.ok) { setState("saved"); return; }
+    // 403 = the free template limit (a stale count let the save form show) —
+    // land on the upsell card, never a silent failure.
+    setState(res.status === 403 ? "upsell" : "idle");
   };
 
   return (

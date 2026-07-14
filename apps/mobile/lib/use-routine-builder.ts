@@ -9,6 +9,7 @@ import {
   type BlockKind,
 } from "@hybrid/core";
 import { fetchRoutines, createRoutine, deleteRoutine, type Routine } from "./api";
+import { useLang } from "./i18n";
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -33,6 +34,7 @@ const cloneBlock = (b: SessionBlock): EditableBlock => ({ ...(JSON.parse(JSON.st
 /** Shared routine-builder state + persistence for the mobile Builder — full
  *  per-set editing over the same /api/templates persistence as the web twin. */
 export function useRoutineBuilder() {
+  const { t } = useLang();
   const [name, setName] = useState("New routine");
   const [items, setItems] = useState<EditableBlock[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -100,10 +102,29 @@ export function useRoutineBuilder() {
     setSaving(true);
     setMsg(null);
     const blocks = items.map(({ uid: _u, ...b }) => b as SessionBlock);
-    const ok = await createRoutine(name.trim() || "Routine", blocks);
+    const res = await createRoutine(name.trim() || "Routine", blocks);
     setSaving(false);
-    setMsg(ok ? { text: "Routine saved.", ok: true } : { text: "Couldn't save — sign in and try again.", ok: false });
-    if (ok) await load();
+    if (res.ok) {
+      setMsg({ text: t("w.train.builder.templateSaved"), ok: true });
+      await load();
+      return;
+    }
+    // 403 = the free template limit (a stale count let the save button show) —
+    // reloading the routines flips the Builder's gate to the upsell card, so
+    // no error message is needed here.
+    if (res.status === 403) {
+      await load();
+      return;
+    }
+    setMsg({
+      text:
+        res.status === 401
+          ? t("w.train.builder.signInSave")
+          : res.status == null
+            ? t("w.train.builder.networkError")
+            : `${t("w.train.builder.saveErrorPrefix")}${res.status}${t("w.train.builder.saveErrorSuffix")}`,
+      ok: false,
+    });
   };
 
   const remove = async (id: string) => {
