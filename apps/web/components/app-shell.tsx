@@ -113,7 +113,7 @@ export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, loading: sessionsLoading, refresh } = useSessions();
-  const { macro, currentWeek, planId, planStartedAt, refresh: refreshMacro } = useMacrocycle();
+  const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
@@ -781,7 +781,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={navigate} onSaved={refresh} loading={sessionsLoading} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={navigate} onSaved={refresh} loading={sessionsLoading || macroLoading} />
         )}
 
         {screen === "profile" && (
