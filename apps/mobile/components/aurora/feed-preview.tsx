@@ -6,6 +6,7 @@ import { F } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
+import { MetaLine } from "./meta";
 
 // The CONNECT feed — post cards (avatar header, prose body, stat pills ·
 // kudos/comments/share), the latest few of your circle's activity. `horizontal`
@@ -67,8 +68,8 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // X / Twitter-style post — avatar left, name ✓ @handle, time inline, prose,
   // an optional attached-content card, and a reply/repost/like/share row.
   const postStyle = horizontal
-    ? ({ flexDirection: "row", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14, width: cardW } as const)
-    : ({ flexDirection: "row", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line } as const);
+    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, width: cardW } as const)
+    : ({ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line } as const);
   return (
     <Wrap>
       {feed.map((it: any) => {
@@ -76,41 +77,35 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
         const handle = it.author?.handle;
         return (
           <Pressable key={it.id} onPress={onOpen} style={postStyle}>
-            <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={handle} size={42} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              {/* header line — name, verified, @handle, time */}
-              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5 }}>
+            {/* header — avatar inline; everything below spans the full width */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
+              <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={handle} size={36} />
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, flex: 1, minWidth: 0 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
                 {it.author?.coachVerified ? <Text style={{ color: txt(C, C.blue), fontSize: 12 }}>✓</Text> : null}
                 <Text numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle}  ` : ""}{v.when}</Text>
               </View>
+            </View>
 
-              {/* body prose */}
-              {!!v.body && <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 20, marginTop: 2 }}>{v.body}</Text>}
+            {/* body prose — full width */}
+            {!!v.body && <Text style={{ color: C.chalk, fontSize: 14.5, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
               {(v.lead || v.chips.length > 0) && (
-                <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 11, marginTop: 10 }}>
-                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: F.mono, fontSize: 11.5, fontWeight: "600" }}>{v.lead}</Text>}
-                  {v.chips.length > 0 && (
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: v.lead ? 8 : 0 }}>
-                      {v.chips.map((c, i) => (
-                        <Text key={i} style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>{c}</Text>
-                      ))}
-                    </View>
-                  )}
+                <View style={{ marginTop: v.body ? 8 : 12 }}>
+                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: F.mono, fontSize: 11, fontWeight: "600", letterSpacing: 0.4 }}>{v.lead}</Text>}
+                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 5 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 12.5, color: C.ash }} /></View>}
                 </View>
               )}
 
-              {/* action row — monochrome glyphs (no coloured emoji) */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 288, marginTop: 12 }}>
+              {/* action row — monochrome glyphs, full width */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 300, marginTop: 14 }}>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↩  {it.comments ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>⇄  {it.reposts ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡  {it.kudos ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>↗</Text>
               </View>
-            </View>
           </Pressable>
         );
       })}
