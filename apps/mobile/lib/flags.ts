@@ -21,6 +21,21 @@ function ensure() {
     .catch(() => {});
 }
 
+/** Reset the one-shot flag store so it re-fetches for the CURRENT user. Called on
+ *  every auth change (sign-in AND sign-out): flags are typically first fetched
+ *  BEFORE login (the nav mounts at app start, unauthenticated), so without this
+ *  the per-user flags / persona-nav access / premium accent never load for the
+ *  session that signs in, and one user's flags would persist for the next on a
+ *  shared device. If any component is currently subscribed, re-fetch immediately;
+ *  otherwise the next subscribe() will. */
+export function resetFlags() {
+  flags = {};
+  values = {};
+  fetched = false;
+  emit();
+  if (listeners.size > 0) ensure();
+}
+
 function subscribe(l: () => void): () => void {
   listeners.add(l);
   ensure();
