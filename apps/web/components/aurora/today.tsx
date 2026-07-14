@@ -558,7 +558,7 @@ function FeelingCard({ feeling, doneCount, onLog, onDone, onPicked }: { feeling:
     }
   };
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: `linear-gradient(180deg, ${C("ink2")}, ${C("ink")})` }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{t("w.recovery.readiness.title")}</div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0" }}>
         {READINESS_FEELINGS.map((key, i) => {
@@ -573,13 +573,20 @@ function FeelingCard({ feeling, doneCount, onLog, onDone, onPicked }: { feeling:
           );
         })}
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-        <button onClick={onLog} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>
-          <span style={{ fontSize: 15, lineHeight: 1 }}>＋</span> {t("w.home.today.glanceQuickLog")}
+      {/* range ring — the tally is an instrument readout (tap = today's log);
+          the action is a state-aware prompt (tap = log a session). */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 15 }}>
+        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ position: "relative", width: 58, height: 58, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+          <svg width="58" height="58" viewBox="0 0 58 58" fill="none" aria-hidden><circle cx="29" cy="29" r="25" stroke={C("line")} strokeWidth="3" /></svg>
+          <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums", color: doneCount > 0 ? C("chalk") : C("ash") }}>{doneCount}</span>
         </button>
-        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>
-          <b style={{ color: C("chalk"), fontWeight: 700 }}>{doneCount}</b> {t("w.home.today.glanceDone")}
-        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</div>
+          <button onClick={onLog} style={{ marginTop: 9, display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>
+            {doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")}
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        </div>
       </div>
     </div>
   );

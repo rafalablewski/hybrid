@@ -607,14 +607,19 @@ function FeelingCard({ C, feeling, doneCount, onLog, onDone, onPicked }: { C: P;
           );
         })}
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: 15, color: txt(C, C.lime) }}>＋</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.glanceQuickLog")}</Text>
+      {/* range ring — the tally is an instrument readout (tap = today's log);
+          the action is a state-aware prompt (tap = log a session). */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 15 }}>
+        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ width: 58, height: 58, borderRadius: 29, borderWidth: 3, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.6, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text>
         </Pressable>
-        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}><Text style={{ fontFamily: F.monoBold, color: C.chalk }}>{doneCount}</Text> {t("w.home.today.glanceDone")}</Text>
-        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
+          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 9 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, C.lime) }}>{doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>→</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
