@@ -1,8 +1,10 @@
-import { useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Alert, Animated, PanResponder } from "react-native";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { View, Text, Pressable, Alert, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, type LoggedSession, type AuroraIconName } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
+import { auroraScrollClearance } from "../../lib/layout";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -29,11 +31,21 @@ export default function AuroraHistory() {
   const [busy, setBusy] = useState<string | null>(null);
   const revalidate = useRevalidate();
 
+  const insets = useSafeAreaInsets();
   const q = useSessionsQuery({ archived: showArchived });
   const sessions = q.data ?? [];
   const loading = q.isPending;
   const refreshing = q.isFetching;
   useRefreshOnFocus(q.refetch);
+
+  // PR badge counts, computed ONCE per data change (not per card on every
+  // render/scroll). prsForSession is O(n) per session, so calling it inline in
+  // the list was O(n²) on every render; memoizing lifts it off the render path.
+  const prCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of sessions) m.set(s.id, prsForSession(sessions, s.id).length);
+    return m;
+  }, [sessions]);
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id); const ok = await archiveSession(id, archived); setBusy(null);
@@ -46,8 +58,47 @@ export default function AuroraHistory() {
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={() => q.refetch()}>
+  const renderItem = ({ item: s }: { item: LoggedSession }) => {
+    const prCount = prCounts.get(s.id) ?? 0;
+    const actions: SwipeAction[] = [
+      showArchived
+        ? { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) }
+        : { key: "archive", label: t("common.archive"), color: C.ash, onPress: () => onArchive(s.id, true) },
+      { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
+    ];
+    return (
+      <SwipeCard C={C} busy={busy === s.id} actions={actions} onOpen={() => router.push(`/session/${s.id}`)}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
+          {/* Sport-aware headline chip — a run/match has no tonnage, so
+              cardio sessions read distance·time, not "0 kg" (#4). */}
+          {sessionShape(s) === "cardio"
+            ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" – ") || t("history.block")); })()
+            : chip(C.ash, `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}
+          {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
+          {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
+        </View>
+        <View style={{ marginTop: 14 }}>
+          {s.blocks.map((b, i) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{b.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{blockSummary(b)}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("history.tapDetail")}</Text>
+          <AuroraIcon name="arrow-up" size={11} color={C.ash} style={{ transform: [{ rotate: "90deg" }] }} />
+        </View>
+      </SwipeCard>
+    );
+  };
+
+  const header = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
@@ -55,64 +106,49 @@ export default function AuroraHistory() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
+      {/* Swipe hint, once at the top of the list. */}
+      {sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+    </>
+  );
 
-      {loading ? <Loading /> : q.isError ? (
-        // A real fetch failure — distinct from a genuine empty history, so an
-        // offline / 500 load never masquerades as "no workouts yet".
-        <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("common.loadError")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{t("common.loadErrorHint")}</Text>
-          <APill label={t("common.retry")} variant="soft" onPress={() => q.refetch()} style={{ marginTop: 16, paddingHorizontal: 28 }} />
-        </ACard>
-      ) : sessions.length === 0 ? (
-        <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("history.noArchived") : t("history.none")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("history.archivedHint") : t("history.emptyHint")}</Text>
-        </ACard>
-      ) : (
-        <View style={{ marginTop: 14 }}>
-          {/* Swipe hint, once at the top of the list. */}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginBottom: 8 }}>{t("history.swipeHint")}</Text>
-          {sessions.map((s) => {
-            const prCount = prsForSession(sessions, s.id).length;
-            const actions: SwipeAction[] = [
-              showArchived
-                ? { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) }
-                : { key: "archive", label: t("common.archive"), color: C.ash, onPress: () => onArchive(s.id, true) },
-              { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
-            ];
-            return (
-              <SwipeCard key={s.id} C={C} busy={busy === s.id} actions={actions} onOpen={() => router.push(`/session/${s.id}`)}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
-                </View>
-                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                  {/* Sport-aware headline chip — a run/match has no tonnage, so
-                      cardio sessions read distance·time, not "0 kg" (#4). */}
-                  {sessionShape(s) === "cardio"
-                    ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" – ") || t("history.block")); })()
-                    : chip(C.ash, `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}
-                  {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
-                  {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
-                </View>
-                <View style={{ marginTop: 14 }}>
-                  {s.blocks.map((b, i) => (
-                    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 }}>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{b.name}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{blockSummary(b)}</Text>
-                    </View>
-                  ))}
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("history.tapDetail")}</Text>
-                  <AuroraIcon name="arrow-up" size={11} color={C.ash} style={{ transform: [{ rotate: "90deg" }] }} />
-                </View>
-              </SwipeCard>
-            );
-          })}
-        </View>
-      )}
+  // Loading / error / empty all render as the FlatList's empty component (its
+  // data is [] in each of those states), so the header (title + toggle) stays.
+  const empty = loading ? (
+    <Loading />
+  ) : q.isError ? (
+    // A real fetch failure — distinct from a genuine empty history, so an
+    // offline / 500 load never masquerades as "no workouts yet".
+    <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("common.loadError")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{t("common.loadErrorHint")}</Text>
+      <APill label={t("common.retry")} variant="soft" onPress={() => q.refetch()} style={{ marginTop: 16, paddingHorizontal: 28 }} />
+    </ACard>
+  ) : (
+    <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("history.noArchived") : t("history.none")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("history.archivedHint") : t("history.emptyHint")}</Text>
+    </ACard>
+  );
+
+  return (
+    // scroll={false} → the FlatList (below) is the sole scroller, so the list is
+    // actually virtualized (nesting it inside AuroraScreen's ScrollView would
+    // defeat that). AuroraScreen still provides the SafeArea + Aurora backdrop +
+    // entrance animation chrome.
+    <AuroraScreen scroll={false} padding={0}>
+      <FlatList
+        data={loading || q.isError ? [] : sessions}
+        keyExtractor={(s) => s.id}
+        renderItem={renderItem}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        windowSize={11}
+        removeClippedSubviews
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: auroraScrollClearance(insets.bottom) }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => q.refetch()} tintColor={C.lime} colors={[C.lime]} />}
+      />
     </AuroraScreen>
   );
 }
