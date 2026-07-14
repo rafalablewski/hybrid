@@ -209,16 +209,21 @@ export async function fetchRoutines(): Promise<Routine[]> {
   }
 }
 
-export async function createRoutine(name: string, blocks: unknown[]): Promise<boolean> {
+// Status-aware so callers can tell the free template limit (403) from a
+// missing sign-in (401) or a network failure (status null) and react properly.
+export async function createRoutine(
+  name: string,
+  blocks: unknown[],
+): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/templates`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name, blocks }),
     });
-    return res.ok;
+    return { ok: res.ok, status: res.status };
   } catch {
-    return false;
+    return { ok: false, status: null };
   }
 }
 

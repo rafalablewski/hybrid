@@ -392,7 +392,7 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   // layer on top — periodizing your season — is the paid line)
   { group: "Training depth (Pro)", feature: "Periodization (build your season)", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Adaptive progression (loads auto-adjust to recovery)", free: false, pro: true, coach: true, org: true },
-  { group: "Training depth (Pro)", feature: "Template builder", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Template builder", free: "2 saved templates", pro: "Unlimited", coach: "Unlimited", org: "Unlimited" },
   { group: "Training depth (Pro)", feature: "Competition peaking", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Sport-specific S&C", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Velocity (VBT) – force plate – video", free: false, pro: true, coach: true, org: true },

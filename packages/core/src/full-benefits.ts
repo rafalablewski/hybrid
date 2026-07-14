@@ -9,4 +9,5 @@ export const FULL_BENEFITS: FullBenefit[] = [
   { title: "Sport plans", desc: "Periodised programs for tennis, running, Hyrox & more" },
   { title: "Pre-made meals & auto macros", desc: "Skip manual entry — tap to log, targets split for you" },
   { title: "Full plan library", desc: "All 5 discipline programs, unlocked" },
+  { title: "Unlimited saved routines", desc: "Free includes 2 Builder templates — Full removes the cap" },
 ];

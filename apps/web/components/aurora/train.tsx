@@ -98,26 +98,23 @@ export default function AuroraTrainWeb({
           first
         />
 
-        {/* Routines — a Premium slot. Athletes see their saved routines (or a
-            build prompt); free users get one upsell row. */}
-        {isAthlete ? (
-          routines.length > 0 ? (
-            routines.map((r) => (
-              <ListRow
-                key={r.id}
-                icon="list-check"
-                iconColor={C("ash")}
-                title={r.name}
-                meta={r.blocks.map((b) => b.name).slice(0, 3).join(" – ")}
-                right={<Chevron />}
-                onClick={() => onStart(r.blocks)}
-              />
-            ))
-          ) : (
-            <ListRow icon="list-check" iconColor={C("ash")} title={t("train.fromRoutine")} meta={t("train.buildFirst")} right={<Chevron />} onClick={() => onNavigate("builder")} />
-          )
+        {/* Routines — free for everyone (a free account keeps up to
+            FREE_TEMPLATE_LIMIT saved templates; the Builder upsells past that).
+            Saved routines list here, else a build prompt into the Builder. */}
+        {routines.length > 0 ? (
+          routines.map((r) => (
+            <ListRow
+              key={r.id}
+              icon="list-check"
+              iconColor={C("ash")}
+              title={r.name}
+              meta={r.blocks.map((b) => b.name).slice(0, 3).join(" – ")}
+              right={<Chevron />}
+              onClick={() => onStart(r.blocks)}
+            />
+          ))
         ) : (
-          <ListRow icon="list-check" iconColor={C("ash")} title={t("train.fromRoutine")} premium right={<Chevron />} onClick={() => upsell("train-routine")} />
+          <ListRow icon="list-check" iconColor={C("ash")} title={t("train.fromRoutine")} meta={t("train.buildFirst")} right={<Chevron />} onClick={() => onNavigate("builder")} />
         )}
 
         {/* Repeat last — free, only once there's history. */}

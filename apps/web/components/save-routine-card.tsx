@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { canSaveRoutine, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { useEffect, useState } from "react";
+import { canSaveRoutine, isFullAccess, FUNNEL, type SessionBlock } from "@hybrid/core";
 import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
@@ -14,11 +14,13 @@ const C = (v: string) => `var(--color-${v})`;
  * Aurora). Saving a reusable routine belongs AFTER you finish, not on the live
  * logging surface, and it's the one place a workout name actually matters.
  *
- * Saving a reusable routine is a FULL feature (canSaveRoutine) — logging and
- * building one-off workouts stays free. Free (casual) users see a proper UPSELL
- * here instead of the confusing "couldn't save" error the API's 403 used to
- * produce. Paid users get the three-state flow: collapsed pill → name field →
- * saved. Posts to /api/templates.
+ * Saving reusable routines is free up to FREE_TEMPLATE_LIMIT saved templates
+ * (canSaveRoutine) — beyond that it's a FULL feature. A free (casual) user at
+ * the limit sees a proper UPSELL here instead of the confusing "couldn't save"
+ * error the API's 403 used to produce (the saved count is fetched on mount;
+ * a stale count still lands on the upsell via the 403 path). Under the limit
+ * everyone gets the three-state flow: collapsed pill → name field → saved.
+ * Posts to /api/templates.
  */
 export default function SaveRoutineCard({
   blocks,
@@ -32,11 +34,26 @@ export default function SaveRoutineCard({
 }) {
   const { t } = useLang();
   const persona = usePersona();
-  const allowed = canSaveRoutine(persona);
+  const [savedCount, setSavedCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(defaultName);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
   const [err, setErr] = useState("");
+
+  // Free users are capped at FREE_TEMPLATE_LIMIT saved templates — fetch the
+  // count so the card can upsell up-front instead of erroring on save. Full
+  // users are unlimited, so skip the round-trip. A failed fetch deliberately
+  // leaves the count at 0: the save button shows, and a save at the limit
+  // still lands on the upsell via the API's 403 — never a silent failure.
+  const isFree = !isFullAccess(persona);
+  useEffect(() => {
+    if (!isFree) return;
+    fetch("/api/templates")
+      .then((r) => (r.ok ? r.json() : { templates: [] }))
+      .then((d) => setSavedCount(((d as { templates?: unknown[] }).templates ?? []).length))
+      .catch(() => {});
+  }, [isFree]);
+  const allowed = canSaveRoutine(persona, savedCount);
 
   const goUpgrade = () => {
     track(FUNNEL.upgradeEntryClick, { client: "web", source: "save-routine" });
@@ -50,8 +67,9 @@ export default function SaveRoutineCard({
       </div>
     );
 
-  // Free user → the upsell card (either they tapped the CTA, or a stale persona
-  // let a 403 through on save). Reusable routines are Full; logging is free.
+  // Free user AT THE TEMPLATE LIMIT → the upsell card (either known up-front,
+  // or a stale count let a 403 through on save). The first FREE_TEMPLATE_LIMIT
+  // routines — and logging — are free.
   if (!allowed || state === "upsell")
     return (
       <div style={{ marginTop: 18, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 8%, transparent)`, borderRadius: 16, padding: 16 }}>

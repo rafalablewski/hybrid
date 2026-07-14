@@ -55,8 +55,8 @@ export default function AuroraTrain() {
   const last = sessions[0];
   const hasHistory = sessions.length > 0;
   const start = (source: "empty" | "ai" | "last" | "new") => router.push(`/workout?source=${source}`);
-  // One upgrade funnel for every premium slot (AI + routines): guests register,
-  // free users upgrade — never fabricate premium content.
+  // One upgrade funnel for the premium AI slot: guests register, free users
+  // upgrade — never fabricate premium content.
   const upsell = (source: string) => {
     track(FUNNEL.upgradeEntryClick, { client: "mobile", source });
     router.push(session ? "/upgrade" : "/login?mode=signup");
@@ -118,27 +118,24 @@ export default function AuroraTrain() {
           first
         />
 
-        {/* Routines — a Premium slot. Athletes see their saved routines (or a
-            build prompt); free users get one upsell row. */}
-        {isAthlete ? (
-          routines.length > 0 ? (
-            routines.map((r) => (
-              <ListRow
-                key={r.id}
-                C={C}
-                icon="list-check"
-                iconColor={C.ash}
-                title={r.name}
-                meta={r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}
-                right={<Chevron C={C} />}
-                onPress={() => router.push(`/workout?source=template&templateId=${r.id}`)}
-              />
-            ))
-          ) : (
-            <ListRow C={C} icon="list-check" iconColor={C.ash} title={t("train.fromRoutine")} meta={t("train.buildFirst")} right={<Chevron C={C} />} onPress={() => router.push("/builder")} />
-          )
+        {/* Routines — free for everyone (a free account keeps up to
+            FREE_TEMPLATE_LIMIT saved templates; the Builder upsells past that).
+            Saved routines list here, else a build prompt into the Builder. */}
+        {routines.length > 0 ? (
+          routines.map((r) => (
+            <ListRow
+              key={r.id}
+              C={C}
+              icon="list-check"
+              iconColor={C.ash}
+              title={r.name}
+              meta={r.blocks.map((b) => b.name).slice(0, 3).join(" – ")}
+              right={<Chevron C={C} />}
+              onPress={() => router.push(`/workout?source=template&templateId=${r.id}`)}
+            />
+          ))
         ) : (
-          <ListRow C={C} icon="list-check" iconColor={C.ash} title={t("train.fromRoutine")} premium right={<Chevron C={C} />} onPress={() => upsell("train-routine")} />
+          <ListRow C={C} icon="list-check" iconColor={C.ash} title={t("train.fromRoutine")} meta={t("train.buildFirst")} right={<Chevron C={C} />} onPress={() => router.push("/builder")} />
         )}
 
         {/* Repeat last — free, only once there's history. */}

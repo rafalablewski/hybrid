@@ -44,11 +44,19 @@ export function canSaveMealsAndProducts(persona: Persona): boolean {
   return isFullAccess(persona);
 }
 
-/** Free users CAN log and build a one-off workout, but saving it as a REUSABLE
- *  routine (load-and-go template) is a Full feature. The API mirrors this on
- *  POST /api/templates (403 upgrade_required for a free client), so the clients
- *  gate the CTA on this predicate and show an upgrade prompt instead of an
- *  error. */
-export function canSaveRoutine(persona: Persona): boolean {
-  return isFullAccess(persona);
+/** How many reusable routines (WorkoutTemplates) a FREE user may keep saved.
+ *  The Builder itself is free; only the library size is capped — more requires
+ *  the Full upgrade. Shared by both clients AND the API gate so the number can
+ *  never drift. */
+export const FREE_TEMPLATE_LIMIT = 2;
+
+/** Free users CAN build and save reusable routines (load-and-go templates) — up
+ *  to {@link FREE_TEMPLATE_LIMIT} of them. Saving MORE is a Full feature. The
+ *  API mirrors this on POST /api/templates (403 upgrade_required for a free
+ *  client already at the limit), so the clients gate the CTA on this predicate
+ *  and show an upgrade prompt instead of an error.
+ *  @param savedCount how many templates the user currently has saved. */
+export function canSaveRoutine(persona: Persona, savedCount: number): boolean {
+  if (isFullAccess(persona)) return true;
+  return persona === "casual" && savedCount < FREE_TEMPLATE_LIMIT;
 }
