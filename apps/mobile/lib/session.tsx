@@ -100,7 +100,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     (meta.name as string) ||
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
   const role: Role = normalizeAuthRole(meta.role);
-  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
+  // Entitlement is mirrored into app_metadata (server-only, not user-writable).
+  // Prefer it; fall back to legacy user_metadata for pre-move sessions.
+  const appMeta = session?.user.app_metadata ?? {};
+  const entitlement: Entitlement = normalizeEntitlement(
+    (appMeta.entitlement as string | undefined) ?? meta.entitlement,
+  );
 
   return (
     <SessionCtx.Provider

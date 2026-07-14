@@ -73,7 +73,13 @@ function fromSupabaseUser(user: User): Session {
   // The DB stores uppercase roles (CLIENT|COACH|ADMIN); normalize so strict
   // equality against the lowercase Role type never silently fails.
   const role: Role = normalizeAuthRole(meta.role);
-  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
+  // Entitlement is mirrored into app_metadata (server-only). Prefer it; fall back
+  // to legacy user_metadata for sessions minted before the move. The DB value
+  // from /api/me is the authoritative override applied later.
+  const appMeta = user.app_metadata ?? {};
+  const entitlement: Entitlement = normalizeEntitlement(
+    (appMeta.entitlement as string | undefined) ?? meta.entitlement,
+  );
   const name =
     (meta.name as string) ||
     (meta.full_name as string) ||
