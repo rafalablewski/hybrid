@@ -1,6 +1,6 @@
 import "react-native-url-polyfill/auto";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { SecureStoreAdapter } from "./secure-store";
 
 // Same Supabase project as the web app — same users, same data.
 // URL is public; the anon (publishable) key is set at build time via EAS env.
@@ -21,7 +21,10 @@ const CLIENT_KEY = SUPABASE_ANON_KEY || "anon-key-not-configured";
 
 export const supabase = createClient(SUPABASE_URL, CLIENT_KEY, {
   auth: {
-    storage: AsyncStorage,
+    // Keychain/Keystore-backed (see lib/secure-store.ts) so the long-lived
+    // refresh token isn't stored in plaintext AsyncStorage. Migrates an existing
+    // AsyncStorage session in transparently on first read (no forced re-login).
+    storage: SecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
