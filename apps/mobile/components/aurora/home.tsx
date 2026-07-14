@@ -90,6 +90,10 @@ export default function AuroraHome() {
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  // True until the FIRST home load (sessions + enrollment) settles. Gates the
+  // plan hero so an already-enrolled athlete sees a skeleton — never the "How
+  // do you want to start?" chooser — while planId is still null on cold start.
+  const [initialLoad, setInitialLoad] = useState(true);
   // TIER-2 glance strip modals: Quick Log (sport carousel) + Done today (a
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
@@ -127,7 +131,7 @@ export default function AuroraHome() {
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null);
       })
       .catch((err) => console.error("Failed to load home data:", err))
-      .finally(() => setRefreshing(false));
+      .finally(() => { setRefreshing(false); setInitialLoad(false); });
   }, [loadFeeling]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -195,12 +199,15 @@ export default function AuroraHome() {
   }, [t]);
   const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
 
-  const planReadiness = hasData || plan || phase;
+  // Readiness (and the AI prescription it feeds) is only real when there's
+  // logged history — a bare macrocycle phase (auto-created at onboarding) must
+  // never surface a fabricated score/session, so this gates on hasData alone.
+  const planReadiness = hasData;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
   // named plan's day), then the AI-prescribed session for PREMIUM athletes, then
   // an empty start. AI is paid-only, so casual/guests never get source=ai here.
   const startPrescribed = () =>
-    router.push(plan ? "/workout?source=plan" : isAthlete && (hasData || phase) ? "/workout?source=ai" : "/workout?source=empty");
+    router.push(plan ? "/workout?source=plan" : isAthlete && hasData ? "/workout?source=ai" : "/workout?source=empty");
 
   // Start a SPECIFIC rail day: stash its exact (date-anchored) blocks so the
   // logger prefills the day you tapped — not the count-based today. Falls back to
@@ -325,7 +332,7 @@ export default function AuroraHome() {
             {/* On a plan, Start becomes the full-width action BELOW the note; the
                 top row then carries only the readiness dial (athlete). Other
                 states keep the compact top-right Start. */}
-            {(isAthlete && planReadiness) || !plan ? (
+            {!initialLoad && ((isAthlete && planReadiness) || !plan) ? (
               <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
                 {isAthlete && planReadiness ? (
                   <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
@@ -400,10 +407,21 @@ export default function AuroraHome() {
                   <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.home.today.start")}</Text>
                 </Pressable>
               </>
-            ) : isAthlete && (hasData || phase) ? (
-              /* PREMIUM only — the real readiness-driven AI prescription. Casual
-                 and guests fall through to the encouraging chooser below (no
-                 fabricated Back-Squat/Assault-Bike session presented as theirs). */
+            ) : initialLoad ? (
+              /* Cold start — sessions AND enrollment are still loading, so we
+                 can't yet tell an enrolled athlete from a first-run one. Show a
+                 skeleton (not the chooser) so the plan simply appears once it
+                 resolves, with no "How do you want to start?" flash between. */
+              <>
+                <View style={{ height: 24, width: "60%", borderRadius: 8, backgroundColor: C.line, opacity: 0.5, marginTop: 8, marginBottom: 10 }} />
+                <View style={{ height: 12, width: "90%", borderRadius: 6, backgroundColor: C.line, opacity: 0.35 }} />
+              </>
+            ) : isAthlete && hasData ? (
+              /* PREMIUM only — the real readiness-driven AI prescription, and
+                 ONLY when grounded in logged history. Casual users, guests and
+                 no-data accounts (even with an onboarding-created macrocycle
+                 phase) fall through to the encouraging chooser below — no
+                 fabricated Back-Squat/Row-Intervals session presented as theirs. */
               <>
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}

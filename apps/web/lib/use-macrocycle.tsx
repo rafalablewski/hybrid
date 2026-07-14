@@ -44,5 +44,9 @@ export function useMacrocycle() {
     macro = { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks };
   }
 
-  return { macro, currentWeek, planId, planStartedAt, refresh: () => q.refetch() };
+  // `loading` mirrors useSessions: isPending covers the first fetch (the
+  // window that used to flash the "How do you want to start?" chooser at an
+  // already-enrolled athlete before their plan resolved), isFetching keeps the
+  // refresh semantics. Consumers gate the cold-start chooser on it.
+  return { macro, currentWeek, planId, planStartedAt, loading: q.isPending || q.isFetching, refresh: () => q.refetch() };
 }
