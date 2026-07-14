@@ -17,6 +17,7 @@ import type {
   MutationResult,
 } from "@hybrid/core";
 import { supabase } from "./supabase";
+import { fetchWithTimeout } from "./fetch";
 
 // Mobile client for the social + coach-marketplace API (the SAME backend the
 // web app calls), with the Supabase access token as a Bearer header.
@@ -30,7 +31,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 
 export async function sapi<T = unknown>(path: string, method = "GET", body?: unknown): Promise<T> {
   try {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetchWithTimeout(`${API_URL}${path}`, {
       method,
       headers: { ...(await authHeaders()), ...(body ? { "Content-Type": "application/json" } : {}) },
       body: body ? JSON.stringify(body) : undefined,

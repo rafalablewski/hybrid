@@ -45,3 +45,33 @@ export async function patchUserMetadata(
     console.error("[supabase] patchUserMetadata: exception", e);
   }
 }
+
+/**
+ * Merge a patch into a user's auth `app_metadata` — the SERVER-CONTROLLED claim
+ * bag. Unlike `user_metadata` (which the end user can rewrite via
+ * `supabase.auth.updateUser({ data })`), `app_metadata` can only be written with
+ * the service-role key, so it is safe to mirror trust-bearing values like the
+ * billing entitlement here. Read-merge-write to avoid clobbering `provider` etc.
+ * No-op when the admin client or authId is unavailable.
+ */
+export async function patchUserAppMetadata(
+  authId: string | null | undefined,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin || !authId) return;
+  try {
+    const { data, error } = await admin.auth.admin.getUserById(authId);
+    if (error || !data?.user) {
+      console.error("[supabase] patchUserAppMetadata: could not read user", error);
+      return;
+    }
+    const current = data.user.app_metadata ?? {};
+    const { error: updateError } = await admin.auth.admin.updateUserById(authId, {
+      app_metadata: { ...current, ...patch },
+    });
+    if (updateError) console.error("[supabase] patchUserAppMetadata: update failed", updateError);
+  } catch (e) {
+    console.error("[supabase] patchUserAppMetadata: exception", e);
+  }
+}

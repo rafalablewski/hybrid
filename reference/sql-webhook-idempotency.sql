@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS "ProcessedWebhookEvent" (
   "processedAt" TIMESTAMP(3) NOT NULL DEFAULT now()
 );
 
+-- Server-only: enable RLS with NO policy so PostgREST (anon/authenticated) can
+-- neither read nor write the ledger. The webhook handler writes it via Prisma
+-- (the privileged role, which bypasses RLS). Without this, the anon key could
+-- pre-seed an event id so a real Stripe event is skipped as "already processed"
+-- (breaking entitlement provisioning) or delete rows to force double-processing.
+ALTER TABLE "ProcessedWebhookEvent" ENABLE ROW LEVEL SECURITY;
+
 -- 2. Ordering guard: timestamp of the last applied subscription event, so a
 --    delayed/reordered webhook can't roll entitlement back to a stale state.
 ALTER TABLE "User"

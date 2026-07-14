@@ -31,14 +31,27 @@ create policy coachinvite_own on "CoachInvite" for all
   using ("coachId" = public.app_user_id())
   with check ("coachId" = public.app_user_id());
 
--- Any signed-in user may READ a still-open invite (to display "Coach X invited
--- you") and UPDATE it to claim it (the API additionally enforces token + expiry
--- and flips it to CLAIMED). Tokens are random + single-use, so this is safe.
+-- A signed-in user may READ a still-open invite ONLY when it is addressed to
+-- their own verified email ("Coach X invited you") — never enumerate other
+-- people's invites. Previously this was `using(status='PENDING')` with no role
+-- restriction, letting the anon role scrape every pending invite's email/phone
+-- (PII). The claim itself runs server-side (token + expiry enforced there).
 drop policy if exists coachinvite_claim_read on "CoachInvite";
 create policy coachinvite_claim_read on "CoachInvite" for select
-  using ("status" = 'PENDING');
+  to authenticated
+  using (
+    "status" = 'PENDING'
+    and lower("email") = lower((select "email" from "User" where id = public.app_user_id()))
+  );
 
 drop policy if exists coachinvite_claim_update on "CoachInvite";
 create policy coachinvite_claim_update on "CoachInvite" for update
-  using ("status" = 'PENDING')
-  with check (true);
+  to authenticated
+  using (
+    "status" = 'PENDING'
+    and lower("email") = lower((select "email" from "User" where id = public.app_user_id()))
+  )
+  with check (
+    lower("email") = lower((select "email" from "User" where id = public.app_user_id()))
+    and "status" in ('PENDING', 'CLAIMED')
+  );

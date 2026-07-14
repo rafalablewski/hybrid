@@ -41,6 +41,10 @@ export function resetPersona(): void {
   coachFetched = false;
   AsyncStorage.removeItem(KEY).catch(() => {});
   emit();
+  // Re-learn the active-coach flag for the CURRENT user if anything is mounted
+  // (called on sign-in too, not just sign-out — the flag is otherwise fetched
+  // pre-login and never refreshed for the account that signs in).
+  if (listeners.size > 0) ensureCoachFetch();
 }
 
 // A client with an ACTIVE coach gets the full adaptive experience on their

@@ -13,6 +13,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!link) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (link.coachId !== me.id && link.clientId !== me.id)
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  // A coach may only read the athlete's data once the athlete has ACCEPTED
+  // (link ACTIVE). Inviting an existing user auto-creates a PENDING link, which
+  // must NOT expose their assignments before consent. The client (reading their
+  // own via the link) is unaffected.
+  if (link.clientId !== me.id && link.status !== "ACTIVE")
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const assignments = await prisma.assignment.findMany({
     where: { athleteId: link.clientId },

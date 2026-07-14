@@ -13,6 +13,7 @@ import { flushGuestSessions } from "./guest";
 import { claimCoachInvite } from "./api";
 import { resetPersona } from "./persona";
 import { resetPlanMaxes } from "./plan-maxes";
+import { resetFlags } from "./flags";
 
 // Device-level prefs that may safely survive a sign-out (everything else under
 // the `hybrid.` namespace is user-scoped and is wiped so a shared device never
@@ -24,6 +25,7 @@ const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announ
 async function clearClientState() {
   resetPersona();
   resetPlanMaxes();
+  resetFlags();
   try {
     const keys = await AsyncStorage.getAllKeys();
     const drop = keys.filter((k) => k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k));
@@ -79,8 +81,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      // First real sign-in: carry any guest workouts up to the account.
-      if (event === "SIGNED_IN") { flushGuestSessions().catch(() => {}); void claimStoredCoachInvite(); }
+      // First real sign-in: carry any guest workouts up to the account, and
+      // RE-FETCH the per-user one-shot stores (flags / persona / plan-maxes).
+      // These are typically first fetched BEFORE login (the nav mounts at app
+      // start), so without a reset here the signed-in user keeps the logged-out
+      // (or previous user's) flags, coach access and maxes until a process
+      // restart. resetX() re-fetches immediately when something is mounted.
+      if (event === "SIGNED_IN") {
+        flushGuestSessions().catch(() => {});
+        void claimStoredCoachInvite();
+        resetFlags();
+        resetPersona();
+        resetPlanMaxes();
+      }
     });
     // Back to foreground (likely back online): retry the offline sync.
     const appSub = AppState.addEventListener("change", (state) => {
@@ -100,7 +113,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     (meta.name as string) ||
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
   const role: Role = normalizeAuthRole(meta.role);
-  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
+  // Entitlement is mirrored into app_metadata (server-only, not user-writable).
+  // Prefer it; fall back to legacy user_metadata for pre-move sessions.
+  const appMeta = session?.user.app_metadata ?? {};
+  const entitlement: Entitlement = normalizeEntitlement(
+    (appMeta.entitlement as string | undefined) ?? meta.entitlement,
+  );
 
   return (
     <SessionCtx.Provider

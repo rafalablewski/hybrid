@@ -126,7 +126,10 @@ export async function POST(request: Request) {
       email,
       ...(password ? { password } : {}),
       email_confirm: Boolean(password),
-      user_metadata: { name: name ?? undefined, role: role.toLowerCase(), entitlement },
+      user_metadata: { name: name ?? undefined, role: role.toLowerCase() },
+      // entitlement is trust-bearing (paywall) → app_metadata (service-role-only),
+      // never user_metadata, which the end user can rewrite to self-grant 'paid'.
+      app_metadata: { entitlement },
     });
     if (error || !data?.user) {
       return NextResponse.json({ error: error?.message ?? "Could not create the auth user." }, { status: 502 });

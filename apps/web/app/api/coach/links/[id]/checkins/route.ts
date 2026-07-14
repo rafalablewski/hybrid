@@ -14,6 +14,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!link) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (link.coachId !== me.id && link.clientId !== me.id)
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  // Coach reads require an ACCEPTED (ACTIVE) link — a PENDING coach-initiated
+  // link must not expose the athlete's shared check-ins before consent.
+  if (link.clientId !== me.id && link.status !== "ACTIVE")
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const isCoach = link.coachId === me.id;
   const checkins = await prisma.checkin.findMany({

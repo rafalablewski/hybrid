@@ -6,6 +6,7 @@ import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { setEntitlement } from "@/lib/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { wipeUserData, wipeUserStorage } from "@/lib/account-wipe";
 
 // Permanently delete a user account and ALL of its data. Admin-only, irreversible.
 // An admin can't delete themselves, and can't delete the last remaining admin
@@ -31,71 +32,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Can't delete the last admin." }, { status: 400 });
   }
 
-  const skipped: string[] = [];
-  const wipe = async (label: string, run: () => Promise<unknown>) => {
-    try {
-      await run();
-    } catch (err) {
-      console.error(`[admin user delete] skipped ${label}:`, err);
-      skipped.push(label);
-    }
-  };
-
-  let linkIds: string[] = [];
-  try {
-    linkIds = (
-      await prisma.coachLink.findMany({
-        where: { OR: [{ coachId: id }, { clientId: id }] },
-        select: { id: true },
-      })
-    ).map((l) => l.id);
-  } catch (err) {
-    console.error("[admin user delete] could not read coach links:", err);
-  }
-
-  await wipe("sessions", () => prisma.session.deleteMany({ where: { userId: id } }));
-  await wipe("macrocycles", () => prisma.macrocycle.deleteMany({ where: { userId: id } }));
-  await wipe("biometrics", () => prisma.biometric.deleteMany({ where: { userId: id } }));
-  await wipe("signals", () => prisma.signal.deleteMany({ where: { userId: id } }));
-  await wipe("checkins", () => prisma.checkin.deleteMany({ where: { userId: id } }));
-  await wipe("rtpProtocols", () => prisma.rtpProtocol.deleteMany({ where: { userId: id } }));
-  await wipe("videoAnalyses", () => prisma.videoAnalysis.deleteMany({ where: { userId: id } }));
-  await wipe("events", () => prisma.event.deleteMany({ where: { userId: id } }));
-  await wipe("riskOutcomes", () => prisma.riskOutcome.deleteMany({ where: { userId: id } }));
-  await wipe("talentProfile", () => prisma.talentProfile.deleteMany({ where: { userId: id } }));
-  await wipe("connections", () => prisma.connection.deleteMany({ where: { userId: id } }));
-  await wipe("memberships", () => prisma.membership.deleteMany({ where: { userId: id } }));
-  await wipe("templates", () => prisma.workoutTemplate.deleteMany({ where: { ownerId: id } }));
-  await wipe("assignments", () =>
-    prisma.assignment.deleteMany({ where: { OR: [{ athleteId: id }, { assignedById: id }] } }),
-  );
-  if (linkIds.length)
-    await wipe("coachNotes", () => prisma.coachNote.deleteMany({ where: { linkId: { in: linkIds } } }));
-  await wipe("coachLinks", () =>
-    prisma.coachLink.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
-  );
-  // Coach-authored artefacts + nutrition the user owns or is the subject of.
-  await wipe("coachGroups", () => prisma.coachGroup.deleteMany({ where: { coachId: id } }));
-  await wipe("coachPrograms", () => prisma.coachProgram.deleteMany({ where: { coachId: id } }));
-  await wipe("coachInvites", () =>
-    prisma.coachInvite.deleteMany({ where: { OR: [{ coachId: id }, { claimedById: id }] } }),
-  );
-  await wipe("coachDiets", () =>
-    prisma.coachDiet.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
-  );
-  // Pending applications tied to the account.
-  await wipe("coachApplication", () => prisma.coachApplication.deleteMany({ where: { userId: id } }));
-  // Email footprint — enrollments + the deliverability ledger. The EmailSuppression
-  // (opt-out) row is DELIBERATELY KEPT: a recorded unsubscribe/bounce must be
-  // honoured permanently (CAN-SPAM / GDPR), so a re-import or re-signup of the
-  // same address can never re-email someone who opted out. It holds only the
-  // email + reason, none of the person's training/account data.
-  if (target.email) {
-    await wipe("emailEnrollments", () => prisma.emailEnrollment.deleteMany({ where: { userId: id } }));
-    await wipe("emailMessages", () =>
-      prisma.emailMessage.deleteMany({ where: { OR: [{ userId: id }, { email: target.email.toLowerCase() }] } }),
-    );
-  }
+  // Wipe ALL of the user's data via the shared helper (one source of truth for
+  // coverage — the same one reset + self-delete use, so no table is ever missed,
+  // which is what used to make the User delete below throw an FK violation).
+  const { skipped } = await wipeUserData(id, target.email);
+  await wipeUserStorage(target.authId);
 
   // The User row is the PRIMARY action — never swallow its failure (that would
   // return a false success while the account still exists). Their AdminAudit
@@ -109,7 +50,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json(
       {
         error:
-          "Couldn't delete the account — its data was cleared but the user row failed (if this user has audit history, apply reference/sql-adminaudit-actor-nullable.sql).",
+          "Couldn't delete the account — its data was cleared but the user row failed. If this user has admin audit history, apply reference/sql-adminaudit-actor-nullable.sql so the audit actor can be set null on delete.",
         skipped,
       },
       { status: 500 },

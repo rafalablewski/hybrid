@@ -2,7 +2,8 @@ import { useState, useCallback, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
-import { resetAccount } from "../../lib/api";
+import { resetAccount, deleteAccount } from "../../lib/api";
+import { iapAvailable, manageSubscriptions } from "../../lib/iap";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
@@ -18,6 +19,7 @@ import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS }
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import { LegalLinks } from "../legal-links";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Theme picker swatches — a mini colour preview per template (shared shape with
@@ -70,6 +72,10 @@ export default function AuroraSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const armed = confirm.trim().toUpperCase() === "RESET";
+  const [delConfirm, setDelConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [delError, setDelError] = useState("");
+  const armedDelete = delConfirm.trim().toUpperCase() === "DELETE";
   // Public profile — loaded for the header completeness ring + Share action.
   // Re-fetched on every screen focus so returning from Edit profile (this screen
   // stays mounted in the stack) reflects the latest handle/bio/photo.
@@ -95,6 +101,18 @@ export default function AuroraSettings() {
     await Promise.all([clearGuestSessions(), clearDraft()]);
     setBusy(false);
     router.replace("/(tabs)");
+  };
+
+  const del = async () => {
+    if (!armedDelete) return;
+    setDeleting(true);
+    setDelError("");
+    const ok = await deleteAccount();
+    if (!ok) { setDelError(t("settings.deleteError")); AccessibilityInfo.announceForAccessibility(t("settings.deleteError")); setDeleting(false); return; }
+    // Account (incl. login) is gone — clear local state and sign out to the login screen.
+    await Promise.all([clearGuestSessions(), clearDraft()]);
+    await signOut();
+    setDeleting(false);
   };
 
   const tone = (c: string) => ({ tile: `${c}24`, fg: txt(C, c) });
@@ -248,7 +266,7 @@ export default function AuroraSettings() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.account.settings.unlocks")}</Text>
             </>
           ) : (
-            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={goUpgrade} style={{ paddingVertical: 13, marginTop: 16 }} />
+            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={() => (iapAvailable() ? void manageSubscriptions() : goUpgrade())} style={{ paddingVertical: 13, marginTop: 16 }} />
           )}
         </Section>
       </>
@@ -290,6 +308,22 @@ export default function AuroraSettings() {
           <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
           </Pressable>
+        </Section>
+        <Section label={t("settings.deleteTitle")} tone={C.red}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.deleteBody")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
+          <TextInput
+            value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
+            autoCapitalize="characters" autoCorrect={false}
+            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 8 }}
+          />
+          {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{delError}</Text>}
+          <Pressable onPress={del} disabled={!armedDelete || deleting} accessibilityRole="button" accessibilityLabel={t("settings.deleteAccount")} style={{ backgroundColor: armedDelete && !deleting ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
+            {deleting ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.deleteAccount")}</Text>}
+          </Pressable>
+        </Section>
+        <Section label={t("legal.section")}>
+          <LegalLinks align="left" />
         </Section>
       </>
         );

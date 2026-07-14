@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // Target competitions for the signed-in athlete (the peaking optimizer fits a
@@ -19,7 +20,9 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const b = (await request.json().catch(() => ({}))) as { name?: unknown; sport?: unknown; date?: unknown };
+  const parsed = await readJsonLimited<Record<string, unknown>>(request, 16 * 1024);
+  if (parsed.error) return parsed.error;
+  const b = parsed.data as { name?: unknown; sport?: unknown; date?: unknown };
   if (typeof b.name !== "string" || !b.name.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
   if (typeof b.sport !== "string" || !b.sport) return NextResponse.json({ error: "sport required" }, { status: 400 });
   if (typeof b.date !== "string" || Number.isNaN(Date.parse(b.date))) return NextResponse.json({ error: "valid date required" }, { status: 400 });

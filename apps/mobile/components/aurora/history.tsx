@@ -9,7 +9,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -56,7 +56,15 @@ export default function AuroraHistory() {
         </Pressable>
       </View>
 
-      {loading ? <Loading /> : sessions.length === 0 ? (
+      {loading ? <Loading /> : q.isError ? (
+        // A real fetch failure — distinct from a genuine empty history, so an
+        // offline / 500 load never masquerades as "no workouts yet".
+        <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("common.loadError")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{t("common.loadErrorHint")}</Text>
+          <APill label={t("common.retry")} variant="soft" onPress={() => q.refetch()} style={{ marginTop: 16, paddingHorizontal: 28 }} />
+        </ACard>
+      ) : sessions.length === 0 ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("history.noArchived") : t("history.none")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("history.archivedHint") : t("history.emptyHint")}</Text>

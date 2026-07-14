@@ -77,6 +77,9 @@ export function resetPlanMaxes(): void {
   hydrated = false;
   AsyncStorage.removeItem(KEY).catch(() => {});
   emit();
+  // Re-hydrate the CURRENT user's maxes if anything is mounted (called on sign-in
+  // too, so the account that signs in after a pre-login hydrate gets its data).
+  if (listeners.size > 0) hydrateFromServer();
 }
 
 /** Set (or clear, with a null/≤0 value) one max — persisted on-device and pushed

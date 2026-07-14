@@ -15,6 +15,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const isCoach = link.coachId === me.id;
   const isClient = link.clientId === me.id;
   if (!isCoach && !isClient) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  // Coach reads require an ACCEPTED (ACTIVE) link (notes are only written on an
+  // ACTIVE link, so this is mostly belt-and-suspenders, but keeps the three coach
+  // reads consistent — no data before consent).
+  if (isCoach && !isClient && link.status !== "ACTIVE")
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const notes = await prisma.coachNote.findMany({
     where: { linkId: id, ...(isClient && !isCoach ? { private: false } : {}) },

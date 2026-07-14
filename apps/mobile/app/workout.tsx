@@ -203,7 +203,7 @@ export default function Workout() {
   const R = auroraRadii(aurora);
   const router = useRouter();
   const { t } = useLang();
-  const { session } = useSession();
+  const { session, ready } = useSession();
   const revalidate = useRevalidate();
   const { catalog, aliases, categoryByName } = useExercises();
   const guest = !session;
@@ -381,7 +381,16 @@ export default function Workout() {
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
   // start resumes an in-progress draft if one exists (never lose a workout).
+  // Seed the session ONCE, and only after the auth session has resolved
+  // (`ready`). Previously this depended on `guest = !session`, so on a cold start
+  // into the logger (draft resume / deep link) it ran first as a guest, then RE-RAN
+  // when the session landed — re-applying loadDraft() / re-seeding and clobbering
+  // any sets the user had already ticked. Gating on `ready` + a run-once ref makes
+  // `guest` final before we touch state.
+  const seeded = useRef(false);
   useEffect(() => {
+    if (!ready || seeded.current) return;
+    seeded.current = true;
     (async () => {
       const sessions = guest
         ? (await listGuestSessions()).map(guestToLogged)
@@ -470,7 +479,7 @@ export default function Workout() {
       }
       setRestored(true);
     })();
-  }, [source, guest, templateId, sport]);
+  }, [ready, guest, source, templateId, sport]);
 
   // Persist the in-progress draft as it changes (debounced) so it survives a
   // crash / kill. Only after the initial restore, so we never clobber a draft.

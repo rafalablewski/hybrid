@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { getOrCreateDbUser } from "@/lib/server-auth";
-import { readJsonLimited } from "@/lib/guard";
+import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sendEmail, emailConfigured } from "@/lib/email";
 
@@ -58,6 +58,13 @@ export async function POST(request: Request) {
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (me.role !== "COACH" && me.role !== "ADMIN")
     return NextResponse.json({ error: "coach only" }, { status: 403 });
+
+  // Per-coach throttle: each invite can email an arbitrary address, so without a
+  // per-actor cap a coach account is an email-bombing / brand-abuse vector (the
+  // MAX_ROSTER cap alone is refreshable as invites expire/claim). Bucketed on the
+  // coach id (+ IP, which rateLimit always appends): ~20 invites/hour.
+  const limited = await rateLimit(request, { key: `coach-invite:${me.id}`, limit: 20, windowMs: 60 * 60_000 });
+  if (limited) return limited;
 
   const { data: b, error } = await readJsonLimited<{ email?: unknown; phone?: unknown }>(request, 4 * 1024);
   if (error) return error;

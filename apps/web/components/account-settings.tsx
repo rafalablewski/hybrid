@@ -70,6 +70,9 @@ export default function AccountSettings() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [delConfirm, setDelConfirm] = useState("");
+  const [delBusy, setDelBusy] = useState(false);
+  const [delMsg, setDelMsg] = useState<string | null>(null);
   // Public profile — loaded for the header completeness ring + Share action.
   const [socialProfile, setSocialProfile] = useState<{ handle?: string; displayName?: string | null; bio?: string | null; avatarUrl?: string | null } | null>(null);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
@@ -279,6 +282,33 @@ export default function AccountSettings() {
     } catch {
       setMsg(t("w.account.settings.network-error"));
       setBusy(false);
+    }
+  };
+
+  const armedDelete = delConfirm.trim().toUpperCase() === "DELETE";
+
+  const del = async () => {
+    if (!armedDelete) return;
+    setDelBusy(true);
+    setDelMsg(null);
+    try {
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setDelMsg(j.error ?? `${t("w.account.settings.failed")} (HTTP ${res.status})`);
+        setDelBusy(false);
+        return;
+      }
+      // Account (incl. login) is gone — sign the dead session out and leave.
+      if (authOn) await createClient().auth.signOut().catch(() => {});
+      window.location.assign("/login");
+    } catch {
+      setDelMsg(t("w.account.settings.network-error"));
+      setDelBusy(false);
     }
   };
 
@@ -590,6 +620,29 @@ export default function AccountSettings() {
               <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
                 {t("w.account.settings.sign-out-instead")}
               </button>
+            </div>
+
+            {/* Permanent account deletion (App Store 5.1.1(v) + GDPR erasure) —
+                distinct from reset: removes the login itself, not just the data. */}
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${LINE}` }}>
+              <Mono s={{ fontSize: fs.bodyLg, fontWeight: 800, display: "block", color: txt(RED) }} c={RED}>{t("settings.deleteTitle")}</Mono>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>{t("settings.deleteBody")}</Mono>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>
+                {t("settings.typeDelete")}
+              </Mono>
+              <input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armedDelete ? RED : LINE}`, outline: "none" }} />
+              {delMsg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{delMsg}</Mono></div>}
+              <div style={{ marginTop: 16 }}>
+                <button onClick={del} disabled={!armedDelete || delBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
+                  {delBusy ? t("settings.deleting") : t("settings.deleteAccount")}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>
+              <a href="/privacy" style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textDecoration: "underline" }}>{t("legal.privacy")}</a>
+              <span style={{ ...mono, fontSize: fs.caption, color: txt(ASH), margin: "0 8px" }}>{t("legal.and")}</span>
+              <a href="/terms" style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textDecoration: "underline" }}>{t("legal.terms")}</a>
             </div>
           </Section>
         );

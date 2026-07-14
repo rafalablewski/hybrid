@@ -9,6 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading, ABack } from "./kit";
+import { LegalLinks } from "../legal-links";
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
  *  same Supabase auth flow as the classic login screen. */
@@ -24,6 +25,7 @@ export default function AuroraLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   // Where to go AFTER auth — navigate only once the session is actually present
   // in context. Navigating the instant signInWithPassword resolves races the
@@ -43,6 +45,19 @@ export default function AuroraLogin() {
     setError(m);
     AccessibilityInfo.announceForAccessibility(m);
     setBusy(false);
+  };
+
+  // Password reset — send a reset link to the entered email. Was a dead label
+  // that locked users out on mobile.
+  const resetPassword = async () => {
+    if (!live || busy) return;
+    if (!email.trim()) { setError(t("w.account.login.forgot-need-email")); return; }
+    setBusy(true); setError(""); setNotice("");
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
+    setBusy(false);
+    if (err) { fail(err.message); return; }
+    setNotice(t("w.account.login.forgot-sent"));
+    AccessibilityInfo.announceForAccessibility(t("w.account.login.forgot-sent"));
   };
 
   // Mirrors the web login step-up (aurora/login.tsx): if the signed-in session is
@@ -150,11 +165,16 @@ export default function AuroraLogin() {
         <AField value={password} onChange={setPassword} placeholder={t("w.account.login.password-ph")} secure icon="lock" />
 
         {!isSignup && (
-          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.ash, textAlign: "right", marginBottom: 6 }}>
-            {t("w.account.login.forgot-password")}
-          </Text>
+          <Pressable onPress={resetPassword} accessibilityRole="button" accessibilityLabel={t("w.account.login.forgot-password")} hitSlop={8} style={{ alignSelf: "flex-end", marginBottom: 6 }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(palette, palette.lime), textAlign: "right" }}>
+              {t("w.account.login.forgot-password")}
+            </Text>
+          </Pressable>
         )}
 
+        {!!notice && (
+          <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.lime), marginBottom: 10 }}>{notice}</Text>
+        )}
         {!!error && (
           <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginBottom: 10 }}>{error}</Text>
         )}
@@ -190,6 +210,8 @@ export default function AuroraLogin() {
           {t("w.account.login.anon-key-hint")}
         </Text>
       )}
+
+      <LegalLinks agree />
     </AuroraScreen>
   );
 }

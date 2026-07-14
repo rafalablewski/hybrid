@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
-import { patchUserMetadata } from "@/lib/supabase/admin";
+import { patchUserAppMetadata } from "@/lib/supabase/admin";
 
 /**
  * Billing — the paid "Full" entitlement.
@@ -40,9 +40,12 @@ export function entitlementForStatus(status: string | null | undefined): Entitle
 
 /**
  * Set the account entitlement EVERYWHERE: the DB row (server source of truth +
- * Stripe linkage) AND the Supabase auth user_metadata (so both clients pick it
- * up from their session on the next refresh). Safe if the admin client is
- * unconfigured — the DB still updates.
+ * Stripe linkage) AND the Supabase auth `app_metadata` (so both clients pick it
+ * up from their session on the next refresh). We mirror into app_metadata, NOT
+ * user_metadata, because user_metadata is writable by the end user
+ * (`supabase.auth.updateUser({ data })`) — mirroring a paywall flag there would
+ * let a user self-grant 'paid'. app_metadata is service-role-only. Safe if the
+ * admin client is unconfigured — the DB stays the source of truth regardless.
  */
 export async function setEntitlement(opts: {
   userId: string;
@@ -66,7 +69,7 @@ export async function setEntitlement(opts: {
     },
     select: { id: true, email: true, role: true },
   });
-  await patchUserMetadata(opts.authId, { entitlement: opts.entitlement });
+  await patchUserAppMetadata(opts.authId, { entitlement: opts.entitlement });
 
   // Fire the `upgraded` lifecycle automation when an account becomes paid
   // (idempotent — the unique enrollment guard means a repeated webhook is safe;

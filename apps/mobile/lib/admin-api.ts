@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { API_BASE } from "./api";
+import { fetchWithTimeout } from "./fetch";
 
 // ---------------------------------------------------------------------------
 // Mobile admin API client.
@@ -23,7 +24,7 @@ export type AdminResult<T> = { ok: boolean; status: number; data: T | null; erro
 /** GET an admin endpoint. `path` is the API path (e.g. "/api/admin/stats"). */
 export async function adminGet<T = unknown>(path: string): Promise<AdminResult<T>> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_BASE}${path}`, { headers: await authHeaders() });
     const data = (await res.json().catch(() => null)) as T | null;
     return { ok: res.ok, status: res.status, data, error: errOf(res.ok, data) };
   } catch {
@@ -38,7 +39,7 @@ export async function adminSend<T = unknown>(
   body?: unknown,
 ): Promise<AdminResult<T>> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetchWithTimeout(`${API_BASE}${path}`, {
       method,
       headers: {
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),

@@ -216,6 +216,11 @@ export default function AuroraLogin() {
             <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
+        <div style={{ marginTop: 22, textAlign: "center" }}>
+          <a href="/privacy" style={{ ...mono, fontSize: fs.caption, color: ASH, textDecoration: "underline" }}>{t("legal.privacy")}</a>
+          <span style={{ ...mono, fontSize: fs.caption, color: ASH, margin: "0 8px" }}>{t("legal.and")}</span>
+          <a href="/terms" style={{ ...mono, fontSize: fs.caption, color: ASH, textDecoration: "underline" }}>{t("legal.terms")}</a>
+        </div>
       </div>
     </div>
   );

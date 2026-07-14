@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { signalUnit, SIGNAL_KINDS, type SignalKind } from "@hybrid/core";
 
@@ -28,7 +29,9 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const b = (await request.json().catch(() => ({}))) as {
+  const parsed = await readJsonLimited<Record<string, unknown>>(request, 16 * 1024);
+  if (parsed.error) return parsed.error;
+  const b = parsed.data as {
     kind?: unknown;
     value?: unknown;
     unit?: unknown;
