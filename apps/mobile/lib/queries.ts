@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName } from "@hybrid/core";
-import { fetchSessions, fetchSignals, fetchCustomExercises } from "./api";
+import { querySessions, querySignals, fetchCustomExercises } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
-// match conceptually so the same mutation→invalidate discipline applies. Wraps
-// the existing lib/api fetchers (which already swallow errors → []), so callers
-// keep their honest empty states.
+// match conceptually so the same mutation→invalidate discipline applies. These
+// use the THROWING query* fetchers so useQuery's isError/retry fire and screens
+// can show a real "couldn't load — retry" state instead of a fake empty one.
+// (The exercise overlay stays soft — it degrades to the built-in catalog.)
 
 export const qk = {
   sessions: ["sessions"] as const,
@@ -22,13 +23,13 @@ export function useSessionsQuery(opts?: { archived?: boolean }) {
   const archived = opts?.archived ?? false;
   return useQuery({
     queryKey: archived ? (["sessions", "archived"] as const) : qk.sessions,
-    queryFn: () => fetchSessions(archived ? { archived: true } : undefined),
+    queryFn: () => querySessions(archived ? { archived: true } : undefined),
   });
 }
 
 /** The signed-in user's Signal ontology, from the shared cache. */
 export function useSignalsQuery() {
-  return useQuery({ queryKey: qk.signals, queryFn: () => fetchSignals() });
+  return useQuery({ queryKey: qk.signals, queryFn: () => querySignals() });
 }
 
 // Folds the admin-managed exercise library over the built-in MOVEMENTS — the

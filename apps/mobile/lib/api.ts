@@ -19,6 +19,44 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** Thrown by the `query*` fetchers below on a network error or non-2xx response,
+ *  so React Query's isError / retry actually fire (the `fetch*` fetchers above
+ *  deliberately SWALLOW errors to an empty value for optional/degradable reads;
+ *  the `query*` ones THROW so a screen can show a real "couldn't load" state
+ *  instead of a fake "no data yet" one). */
+export class ApiError extends Error {
+  constructor(public status: number, message?: string) {
+    super(message ?? `Request failed (HTTP ${status})`);
+    this.name = "ApiError";
+  }
+}
+
+async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
+    ...init,
+    headers: { ...(init.headers ?? {}), ...(await authHeaders()) },
+  });
+  if (!res.ok) throw new ApiError(res.status);
+  return (await res.json()) as T;
+}
+
+/** Sessions for React Query — THROWS on failure (see ApiError). */
+export async function querySessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
+  const qs = opts?.archived ? "?archived=1" : "";
+  const data = await fetchJson<{ sessions?: LoggedSession[] }>(`/api/sessions${qs}`);
+  return data.sessions ?? [];
+}
+
+/** Signals for React Query — THROWS on failure (see ApiError). */
+export async function querySignals(): Promise<CoreSignal[]> {
+  const data = await fetchJson<{
+    signals?: { userId: string; kind: string; value: number; unit: string; source: string; ts: string }[];
+  }>(`/api/signals`);
+  return (data.signals ?? []).map((s) => ({
+    athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts,
+  }));
+}
+
 // The admin-managed custom exercise library (published rows). The client folds
 // these over the built-in MOVEMENTS (mergeMovements) into the catalog the picker
 // consumes — parity with web's useExercises. Empty when signed-out / none
