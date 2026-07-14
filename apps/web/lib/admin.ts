@@ -49,12 +49,21 @@ export async function requireAgentOperator(req?: Request): Promise<Ok | Err> {
   return { error: NextResponse.json({ error: "not an agent operator — ask an owner to add you to AGENT_OPERATOR_EMAILS" }, { status: 403 }) };
 }
 
-/** Best-effort request IP from the proxy headers Vercel sets. */
+/** Best-effort request IP for rate-limiting + audit. Prefer `x-real-ip` (Vercel
+ *  sets it to the real peer). For `x-forwarded-for`, use the RIGHTMOST entry —
+ *  the hop added by our trusted proxy — NOT the leftmost, which is
+ *  client-supplied and can be spoofed to mint a fresh rate-limit bucket per
+ *  request or to poison the audit trail's IP. */
 export function clientIp(req?: Request): string | null {
   if (!req) return null;
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return req.headers.get("x-real-ip");
+  if (xff) {
+    const hops = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1]!;
+  }
+  return null;
 }
 
 export type AuditInput = {
