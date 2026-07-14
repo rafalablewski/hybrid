@@ -26,7 +26,12 @@ async function clearClientState() {
   resetPlanMaxes();
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const drop = keys.filter((k) => k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k));
+    // Drop every user-scoped `hybrid.*` key AND the Supabase auth token (`sb-*`).
+    // Wiping the auth token ourselves is what makes a sign-out actually STICK:
+    // supabase.auth.signOut() only removes the persisted session when its network
+    // revoke succeeds, so an offline/failed revoke would otherwise leave the token
+    // behind and silently sign the user back in on the next launch.
+    const drop = keys.filter((k) => (k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k)) || k.startsWith("sb-"));
     await Promise.all(drop.map((k) => AsyncStorage.removeItem(k)));
   } catch {
     // best-effort
@@ -111,8 +116,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         role,
         entitlement,
         signOut: async () => {
-          await supabase.auth.signOut();
+          // Local scope — sign THIS device out; the explicit "sign out
+          // everywhere" (account.ts) is the global one. Best-effort: a
+          // failed/offline network revoke must never leave us signed in, so we
+          // force-clear the persisted auth token + app state and null the
+          // session regardless of the result (the auth listener only fires
+          // SIGNED_OUT when the revoke succeeds).
+          try {
+            await supabase.auth.signOut({ scope: "local" });
+          } catch {
+            // fall through to the forced teardown below
+          }
           await clearClientState();
+          setSession(null);
         },
       }}
     >

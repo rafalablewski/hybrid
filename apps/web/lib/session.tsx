@@ -38,6 +38,21 @@ function clearClientState() {
   } catch {
     // ignore storage failures (private mode, etc.)
   }
+  // Supabase (SSR) keeps the auth session in `sb-*` COOKIES, not localStorage.
+  // signOut() clears them only when its network revoke succeeds, so a
+  // failed/offline sign-out would leave them behind — and getUser() on the next
+  // load would silently restore the session ("logged out, still logged in").
+  // Force-expire any `sb-*` cookie so logout always sticks.
+  try {
+    for (const cookie of document.cookie.split(";")) {
+      const name = cookie.split("=")[0]?.trim();
+      if (name && name.startsWith("sb-")) {
+        document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+      }
+    }
+  } catch {
+    // ignore
+  }
 }
 
 export type Session = {
@@ -205,9 +220,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (live) {
       try {
-        await createClient().auth.signOut();
+        // Local scope — sign THIS browser out; the explicit "sign out
+        // everywhere" (account-settings) is the global one. Best-effort: the
+        // forced cookie + state wipe in clearClientState() makes logout stick
+        // even when the network revoke fails.
+        await createClient().auth.signOut({ scope: "local" });
       } catch {
-        // ignore network/signout failures
+        // ignore network/signout failures — clearClientState still tears down
       }
     }
     setSession(null);
