@@ -42,7 +42,9 @@ export default function SaveRoutineCard({
 
   // Free users are capped at FREE_TEMPLATE_LIMIT saved templates — fetch the
   // count so the card can upsell up-front instead of erroring on save. Full
-  // users are unlimited, so skip the round-trip.
+  // users are unlimited, so skip the round-trip. A failed fetch deliberately
+  // leaves the count at 0: the save button shows, and a save at the limit
+  // still lands on the upsell via the API's 403 — never a silent failure.
   const isFree = !isFullAccess(persona);
   useEffect(() => {
     if (!isFree) return;

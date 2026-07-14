@@ -1685,10 +1685,13 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
   const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
   // Free users are capped — fetch the saved count so the card upsells up-front
   // at the limit instead of failing on save. Full users skip the round-trip.
+  // fetchRoutines never rejects (it degrades to [] internally); if it does
+  // degrade, the count stays 0 and a save at the limit still lands on the
+  // upsell via the API's 403 — never a silent failure.
   const [savedCount, setSavedCount] = useState(0);
   const isFree = !isFullAccess(persona);
   useEffect(() => {
-    if (isFree) fetchRoutines().then((rs) => setSavedCount(rs.length)).catch(() => {});
+    if (isFree) fetchRoutines().then((rs) => setSavedCount(rs.length));
   }, [isFree]);
   const allowed = canSaveRoutine(persona, savedCount);
 

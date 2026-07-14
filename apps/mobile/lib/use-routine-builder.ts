@@ -120,7 +120,7 @@ export function useRoutineBuilder() {
       text:
         res.status === 401
           ? t("w.train.builder.signInSave")
-          : res.status == null
+          : res.status === null
             ? t("w.train.builder.networkError")
             : `${t("w.train.builder.saveErrorPrefix")}${res.status}${t("w.train.builder.saveErrorSuffix")}`,
       ok: false,
