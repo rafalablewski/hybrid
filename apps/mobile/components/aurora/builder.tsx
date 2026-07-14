@@ -12,6 +12,8 @@ import {
   timedSportOnly,
   cardioPace,
   canSaveRoutine,
+  isFullAccess,
+  FREE_TEMPLATE_LIMIT,
   FUNNEL,
   sessionSignal,
   strengthBlockStats,
@@ -63,9 +65,12 @@ export default function AuroraBuilder() {
   const prefs = useLoggerPrefs();
   // Bodyweight-aware tonnage: 10 BW pull-ups at 70 kg = 700 kg of work.
   const bodyweightKg = useBodyweight();
-  // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
-  const allowedSave = canSaveRoutine(usePersona());
+  // Building is free; a free user can SAVE up to FREE_TEMPLATE_LIMIT routines
+  // (canSaveRoutine) — beyond that the save slot becomes the Full upsell.
+  const persona = usePersona();
+  const isFree = !isFullAccess(persona);
   const b = useRoutineBuilder();
+  const allowedSave = canSaveRoutine(persona, b.routines.length);
   const { catalog, aliases, categoryByName } = useExercises();
   const [picker, setPicker] = useState(false);
   const [query, setQuery] = useState("");
@@ -186,14 +191,22 @@ export default function AuroraBuilder() {
       {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 14 }}>{b.msg.text}</Text>}
 
       {allowedSave ? (
-        <APill
-          label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
-          onPress={b.save}
-          disabled={b.saving || b.items.length === 0}
-          style={{ marginTop: 16 }}
-        />
+        <>
+          <APill
+            label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
+            onPress={b.save}
+            disabled={b.saving || b.items.length === 0}
+            style={{ marginTop: 16 }}
+          />
+          {isFree && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, textAlign: "center" }}>
+              {t("w.train.builder.freeSlots").replace("{used}", String(b.routines.length)).replace("{limit}", String(FREE_TEMPLATE_LIMIT))}
+            </Text>
+          )}
+        </>
       ) : (
-        // Free user — saving a routine is Full. Building/previewing stays free.
+        // Free user at the template limit — more saved routines is Full.
+        // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
         <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 14 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: pa.text }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>

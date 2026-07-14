@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { SessionBlock } from "@hybrid/core";
+import { FREE_TEMPLATE_LIMIT, type SessionBlock } from "@hybrid/core";
 import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -18,17 +18,23 @@ export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // The builder (authoring your own workouts) is a paid (Full/athlete) action.
-  // A free CLIENT — including a coached client — can VIEW what's assigned but
-  // must upgrade to create/edit records. Coaches & admins author by role.
+  // The Builder is free, but a FREE client may keep at most FREE_TEMPLATE_LIMIT
+  // saved templates — saving more is the paid (Full) upgrade. Coaches & admins
+  // author by role; paid clients are unlimited.
   if (me.role === "CLIENT") {
     // Read entitlement from the DB row (source of truth) — never from
     // user-writable Supabase metadata, which a free user can self-set to 'paid'.
     if (entitlementOf(me) !== "paid") {
-      return NextResponse.json(
-        { error: "Upgrade to Full to create your own workouts.", code: "upgrade_required" },
-        { status: 403 },
-      );
+      const saved = await prisma.workoutTemplate.count({ where: { ownerId: me.id } });
+      if (saved >= FREE_TEMPLATE_LIMIT) {
+        return NextResponse.json(
+          {
+            error: `Free includes ${FREE_TEMPLATE_LIMIT} saved templates. Upgrade to Full for unlimited templates.`,
+            code: "upgrade_required",
+          },
+          { status: 403 },
+        );
+      }
     }
   }
 

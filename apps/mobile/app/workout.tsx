@@ -63,6 +63,7 @@ import {
   exercisesByCategory,
   FUNNEL,
   canSaveRoutine,
+  isFullAccess,
   mmss,
   type SessionBlock,
   type LoggedSession,
@@ -1671,23 +1672,32 @@ function Summary({
 
 // Save the just-finished workout as a reusable routine (WorkoutTemplate) so it
 // can be loaded and started next time. Non-guest only (routines need an account).
-// Saving a routine is a FULL feature (canSaveRoutine) — free users get an upsell
-// here instead of a "sign in and try again" error; logging/building one-offs
-// stays free.
+// Free users can keep up to FREE_TEMPLATE_LIMIT saved routines (canSaveRoutine)
+// — at the limit they get an upsell here instead of a "sign in and try again"
+// error; logging/building one-offs stays free.
 function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
   const C = useTheme().palette;
   const R = auroraRadii(useTemplate().template === "aurora");
   const router = useRouter();
-  const allowed = canSaveRoutine(usePersona());
+  const persona = usePersona();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(title || "Routine");
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
+  // Free users are capped — fetch the saved count so the card upsells up-front
+  // at the limit instead of failing on save. Full users skip the round-trip.
+  const [savedCount, setSavedCount] = useState(0);
+  const isFree = !isFullAccess(persona);
+  useEffect(() => {
+    if (isFree) fetchRoutines().then((rs) => setSavedCount(rs.length)).catch(() => {});
+  }, [isFree]);
+  const allowed = canSaveRoutine(persona, savedCount);
 
   if (state === "saved")
     return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("summary.routineSaved")}</Mono>;
 
-  // Free user → upsell card (routines are Full; logging/building stays free).
-  if (!allowed)
+  // Free user at the routine limit → upsell card (a stale count that lets a
+  // save through still lands here when it fails); logging/building stays free.
+  if (!allowed || state === "upsell")
     return (
       <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
         <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 1 }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Mono>
@@ -1714,7 +1724,15 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
   const save = async () => {
     setState("saving");
     const ok = await createRoutine(name.trim() || "Routine", blocks);
-    setState(ok ? "saved" : "idle");
+    if (ok) { setState("saved"); return; }
+    // A free save can fail because a stale count let it through the gate —
+    // re-check: at the limit it's the upsell, otherwise back to idle.
+    if (isFree) {
+      const fresh = await fetchRoutines().catch(() => null);
+      if (fresh) setSavedCount(fresh.length);
+      if (fresh && !canSaveRoutine(persona, fresh.length)) { setState("upsell"); return; }
+    }
+    setState("idle");
   };
 
   return (
