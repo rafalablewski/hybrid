@@ -37,7 +37,23 @@ export async function GET(request: Request) {
   await grab("rtpProtocols", () => prisma.rtpProtocol.findMany({ where: { userId: id } }));
   await grab("videoAnalyses", () => prisma.videoAnalysis.findMany({ where: { userId: id } }));
   await grab("talentProfile", () => prisma.talentProfile.findMany({ where: { userId: id } }));
-  await grab("connections", () => prisma.connection.findMany({ where: { userId: id } }));
+  // SECURITY: never serialize the OAuth access/refresh tokens into the export
+  // (they'd leak live third-party credentials into a downloadable/emailed file,
+  // plaintext when TOKEN_ENCRYPTION_KEY is unset). Select only non-secret fields.
+  await grab("connections", () =>
+    prisma.connection.findMany({
+      where: { userId: id },
+      select: {
+        id: true,
+        provider: true,
+        status: true,
+        scope: true,
+        expiresAt: true,
+        lastSyncAt: true,
+        createdAt: true,
+      },
+    }),
+  );
   await grab("coachLinks", () => prisma.coachLink.findMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }));
 
   const payload = {

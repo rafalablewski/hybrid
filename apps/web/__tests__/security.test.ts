@@ -85,6 +85,23 @@ describe("data protection: tokens never leak", () => {
     const conn = read(join(APP_ROOT, "app", "api", "connections", "route.ts"));
     expect(conn).not.toMatch(/accessToken|refreshToken/);
   });
+  it("no Connection findMany is unprojected (a bare findMany returns the tokens)", () => {
+    // The accessToken:true check above misses the real leak vector: a
+    // findMany with NO `select` returns EVERY column — including the OAuth
+    // tokens — straight into a response (this is exactly how /account/export
+    // leaked them). Require an explicit `select` on every Connection findMany.
+    const offenders = apiRoutes.filter((f) => {
+      const calls = read(f).match(/connection\.findMany\(\{[\s\S]*?\}\s*\)/g) ?? [];
+      return calls.some((c) => !/\bselect\s*:/.test(c));
+    });
+    expect(offenders, `Connection findMany without select in:\n${offenders.join("\n")}`).toEqual([]);
+  });
+  it("the account export never serializes OAuth tokens", () => {
+    const exp = read(join(APP_ROOT, "app", "api", "account", "export", "route.ts"));
+    // tokens must not be selected true, and the connection read must project.
+    expect(exp).not.toMatch(/(accessToken|refreshToken)\s*:\s*true/);
+    expect(exp).toMatch(/connection\.findMany\([\s\S]*?select\s*:/);
+  });
 });
 
 describe("xss: no raw HTML injection", () => {
