@@ -18,6 +18,7 @@ import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS }
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import { LegalLinks } from "../legal-links";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Theme picker swatches — a mini colour preview per template (shared shape with
@@ -319,6 +320,9 @@ export default function AuroraSettings() {
           <Pressable onPress={del} disabled={!armedDelete || deleting} accessibilityRole="button" accessibilityLabel={t("settings.deleteAccount")} style={{ backgroundColor: armedDelete && !deleting ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
             {deleting ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.deleteAccount")}</Text>}
           </Pressable>
+        </Section>
+        <Section label={t("legal.section")}>
+          <LegalLinks align="left" />
         </Section>
       </>
         );

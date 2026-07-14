@@ -638,6 +638,12 @@ export default function AccountSettings() {
                 </button>
               </div>
             </div>
+
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>
+              <a href="/privacy" style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textDecoration: "underline" }}>{t("legal.privacy")}</a>
+              <span style={{ ...mono, fontSize: fs.caption, color: txt(ASH), margin: "0 8px" }}>{t("legal.and")}</span>
+              <a href="/terms" style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textDecoration: "underline" }}>{t("legal.terms")}</a>
+            </div>
           </Section>
         );
       default:

@@ -9,6 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading, ABack } from "./kit";
+import { LegalLinks } from "../legal-links";
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
  *  same Supabase auth flow as the classic login screen. */
@@ -190,6 +191,8 @@ export default function AuroraLogin() {
           {t("w.account.login.anon-key-hint")}
         </Text>
       )}
+
+      <LegalLinks agree />
     </AuroraScreen>
   );
 }
