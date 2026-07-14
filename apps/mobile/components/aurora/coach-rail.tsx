@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
-import { getCoaches, follow } from "../../lib/social-api";
+import { getCoaches } from "../../lib/social-api";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
@@ -20,7 +20,6 @@ function initials(name: string) {
 export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
   const C = useTheme().palette;
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
-  const [followed, setFollowed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -29,12 +28,6 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
   }, []);
 
   const items = coaches ?? coachRailItems(null);
-
-  const doFollow = async (c: DiscoverCoach) => {
-    if (!c.userId) { onOpen(); return; }
-    setFollowed((f) => ({ ...f, [c.userId!]: true }));
-    try { await follow({ followeeId: c.userId }); } catch { /* best-effort */ }
-  };
 
   return (
     <View style={{ marginTop: headerless ? 0 : 18 }}>
@@ -48,36 +41,35 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
         </View>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={228} decelerationRate="fast" contentContainerStyle={{ gap: 12, paddingRight: 8 }}>
-        {items.map((c, i) => {
-          const isFollowing = c.userId ? followed[c.userId] : false;
-          return (
-            <View key={c.userId ?? c.handle ?? String(i)} style={{ width: 216, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 16 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <Pressable onPress={onOpen} style={{ width: 48, height: 48, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: C.ash, fontFamily: F.mono, fontWeight: "700", fontSize: 14 }}>{initials(c.name)}</Text>
-                </Pressable>
-                <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
-                  <Text style={{ fontSize: 11, marginTop: 2 }}>
-                    {c.rating == null ? <Text style={{ color: C.ash, fontFamily: F.mono }}>New</Text> : (
-                      <Text><Text style={{ color: C.gold }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
-                    )}
-                  </Text>
-                </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" contentContainerStyle={{ gap: 12, paddingRight: 8 }}>
+        {items.map((c, i) => (
+          <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16 }}>
+            <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 16 }}>
+              <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
               </View>
-              <Text numberOfLines={2} style={{ color: C.ash, fontSize: 12.5, marginTop: 10, lineHeight: 17, minHeight: 34 }}>{c.headline}</Text>
-              <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 8, minHeight: 26 }}>
-                {c.specialties.slice(0, 2).map((s) => (
-                  <View key={s} style={{ paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.chalk, fontSize: 11 }}>{s}</Text></View>
-                ))}
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
+                {c.rating == null ? (
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, marginTop: 4 }}>New</Text>
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                    <Text style={{ color: C.gold, fontSize: 12 }}>★</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.mono, fontSize: 12 }}>{c.rating.toFixed(1)}</Text>
+                    {c.reviews ? <Text style={{ color: `${C.ash}b3`, fontFamily: F.mono, fontSize: 12 }}>{c.reviews} reviews</Text> : null}
+                  </View>
+                )}
               </View>
-              <Pressable onPress={() => doFollow(c)} style={{ marginTop: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: "transparent", alignItems: "center" }}>
-                <Text style={{ color: isFollowing ? C.ash : C.chalk, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase" }}>{isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}</Text>
-              </Pressable>
             </View>
-          );
-        })}
+            <Text numberOfLines={2} style={{ color: C.ash, fontSize: 12.5, marginTop: 12, lineHeight: 17, minHeight: 34 }}>{c.headline}</Text>
+            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 12, minHeight: 24 }}>
+              {c.specialties.slice(0, 2).map((s) => (
+                <View key={s} style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>{s}</Text></View>
+              ))}
+            </View>
+          </Pressable>
+        ))}
       </ScrollView>
     </View>
   );

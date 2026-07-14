@@ -6,7 +6,8 @@ import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 // "Follow a coach" — a horizontally swipeable rail on Today. Pulls the live
 // marketplace (/api/coaches); until coaches publish storefronts it shows the
 // shared placeholder people (coachRailItems falls back), so the section is never
-// empty. Real coaches get a working Follow; placeholders route to the marketplace.
+// empty. Each card is a single tap-target (a chevron says so) that opens the
+// coach / marketplace, where following happens — no inline button.
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -15,24 +16,28 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[1]?.[0] ?? "")).toUpperCase() || "C";
 }
 
-function Stars({ rating }: { rating: number | null }) {
+// Rating as a single gold star + the score, with an optional faint review count —
+// calmer than a five-star row, and the number does the work.
+function Stars({ rating, reviews }: { rating: number | null; reviews?: number }) {
   if (rating == null) return <span style={{ color: C("ash"), fontSize: 11, fontFamily: "var(--font-mono)" }}>New</span>;
-  const full = Math.round(rating);
   return (
-    <span style={{ fontSize: 11, color: C("gold"), letterSpacing: 0.5 }}>
-      {"★".repeat(full)}
-      <span style={{ color: C("line") }}>{"★".repeat(5 - full)}</span>
-      <span style={{ color: C("ash"), fontFamily: "var(--font-mono)", marginLeft: 3 }}>{rating.toFixed(1)}</span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontSize: 12 }}>
+      <span style={{ color: C("gold") }}>★</span>
+      <span style={{ color: C("chalk") }}>{rating.toFixed(1)}</span>
+      {reviews ? <span style={{ color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>{reviews} reviews</span> : null}
     </span>
   );
 }
+
+const Chevron = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
 
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
 // parent (Explore) can supply the shared, unified SectionHead instead. Today
 // keeps the default header.
 export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
-  const [followed, setFollowed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -44,12 +49,6 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
   }, []);
 
   const items = coaches ?? coachRailItems(null);
-
-  const follow = async (c: DiscoverCoach) => {
-    if (!c.userId) { onOpen(); return; }
-    setFollowed((f) => ({ ...f, [c.userId!]: true }));
-    try { await fetch("/api/social/follow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ followeeId: c.userId }) }); } catch { /* best-effort */ }
-  };
 
   return (
     <div style={{ marginTop: headerless ? 0 : 18 }}>
@@ -64,37 +63,34 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
       )}
 
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 4 }}>
-        {items.map((c, i) => {
-          const isFollowing = c.userId ? followed[c.userId] : false;
-          return (
-            <div
-              key={c.userId ?? c.handle ?? i}
-              style={{ scrollSnapAlign: "start", flex: "0 0 auto", width: 216, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={onOpen} aria-label={`Open ${c.name}`} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("ash"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0 }}>{initials(c.name)}</button>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {c.name}{c.verified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
-                  </div>
-                  <div style={{ marginTop: 2 }}><Stars rating={c.rating} /></div>
+        {items.map((c, i) => (
+          <div
+            key={c.userId ?? c.handle ?? i}
+            onClick={onOpen}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+            aria-label={`Open ${c.name}`}
+            style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 220, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+          >
+            <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, paddingRight: 18 }}>
+              <span style={{ width: 46, height: 46, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("ash"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {c.name}{c.verified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
                 </div>
+                <div style={{ marginTop: 4 }}><Stars rating={c.rating} reviews={c.reviews} /></div>
               </div>
-              <div style={{ color: C("ash"), fontSize: 12.5, marginTop: 10, lineHeight: 1.4, minHeight: 34 }}>{c.headline}</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, minHeight: 26 }}>
-                {c.specialties.slice(0, 2).map((s) => (
-                  <span key={s} style={{ fontSize: 11, padding: "3px 9px", borderRadius: 999, background: C("card"), border: `1px solid ${C("line")}`, color: C("chalk") }}>{s}</span>
-                ))}
-              </div>
-              <button
-                onClick={() => follow(c)}
-                style={{ marginTop: 12, width: "100%", padding: "9px 0", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isFollowing ? C("ash") : C("chalk"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer" }}
-              >
-                {isFollowing ? "Following" : c.placeholder ? "View" : "Follow"}
-              </button>
             </div>
-          );
-        })}
+            <div style={{ color: C("ash"), fontSize: 12.5, marginTop: 12, lineHeight: 1.4, minHeight: 34 }}>{c.headline}</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12, minHeight: 24 }}>
+              {c.specialties.slice(0, 2).map((s) => (
+                <span key={s} style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", padding: "5px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, color: C("ash") }}>{s}</span>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
