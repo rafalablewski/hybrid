@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Feeling Log — 5 Redesign Ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;--amber:#d0cd94;--amber-text:#d0cd94;
+    --red:#d56f3e;--red-text:#e58a5c;--violet:#8296c4;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  /* ---------- page head ---------- */
+  .page-head{max-width:1320px;margin:0 auto 44px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:720px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .brief{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font:600 12px/1 var(--mono);color:var(--ash);background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:999px;display:flex;align-items:center;gap:7px}
+  .tag b{color:var(--chalk);font-weight:700}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .dot.p{background:var(--lime)}.dot.g{background:var(--blue-text)}.dot.f{background:var(--amber)}.dot.w{background:var(--red-text)}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(370px,1fr));gap:56px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:410px}
+  .cap{margin:0 4px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .cap .state{margin-top:9px;display:inline-flex;gap:7px;flex-wrap:wrap}
+  .cap .state span{font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+  .cap .state span b{color:var(--lime-text);font-weight:700}
+
+  /* ---------- phone ---------- */
+  .phone{position:relative;width:100%;aspect-ratio:390/812;border-radius:48px;padding:11px;
+    background:linear-gradient(160deg,#2a2e21,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:15px 26px 2px;font-size:14px;font-weight:700;flex:none}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:13px}
+  .bat{background:var(--lime);color:#161608;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .body{flex:1;overflow:hidden;padding:14px 20px 20px;display:flex;flex-direction:column}
+  .eyebrow{font:700 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .h-lg{font-size:28px;font-weight:800;letter-spacing:-.03em;margin-top:8px}
+  .sub{color:var(--ash);font-size:13px;line-height:1.5;margin-top:6px}
+
+  /* face node */
+  .face{display:inline-grid;place-items:center;flex:none}
+
+  /* shared card */
+  .kard{background:var(--ink2);border:1px solid var(--line);border-radius:22px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+
+  /* pills / buttons */
+  .cta{width:100%;border:none;border-radius:999px;background:var(--lime);color:var(--on-accent);font:800 16px var(--sans);padding:16px;cursor:pointer;text-align:center}
+  .cta.ghost{background:transparent;color:var(--ash);border:1px solid var(--line)}
+  .cta.lock{background:var(--ink2);color:var(--ash2);border:1px solid var(--line);cursor:default}
+  .lockrow{display:flex;align-items:center;justify-content:center;gap:8px}
+
+  /* ============ 01 · PULSE TIMELINE ============ */
+  .spine{position:relative;margin-top:20px;padding-left:6px;flex:1}
+  .tl{position:relative;display:flex;gap:16px;padding-bottom:22px}
+  .tl::before{content:"";position:absolute;left:23px;top:44px;bottom:-4px;width:2px;background:var(--line)}
+  .tl:last-of-type::before{display:none}
+  .tl .node{width:48px;height:48px;border-radius:16px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;flex:none;z-index:1}
+  .tl .meta{padding-top:4px}
+  .tl .meta .t{font:700 11px/1 var(--mono);color:var(--ash);letter-spacing:.06em}
+  .tl .meta .lab{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+  .tl .meta .lab.p{color:var(--lime-text)}.tl .meta .lab.g{color:var(--blue-text)}.tl .meta .lab.f{color:var(--amber-text)}.tl .meta .lab.w{color:var(--red-text)}
+  .tl .meta .d{font-size:12px;color:var(--ash);margin-top:3px;line-height:1.4}
+  .lognow{margin-top:auto;border-top:1px solid var(--line);padding-top:16px}
+  .lognow .q{font-size:15px;font-weight:700}
+  .quickrow{display:flex;gap:9px;margin-top:12px}
+  .quickrow button{flex:1;aspect-ratio:1;border-radius:16px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;transition:border-color .15s}
+  .quickrow button:hover{border-color:var(--line2)}
+  .hint{font:600 11px/1.4 var(--mono);color:var(--ash2);text-align:center;margin-top:11px}
+
+  /* ============ 02 · COOLDOWN DIAL ============ */
+  .dialwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .dial{position:relative;width:230px;height:230px}
+  .dial svg{transform:rotate(-90deg)}
+  .dial .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+  .dial .center .lab{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--blue-text)}
+  .dial .center .ago{font:600 11px/1 var(--mono);color:var(--ash);text-transform:uppercase;letter-spacing:.08em}
+  .count{text-align:center;margin-top:6px}
+  .count .big{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .count .cap2{font:600 11px/1 var(--mono);color:var(--ash);text-transform:uppercase;letter-spacing:.14em;margin-top:6px}
+  .todaymini{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:4px}
+  .todaymini .chip{display:flex;align-items:center;gap:7px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:6px 11px 6px 8px;font:700 11px/1 var(--mono);color:var(--ash)}
+
+  /* ============ 03 · DAY WINDOWS ============ */
+  .winlist{display:flex;flex-direction:column;gap:12px;margin-top:20px;flex:1}
+  .win{display:flex;align-items:center;gap:15px;padding:16px;border-radius:20px;border:1px solid var(--line);background:var(--ink2)}
+  .win.now{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 8%,transparent)}
+  .win .ic{width:52px;height:52px;border-radius:16px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .win.now .ic{background:var(--ink);border-color:var(--lime)}
+  .win .txt{flex:1;min-width:0}
+  .win .txt .w{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .win .txt .v{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:5px}
+  .win .txt .v.p{color:var(--lime-text)}.win .txt .v.g{color:var(--blue-text)}.win .txt .v.muted{color:var(--chalk)}
+  .win .txt .tm{font:600 11px/1 var(--mono);color:var(--ash);margin-top:4px}
+  .win .go{font:800 13px var(--sans);color:var(--on-accent);background:var(--lime);border-radius:999px;padding:10px 16px;flex:none;border:none;cursor:pointer}
+  .win .done{font:700 11px/1 var(--mono);color:var(--ash2);flex:none;letter-spacing:.06em}
+  .winfoot{margin-top:auto;font:600 11px/1.5 var(--mono);color:var(--ash2);text-align:center;padding-top:14px}
+
+  /* ============ 04 · RE-LOG SHEET ============ */
+  .sheet{margin-top:auto;background:var(--ink2);border-radius:28px 28px 0 0;border:1px solid var(--line);border-bottom:none;margin-left:-20px;margin-right:-20px;margin-bottom:-20px;padding:14px 20px 26px;box-shadow:0 -30px 60px -20px rgba(0,0,0,.7)}
+  .grab{width:44px;height:5px;border-radius:3px;background:#3a3e34;margin:0 auto 16px}
+  .banner{display:flex;align-items:center;gap:13px;background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:16px}
+  .banner .txt{flex:1}
+  .banner .txt .a{font-size:14px;font-weight:800;letter-spacing:-.01em}
+  .banner .txt .a b{color:var(--blue-text)}
+  .banner .txt .b{font:600 11px/1 var(--mono);color:var(--ash);margin-top:5px;letter-spacing:.04em}
+  .banner .ok{font:700 10px/1 var(--mono);color:var(--lime-text);text-transform:uppercase;letter-spacing:.1em;border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);border-radius:999px;padding:6px 10px;background:color-mix(in srgb,var(--lime) 10%,transparent)}
+  .lvl{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;margin-bottom:9px;color:var(--chalk);transition:border-color .15s}
+  .lvl:hover{border-color:var(--line2)}
+  .lvl .fw{width:40px;height:40px;border-radius:12px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .lvl .name{flex:1}
+  .lvl .name .t{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .lvl .name .s{font:600 10px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ash);margin-top:4px}
+  .lvl .arr{color:var(--ash2);font-size:18px}
+  .todaystrip{display:flex;align-items:center;gap:10px;margin-top:6px;padding-top:14px;border-top:1px solid var(--line)}
+  .todaystrip .lbl{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .todaystrip .items{display:flex;gap:14px;margin-left:auto}
+  .todaystrip .items .it{display:flex;align-items:center;gap:6px;font:600 11px/1 var(--mono);color:var(--ash)}
+
+  /* ============ 05 · MOMENTUM CARD ============ */
+  .todaygrid{margin-top:18px;display:flex;flex-direction:column;gap:14px;flex:1}
+  .feelcard{padding:20px}
+  .feelcard .top{display:flex;align-items:center;justify-content:space-between}
+  .feelcard .top .lbl{font:700 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--blue-text)}
+  .feelcard .top .trend{display:flex;align-items:center;gap:6px;font:700 11px/1 var(--mono);color:var(--lime-text)}
+  .feelcard .now{display:flex;align-items:center;gap:16px;margin-top:16px}
+  .feelcard .now .big{width:64px;height:64px;border-radius:20px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .feelcard .now .txt .v{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--blue-text)}
+  .feelcard .now .txt .m{font:600 11px/1 var(--mono);color:var(--ash);margin-top:5px;letter-spacing:.04em}
+  .sparkline{display:flex;align-items:flex-end;gap:0;margin-top:18px;height:64px;position:relative;padding-top:14px}
+  .sparkline .seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+  .sparkline .seg .f{transition:transform .2s}
+  .sparkline .seg .tt{font:600 9px/1 var(--mono);color:var(--ash2);letter-spacing:.04em}
+  .sparkline::before{content:"";position:absolute;left:8%;right:8%;top:34px;height:2px;background:linear-gradient(90deg,var(--red-text),var(--amber-text),var(--blue-text),var(--lime-text));border-radius:2px;opacity:.35}
+  .feelcard .cta{margin-top:20px}
+  .othercard{padding:16px 18px;display:flex;align-items:center;gap:14px;opacity:.55}
+  .othercard .ic{width:44px;height:44px;border-radius:14px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none;font-size:20px}
+  .othercard .txt .v{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .othercard .txt .m{font:600 11px/1 var(--mono);color:var(--ash);margin-top:4px}
+  .othercard .go{margin-left:auto;font:700 12px var(--sans);color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:9px 14px}
+
+  footer{max-width:1320px;margin:60px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Recovery — Feel</div>
+  <h1>Daily feeling log <span>— five ways to log more than once</span></h1>
+  <p>Today you log how you feel <b>once and it sticks</b>. These five redesigns make the feeling log a <b>living daily signal</b>: you must log <b>at least once a day</b>, and you can re-log <b>anytime</b> — capped at <b>once every 6&nbsp;hours</b>. Each concept solves the same two states: <b>unlocked</b> (log now) and <b>cooling down</b> (a live countdown to the next check-in). Built in the Aurora system — the same faces, tokens and type the app already ships.</p>
+  <div class="brief">
+    <span class="tag"><span class="dot p"></span><b>Primed</b> grin</span>
+    <span class="tag"><span class="dot g"></span><b>Good</b> smile</span>
+    <span class="tag"><span class="dot f"></span><b>Flat</b> line</span>
+    <span class="tag"><span class="dot w"></span><b>Wrecked</b> frown</span>
+    <span class="tag">≥1× / day required</span>
+    <span class="tag">re-log max 1× / 6h</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ===================== 01 · PULSE TIMELINE ===================== -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>Pulse Timeline</div>
+      <h2>How you felt today, top to bottom</h2>
+      <p>Each log becomes a <b>node on a vertical spine</b> so a day of feelings reads as a story. The live logger sits at the bottom — tap a face to add the next reading. Answers "how has today gone?", not just "how are you now?".</p>
+      <div class="state"><span>Shown: <b>Unlocked</b></span><span>re-log = 4-face tap</span></div>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>Feel</span><span class="bat">82</span></div></div>
+      <div class="body">
+        <div class="eyebrow">Recovery — Today</div>
+        <div class="h-lg">How you're feeling</div>
+        <div class="sub">Logged twice today. Add another whenever it shifts.</div>
+        <div class="spine">
+          <div class="tl">
+            <div class="node"><span class="face" data-face="primed" data-size="30"></span></div>
+            <div class="meta"><div class="t">07:12 — MORNING</div><div class="lab p">Primed</div><div class="d">Right after coffee, pre-session.</div></div>
+          </div>
+          <div class="tl">
+            <div class="node"><span class="face" data-face="good" data-size="30"></span></div>
+            <div class="meta"><div class="t">12:40 — MIDDAY</div><div class="lab g">Good</div><div class="d">Legs a little heavy but fine.</div></div>
+          </div>
+          <div class="lognow">
+            <div class="q">How do you feel now?</div>
+            <div class="quickrow">
+              <button><span class="face" data-face="primed" data-size="30"></span></button>
+              <button><span class="face" data-face="good" data-size="30"></span></button>
+              <button><span class="face" data-face="flat" data-size="30"></span></button>
+              <button><span class="face" data-face="wrecked" data-size="30"></span></button>
+            </div>
+            <div class="hint">Last log 2h 21m ago — you can log again now</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===================== 02 · COOLDOWN DIAL ===================== -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>Cooldown Dial</div>
+      <h2>The ring fills, then it's your button</h2>
+      <p>One glanceable dial. It <b>drains as the 6h cooldown counts down</b>; the centre holds your latest feeling. When it completes, the ring turns lime and the whole dial becomes the tap-to-log target. This mock shows the <b>locked</b> state.</p>
+      <div class="state"><span>Shown: <b>Cooling down</b></span><span>3h 51m to next</span></div>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>Feel</span><span class="bat">82</span></div></div>
+      <div class="body">
+        <div class="eyebrow">Recovery — Today</div>
+        <div class="h-lg">Feeling logged</div>
+        <div class="dialwrap">
+          <div class="dial">
+            <svg width="230" height="230" viewBox="0 0 230 230">
+              <circle cx="115" cy="115" r="100" fill="none" stroke="#242724" stroke-width="14"/>
+              <circle cx="115" cy="115" r="100" fill="none" stroke="#3c787e" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="628" stroke-dashoffset="405"/>
+            </svg>
+            <div class="center">
+              <span class="face" data-face="good" data-size="66"></span>
+              <div class="lab">Good</div>
+              <div class="ago">Logged 2h 09m ago</div>
+            </div>
+          </div>
+          <div class="count">
+            <div class="big">3:51:04</div>
+            <div class="cap2">Until you can log again</div>
+          </div>
+          <div class="todaymini">
+            <div class="chip"><span class="face" data-face="primed" data-size="20"></span>07:12</div>
+            <div class="chip"><span class="face" data-face="good" data-size="20"></span>12:40</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===================== 03 · DAY WINDOWS ===================== -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Day Windows</div>
+      <h2>Morning, midday, evening slots</h2>
+      <p>The 6h cadence maps naturally onto <b>parts of the day</b>. Filled windows show the face + time; the <b>current window glows lime</b> and is the only one you can act on. The daily requirement is obvious — an empty slot reads as "not done yet".</p>
+      <div class="state"><span>Shown: <b>Mixed</b></span><span>evening = unlocked</span></div>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>Feel</span><span class="bat">82</span></div></div>
+      <div class="body">
+        <div class="eyebrow">Recovery — Today</div>
+        <div class="h-lg">Today's feeling</div>
+        <div class="sub">Two of three windows logged. One tap keeps the day complete.</div>
+        <div class="winlist">
+          <div class="win">
+            <div class="ic"><span class="face" data-face="primed" data-size="34"></span></div>
+            <div class="txt"><div class="w">Morning</div><div class="v p">Primed</div><div class="tm">Logged 07:12</div></div>
+            <div class="done">✓ Logged</div>
+          </div>
+          <div class="win">
+            <div class="ic"><span class="face" data-face="good" data-size="34"></span></div>
+            <div class="txt"><div class="w">Midday</div><div class="v g">Good</div><div class="tm">Logged 12:40</div></div>
+            <div class="done">✓ Logged</div>
+          </div>
+          <div class="win now">
+            <div class="ic"><span class="face" data-face="flat" data-size="34"></span></div>
+            <div class="txt"><div class="w">Evening — now</div><div class="v muted">How do you feel?</div><div class="tm">Window open until 22:00</div></div>
+            <button class="go">Log</button>
+          </div>
+        </div>
+        <div class="winfoot">You've met today's check-in. Extra logs are welcome.</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===================== 04 · RE-LOG SHEET ===================== -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>Re-log Sheet</div>
+      <h2>The familiar picker, now repeatable</h2>
+      <p>The smallest change from today's UI: the same four-level picker, but a <b>status banner</b> tops it with your last log + a cooldown chip, and a <b>"today" strip</b> at the foot shows every reading so far. Log again lands straight in history.</p>
+      <div class="state"><span>Shown: <b>Unlocked</b></span><span>closest to shipped UI</span></div>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>Feel</span><span class="bat">82</span></div></div>
+      <div class="body">
+        <div class="eyebrow">Recovery</div>
+        <div class="h-lg">Log your feeling</div>
+        <div class="sub">Quick tap goes to your daily check-in and your coach.</div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="banner">
+            <span class="face" data-face="good" data-size="34"></span>
+            <div class="txt"><div class="a">Last logged <b>Good</b></div><div class="b">2h 21m ago — 3rd time today</div></div>
+            <div class="ok">Unlocked</div>
+          </div>
+          <button class="lvl">
+            <div class="fw"><span class="face" data-face="primed" data-size="30"></span></div>
+            <div class="name"><div class="t">Primed</div><div class="s">Ready to attack it</div></div>
+            <div class="arr">›</div>
+          </button>
+          <button class="lvl">
+            <div class="fw"><span class="face" data-face="good" data-size="30"></span></div>
+            <div class="name"><div class="t">Good</div><div class="s">Solid, good to train</div></div>
+            <div class="arr">›</div>
+          </button>
+          <button class="lvl">
+            <div class="fw"><span class="face" data-face="flat" data-size="30"></span></div>
+            <div class="name"><div class="t">Flat</div><div class="s">A bit drained</div></div>
+            <div class="arr">›</div>
+          </button>
+          <button class="lvl">
+            <div class="fw"><span class="face" data-face="wrecked" data-size="30"></span></div>
+            <div class="name"><div class="t">Wrecked</div><div class="s">Need to back off</div></div>
+            <div class="arr">›</div>
+          </button>
+          <div class="todaystrip">
+            <span class="lbl">Today</span>
+            <div class="items">
+              <span class="it"><span class="face" data-face="primed" data-size="22"></span>07:12</span>
+              <span class="it"><span class="face" data-face="good" data-size="22"></span>12:40</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===================== 05 · MOMENTUM CARD ===================== -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Momentum Card</div>
+      <h2>A Today card that shows the trajectory</h2>
+      <p>Lives on the <b>Today home screen</b> next to Nutrition. A face-sparkline plots the day along the feeling spectrum with a <b>trend read-out</b> ("up since this morning"). The primary button flips to a live countdown when you're in cooldown.</p>
+      <div class="state"><span>Shown: <b>Unlocked</b></span><span>home-screen entry point</span></div>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>Today</span><span class="bat">82</span></div></div>
+      <div class="body">
+        <div class="eyebrow">Home — Today</div>
+        <div class="h-lg">Tuesday, 14 Jul</div>
+        <div class="todaygrid">
+          <div class="kard feelcard">
+            <div class="top"><div class="lbl">Feeling</div><div class="trend">▲ Trending up</div></div>
+            <div class="now">
+              <div class="big"><span class="face" data-face="good" data-size="42"></span></div>
+              <div class="txt"><div class="v">Good, right now</div><div class="m">2 logs today — last at 12:40</div></div>
+            </div>
+            <div class="sparkline">
+              <div class="seg"><span class="face f" data-face="wrecked" data-size="26"></span><span class="tt">Mon</span></div>
+              <div class="seg"><span class="face f" data-face="flat" data-size="26"></span><span class="tt">06:40</span></div>
+              <div class="seg"><span class="face f" data-face="primed" data-size="26"></span><span class="tt">07:12</span></div>
+              <div class="seg"><span class="face f" data-face="good" data-size="26"></span><span class="tt">12:40</span></div>
+              <div class="seg"><span class="face f" data-face="good" data-size="26"></span><span class="tt">Now</span></div>
+            </div>
+            <button class="cta">How do you feel now?</button>
+          </div>
+          <div class="kard othercard">
+            <div class="ic">🍽</div>
+            <div class="txt"><div class="v">Nutrition</div><div class="m">1,840 / 2,600 kcal</div></div>
+            <div class="go">Add meal</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<footer>
+  <b>How each handles the two states.</b> Unlocked → tap a face / press the primary and it writes a new check-in row (energy=sleep=soreness=mood set to the picked 1–5, same as today's quick picker). Cooling down → the same surface swaps to a live countdown ("3h 51m to next") and the log target is disabled until 6h since the last write. The daily requirement is a "≥1 today" nudge on Home; re-logs beyond the first are pure upside.<br>
+  Aurora tokens — ink #0c0d0c, lime #c6f84f, faces in lime / blue / amber / red. Standalone preview — no build step.
+</footer>
+
+<script>
+  function faceSVG(feeling, size){
+    var M={primed:'M12 23 Q20 31 28 23',good:'M13 23 Q20 30 27 23',flat:'M13 25 L27 25',wrecked:'M13 28 Q20 21 27 28'};
+    var C={primed:'#c6f84f',good:'#6cb6bd',flat:'#d0cd94',wrecked:'#e58a5c'};
+    var c=C[feeling]||'#8b8f86', m=M[feeling]||M.flat;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 40 40" fill="none">'
+      +'<circle cx="13" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<circle cx="27" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<path d="'+m+'" stroke="'+c+'" stroke-width="2.8" stroke-linecap="round" fill="none"/>'
+      +'</svg>';
+  }
+  document.querySelectorAll('[data-face]').forEach(function(el){
+    el.innerHTML=faceSVG(el.dataset.face, +el.dataset.size||34);
+  });
+</script>
+</body>
+</html>
