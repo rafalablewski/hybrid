@@ -16,8 +16,22 @@ export async function POST(request: Request) {
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
 
-  const users = await prisma.user.findMany({ select: { id: true }, take: 500 });
+  // Keyset-paginate by id so the daily job covers EVERY user across calls, not a
+  // silent first-500. One request processes at most PAGE users (bounded so the
+  // per-athlete engine compute below stays within the function time limit); when
+  // more remain we return `nextCursor` and the caller (cron) calls again with
+  // ?after=<nextCursor>. Ordered by id for a stable keyset walk.
+  const PAGE = 500;
+  const url = new URL(request.url);
+  const after = url.searchParams.get("after");
+  const users = await prisma.user.findMany({
+    select: { id: true },
+    orderBy: { id: "asc" },
+    ...(after ? { cursor: { id: after }, skip: 1 } : {}),
+    take: PAGE,
+  });
   const ids = users.map((u) => u.id);
+  const nextCursor = users.length === PAGE ? ids[ids.length - 1] : null;
 
   // Batch the two eligibility lookups into ONE query each (instead of 2 per user
   // = ~1,000 queries): who currently has an active RTP (injured), and who already
@@ -43,5 +57,7 @@ export async function POST(request: Request) {
   }
   if (samples.length) await prisma.riskOutcome.createMany({ data: samples });
 
-  return NextResponse.json({ written: samples.length, skipped, athletes: users.length });
+  // `nextCursor` non-null → more users remain; the caller should re-invoke with
+  // ?after=<nextCursor> until it's null. Never silently stops at a fixed cap.
+  return NextResponse.json({ written: samples.length, skipped, athletes: users.length, nextCursor });
 }

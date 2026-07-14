@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildMacrocycle } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // A user's periodized seasons. Enrolling in a plan builds a macrocycle from the
@@ -22,13 +23,9 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
-  }
-  const b = body as { goal?: unknown; eventInWeeks?: unknown; planId?: unknown };
+  const parsed = await readJsonLimited<Record<string, unknown>>(request, 32 * 1024);
+  if (parsed.error) return parsed.error;
+  const b = parsed.data as { goal?: unknown; eventInWeeks?: unknown; planId?: unknown };
   if (typeof b.goal !== "string" || !b.goal.trim()) {
     return NextResponse.json({ error: "goal is required" }, { status: 400 });
   }

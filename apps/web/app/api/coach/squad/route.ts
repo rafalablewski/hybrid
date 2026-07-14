@@ -29,9 +29,24 @@ export async function GET(request: Request) {
   // Batch both reads across the whole roster (two queries, not 2×N) and group
   // in-memory — avoids exhausting the connection pool as the roster grows.
   const clientIds = links.map((l) => l.clientId);
+  // Bound the fetch by TIME (squad readiness/adherence only looks back weeks) so
+  // it can't pull a whole roster's entire history into memory as clients age —
+  // the previous unbounded fetch would OOM the function at scale. The per-user
+  // slice(0, 120) below is a further safety cap.
+  const now = Date.now();
+  const sessionsSince = new Date(now - 90 * 24 * 60 * 60_000); // 90 days
+  const signalsSince = new Date(now - 45 * 24 * 60 * 60_000); // 45 days
   const [allRows, allSigRows] = await Promise.all([
-    prisma.session.findMany({ where: { userId: { in: clientIds }, archivedAt: null }, orderBy: { startedAt: "desc" } }),
-    prisma.signal.findMany({ where: { userId: { in: clientIds } }, orderBy: { ts: "desc" } }),
+    prisma.session.findMany({
+      where: { userId: { in: clientIds }, archivedAt: null, startedAt: { gte: sessionsSince } },
+      orderBy: { startedAt: "desc" },
+      take: 4000,
+    }),
+    prisma.signal.findMany({
+      where: { userId: { in: clientIds }, ts: { gte: signalsSince } },
+      orderBy: { ts: "desc" },
+      take: 8000,
+    }),
   ]);
   const groupBy = <T extends { userId: string }>(items: T[]) => {
     const m = new Map<string, T[]>();

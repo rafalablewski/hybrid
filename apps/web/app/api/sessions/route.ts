@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { migrateBlocks } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // The logger's backend. Both clients (web + mobile) call this.
@@ -29,14 +30,15 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
-  }
+  // Bound the write: cap the body (a workout is large but not unbounded) and
+  // throttle per-IP so the core logging path can't be used for storage/DB-bloat
+  // abuse. 256 KB comfortably fits a long, detailed session.
+  const limited = await rateLimit(request, { key: "sessions-write", limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+  const parsed = await readJsonLimited<Record<string, unknown>>(request, 256 * 1024);
+  if (parsed.error) return parsed.error;
 
-  const b = body as {
+  const b = parsed.data as {
     title?: unknown;
     blocks?: unknown;
     startedAt?: unknown;
