@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today Feel Widget — 5 Fresh Ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;--amber:#d0cd94;--amber-text:#d0cd94;
+    --red:#d56f3e;--red-text:#e58a5c;--violet:#8296c4;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  /* ---------- page head ---------- */
+  .page-head{max-width:1240px;margin:0 auto 40px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:730px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  /* ---------- "where it lives" context ---------- */
+  .context{max-width:1240px;margin:26px auto 0;display:flex;gap:26px;align-items:center;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 24px}
+  .context .lead{flex:1;min-width:240px}
+  .context .lead .e{font:700 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--lime);margin-bottom:10px}
+  .context .lead h3{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .context .lead p{color:var(--ash);font-size:13px;line-height:1.55}
+  .context .lead p b{color:var(--chalk);font-weight:600}
+  .miniphone{width:270px;flex:none}
+  .mp-frame{border-radius:26px;padding:8px;background:linear-gradient(160deg,#2a2e21,#0b0c09);box-shadow:0 24px 50px -24px rgba(0,0,0,.9)}
+  .mp-scr{background:var(--ink);border-radius:20px;padding:14px 13px 16px}
+  .mp-h{font:800 15px var(--sans);letter-spacing:-.02em;margin-bottom:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* ---------- gallery ---------- */
+  .gallery{max-width:1240px;margin:44px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:44px 32px;align-items:start}
+  .concept{width:100%}
+  .cap{margin:0 2px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  /* state pair */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .slot{display:flex;flex-direction:column;gap:9px}
+  .slot .lbl{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);display:flex;align-items:center;gap:7px}
+  .slot .lbl .d{width:8px;height:8px;border-radius:99px}
+  .slot .lbl .d.on{background:var(--lime)}.slot .lbl .d.off{background:var(--ash2)}
+
+  /* ---------- WIDGET BASE (the real Today square) ---------- */
+  .w{aspect-ratio:1/1;border-radius:24px;border:1px solid var(--line);background:var(--ink2);
+    box-shadow:0 6px 22px -12px rgba(0,0,0,.55);padding:16px;display:flex;flex-direction:column;overflow:hidden;position:relative;cursor:pointer}
+  .w.cool{cursor:default}
+  .w .name{font:700 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--blue-text);display:flex;align-items:center;justify-content:space-between}
+  .w .name .cnt{color:var(--ash);font-weight:700}
+  .face{display:inline-grid;place-items:center;flex:none}
+  .word{font-weight:800;letter-spacing:-.02em}
+  .word.p{color:var(--lime-text)}.word.g{color:var(--blue-text)}.word.f{color:var(--amber-text)}.word.w{color:var(--red-text)}
+  .meta{font:600 10px/1 var(--mono);color:var(--ash);letter-spacing:.03em}
+  .btn{margin-top:auto;border-radius:999px;text-align:center;font-weight:800;font-size:12.5px;padding:11px 0;border:none;cursor:pointer}
+  .btn.go{background:var(--lime);color:var(--on-accent)}
+  .btn.wait{background:transparent;color:var(--ash2);border:1px solid var(--line);cursor:default;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn.wait .clk{font-variant-numeric:tabular-nums;color:var(--ash)}
+
+  /* ==== 1 · SPECTRUM SLIDER ==== */
+  .spec .top{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .spec .top .word{font-size:20px}
+  .track{position:relative;height:9px;border-radius:99px;margin-top:14px;
+    background:linear-gradient(90deg,var(--red),var(--amber),var(--blue-text),var(--lime))}
+  .track.dim{filter:saturate(.35) brightness(.7)}
+  .track .ghost{position:absolute;top:50%;width:7px;height:7px;border-radius:99px;background:#fff;opacity:.32;transform:translate(-50%,-50%)}
+  .track .knob{position:absolute;top:50%;width:20px;height:20px;border-radius:99px;background:var(--chalk);border:3px solid var(--ink2);transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .track.dim .knob{background:var(--ash)}
+  .spec .foot{margin-top:auto;font:700 11px/1 var(--mono);letter-spacing:.04em}
+  .spec .foot.go{color:var(--lime-text)}
+  .spec .foot.wait{color:var(--ash2);display:flex;gap:6px}
+  .spec .foot.wait b{color:var(--ash);font-weight:700}
+
+  /* ==== 2 · SEGMENTED DAY BAR ==== */
+  .seg2 .top{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .seg2 .top .word{font-size:20px}
+  .segbar{display:flex;gap:5px;margin-top:16px}
+  .segbar .s{flex:1;height:34px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;background:var(--ink)}
+  .segbar .s.done{border-color:transparent}
+  .segbar .s.p{background:color-mix(in srgb,var(--lime) 20%,var(--ink))}
+  .segbar .s.g{background:color-mix(in srgb,var(--blue-text) 22%,var(--ink))}
+  .segbar .s.now{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 8%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 16%,transparent)}
+  .segbar .s.future{opacity:.4}
+  .seg2 .foot{margin-top:auto;font:700 11px/1 var(--mono);letter-spacing:.04em}
+  .seg2 .foot.go{color:var(--lime-text)}
+  .seg2 .foot.wait{color:var(--ash);display:flex;gap:6px}
+  .seg2 .foot.wait b{color:var(--ash2);font-weight:700}
+
+  /* ==== 3 · EMOJI HERO + METER ==== */
+  .hero{align-items:center;text-align:center}
+  .hero .name{align-self:stretch;justify-content:center}
+  .hero .big{margin:auto 0}
+  .hero .word{font-size:19px;margin-top:2px}
+  .hero .meter{align-self:stretch;height:6px;border-radius:99px;background:var(--ink);overflow:hidden;margin-top:12px}
+  .hero .meter .fill{height:100%;border-radius:99px;background:var(--lime)}
+  .hero .cta2{align-self:stretch;font:700 11px/1 var(--mono);letter-spacing:.06em;margin-top:10px;text-transform:uppercase}
+  .hero .cta2.go{color:var(--lime-text)}
+  .hero .cta2.wait{color:var(--ash);display:flex;justify-content:center;gap:6px}
+  .hero .cta2.wait b{color:var(--ash2)}
+
+  /* ==== 4 · FACE STACK / ADD ==== */
+  .stack .row{display:flex;align-items:center;margin-top:16px;min-height:52px}
+  .stack .row .av{width:44px;height:44px;border-radius:14px;background:var(--ink);border:2px solid var(--ink2);display:grid;place-items:center;margin-left:-12px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+  .stack .row .av:first-child{margin-left:0}
+  .stack .add{margin-left:auto;position:relative;width:52px;height:52px;flex:none}
+  .stack .add .ring{position:absolute;inset:0}
+  .stack .add .plus{position:absolute;inset:6px;border-radius:99px;display:grid;place-items:center;font-size:24px;font-weight:600}
+  .stack .add .plus.go{background:var(--lime);color:var(--on-accent)}
+  .stack .add .plus.wait{background:var(--ink);color:var(--ash2);border:1px solid var(--line)}
+  .stack .foot{margin-top:auto;font:700 11px/1 var(--mono);letter-spacing:.04em}
+  .stack .foot.go{color:var(--lime-text)}
+  .stack .foot.wait{color:var(--ash);display:flex;gap:6px}
+  .stack .foot.wait b{color:var(--ash2)}
+
+  /* ==== 5 · INLINE STATUS (drop-in) ==== */
+  .inline .big{display:flex;align-items:center;gap:11px;margin-top:14px}
+  .inline .big .word{font-size:27px}
+  .inline .sub{font:600 11px/1 var(--mono);color:var(--ash);margin-top:9px;letter-spacing:.03em}
+
+  footer{max-width:1240px;margin:56px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Today home — Feel widget</div>
+  <h1>The Feel widget, re-thought <span>— 5 fresh ideas</span></h1>
+  <p>Scoped to the <b>square widget on the Today home screen</b>, the one that today just flips to "Done" after a single log. Every idea makes it a <b>live daily signal</b>: log at least once a day, re-log anytime, capped once per 6h. Each is shown in its two real states — <b>Unlocked</b> (tap to log) and <b>Cooling down</b> (a live countdown to the next check-in) — at the widget's true footprint next to Nutrition.</p>
+</div>
+
+<div class="context">
+  <div class="lead">
+    <div class="e">Where it lives</div>
+    <h3>Top of Today, paired with Nutrition</h3>
+    <p>Two square widgets side by side. The Feel widget must stay <b>glanceable at ~165&nbsp;pt</b> and read its state in a single look — that constraint drives all five. Deeper history + notes stay on the Recovery screen.</p>
+  </div>
+  <div class="miniphone">
+    <div class="mp-frame"><div class="mp-scr">
+      <div class="mp-h">Today</div>
+      <div class="grid2">
+        <div class="w inline" style="cursor:default">
+          <div class="name">Feel</div>
+          <div class="big"><span class="face" data-face="good" data-size="30"></span><span class="word g">Good</span></div>
+          <div class="sub">Logged 2h ago</div>
+          <button class="btn go">Log again</button>
+        </div>
+        <div class="w" style="cursor:default">
+          <div class="name" style="color:var(--blue-text)">Nutrition</div>
+          <div style="font:900 24px var(--sans);letter-spacing:-.02em;margin-top:8px">1,840<span style="font-size:12px;color:var(--ash);font-weight:600"> / 2,600</span></div>
+          <div style="height:6px;border-radius:4px;background:var(--ink);overflow:hidden;margin-top:8px"><div style="width:70%;height:100%;background:var(--blue)"></div></div>
+          <button class="btn" style="border:1px solid var(--line);color:var(--chalk);background:transparent">Add meal</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ 1 · SPECTRUM SLIDER ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>Spectrum Slider</div>
+      <h2>The widget is the feeling spectrum</h2>
+      <p>A red→lime gradient track with a knob at your latest feeling and <b>ghost dots for earlier logs</b>. Tap or drag to log in one gesture. When cooling down the track dims and the knob locks with a countdown — the day's shape still reads at a glance.</p>
+    </div>
+    <div class="pair">
+      <div class="slot"><div class="lbl"><span class="d on"></span>Unlocked</div>
+        <div class="w spec">
+          <div class="name">Feel <span class="cnt">2 today</span></div>
+          <div class="top"><span class="face" data-face="good" data-size="30"></span><span class="word g">Good</span></div>
+          <div class="track">
+            <div class="ghost" style="left:20%"></div>
+            <div class="ghost" style="left:88%"></div>
+            <div class="knob" style="left:66%"></div>
+          </div>
+          <div class="foot go">Tap the scale to log now</div>
+        </div>
+      </div>
+      <div class="slot"><div class="lbl"><span class="d off"></span>Cooling down</div>
+        <div class="w spec cool">
+          <div class="name">Feel <span class="cnt">3 today</span></div>
+          <div class="top"><span class="face" data-face="flat" data-size="30"></span><span class="word f">Flat</span></div>
+          <div class="track dim">
+            <div class="ghost" style="left:20%"></div>
+            <div class="ghost" style="left:66%"></div>
+            <div class="knob" style="left:42%"></div>
+          </div>
+          <div class="foot wait">Next in <b>3h 51m</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2 · SEGMENTED DAY BAR ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>Segmented Day Bar</div>
+      <h2>Four blocks, one per 6h window</h2>
+      <p>The day splits into cooldown blocks. Logged blocks carry their face and colour; the <b>current block glows lime</b> and is tappable; future blocks sit dim. The daily minimum is unmistakable — an untouched block reads as "not yet".</p>
+    </div>
+    <div class="pair">
+      <div class="slot"><div class="lbl"><span class="d on"></span>Unlocked</div>
+        <div class="w seg2">
+          <div class="name">Feel <span class="cnt">now open</span></div>
+          <div class="top"><span class="face" data-face="good" data-size="28"></span><span class="word g">Good</span></div>
+          <div class="segbar">
+            <div class="s done p"><span class="face" data-face="primed" data-size="20"></span></div>
+            <div class="s done g"><span class="face" data-face="good" data-size="20"></span></div>
+            <div class="s now"></div>
+            <div class="s future"></div>
+          </div>
+          <div class="foot go">This window is open — log</div>
+        </div>
+      </div>
+      <div class="slot"><div class="lbl"><span class="d off"></span>Cooling down</div>
+        <div class="w seg2 cool">
+          <div class="name">Feel <span class="cnt">logged</span></div>
+          <div class="top"><span class="face" data-face="flat" data-size="28"></span><span class="word f">Flat</span></div>
+          <div class="segbar">
+            <div class="s done p"><span class="face" data-face="primed" data-size="20"></span></div>
+            <div class="s done g"><span class="face" data-face="good" data-size="20"></span></div>
+            <div class="s done" style="background:color-mix(in srgb,var(--amber) 22%,var(--ink))"><span class="face" data-face="flat" data-size="20"></span></div>
+            <div class="s future"></div>
+          </div>
+          <div class="foot wait">Next window in <b>3h 51m</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3 · EMOJI HERO + METER ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Face Hero + Meter</div>
+      <h2>Big face, thin cooldown line</h2>
+      <p>The boldest, simplest take: your current feeling fills the tile, one word underneath, and a <b>slim meter that refills over the 6h cooldown</b>. Full + lime = tap to log; part-full = a live timer. Reads from across the room.</p>
+    </div>
+    <div class="pair">
+      <div class="slot"><div class="lbl"><span class="d on"></span>Unlocked</div>
+        <div class="w hero">
+          <div class="name">Feel</div>
+          <div class="big"><span class="face" data-face="good" data-size="72"></span></div>
+          <div class="word g">Good</div>
+          <div class="meter"><div class="fill" style="width:100%"></div></div>
+          <div class="cta2 go">Tap to log</div>
+        </div>
+      </div>
+      <div class="slot"><div class="lbl"><span class="d off"></span>Cooling down</div>
+        <div class="w hero cool">
+          <div class="name">Feel</div>
+          <div class="big"><span class="face" data-face="good" data-size="72"></span></div>
+          <div class="word g">Good</div>
+          <div class="meter"><div class="fill" style="width:36%"></div></div>
+          <div class="cta2 wait">next <b>3h 51m</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4 · FACE STACK / ADD ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>Face Stack</div>
+      <h2>Today's logs pile up, tap + to add</h2>
+      <p>Each log drops a small face avatar into a stack — the pile itself shows how checked-in you've been. The lime <b>+</b> carries a thin ring that fills as the cooldown counts down; when the ring completes, + goes live.</p>
+    </div>
+    <div class="pair">
+      <div class="slot"><div class="lbl"><span class="d on"></span>Unlocked</div>
+        <div class="w stack">
+          <div class="name">Feel <span class="cnt">2 today</span></div>
+          <div class="row">
+            <div class="av"><span class="face" data-face="primed" data-size="26"></span></div>
+            <div class="av"><span class="face" data-face="good" data-size="26"></span></div>
+            <div class="add">
+              <svg class="ring" width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="#c6f84f" stroke-width="3"/></svg>
+              <div class="plus go">+</div>
+            </div>
+          </div>
+          <div class="foot go">Ready — log again</div>
+        </div>
+      </div>
+      <div class="slot"><div class="lbl"><span class="d off"></span>Cooling down</div>
+        <div class="w stack cool">
+          <div class="name">Feel <span class="cnt">3 today</span></div>
+          <div class="row">
+            <div class="av"><span class="face" data-face="primed" data-size="26"></span></div>
+            <div class="av"><span class="face" data-face="good" data-size="26"></span></div>
+            <div class="av"><span class="face" data-face="flat" data-size="26"></span></div>
+            <div class="add">
+              <svg class="ring" width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg)"><circle cx="26" cy="26" r="24" fill="none" stroke="#242724" stroke-width="3"/><circle cx="26" cy="26" r="24" fill="none" stroke="#6cb6bd" stroke-width="3" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="97"/></svg>
+              <div class="plus wait">+</div>
+            </div>
+          </div>
+          <div class="foot wait">Opens in <b>3h 51m</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5 · INLINE STATUS ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Inline Status</div>
+      <h2>Same footprint, now repeatable</h2>
+      <p>The lowest-risk drop-in: keeps today's square almost exactly, but the button <b>morphs</b> — a lime "Log again" when unlocked, a bordered live countdown when cooling. Big accent word + face keep it glanceable. Ships fastest.</p>
+    </div>
+    <div class="pair">
+      <div class="slot"><div class="lbl"><span class="d on"></span>Unlocked</div>
+        <div class="w inline">
+          <div class="name">Feel <span class="cnt">2 today</span></div>
+          <div class="big"><span class="face" data-face="good" data-size="34"></span><span class="word g">Good</span></div>
+          <div class="sub">Logged 2h 21m ago</div>
+          <button class="btn go">Log again</button>
+        </div>
+      </div>
+      <div class="slot"><div class="lbl"><span class="d off"></span>Cooling down</div>
+        <div class="w inline cool">
+          <div class="name">Feel <span class="cnt">3 today</span></div>
+          <div class="big"><span class="face" data-face="flat" data-size="34"></span><span class="word f">Flat</span></div>
+          <div class="sub">Logged just now</div>
+          <button class="btn wait">Next <span class="clk">3h 51m</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <b>Same mechanic under all five.</b> A tap writes a check-in row exactly like today's quick picker (energy = sleep = soreness = mood = the picked 1–5). The 6h cooldown is enforced server-side; the widget just reflects it — unlocked below 6h-since-last, a live countdown above it. "At least once a day" surfaces as the widget's default prompt when nothing's logged yet. History + notes stay on the Recovery screen. Same tokens, faces and type the app already ships. Standalone preview, no build step.
+</footer>
+
+<script>
+  function faceSVG(feeling, size){
+    var M={primed:'M12 23 Q20 31 28 23',good:'M13 23 Q20 30 27 23',flat:'M13 25 L27 25',wrecked:'M13 28 Q20 21 27 28'};
+    var C={primed:'#c6f84f',good:'#6cb6bd',flat:'#d0cd94',wrecked:'#e58a5c'};
+    var c=C[feeling]||'#8b8f86', m=M[feeling]||M.flat;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 40 40" fill="none">'
+      +'<circle cx="13" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<circle cx="27" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<path d="'+m+'" stroke="'+c+'" stroke-width="2.8" stroke-linecap="round" fill="none"/>'
+      +'</svg>';
+  }
+  document.querySelectorAll('[data-face]').forEach(function(el){
+    el.innerHTML=faceSVG(el.dataset.face, +el.dataset.size||34);
+  });
+</script>
+</body>
+</html>
