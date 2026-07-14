@@ -548,20 +548,23 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 }
 
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface
-// (Nutrition, Coaches), with a tinted glyph, title + sub, and a chevron.
+// (Nutrition, Coaches) as an "airy band": a roomy tap-target on the real palette
+// surface (ink2 + hairline), with a crafted icon tile drawn on the darker ink so
+// it lifts off the row, a display title and a mono descriptor. Same material
+// vocabulary as the cards above it, just laid out with more air.
 function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIconName; tint: string; title: string; sub: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-        <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: `${tint}26`, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name={icon} size={15} color={txt(C, tint)} />
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, flex: 1 }}>
+        <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name={icon} size={20} color={txt(C, tint)} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>{sub}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{sub}</Text>
         </View>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>›</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
     </Pressable>
   );
 }

@@ -514,17 +514,22 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface
 // (Nutrition, Coaches), with a tinted glyph, title + sub, and a chevron.
+// Recover & more — an "airy band": a roomy tap-target on the real palette
+// surface (ink2 + hairline), with a crafted icon tile that lifts off the row
+// (drawn on the darker ink so it reads as its own object), a display title and a
+// mono descriptor. The whole row is the same material vocabulary as the cards
+// above it, just laid out with more air.
 function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: string; title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 15px", cursor: "pointer", color: C("chalk") }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ width: 30, height: 30, borderRadius: 9, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(tint)} 20%, transparent)`, color: C(tint), fontSize: 14 }}>{glyph}</span>
-        <span>
-          <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{title}</span>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{sub}</span>
+    <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "15px 16px", cursor: "pointer", color: C("chalk") }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+        <span style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink"), border: `1px solid ${C("line")}`, color: C(tint), fontSize: 19 }}>{glyph}</span>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{sub}</span>
         </span>
       </span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, flexShrink: 0 }}>›</span>
     </button>
   );
 }
