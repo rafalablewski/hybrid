@@ -206,12 +206,20 @@ create or replace function public.is_active_coach(client_id text) returns boolea
 $$;
 
 -- ---- User ----------------------------------------------------------------
+-- SECURITY: PostgREST enforces column GRANTs, not policy intent. Revoke table-
+-- wide UPDATE from the API roles and re-grant only safe profile columns, so a
+-- signed-in user can't PATCH their own role/entitlement to escalate. Prisma
+-- (privileged role) is unaffected.
+revoke update on "User" from anon, authenticated;
+grant  update ("name", "language") on "User" to authenticated;
+
 drop policy if exists user_self_select on "User";
 create policy user_self_select on "User" for select
   using ("authId" = auth.uid()::text or id = public.app_user_id());
 drop policy if exists user_self_update on "User";
 create policy user_self_update on "User" for update
-  using ("authId" = auth.uid()::text);
+  using ("authId" = auth.uid()::text)
+  with check ("authId" = auth.uid()::text);
 
 -- ---- Session -------------------------------------------------------------
 drop policy if exists session_own on "Session";
@@ -238,12 +246,19 @@ create policy bio_own on "Biometric" for all
 drop policy if exists link_read on "CoachLink";
 create policy link_read on "CoachLink" for select
   using ("coachId" = public.app_user_id() or "clientId" = public.app_user_id());
+-- SECURITY: a coach may only CREATE a PENDING link; only the CLIENT may accept
+-- it (move to ACTIVE). Blocks forging {coachId: me, clientId: victim,
+-- status: ACTIVE} to read a victim's data via is_active_coach().
 drop policy if exists link_insert on "CoachLink";
 create policy link_insert on "CoachLink" for insert
-  with check ("coachId" = public.app_user_id());
+  with check ("coachId" = public.app_user_id() and status = 'PENDING');
 drop policy if exists link_update on "CoachLink";
 create policy link_update on "CoachLink" for update
-  using ("coachId" = public.app_user_id() or "clientId" = public.app_user_id());
+  using ("coachId" = public.app_user_id() or "clientId" = public.app_user_id())
+  with check (
+    ("coachId" = public.app_user_id() or "clientId" = public.app_user_id())
+    and (status <> 'ACTIVE' or "clientId" = public.app_user_id())
+  );
 
 -- ---- CoachNote -----------------------------------------------------------
 drop policy if exists note_read on "CoachNote";
@@ -418,3 +433,15 @@ alter table if exists "EmailSequenceStep"   enable row level security;
 alter table if exists "EmailEnrollment"     enable row level security;
 alter table if exists "EmailMessage"        enable row level security;
 alter table if exists "EmailSuppression"    enable row level security;
+
+-- Stripe idempotency ledger — server-only (deny-all to PostgREST).
+alter table if exists "ProcessedWebhookEvent" enable row level security;
+
+-- ===========================================================================
+-- 5. Blanket hardening — no anonymous PostgREST access to application tables.
+--    Every client goes through /api (Prisma); no client uses the anon key for
+--    table data (only Storage). Revoke the unauthenticated grant behind the
+--    per-table policies above. storage.objects RLS is unaffected.
+-- ===========================================================================
+revoke all on all tables in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;

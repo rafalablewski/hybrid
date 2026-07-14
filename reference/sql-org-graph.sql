@@ -45,23 +45,26 @@ alter table "Organization" enable row level security;
 alter table "Team" enable row level security;
 alter table "Membership" enable row level security;
 
--- Organization: members read; anyone signed-in may create (becomes OWNER via API).
+-- SECURITY: the org graph is created and mutated exclusively through the /api
+-- layer (Prisma, privileged role) with role checks (canAssignRole etc.). All
+-- WRITES are therefore server-only here — no `with check (true)` / member-wide
+-- write, which previously let anyone self-join ANY org as OWNER via the anon key
+-- (self-insert Membership) or create orgs / restructure teams directly. Only the
+-- member-scoped READS are exposed to PostgREST as defense-in-depth.
+
+-- Organization: members read; creation is server-only.
 drop policy if exists org_read on "Organization";
 create policy org_read on "Organization" for select using (public.is_org_member("id"));
-drop policy if exists org_insert on "Organization";
-create policy org_insert on "Organization" for insert with check (true);
+drop policy if exists org_insert on "Organization";  -- was `with check (true)` — removed (server-only)
 
--- Team: members of the owning org read; managers write (checked in API).
+-- Team: members read; writes are server-only.
 drop policy if exists team_read on "Team";
 create policy team_read on "Team" for select using (public.is_org_member("orgId"));
-drop policy if exists team_write on "Team";
-create policy team_write on "Team" for all
-  using (public.is_org_member("orgId")) with check (public.is_org_member("orgId"));
+drop policy if exists team_write on "Team";           -- was member-wide `for all` — removed (server-only)
 
--- Membership: you can read rows of any org you belong to; you can insert your
--- own first membership (OWNER on org create).
+-- Membership: members read their org's rows; inserts/updates are server-only
+-- (an invite is materialized into a membership by the API, with the role checked
+-- there). Self-insert is removed so a user can't grant themselves OWNER anywhere.
 drop policy if exists member_read on "Membership";
 create policy member_read on "Membership" for select using (public.is_org_member("orgId"));
-drop policy if exists member_self_insert on "Membership";
-create policy member_self_insert on "Membership" for insert
-  with check ("userId" = public.app_user_id());
+drop policy if exists member_self_insert on "Membership";  -- removed (server-only)
