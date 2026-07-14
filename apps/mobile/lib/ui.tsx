@@ -196,44 +196,59 @@ export function GlassField() {
   );
 }
 
+/** The scroll bottom-inset a Screen reserves so content clears the floating
+ *  Aurora pill nav (classic keeps the tight 48). Exported so a screen that
+ *  supplies its OWN scroller (a FlatList via `Screen scroll={false}`) can apply
+ *  the same clearance to its contentContainerStyle. */
+export function useScreenBottomPad(): number {
+  const aurora = useTemplate().template === "aurora";
+  const insets = useSafeAreaInsets();
+  return aurora ? auroraScrollClearance(insets.bottom) : 48;
+}
+
 export function Screen({
   children,
   refreshing,
   onRefresh,
+  scroll = true,
 }: {
   children: ReactNode;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** false → render a plain flex container instead of a ScrollView, so the
+   *  screen can supply its own virtualized scroller (a FlatList). The caller
+   *  then owns the RefreshControl + contentContainerStyle padding (see
+   *  useScreenBottomPad). */
+  scroll?: boolean;
 }) {
   const { palette } = useTheme();
-  // Aurora renders a FLOATING pill nav over every screen (incl. pushed pages),
-  // so the last bit of content (share buttons, sign-out, the Builder CTA) would
-  // sit UNDER the bar. Reserve room for it so everything stays scrollable into
-  // view. Classic keeps the tight padding (its bar is a real, laid-out tab bar).
-  const aurora = useTemplate().template === "aurora";
-  const insets = useSafeAreaInsets();
+  const padBottom = useScreenBottomPad();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
       {/* Lift the form above the keyboard so low inputs/submit buttons aren't
           hidden when the keyboard opens (no screen had keyboard avoidance). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView
-          contentContainerStyle={{ padding: 18, paddingBottom: aurora ? auroraScrollClearance(insets.bottom) : 48 }}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            onRefresh ? (
-              <RefreshControl
-                refreshing={!!refreshing}
-                onRefresh={onRefresh}
-                tintColor={palette.lime}
-                colors={[palette.lime]}
-              />
-            ) : undefined
-          }
-        >
-          {children}
-        </ScrollView>
+        {scroll ? (
+          <ScrollView
+            contentContainerStyle={{ padding: 18, paddingBottom: padBottom }}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={!!refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={palette.lime}
+                  colors={[palette.lime]}
+                />
+              ) : undefined
+            }
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={{ flex: 1 }}>{children}</View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
