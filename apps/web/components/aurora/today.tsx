@@ -86,8 +86,9 @@ export default function AuroraToday({
   onNavigate?: (screen: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
-  /** True while the first sessions fetch is in flight — suppresses the
-   *  cold-start chooser so returning athletes don't see a false flash. */
+  /** True while the first sessions OR enrollment fetch is in flight —
+   *  suppresses the cold-start chooser so an already-enrolled athlete never
+   *  sees the "How do you want to start?" flash before their plan resolves. */
   loading?: boolean;
 }) {
   const router = useRouter();
@@ -256,7 +257,10 @@ export default function AuroraToday({
             // top row then carries only the readiness ring (athlete). Other
             // states keep the compact top-right Start.
             const showRing = isAthlete && (hasData || plan || phase);
-            const showTopStart = !plan;
+            // While the first sessions/enrollment fetch is in flight we don't
+            // yet know if they're on a plan — hold the top Start back so it
+            // doesn't flash in and vanish once the plan (or rail) resolves.
+            const showTopStart = !plan && !loading;
             if (!showRing && !showTopStart) return null;
             return (
               <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
@@ -347,6 +351,16 @@ export default function AuroraToday({
                 {t("w.home.today.start")}
               </button>
             </>
+          ) : loading ? (
+            // Cold start — sessions AND enrollment are still loading, so we
+            // can't yet tell an enrolled athlete from a first-run one. Show a
+            // skeleton (not the chooser, not a stand-in AI session) so the plan
+            // simply appears once it resolves, with no "How do you want to
+            // start?" flash in between.
+            <>
+              <div style={{ height: 24, width: "60%", borderRadius: 8, background: C("line"), opacity: 0.5, margin: "8px 0 10px" }} />
+              <div style={{ height: 12, width: "90%", borderRadius: 6, background: C("line"), opacity: 0.35 }} />
+            </>
           ) : isAthlete && (hasData || phase) ? (
             // PREMIUM only — the real readiness-driven AI prescription. Casual
             // users fall through to the encouraging chooser (no fabricated
@@ -362,11 +376,6 @@ export default function AuroraToday({
                 />
               )}
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
-            </>
-          ) : loading ? (
-            <>
-              <div style={{ height: 24, width: "60%", borderRadius: 8, background: C("line"), opacity: 0.5, margin: "8px 0 10px" }} />
-              <div style={{ height: 12, width: "90%", borderRadius: 6, background: C("line"), opacity: 0.35 }} />
             </>
           ) : (
             <>
