@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { csrfCheck } from "@hybrid/core";
 
-// Edge middleware doing three jobs:
+// Edge middleware doing four jobs:
 //
 // 1. CSRF protection for the cookie-authenticated web app: every state-changing
 //    /api request must carry a same-origin Origin/Referer. Bearer (mobile) calls
@@ -14,6 +15,14 @@ import { csrfCheck } from "@hybrid/core";
 //    uses inline styles; fonts.googleapis/​gstatic + Supabase are allow-listed.
 //
 // 3. Forward-looking: an `admin.` host root is rewritten onto /admin.
+//
+// 4. Supabase auth-session refresh (the standard @supabase/ssr pattern): Server
+//    Components can't WRITE cookies, so if the access token expired between
+//    visits, SSR would render from a stale session until the client refreshed
+//    it. Middleware is the one place that can rotate the token server-side —
+//    getUser() refreshes it and the rotated cookies are written onto both the
+//    downstream request (so this render sees them) and the response (so the
+//    browser stores them).
 
 function buildCsp(nonce: string, dev: boolean): string {
   const scriptSrc = dev
@@ -42,7 +51,7 @@ function makeNonce(): string {
   return btoa(bin);
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // --- 1. CSRF on API mutations ---
@@ -64,22 +73,54 @@ export function middleware(req: NextRequest) {
   // --- 2. Nonce + strict CSP for HTML routes ---
   const nonce = makeNonce();
   const csp = buildCsp(nonce, process.env.NODE_ENV !== "production");
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-nonce", nonce);
-  // Next reads the CSP from the REQUEST headers to nonce its own scripts.
-  requestHeaders.set("content-security-policy", csp);
 
   // --- 3. admin.* host rewrite (root only) ---
+  // Response construction is a factory because the auth refresh below may need
+  // to REBUILD the response after rotating cookies (headers are re-derived from
+  // req so the refreshed Cookie header flows through to the SSR render).
   const host = (req.headers.get("host") ?? "").split(":")[0] ?? "";
-  const init = { request: { headers: requestHeaders } };
-  let res: NextResponse;
-  if (host.startsWith("admin.") && pathname === "/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/admin";
-    res = NextResponse.rewrite(url, init);
-  } else {
-    res = NextResponse.next(init);
+  const makeRes = (): NextResponse => {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-nonce", nonce);
+    // Next reads the CSP from the REQUEST headers to nonce its own scripts.
+    requestHeaders.set("content-security-policy", csp);
+    const init = { request: { headers: requestHeaders } };
+    if (host.startsWith("admin.") && pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin";
+      return NextResponse.rewrite(url, init);
+    }
+    return NextResponse.next(init);
+  };
+  let res = makeRes();
+
+  // --- 4. Supabase session refresh (only when an auth cookie is present, so
+  // logged-out traffic never pays the auth round-trip; demo mode — no env —
+  // skips entirely). Best-effort: a refresh hiccup must never block the page. ---
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (supaUrl && supaKey && req.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
+    try {
+      const supabase = createServerClient(supaUrl, supaKey, {
+        cookies: {
+          getAll: () => req.cookies.getAll(),
+          setAll: (cookiesToSet) => {
+            // Rotated tokens: onto the request (mutates its Cookie header) so
+            // this render's Server Components see the fresh session…
+            for (const { name, value } of cookiesToSet) req.cookies.set(name, value);
+            res = makeRes();
+            // …and onto the response so the browser persists them.
+            for (const { name, value, options } of cookiesToSet) res.cookies.set(name, value, options);
+          },
+        },
+      });
+      // Triggers the token refresh when expired; result itself is unused here.
+      await supabase.auth.getUser();
+    } catch {
+      // never block a page on the auth refresh
+    }
   }
+
   res.headers.set("content-security-policy", csp);
   return res;
 }
