@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
-import { iapAvailable, purchaseFull } from "../../lib/iap";
+import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
+import { LegalLinks } from "../legal-links";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
@@ -32,7 +33,16 @@ export default function AuroraUpgrade() {
   const paid = useSession().entitlement === "paid";
 
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState("");
+  // Localized StoreKit price (App Store requires the real, currency-correct price
+  // on the paywall, not a hardcoded number). Falls back to the display copy below.
+  const [price, setPrice] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetchFullPrice().then((p) => { if (active && p) setPrice(p); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   // Slide-up entrance: 1 = off-screen (down), 0 = resting (up). The scrim fades
   // in with it, and a dismiss slides it back down before popping the modal.
@@ -77,6 +87,21 @@ export default function AuroraUpgrade() {
     } else {
       setError(res.error ?? "Couldn't start checkout — try again.");
     }
+  };
+
+  const restore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    setError("");
+    const res = await restorePurchases();
+    if (res.ok) {
+      await supabase.auth.refreshSession().catch(() => {});
+      setRestoring(false);
+      close();
+      return;
+    }
+    setRestoring(false);
+    if (!res.cancelled) setError(res.error ?? t("w.account.upgrade.restore-none"));
   };
 
   return (
@@ -124,7 +149,7 @@ export default function AuroraUpgrade() {
           {/* price */}
           <View style={{ alignItems: "center", marginTop: 18 }}>
             <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
-              $9.99<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
+              {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.3 }}>{t("w.account.upgrade.trial-note")}</Text>
           </View>
@@ -138,9 +163,17 @@ export default function AuroraUpgrade() {
         <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 17, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
           {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
         </Pressable>
-        <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 14, marginTop: 4 }}>
+        {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}
+        {iapAvailable() && (
+          <Pressable onPress={restore} disabled={restoring} accessibilityRole="button" accessibilityLabel={t("w.account.upgrade.restore")} style={{ alignItems: "center", paddingVertical: 10, marginTop: 4 }}>
+            {restoring ? <ActivityIndicator color={C.ash} /> : <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.upgrade.restore")}</Text>}
+          </Pressable>
+        )}
+        <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 12 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.upgrade.maybe-later")}</Text>
         </Pressable>
+        {/* Terms + Privacy — App Store requires both on the subscription screen */}
+        <LegalLinks />
       </Animated.View>
     </View>
   );

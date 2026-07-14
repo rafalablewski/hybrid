@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo,
 import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
+import { iapAvailable, manageSubscriptions } from "../../lib/iap";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
@@ -265,7 +266,7 @@ export default function AuroraSettings() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.account.settings.unlocks")}</Text>
             </>
           ) : (
-            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={goUpgrade} style={{ paddingVertical: 13, marginTop: 16 }} />
+            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={() => (iapAvailable() ? void manageSubscriptions() : goUpgrade())} style={{ paddingVertical: 13, marginTop: 16 }} />
           )}
         </Section>
       </>

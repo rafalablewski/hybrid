@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
@@ -20,6 +21,8 @@ import { LiquidGlassProvider } from "../lib/liquid-glass";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
+import { startIap } from "../lib/iap";
+import { supabase } from "../lib/supabase";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
@@ -28,6 +31,15 @@ import AuroraGlobalNav from "../components/aurora/global-nav";
 // renders the global floating pill nav over every screen (self-gating).
 function Shell() {
   const { scheme, palette } = useTheme();
+  // Launch-time IAP listener: verify + grant + finish any transaction that
+  // completes while no purchase UI is open (interrupted / Ask-to-Buy / renewal /
+  // another-device purchase), and refresh the session so Full unlocks at once.
+  // No-op off iOS. Cleaned up on unmount.
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    startIap(() => { supabase.auth.refreshSession().catch(() => {}); }).then((c) => { cleanup = c; });
+    return () => { cleanup?.(); };
+  }, []);
   return (
     <>
       <StatusBar style={scheme === "light" ? "dark" : "light"} />
