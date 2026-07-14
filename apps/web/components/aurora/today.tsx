@@ -19,6 +19,7 @@ import { fs, space,
   ROLE_COLOR,
   readinessRole,
   checkinFeeling,
+  planSchedule,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -141,6 +142,14 @@ export default function AuroraToday({
   // and a quick sport log both land here the moment they save, so Today shows
   // "you did this" instead of forever prompting "Start".
   const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
+  // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
+  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
+  const plannedToday = useMemo(() => {
+    if (!planId || !planStartedAt) return 0;
+    const sched = planSchedule({ planId, startedAt: planStartedAt, sessions });
+    const today = sched?.days[sched.todayIndex];
+    return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
+  }, [planId, planStartedAt, sessions]);
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
   const initials = useMemo(
@@ -381,6 +390,7 @@ export default function AuroraToday({
       <FeelingCard
         feeling={feeling}
         doneCount={doneToday.length}
+        plannedCount={plannedToday}
         onLog={() => setQuickOpen(true)}
         onDone={() => setDoneOpen(true)}
         onPicked={loadFeeling}
@@ -476,7 +486,7 @@ function ChooserRow({ title, sub, badge, color, onClick }: { title: string; sub:
 /** Readiness/score dial — a ring of TICK MARKS (lit up to the value) with the
  *  number in the middle, matching the mobile kit Ring so web + mobile read the
  *  same. The ticks are the "number effect" from the original Your Plan Today. */
-function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: string; size?: number; ticks?: number }) {
+function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; color: string; size?: number; ticks?: number; center?: React.ReactNode }) {
   const pct = Math.max(0, Math.min(100, value));
   const lit = Math.round((pct / 100) * ticks);
   const tickLen = Math.max(4, Math.round(size * 0.16));
@@ -488,7 +498,7 @@ function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: s
           <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: i < lit ? color : C("line") }} />
         </span>
       ))}
-      <span style={{ position: "relative", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>
+      <span style={{ position: "relative" }}>{center ?? <span style={{ fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>}</span>
     </div>
   );
 }
@@ -538,9 +548,12 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 // today's readiness inline (one tap → POST /api/checkins, the same write the full
 // check-in makes), and a quiet footer: log a session, and the day's done count.
 // The picked face lights in its own semantic feeling colour.
-function FeelingCard({ feeling, doneCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; doneCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+function FeelingCard({ feeling, doneCount, plannedCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
   const { t } = useLang();
   const [busy, setBusy] = useState(false);
+  // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
+  // session fills it whole; nothing logged leaves it an empty bezel.
+  const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
   const pick = async (rating: number) => {
     if (busy) return;
     setBusy(true);
@@ -573,12 +586,11 @@ function FeelingCard({ feeling, doneCount, onLog, onDone, onPicked }: { feeling:
           );
         })}
       </div>
-      {/* range ring — the tally is an instrument readout (tap = today's log);
-          the action is a state-aware prompt (tap = log a session). */}
+      {/* range ring — a live gauge: the arc lights toward today's scheduled
+          sessions (tap = today's log). The action is a state-aware prompt. */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 15 }}>
-        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ position: "relative", width: 58, height: 58, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer" }}>
-          <svg width="58" height="58" viewBox="0 0 58 58" fill="none" aria-hidden><circle cx="29" cy="29" r="25" stroke={C("line")} strokeWidth="3" /></svg>
-          <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums", color: doneCount > 0 ? C("chalk") : C("ash") }}>{doneCount}</span>
+        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
+          <Ring value={progress} color={C("lime")} size={58} center={<span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums", color: doneCount > 0 ? C("chalk") : C("ash") }}>{doneCount}</span>} />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</div>

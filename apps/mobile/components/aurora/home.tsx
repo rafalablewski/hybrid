@@ -16,6 +16,7 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  planSchedule,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -165,6 +166,14 @@ export default function AuroraHome() {
   // Sessions logged TODAY — the confirmation loop (a finished session OR a quick
   // sport log both land here the moment they save).
   const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
+  // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
+  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
+  const plannedToday = useMemo(() => {
+    if (!planId || !planStartedAt) return 0;
+    const sched = planSchedule({ planId, startedAt: planStartedAt, sessions });
+    const today = sched?.days[sched.todayIndex];
+    return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
+  }, [planId, planStartedAt, sessions]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -434,6 +443,7 @@ export default function AuroraHome() {
           C={C}
           feeling={feeling}
           doneCount={doneToday.length}
+          plannedCount={plannedToday}
           onLog={() => setQuickOpen(true)}
           onDone={() => setDoneOpen(true)}
           onPicked={loadFeeling}
@@ -575,10 +585,13 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // today's readiness inline (one tap → createCheckin, the same write the full
 // check-in makes), and a quiet footer: log a session, and the day's done count.
 // The picked face lights in its own semantic feeling colour.
-function FeelingCard({ C, feeling, doneCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; doneCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+function FeelingCard({ C, feeling, doneCount, plannedCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
+  // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
+  // session fills it whole; nothing logged leaves it an empty bezel.
+  const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
   const pick = async (rating: number) => {
     if (busy) return;
     setBusy(true);
@@ -610,8 +623,10 @@ function FeelingCard({ C, feeling, doneCount, onLog, onDone, onPicked }: { C: P;
       {/* range ring — the tally is an instrument readout (tap = today's log);
           the action is a state-aware prompt (tap = log a session). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 15 }}>
-        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ width: 58, height: 58, borderRadius: 29, borderWidth: 3, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.6, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text>
+        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")}>
+          <Ring value={progress} size={58} color={txt(C, C.lime)} track={C.line}>
+            <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.6, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text>
+          </Ring>
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
