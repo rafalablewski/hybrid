@@ -471,15 +471,17 @@ export async function enrollPlan(goal: string, planId?: string): Promise<boolean
 
 /** Whether the signed-in user has finished/skipped onboarding (server source of
  *  truth). null when not onboarded or the call fails. Drives the entry gate. */
+// Resolve whether the signed-in user has completed onboarding. Returns the
+// timestamp (or null when genuinely not onboarded) ONLY for a successful
+// response; THROWS on any network/HTTP failure so the caller can tell "not
+// onboarded" apart from "couldn't reach the server". Conflating the two used to
+// route an already-onboarded user (offline / new device) back into the
+// questionnaire, whose submit re-enrolls a plan and clobbers their existing one.
 export async function fetchOnboardedAt(): Promise<string | null> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/me`, { headers: await authHeaders() });
-    if (!res.ok) return null;
-    const d = (await res.json()) as { onboardedAt?: string | null };
-    return d.onboardedAt ?? null;
-  } catch {
-    return null;
-  }
+  const res = await fetchWithTimeout(`${API_URL}/api/me`, { headers: await authHeaders() });
+  if (!res.ok) throw new Error(`onboarded check failed: HTTP ${res.status}`);
+  const d = (await res.json()) as { onboardedAt?: string | null };
+  return d.onboardedAt ?? null;
 }
 
 /** The admin-editable onboarding question set the client renders. Falls back to
