@@ -23,6 +23,7 @@ import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
 import { supabase } from "../lib/supabase";
+import { ErrorBoundary } from "../components/error-boundary";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
@@ -77,20 +78,22 @@ export default function RootLayout() {
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;
 
   return (
-    <SafeAreaProvider>
-      <QueryProvider>
-        <ThemeProvider>
-          <TemplateProvider>
-            <LiquidGlassProvider>
-              <SessionProvider>
-                <LanguageProvider>
-                  <Shell />
-                </LanguageProvider>
-              </SessionProvider>
-            </LiquidGlassProvider>
-          </TemplateProvider>
-        </ThemeProvider>
-      </QueryProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <TemplateProvider>
+              <LiquidGlassProvider>
+                <SessionProvider>
+                  <LanguageProvider>
+                    <Shell />
+                  </LanguageProvider>
+                </SessionProvider>
+              </LiquidGlassProvider>
+            </TemplateProvider>
+          </ThemeProvider>
+        </QueryProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

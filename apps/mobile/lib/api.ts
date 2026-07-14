@@ -1,6 +1,7 @@
 import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
+import { fetchWithTimeout } from "./fetch";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
 // Supabase access token as a Bearer header. So a session logged on the phone
@@ -24,7 +25,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 // authored, so the app always falls back to the built-ins.
 export async function fetchCustomExercises(): Promise<LibraryMovement[]> {
   try {
-    const res = await fetch(`${API_URL}/api/exercises`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/exercises`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as {
       exercises?: Array<{ name: string; pattern: string; muscles: string[]; baseLoad: number | null; system: string | null; aliases: string[]; category: string | null }>;
@@ -47,7 +48,7 @@ export async function fetchCustomExercises(): Promise<LibraryMovement[]> {
 // signed-out / none authored, so the app always falls back to the baseline.
 export async function fetchTranslationOverrides(): Promise<TranslationOverrides> {
   try {
-    const res = await fetch(`${API_URL}/api/translations`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/translations`, { headers: await authHeaders() });
     if (!res.ok) return {};
     const data = (await res.json()) as { overrides?: TranslationOverrides };
     return data.overrides ?? {};
@@ -59,7 +60,7 @@ export async function fetchTranslationOverrides(): Promise<TranslationOverrides>
 export async function fetchSessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
   try {
     const qs = opts?.archived ? "?archived=1" : "";
-    const res = await fetch(`${API_URL}/api/sessions${qs}`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions${qs}`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { sessions?: LoggedSession[] };
     return data.sessions ?? [];
@@ -72,7 +73,7 @@ export async function fetchSessions(opts?: { archived?: boolean }): Promise<Logg
  *  workouts. */
 export async function archiveSession(id: string, archived: boolean): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ archived }),
@@ -86,7 +87,7 @@ export async function archiveSession(id: string, archived: boolean): Promise<boo
 /** Permanently delete one of your own workouts. */
 export async function deleteSession(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -97,7 +98,7 @@ export async function deleteSession(id: string): Promise<boolean> {
  *  pre-signup usage. No auth — there's no account yet. Best-effort. */
 export async function logAnonSession(payload: NewSession & { deviceId?: string; platform?: string }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/anon-sessions`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/anon-sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -121,7 +122,7 @@ export type NewSession = {
 // still treat the result as truthy/falsy.
 export async function createSession(payload: NewSession): Promise<string | null> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(payload),
@@ -138,7 +139,7 @@ export async function createSession(payload: NewSession): Promise<string | null>
 // effort: returns true if the server accepted the new title.
 export async function renameSession(id: string, title: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ title }),
@@ -161,7 +162,7 @@ export type Routine = {
 
 export async function fetchRoutines(): Promise<Routine[]> {
   try {
-    const res = await fetch(`${API_URL}/api/templates`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/templates`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { templates?: Routine[] };
     return data.templates ?? [];
@@ -172,7 +173,7 @@ export async function fetchRoutines(): Promise<Routine[]> {
 
 export async function createRoutine(name: string, blocks: unknown[]): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/templates`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/templates`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name, blocks }),
@@ -185,7 +186,7 @@ export async function createRoutine(name: string, blocks: unknown[]): Promise<bo
 
 export async function deleteRoutine(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/templates/${id}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/templates/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -203,7 +204,7 @@ export type CoachApplication = {
 
 export async function fetchCoachApplication(): Promise<CoachApplication | null> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/apply`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/apply`, { headers: await authHeaders() });
     if (!res.ok) return null;
     const data = (await res.json()) as { application?: CoachApplication | null };
     return data.application ?? null;
@@ -218,7 +219,7 @@ export async function applyForCoach(
   credentials: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/apply`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ credentials }),
@@ -237,7 +238,7 @@ export async function applyForCoach(
  *  fall back to the free experience. */
 export async function fetchBillingStatus(): Promise<{ entitlement: "free" | "paid"; subscriptionStatus: string | null; configured: boolean } | null> {
   try {
-    const res = await fetch(`${API_URL}/api/billing/status`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/billing/status`, { headers: await authHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as { entitlement: "free" | "paid"; subscriptionStatus: string | null; configured: boolean };
   } catch {
@@ -249,7 +250,7 @@ export async function fetchBillingStatus(): Promise<{ entitlement: "free" | "pai
  *  on failure (incl. 503 when billing isn't configured) returns the error. */
 export async function startCheckout(): Promise<{ ok: boolean; url?: string; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/billing/checkout`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/billing/checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     });
@@ -268,7 +269,7 @@ export async function startCheckout(): Promise<{ ok: boolean; url?: string; erro
  *  grant Full. Pass the StoreKit transactionId; returns ok or an error string. */
 export async function verifyIapPurchase(transactionId: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/billing/iap/verify`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/billing/iap/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ transactionId }),
@@ -286,7 +287,7 @@ export async function verifyIapPurchase(transactionId: string): Promise<{ ok: bo
  *  serves). Returns the JSON text, or null on failure. */
 export async function exportAccountData(): Promise<string | null> {
   try {
-    const res = await fetch(`${API_URL}/api/account/export`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/account/export`, { headers: await authHeaders() });
     if (!res.ok) return null;
     return await res.text();
   } catch {
@@ -297,7 +298,7 @@ export async function exportAccountData(): Promise<string | null> {
 // Wipe all of the signed-in user's data on the backend (keeps the login).
 export async function resetAccount(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/account/reset`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/account/reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ confirm: "RESET" }),
@@ -313,7 +314,7 @@ export async function resetAccount(): Promise<boolean> {
 // sign out + clear local state afterwards.
 export async function deleteAccount(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/account`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/account`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ confirm: "DELETE" }),
@@ -332,7 +333,7 @@ export type CoachNote = { text: string; source: "ai" | "engine" | ""; readiness?
 
 export async function askAiCoach(): Promise<CoachNote> {
   try {
-    const res = await fetch(`${API_URL}/api/ai-coach`, { method: "POST", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/ai-coach`, { method: "POST", headers: await authHeaders() });
     if (res.status === 401) return { text: "Sign in to get a personalized coaching note.", source: "" };
     if (!res.ok) return { text: "Couldn't reach the coach — try again.", source: "" };
     const j = (await res.json()) as { text?: string; source?: "ai" | "engine"; readiness?: number; hpi?: number };
@@ -347,7 +348,7 @@ export type CoreSignal = { athleteId: string; kind: string; value: number; unit:
 
 export async function fetchSignals(): Promise<CoreSignal[]> {
   try {
-    const res = await fetch(`${API_URL}/api/signals`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/signals`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { signals?: { userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] };
     return (data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts }));
@@ -358,7 +359,7 @@ export async function fetchSignals(): Promise<CoreSignal[]> {
 
 export async function createSignal(kind: string, value: number, unit?: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/signals`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ kind, value, unit, source: "manual" }),
@@ -375,7 +376,7 @@ export type ScannedMacros = { name: string | null; kcal: number | null; protein:
  *  Returns the parsed per-serving macros, or a status for the caller to message. */
 export async function scanNutritionLabel(image: string, mediaType: string): Promise<{ ok: boolean; status: number; data?: ScannedMacros }> {
   try {
-    const res = await fetch(`${API_URL}/api/nutrition/scan`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ image, mediaType }),
@@ -406,7 +407,7 @@ export type Checkin = {
 
 export async function fetchCheckins(): Promise<Checkin[]> {
   try {
-    const res = await fetch(`${API_URL}/api/checkins`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/checkins`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [];
   } catch {
@@ -416,7 +417,7 @@ export async function fetchCheckins(): Promise<Checkin[]> {
 
 export async function createCheckin(payload: Partial<Checkin>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/checkins`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/checkins`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(payload),
@@ -432,7 +433,7 @@ export type Assignment = { id: string; name: string; date: string; status: strin
 
 export async function fetchAssignments(): Promise<Assignment[]> {
   try {
-    const res = await fetch(`${API_URL}/api/assignments`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/assignments`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { assignments?: Assignment[] }).assignments ?? [];
   } catch {
@@ -442,7 +443,7 @@ export async function fetchAssignments(): Promise<Assignment[]> {
 
 export async function updateAssignment(id: string, status: "completed" | "skipped" | "assigned"): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/assignments/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/assignments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ status }),
@@ -455,7 +456,7 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
 
 export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/macrocycles`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/macrocycles`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }),
@@ -472,7 +473,7 @@ export async function enrollPlan(goal: string, planId?: string): Promise<boolean
  *  truth). null when not onboarded or the call fails. Drives the entry gate. */
 export async function fetchOnboardedAt(): Promise<string | null> {
   try {
-    const res = await fetch(`${API_URL}/api/me`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/me`, { headers: await authHeaders() });
     if (!res.ok) return null;
     const d = (await res.json()) as { onboardedAt?: string | null };
     return d.onboardedAt ?? null;
@@ -485,7 +486,7 @@ export async function fetchOnboardedAt(): Promise<string | null> {
  *  null (the caller then uses the @hybrid/core built-in defaults). */
 export async function fetchOnboardingQuestions(): Promise<unknown[] | null> {
   try {
-    const res = await fetch(`${API_URL}/api/onboarding/questions`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/onboarding/questions`, { headers: await authHeaders() });
     if (!res.ok) return null;
     const d = (await res.json()) as { questions?: unknown[] };
     return d.questions ?? null;
@@ -501,7 +502,7 @@ export async function submitOnboarding(
   plan?: { goalLabel: string; planId: string } | null,
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/onboarding`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/onboarding`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ answers, ...(plan ? { goal: plan.goalLabel, planId: plan.planId } : {}) }),
@@ -519,7 +520,7 @@ type MacroRow = { id: string; goal: string; planId?: string | null; blocks: Macr
 // and the enrolled named-plan id (when they picked a real plan).
 export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null; planStartedAt: string | null } | null> {
   try {
-    const res = await fetch(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
     if (!res.ok) return null;
     const row = ((await res.json()) as { macrocycles?: MacroRow[] }).macrocycles?.[0];
     if (!row || !row.blocks?.length) return null;
@@ -546,7 +547,7 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
 // migrated (reference/sql-plan-maxes.sql).
 export async function fetchPlanMaxes(): Promise<Record<string, number>> {
   try {
-    const res = await fetch(`${API_URL}/api/plan-maxes`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/plan-maxes`, { headers: await authHeaders() });
     if (!res.ok) return {};
     const data = (await res.json()) as { maxes?: Record<string, number> };
     return data.maxes && typeof data.maxes === "object" ? data.maxes : {};
@@ -557,7 +558,7 @@ export async function fetchPlanMaxes(): Promise<Record<string, number>> {
 
 export async function savePlanMaxes(maxes: Record<string, number>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/plan-maxes`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/plan-maxes`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ maxes }),
@@ -575,7 +576,7 @@ export async function savePlanMaxes(maxes: Record<string, number>): Promise<bool
 // out or the table isn't migrated, so the local cache alone keeps the rail working.
 export async function fetchPlanOverrides(planId: string): Promise<PlanOverrides> {
   try {
-    const res = await fetch(`${API_URL}/api/plan-days?planId=${encodeURIComponent(planId)}`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/plan-days?planId=${encodeURIComponent(planId)}`, { headers: await authHeaders() });
     if (!res.ok) return {};
     const d = (await res.json()) as { overrides?: PlanOverrides };
     return d.overrides ?? {};
@@ -586,7 +587,7 @@ export async function fetchPlanOverrides(planId: string): Promise<PlanOverrides>
 
 export async function savePlanOverride(planId: string, date: string, override: PlanOverride | null): Promise<void> {
   try {
-    await fetch(`${API_URL}/api/plan-days`, {
+    await fetchWithTimeout(`${API_URL}/api/plan-days`, {
       method: "POST",
       headers: { "content-type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ planId, date, override }),
@@ -600,7 +601,7 @@ export async function savePlanOverride(planId: string, date: string, override: P
 // read from the feature-flags value. Empty → code defaults.
 export async function fetchPersonaAccess(): Promise<PersonaAccess> {
   try {
-    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/flags`, { headers: await authHeaders() });
     if (!res.ok) return {};
     const data = (await res.json()) as { values?: Record<string, unknown> };
     return sanitizePersonaAccess(data.values?.["access.personaNav"]);
@@ -612,7 +613,7 @@ export async function fetchPersonaAccess(): Promise<PersonaAccess> {
 /** The boolean feature flags evaluated for the signed-in user (admin → Flags). */
 export async function fetchFeatureFlags(): Promise<Record<string, boolean>> {
   try {
-    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/flags`, { headers: await authHeaders() });
     if (!res.ok) return {};
     const data = (await res.json()) as { flags?: Record<string, boolean> };
     return data.flags ?? {};
@@ -624,7 +625,7 @@ export async function fetchFeatureFlags(): Promise<Record<string, boolean>> {
 /** Flags AND their config values (e.g. theme.premiumAccent) in one fetch. */
 export async function fetchFlagState(): Promise<{ flags: Record<string, boolean>; values: Record<string, unknown> }> {
   try {
-    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/flags`, { headers: await authHeaders() });
     if (!res.ok) return { flags: {}, values: {} };
     const data = (await res.json()) as { flags?: Record<string, boolean>; values?: Record<string, unknown> };
     return { flags: data.flags ?? {}, values: data.values ?? {} };
@@ -639,7 +640,7 @@ export type CoachInvite = { id: string; status: string; coach?: { name: string |
 
 export async function fetchCoachInvites(): Promise<CoachInvite[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { asClient?: CoachInvite[] };
     return (data.asClient ?? []).filter((l) => l.status === "PENDING");
@@ -650,7 +651,7 @@ export async function fetchCoachInvites(): Promise<CoachInvite[]> {
 
 export async function actCoachInvite(id: string, action: "accept" | "end"): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ action }),
@@ -666,7 +667,7 @@ export async function actCoachInvite(id: string, action: "accept" | "end"): Prom
 export type StateSnapshot = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 export async function fetchState(): Promise<StateSnapshot | null> {
   try {
-    const res = await fetch(`${API_URL}/api/state`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/state`, { headers: await authHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as StateSnapshot;
   } catch {
@@ -678,7 +679,7 @@ export type Conn = { id: string; provider: string; status: string; lastSyncAt?: 
 export type Provider = { id: string; label: string; auth: "native" | "team" | "oauth"; provides: string[]; configured: boolean };
 export async function fetchConnections(): Promise<{ connections: Conn[]; providers: Provider[] }> {
   try {
-    const res = await fetch(`${API_URL}/api/connections`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/connections`, { headers: await authHeaders() });
     if (!res.ok) return { connections: [], providers: [] };
     const d = (await res.json()) as { connections?: Conn[]; providers?: Provider[] };
     return { connections: d.connections ?? [], providers: d.providers ?? [] };
@@ -688,7 +689,7 @@ export async function fetchConnections(): Promise<{ connections: Conn[]; provide
 }
 export async function syncConnection(providerId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/connect/${providerId}/sync`, { method: "POST", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/connect/${providerId}/sync`, { method: "POST", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -698,7 +699,7 @@ export async function syncConnection(providerId: string): Promise<boolean> {
 export type EventRow = { id: string; name: string; sport: string; date: string };
 export async function fetchEvents(): Promise<EventRow[]> {
   try {
-    const res = await fetch(`${API_URL}/api/events`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/events`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return (((await res.json()) as { events?: EventRow[] }).events) ?? [];
   } catch {
@@ -707,7 +708,7 @@ export async function fetchEvents(): Promise<EventRow[]> {
 }
 export async function createEvent(name: string, sport: string, date: string): Promise<EventRow | null> {
   try {
-    const res = await fetch(`${API_URL}/api/events`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name, sport, date }),
@@ -727,7 +728,7 @@ export type VideoAnalysis = {
 };
 export async function fetchVideoAnalyses(): Promise<VideoAnalysis[]> {
   try {
-    const res = await fetch(`${API_URL}/api/video`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/video`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return (((await res.json()) as { analyses?: VideoAnalysis[] }).analyses) ?? [];
   } catch {
@@ -744,7 +745,7 @@ export type TalentResult = { id: string; name: string; sport: string; age: numbe
 
 export async function fetchTalent(): Promise<{ profile: TalentProfile | null; report: TalentReport | null; computedHpi: number }> {
   try {
-    const res = await fetch(`${API_URL}/api/talent`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/talent`, { headers: await authHeaders() });
     if (!res.ok) return { profile: null, report: null, computedHpi: 0 };
     return (await res.json()) as { profile: TalentProfile | null; report: TalentReport | null; computedHpi: number };
   } catch {
@@ -754,7 +755,7 @@ export async function fetchTalent(): Promise<{ profile: TalentProfile | null; re
 
 export async function saveTalentProfile(body: { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number | undefined> }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/talent`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/talent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -768,7 +769,7 @@ export async function saveTalentProfile(body: { sport: string; sex: string; age:
 export async function searchTalent(metric: string, minPct: string, sport?: string, byPotential?: boolean): Promise<TalentResult[]> {
   try {
     const p = new URLSearchParams({ metric, minPct, ...(sport ? { sport } : {}), ...(byPotential ? { byPotential: "1" } : {}) });
-    const res = await fetch(`${API_URL}/api/talent/search?${p.toString()}`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/talent/search?${p.toString()}`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return (((await res.json()) as { results?: TalentResult[] }).results) ?? [];
   } catch {
@@ -778,7 +779,7 @@ export async function searchTalent(metric: string, minPct: string, sport?: strin
 
 export async function reportProfile(targetId: string, reason: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/reports`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/reports`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ targetType: "talentProfile", targetId, reason }),
@@ -793,7 +794,7 @@ export async function reportProfile(targetId: string, reason: string): Promise<b
  *  where historical timestamps must be preserved). */
 export async function importSignal(s: { kind: string; value: number; unit?: string; source?: string; ts?: string }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/signals`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: s.source ?? "forceplate", ts: s.ts }),
@@ -810,7 +811,7 @@ export async function importSignal(s: { kind: string; value: number; unit?: stri
 // after logging a day regenerates the rest of the week off real results.
 export async function createSelfAssignments(items: ScheduledAssignment[], replace = false): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/assignments`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/assignments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ items, replace }),
@@ -828,7 +829,7 @@ export type Note = { id: string; body: string; private: boolean; createdAt: stri
 
 export async function getCoachLinks(): Promise<{ asCoach: CoachLink[]; asClient: CoachLink[] }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
     if (!res.ok) return { asCoach: [], asClient: [] };
     return (await res.json()) as { asCoach: CoachLink[]; asClient: CoachLink[] };
   } catch {
@@ -841,7 +842,7 @@ export type CoachInviteRow = { id: string; token: string; email: string | null; 
 
 export async function getCoachInvites(): Promise<{ invites: CoachInviteRow[]; unavailable: boolean }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/invite`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/invite`, { headers: await authHeaders() });
     if (!res.ok) return { invites: [], unavailable: false };
     const d = (await res.json()) as { invites?: CoachInviteRow[]; unavailable?: boolean };
     return { invites: d.invites ?? [], unavailable: Boolean(d.unavailable) };
@@ -854,7 +855,7 @@ export async function createCoachInvite(
   body: { email?: string; phone?: string },
 ): Promise<{ ok: boolean; url?: string; existingUser?: boolean; message?: string; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/invite`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -868,7 +869,7 @@ export async function createCoachInvite(
 
 export async function revokeCoachInvite(token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/invite/${token}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/invite/${token}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -877,7 +878,7 @@ export async function revokeCoachInvite(token: string): Promise<boolean> {
 
 export async function claimCoachInvite(token: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/invite/${token}/claim`, { method: "POST", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/invite/${token}/claim`, { method: "POST", headers: await authHeaders() });
     const d = (await res.json().catch(() => ({}))) as { error?: string };
     return { ok: res.ok, error: d.error };
   } catch {
@@ -890,7 +891,7 @@ export type CoachDietRow = { kcal: number | null; protein: number | null; carbs:
 
 export async function getCoachDiet(linkId: string): Promise<{ diet: CoachDietRow | null; unavailable: boolean }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/diet`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/diet`, { headers: await authHeaders() });
     if (!res.ok) return { diet: null, unavailable: false };
     const d = (await res.json()) as { diet?: CoachDietRow | null; unavailable?: boolean };
     return { diet: d.diet ?? null, unavailable: Boolean(d.unavailable) };
@@ -904,7 +905,7 @@ export async function saveCoachDiet(
   body: { kcal?: number; protein?: number; carbs?: number; fat?: number; note?: string },
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/diet`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/diet`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -918,7 +919,7 @@ export async function saveCoachDiet(
 
 export async function getAssignedDiet(): Promise<{ diet: CoachDietRow | null; coachName?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/nutrition/assigned`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/assigned`, { headers: await authHeaders() });
     if (!res.ok) return { diet: null };
     return (await res.json()) as { diet: CoachDietRow | null; coachName?: string };
   } catch {
@@ -931,7 +932,7 @@ export type CoachGroup = { id: string; name: string; clientIds: string[] };
 
 export async function getCoachGroups(): Promise<{ groups: CoachGroup[]; unavailable: boolean }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/groups`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/groups`, { headers: await authHeaders() });
     if (!res.ok) return { groups: [], unavailable: false };
     const d = (await res.json()) as { groups?: CoachGroup[]; unavailable?: boolean };
     return { groups: d.groups ?? [], unavailable: Boolean(d.unavailable) };
@@ -942,7 +943,7 @@ export async function getCoachGroups(): Promise<{ groups: CoachGroup[]; unavaila
 
 export async function createCoachGroup(name: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/groups`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/groups`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name }),
@@ -958,7 +959,7 @@ export async function patchCoachGroup(
   body: { name?: string; clientIds?: string[]; addClientId?: string; removeClientId?: string },
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/groups/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/groups/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -971,7 +972,7 @@ export async function patchCoachGroup(
 
 export async function deleteCoachGroup(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/groups/${id}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/groups/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -980,7 +981,7 @@ export async function deleteCoachGroup(id: string): Promise<boolean> {
 
 export async function assignPlanToGroup(id: string, goal: string, planId?: string): Promise<{ ok: boolean; assigned?: number; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/groups/${id}/assign-plan`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/groups/${id}/assign-plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }),
@@ -1000,7 +1001,7 @@ export type CoachProgram = { id: string; name: string; goal: string | null; week
 
 export async function getCoachPrograms(): Promise<{ programs: CoachProgram[]; unavailable: boolean }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/programs`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/programs`, { headers: await authHeaders() });
     if (!res.ok) return { programs: [], unavailable: false };
     const d = (await res.json()) as { programs?: CoachProgram[]; unavailable?: boolean };
     return { programs: d.programs ?? [], unavailable: Boolean(d.unavailable) };
@@ -1011,7 +1012,7 @@ export async function getCoachPrograms(): Promise<{ programs: CoachProgram[]; un
 
 export async function createCoachProgram(name: string): Promise<CoachProgram | null> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/programs`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/programs`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name, weeks: [{ days: [] }] }),
@@ -1025,7 +1026,7 @@ export async function createCoachProgram(name: string): Promise<CoachProgram | n
 
 export async function updateCoachProgram(id: string, body: { name?: string; weeks?: ProgramWeek[] }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/programs/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/programs/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -1038,7 +1039,7 @@ export async function updateCoachProgram(id: string, body: { name?: string; week
 
 export async function deleteCoachProgram(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/programs/${id}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/programs/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -1047,7 +1048,7 @@ export async function deleteCoachProgram(id: string): Promise<boolean> {
 
 export async function assignProgram(id: string, target: { linkId?: string; groupId?: string }, startDate: string): Promise<{ ok: boolean; assigned?: number; sessions?: number; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/programs/${id}/assign`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/programs/${id}/assign`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ ...target, startDate }),
@@ -1061,7 +1062,7 @@ export async function assignProgram(id: string, target: { linkId?: string; group
 
 export async function inviteClient(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ email }),
@@ -1076,7 +1077,7 @@ export async function inviteClient(email: string): Promise<{ ok: boolean; error?
 
 export async function actOnLink(id: string, action: "accept" | "end"): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ action }),
@@ -1089,7 +1090,7 @@ export async function actOnLink(id: string, action: "accept" | "end"): Promise<b
 
 export async function getClientSessions(linkId: string): Promise<LoggedSession[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/sessions`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/sessions`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { sessions?: LoggedSession[] }).sessions ?? [];
   } catch {
@@ -1099,7 +1100,7 @@ export async function getClientSessions(linkId: string): Promise<LoggedSession[]
 
 export async function getNotes(linkId: string): Promise<Note[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/notes`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/notes`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { notes?: Note[] }).notes ?? [];
   } catch {
@@ -1109,7 +1110,7 @@ export async function getNotes(linkId: string): Promise<Note[]> {
 
 export async function addNote(linkId: string, body: string, isPrivate: boolean): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/notes`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ body, private: isPrivate }),
@@ -1129,7 +1130,7 @@ export type RtpProtocol = { id: string; tissue: string; injuryDate: string; stag
 
 export async function fetchRtpProtocols(): Promise<RtpProtocol[]> {
   try {
-    const res = await fetch(`${API_URL}/api/rtp`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/rtp`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const d = (await res.json()) as { protocols?: RtpProtocol[] };
     return (d.protocols ?? []).map((p) => ({ ...p, completed: p.completed ?? [], audit: p.audit ?? [] }));
@@ -1141,7 +1142,7 @@ export async function fetchRtpProtocols(): Promise<RtpProtocol[]> {
 /** Open a new protocol for a tissue (server starts it at the `acute` stage). */
 export async function createRtpProtocol(tissue: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/rtp`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/rtp`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ tissue }),
@@ -1156,7 +1157,7 @@ export async function createRtpProtocol(tissue: string): Promise<boolean> {
  *  gates with a reason. Mirrors the web PATCH /api/rtp/:id body. */
 export async function mutateRtpProtocol(id: string, body: object): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/rtp/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/rtp/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -1171,7 +1172,7 @@ export async function mutateRtpProtocol(id: string, body: object): Promise<boole
 // PATCH { action: "tags", tags } replaces them (mirrors web's saveTags).
 export async function getCoachLinkTags(linkId: string): Promise<string[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const d = (await res.json()) as { link?: { tags?: string[] } };
     return d.link?.tags ?? [];
@@ -1182,7 +1183,7 @@ export async function getCoachLinkTags(linkId: string): Promise<string[]> {
 
 export async function saveCoachLinkTags(linkId: string, tags: string[]): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ action: "tags", tags }),
@@ -1198,7 +1199,7 @@ export type CoachAssignment = { id: string; name: string; date: string; status: 
 
 export async function getCoachAssignments(linkId: string): Promise<CoachAssignment[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/assignments`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { assignments?: CoachAssignment[] }).assignments ?? [];
   } catch {
@@ -1213,7 +1214,7 @@ export async function assignToClient(
   body: { name: string; blocks: unknown[]; date: string; templateId?: string },
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/assignments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(body),
@@ -1228,7 +1229,7 @@ export async function assignToClient(
 // the same season the coach programs against. Mirrors web's coach macrocycle POST.
 export async function enrollClientMacrocycle(linkId: string, goal: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/macrocycle`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/macrocycle`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ goal }),
@@ -1242,7 +1243,7 @@ export async function enrollClientMacrocycle(linkId: string, goal: string): Prom
 // The client's weekly check-ins, as the coach sees them (includes any reply).
 export async function getCoachCheckins(linkId: string): Promise<Checkin[]> {
   try {
-    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/checkins`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/links/${linkId}/checkins`, { headers: await authHeaders() });
     if (!res.ok) return [];
     return ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [];
   } catch {
@@ -1253,7 +1254,7 @@ export async function getCoachCheckins(linkId: string): Promise<Checkin[]> {
 // Post (or update) the coach's reply on one check-in. Mirrors web PATCH /api/checkins/[id].
 export async function replyToCheckin(checkinId: string, coachReply: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/api/checkins/${checkinId}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/checkins/${checkinId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ coachReply }),
