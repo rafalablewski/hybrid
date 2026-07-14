@@ -308,6 +308,22 @@ export async function resetAccount(): Promise<boolean> {
   }
 }
 
+// Permanently DELETE the signed-in user's account: all data, then the login
+// itself (App Store 5.1.1(v) + GDPR erasure). Irreversible; the caller must
+// sign out + clear local state afterwards.
+export async function deleteAccount(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/account`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ confirm: "DELETE" }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ---- AI coach ----
 // The server-side AI coach: builds context from your real sessions + recovery
 // and asks Claude for a personalized note (falls back to the engine rationale
