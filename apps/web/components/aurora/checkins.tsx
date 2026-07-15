@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import {
   fs,
@@ -17,25 +17,17 @@ import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 
-type Checkin = {
-  id: string; weekOf: string; bodyMassKg: number | null;
-  energy: number | null; sleep: number | null; soreness: number | null; mood: number | null;
-  adherencePct: number | null; note: string | null; coachReply: string | null; repliedAt: string | null; createdAt: string;
-  sharedWithCoach?: boolean;
-};
-
 type Ratings = Record<CheckinMetricKey, number>;
 
 /** AURORA Daily check-in (web) — a GUIDED, one-question-per-card flow. Steps 1–4
  *  walk Energy / Sleep / Soreness / Mood with a big reactive readiness face; the
  *  final card collects weight, adherence, a note + share-with-coach and submits.
- *  Same /api/checkins POST + history as before — only the input UX changed.
+ *  Same /api/checkins POST as before — only the input UX changed.
  *  Mirrors the mobile AuroraCheckin wizard. */
 export default function AuroraCheckins() {
   const revalidate = useRevalidate();
   const { t } = useLang();
   const isPaid = useSession().entitlement === "paid";
-  const [history, setHistory] = useState<Checkin[]>([]);
   const [step, setStep] = useState(0); // 0..3 metrics, 4 = details
   const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,14 +35,6 @@ export default function AuroraCheckins() {
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   const C = (v: string) => `var(--color-${v})`;
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/checkins");
-      setHistory(res.ok ? ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [] : []);
-    } catch { setHistory([]); }
-  }, []);
-  useEffect(() => { load(); }, [load]);
 
   const detailsStep = CHECKIN_METRICS.length; // index 4
   const isDetails = step === detailsStep;
@@ -72,7 +56,6 @@ export default function AuroraCheckins() {
       if (res.status === 401) { setError(t("w.recovery.checkins.errSignIn")); setSaving(false); return; }
       if (!res.ok) { setError(`${t("w.recovery.checkins.errSubmit")} (HTTP ${res.status}).`); setSaving(false); return; }
       setDone(true);
-      await load();
       revalidate.recovery();
     } catch { setError(t("w.recovery.checkins.errNetwork")); }
     setSaving(false);
@@ -185,33 +168,6 @@ export default function AuroraCheckins() {
           })()
         )}
       </div>
-
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), margin: "18px 0 10px" }}>{t("w.recovery.checkins.history")}</div>
-      {history.length === 0 ? (
-        <div style={{ fontSize: fs.body, color: C("ash") }}>{t("w.recovery.checkins.historyEmpty")}</div>
-      ) : (
-        history.map((c) => (
-          <div key={c.id} style={{ ...card, padding: 18, marginBottom: 11 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontWeight: 700, fontSize: fs.note }}>{new Date(c.weekOf).toLocaleDateString()}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-                {c.sharedWithCoach && <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "2px 10px", fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</span>}
-                {c.adherencePct != null && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{c.adherencePct}% {t("w.recovery.checkins.adherence")}</span>}
-              </div>
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6 }}>
-              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} – {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} – {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} – {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
-            </div>
-            {c.note && <div style={{ fontSize: fs.bodyLg, lineHeight: 1.5, marginTop: 6 }}>{c.note}</div>}
-            {c.coachReply && (
-              <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.recovery.checkins.coach")}</div>
-                <div style={{ fontSize: fs.bodyLg, lineHeight: 1.5, marginTop: 4 }}>{c.coachReply}</div>
-              </div>
-            )}
-          </div>
-        ))
-      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useFocusEffect } from "expo-router";
 import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
@@ -10,7 +9,7 @@ import {
   type CheckinMetricKey,
   type ReadinessFeeling,
 } from "@hybrid/core";
-import { fetchCheckins, createCheckin, fetchBillingStatus, type Checkin } from "../../lib/api";
+import { createCheckin, fetchBillingStatus } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -27,14 +26,12 @@ const feelingColor = (C: Palette, feeling: ReadinessFeeling) => txt(C, C[ACCENT[
 /** AURORA Daily check-in (mobile) — a GUIDED, one-question-per-card flow. Steps
  *  1–4 walk Energy / Sleep / Soreness / Mood with a big reactive readiness face;
  *  the final card collects weight, adherence, a note + share-with-coach and
- *  submits. Same createCheckin flow + history as before. Mirrors the web wizard.
+ *  submits. Same createCheckin flow as before. Mirrors the web wizard.
  *  `embedded` drops the screen chrome so the flow can live inside a sheet. */
 export default function AuroraCheckin({ embedded = false, onDone }: { embedded?: boolean; onDone?: () => void } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const revalidate = useRevalidate();
-  const [history, setHistory] = useState<Checkin[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [paid, setPaid] = useState(false);
   const [step, setStep] = useState(0); // 0..3 metrics, 4 = details
@@ -42,11 +39,6 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
 
-  const load = () => {
-    setRefreshing(true);
-    fetchCheckins().then((c) => setHistory(c)).finally(() => setRefreshing(false));
-  };
-  useFocusEffect(useCallback(load, []));
   useEffect(() => { fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {}); }, []);
 
   const detailsStep = CHECKIN_METRICS.length; // index 4
@@ -65,7 +57,6 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
     setSaving(false);
     if (!ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
     setDone(true);
-    load();
     revalidate.recovery();
     onDone?.();
   };
@@ -198,43 +189,12 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
       )}
 
       {wizard}
-
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18, marginBottom: 10 }}>{t("w.recovery.checkins.historyShort")}</Text>
-      {history.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.checkins.historyEmptyFirst")}</Text>
-      ) : (
-        history.map((c) => (
-          <ACard key={c.id} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
-                {c.sharedWithCoach ? (
-                  <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 2 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.lime), textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{c.adherencePct != null ? `${c.adherencePct}% ${t("w.recovery.checkins.adherence")}` : ""}</Text>
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
-              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} – {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} – {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} – {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
-            </Text>
-            {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{c.note}</Text> : null}
-            {c.coachReply ? (
-              <View style={{ marginTop: 10, borderLeftWidth: 2, borderLeftColor: C.line, paddingLeft: 10 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.recovery.checkins.coach")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 4, lineHeight: 18 }}>{c.coachReply}</Text>
-              </View>
-            ) : null}
-          </ACard>
-        ))
-      )}
     </>
   );
 
   if (embedded) return body;
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen>
       {body}
     </AuroraScreen>
   );

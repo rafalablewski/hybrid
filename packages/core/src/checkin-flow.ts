@@ -42,3 +42,13 @@ export function checkinScaleWordKey(value: number): string {
 export function checkinScaleFeeling(value: number): ReadinessFeeling {
   return feelingFromRating(value);
 }
+
+/** Re-log cadence: a feeling must be logged at least once a day, and may be
+ *  re-logged at most once every 6 hours. This is the shared window both clients
+ *  read to show "next in …" on the home feeling card. */
+export const CHECKIN_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+
+/** Milliseconds left in the 6h re-log window (0 once it's open again). */
+export function checkinCooldownRemainingMs(lastLoggedMs: number, nowMs = Date.now()): number {
+  return Math.max(0, CHECKIN_COOLDOWN_MS - (nowMs - lastLoggedMs));
+}
