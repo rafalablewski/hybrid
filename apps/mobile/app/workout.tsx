@@ -1846,10 +1846,12 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
     const body = note.trim();
     if (sessionId && (body || mood != null || tags.length > 0)) {
       setSaving(true);
-      await patchSessionNote(sessionId, { note: body || null, mood, tags });
+      const ok = await patchSessionNote(sessionId, { note: body || null, mood, tags });
       setSaving(false);
+      setSaved(ok); // only collapse to "Note saved" when the write landed
+      return;
     }
-    setSaved(true);
+    setSaved(true); // nothing to write — just close the composer
   };
 
   return (

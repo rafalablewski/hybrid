@@ -119,8 +119,11 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
     }
     if (Object.keys(payload).length === 0) return;
     setBusy(true);
-    await j("/api/body", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    setBusy(false); setForm({}); setOpen(false); load();
+    const res = await j("/api/body", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    setBusy(false);
+    // `j` swallows failures into {} and a 400 returns {error}; only a real
+    // create returns {metric}. Keep the form open otherwise so nothing is lost.
+    if (res?.metric) { setForm({}); setOpen(false); load(); }
   };
 
   const has = !!metrics && metrics.length > 0;

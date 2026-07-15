@@ -252,16 +252,20 @@ export function SessionNote({ sessionId }: { sessionId: string | null }) {
     const body = note.trim();
     if (sessionId && (body || mood != null || tags.length > 0)) {
       setSaving(true);
+      let ok = false;
       try {
-        await fetch(`/api/sessions/${sessionId}`, {
+        const res = await fetch(`/api/sessions/${sessionId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ note: body, mood, tags }),
         });
-      } catch { /* best-effort */ }
+        ok = res.ok;
+      } catch { /* best-effort — stay open so the note can be retried */ }
       setSaving(false);
+      setSaved(ok); // only collapse to "Note saved" when the write landed
+      return;
     }
-    setSaved(true);
+    setSaved(true); // nothing to write — just close the composer
   };
 
   return (

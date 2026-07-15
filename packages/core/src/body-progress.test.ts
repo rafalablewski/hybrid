@@ -28,7 +28,7 @@ describe("metricTrends", () => {
   });
 
   it("computes latest, previous, delta and direction from newest-first input", () => {
-    const w = metricTrends([at(0, { weightKg: 82.1 }), at(3, { weightKg: 82.5 }), at(6, { weightKg: 83.0 })])[0];
+    const w = metricTrends([at(0, { weightKg: 82.1 }), at(3, { weightKg: 82.5 }), at(6, { weightKg: 83.0 })])[0]!;
     expect(w.latest).toBe(82.1);
     expect(w.previous).toBe(82.5);
     expect(w.delta).toBeCloseTo(-0.4, 5);
@@ -38,16 +38,16 @@ describe("metricTrends", () => {
   it("orders the sparkline series oldest→newest and caps it to the window", () => {
     // weight = 80 + daysAgo, so the newest entry (0 days ago) is the lightest.
     const metrics = Array.from({ length: 10 }, (_, i) => at(i, { weightKg: 80 + i }));
-    const series = metricTrends(metrics, 8)[0].series;
+    const series = metricTrends(metrics, 8)[0]!.series;
     expect(series).toHaveLength(8);
     expect(series[series.length - 1]).toBe(80); // newest (0 days ago) is last
     expect(series[0]).toBe(87); // oldest in the 8-point window (7 days ago)
-    expect(series[0]).toBeGreaterThan(series[series.length - 1]); // chronological, trending down
+    expect(series[0]!).toBeGreaterThan(series[series.length - 1]!); // chronological, trending down
   });
 
   it("marks a sub-threshold change as flat and a single entry as null delta", () => {
-    expect(metricTrends([at(0, { weightKg: 82.0 }), at(2, { weightKg: 82.02 })])[0].direction).toBe("flat");
-    const one = metricTrends([at(0, { weightKg: 82 })])[0];
+    expect(metricTrends([at(0, { weightKg: 82.0 }), at(2, { weightKg: 82.02 })])[0]!.direction).toBe("flat");
+    const one = metricTrends([at(0, { weightKg: 82 })])[0]!;
     expect(one.previous).toBeNull();
     expect(one.delta).toBeNull();
   });

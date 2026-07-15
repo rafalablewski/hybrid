@@ -125,8 +125,11 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
     }
     if (Object.keys(payload).length === 0) return;
     setBusy(true);
-    await sapi("/api/body", "POST", payload);
-    setBusy(false); setForm({}); setOpen(false); load();
+    try {
+      await sapi("/api/body", "POST", payload);
+      setForm({}); setOpen(false); load();
+    } catch { /* keep the form open so the entry can be retried */ }
+    finally { setBusy(false); }
   };
 
   const has = !!metrics && metrics.length > 0;
