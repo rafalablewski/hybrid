@@ -12,6 +12,7 @@ import { useTemplate } from "../../lib/template";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useNavScroll } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 
 // The bottom nav: Today · Explore · [Train FAB] · More · Profile. Train is the
@@ -60,6 +61,19 @@ export default function AuroraGlobalNav() {
   const persona = usePersona();
   const access = useNavAccess();
   const haptics = useLoggerPrefs().haptics;
+  const navScroll = useNavScroll();
+
+  // Shrink-on-scroll (the Instagram behaviour): the whole pill+FAB is full size
+  // at the top and scales down smoothly as the active surface scrolls, driven by
+  // the shared `collapse` value (0 → 1). Reset to full whenever the route
+  // changes so landing on a new screen always starts expanded, even if the
+  // previous screen was scrolled.
+  const collapse = navScroll?.collapse;
+  const routeKey = segments.join("/");
+  useEffect(() => { navScroll?.reset(); }, [routeKey, navScroll]);
+  const collapseScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.82] }) : 1;
+  const collapseShift = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) : 0;
+  const collapseFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
 
   // The single sliding selection indicator (the Instagram-style liquid pill): a
   // chalk highlight that SPRINGS to the active slot and STRETCHES mid-travel,
@@ -177,7 +191,7 @@ export default function AuroraGlobalNav() {
 
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: Math.max(insets.bottom, 12), paddingHorizontal: 18, alignItems: "center" }}>
-      <View
+      <Animated.View
         style={{
           width: "100%",
           maxWidth: 420,
@@ -187,6 +201,8 @@ export default function AuroraGlobalNav() {
           shadowRadius: 18,
           shadowOffset: { width: 0, height: 8 },
           elevation: 12,
+          opacity: collapseFade,
+          transform: [{ translateY: collapseShift }, { scale: collapseScale }],
         }}
       >
       {/* The frosted pill itself (clips the blur to the radius). The four side
@@ -261,7 +277,7 @@ export default function AuroraGlobalNav() {
           </View>
         </Pressable>
       </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }

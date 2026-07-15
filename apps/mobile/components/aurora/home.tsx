@@ -48,6 +48,7 @@ import { fs, space, F, serifIf } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
+import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
@@ -80,6 +81,7 @@ export default function AuroraHome() {
   const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
   const insets = useSafeAreaInsets();
+  const navScroll = useNavScrollProps();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
   const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
@@ -268,7 +270,7 @@ export default function AuroraHome() {
           same field here so it isn't the one flat tab next to History/More/You. */}
       <AuroraField />
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }} {...navScroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         <Animated.View style={enterStyle}>
         {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
             Replaces the old greeting + search/bell row: the brand sits centre

@@ -24,6 +24,7 @@ import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
+import { NavScrollProvider } from "../lib/nav-scroll";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
@@ -42,7 +43,7 @@ function Shell() {
     return () => { cleanup?.(); };
   }, []);
   return (
-    <>
+    <NavScrollProvider>
       <StatusBar style={scheme === "light" ? "dark" : "light"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }}>
         {/* The signed-in app shell. Auth/funnel screens (welcome/login) can sit
@@ -58,7 +59,7 @@ function Shell() {
         <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
       <AuroraGlobalNav />
-    </>
+    </NavScrollProvider>
   );
 }
 

@@ -23,6 +23,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment } from "./swiftui";
@@ -113,6 +114,9 @@ export function AuroraScreen({
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
+  // Drives the floating nav's shrink-on-scroll (full at the top, compact once
+  // scrolled) — spread onto the ScrollView so every AuroraScreen collapses it.
+  const navScroll = useNavScrollProps();
   // Subtle entrance — content fades + rises on every screen ENTRY (push or tab
   // switch), so navigation feels like motion, not a hard cut. Re-runs on focus.
   const enter = useRef(new Animated.Value(0)).current;
@@ -140,6 +144,7 @@ export function AuroraScreen({
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.
       contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      {...navScroll}
       keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
