@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Pressable, StyleSheet, Animated, AccessibilityInfo } from "react-native";
+import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform } from "react-native";
 import { BlurView } from "expo-blur";
+import { Host, RoundedRectangle } from "@expo/ui/swift-ui";
+import { glassEffect } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -88,6 +90,13 @@ export default function AuroraGlobalNav() {
   const [measured, setMeasured] = useState(0);
   const firstRef = useRef(true);
   const [reduceMotion, setReduceMotion] = useState(false);
+  // OPTIMISTIC selection — the indicator + icon tint follow this, updated the
+  // instant a tab is pressed (not when the route finally commits). Fixes the
+  // "icon turns black, then a second later the pill slides in" lag: navigation
+  // (useSegments) can take a beat to flip on a heavy screen, so previously the
+  // tapped icon inverted to its dark on-pill colour immediately while the pill
+  // was still waiting on the route. Now the pill leads; the route reconciles it.
+  const [selectedSeg, setSelectedSeg] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -103,9 +112,21 @@ export default function AuroraGlobalNav() {
   const inTabs0 = top0 === "(tabs)";
   const activeSeg0 = inTabs0 ? (segments[1] ?? "index") : null;
   const focusedSeg = SIDES.find((s) => activeSeg0 === s.seg || (!inTabs0 && top0 === s.seg))?.seg ?? null;
+  // Reconcile the optimistic selection with the real route once it settles
+  // (deep links, the back button, or a redirect that lands elsewhere than the
+  // tapped tab). A press sets selectedSeg first; this keeps it honest after.
+  useEffect(() => { setSelectedSeg(focusedSeg); }, [focusedSeg]);
+
+  // iOS renders the moving highlight as REAL Liquid Glass (a native SwiftUI
+  // glassEffect lens via @expo/ui — the same material the kit's GlassSurface
+  // uses); Android falls back to the opaque chalk pill. Over the translucent
+  // glass the active glyph stays bright (chalk) so it never inverts to an
+  // invisible dark-on-glass; over the opaque chalk pill it flips to ink.
+  const useGlass = Platform.OS === "ios";
+  const activeIconColor = useGlass ? C.chalk : C.onAccent;
 
   useEffect(() => {
-    const pos = focusedSeg ? posRef.current[focusedSeg] : null;
+    const pos = selectedSeg ? posRef.current[selectedSeg] : null;
     if (!pos) {
       Animated.timing(op, { toValue: 0, duration: 160, useNativeDriver: true }).start();
       return;
@@ -120,15 +141,17 @@ export default function AuroraGlobalNav() {
       return;
     }
     Animated.parallel([
-      Animated.spring(tx, { toValue: target, useNativeDriver: true, speed: 14, bounciness: 9 }),
+      Animated.spring(tx, { toValue: target, useNativeDriver: true, speed: 16, bounciness: 8 }),
       Animated.timing(op, { toValue: 1, duration: 120, useNativeDriver: true }),
-      Animated.sequence([
+      // The chalk pill stretches mid-travel for a liquid feel; the glass lens
+      // gets its liquid quality from the material itself, so it just springs.
+      ...(useGlass ? [] : [Animated.sequence([
         Animated.timing(sx, { toValue: 1.28, duration: 150, useNativeDriver: true }),
         Animated.spring(sx, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 8 }),
-      ]),
+      ])]),
     ]).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusedSeg, measured, reduceMotion]);
+  }, [selectedSeg, measured, reduceMotion]);
 
   // Gate: Aurora only, signed in, and not on an auth/funnel/live-workout route.
   if (!aurora || !ready || !session) return null;
@@ -157,14 +180,19 @@ export default function AuroraGlobalNav() {
   // makes React remount the whole subtree each render. A plain function that
   // returns JSX renders inline with no remount penalty.
   const renderSideItem = (tab: Side) => {
-    // Tab routes match on the second segment; a pushed route (e.g. Explore →
-    // /explore) matches on the first segment so it still highlights.
-    const focused = activeSeg === tab.seg || (!inTabs && top === tab.seg);
+    // The VISUAL selection follows selectedSeg (optimistic), so the highlight +
+    // icon tint respond the instant you tap; the ROUTE (focusedSeg) only decides
+    // whether we still need to navigate.
+    const isSel = selectedSeg === tab.seg;
+    const onRoute = focusedSeg === tab.seg;
     const label = tab.labelKey ? t(tab.labelKey) : (tab.label ?? "");
     return (
       <Pressable
         key={tab.id}
-        onPress={() => { if (!focused) { if (haptics) Haptics.selectionAsync().catch(() => {}); router.navigate(tab.href); } }}
+        onPress={() => {
+          setSelectedSeg(tab.seg);
+          if (!onRoute) { if (haptics) Haptics.selectionAsync().catch(() => {}); router.navigate(tab.href); }
+        }}
         onLayout={(e) => {
           const { x, width } = e.nativeEvent.layout;
           const prev = posRef.current[tab.seg];
@@ -174,16 +202,15 @@ export default function AuroraGlobalNav() {
           }
         }}
         accessibilityRole="button"
-        accessibilityState={{ selected: focused }}
+        accessibilityState={{ selected: isSel }}
         accessibilityLabel={label}
         hitSlop={8}
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
         {/* Icon-only bar — the accessibilityLabel names the destination for
-            screen readers; the shared sliding pill marks the current tab, so the
-            glyph just tints onAccent when focused (chalk pill behind it). */}
+            screen readers; the shared sliding highlight marks the current tab. */}
         <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name={tab.glyph} size={23} color={focused ? C.onAccent : C.ash} />
+          <AuroraIcon name={tab.glyph} size={23} color={isSel ? activeIconColor : C.ash} />
         </View>
       </Pressable>
     );
@@ -223,12 +250,29 @@ export default function AuroraGlobalNav() {
         {/* Inner row (no padding of its own) so the items' onLayout x and the
             absolute indicator share one origin. */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          {/* The sliding highlight — springs between slots (translateX) and
-              stretches mid-travel (scaleX); sits behind the icons. */}
+          {/* The sliding highlight — springs between slots, sitting behind the
+              icons. iOS: a real Liquid Glass lens (native SwiftUI glassEffect).
+              Android: the opaque chalk pill, which also stretches mid-travel. */}
           <Animated.View
             pointerEvents="none"
-            style={{ position: "absolute", left: 0, top: 0, width: PILL_W, height: PILL_H, borderRadius: 20, backgroundColor: C.chalk, opacity: op, transform: [{ translateX: tx }, { scaleX: sx }] }}
-          />
+            style={{ position: "absolute", left: 0, top: 0, width: PILL_W, height: PILL_H, opacity: op, transform: useGlass ? [{ translateX: tx }] : [{ translateX: tx }, { scaleX: sx }] }}
+          >
+            {useGlass ? (
+              <>
+                {/* A faint floor keeps the selection visible on iOS < 26 (where
+                    glassEffect degrades) and during the brief native mount. */}
+                <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)" }]} />
+                <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <RoundedRectangle
+                    cornerRadius={20}
+                    modifiers={[glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 })]}
+                  />
+                </Host>
+              </>
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk }]} />
+            )}
+          </Animated.View>
           {LEFT.map(renderSideItem)}
           {/* centre gap — the raised Train FAB overlays this slot */}
           <View style={{ width: 64 }} />
@@ -241,7 +285,7 @@ export default function AuroraGlobalNav() {
           Rendered in the OUTER (non-clipped) wrapper so it can overflow upward. */}
       <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, alignItems: "center" }}>
         <Pressable
-          onPress={() => { if (!trainFocused) { if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.navigate(TRAIN.href); } }}
+          onPress={() => { setSelectedSeg(null); if (!trainFocused) { if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.navigate(TRAIN.href); } }}
           accessibilityRole="button"
           accessibilityState={{ selected: trainFocused }}
           accessibilityLabel={t("nav.train")}
