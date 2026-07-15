@@ -16,6 +16,8 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  checkinCooldownRemainingMs,
+  relativeTime,
   planSchedule,
   READINESS_FEELINGS,
   READINESS_FACE,
@@ -110,6 +112,7 @@ export default function AuroraHome() {
   // check-in (primed/good/flat/wrecked), not a computed score. null until they
   // check in today; refreshed on focus, pull-to-refresh, and after the sheet saves.
   const [feeling, setFeeling] = useState<ReadinessFeeling | null>(null);
+  const [feelingAt, setFeelingAt] = useState<number | null>(null);
   const loadFeeling = useCallback(async () => {
     // Self-contained try/catch: this runs inside the home-load Promise.all, so a
     // throw here must never block sessions/assignments/macrocycle from loading.
@@ -118,6 +121,7 @@ export default function AuroraHome() {
       const today = new Date().toDateString();
       const todays = checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
       setFeeling(todays ? checkinFeeling(todays) : null);
+      setFeelingAt(todays?.weekOf ? new Date(todays.weekOf).getTime() : null);
     } catch (err) {
       console.error("Failed to load readiness feeling:", err);
     }
@@ -460,6 +464,7 @@ export default function AuroraHome() {
         <FeelingCard
           C={C}
           feeling={feeling}
+          loggedAt={feelingAt}
           doneCount={doneToday.length}
           plannedCount={plannedToday}
           onLog={() => setQuickOpen(true)}
@@ -603,13 +608,19 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // today's readiness inline (one tap → createCheckin, the same write the full
 // check-in makes), and a quiet footer: log a session, and the day's done count.
 // The picked face lights in its own semantic feeling colour.
-function FeelingCard({ C, feeling, doneCount, plannedCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; loggedAt: number | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
   // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
   // session fills it whole; nothing logged leaves it an empty bezel.
   const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
+  // The 6h re-log window: while open, show "next in Xh Ym" beside today's last
+  // logged feeling. Informational — the faces stay tappable.
+  const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
+  const coolMin = Math.ceil(coolMs / 60000);
+  const coolH = Math.floor(coolMin / 60);
+  const coolM = coolMin % 60;
   const pick = async (rating: number) => {
     if (busy) return;
     setBusy(true);
@@ -638,6 +649,20 @@ function FeelingCard({ C, feeling, doneCount, plannedCount, onLog, onDone, onPic
           );
         })}
       </View>
+      {/* today's last logged feeling + the re-log cooldown chip (added; the
+          faces above are unchanged). Only shows once something's logged today. */}
+      {feeling && loggedAt != null ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 15 }}>
+          <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+            {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
+          </Text>
+          {coolMs > 0 ? (
+            <View style={{ marginLeft: "auto", borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {/* range ring — the tally is an instrument readout (tap = today's log);
           the action is a state-aware prompt (tap = log a session). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 15 }}>

@@ -19,6 +19,8 @@ import { fs, space,
   ROLE_COLOR,
   readinessRole,
   checkinFeeling,
+  checkinCooldownRemainingMs,
+  relativeTime,
   planSchedule,
   READINESS_FEELINGS,
   READINESS_FACE,
@@ -164,6 +166,7 @@ export default function AuroraToday({
   // check in today; refetched when the Readiness sheet saves. Client-only fetch
   // so the today-comparison never mismatches the server clock on hydration.
   const [feeling, setFeeling] = useState<ReadinessFeeling | null>(null);
+  const [feelingAt, setFeelingAt] = useState<number | null>(null);
   const loadFeeling = useCallback(async () => {
     try {
       const r = await fetch("/api/checkins");
@@ -172,6 +175,7 @@ export default function AuroraToday({
       const today = new Date().toDateString();
       const todays = (d?.checkins ?? []).find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
       setFeeling(todays ? checkinFeeling(todays) : null);
+      setFeelingAt(todays?.weekOf ? new Date(todays.weekOf).getTime() : null);
     } catch { /* leave as-is */ }
   }, []);
   useEffect(() => { loadFeeling(); }, [loadFeeling]);
@@ -401,6 +405,7 @@ export default function AuroraToday({
           the two secondary affordances — log a session, and the day's done count. */}
       <FeelingCard
         feeling={feeling}
+        loggedAt={feelingAt}
         doneCount={doneToday.length}
         plannedCount={plannedToday}
         onLog={() => setQuickOpen(true)}
@@ -560,12 +565,18 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 // today's readiness inline (one tap → POST /api/checkins, the same write the full
 // check-in makes), and a quiet footer: log a session, and the day's done count.
 // The picked face lights in its own semantic feeling colour.
-function FeelingCard({ feeling, doneCount, plannedCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; loggedAt: number | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
   const { t } = useLang();
   const [busy, setBusy] = useState(false);
   // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
   // session fills it whole; nothing logged leaves it an empty bezel.
   const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
+  // The 6h re-log window: while it's open, show "next in Xh Ym" beside today's
+  // last logged feeling. Purely informational — the faces stay tappable.
+  const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
+  const coolMin = Math.ceil(coolMs / 60000);
+  const coolH = Math.floor(coolMin / 60);
+  const coolM = coolMin % 60;
   const pick = async (rating: number) => {
     if (busy) return;
     setBusy(true);
@@ -598,6 +609,20 @@ function FeelingCard({ feeling, doneCount, plannedCount, onLog, onDone, onPicked
           );
         })}
       </div>
+      {/* today's last logged feeling + the re-log cooldown chip (added; the
+          faces above are unchanged). Only shows once something's logged today. */}
+      {feeling && loggedAt != null && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+            {t("w.home.today.feelLogged")} <b style={{ color: C("chalk"), fontWeight: 700 }}>{t(`w.recovery.readiness.${feeling}`)}</b>, {relativeTime(loggedAt)}
+          </span>
+          {coolMs > 0 && (
+            <span style={{ marginLeft: "auto", flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 10px" }}>
+              {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
+            </span>
+          )}
+        </div>
+      )}
       {/* range ring — a live gauge: the arc lights toward today's scheduled
           sessions (tap = today's log). The action is a state-aware prompt. */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 15 }}>
