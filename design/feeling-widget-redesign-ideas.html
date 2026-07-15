@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feeling Widget — 5 Redesign Ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;--amber:#d0cd94;--amber-text:#d0cd94;
+    --red:#d56f3e;--red-text:#e58a5c;--violet:#8296c4;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1200px;margin:0 auto 18px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:750px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  .gallery{max-width:1200px;margin:40px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:48px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:400px}
+  .cap{margin:0 2px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .ctx{font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:0 4px 8px}
+
+  /* card shell (the real home FeelingCard) */
+  .card{border:1px solid var(--line);border-radius:22px;padding:18px;background:var(--ink2);box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .card + .card{margin-top:14px}
+  .title{font-family:var(--sans);font-weight:700;font-size:16px;letter-spacing:-.01em}
+  .face{display:inline-grid;place-items:center;flex:none}
+
+  /* face picker row */
+  .faces{display:flex;justify-content:space-between;gap:6px;margin:16px 0}
+  .faces button{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0;border-radius:16px;cursor:pointer;background:transparent;border:1px solid transparent;transition:background .15s}
+  .faces button .lb{font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash)}
+  .faces button.on.p{background:color-mix(in srgb,var(--lime) 12%,transparent);border-color:color-mix(in srgb,var(--lime) 40%,transparent)}
+  .faces button.on.g{background:color-mix(in srgb,var(--blue-text) 12%,transparent);border-color:color-mix(in srgb,var(--blue-text) 40%,transparent)}
+  .faces button.on.p .lb{color:var(--lime-text)}
+  .faces button.on.g .lb{color:var(--blue-text)}
+  .faces.dim button{opacity:.4}
+  .faces.dim button.on{opacity:1}
+
+  /* footer: done ring + link */
+  .foot{display:flex;align-items:center;gap:16px;border-top:1px solid var(--line);padding-top:15px}
+  .ring{position:relative;flex:none}
+  .ring .num{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:20px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .foot .txt{flex:1;min-width:0}
+  .foot .txt .k{font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .foot .txt .lnk{margin-top:9px;display:inline-flex;align-items:center;gap:7px;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lime-text);cursor:pointer}
+
+  /* status line + chips */
+  .status{display:flex;align-items:center;gap:10px;margin:2px 0 2px}
+  .status .s{font:600 12px/1 var(--mono);color:var(--ash);letter-spacing:.02em}
+  .status .s b{color:var(--chalk);font-weight:700}
+  .chip{margin-left:auto;font:700 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+  .chip.ok{color:var(--lime-text);border:1px solid color-mix(in srgb,var(--lime) 38%,transparent);background:color-mix(in srgb,var(--lime) 9%,transparent)}
+  .chip.wait{color:var(--ash);border:1px solid var(--line);background:var(--ink)}
+
+  /* concept 2: split */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .half{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--ink);display:flex;flex-direction:column;gap:10px;min-height:150px}
+  .half .k{font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--blue-text)}
+  .half.tr .k{color:var(--lime-text)}
+  .half .big{display:flex;align-items:center;gap:12px}
+  .half .big .w{font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--blue-text)}
+  .half .m{font:600 11px/1.4 var(--mono);color:var(--ash);margin-top:auto}
+  .half .relog{font:700 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ash2)}
+  .half .go{font:700 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--lime-text);margin-top:auto}
+  .half.tr{align-items:center;justify-content:center;text-align:center}
+  .half.tr .k{align-self:flex-start}
+
+  /* concept 3: day trace */
+  .trace{display:flex;align-items:center;gap:0;margin-top:4px;padding:14px 2px 2px;border-top:1px solid var(--line);position:relative}
+  .trace .node{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative;z-index:1}
+  .trace .node .av{width:38px;height:38px;border-radius:12px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center}
+  .trace .node.next .av{border-style:dashed;border-color:var(--line2)}
+  .trace .node .tm{font:600 9px/1 var(--mono);color:var(--ash);letter-spacing:.04em}
+  .trace .seg{flex:1;height:2px;background:var(--line);margin-bottom:22px}
+  .trace .lbl{position:absolute;top:-2px;left:2px;font:700 9px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2)}
+  .traceHead{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+  .traceHead .cnt{font:600 11px/1 var(--mono);color:var(--ash)}
+
+  /* concept 4: one action */
+  .hero{display:flex;align-items:center;gap:16px;margin:14px 0}
+  .hero .fw{width:64px;height:64px;border-radius:18px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .hero .w{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--blue-text)}
+  .hero .m{font:600 11px/1.3 var(--mono);color:var(--ash);margin-top:5px;letter-spacing:.02em}
+  .hero .done{margin-left:auto;text-align:center}
+  .hero .done .k{font:700 8.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);margin-top:6px}
+  .bigcta{width:100%;border:none;border-radius:999px;background:var(--lime);color:var(--on-accent);font:800 15px var(--sans);padding:15px;cursor:pointer;text-align:center}
+  .bigcta.wait{background:var(--ink);color:var(--ash);border:1px solid var(--line);cursor:default;display:flex;align-items:center;justify-content:center;gap:8px}
+  .bigcta.wait b{color:var(--chalk);font-variant-numeric:tabular-nums}
+  .subcta{width:100%;text-align:center;margin-top:10px;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lime-text);cursor:pointer}
+
+  /* concept 5: dual ring */
+  .rings{display:flex;gap:14px;margin:16px 0 4px}
+  .rings .rc{flex:1;border:1px solid var(--line);border-radius:16px;background:var(--ink);padding:14px;display:flex;flex-direction:column;align-items:center;gap:9px}
+  .rings .rc .k{font:700 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .rings .rc .cap2{font:600 10px/1.3 var(--mono);color:var(--ash2);text-align:center}
+  .minifaces{display:flex;justify-content:space-between;gap:6px;border-top:1px solid var(--line);padding-top:13px}
+  .minifaces button{flex:1;display:grid;place-items:center;padding:8px 0;border-radius:12px;background:transparent;border:1px solid transparent;cursor:pointer}
+  .minifaces button.on{background:color-mix(in srgb,var(--blue-text) 12%,transparent);border-color:color-mix(in srgb,var(--blue-text) 40%,transparent)}
+
+  footer{max-width:1200px;margin:56px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Today home — "How ready do you feel?" card</div>
+  <h1>The feeling card, re-thought <span>— 5 ideas</span></h1>
+  <p>Redesigns of the full-width home card (<b>FeelingCard</b> in <b>today.tsx</b>): the four readiness faces that log a check-in on tap, plus the DONE-TODAY session ring and the "Already trained?" link. Today it just lights one face and forgets — these carry the new model: <b>log at least once a day, re-log anytime, capped once per 6h</b>. Where the state matters, both the <b>Unlocked</b> and <b>Cooling-down</b> looks are shown.</p>
+</div>
+
+<div class="gallery">
+
+  <!-- 1 · LOGGED-STATE AWARE -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>Logged-state aware</div>
+      <h2>Smallest fix: it remembers today</h2>
+      <p>Keeps the four faces exactly, but adds a <b>status line</b> — what you last logged, when — and a chip that flips between "Update anytime" and a live cooldown. The lit face shows today's pick instead of resetting to blank. Both states below.</p>
+    </div>
+    <div class="ctx">Unlocked</div>
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="faces">
+        <button class="w"><span class="face" data-face="wrecked" data-size="36"></span><span class="lb">Wrecked</span></button>
+        <button class="f"><span class="face" data-face="flat" data-size="36"></span><span class="lb">Flat</span></button>
+        <button class="g on"><span class="face" data-face="good" data-size="36"></span><span class="lb">Good</span></button>
+        <button class="p"><span class="face" data-face="primed" data-size="36"></span><span class="lb">Primed</span></button>
+      </div>
+      <div class="status"><span class="s">Logged <b>Good</b>, 2h 10m ago</span><span class="chip ok">Update anytime</span></div>
+      <div class="foot" style="margin-top:13px">
+        <div class="ring"><svg width="58" height="58" viewBox="0 0 58 58"><circle cx="29" cy="29" r="24" fill="none" stroke="#242724" stroke-width="5"/></svg><span class="num" style="color:var(--ash)">0</span></div>
+        <div class="txt"><div class="k">Done today</div><div class="lnk">Already trained? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+      </div>
+    </div>
+    <div class="ctx" style="margin-top:14px">Cooling down</div>
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="faces dim">
+        <button class="w"><span class="face" data-face="wrecked" data-size="36"></span><span class="lb">Wrecked</span></button>
+        <button class="f"><span class="face" data-face="flat" data-size="36"></span><span class="lb">Flat</span></button>
+        <button class="g on"><span class="face" data-face="good" data-size="36"></span><span class="lb">Good</span></button>
+        <button class="p"><span class="face" data-face="primed" data-size="36"></span><span class="lb">Primed</span></button>
+      </div>
+      <div class="status"><span class="s">Logged <b>Good</b>, just now</span><span class="chip wait">Next in 5h 12m</span></div>
+    </div>
+  </div>
+
+  <!-- 2 · SPLIT -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>Feel / Trained split</div>
+      <h2>Two jobs, two halves</h2>
+      <p>Today the card quietly does two unrelated things — log a feeling and count sessions. This splits them: a <b>Feel</b> tile (big current face, tap to re-log) beside a <b>Trained</b> tile (the ring + log-a-session). Each reads in one glance.</p>
+    </div>
+    <div class="ctx">Unlocked</div>
+    <div class="card">
+      <div class="title">Today</div>
+      <div class="split">
+        <div class="half">
+          <div class="k">Feel</div>
+          <div class="big"><span class="face" data-face="good" data-size="40"></span><span class="w">Good</span></div>
+          <div class="m">Logged 2h 10m ago</div>
+          <div class="relog">Tap a face to re-log →</div>
+        </div>
+        <div class="half tr">
+          <div class="k">Trained</div>
+          <div class="ring" style="margin:auto 0"><svg width="66" height="66" viewBox="0 0 66 66"><circle cx="33" cy="33" r="27" fill="none" stroke="#242724" stroke-width="6"/></svg><span class="num" style="color:var(--ash)">0</span></div>
+          <div class="go">Log a session →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · DAY TRACE -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Day trace</div>
+      <h2>Each re-log leaves a mark</h2>
+      <p>The picker stays on top; underneath, every log today drops a face node onto a mini trace with its time, and the next slot sits ready. Re-logging isn't a reset — it <b>builds a visible line</b> of how the day has gone.</p>
+    </div>
+    <div class="ctx">Two logs today</div>
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="faces">
+        <button class="w"><span class="face" data-face="wrecked" data-size="36"></span><span class="lb">Wrecked</span></button>
+        <button class="f"><span class="face" data-face="flat" data-size="36"></span><span class="lb">Flat</span></button>
+        <button class="g on"><span class="face" data-face="good" data-size="36"></span><span class="lb">Good</span></button>
+        <button class="p"><span class="face" data-face="primed" data-size="36"></span><span class="lb">Primed</span></button>
+      </div>
+      <div class="trace">
+        <span class="lbl">Today</span>
+        <div class="node"><div class="av"><span class="face" data-face="primed" data-size="26"></span></div><div class="tm">07:12</div></div>
+        <div class="seg"></div>
+        <div class="node"><div class="av"><span class="face" data-face="good" data-size="26"></span></div><div class="tm">12:40</div></div>
+        <div class="seg"></div>
+        <div class="node next"><div class="av"><span style="color:var(--ash2);font-size:22px;font-weight:300">+</span></div><div class="tm">now</div></div>
+      </div>
+      <div class="traceHead"><span class="cnt">0 sessions done</span><span class="lnk" style="font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lime-text)">Already trained? →</span></div>
+    </div>
+  </div>
+
+  <!-- 4 · ONE ACTION -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>One clear action</div>
+      <h2>Big face, one button</h2>
+      <p>The most decisive: your current feeling is the hero, and a single primary button says exactly what's next. It <b>morphs</b> — "Log how you feel" when it's time, a live countdown when cooling. Session count shrinks to a quiet corner ring.</p>
+    </div>
+    <div class="ctx">Unlocked</div>
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="hero">
+        <div class="fw"><span class="face" data-face="good" data-size="42"></span></div>
+        <div><div class="w">Good</div><div class="m">Logged 2h 10m ago</div></div>
+        <div class="done"><div class="ring"><svg width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#242724" stroke-width="4"/></svg><span class="num" style="font-size:15px;color:var(--ash)">0</span></div><div class="k">Done</div></div>
+      </div>
+      <button class="bigcta">Log how you feel now</button>
+      <div class="subcta">Already trained? →</div>
+    </div>
+    <div class="ctx" style="margin-top:14px">Cooling down</div>
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="hero">
+        <div class="fw"><span class="face" data-face="good" data-size="42"></span></div>
+        <div><div class="w">Good</div><div class="m">Logged just now</div></div>
+        <div class="done"><div class="ring"><svg width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="#242724" stroke-width="4"/></svg><span class="num" style="font-size:15px;color:var(--ash)">0</span></div><div class="k">Done</div></div>
+      </div>
+      <div class="bigcta wait">Next check-in in <b>5h 12m</b></div>
+      <div class="subcta">Already trained? →</div>
+    </div>
+  </div>
+
+  <!-- 5 · DUAL RING COCKPIT -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Dual-ring cockpit</div>
+      <h2>Readiness ring + session ring</h2>
+      <p>Two gauges up top: a <b>Readiness</b> ring that fills with today's feeling (and drains as the cooldown recharges) beside the <b>Done</b> session ring. The four-face picker sits compact below. A denser, dashboard read of the day.</p>
+    </div>
+    <div class="ctx">Unlocked</div>
+    <div class="card">
+      <div class="title">Today's readiness</div>
+      <div class="rings">
+        <div class="rc">
+          <div class="k">Readiness</div>
+          <div class="ring"><svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)"><circle cx="36" cy="36" r="30" fill="none" stroke="#242724" stroke-width="7"/><circle cx="36" cy="36" r="30" fill="none" stroke="#6cb6bd" stroke-width="7" stroke-linecap="round" stroke-dasharray="188" stroke-dashoffset="51"/></svg><span class="num" style="font-size:17px;color:var(--blue-text)">73</span></div>
+          <div class="cap2">Good — logged 2h ago</div>
+        </div>
+        <div class="rc">
+          <div class="k">Done today</div>
+          <div class="ring"><svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="#242724" stroke-width="7"/></svg><span class="num" style="font-size:22px;color:var(--ash)">0</span></div>
+          <div class="cap2" style="color:var(--lime-text)">Log a session →</div>
+        </div>
+      </div>
+      <div class="minifaces">
+        <button><span class="face" data-face="wrecked" data-size="30"></span></button>
+        <button><span class="face" data-face="flat" data-size="30"></span></button>
+        <button class="on"><span class="face" data-face="good" data-size="30"></span></button>
+        <button><span class="face" data-face="primed" data-size="30"></span></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <b>Same write under all five.</b> Tapping a face POSTs a check-in (energy = sleep = soreness = mood = the picked 1–5), exactly as today's card does. New: the card reads back today's last log + time, re-logs are allowed once the 6h window is open, and the cooling state swaps the picker for a live countdown. The DONE-TODAY session ring + "Already trained?" link are unchanged in purpose. Aurora tokens + the shipped readiness faces (lime / blue / amber / red). Standalone preview, no build step.
+</footer>
+
+<script>
+  function faceSVG(feeling, size){
+    var M={primed:'M12 23 Q20 31 28 23',good:'M13 23 Q20 30 27 23',flat:'M13 25 L27 25',wrecked:'M13 28 Q20 21 27 28'};
+    var C={primed:'#c6f84f',good:'#6cb6bd',flat:'#d0cd94',wrecked:'#e58a5c'};
+    var c=C[feeling]||'#8b8f86', m=M[feeling]||M.flat;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 40 40" fill="none">'
+      +'<circle cx="13" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<circle cx="27" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<path d="'+m+'" stroke="'+c+'" stroke-width="2.8" stroke-linecap="round" fill="none"/>'
+      +'</svg>';
+  }
+  document.querySelectorAll('[data-face]').forEach(function(el){
+    el.innerHTML=faceSVG(el.dataset.face, +el.dataset.size||34);
+  });
+</script>
+</body>
+</html>
