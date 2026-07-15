@@ -7,6 +7,7 @@ import { useTheme } from "../lib/theme";
 import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
+import { useNavScrollProps } from "../lib/nav-scroll";
 
 function Comments({ item }: { item: FeedItemView }) {
   const C = useTheme().palette;
@@ -65,6 +66,7 @@ export default function FeedScreen() {
   };
   const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };
   const padBottom = useScreenBottomPad();
+  const navScroll = useNavScrollProps();
 
   const header = (
     <>
@@ -130,6 +132,7 @@ export default function FeedScreen() {
         renderItem={renderItem}
         ListHeaderComponent={header}
         ListEmptyComponent={feed === null ? <Loading /> : <Empty title="Your feed is quiet" sub="Follow friends from Find friends — their workouts and PRs show up here." />}
+        {...navScroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         initialNumToRender={6}

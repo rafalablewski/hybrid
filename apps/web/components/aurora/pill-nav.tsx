@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space, groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
@@ -90,6 +90,31 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     return () => { window.removeEventListener("resize", onResize); if (stretchTimer) clearTimeout(stretchTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFlat]);
+
+  // Shrink-on-scroll (the Instagram behaviour): full size at the very top, the
+  // pill scales down smoothly as the page scrolls. The whole bar (barRef) is
+  // scaled — the FAB + sliding indicator are its children, so they shrink with
+  // it. Applied imperatively per animation frame (transform isn't in the bar's
+  // React-managed style, so it's never clobbered on re-render); honours reduced
+  // motion; recomputed on screen change so a short screen re-expands.
+  useEffect(() => {
+    const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    const apply = () => {
+      raf = 0;
+      const bar = barRef.current;
+      if (!bar) return;
+      const y = window.scrollY || 0;
+      const p = reduce ? 0 : y <= 0 ? 0 : y >= 48 ? 1 : y / 48;
+      bar.style.transformOrigin = "bottom center";
+      bar.style.transform = `scale(${1 - 0.16 * p})`;
+      bar.style.opacity = String(1 - 0.06 * p);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    apply();
+    return () => { window.removeEventListener("scroll", onScroll); if (raf) cancelAnimationFrame(raf); };
+  }, [activeId]);
 
   if (!aurora) return null;
 
