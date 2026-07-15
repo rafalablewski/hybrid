@@ -12,6 +12,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { fs, F, serifIf, startGlow } from "../../lib/ui";
 import { RADIUS } from "./kit";
+import { CtaLabel } from "./cta-label";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
@@ -395,7 +396,7 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
 function PrimaryBtn({ C, label, onPress }: { C: Pal; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{label}</Text>
+      <CtaLabel label={label} color={C.onAccent} fontSize={fs.bodyLg} />
     </Pressable>
   );
 }
