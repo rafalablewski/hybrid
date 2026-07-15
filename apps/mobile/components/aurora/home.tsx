@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, StyleSheet } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -44,7 +44,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, serifIf, startGlow } from "../../lib/ui";
+import { fs, space, F, serifIf, startGlow, useEntrance } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { CtaLabel } from "./cta-label";
@@ -143,17 +143,9 @@ export default function AuroraHome() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Subtle entrance — content fades + rises each time Today gains focus, matching
-  // the AuroraScreen transition so the home doesn't hard-cut in.
-  const enter = useRef(new Animated.Value(0)).current;
-  useFocusEffect(
-    useCallback(() => {
-      enter.setValue(0);
-      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
-      anim.start();
-      return () => anim.stop();
-    }, [enter]),
-  );
-  const enterStyle = { opacity: enter, transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] };
+  // the AuroraScreen transition so the home doesn't hard-cut in. Shared hook
+  // (lib/ui): same Reduce-Motion guard + JS-driver blank-screen fix as the shell.
+  const enterStyle = useEntrance();
 
   // Onboarding prefs that tailor the prescription (client-only).
   useEffect(() => {

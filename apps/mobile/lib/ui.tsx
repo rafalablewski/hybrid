@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   type TextStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { BlurView } from "expo-blur";
 import { colors, fs, space } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
@@ -62,6 +63,49 @@ export function startGlow(accent: string, pressed = false): ViewStyle {
     shadowOpacity: pressed ? 0.55 : 0.32,
     shadowRadius: pressed ? 22 : 14,
     elevation: pressed ? 10 : 6,
+  };
+}
+
+// SCREEN ENTRANCE — the subtle fade + 10px rise every screen plays on focus.
+// Returns an animated style to spread onto the content wrapper; one source of
+// truth so the shell (AuroraScreen) and the screens that own their own shell
+// (Today/home) can't drift (home used to omit the Reduce-Motion guard).
+//
+// Deliberately runs on the JS animation driver (useNativeDriver: false). The
+// same entrance previously used the native driver, but under the New
+// Architecture (Fabric) a native-driver opacity animation started from
+// useFocusEffect can lose the JS-start-vs-native-mount race and strand the view
+// at its initial value (opacity 0). Because AuroraField (the ambient gradient)
+// renders OUTSIDE this wrapper, a stranded value left the whole screen blank —
+// just the gradient, no content — on some devices (e.g. iPhone 15) while faster
+// ones won the race (facebook/react-native#12453). The JS driver commits through
+// the standard renderer, so it always reaches the resting (visible) end state.
+// This is a one-shot 240ms entrance, so the JS-thread cost is negligible.
+//
+// Honours Reduce Motion: shows the screen at rest (no fade/rise) when it's on.
+export function useEntrance() {
+  const enter = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+  useFocusEffect(
+    useCallback(() => {
+      if (reducedMotion) {
+        enter.setValue(1);
+        return;
+      }
+      enter.setValue(0);
+      const anim = Animated.timing(enter, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      });
+      anim.start();
+      return () => anim.stop();
+    }, [enter, reducedMotion]),
+  );
+  return {
+    opacity: enter,
+    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
   };
 }
 
