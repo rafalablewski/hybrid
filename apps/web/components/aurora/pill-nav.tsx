@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space, groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
@@ -45,6 +45,51 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const [query, setQuery] = useState("");
   const closeMore = () => { setMoreOpen(false); setQuery(""); };
   const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
+
+  // Sliding selection indicator (the Instagram-style liquid pill): a single
+  // chalk highlight that SPRINGS to the active flat slot and STRETCHES mid-
+  // travel, instead of a static per-tab background. barRef is the offset parent;
+  // flatRefs holds the four flat buttons (the centre Train FAB is excluded — it
+  // has its own glow, so the indicator hides while Train is active).
+  const barRef = useRef<HTMLDivElement>(null);
+  const flatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [ind, setInd] = useState<{ x: number; top: number } | null>(null);
+  const [moving, setMoving] = useState(false);
+  const firstRef = useRef(true);
+
+  // Which of the four flat slots is lit: Today/Explore/Profile by route, "more"
+  // when its sheet is open or the active screen isn't a bar slot. Train (the
+  // centre FAB) maps to none → the indicator fades out while Train is active.
+  const flatSlotIds = new Set<string>([...PRIMARY.map((tb) => tb.id), "train", "log", "profile"]);
+  const moreLit = moreOpen || (activeId != null && !flatSlotIds.has(activeId));
+  const activeFlat = moreLit
+    ? "more"
+    : activeId === "today" || activeId === "explore" || activeId === "profile"
+      ? activeId
+      : null;
+
+  // Reposition the indicator whenever the active slot changes (and on resize).
+  // On the first paint it snaps into place; after that it springs + stretches.
+  useLayoutEffect(() => {
+    const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let stretchTimer: ReturnType<typeof setTimeout> | undefined;
+    const place = () => {
+      const bar = barRef.current;
+      const el = activeFlat ? flatRefs.current[activeFlat] : null;
+      if (!bar || !el) { setInd(null); return; }
+      setInd({ x: el.offsetLeft + (el.offsetWidth - 52) / 2, top: el.offsetTop + (el.offsetHeight - 52) / 2 });
+      if (!firstRef.current && !reduced) {
+        setMoving(true);
+        stretchTimer = setTimeout(() => setMoving(false), 240);
+      }
+      firstRef.current = false;
+    };
+    place();
+    const onResize = () => { firstRef.current = true; place(); };
+    window.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("resize", onResize); if (stretchTimer) clearTimeout(stretchTimer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFlat]);
 
   if (!aurora) return null;
 
@@ -184,24 +229,36 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
         {/* Liquid-glass pill — a frosted blur lets the page fizz through, lighter
             than the classic .liquid-glass (translucent tint + a top rim highlight,
             no grain/sheen). */}
-        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
+        <div ref={barRef} style={{ position: "relative", pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
+          {/* The single sliding highlight — springs between flat slots (transform),
+              stretching mid-travel (scaleX) for the liquid feel; sits behind the
+              icons (zIndex 0). Hidden while Train is active (ind === null). */}
+          {ind && (
+            <span
+              aria-hidden
+              style={{ position: "absolute", left: 0, top: ind.top, width: 52, height: 52, borderRadius: 26, background: C("chalk"), transformOrigin: "center", transform: `translateX(${ind.x}px) scaleX(${moving ? 1.32 : 1})`, transition: "transform .44s cubic-bezier(.34,1.36,.5,1)", zIndex: 0, pointerEvents: "none" }}
+            />
+          )}
           {/* Today · Explore | [Train] | More · Profile */}
           {tabs.map((tab) => (
-            <PillButton key={tab.id} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
+            <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
-          <PillButton icon="grid" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
-          <PillButton icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
+          <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>
     </>
   );
 }
 
-function PillButton({ icon, label, active, onClick }: { icon: AuroraIconName; label: string; active: boolean; onClick: () => void }) {
+function PillButton({ icon, label, active, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
   return (
-    <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
-      <span style={{ width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center", background: active ? C("chalk") : "transparent" }}>
+    // zIndex 1 keeps the glyph above the shared sliding highlight; the highlight
+    // itself (chalk pill) is drawn once in the bar, not per-button, so the icon
+    // just tints ink when active.
+    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
+      <span style={{ width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center" }}>
         <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={active ? C("ink") : C("ash")} />
       </span>
     </button>
@@ -214,7 +271,7 @@ function PillButton({ icon, label, active, onClick }: { icon: AuroraIconName; la
  */
 function TrainFab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
+    <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
       <span
         style={{
           width: 58, height: 58, borderRadius: "50%", display: "grid", placeItems: "center",

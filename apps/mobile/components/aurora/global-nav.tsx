@@ -1,4 +1,5 @@
-import { View, Pressable, StyleSheet } from "react-native";
+import { useRef, useState, useEffect } from "react";
+import { View, Pressable, StyleSheet, Animated, AccessibilityInfo } from "react-native";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
@@ -27,6 +28,7 @@ const RIGHT: Side[] = [
   { id: "more", glyph: "grid", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", href: "/(tabs)/you", seg: "you" },
 ];
+const SIDES: Side[] = [...LEFT, ...RIGHT];
 // The centre Train action opens the Train launcher hub (start today's session,
 // AI/repeat-last, routines, resume a draft) — matching web, where the Train FAB
 // also opens the launcher. From there one tap drops into the live logger.
@@ -35,6 +37,10 @@ const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.
 const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade"]);
+
+// The sliding highlight's size (matches the old per-item pill).
+const PILL_W = 46;
+const PILL_H = 40;
 
 /**
  * AURORA global navigation — the floating pill bottom bar, rendered once at the
@@ -54,6 +60,61 @@ export default function AuroraGlobalNav() {
   const persona = usePersona();
   const access = useNavAccess();
   const haptics = useLoggerPrefs().haptics;
+
+  // The single sliding selection indicator (the Instagram-style liquid pill): a
+  // chalk highlight that SPRINGS to the active slot and STRETCHES mid-travel,
+  // instead of a static per-tab background. Measured item geometry lives in a
+  // ref (onLayout); `measured` bumps so the animation effect re-runs once slots
+  // have real positions. Train (the centre FAB) maps to no side slot → the
+  // indicator fades out while Train is active (the FAB has its own glow).
+  const tx = useRef(new Animated.Value(0)).current;
+  const sx = useRef(new Animated.Value(1)).current;
+  const op = useRef(new Animated.Value(0)).current;
+  const posRef = useRef<Record<string, { x: number; width: number }>>({});
+  const [measured, setMeasured] = useState(0);
+  const firstRef = useRef(true);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => { if (alive) setReduceMotion(v); }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => { alive = false; sub.remove(); };
+  }, []);
+
+  // Which side slot is lit, derived the same way as renderSideItem's `focused`:
+  // a tab route matches on the second segment, a pushed route (e.g. Explore →
+  // /explore) on the first. Train / unknown routes → null (indicator hidden).
+  const top0 = segments[0];
+  const inTabs0 = top0 === "(tabs)";
+  const activeSeg0 = inTabs0 ? (segments[1] ?? "index") : null;
+  const focusedSeg = SIDES.find((s) => activeSeg0 === s.seg || (!inTabs0 && top0 === s.seg))?.seg ?? null;
+
+  useEffect(() => {
+    const pos = focusedSeg ? posRef.current[focusedSeg] : null;
+    if (!pos) {
+      Animated.timing(op, { toValue: 0, duration: 160, useNativeDriver: true }).start();
+      return;
+    }
+    const target = pos.x + (pos.width - PILL_W) / 2;
+    if (firstRef.current || reduceMotion) {
+      // First paint (or reduced motion): snap into place, no travel/stretch.
+      tx.setValue(target);
+      sx.setValue(1);
+      op.setValue(1);
+      firstRef.current = false;
+      return;
+    }
+    Animated.parallel([
+      Animated.spring(tx, { toValue: target, useNativeDriver: true, speed: 14, bounciness: 9 }),
+      Animated.timing(op, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(sx, { toValue: 1.28, duration: 150, useNativeDriver: true }),
+        Animated.spring(sx, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 8 }),
+      ]),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedSeg, measured, reduceMotion]);
 
   // Gate: Aurora only, signed in, and not on an auth/funnel/live-workout route.
   if (!aurora || !ready || !session) return null;
@@ -83,13 +144,21 @@ export default function AuroraGlobalNav() {
   // returns JSX renders inline with no remount penalty.
   const renderSideItem = (tab: Side) => {
     // Tab routes match on the second segment; a pushed route (e.g. Explore →
-    // /feed) matches on the first segment so it still highlights.
+    // /explore) matches on the first segment so it still highlights.
     const focused = activeSeg === tab.seg || (!inTabs && top === tab.seg);
     const label = tab.labelKey ? t(tab.labelKey) : (tab.label ?? "");
     return (
       <Pressable
         key={tab.id}
         onPress={() => { if (!focused) { if (haptics) Haptics.selectionAsync().catch(() => {}); router.navigate(tab.href); } }}
+        onLayout={(e) => {
+          const { x, width } = e.nativeEvent.layout;
+          const prev = posRef.current[tab.seg];
+          if (!prev || prev.x !== x || prev.width !== width) {
+            posRef.current[tab.seg] = { x, width };
+            setMeasured((m) => m + 1);
+          }
+        }}
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={label}
@@ -97,8 +166,9 @@ export default function AuroraGlobalNav() {
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
         {/* Icon-only bar — the accessibilityLabel names the destination for
-            screen readers; the active pill (chalk) marks the current tab. */}
-        <View style={{ width: 46, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
+            screen readers; the shared sliding pill marks the current tab, so the
+            glyph just tints onAccent when focused (chalk pill behind it). */}
+        <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name={tab.glyph} size={23} color={focused ? C.onAccent : C.ash} />
         </View>
       </Pressable>
@@ -123,9 +193,6 @@ export default function AuroraGlobalNav() {
           items sit either side of a centre gap reserved for the elevated FAB. */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
           borderRadius: 999,
           overflow: "hidden",
           borderWidth: 1,
@@ -137,10 +204,20 @@ export default function AuroraGlobalNav() {
         <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
         <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {LEFT.map(renderSideItem)}
-        {/* centre gap — the raised Train FAB overlays this slot */}
-        <View style={{ width: 64 }} />
-        {RIGHT.map(renderSideItem)}
+        {/* Inner row (no padding of its own) so the items' onLayout x and the
+            absolute indicator share one origin. */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          {/* The sliding highlight — springs between slots (translateX) and
+              stretches mid-travel (scaleX); sits behind the icons. */}
+          <Animated.View
+            pointerEvents="none"
+            style={{ position: "absolute", left: 0, top: 0, width: PILL_W, height: PILL_H, borderRadius: 20, backgroundColor: C.chalk, opacity: op, transform: [{ translateX: tx }, { scaleX: sx }] }}
+          />
+          {LEFT.map(renderSideItem)}
+          {/* centre gap — the raised Train FAB overlays this slot */}
+          <View style={{ width: 64 }} />
+          {RIGHT.map(renderSideItem)}
+        </View>
       </View>
 
       {/* ELEVATED TRAIN FAB — a larger lime circle raised above the bar, with a
@@ -188,4 +265,3 @@ export default function AuroraGlobalNav() {
     </View>
   );
 }
-
