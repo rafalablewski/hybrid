@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CHECKIN_COOLDOWN_MS } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -20,6 +21,21 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : n
 export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // 6h re-log cooldown: a feeling may be logged at most once every 6 hours.
+  // Server-authoritative (keyed on the last row's createdAt, not client-supplied
+  // weekOf), so the cap holds no matter which surface or client sends the POST.
+  const last = await prisma.checkin.findFirst({
+    where: { userId: me.id },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  if (last) {
+    const retryAfterMs = CHECKIN_COOLDOWN_MS - (Date.now() - last.createdAt.getTime());
+    if (retryAfterMs > 0) {
+      return NextResponse.json({ error: "cooldown", retryAfterMs }, { status: 429 });
+    }
+  }
 
   const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const weekOf =

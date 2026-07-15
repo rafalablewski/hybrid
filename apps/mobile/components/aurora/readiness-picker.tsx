@@ -35,14 +35,14 @@ export default function ReadinessPicker({ onDone }: { onDone?: () => void }) {
   const pick = async (key: string, rating: number) => {
     if (busy) return;
     setBusy(key);
-    const ok = await createCheckin({
+    const r = await createCheckin({
       weekOf: new Date().toISOString(),
       bodyMassKg: null,
       energy: rating, sleep: rating, soreness: rating, mood: rating,
       adherencePct: null, note: null, sharedWithCoach: false,
     });
     setBusy(null);
-    if (!ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
+    if (!r.ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
     revalidate.recovery();
     onDone?.();
   };

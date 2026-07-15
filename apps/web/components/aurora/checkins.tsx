@@ -54,6 +54,12 @@ export default function AuroraCheckins() {
         }),
       });
       if (res.status === 401) { setError(t("w.recovery.checkins.errSignIn")); setSaving(false); return; }
+      if (res.status === 429) {
+        const body = (await res.json().catch(() => ({}))) as { retryAfterMs?: number };
+        const mins = Math.ceil((body.retryAfterMs ?? 0) / 60000);
+        setError(`${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
+        setSaving(false); return;
+      }
       if (!res.ok) { setError(`${t("w.recovery.checkins.errSubmit")} (HTTP ${res.status}).`); setSaving(false); return; }
       setDone(true);
       revalidate.recovery();

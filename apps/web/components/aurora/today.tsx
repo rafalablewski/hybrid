@@ -574,11 +574,12 @@ function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone
   // The 6h re-log window: while it's open, show "next in Xh Ym" beside today's
   // last logged feeling. Purely informational — the faces stay tappable.
   const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
+  const cooling = coolMs > 0;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
   const pick = async (rating: number) => {
-    if (busy) return;
+    if (busy || cooling) return;
     setBusy(true);
     try {
       const res = await fetch("/api/checkins", {
@@ -601,8 +602,8 @@ function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone
           const on = feeling === key;
           const at = `var(--${READINESS_FACE[key].accent}-text)`;
           return (
-            <button key={key} onClick={() => pick(i + 2)} disabled={busy} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
-              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "10px 0", borderRadius: 16, cursor: busy ? "default" : "pointer", background: on ? `color-mix(in srgb, ${at} 12%, transparent)` : "transparent", border: on ? `1px solid color-mix(in srgb, ${at} 40%, transparent)` : "1px solid transparent", opacity: busy && !on ? 0.55 : 1, transition: "background .15s, opacity .15s" }}>
+            <button key={key} onClick={() => pick(i + 2)} disabled={busy || cooling} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "10px 0", borderRadius: 16, cursor: busy || cooling ? "default" : "pointer", background: on ? `color-mix(in srgb, ${at} 12%, transparent)` : "transparent", border: on ? `1px solid color-mix(in srgb, ${at} 40%, transparent)` : "1px solid transparent", opacity: (busy || cooling) && !on ? 0.45 : 1, transition: "background .15s, opacity .15s" }}>
               <ReadinessFace feeling={key} size={36} />
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: on ? at : C("ash") }}>{t(`w.recovery.readiness.${key}`)}</span>
             </button>

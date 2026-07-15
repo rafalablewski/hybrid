@@ -458,16 +458,24 @@ export async function fetchCheckins(): Promise<Checkin[]> {
   }
 }
 
-export async function createCheckin(payload: Partial<Checkin>): Promise<boolean> {
+export type CreateCheckinResult = { ok: boolean; cooldownMs?: number };
+
+export async function createCheckin(payload: Partial<Checkin>): Promise<CreateCheckinResult> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/checkins`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(payload),
     });
-    return res.ok;
+    if (res.ok) return { ok: true };
+    // 429 = the 6h re-log cooldown is still active; surface the remaining time.
+    if (res.status === 429) {
+      const body = (await res.json().catch(() => ({}))) as { retryAfterMs?: number };
+      return { ok: false, cooldownMs: typeof body.retryAfterMs === "number" ? body.retryAfterMs : undefined };
+    }
+    return { ok: false };
   } catch {
-    return false;
+    return { ok: false };
   }
 }
 
