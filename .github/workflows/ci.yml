@@ -45,9 +45,14 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # Fail the build on a high/critical CVE in production dependencies.
-      # Dependabot (.github/dependabot.yml) raises the update PRs to fix them.
+      # Surface high/critical CVEs in production dependencies. Non-blocking:
+      # npm retired the audit-quick endpoint pnpm calls (HTTP 410 — "use the
+      # bulk advisory endpoint"), so `pnpm audit` currently errors regardless of
+      # findings and would red-fail every run. Dependabot (.github/dependabot.yml)
+      # remains the enforced path for dependency fixes; re-block here once pnpm
+      # targets npm's bulk endpoint.
       - name: Dependency audit
+        continue-on-error: true
         run: pnpm audit --audit-level=high --prod
 
       # iOS bundle export — proves the Expo app actually bundles (Metro
