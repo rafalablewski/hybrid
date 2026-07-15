@@ -56,9 +56,11 @@ export const glassShadow: ViewStyle = {
 export function startGlow(accent: string, pressed = false): ViewStyle {
   return {
     shadowColor: accent,
+    // Centred offset → a uniform halo that grows on press, matching web's
+    // `box-shadow: 0 0 34px` (no directional cast). Only radius/opacity bloom.
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: pressed ? 0.55 : 0.32,
     shadowRadius: pressed ? 22 : 14,
-    shadowOffset: { width: 0, height: pressed ? 2 : 6 },
     elevation: pressed ? 10 : 6,
   };
 }
