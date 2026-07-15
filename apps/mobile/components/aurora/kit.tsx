@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useRef, useCallback } from "react";
+import { type ReactNode, useState } from "react";
 import {
   View,
   Text,
@@ -10,19 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Easing,
   type StyleProp,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, space, F, serifIf, useEntrance } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
@@ -119,25 +117,9 @@ export function AuroraScreen({
   const navScroll = useNavScrollProps();
   // Subtle entrance — content fades + rises on every screen ENTRY (push or tab
   // switch), so navigation feels like motion, not a hard cut. Re-runs on focus.
-  const enter = useRef(new Animated.Value(0)).current;
-  const reducedMotion = useReducedMotion();
-  useFocusEffect(
-    useCallback(() => {
-      // Reduce Motion: show the screen at rest (no fade/rise) instead of animating.
-      if (reducedMotion) {
-        enter.setValue(1);
-        return;
-      }
-      enter.setValue(0);
-      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
-      anim.start();
-      return () => anim.stop();
-    }, [enter, reducedMotion]),
-  );
-  const enterStyle = {
-    opacity: enter,
-    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-  };
+  // Shared hook (lib/ui) so this and Today can't drift, and so the JS-driver fix
+  // for the Fabric blank-screen strand lives in exactly one place.
+  const enterStyle = useEntrance();
   const body = scroll ? (
     <ScrollView
       // Clear the floating Aurora pill nav so the last content row never hides
