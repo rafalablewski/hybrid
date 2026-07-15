@@ -7,6 +7,7 @@ import { ABack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { getLeaderboard } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SPill } from "../components/social-kit";
+import { useNavScrollProps } from "../lib/nav-scroll";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -19,6 +20,7 @@ export default function LeaderboardScreen() {
 
   useEffect(() => { setBoard(null); getLeaderboard(metric).then((r: any) => setBoard(r.board ?? [])); }, [metric]);
   const padBottom = useScreenBottomPad();
+  const navScroll = useNavScrollProps();
 
   const renderRow = ({ item: r }: { item: any }) => (
     <Pressable onPress={() => !r.isMe && setDrawer(r.handle)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
@@ -56,6 +58,7 @@ export default function LeaderboardScreen() {
             data={board}
             keyExtractor={(r) => String(r.id)}
             renderItem={renderRow}
+            {...navScroll}
             showsVerticalScrollIndicator={false}
             initialNumToRender={12}
             windowSize={11}

@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
 import { auroraScrollClearance } from "../../lib/layout";
+import { useNavScrollProps } from "../../lib/nav-scroll";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -63,6 +64,7 @@ export default function AuroraHistory() {
   const revalidate = useRevalidate();
 
   const insets = useSafeAreaInsets();
+  const navScroll = useNavScrollProps();
   const q = useSessionsQuery({ archived: showArchived });
   const sessions = q.data ?? [];
   const loading = q.isPending;
@@ -174,6 +176,7 @@ export default function AuroraHistory() {
         renderItem={renderItem}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
+        {...navScroll}
         showsVerticalScrollIndicator={false}
         initialNumToRender={8}
         windowSize={11}
