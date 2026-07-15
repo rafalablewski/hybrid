@@ -35,7 +35,7 @@ import { fs, space,
 } from "@hybrid/core";
 import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
-import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
+import SaveRoutineCard, { SessionRename, SessionNote } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
@@ -816,6 +816,7 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
         <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 6 }}>{title || "Workout"}</div>
         <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
+        <SessionNote sessionId={sessionId} />
       </div>
 
       {/* Swipeable summary slides — each is the real 9:16 story card (what you

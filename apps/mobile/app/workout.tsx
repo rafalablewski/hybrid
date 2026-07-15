@@ -65,13 +65,17 @@ import {
   canSaveRoutine,
   isFullAccess,
   mmss,
+  MOODS,
+  SUGGESTED_TAGS,
+  MAX_TAGS,
+  tagLabelKey,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, renameSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
+import { fetchSessions, createSession, renameSession, patchSessionNote, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { useRevalidate, useExercises } from "../lib/queries";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
@@ -1558,6 +1562,7 @@ function Summary({
           {/* Workout name, directly under the heading. */}
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8, textAlign: "center" }}>{title || "Workout"}</Text>
           {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
+          {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
           {firstEver && (
             <Mono color={C.ash} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
           )}
@@ -1808,6 +1813,81 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
       />
       <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>✓</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// A PRIVATE post-workout note — free text + a quick mood tap + context tags,
+// PATCHed onto the just-finished session (owner-only). Collapsed to a subtle
+// link like the rename; pill → composer → saved. Mirrors the web SessionNote.
+function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string) => string }) {
+  const C = useTheme().palette;
+  const R = auroraRadii(useTemplate().template === "aurora");
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [note, setNote] = useState("");
+  const [mood, setMood] = useState<number | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const toggleTag = (slug: string) => setTags((cur) => (cur.includes(slug) ? cur.filter((s) => s !== slug) : cur.length < MAX_TAGS ? [...cur, slug] : cur));
+
+  if (saved)
+    return <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 12 }}>{t("w.train.note.saved")}</Text>;
+
+  if (!open)
+    return (
+      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 10, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>✎ {t("w.train.note.add")}</Text>
+      </Pressable>
+    );
+
+  const commit = async () => {
+    const body = note.trim();
+    if (sessionId && (body || mood != null || tags.length > 0)) {
+      setSaving(true);
+      const ok = await patchSessionNote(sessionId, { note: body || null, mood, tags });
+      setSaving(false);
+      setSaved(ok); // only collapse to "Note saved" when the write landed
+      return;
+    }
+    setSaved(true); // nothing to write — just close the composer
+  };
+
+  return (
+    <View style={{ width: "100%", marginTop: 12, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, padding: 14 }}>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder={t("w.train.note.ph")}
+        placeholderTextColor={C.ash}
+        multiline
+        style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, textAlignVertical: "top" }}
+      />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.train.note.mood-q")}</Text>
+        {MOODS.map((m) => {
+          const on = mood === m.value;
+          return (
+            <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: on ? `${C.lime}1a` : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
+              <Text style={{ fontSize: 15 }}>{m.emoji}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+        {SUGGESTED_TAGS.map((tg) => {
+          const on = tags.includes(tg.slug);
+          const k = tagLabelKey(tg.slug);
+          return (
+            <Pressable key={tg.slug} onPress={() => toggleTag(tg.slug)} style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: on ? C.lime : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: on ? C.onAccent : C.ash }}>#{k ? t(k) : tg.slug}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: saving ? 0.6 : 1 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
   );

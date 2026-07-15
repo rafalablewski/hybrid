@@ -573,6 +573,12 @@ model Session {
   completedAt DateTime?
   blocks      Json // exercises/sets/reps/load/rpe — matches the prototype block shape
   readiness   Int?
+  // Private post-workout reflection (owner-only — NEVER serialised to coaches,
+  // the Activity feed or social). `mood` is 1..4 (rough → strong, core MOODS);
+  // `tags` are short slugs (core SUGGESTED_TAGS). All optional.
+  note        String?
+  mood        Int?
+  tags        String[]  @default([])
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.

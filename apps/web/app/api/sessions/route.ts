@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { migrateBlocks } from "@hybrid/core";
+import { migrateBlocks, sanitizeNote, sanitizeMood, sanitizeTags } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -44,6 +44,9 @@ export async function POST(request: Request) {
     startedAt?: unknown;
     completedAt?: unknown;
     readiness?: unknown;
+    note?: unknown;
+    mood?: unknown;
+    tags?: unknown;
   };
 
   if (typeof b.title !== "string" || !b.title.trim()) {
@@ -59,6 +62,10 @@ export async function POST(request: Request) {
       // blocks holds the prototype block shape (exercises/sets/reps/load/rpe)
       blocks: (b.blocks ?? []) as object,
       readiness: typeof b.readiness === "number" ? b.readiness : null,
+      // Private post-workout reflection (owner-only).
+      note: sanitizeNote(b.note),
+      mood: sanitizeMood(b.mood),
+      tags: sanitizeTags(b.tags),
     },
   });
 

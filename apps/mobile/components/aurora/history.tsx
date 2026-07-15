@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Alert, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, type LoggedSession, type AuroraIconName } from "@hybrid/core";
+import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -15,8 +15,39 @@ import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const moodColorH = (C: Palette, m: MoodDef) => (m.tone === "red" ? C.red : m.tone === "amber" ? C.amber : (txt(C, C.lime) as string));
 
 type SwipeAction = { key: string; label: string; color: string; onPress: () => void };
+
+// The owner's PRIVATE post-workout note (mood dot + text + tags), shown on their
+// own history card. Never rendered on any non-owner view.
+function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: string) => string }) {
+  const m = moodDef(s.mood);
+  const tags = s.tags ?? [];
+  const lime = txt(C, C.lime) as string;
+  return (
+    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+      {(m || !!s.note) && (
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
+          {m && <View style={{ marginTop: 5, width: 8, height: 8, borderRadius: 4, backgroundColor: moodColorH(C, m) }} />}
+          {!!s.note && <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{s.note}</Text>}
+        </View>
+      )}
+      {tags.length > 0 && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: m || s.note ? 8 : 0 }}>
+          {tags.map((slug) => {
+            const k = tagLabelKey(slug);
+            return (
+              <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: lime }}>#{k ? t(k) : slug}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
 
 /** AURORA History — logged-session list with PR badges. Manage actions
  *  (archive/restore/delete) live behind a SWIPE: drag a card left to reveal
@@ -89,6 +120,7 @@ export default function AuroraHistory() {
             </View>
           ))}
         </View>
+        {hasNote(s) && <SessionNoteView C={C} s={s} t={t} />}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("history.tapDetail")}</Text>
           <AuroraIcon name="arrow-up" size={11} color={C.ash} style={{ transform: [{ rotate: "90deg" }] }} />

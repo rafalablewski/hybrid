@@ -24,6 +24,8 @@ export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
 export * from "./bodyweight";
+export * from "./body-progress";
+export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";
 export * from "./capabilities";
