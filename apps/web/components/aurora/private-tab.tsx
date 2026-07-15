@@ -243,7 +243,7 @@ function EmptyBody({ onLog }: { onLog: () => void }) {
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".2em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", color: C("chalk"), margin: "8px 0 6px", textWrap: "balance" }}>{t("w.account.profile.priv-first-t")}</div>
       <div style={{ fontSize: 13, color: C("ash"), lineHeight: 1.5 }}>{t("w.account.profile.priv-first-s")}</div>
-      <button onClick={onLog} style={{ marginTop: 14, width: "100%", background: C("lime"), border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)" }}>＋ {t("w.account.profile.priv-first-cta")}</button>
+      <button onClick={onLog} style={{ marginTop: 14, width: "100%", background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)" }}>＋ {t("w.account.profile.priv-first-cta")}</button>
       <div style={{ margin: "18px 0 10px", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-first-track")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
         {BODY_METRIC_DEFS.slice(0, 4).map((def) => (
@@ -272,7 +272,7 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
           <MetricInput key={def.key} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </div>
-      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "13px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
+      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
     </div>
   );
 }

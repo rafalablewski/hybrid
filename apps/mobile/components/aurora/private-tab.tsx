@@ -254,8 +254,8 @@ function EmptyBody({ C, onLog }: { C: Palette; onLog: () => void }) {
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.4, color: C.chalk, marginTop: 8, marginBottom: 6 }}>{t("w.account.profile.priv-first-t")}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 19, color: C.ash }}>{t("w.account.profile.priv-first-s")}</Text>
-      <Pressable onPress={onLog} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.onAccent }}>＋ {t("w.account.profile.priv-first-cta")}</Text>
+      <Pressable onPress={onLog} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.account.profile.priv-first-cta")}</Text>
       </Pressable>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 18, marginBottom: 10 }}>{t("w.account.profile.priv-first-track")}</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
@@ -285,8 +285,8 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
           <MetricInput key={def.key} C={C} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </View>
-      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.6 : 1, marginTop: 2 }}>
-        {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("common.save")}</Text>}
+      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", opacity: busy ? 0.6 : 1, marginTop: 2 }}>
+        {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>}
       </Pressable>
     </View>
   );
