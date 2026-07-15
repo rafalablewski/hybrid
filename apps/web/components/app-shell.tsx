@@ -820,7 +820,7 @@ export default function AppShell() {
 
         {screen === "progress" && <AuroraProgress />}
 
-        {screen === "checkin" && <AuroraCheckins sessions={sessions} />}
+        {screen === "checkin" && <AuroraCheckins />}
 
         {screen === "calendar" && <AuroraCalendar sessions={sessions} />}
 
