@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
   trainingHeatmap,
@@ -53,7 +54,7 @@ type TabId = "overview" | "prs" | "activity" | "private";
  * honest zeros / omitted tiles — nothing here is fabricated.
  */
 export default function AuroraProfile() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
@@ -212,7 +213,10 @@ export default function AuroraProfile() {
         </Pressable>
       )}
 
-      {/* COVER BANNER — Aurora gradient wash with a lime corner glow. */}
+      {/* COVER BANNER — Aurora gradient wash with a lime corner glow. The
+          edit-profile control lives as a frosted chip in the banner's top-right
+          (the classic "edit cover" spot) — out of the content flow, away from
+          the avatar and name. */}
       <View style={{ height: 96, borderRadius: 20, overflow: "hidden" }}>
         <LinearGradient
           colors={[`${C.violet}66`, `${C.lime}33`, C.ink2]}
@@ -221,12 +225,21 @@ export default function AuroraProfile() {
           style={StyleSheet.absoluteFill}
         />
         <View pointerEvents="none" style={{ position: "absolute", top: -34, right: -24, width: 170, height: 170, borderRadius: 85, backgroundColor: C.lime, opacity: 0.18 }} />
+        <Pressable
+          onPress={() => router.push("/profile-edit")}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.account.profile.edit")}
+          hitSlop={8}
+          style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" }}
+        >
+          <BlurView intensity={24} tint={scheme} style={StyleSheet.absoluteFill} />
+          <AuroraIcon name="edit" size={17} color={C.chalk} />
+        </Pressable>
       </View>
 
-      {/* HEAD — avatar overlapping the cover + the edit-profile icon (the
-          "edit" pencil glyph, distinct from the settings gear) where a follower
-          would see "Follow". No Edit / Share buttons anywhere. */}
-      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, paddingHorizontal: 4 }}>
+      {/* HEAD — avatar overlapping the cover. The edit-profile control moved
+          into the banner (above); no Edit / Share buttons in this row. */}
+      <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: -40, paddingHorizontal: 4 }}>
         {/* Outer lime ring (2px) around the 3px ink border — RN box-shadow is
             unreliable, so the ring is a lime-filled wrapper View. Matches web's
             `box-shadow: 0 0 0 2px lime` on the avatar. */}
@@ -239,15 +252,6 @@ export default function AuroraProfile() {
             )}
           </View>
         </View>
-        <Pressable
-          onPress={() => router.push("/profile-edit")}
-          accessibilityRole="button"
-          accessibilityLabel={t("w.account.profile.edit")}
-          hitSlop={8}
-          style={{ width: 46, height: 46, borderRadius: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", marginBottom: 6 }}
-        >
-          <AuroraIcon name="edit" size={19} color={C.chalk} />
-        </Pressable>
       </View>
 
       {/* NAME + membership pill (pill UNCHANGED from the original design). */}

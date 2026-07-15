@@ -258,15 +258,25 @@ export default function AuroraProfile({
         </button>
       )}
 
-      {/* COVER BANNER — Aurora gradient wash with a lime corner glow. */}
+      {/* COVER BANNER — Aurora gradient wash with a lime corner glow. The
+          edit-profile control lives as a frosted chip in the banner's top-right
+          (the classic "edit cover" spot) — out of the content flow, away from
+          the avatar and name. Uses the shared "edit" glyph (a dedicated pencil
+          asset is a blocked follow-up). */}
       <div style={{ position: "relative", height: 96, borderRadius: 20, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
         <span style={{ position: "absolute", top: -34, right: -24, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 32%, transparent), transparent 70%)", pointerEvents: "none" }} />
+        <button
+          onClick={go("settings", "/settings")}
+          aria-label={t("w.account.profile.edit")}
+          style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, background: "color-mix(in srgb, var(--color-ink) 55%, transparent)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid color-mix(in srgb, #fff 16%, transparent)", color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer" }}
+        >
+          <AuroraIcon name="edit" size={17} color={C("chalk")} />
+        </button>
       </div>
 
-      {/* HEAD — avatar overlapping the cover + the edit-profile icon (the
-          "edit" pencil glyph, distinct from the settings gear) where a follower
-          would see "Follow". No Edit / Share buttons anywhere. */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, padding: "0 4px" }}>
+      {/* HEAD — avatar overlapping the cover. The edit-profile control moved
+          into the banner (above); no Edit / Share buttons in this row. */}
+      <div style={{ display: "flex", alignItems: "flex-end", marginTop: -40, padding: "0 4px" }}>
         <div style={{ width: 84, height: 84, borderRadius: "50%", border: `3px solid ${C("ink")}`, boxShadow: "0 0 0 2px var(--color-lime)", background: C("ink2"), display: "grid", placeItems: "center", overflow: "hidden", fontWeight: 900, fontSize: 32, color: "var(--lime-text)" }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -275,13 +285,6 @@ export default function AuroraProfile({
             initials
           )}
         </div>
-        <button
-          onClick={go("settings", "/settings")}
-          aria-label={t("w.account.profile.edit")}
-          style={{ width: 46, height: 46, borderRadius: 15, background: C("ink2"), border: `1px solid ${C("line")}`, color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer", marginBottom: 6 }}
-        >
-          <AuroraIcon name="edit" size={19} color={C("chalk")} />
-        </button>
       </div>
 
       {/* NAME + membership pill (pill UNCHANGED from the original design). */}
