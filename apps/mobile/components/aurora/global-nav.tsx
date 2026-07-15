@@ -1,8 +1,8 @@
-import { useRef, useState, useEffect, useId } from "react";
+import { useRef, useState, useEffect } from "react";
 import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
-import { Host, RoundedRectangle, Namespace, GlassEffectContainer, HStack, ZStack } from "@expo/ui/swift-ui";
-import { glassEffect, glassEffectId, frame, animation, Animation } from "@expo/ui/swift-ui/modifiers";
+import { Host, RoundedRectangle, ZStack } from "@expo/ui/swift-ui";
+import { glassEffect, frame, offset, animation, Animation } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -296,55 +296,49 @@ export default function AuroraGlobalNav() {
 }
 
 /**
- * The iOS selection highlight — a SINGLE native Liquid Glass lens that MORPHS
- * between tab slots (Apple's matched-geometry travel), instead of a JS-driven
- * translate that re-samples the glass every frame and janks. All four slot cells
- * live in one GlassEffectContainer under a Namespace; only the selected cell
- * renders the glass RoundedRectangle, tagged with a stable glassEffectId — so
- * when the selection moves, SwiftUI fluidly morphs the glass across. Laid out
- * with concrete widths (SwiftUI frames aren't flex) to match the RN icons: four
- * equal slots of (rowW − 64) / 4 with a fixed 64pt centre gap for the Train FAB.
- * Rendered behind the RN glyphs and pointer-transparent; if the native layer
- * fails to render the bar still works (the glyphs + taps are all RN).
+ * The iOS selection highlight — a SINGLE, PERSISTENT native Liquid Glass lens
+ * that TRAVELS between slots via an animated SwiftUI `.offset`, driven by
+ * `.animation(_:value:)` keyed to selectedIndex.
+ *
+ * Why this shape (from auditing @expo/ui's native Swift): matched-geometry
+ * (GlassEffectContainer + glassEffectId) morphs on INSERT/REMOVE, but an
+ * ancestor `.animation(value:)` doesn't animate a child appearing/disappearing
+ * — so a per-cell "only the selected cell has glass" design SNAPS. The pattern
+ * that actually animates is a PERSISTING view whose animatable property changes
+ * under `.animation(value:)` — exactly what @expo/ui's own ChartView does
+ * (`.animation(.easeInOut, value: props.data.count)`). So: one glass lens,
+ * centred, shifted by an animated offset. The animation runs natively in
+ * SwiftUI (not a JS-driven transform over the bridge, which is what janked
+ * earlier), so the travel is smooth.
+ *
+ * Offsets are from the row centre. Slots are (rowW−64)/4 wide with a 64pt centre
+ * gap for the Train FAB, so the four slot centres sit at ∓(1.5·slotW+32) and
+ * ∓(0.5·slotW+32) around centre. Rendered behind the RN glyphs, pointer-
+ * transparent; the glyphs/FAB/taps are all RN so the bar works regardless.
  */
 function GlassMorphSelector({ rowW, selectedIndex }: { rowW: number; selectedIndex: number }) {
-  const nsId = useId();
+  if (selectedIndex < 0) return null; // Train / none → no lens
   const slotW = Math.max(0, (rowW - 64) / 4);
-  const cell = (i: number) => (
-    <ZStack key={i} modifiers={[frame({ width: slotW, height: PILL_H })]}>
-      {selectedIndex === i ? (
+  const offsetX =
+    selectedIndex === 0 ? -(1.5 * slotW) - 32
+    : selectedIndex === 1 ? -(0.5 * slotW) - 32
+    : selectedIndex === 2 ? 0.5 * slotW + 32
+    : 1.5 * slotW + 32;
+  return (
+    <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+      <ZStack>
         <RoundedRectangle
           cornerRadius={20}
           modifiers={[
             frame({ width: PILL_W, height: PILL_H }),
             glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 }),
-            glassEffectId("sel", nsId),
+            // Animated offset = the travel. .animation(value: selectedIndex)
+            // animates this offset change natively when the selection moves.
+            offset({ x: offsetX, y: 0 }),
+            animation(Animation.spring({ response: 0.38, dampingFraction: 0.82 }), selectedIndex),
           ]}
         />
-      ) : null}
-    </ZStack>
-  );
-  return (
-    <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Namespace id={nsId}>
-        {/* .animation(_:value:) keyed to selectedIndex — THIS is what makes the
-            glass TRAVEL: when the selected slot changes, SwiftUI animates the
-            matched-geometry morph (glassEffectId) with this spring, fluidly
-            gliding the lens across instead of snapping. A plain number value,
-            so no worklets/native-state are involved. */}
-        <GlassEffectContainer
-          modifiers={[animation(Animation.spring({ response: 0.38, dampingFraction: 0.82 }), selectedIndex)]}
-        >
-          <HStack spacing={0} modifiers={[frame({ height: PILL_H })]}>
-            {cell(0)}
-            {cell(1)}
-            {/* fixed centre gap — the raised Train FAB overlays this */}
-            <ZStack modifiers={[frame({ width: 64, height: PILL_H })]}>{null}</ZStack>
-            {cell(2)}
-            {cell(3)}
-          </HStack>
-        </GlassEffectContainer>
-      </Namespace>
+      </ZStack>
     </Host>
   );
 }
