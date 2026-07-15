@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal } from "react-native";
+import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../lib/theme";
 import { F } from "../../lib/ui";
@@ -64,10 +64,16 @@ export default function Sheet({
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-        <Pressable onPress={onClose} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close">
-          <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
-        </Pressable>
+      {/* Full-screen scrim — kept OUTSIDE the KeyboardAvoidingView so it always
+          covers the whole screen; wrapping it in the KAV would shrink the dimming
+          (and undim the area behind the keyboard) when padding is added. */}
+      <Pressable onPress={onClose} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close">
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
+      </Pressable>
+      {/* Lift the panel above the keyboard so low inputs (nutrition quick-add,
+          any sheet-hosted field) aren't hidden when the keyboard opens.
+          box-none lets taps on the empty area fall through to the scrim. */}
+      <KeyboardAvoidingView style={{ flex: 1, justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : undefined} pointerEvents="box-none">
         <Animated.View
           onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}
           style={{
@@ -100,7 +106,7 @@ export default function Sheet({
             </>
           )}
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

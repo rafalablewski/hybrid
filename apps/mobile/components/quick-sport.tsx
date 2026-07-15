@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Modal } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import {
   olympicSport,
   olympicSportsByCategory,
@@ -73,6 +73,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}
       <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
           <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -107,6 +108,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
             </ScrollView>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Log sheet — minutes (+ distance) and Log, for the chosen sport */}
@@ -150,6 +152,9 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
 
   return (
     <Modal visible={!!sport} transparent animationType="slide" onRequestClose={close}>
+      {/* Lift the panel above the numeric keyboard — its inputs autofocus and sit
+          at the very bottom, so without this the keyboard covers them entirely. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
         <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 34 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
@@ -179,6 +184,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
           )}
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
