@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import {
   View,
   Text,
@@ -103,10 +103,16 @@ export function useEntrance() {
       return () => anim.stop();
     }, [enter, reducedMotion]),
   );
-  return {
-    opacity: enter,
-    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-  };
+  // Memoised on the stable `enter` value: interpolate() registers a new node on
+  // its parent Animated.Value every call, so recreating the style each render
+  // would leak nodes. `enter` never changes, so this builds exactly once.
+  return useMemo(
+    () => ({
+      opacity: enter,
+      transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+    }),
+    [enter],
+  );
 }
 
 /**
