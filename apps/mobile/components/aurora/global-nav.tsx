@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useId } from "react";
 import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
 import { Host, RoundedRectangle, Namespace, GlassEffectContainer, HStack, ZStack } from "@expo/ui/swift-ui";
-import { glassEffect, glassEffectId, frame } from "@expo/ui/swift-ui/modifiers";
+import { glassEffect, glassEffectId, frame, animation, Animation } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -327,7 +327,14 @@ function GlassMorphSelector({ rowW, selectedIndex }: { rowW: number; selectedInd
   return (
     <Host style={StyleSheet.absoluteFill} pointerEvents="none">
       <Namespace id={nsId}>
-        <GlassEffectContainer>
+        {/* .animation(_:value:) keyed to selectedIndex — THIS is what makes the
+            glass TRAVEL: when the selected slot changes, SwiftUI animates the
+            matched-geometry morph (glassEffectId) with this spring, fluidly
+            gliding the lens across instead of snapping. A plain number value,
+            so no worklets/native-state are involved. */}
+        <GlassEffectContainer
+          modifiers={[animation(Animation.spring({ response: 0.38, dampingFraction: 0.82 }), selectedIndex)]}
+        >
           <HStack spacing={0} modifiers={[frame({ height: PILL_H })]}>
             {cell(0)}
             {cell(1)}
