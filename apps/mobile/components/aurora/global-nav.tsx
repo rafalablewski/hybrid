@@ -77,17 +77,15 @@ export default function AuroraGlobalNav() {
   const collapseShift = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) : 0;
   const collapseFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
 
-  // The single sliding selection indicator (the Instagram-style liquid pill): a
-  // chalk highlight that SPRINGS to the active slot and STRETCHES mid-travel,
-  // instead of a static per-tab background. Measured item geometry lives in a
-  // ref (onLayout); `measured` bumps so the animation effect re-runs once slots
-  // have real positions. Train (the centre FAB) maps to no side slot → the
-  // indicator fades out while Train is active (the FAB has its own glow).
-  const tx = useRef(new Animated.Value(0)).current;
-  const sx = useRef(new Animated.Value(1)).current;
-  const op = useRef(new Animated.Value(0)).current;
-  const posRef = useRef<Record<string, { x: number; width: number }>>({});
-  const [measured, setMeasured] = useState(0);
+  // The selection highlight is a per-slot lens that CROSS-FADES between tabs
+  // (opacity only), NOT a single lens that slides across the bar: sliding a
+  // native glassEffect view re-samples its backdrop every frame and janks (the
+  // "laggy movement between tabs"). Each slot owns an opacity Animated.Value;
+  // selecting a tab fades its lens in and the others out, so nothing ever
+  // travels. Train (the centre FAB) → all lenses fade out.
+  const lensOpRef = useRef<Record<string, Animated.Value> | null>(null);
+  if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
+  const lensOp = lensOpRef.current;
   const firstRef = useRef(true);
   const [reduceMotion, setReduceMotion] = useState(false);
   // OPTIMISTIC selection — the indicator + icon tint follow this, updated the
@@ -126,34 +124,17 @@ export default function AuroraGlobalNav() {
   const activeIconColor = useGlass ? C.chalk : C.onAccent;
 
   useEffect(() => {
-    const pos = selectedSeg ? posRef.current[selectedSeg] : null;
-    if (!pos) {
-      Animated.timing(op, { toValue: 0, duration: 160, useNativeDriver: true }).start();
-      return;
-    }
-    const target = pos.x + (pos.width - PILL_W) / 2;
-    if (firstRef.current || reduceMotion) {
-      // First paint (or reduced motion): snap into place, no travel/stretch.
-      tx.setValue(target);
-      sx.setValue(1);
-      op.setValue(1);
-      firstRef.current = false;
-      return;
-    }
-    Animated.parallel([
-      // A crisp, short ease-out (no spring wobble) so the slide feels snappy,
-      // not floaty — the earlier bouncy spring read as lag as it settled.
-      Animated.timing(tx, { toValue: target, duration: 190, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(op, { toValue: 1, duration: 110, useNativeDriver: true }),
-      // The chalk pill stretches mid-travel for a liquid feel; the glass lens
-      // gets its liquid quality from the material itself, so it just slides.
-      ...(useGlass ? [] : [Animated.sequence([
-        Animated.timing(sx, { toValue: 1.22, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(sx, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ])]),
-    ]).start();
+    // Cross-fade: the selected slot's lens → 1, every other → 0. Opacity only
+    // (no translate/scale of the glass), so it stays smooth. Snap on first paint
+    // or reduced motion.
+    SIDES.forEach((s) => {
+      const to = s.seg === selectedSeg ? 1 : 0;
+      if (firstRef.current || reduceMotion) lensOp[s.seg].setValue(to);
+      else Animated.timing(lensOp[s.seg], { toValue: to, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    });
+    firstRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSeg, measured, reduceMotion]);
+  }, [selectedSeg, reduceMotion]);
 
   // Gate: Aurora only, signed in, and not on an auth/funnel/live-workout route.
   if (!aurora || !ready || !session) return null;
@@ -195,23 +176,34 @@ export default function AuroraGlobalNav() {
           setSelectedSeg(tab.seg);
           if (!onRoute) { if (haptics) Haptics.selectionAsync().catch(() => {}); router.navigate(tab.href); }
         }}
-        onLayout={(e) => {
-          const { x, width } = e.nativeEvent.layout;
-          const prev = posRef.current[tab.seg];
-          if (!prev || prev.x !== x || prev.width !== width) {
-            posRef.current[tab.seg] = { x, width };
-            setMeasured((m) => m + 1);
-          }
-        }}
         accessibilityRole="button"
         accessibilityState={{ selected: isSel }}
         accessibilityLabel={label}
         hitSlop={8}
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
-        {/* Icon-only bar — the accessibilityLabel names the destination for
-            screen readers; the shared sliding highlight marks the current tab. */}
+        {/* This slot's selection lens (cross-faded via lensOp) sits behind the
+            glyph. iOS: a real Liquid Glass lens (native SwiftUI glassEffect);
+            Android: the opaque chalk pill. It never moves — only its opacity
+            animates — so switching tabs stays smooth. */}
         <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: lensOp[tab.seg] }]}>
+            {useGlass ? (
+              <>
+                {/* A faint floor keeps the selection visible on iOS < 26 (where
+                    glassEffect degrades) and during the brief native mount. */}
+                <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)" }]} />
+                <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <RoundedRectangle
+                    cornerRadius={20}
+                    modifiers={[glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 })]}
+                  />
+                </Host>
+              </>
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk }]} />
+            )}
+          </Animated.View>
           <AuroraIcon name={tab.glyph} size={23} color={isSel ? activeIconColor : C.ash} />
         </View>
       </Pressable>
@@ -249,32 +241,9 @@ export default function AuroraGlobalNav() {
         <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
         <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {/* Inner row (no padding of its own) so the items' onLayout x and the
-            absolute indicator share one origin. */}
+        {/* Each side item carries its own selection lens (cross-faded in place),
+            so there's no single indicator sliding across the bar. */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          {/* The sliding highlight — springs between slots, sitting behind the
-              icons. iOS: a real Liquid Glass lens (native SwiftUI glassEffect).
-              Android: the opaque chalk pill, which also stretches mid-travel. */}
-          <Animated.View
-            pointerEvents="none"
-            style={{ position: "absolute", left: 0, top: 0, width: PILL_W, height: PILL_H, opacity: op, transform: useGlass ? [{ translateX: tx }] : [{ translateX: tx }, { scaleX: sx }] }}
-          >
-            {useGlass ? (
-              <>
-                {/* A faint floor keeps the selection visible on iOS < 26 (where
-                    glassEffect degrades) and during the brief native mount. */}
-                <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)" }]} />
-                <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-                  <RoundedRectangle
-                    cornerRadius={20}
-                    modifiers={[glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 })]}
-                  />
-                </Host>
-              </>
-            ) : (
-              <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk }]} />
-            )}
-          </Animated.View>
           {LEFT.map(renderSideItem)}
           {/* centre gap — the raised Train FAB overlays this slot */}
           <View style={{ width: 64 }} />
