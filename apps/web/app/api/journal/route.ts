@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeMood, sanitizeTags } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   const body = typeof b.body === "string" ? b.body.trim() : "";
   if (!body) return NextResponse.json({ error: "empty" }, { status: 400 });
   const entry = await prisma.journalEntry.create({
-    data: { userId: me.id, body: body.slice(0, 5000) },
+    data: { userId: me.id, body: body.slice(0, 5000), mood: sanitizeMood(b.mood), tags: sanitizeTags(b.tags) },
   });
   return NextResponse.json({ entry }, { status: 201 });
 }

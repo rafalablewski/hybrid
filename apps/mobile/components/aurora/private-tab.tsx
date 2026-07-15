@@ -6,7 +6,9 @@ import {
   relativeTime, FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
   fmtMetricValue, fmtMetricDelta, unitToKg,
+  MOODS, moodDef, SUGGESTED_TAGS, MAX_TAGS, tagLabelKey, journalDayGroups, relativeDayKey,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
+  type JournalEntry, type MoodDef,
 } from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
@@ -17,7 +19,8 @@ import { track } from "../../lib/track";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
-type Entry = { id: string; body: string; createdAt: string };
+const moodColorM = (C: Palette, m: MoodDef) => (m.tone === "red" ? C.red : m.tone === "amber" ? C.amber : (txt(C, C.lime) as string));
+const tagLabelM = (t: (k: string) => string, slug: string) => { const k = tagLabelKey(slug); return k ? t(k) : slug; };
 
 // The interactive Profile → Private tab. Owner-only self-tracking, now on the
 // same Jony-Ive material vocabulary as Today: the Command center leads as a
@@ -287,14 +290,20 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
 }
 
 // ── Journal ─────────────────────────────────────────────────────────────────
+// Free text kept, now with a quick mood tap + tag chips (revealed as you write)
+// and a day-grouped timeline where each note carries its mood dot and tags.
+// Mirrors the web JournalBlock; shape + grouping live in @hybrid/core.
 function JournalBlock({ C }: { C: Palette }) {
   const { t } = useLang();
-  const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [entries, setEntries] = useState<JournalEntry[] | null>(null);
   const [draft, setDraft] = useState("");
+  const [mood, setMood] = useState<number | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const lime = txt(C, C.lime) as string;
 
   const load = useCallback(() => {
-    sapi<{ entries?: Entry[] }>("/api/journal").then((d) => setEntries(d.entries ?? [])).catch(() => setEntries([]));
+    sapi<{ entries?: JournalEntry[] }>("/api/journal").then((d) => setEntries(d.entries ?? [])).catch(() => setEntries([]));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -302,10 +311,14 @@ function JournalBlock({ C }: { C: Palette }) {
     const body = draft.trim();
     if (!body) return;
     setBusy(true);
-    await sapi("/api/journal", "POST", { body });
-    setBusy(false); setDraft(""); load();
+    await sapi("/api/journal", "POST", { body, mood, tags });
+    setBusy(false); setDraft(""); setMood(null); setTags([]); load();
   };
   const del = async (id: string) => { await sapi(`/api/journal?id=${encodeURIComponent(id)}`, "DELETE"); load(); };
+  const toggleTag = (slug: string) => setTags((cur) => (cur.includes(slug) ? cur.filter((s) => s !== slug) : cur.length < MAX_TAGS ? [...cur, slug] : cur));
+
+  const composing = draft.trim().length > 0;
+  const groups = entries ? journalDayGroups(entries.slice(0, 12)) : [];
 
   return (
     <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 16 }}>
@@ -325,24 +338,81 @@ function JournalBlock({ C }: { C: Palette }) {
         multiline
         style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }}
       />
-      {draft.trim().length > 0 && (
-        <Pressable onPress={save} disabled={busy} style={{ alignSelf: "flex-start", marginTop: 8, backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, opacity: busy ? 0.6 : 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.account.profile.priv-journal-add")}</Text>
-        </Pressable>
+      {composing && (
+        <View style={{ marginTop: 12, gap: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.account.profile.priv-j-mood-q")}</Text>
+            {MOODS.map((m) => {
+              const on = mood === m.value;
+              return (
+                <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityRole="button" accessibilityLabel={t(m.labelKey)}
+                  style={{ width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: on ? `${C.lime}1a` : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
+                  <Text style={{ fontSize: 15 }}>{m.emoji}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            {SUGGESTED_TAGS.map((tg) => {
+              const on = tags.includes(tg.slug);
+              return (
+                <Pressable key={tg.slug} onPress={() => toggleTag(tg.slug)} accessibilityRole="button"
+                  style={{ borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: on ? C.lime : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: on ? C.onAccent : C.ash }}>#{tagLabelM(t, tg.slug)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable onPress={save} disabled={busy} style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, opacity: busy ? 0.6 : 1 }}>
+            {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.account.profile.priv-journal-add")}</Text>}
+          </Pressable>
+        </View>
       )}
 
-      {entries && entries.length > 0 && (
-        <View style={{ marginTop: 14, gap: 10 }}>
-          {entries.slice(0, 4).map((e) => (
-            <View key={e.id} style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 19 }}>{e.body}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 5 }}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{relativeTime(Date.parse(e.createdAt))}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</Text>
-                </View>
-                <Pressable onPress={() => del(e.id)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{t("common.delete")}</Text></Pressable>
-              </View>
+      {groups.length > 0 && (
+        <View style={{ marginTop: 16, gap: 9 }}>
+          {groups.map((g) => (
+            <View key={g.key} style={{ gap: 9 }}>
+              <DaySep C={C} ts={g.ts} />
+              {g.entries.map((e) => <JournalCard key={e.id} C={C} e={e} onDelete={del} />)}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function DaySep({ C, ts }: { C: Palette; ts: number }) {
+  const { t } = useLang();
+  const rel = relativeDayKey(ts, Date.now());
+  const label = rel === "today" ? t("w.account.profile.priv-j-today") : rel === "yesterday" ? t("w.account.profile.priv-j-yesterday") : new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+    </View>
+  );
+}
+
+function JournalCard({ C, e, onDelete }: { C: Palette; e: JournalEntry; onDelete: (id: string) => void }) {
+  const { t } = useLang();
+  const lime = txt(C, C.lime) as string;
+  const m = moodDef(e.mood);
+  return (
+    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink, paddingHorizontal: 13, paddingVertical: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        {m && <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: moodColorM(C, m) }} />}
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{relativeTime(Date.parse(e.createdAt))}</Text>
+        <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</Text>
+        <Pressable onPress={() => onDelete(e.id)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{t("common.delete")}</Text></Pressable>
+      </View>
+      <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>{e.body}</Text>
+      {e.tags && e.tags.length > 0 && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {e.tags.map((slug) => (
+            <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, color: lime }}>#{tagLabelM(t, slug)}</Text>
             </View>
           ))}
         </View>
