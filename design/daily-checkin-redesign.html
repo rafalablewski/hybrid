@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Check-in — 5 Full Redesigns</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;--amber:#d0cd94;--amber-text:#d0cd94;
+    --red:#d56f3e;--red-text:#e58a5c;--violet:#8296c4;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1360px;margin:0 auto 20px}
+  .kicker{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:760px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .fixnote{max-width:1360px;margin:18px auto 0;display:flex;gap:10px;flex-wrap:wrap}
+  .fixnote .t{font:600 12px/1.4 var(--mono);color:var(--ash);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 13px}
+  .fixnote .t b{color:var(--red-text);font-weight:700}
+  .fixnote .t i{color:var(--lime-text);font-style:normal;font-weight:700}
+
+  .gallery{max-width:1360px;margin:40px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:52px 30px;justify-items:center;align-items:start}
+  .concept{width:100%;max-width:400px}
+  .cap{margin:0 4px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  .phone{position:relative;width:100%;aspect-ratio:390/812;border-radius:48px;padding:11px;
+    background:linear-gradient(160deg,#2a2e21,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:14px 26px 0;font-size:13px;font-weight:700;flex:none}
+  .status .r{display:flex;gap:6px;align-items:center;font-size:12px}
+  .bat{background:var(--amber);color:#161608;font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px}
+  .body{flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column}
+
+  .hd{display:flex;align-items:center;gap:12px;padding:8px 0 4px}
+  .hd .bk{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;color:var(--chalk);font-size:17px;flex:none}
+  .hd h1{font-size:25px;font-weight:800;letter-spacing:-.03em}
+  .hd .hb{margin-left:auto;color:var(--red-text);font-size:20px}
+  .eyebrow{font:700 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  .datesub{font:600 11px/1 var(--mono);color:var(--ash);margin:2px 0 0;letter-spacing:.04em}
+
+  .face{display:inline-grid;place-items:center;flex:none}
+  .word.p{color:var(--lime-text)}.word.g{color:var(--blue-text)}.word.f{color:var(--amber-text)}.word.w{color:var(--red-text)}
+
+  .submit{border:none;border-radius:999px;background:var(--lime);color:var(--on-accent);font:800 16px var(--sans);padding:15px;text-align:center;cursor:pointer;width:100%}
+  .field{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:12px 13px;font:600 14px var(--mono);color:var(--chalk);width:100%}
+  .field.ph{color:var(--ash2)}
+  .note{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:12px 13px;font:400 13px/1.5 var(--sans);color:var(--ash2);width:100%}
+  .share{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;padding:11px 13px;color:var(--ash)}
+  .share .lk{font-size:15px}
+  .share .st .a{font-size:13px;font-weight:800;color:var(--chalk)}
+  .share .st .b{font:600 10px/1.3 var(--mono);color:var(--ash2);margin-top:3px}
+
+  /* micro tab bar */
+  .nav{margin-top:auto;display:flex;align-items:center;justify-content:space-around;padding:11px 20px 14px;border-top:1px solid var(--line);color:var(--ash2);font-size:17px;position:relative;flex:none}
+  .nav .fab{width:44px;height:44px;border-radius:99px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-size:19px;margin-top:-26px;box-shadow:0 0 0 4px var(--ink),0 0 20px -2px var(--lime)}
+
+  /* shared: spectrum slider */
+  .sld{margin-top:14px}
+  .sld .lab{display:flex;align-items:baseline;gap:8px}
+  .sld .lab .nm{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .sld .lab .vl{margin-left:auto;font:800 13px var(--mono);letter-spacing:.02em}
+  .strk{position:relative;height:10px;border-radius:99px;margin-top:11px;background:linear-gradient(90deg,var(--red),var(--amber),var(--blue-text),var(--lime))}
+  .strk .th{position:absolute;top:50%;width:22px;height:22px;border-radius:99px;background:var(--chalk);border:3px solid var(--ink);transform:translate(-50%,-50%);box-shadow:0 2px 7px rgba(0,0,0,.55)}
+
+  /* shared: segmented 1-5 (refined) */
+  .seg{display:flex;gap:6px;margin-top:9px}
+  .seg .b{flex:1;height:40px;border-radius:12px;border:1px solid var(--line);display:grid;place-items:center;font:800 14px var(--sans);color:var(--ash);background:var(--ink2)}
+  .seg .b.on{background:var(--lime);color:var(--on-accent);border-color:var(--lime)}
+
+  /* ============ 1 · GUIDED ============ */
+  .prog{display:flex;gap:6px;margin:14px 0 0}
+  .prog .p{flex:1;height:5px;border-radius:99px;background:var(--line)}
+  .prog .p.on{background:var(--lime)}
+  .g-card{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:10px}
+  .g-card .q{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:20px;line-height:1.1;max-width:280px}
+  .g-face{margin:26px 0 6px}
+  .g-word{font-size:20px;font-weight:800;margin-top:4px}
+  .g-scale{display:flex;gap:9px;width:100%;margin-top:26px}
+  .g-scale .b{flex:1;aspect-ratio:1;border-radius:16px;border:1px solid var(--line);display:grid;place-items:center;background:var(--ink2)}
+  .g-scale .b.on{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 10%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 14%,transparent)}
+  .g-foot{width:100%;display:flex;gap:10px;margin:auto 0 4px}
+  .g-foot .skip{flex:none;padding:15px 20px;border-radius:999px;border:1px solid var(--line);color:var(--ash);font-weight:700;font-size:14px}
+  .g-foot .submit{flex:1}
+  .g-mini{font:600 11px/1 var(--mono);color:var(--ash2);margin-top:12px;letter-spacing:.04em}
+
+  /* ============ 3 · READINESS HERO ============ */
+  .hero3{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:6px}
+  .ring3{position:relative;width:186px;height:186px;margin-top:4px}
+  .ring3 svg{transform:rotate(-90deg)}
+  .ring3 .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .ring3 .c .w{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--blue-text)}
+  .ring3 .c .s{font:700 10px/1 var(--mono);color:var(--ash);text-transform:uppercase;letter-spacing:.1em}
+  .hero3 .hint{font-size:13px;color:var(--ash);margin-top:12px;line-height:1.5;max-width:280px}
+  .hero3 .hint b{color:var(--chalk);font-weight:700}
+  .mchips{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;margin-top:16px}
+  .mchip{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:15px;padding:11px 12px;background:var(--ink2)}
+  .mchip .fw{width:32px;height:32px;border-radius:9px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .mchip .t{text-align:left;flex:1;min-width:0}
+  .mchip .t .k{font:700 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .mchip .t .v{font-size:15px;font-weight:800;margin-top:3px}
+  .mchip .dots{display:flex;gap:3px}
+  .mchip .dots i{width:5px;height:5px;border-radius:99px;background:var(--line)}
+  .mchip .dots i.on{background:var(--lime)}
+
+  /* ============ 4 · BENTO ============ */
+  .bento{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .btile{border:1px solid var(--line);border-radius:18px;padding:13px;background:var(--ink2);display:flex;flex-direction:column;min-height:104px}
+  .btile .k{font:700 9.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:flex;align-items:center;justify-content:space-between}
+  .btile .mid{display:flex;align-items:center;gap:10px;margin-top:auto}
+  .btile .mid .num{font-size:30px;font-weight:800;letter-spacing:-.03em}
+  .btile .mid .num.p{color:var(--lime-text)}.btile .mid .num.g{color:var(--blue-text)}.btile .mid .num.f{color:var(--amber-text)}
+  .btile .bar{display:flex;gap:3px;margin-top:9px}
+  .btile .bar i{flex:1;height:4px;border-radius:99px;background:var(--line)}
+  .btile .bar i.on{background:currentColor}
+  .btile.p{color:var(--lime-text)}.btile.g{color:var(--blue-text)}.btile.f{color:var(--amber-text)}
+  .btile .kk{color:var(--ash)}
+  .btile.wide{grid-column:1 / -1;min-height:0}
+  .btile.io{flex-direction:row;align-items:center;gap:10px;min-height:0;padding:12px 13px}
+  .btile.io .num{font-size:22px;font-weight:800;color:var(--chalk)}
+  .btile.io .u{font:700 10px/1 var(--mono);color:var(--ash);margin-left:auto}
+
+  /* ============ 5 · MINIMAL ============ */
+  .min-row{display:flex;align-items:center;padding:17px 0;border-bottom:1px solid var(--line)}
+  .min-row .nm{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .min-row .rt{margin-left:auto;display:flex;gap:7px;align-items:center}
+  .min-row .rt .dot{width:11px;height:11px;border-radius:99px;border:1.5px solid var(--line2)}
+  .min-row .rt .dot.on{background:var(--lime);border-color:var(--lime)}
+  .min-row .rt .val{font:800 15px var(--mono);color:var(--chalk);margin-left:8px;min-width:16px;text-align:right}
+  .min-lead{font-size:15px;font-weight:800;letter-spacing:-.01em;margin-top:16px}
+  .min-lead span{color:var(--blue-text)}
+
+  footer{max-width:1360px;margin:56px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kicker">Recovery — Daily check-in</div>
+  <h1>Daily check-in, rebuilt <span>— 5 full-screen versions</span></h1>
+  <p>Total redesign of the check-in screen. Same data captured — <b>Energy, Sleep, Soreness, Mood, weight, an optional note, share-with-coach</b> — presented five very different ways. All fix the framing bug in the current screen (it says "Daily" but reads "training volume <b>this week</b>" and "how did the <b>week</b> go?") and align with the new model: log at least once a day, re-log up to once per 6h.</p>
+  <div class="fixnote">
+    <span class="t">Current bug: titled <b>Daily</b> but body says <b>“this week”</b></span>
+    <span class="t">Fixed → <i>today-framed</i> copy throughout</span>
+    <span class="t">1–5 number pills → <i>expressive faces / sliders</i></span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============ 1 · GUIDED ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>Guided flow</div>
+      <h2>One question at a time</h2>
+      <p>Turns the wall of pills into a calm, swipeable flow — one big question per card with a face that reacts as you pick. Progress bar up top, "Skip" for anything you don't track. Lowest cognitive load; feels like the app is talking to you.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>92</span><span class="bat">85</span></div></div>
+      <div class="body">
+        <div class="hd"><div class="bk">‹</div><h1>Check-in</h1><div class="hb">♥</div></div>
+        <div class="prog"><span class="p on"></span><span class="p on"></span><span class="p on"></span><span class="p"></span><span class="p"></span></div>
+        <div class="g-card">
+          <div class="eyebrow" style="margin-top:16px">Step 3 of 5 — Soreness</div>
+          <div class="q">How sore do you feel today?</div>
+          <div class="g-face"><span class="face" data-face="good" data-size="86"></span></div>
+          <div class="g-word word g">Barely sore</div>
+          <div class="g-scale">
+            <div class="b"><span class="face" data-face="wrecked" data-size="26"></span></div>
+            <div class="b"></div>
+            <div class="b"></div>
+            <div class="b on"><span class="face" data-face="good" data-size="26"></span></div>
+            <div class="b"><span class="face" data-face="primed" data-size="26"></span></div>
+          </div>
+          <div class="g-mini">Swipe or tap — you can go back anytime</div>
+          <div class="g-foot">
+            <div class="skip">Skip</div>
+            <button class="submit">Next</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav"><span>⌂</span><span>◍</span><span class="fab">▮▮</span><span>▦</span><span>◔</span></div>
+    </div></div>
+  </div>
+
+  <!-- ============ 2 · EXPRESSIVE SLIDERS ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>Expressive sliders</div>
+      <h2>Feelings on a spectrum, not a 1–5</h2>
+      <p>Each metric becomes a red→lime gradient slider with a face-anchored scale — far more expressive than five identical ovals, and quicker to set. Weight and an optional daily note sit below. Everything on one screen.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>92</span><span class="bat">85</span></div></div>
+      <div class="body">
+        <div class="hd"><div class="bk">‹</div><h1>Daily check-in</h1><div class="hb">♥</div></div>
+        <div class="datesub">TUESDAY 15 JUL — 2ND LOG TODAY</div>
+        <div class="sld"><div class="lab"><span class="nm">Energy</span><span class="vl word g">Good</span></div><div class="strk"><div class="th" style="left:70%"></div></div></div>
+        <div class="sld"><div class="lab"><span class="nm">Sleep</span><span class="vl word f">Fair</span></div><div class="strk"><div class="th" style="left:52%"></div></div></div>
+        <div class="sld"><div class="lab"><span class="nm">Soreness</span><span class="vl word g">Low</span></div><div class="strk"><div class="th" style="left:74%"></div></div></div>
+        <div class="sld"><div class="lab"><span class="nm">Mood</span><span class="vl word p">Great</span></div><div class="strk"><div class="th" style="left:90%"></div></div></div>
+        <div style="display:flex;gap:9px;margin-top:18px">
+          <div class="field ph">Weight kg</div>
+          <div class="field ph">Adherence %</div>
+        </div>
+        <div class="note" style="margin-top:9px">How's today? Anything your coach should know…</div>
+        <button class="submit" style="margin:12px 0 10px">Log check-in</button>
+      </div>
+      <div class="nav"><span>⌂</span><span>◍</span><span class="fab">▮▮</span><span>▦</span><span>◔</span></div>
+    </div></div>
+  </div>
+
+  <!-- ============ 3 · READINESS HERO ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Readiness hero</div>
+      <h2>Lead with the answer</h2>
+      <p>A single computed readiness face + score is the hero; the four sub-metrics are compact chips that feed it and update it live as you tap. Puts the outcome ("you're good to train") first, the inputs second. Great for a fast daily tap.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>92</span><span class="bat">85</span></div></div>
+      <div class="body">
+        <div class="hd"><div class="bk">‹</div><h1>Today's read</h1><div class="hb">♥</div></div>
+        <div class="hero3">
+          <div class="ring3">
+            <svg width="186" height="186" viewBox="0 0 186 186">
+              <circle cx="93" cy="93" r="82" fill="none" stroke="#242724" stroke-width="11"/>
+              <circle cx="93" cy="93" r="82" fill="none" stroke="#6cb6bd" stroke-width="11" stroke-linecap="round" stroke-dasharray="515" stroke-dashoffset="140"/>
+            </svg>
+            <div class="c"><span class="face" data-face="good" data-size="58"></span><div class="w">Good to train</div><div class="s">Readiness 73</div></div>
+          </div>
+          <div class="hint">Solid across the board — <b>sleep</b> is the one to watch. Adjust anything below and the read updates.</div>
+          <div class="mchips">
+            <div class="mchip"><div class="fw"><span class="face" data-face="good" data-size="24"></span></div><div class="t"><div class="k">Energy</div><div class="v word g">4</div></div><div class="dots"><i></i><i></i><i></i><i class="on"></i><i></i></div></div>
+            <div class="mchip"><div class="fw"><span class="face" data-face="flat" data-size="24"></span></div><div class="t"><div class="k">Sleep</div><div class="v word f">3</div></div><div class="dots"><i></i><i></i><i class="on"></i><i></i><i></i></div></div>
+            <div class="mchip"><div class="fw"><span class="face" data-face="good" data-size="24"></span></div><div class="t"><div class="k">Soreness</div><div class="v word g">4</div></div><div class="dots"><i></i><i></i><i></i><i class="on"></i><i></i></div></div>
+            <div class="mchip"><div class="fw"><span class="face" data-face="primed" data-size="24"></span></div><div class="t"><div class="k">Mood</div><div class="v word p">5</div></div><div class="dots"><i></i><i></i><i></i><i></i><i class="on"></i></div></div>
+          </div>
+          <button class="submit" style="margin-top:16px">Log today's read</button>
+        </div>
+      </div>
+      <div class="nav"><span>⌂</span><span>◍</span><span class="fab">▮▮</span><span>▦</span><span>◔</span></div>
+    </div></div>
+  </div>
+
+  <!-- ============ 4 · BENTO ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>Bento grid</div>
+      <h2>Tap-to-cycle tiles, no scrolling</h2>
+      <p>Four metric tiles in a 2×2 — tap a tile to cycle its value; the face, number and bar all move together. Weight + adherence as slim input tiles, note full-width. Dense and modern; the whole check-in fits one glance.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>92</span><span class="bat">85</span></div></div>
+      <div class="body">
+        <div class="hd"><div class="bk">‹</div><h1>Daily check-in</h1><div class="hb">♥</div></div>
+        <div class="datesub">TUESDAY 15 JUL — TAP A TILE TO SET</div>
+        <div class="bento">
+          <div class="btile g"><div class="k"><span class="kk">Energy</span><span class="face" data-face="good" data-size="20"></span></div><div class="mid"><span class="num g">4</span></div><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+          <div class="btile f"><div class="k"><span class="kk">Sleep</span><span class="face" data-face="flat" data-size="20"></span></div><div class="mid"><span class="num f">3</span></div><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+          <div class="btile g"><div class="k"><span class="kk">Soreness</span><span class="face" data-face="good" data-size="20"></span></div><div class="mid"><span class="num g">4</span></div><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+          <div class="btile p"><div class="k"><span class="kk">Mood</span><span class="face" data-face="primed" data-size="20"></span></div><div class="mid"><span class="num p">5</span></div><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+          <div class="btile io"><span class="num">72.4</span><span class="u">kg</span></div>
+          <div class="btile io"><span class="num">100</span><span class="u">% plan</span></div>
+          <div class="btile wide" style="min-height:56px"><div class="k"><span class="kk">Note for coach</span></div><div style="font:400 12px/1.4 var(--sans);color:var(--ash2);margin-top:7px">Legs fresh, session felt easy today…</div></div>
+        </div>
+        <button class="submit" style="margin:12px 0 10px">Submit check-in</button>
+      </div>
+      <div class="nav"><span>⌂</span><span>◍</span><span class="fab">▮▮</span><span>▦</span><span>◔</span></div>
+    </div></div>
+  </div>
+
+  <!-- ============ 5 · MINIMAL ============ -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Minimal editorial</div>
+      <h2>Big type, quiet chrome</h2>
+      <p>The premium, restrained take: generous whitespace, large left-aligned labels, a compact 5-dot selector on the right, thin dividers. A one-line readiness read sits at the bottom. Feels calm and expensive; nothing shouts.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><div class="r"><span>92</span><span class="bat">85</span></div></div>
+      <div class="body">
+        <div class="hd"><div class="bk">‹</div><h1>Check-in</h1><div class="hb">♥</div></div>
+        <div class="datesub" style="margin-bottom:6px">TUESDAY 15 JULY</div>
+        <div class="min-row"><span class="nm">Energy</span><div class="rt"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot on"></span><span class="dot"></span><span class="val">4</span></div></div>
+        <div class="min-row"><span class="nm">Sleep</span><div class="rt"><span class="dot"></span><span class="dot"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="val">3</span></div></div>
+        <div class="min-row"><span class="nm">Soreness</span><div class="rt"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot on"></span><span class="dot"></span><span class="val">4</span></div></div>
+        <div class="min-row"><span class="nm">Mood</span><div class="rt"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot on"></span><span class="val">5</span></div></div>
+        <div class="min-row"><span class="nm">Weight</span><div class="rt"><span class="val" style="font-size:17px">72.4</span><span style="font:700 11px var(--mono);color:var(--ash);margin-left:4px">kg</span></div></div>
+        <div class="min-lead">Today reads <span>Good</span> — clear to train.</div>
+        <div class="note" style="margin-top:14px;border:none;padding:0;color:var(--ash2)">Add a note for your coach…</div>
+        <button class="submit" style="margin-top:auto;margin-bottom:12px">Log check-in</button>
+      </div>
+      <div class="nav"><span>⌂</span><span>◍</span><span class="fab">▮▮</span><span>▦</span><span>◔</span></div>
+    </div></div>
+  </div>
+
+</div>
+
+<footer>
+  <b>All five capture the same fields</b> — Energy / Sleep / Soreness / Mood (1–5), weight, adherence, a note, share-with-coach — and write the same check-in row, so the engines, compliance and coach view are untouched. Copy is re-framed to <b>today</b>, and each screen fits the "log ≥1× a day, re-log ≤1× / 6h" model. Aurora tokens + the shipped readiness faces (lime / blue / amber / red). Standalone preview, no build step.
+</footer>
+
+<script>
+  function faceSVG(feeling, size){
+    var M={primed:'M12 23 Q20 31 28 23',good:'M13 23 Q20 30 27 23',flat:'M13 25 L27 25',wrecked:'M13 28 Q20 21 27 28'};
+    var C={primed:'#c6f84f',good:'#6cb6bd',flat:'#d0cd94',wrecked:'#e58a5c'};
+    var c=C[feeling]||'#8b8f86', m=M[feeling]||M.flat;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 40 40" fill="none">'
+      +'<circle cx="13" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<circle cx="27" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<path d="'+m+'" stroke="'+c+'" stroke-width="2.8" stroke-linecap="round" fill="none"/>'
+      +'</svg>';
+  }
+  document.querySelectorAll('[data-face]').forEach(function(el){
+    el.innerHTML=faceSVG(el.dataset.face, +el.dataset.size||34);
+  });
+</script>
+</body>
+</html>
