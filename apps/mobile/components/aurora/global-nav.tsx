@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform } from "react-native";
+import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
 import { Host, RoundedRectangle } from "@expo/ui/swift-ui";
 import { glassEffect } from "@expo/ui/swift-ui/modifiers";
@@ -141,13 +141,15 @@ export default function AuroraGlobalNav() {
       return;
     }
     Animated.parallel([
-      Animated.spring(tx, { toValue: target, useNativeDriver: true, speed: 16, bounciness: 8 }),
-      Animated.timing(op, { toValue: 1, duration: 120, useNativeDriver: true }),
+      // A crisp, short ease-out (no spring wobble) so the slide feels snappy,
+      // not floaty — the earlier bouncy spring read as lag as it settled.
+      Animated.timing(tx, { toValue: target, duration: 190, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(op, { toValue: 1, duration: 110, useNativeDriver: true }),
       // The chalk pill stretches mid-travel for a liquid feel; the glass lens
-      // gets its liquid quality from the material itself, so it just springs.
+      // gets its liquid quality from the material itself, so it just slides.
       ...(useGlass ? [] : [Animated.sequence([
-        Animated.timing(sx, { toValue: 1.28, duration: 150, useNativeDriver: true }),
-        Animated.spring(sx, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 8 }),
+        Animated.timing(sx, { toValue: 1.22, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(sx, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
       ])]),
     ]).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
