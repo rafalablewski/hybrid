@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
-  fmtMetricValue, fmtMetricDelta, unitToKg,
+  fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/track";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 const C = (v: string) => `var(--color-${v})`;
 const LIME = "var(--lime-text)";
@@ -139,10 +140,8 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           <div style={{ fontWeight: 700, fontSize: 16, color: C("chalk") }}>{t("w.account.profile.priv-body-t")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: has ? LIME : C("ash"), marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{metrics === undefined ? "…" : subline}</div>
         </div>
-        <button onClick={() => setOpen((v) => !v)} style={{ flex: "none", padding: "7px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: C("chalk") }}>{open ? t("common.cancel") : t("w.account.profile.priv-log")}</button>
+        <button onClick={() => setOpen(true)} style={{ flex: "none", padding: "7px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: C("chalk") }}>{t("w.account.profile.priv-log")}</button>
       </div>
-
-      {open && <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />}
 
       {metrics !== undefined && (has ? (
         <>
@@ -155,11 +154,17 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
             {trends.map((tr) => <MetricTile key={tr.def.key} tr={tr} units={units} />)}
           </div>
         </>
-      ) : (!open && <EmptyBody onLog={() => setOpen(true)} />))}
+      ) : <EmptyBody onLog={() => setOpen(true)} />)}
 
       <button onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
         <AuroraIcon name="eye" size={14} color={LIME} /> {t("w.account.profile.priv-photos")} →
       </button>
+
+      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
+          modal Today uses for "Add a meal"), not an inline second form. */}
+      <Sheet open={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+        <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />
+      </Sheet>
     </div>
   );
 }
@@ -238,7 +243,7 @@ function EmptyBody({ onLog }: { onLog: () => void }) {
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".2em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", color: C("chalk"), margin: "8px 0 6px", textWrap: "balance" }}>{t("w.account.profile.priv-first-t")}</div>
       <div style={{ fontSize: 13, color: C("ash"), lineHeight: 1.5 }}>{t("w.account.profile.priv-first-s")}</div>
-      <button onClick={onLog} style={{ marginTop: 14, width: "100%", background: C("lime"), border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)" }}>＋ {t("w.account.profile.priv-first-cta")}</button>
+      <button onClick={onLog} style={{ marginTop: 14, width: "100%", background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)" }}>＋ {t("w.account.profile.priv-first-cta")}</button>
       <div style={{ margin: "18px 0 10px", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-first-track")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
         {BODY_METRIC_DEFS.slice(0, 4).map((def) => (
@@ -254,18 +259,20 @@ function EmptyBody({ onLog }: { onLog: () => void }) {
 }
 
 // The expanded logger — every field the trends grid can surface, all optional;
-// weight in the athlete's display unit, tape in cm, body-fat in %.
+// weight in the athlete's display unit, tape in cm, body-fat in %. Each metric
+// is a labelled big-number tile, the same quick-add anatomy as Today's "Add a
+// meal" quadrant (dot + mono label, borderless display number, unit suffix).
 function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; form: Record<string, string>; setField: (k: string, v: string) => void; onSave: () => void; busy: boolean }) {
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
         {BODY_METRIC_DEFS.map((def) => (
-          <Field key={def.key} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} placeholder={`${t(def.labelKey)} (${unitLabel(def.unit)})`} />
+          <MetricInput key={def.key} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </div>
-      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "11px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}>{t("common.save")}</button>
+      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
     </div>
   );
 }
@@ -295,14 +302,26 @@ function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: strin
   );
 }
 
-function Field({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+// One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
+// mono label up top, a big borderless display-number input, and the unit as a
+// quiet mono suffix. Empty reads as a muted "0" placeholder.
+function MetricInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <input
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      inputMode="decimal"
-      style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontSize: 14, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "10px 12px" }}
-    />
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "11px 13px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+        <span style={{ width: 9, height: 9, borderRadius: 3, background: C("lime") }} />{label}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+        <input
+          value={value}
+          onChange={(e) => { if (isDecimalInput(e.target.value)) onChange(e.target.value); }}
+          inputMode="decimal"
+          placeholder="0"
+          aria-label={`${label} (${unit})`}
+          style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }}
+        />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), flex: "none" }}>{unit}</span>
+      </div>
+    </div>
   );
 }

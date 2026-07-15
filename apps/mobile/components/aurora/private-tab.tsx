@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import {
   FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
-  fmtMetricValue, fmtMetricDelta, unitToKg,
+  fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
@@ -16,6 +16,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { track } from "../../lib/track";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 // The interactive Profile → Private tab. Owner-only self-tracking, now on the
 // same Jony-Ive material vocabulary as Today: the Command center leads as a
@@ -145,12 +146,10 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{metrics === undefined ? "…" : subline}</Text>
         </View>
-        <Pressable onPress={() => setOpen((v) => !v)} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{open ? t("common.cancel") : t("w.account.profile.priv-log")}</Text>
+        <Pressable onPress={() => setOpen(true)} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.line }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{t("w.account.profile.priv-log")}</Text>
         </Pressable>
       </View>
-
-      {open && <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />}
 
       {metrics !== undefined && (has ? (
         <>
@@ -163,12 +162,18 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
             {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
           </View>
         </>
-      ) : (!open && <EmptyBody C={C} onLog={() => setOpen(true)} />))}
+      ) : <EmptyBody C={C} onLog={() => setOpen(true)} />)}
 
       <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
         <AuroraIcon name="eye" size={14} color={lime} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-photos")} →</Text>
       </Pressable>
+
+      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
+          modal Today uses for "Add a meal"), not an inline second form. */}
+      <Sheet visible={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+        <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
+      </Sheet>
     </View>
   );
 }
@@ -249,8 +254,8 @@ function EmptyBody({ C, onLog }: { C: Palette; onLog: () => void }) {
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.4, color: C.chalk, marginTop: 8, marginBottom: 6 }}>{t("w.account.profile.priv-first-t")}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 19, color: C.ash }}>{t("w.account.profile.priv-first-s")}</Text>
-      <Pressable onPress={onLog} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.onAccent }}>＋ {t("w.account.profile.priv-first-cta")}</Text>
+      <Pressable onPress={onLog} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.account.profile.priv-first-cta")}</Text>
       </Pressable>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 18, marginBottom: 10 }}>{t("w.account.profile.priv-first-track")}</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
@@ -267,21 +272,21 @@ function EmptyBody({ C, onLog }: { C: Palette; onLog: () => void }) {
 }
 
 // The expanded logger — every field the trends grid can surface, all optional;
-// weight in the athlete's display unit, tape in cm, body-fat in %.
+// weight in the athlete's display unit, tape in cm, body-fat in %. Each metric
+// is a labelled big-number tile, the same quick-add anatomy as Today's "Add a
+// meal" quadrant (dot + mono label, borderless display number, unit suffix).
 function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units: "kg" | "lb"; form: Record<string, string>; setField: (k: string, v: string) => void; onSave: () => void; busy: boolean }) {
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <View style={{ marginTop: 14, gap: 8 }}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {BODY_METRIC_DEFS.map((def) => (
-          <View key={def.key} style={{ width: "48%", flexGrow: 1 }}>
-            <Field C={C} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} placeholder={`${t(def.labelKey)} (${unitLabel(def.unit)})`} />
-          </View>
+          <MetricInput key={def.key} C={C} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </View>
-      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 11, alignItems: "center", opacity: busy ? 0.6 : 1 }}>
-        {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("common.save")}</Text>}
+      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", opacity: busy ? 0.6 : 1, marginTop: 2 }}>
+        {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>}
       </Pressable>
     </View>
   );
@@ -312,15 +317,20 @@ function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconNam
   );
 }
 
-function Field({ C, value, onChange, placeholder }: { C: Palette; value: string; onChange: (v: string) => void; placeholder: string }) {
+// One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
+// mono label up top, a big borderless display-number input, and the unit as a
+// quiet mono suffix. Empty reads as a muted "0" placeholder.
+function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={C.ash}
-      keyboardType="decimal-pad"
-      style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}
-    />
+    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 11, paddingBottom: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
+        <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.8, color: C.chalk, paddingVertical: 2 }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>
+      </View>
+    </View>
   );
 }

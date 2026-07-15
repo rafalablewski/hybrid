@@ -197,6 +197,15 @@ export function fmtMetricValue(def: BodyMetricDef, stored: number, units: Weight
   return { value: Number(stored.toFixed(1)).toString(), unit: "cm" };
 }
 
+/** Guard for the measurement inputs: accept only a partial decimal number
+ *  (digits, one optional `.`/`,` separator) or empty. `inputMode`/`keyboardType`
+ *  only hint the on-screen keyboard — they don't stop a paste or a desktop
+ *  keystroke — so callers gate `onChange` through this to keep the field from
+ *  holding characters that would be silently dropped on save. */
+export function isDecimalInput(v: string): boolean {
+  return v === "" || /^[0-9]*[.,]?[0-9]*$/.test(v);
+}
+
 /** The magnitude of a delta for the arrow pill (weight in display units), as a
  *  bare string — the caller supplies the ▲/▼ and colour from `direction`. */
 export function fmtMetricDelta(def: BodyMetricDef, deltaStored: number, units: WeightUnit): string {
