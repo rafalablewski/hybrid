@@ -259,18 +259,20 @@ function EmptyBody({ onLog }: { onLog: () => void }) {
 }
 
 // The expanded logger — every field the trends grid can surface, all optional;
-// weight in the athlete's display unit, tape in cm, body-fat in %.
+// weight in the athlete's display unit, tape in cm, body-fat in %. Each metric
+// is a labelled big-number tile, the same quick-add anatomy as Today's "Add a
+// meal" quadrant (dot + mono label, borderless display number, unit suffix).
 function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; form: Record<string, string>; setField: (k: string, v: string) => void; onSave: () => void; busy: boolean }) {
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
         {BODY_METRIC_DEFS.map((def) => (
-          <Field key={def.key} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} placeholder={`${t(def.labelKey)} (${unitLabel(def.unit)})`} />
+          <MetricInput key={def.key} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </div>
-      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "11px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}>{t("common.save")}</button>
+      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "13px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
     </div>
   );
 }
@@ -300,14 +302,26 @@ function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: strin
   );
 }
 
-function Field({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+// One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
+// mono label up top, a big borderless display-number input, and the unit as a
+// quiet mono suffix. Empty reads as a muted "0" placeholder.
+function MetricInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <input
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      inputMode="decimal"
-      style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontSize: 14, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "10px 12px" }}
-    />
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "11px 13px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+        <span style={{ width: 9, height: 9, borderRadius: 3, background: C("lime") }} />{label}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          inputMode="decimal"
+          placeholder="0"
+          aria-label={`${label} (${unit})`}
+          style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }}
+        />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), flex: "none" }}>{unit}</span>
+      </div>
+    </div>
   );
 }

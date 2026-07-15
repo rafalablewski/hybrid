@@ -272,20 +272,20 @@ function EmptyBody({ C, onLog }: { C: Palette; onLog: () => void }) {
 }
 
 // The expanded logger — every field the trends grid can surface, all optional;
-// weight in the athlete's display unit, tape in cm, body-fat in %.
+// weight in the athlete's display unit, tape in cm, body-fat in %. Each metric
+// is a labelled big-number tile, the same quick-add anatomy as Today's "Add a
+// meal" quadrant (dot + mono label, borderless display number, unit suffix).
 function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units: "kg" | "lb"; form: Record<string, string>; setField: (k: string, v: string) => void; onSave: () => void; busy: boolean }) {
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {BODY_METRIC_DEFS.map((def) => (
-          <View key={def.key} style={{ width: "48%", flexGrow: 1 }}>
-            <Field C={C} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} placeholder={`${t(def.labelKey)} (${unitLabel(def.unit)})`} />
-          </View>
+          <MetricInput key={def.key} C={C} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </View>
-      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 11, alignItems: "center", opacity: busy ? 0.6 : 1 }}>
+      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.6 : 1, marginTop: 2 }}>
         {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("common.save")}</Text>}
       </Pressable>
     </View>
@@ -317,15 +317,20 @@ function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconNam
   );
 }
 
-function Field({ C, value, onChange, placeholder }: { C: Palette; value: string; onChange: (v: string) => void; placeholder: string }) {
+// One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
+// mono label up top, a big borderless display-number input, and the unit as a
+// quiet mono suffix. Empty reads as a muted "0" placeholder.
+function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={C.ash}
-      keyboardType="decimal-pad"
-      style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}
-    />
+    <View style={{ flexGrow: 1, flexBasis: "46%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 11, paddingBottom: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
+        <TextInput value={value} onChangeText={onChange} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.8, color: C.chalk, paddingVertical: 2 }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>
+      </View>
+    </View>
   );
 }
