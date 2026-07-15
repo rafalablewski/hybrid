@@ -16,6 +16,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { track } from "../../lib/track";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 // The interactive Profile → Private tab. Owner-only self-tracking, now on the
 // same Jony-Ive material vocabulary as Today: the Command center leads as a
@@ -145,12 +146,10 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{metrics === undefined ? "…" : subline}</Text>
         </View>
-        <Pressable onPress={() => setOpen((v) => !v)} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{open ? t("common.cancel") : t("w.account.profile.priv-log")}</Text>
+        <Pressable onPress={() => setOpen(true)} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.line }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{t("w.account.profile.priv-log")}</Text>
         </Pressable>
       </View>
-
-      {open && <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />}
 
       {metrics !== undefined && (has ? (
         <>
@@ -163,12 +162,18 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
             {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
           </View>
         </>
-      ) : (!open && <EmptyBody C={C} onLog={() => setOpen(true)} />))}
+      ) : <EmptyBody C={C} onLog={() => setOpen(true)} />)}
 
       <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
         <AuroraIcon name="eye" size={14} color={lime} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-photos")} →</Text>
       </Pressable>
+
+      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
+          modal Today uses for "Add a meal"), not an inline second form. */}
+      <Sheet visible={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+        <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
+      </Sheet>
     </View>
   );
 }
@@ -272,7 +277,7 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <View style={{ marginTop: 14, gap: 8 }}>
+    <View style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {BODY_METRIC_DEFS.map((def) => (
           <View key={def.key} style={{ width: "48%", flexGrow: 1 }}>

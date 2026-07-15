@@ -10,6 +10,7 @@ import {
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/track";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 const C = (v: string) => `var(--color-${v})`;
 const LIME = "var(--lime-text)";
@@ -139,10 +140,8 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           <div style={{ fontWeight: 700, fontSize: 16, color: C("chalk") }}>{t("w.account.profile.priv-body-t")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: has ? LIME : C("ash"), marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{metrics === undefined ? "…" : subline}</div>
         </div>
-        <button onClick={() => setOpen((v) => !v)} style={{ flex: "none", padding: "7px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: C("chalk") }}>{open ? t("common.cancel") : t("w.account.profile.priv-log")}</button>
+        <button onClick={() => setOpen(true)} style={{ flex: "none", padding: "7px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: C("chalk") }}>{t("w.account.profile.priv-log")}</button>
       </div>
-
-      {open && <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />}
 
       {metrics !== undefined && (has ? (
         <>
@@ -155,11 +154,17 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
             {trends.map((tr) => <MetricTile key={tr.def.key} tr={tr} units={units} />)}
           </div>
         </>
-      ) : (!open && <EmptyBody onLog={() => setOpen(true)} />))}
+      ) : <EmptyBody onLog={() => setOpen(true)} />)}
 
       <button onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
         <AuroraIcon name="eye" size={14} color={LIME} /> {t("w.account.profile.priv-photos")} →
       </button>
+
+      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
+          modal Today uses for "Add a meal"), not an inline second form. */}
+      <Sheet open={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+        <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />
+      </Sheet>
     </div>
   );
 }
@@ -259,7 +264,7 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
   const { t } = useLang();
   const unitLabel = (u: string) => (u === "weight" ? units : u === "pct" ? "%" : "cm");
   return (
-    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {BODY_METRIC_DEFS.map((def) => (
           <Field key={def.key} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} placeholder={`${t(def.labelKey)} (${unitLabel(def.unit)})`} />
