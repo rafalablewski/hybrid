@@ -47,6 +47,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F, serifIf, startGlow } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
+import { CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -347,7 +348,7 @@ export default function AuroraHome() {
                 ) : null}
                 {!plan && (
                   <Pressable onPress={startPrescribed} style={({ pressed }) => ({ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8, ...startGlow(C.lime, pressed) })}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.start")}</Text>
+                    <CtaLabel label={t("w.home.today.start")} color={C.onAccent} fontSize={fs.caption} />
                   </Pressable>
                 )}
               </View>
@@ -410,7 +411,7 @@ export default function AuroraHome() {
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
                 <Pressable onPress={startPrescribed} style={({ pressed }) => ({ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.home.today.start")}</Text>
+                  <CtaLabel label={t("w.home.today.start")} color={C.onAccent} fontSize={fs.bodyLg} />
                 </Pressable>
               </>
             ) : initialLoad ? (
