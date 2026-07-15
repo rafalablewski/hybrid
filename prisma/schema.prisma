@@ -458,15 +458,11 @@ model BodyMetric {
 }
 
 // Private free-text notes/reflections (the "Journal" block). Owner-only.
-// `mood` is 1..4 (rough → strong, see core MOODS) or null; `tags` are short
-// slugs (see core SUGGESTED_TAGS) — both optional so pre-existing notes load.
 model JournalEntry {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   body      String
-  mood      Int?
-  tags      String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
