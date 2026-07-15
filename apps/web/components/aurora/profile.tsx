@@ -268,7 +268,7 @@ export default function AuroraProfile({
         <button
           onClick={go("settings", "/settings")}
           aria-label={t("w.account.profile.edit")}
-          style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, background: "color-mix(in srgb, var(--color-ink) 55%, transparent)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid color-mix(in srgb, #fff 16%, transparent)", color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer" }}
+          style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, background: "color-mix(in srgb, var(--color-ink) 55%, transparent)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255, 255, 255, 0.16)", color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer" }}
         >
           <AuroraIcon name="edit" size={17} color={C("chalk")} />
         </button>
