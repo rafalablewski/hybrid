@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
-  fmtMetricValue, fmtMetricDelta, unitToKg,
+  fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -314,7 +314,7 @@ function MetricInput({ label, unit, value, onChange }: { label: string; unit: st
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
         <input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { if (isDecimalInput(e.target.value)) onChange(e.target.value); }}
           inputMode="decimal"
           placeholder="0"
           aria-label={`${label} (${unit})`}
