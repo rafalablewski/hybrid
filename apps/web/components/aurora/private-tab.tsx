@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  relativeTime, FUNNEL,
+  FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
   fmtMetricValue, fmtMetricDelta, unitToKg,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
@@ -15,8 +15,6 @@ const C = (v: string) => `var(--color-${v})`;
 const LIME = "var(--lime-text)";
 const dirColor = (d: TrendDirection) => (d === "up" ? LIME : d === "down" ? C("red") : C("ash"));
 const dirArrow = (d: TrendDirection) => (d === "up" ? "▲" : d === "down" ? "▼" : "–");
-
-type Entry = { id: string; body: string; createdAt: string };
 
 const j = async (url: string, opts?: RequestInit) => {
   try { return await (await fetch(url, opts)).json(); } catch { return {}; }
@@ -57,8 +55,8 @@ export default function PrivateTab({
       {/* Body & progress — FREE. */}
       <BodyBlock units={units} onPhotos={() => nav("progress")} />
 
-      {/* Journal — FREE. */}
-      <JournalBlock />
+      {/* Private training reflection now lives ON each workout (finish screen +
+          history), not in a standalone journal — see Session note. */}
 
       {/* Privacy & visibility lives in Settings — this is just the way in. */}
       <Row icon="lock" title={t("w.account.profile.priv-privacy-t")} sub={t("w.account.profile.priv-privacy-s")} onClick={() => nav("settings")} />
@@ -265,62 +263,6 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
         ))}
       </div>
       <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "11px 0", cursor: "pointer", fontWeight: 800, fontSize: 14, color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}>{t("common.save")}</button>
-    </div>
-  );
-}
-
-function JournalBlock() {
-  const { t } = useLang();
-  const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const load = useCallback(() => { j("/api/journal").then((d) => setEntries(d.entries ?? [])); }, []);
-  useEffect(() => { load(); }, [load]);
-
-  const save = async () => {
-    const body = draft.trim(); if (!body) return;
-    setBusy(true);
-    await j("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }) });
-    setBusy(false); setDraft(""); load();
-  };
-  const del = async (id: string) => { await j(`/api/journal?id=${encodeURIComponent(id)}`, { method: "DELETE" }); load(); };
-
-  return (
-    <div style={{ border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), padding: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-        <IconTile icon="edit" />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: C("chalk") }}>{t("w.account.profile.priv-journal-t")}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginTop: 3 }}>{t("w.account.profile.priv-journal-s")}</div>
-        </div>
-      </div>
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder={t("w.account.profile.priv-journal-ph")}
-        rows={2}
-        style={{ width: "100%", boxSizing: "border-box", resize: "vertical", fontFamily: "var(--font-display)", fontSize: 14, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "10px 12px" }}
-      />
-      {draft.trim().length > 0 && (
-        <button onClick={save} disabled={busy} style={{ marginTop: 8, background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer", fontWeight: 800, fontSize: 12, color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}>{t("w.account.profile.priv-journal-add")}</button>
-      )}
-      {entries && entries.length > 0 && (
-        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-          {entries.slice(0, 4).map((e) => (
-            <div key={e.id} style={{ borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
-              <div style={{ fontSize: 12.5, color: C("chalk"), lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{e.body}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-                <span style={{ display: "inline-flex", gap: 8, fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash") }}>
-                  <span>{relativeTime(Date.parse(e.createdAt))}</span>
-                  <span style={{ opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</span>
-                </span>
-                <button onClick={() => del(e.id)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash") }}>{t("common.delete")}</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

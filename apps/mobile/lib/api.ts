@@ -188,6 +188,24 @@ export async function renameSession(id: string, title: string): Promise<boolean>
   }
 }
 
+// Set the PRIVATE post-workout reflection (note + mood + tags) on a saved
+// session — the finish-screen note affordance. Owner-only; best effort.
+export async function patchSessionNote(
+  id: string,
+  reflection: { note: string | null; mood: number | null; tags: string[] },
+): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(reflection),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Reusable workout routines (WorkoutTemplate) the user owns — save a workout,
 // then load it to start a live session.
 export type Routine = {

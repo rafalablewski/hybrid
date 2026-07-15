@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioTotals, type LoggedSession } from "@hybrid/core";
+import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, type LoggedSession, type MoodDef } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { SessionDetail } from "../session-detail";
@@ -11,6 +11,33 @@ const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
+const moodColor = (m: MoodDef) => (m.tone === "red" ? C("red") : m.tone === "amber" ? C("amber") : "var(--lime-text)");
+
+// The owner's PRIVATE post-workout note (mood dot + text + tags), shown on their
+// own history card. Never rendered on any non-owner view.
+function SessionNoteView({ s }: { s: LoggedSession }) {
+  const { t } = useLang();
+  const m = moodDef(s.mood);
+  const tags = s.tags ?? [];
+  return (
+    <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+      {(m || s.note) && (
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          {m && <span title={t(m.labelKey)} aria-label={t(m.labelKey)} style={{ marginTop: 5, width: 8, height: 8, borderRadius: "50%", flex: "none", background: moodColor(m) }} />}
+          {s.note && <span style={{ fontFamily: "var(--font-display)", fontSize: fs.body, color: C("chalk"), lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{s.note}</span>}
+        </div>
+      )}
+      {tags.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: m || s.note ? 8 : 0 }}>
+          {tags.map((slug) => {
+            const k = tagLabelKey(slug);
+            return <span key={slug} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 26%, transparent)`, borderRadius: 6, padding: "2px 7px" }}>#{k ? t(k) : slug}</span>;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type SwipeAction = { key: string; label: string; color: string; onPress: () => void };
 
@@ -97,6 +124,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
                     <span style={{ color: C("chalk") }}>{b.name}</span><span style={{ color: C("ash") }}>{blockSummary(b)}</span>
                   </div>
                 ))}
+                {hasNote(s) && <SessionNoteView s={s} />}
                 {!showArchived && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10 }}>{t("w.analyze.hist.openBreakdown")}</div>}
               </SwipeCard>
             );

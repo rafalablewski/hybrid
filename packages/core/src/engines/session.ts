@@ -229,6 +229,10 @@ export interface LoggedSession {
   completedAt?: string | null;
   blocks: SessionBlock[];
   readiness?: number | null;
+  // Private post-workout reflection (owner-only; never serialised to others).
+  note?: string | null;
+  mood?: number | null;
+  tags?: string[] | null;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";

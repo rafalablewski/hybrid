@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { canSaveRoutine, isFullAccess, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { canSaveRoutine, isFullAccess, FUNNEL, MOODS, SUGGESTED_TAGS, MAX_TAGS, tagLabelKey, type SessionBlock } from "@hybrid/core";
 import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
+const tagLabel = (t: (k: string) => string, slug: string) => { const k = tagLabelKey(slug); return k ? t(k) : slug; };
 
 /**
  * "Save as routine" — the post-finish card shared by both web loggers (classic +
@@ -214,6 +215,85 @@ export function SessionRename({
       >
         ✓
       </button>
+    </div>
+  );
+}
+
+// A PRIVATE post-workout note — free text + a quick mood tap + context tags,
+// PATCHed onto the just-finished session (owner-only, never shown to anyone
+// else). Collapsed to a subtle link, like the rename; three states:
+// pill → composer → saved. Mirrors the mobile SummaryNote.
+export function SessionNote({ sessionId }: { sessionId: string | null }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [note, setNote] = useState("");
+  const [mood, setMood] = useState<number | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const toggleTag = (slug: string) => setTags((cur) => (cur.includes(slug) ? cur.filter((s) => s !== slug) : cur.length < MAX_TAGS ? [...cur, slug] : cur));
+
+  if (saved)
+    return (
+      <div style={{ marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)" }}>{t("w.train.note.saved")}</div>
+    );
+
+  if (!open)
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+      >
+        ✎ {t("w.train.note.add")}
+      </button>
+    );
+
+  const commit = async () => {
+    const body = note.trim();
+    if (sessionId && (body || mood != null || tags.length > 0)) {
+      setSaving(true);
+      try {
+        await fetch(`/api/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note: body, mood, tags }),
+        });
+      } catch { /* best-effort */ }
+      setSaving(false);
+    }
+    setSaved(true);
+  };
+
+  return (
+    <div style={{ marginTop: 12, textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), padding: 14 }}>
+      <textarea
+        value={note}
+        autoFocus
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={t("w.train.note.ph")}
+        rows={2}
+        style={{ width: "100%", boxSizing: "border-box", resize: "vertical", fontFamily: "var(--font-display)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "9px 11px" }}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.train.note.mood-q")}</span>
+        {MOODS.map((m) => {
+          const on = mood === m.value;
+          return (
+            <button key={m.value} onClick={() => setMood(on ? null : m.value)} aria-label={t(m.labelKey)} aria-pressed={on}
+              style={{ width: 30, height: 30, borderRadius: 9, cursor: "pointer", fontSize: 15, lineHeight: 1, background: on ? "color-mix(in srgb, var(--color-lime) 10%, transparent)" : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}` }}>{m.emoji}</button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+        {SUGGESTED_TAGS.map((tg) => {
+          const on = tags.includes(tg.slug);
+          return (
+            <button key={tg.slug} onClick={() => toggleTag(tg.slug)} aria-pressed={on}
+              style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, borderRadius: 999, padding: "5px 10px", cursor: "pointer", color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, fontWeight: on ? 600 : 400 }}>#{tagLabel(t, tg.slug)}</button>
+          );
+        })}
+      </div>
+      <button onClick={commit} disabled={saving} style={{ marginTop: 12, width: "100%", background: C("lime"), border: "none", borderRadius: 10, padding: "10px 0", cursor: "pointer", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", opacity: saving ? 0.6 : 1 }}>{t("common.save")}</button>
     </div>
   );
 }

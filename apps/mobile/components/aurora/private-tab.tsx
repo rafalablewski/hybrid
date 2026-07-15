@@ -3,7 +3,7 @@ import { View, Text, Pressable, TextInput, ActivityIndicator, StyleSheet } from 
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  relativeTime, FUNNEL,
+  FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
   fmtMetricValue, fmtMetricDelta, unitToKg,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
@@ -16,8 +16,6 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { track } from "../../lib/track";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
-
-type Entry = { id: string; body: string; createdAt: string };
 
 // The interactive Profile → Private tab. Owner-only self-tracking, now on the
 // same Jony-Ive material vocabulary as Today: the Command center leads as a
@@ -61,8 +59,8 @@ export default function PrivateTab({
       {/* Body & progress — FREE. Measurements (this API) + the photo screen. */}
       <BodyBlock C={C} units={units} onPhotos={() => router.push("/progress")} />
 
-      {/* Journal — FREE. Private notes. */}
-      <JournalBlock C={C} />
+      {/* Private training reflection now lives ON each workout (finish screen +
+          history), not in a standalone journal — see the Session note. */}
 
       {/* Privacy & visibility lives in Settings — this is just the way in. */}
       <Row C={C} icon="lock" title={t("w.account.profile.priv-privacy-t")} sub={t("w.account.profile.priv-privacy-s")} onPress={() => router.push("/settings")} />
@@ -282,71 +280,6 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
       <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 11, alignItems: "center", opacity: busy ? 0.6 : 1 }}>
         {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("common.save")}</Text>}
       </Pressable>
-    </View>
-  );
-}
-
-// ── Journal ─────────────────────────────────────────────────────────────────
-function JournalBlock({ C }: { C: Palette }) {
-  const { t } = useLang();
-  const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const load = useCallback(() => {
-    sapi<{ entries?: Entry[] }>("/api/journal").then((d) => setEntries(d.entries ?? [])).catch(() => setEntries([]));
-  }, []);
-  useEffect(() => { load(); }, [load]);
-
-  const save = async () => {
-    const body = draft.trim();
-    if (!body) return;
-    setBusy(true);
-    await sapi("/api/journal", "POST", { body });
-    setBusy(false); setDraft(""); load();
-  };
-  const del = async (id: string) => { await sapi(`/api/journal?id=${encodeURIComponent(id)}`, "DELETE"); load(); };
-
-  return (
-    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 14 }}>
-        <IconTile C={C} icon="edit" />
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-journal-t")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.account.profile.priv-journal-s")}</Text>
-        </View>
-      </View>
-
-      <TextInput
-        value={draft}
-        onChangeText={setDraft}
-        placeholder={t("w.account.profile.priv-journal-ph")}
-        placeholderTextColor={C.ash}
-        multiline
-        style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }}
-      />
-      {draft.trim().length > 0 && (
-        <Pressable onPress={save} disabled={busy} style={{ alignSelf: "flex-start", marginTop: 8, backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, opacity: busy ? 0.6 : 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.account.profile.priv-journal-add")}</Text>
-        </Pressable>
-      )}
-
-      {entries && entries.length > 0 && (
-        <View style={{ marginTop: 14, gap: 10 }}>
-          {entries.slice(0, 4).map((e) => (
-            <View key={e.id} style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 19 }}>{e.body}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 5 }}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{relativeTime(Date.parse(e.createdAt))}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash, opacity: 0.7 }}>{t("w.account.profile.priv-vis-only")}</Text>
-                </View>
-                <Pressable onPress={() => del(e.id)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 8.5, color: C.ash }}>{t("common.delete")}</Text></Pressable>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
     </View>
   );
 }
