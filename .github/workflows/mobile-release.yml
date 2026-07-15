@@ -43,7 +43,7 @@ jobs:
       CERTIFICATE_PRIVATE_KEY: ${{ secrets.APPLE_CERT_PRIVATE_KEY }}
       BUNDLE_ID: com.hybriddomain.xyz
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Use the newest Xcode on the runner (the default 16.4 is older than the
       # Xcode the project was prebuilt/verified with, which breaks native pods).
