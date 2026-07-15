@@ -82,6 +82,33 @@ html {
   outline-offset: 2px;
 }
 
+/* FOCUS GLOW — the primary Start CTA (week rail + Today plan card). The pill
+   rests flat and blooms a soft lime halo on hover / keyboard focus, so the main
+   action reads as alive and tappable instead of a static slab. Theme-aware: the
+   halo is the live --color-lime token (clay in Japandi). Mobile parity lives in
+   apps/mobile/lib/ui.tsx → startGlow(). */
+.start-glow {
+  transition: box-shadow 0.25s ease, transform 0.18s ease;
+}
+.start-glow:hover,
+.start-glow:focus-visible {
+  box-shadow: 0 0 34px -4px color-mix(in srgb, var(--color-lime) 55%, transparent);
+  transform: translateY(-1px);
+}
+.start-glow:active {
+  transform: translateY(0);
+  box-shadow: 0 0 22px -6px color-mix(in srgb, var(--color-lime) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-glow {
+    transition: none;
+  }
+  .start-glow:hover,
+  .start-glow:focus-visible {
+    transform: none;
+  }
+}
+
 /* Skip-to-content link: off-screen until focused, then it pins to the top-left
    so the first Tab press reveals "Skip to content" jumping past the sidebar. */
 .skip-link {

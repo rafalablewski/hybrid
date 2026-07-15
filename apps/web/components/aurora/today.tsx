@@ -274,6 +274,7 @@ export default function AuroraToday({
                 {showTopStart && (
                   <button
                     onClick={() => onStart(isAthlete && hasData ? (rx.blocks as SessionBlock[]) : undefined)}
+                    className="start-glow"
                     style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
                   >
                     {t("w.home.today.start")}
@@ -352,6 +353,7 @@ export default function AuroraToday({
               {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
               <button
                 onClick={() => onStart(plan.blocks)}
+                className="start-glow"
                 style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
                 {t("w.home.today.start")}

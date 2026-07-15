@@ -331,19 +331,19 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
       {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 9, marginTop: 16 }}>
         {(day.status === "today" || day.status === "missed") && (<>
-          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
+          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</button>
           <button onClick={onSkip} aria-label={t("w.home.rail.skip")} title={t("w.home.rail.skip")} style={iconBtn}><SkipGlyph /></button>
           {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "upcoming" && (<>
-          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.startEarly")}</button>
+          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}>{t("w.home.rail.startEarly")}</button>
           {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "skipped" && (
           <button onClick={onUnskip} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
         )}
         {day.status === "postponed" && (<>
-          <button onClick={() => onStart(startBlocks)} style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
+          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}>{t("w.home.rail.doItNow")}</button>
           <button onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
         </>)}
         {day.status === "done" && (
