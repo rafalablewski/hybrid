@@ -46,6 +46,7 @@ import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
@@ -277,7 +278,7 @@ export default function AuroraToday({
                     className="start-glow"
                     style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
                   >
-                    {t("w.home.today.start")}
+                    <CtaLabel>{t("w.home.today.start")}</CtaLabel>
                   </button>
                 )}
               </div>
@@ -356,7 +357,7 @@ export default function AuroraToday({
                 className="start-glow"
                 style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
-                {t("w.home.today.start")}
+                <CtaLabel>{t("w.home.today.start")}</CtaLabel>
               </button>
             </>
           ) : loading ? (
