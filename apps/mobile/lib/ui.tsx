@@ -18,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { BlurView } from "expo-blur";
 import { colors, fs, space } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
+import { useNavScrollProps } from "./nav-scroll";
 
 // Re-export the shared scale (same source the web client uses) so screens can
 //   import { fs, space } from "../../lib/ui"  →  fontSize: fs.body, gap: space.lg
@@ -223,6 +224,9 @@ export function Screen({
 }) {
   const { palette } = useTheme();
   const padBottom = useScreenBottomPad();
+  // Drive the floating nav's shrink-on-scroll from this screen's scroller too
+  // (Aurora is the only template, so classic-Screen screens sit under the pill).
+  const navScroll = useNavScrollProps();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
@@ -232,6 +236,7 @@ export function Screen({
         {scroll ? (
           <ScrollView
             contentContainerStyle={{ padding: 18, paddingBottom: padBottom }}
+            {...navScroll}
             keyboardShouldPersistTaps="handled"
             refreshControl={
               onRefresh ? (
