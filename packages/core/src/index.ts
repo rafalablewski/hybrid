@@ -13,6 +13,7 @@ export * from "./story-styles";
 export * from "./count-up";
 export * from "./semantic";
 export * from "./readiness-feeling";
+export * from "./checkin-flow";
 export * from "./engines";
 export * from "./plans";
 export * from "./plan-day";
