@@ -44,7 +44,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, space, F, serifIf, startGlow } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -346,7 +346,7 @@ export default function AuroraHome() {
                   </Ring>
                 ) : null}
                 {!plan && (
-                  <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <Pressable onPress={startPrescribed} style={({ pressed }) => ({ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8, ...startGlow(C.lime, pressed) })}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.start")}</Text>
                   </Pressable>
                 )}
@@ -409,7 +409,7 @@ export default function AuroraHome() {
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
-                <Pressable onPress={startPrescribed} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center" }}>
+                <Pressable onPress={startPrescribed} style={({ pressed }) => ({ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.home.today.start")}</Text>
                 </Pressable>
               </>

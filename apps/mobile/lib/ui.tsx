@@ -48,6 +48,23 @@ export const glassShadow: ViewStyle = {
   elevation: 8,
 };
 
+// FOCUS GLOW — the primary Start CTA's lime halo (parity with web `.start-glow`
+// in apps/web/app/globals.css). RN has no hover, so the pill carries a soft
+// resting glow and blooms brighter on press — the same "alive, tappable" cue.
+// iOS renders the coloured shadow; Android falls back to elevation. Pass the
+// live accent (C.lime — clay under Japandi) so it tracks the theme.
+export function startGlow(accent: string, pressed = false): ViewStyle {
+  return {
+    shadowColor: accent,
+    // Centred offset → a uniform halo that grows on press, matching web's
+    // `box-shadow: 0 0 34px` (no directional cast). Only radius/opacity bloom.
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: pressed ? 0.55 : 0.32,
+    shadowRadius: pressed ? 22 : 14,
+    elevation: pressed ? 10 : 6,
+  };
+}
+
 /**
  * Liquid Glass surface for React Native. BlurView frosts whatever is behind it;
  * a brand tint film + a top rim-highlight + a soft border reproduce the web
