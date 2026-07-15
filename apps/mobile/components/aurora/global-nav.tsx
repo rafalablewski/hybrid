@@ -1,8 +1,8 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useId } from "react";
 import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
-import { Host, RoundedRectangle } from "@expo/ui/swift-ui";
-import { glassEffect } from "@expo/ui/swift-ui/modifiers";
+import { Host, RoundedRectangle, Namespace, GlassEffectContainer, HStack, ZStack } from "@expo/ui/swift-ui";
+import { glassEffect, glassEffectId, frame } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -87,6 +87,9 @@ export default function AuroraGlobalNav() {
   if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
   const lensOp = lensOpRef.current;
   const firstRef = useRef(true);
+  // Inner-row width — needed to lay the native glass-morph layer's slots out to
+  // match the RN icons (SwiftUI frames take concrete widths, not flex).
+  const [rowW, setRowW] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   // OPTIMISTIC selection — the indicator + icon tint follow this, updated the
   // instant a tab is pressed (not when the route finally commits). Fixes the
@@ -159,6 +162,9 @@ export default function AuroraGlobalNav() {
   const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.16)";
   const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.12)";
   const trainFocused = activeSeg === TRAIN.seg;
+  // Selected slot index among the 4 side tabs (−1 = none, e.g. Train) — drives
+  // which cell of the native glass-morph layer holds the lens.
+  const selIdx = selectedSeg ? SIDES.findIndex((s) => s.seg === selectedSeg) : -1;
   // A render HELPER, not a nested component: defining a component inside render
   // makes React remount the whole subtree each render. A plain function that
   // returns JSX renders inline with no remount penalty.
@@ -182,28 +188,15 @@ export default function AuroraGlobalNav() {
         hitSlop={8}
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
-        {/* This slot's selection lens (cross-faded via lensOp) sits behind the
-            glyph. iOS: a real Liquid Glass lens (native SwiftUI glassEffect);
-            Android: the opaque chalk pill. It never moves — only its opacity
-            animates — so switching tabs stays smooth. */}
+        {/* iOS: the selection highlight is a single native Liquid Glass lens that
+            MORPHS between slots (rendered once, behind all icons — see
+            GlassMorphSelector); nothing per-slot here. Android: an opaque chalk
+            pill per slot that cross-fades (opacity only) so switching stays
+            smooth without a native glass view. */}
         <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: lensOp[tab.seg] }]}>
-            {useGlass ? (
-              <>
-                {/* A faint floor keeps the selection visible on iOS < 26 (where
-                    glassEffect degrades) and during the brief native mount. */}
-                <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)" }]} />
-                <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-                  <RoundedRectangle
-                    cornerRadius={20}
-                    modifiers={[glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 })]}
-                  />
-                </Host>
-              </>
-            ) : (
-              <View style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk }]} />
-            )}
-          </Animated.View>
+          {!useGlass && (
+            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
+          )}
           <AuroraIcon name={tab.glyph} size={23} color={isSel ? activeIconColor : C.ash} />
         </View>
       </Pressable>
@@ -241,9 +234,14 @@ export default function AuroraGlobalNav() {
         <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
         <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {/* Each side item carries its own selection lens (cross-faded in place),
-            so there's no single indicator sliding across the bar. */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        {/* Inner row. On iOS the native glass-morph layer fills this row BEHIND
+            the icons and travels between slots; the icons/FAB/taps stay RN, so
+            the bar still works even if the native layer doesn't render. */}
+        <View
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+          onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w && w !== rowW) setRowW(w); }}
+        >
+          {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} />}
           {LEFT.map(renderSideItem)}
           {/* centre gap — the raised Train FAB overlays this slot */}
           <View style={{ width: 64 }} />
@@ -294,5 +292,52 @@ export default function AuroraGlobalNav() {
       </View>
       </Animated.View>
     </View>
+  );
+}
+
+/**
+ * The iOS selection highlight — a SINGLE native Liquid Glass lens that MORPHS
+ * between tab slots (Apple's matched-geometry travel), instead of a JS-driven
+ * translate that re-samples the glass every frame and janks. All four slot cells
+ * live in one GlassEffectContainer under a Namespace; only the selected cell
+ * renders the glass RoundedRectangle, tagged with a stable glassEffectId — so
+ * when the selection moves, SwiftUI fluidly morphs the glass across. Laid out
+ * with concrete widths (SwiftUI frames aren't flex) to match the RN icons: four
+ * equal slots of (rowW − 64) / 4 with a fixed 64pt centre gap for the Train FAB.
+ * Rendered behind the RN glyphs and pointer-transparent; if the native layer
+ * fails to render the bar still works (the glyphs + taps are all RN).
+ */
+function GlassMorphSelector({ rowW, selectedIndex }: { rowW: number; selectedIndex: number }) {
+  const nsId = useId();
+  const slotW = Math.max(0, (rowW - 64) / 4);
+  const cell = (i: number) => (
+    <ZStack key={i} modifiers={[frame({ width: slotW, height: PILL_H })]}>
+      {selectedIndex === i ? (
+        <RoundedRectangle
+          cornerRadius={20}
+          modifiers={[
+            frame({ width: PILL_W, height: PILL_H }),
+            glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 }),
+            glassEffectId("sel", nsId),
+          ]}
+        />
+      ) : null}
+    </ZStack>
+  );
+  return (
+    <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Namespace id={nsId}>
+        <GlassEffectContainer>
+          <HStack spacing={0} modifiers={[frame({ height: PILL_H })]}>
+            {cell(0)}
+            {cell(1)}
+            {/* fixed centre gap — the raised Train FAB overlays this */}
+            <ZStack modifiers={[frame({ width: 64, height: PILL_H })]}>{null}</ZStack>
+            {cell(2)}
+            {cell(3)}
+          </HStack>
+        </GlassEffectContainer>
+      </Namespace>
+    </Host>
   );
 }
