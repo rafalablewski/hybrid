@@ -46,7 +46,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
 
   const submit = async () => {
     setSaving(true);
-    const ok = await createCheckin({
+    const r = await createCheckin({
       weekOf: new Date().toISOString(),
       bodyMassKg: extras.bodyMassKg ? parseFloat(extras.bodyMassKg) : null,
       energy: ratings.energy, sleep: ratings.sleep, soreness: ratings.soreness, mood: ratings.mood,
@@ -55,7 +55,15 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
       sharedWithCoach: paid ? extras.sharedWithCoach : false,
     });
     setSaving(false);
-    if (!ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
+    if (!r.ok) {
+      if (r.cooldownMs != null) {
+        const mins = Math.ceil(r.cooldownMs / 60000);
+        Alert.alert(t("w.recovery.checkins.cooldownTitle"), `${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
+      } else {
+        Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody"));
+      }
+      return;
+    }
     setDone(true);
     revalidate.recovery();
     onDone?.();

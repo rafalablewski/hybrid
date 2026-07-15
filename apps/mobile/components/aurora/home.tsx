@@ -618,20 +618,21 @@ function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onD
   // The 6h re-log window: while open, show "next in Xh Ym" beside today's last
   // logged feeling. Informational — the faces stay tappable.
   const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
+  const cooling = coolMs > 0;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
   const pick = async (rating: number) => {
-    if (busy) return;
+    if (busy || cooling) return;
     setBusy(true);
-    const ok = await createCheckin({
+    const r = await createCheckin({
       weekOf: new Date().toISOString(),
       bodyMassKg: null,
       energy: rating, sleep: rating, soreness: rating, mood: rating,
       adherencePct: null, note: null, sharedWithCoach: false,
     });
     setBusy(false);
-    if (ok) { revalidate.recovery(); onPicked(); }
+    if (r.ok) { revalidate.recovery(); onPicked(); }
   };
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
@@ -641,8 +642,8 @@ function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onD
           const on = feeling === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
-            <Pressable key={key} onPress={() => pick(i + 2)} disabled={busy} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: busy && !on ? 0.55 : 1 }}>
+            <Pressable key={key} onPress={() => pick(i + 2)} disabled={busy || cooling} accessibilityRole="button" accessibilityState={{ selected: on, disabled: busy || cooling }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: (busy || cooling) && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </Pressable>

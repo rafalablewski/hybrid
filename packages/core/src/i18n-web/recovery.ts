@@ -55,6 +55,8 @@ export const web_recovery = {
     "w.recovery.checkins.loggedTitle": "Check-in logged",
     "w.recovery.checkins.loggedSub": "Nice — today's check-in is saved. Log again anytime it shifts.",
     "w.recovery.checkins.newCheckin": "New check-in",
+    "w.recovery.checkins.cooldownTitle": "Once every 6 hours",
+    "w.recovery.checkins.cooldownBody": "You've already checked in — next one in",
 
     // nutrition.tsx
     "w.recovery.nutrition.title": "Nutrition",
@@ -222,6 +224,8 @@ export const web_recovery = {
     "w.recovery.checkins.loggedTitle": "Zapisano podsumowanie",
     "w.recovery.checkins.loggedSub": "Gotowe — dzisiejsze podsumowanie zapisane. Zapisz ponownie, gdy coś się zmieni.",
     "w.recovery.checkins.newCheckin": "Nowe podsumowanie",
+    "w.recovery.checkins.cooldownTitle": "Raz na 6 godzin",
+    "w.recovery.checkins.cooldownBody": "Masz już podsumowanie — następne za",
 
     // nutrition.tsx
     "w.recovery.nutrition.title": "Odżywianie",
@@ -389,6 +393,8 @@ export const web_recovery = {
     "w.recovery.checkins.loggedTitle": "Check-in gespeichert",
     "w.recovery.checkins.loggedSub": "Super — dein heutiger Check-in ist gespeichert. Logge erneut, wenn es sich ändert.",
     "w.recovery.checkins.newCheckin": "Neuer Check-in",
+    "w.recovery.checkins.cooldownTitle": "Nur alle 6 Stunden",
+    "w.recovery.checkins.cooldownBody": "Du hast bereits eingecheckt — nächster in",
 
     // nutrition.tsx
     "w.recovery.nutrition.title": "Ernährung",
