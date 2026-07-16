@@ -20,6 +20,10 @@ import {
   blockSummary,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
+  localDayKey,
+  localTodayKey,
+  localMondayMs,
+  addLocalDays,
   type HistoryViewId,
   type HistoryDayGroup,
   type LoggedSession,
@@ -166,14 +170,13 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 
   // The pinned current week Mon–Sun with load dots.
   const week = useMemo(() => {
-    const now = new Date();
-    const base = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const monday = base - ((now.getUTCDay() + 6) % 7) * DAY;
+    const todayKey = localTodayKey();
+    const monday = localMondayMs(Date.now());
     const max = Math.max(1, ...Object.values(byDay).map((d) => d.load));
     return Array.from({ length: 7 }, (_, i) => {
-      const key = new Date(monday + i * DAY).toISOString().slice(0, 10);
+      const key = localDayKey(addLocalDays(monday, i));
       const load = byDay[key]?.load ?? 0;
-      return { key, dayNum: Number(key.slice(8, 10)), isToday: monday + i * DAY === base, future: monday + i * DAY > base, dot: load <= 0 ? 0 : load / max > 0.5 ? 2 : 1 };
+      return { key, dayNum: Number(key.slice(8, 10)), isToday: key === todayKey, future: key > todayKey, dot: load <= 0 ? 0 : load / max > 0.5 ? 2 : 1 };
     });
   }, [byDay]);
 
@@ -210,7 +213,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 
       {!todayHasGroup && !upcoming.some((u) => u.isToday) && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <DayLabel text={`${t("w.analyze.cal.today")} – ${fmtDayLong(new Date().toISOString().slice(0, 10))}`} today />
+          <DayLabel text={`${t("w.analyze.cal.today")} – ${fmtDayLong(localTodayKey())}`} today />
           <span style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash") }}>{t("w.analyze.cal.nothing")}</span>
         </div>
       )}
@@ -245,7 +248,7 @@ export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
   const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12, bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
   const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const shade = [`color-mix(in srgb, ${C("ash")} 10%, transparent)`, `color-mix(in srgb, ${C("lime")} 24%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 66%, ${C("ink")})`, C("lime")];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayKey();
 
   // Month tick under the first column whose Monday enters a new month.
   const monthTicks = cols.map((col, i) => {
@@ -318,9 +321,9 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
   const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
   const [selected, setSelected] = useState(initKey);
   const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayKey();
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
-  const selSessions = ctx.sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
+  const selSessions = ctx.sessions.filter((s) => localDayKey(s.startedAt) === selected);
   const shade = ["transparent", `color-mix(in srgb, ${C("lime")} 7%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 11%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 16%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 24%, ${C("ink2")})`];
   const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, minWidth: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
 
@@ -402,7 +405,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             {w.totals.prs > 0 && chip("var(--lime-text)", `↑ ${w.totals.prs} ${t("w.analyze.hist.pr")}`, true)}
           </div>
           {w.sessions.map((s) => {
-            const key = s.startedAt.slice(0, 10);
+            const key = localDayKey(s.startedAt);
             return (
               <div key={s.id} onClick={() => ctx.onOpen(s.id)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 2px", borderTop: `1px solid ${C("line")}`, cursor: "pointer" }}>
                 <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), width: 32, flex: "none", textAlign: "center", lineHeight: 1.25, textTransform: "uppercase" }}>

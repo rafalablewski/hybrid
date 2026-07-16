@@ -10,10 +10,11 @@
  */
 
 import type { Signal } from "./signals";
+import { localDayKey, localTodayKey } from "../day-key";
 
 const DAY = 86_400_000;
 const KCAL_PER_KG = 7700; // ~energy in 1 kg of body mass
-const dayKey = (iso: string) => iso.slice(0, 10);
+const dayKey = localDayKey; // the athlete's LOCAL calendar day (day-key.ts)
 
 export interface NutritionDay {
   date: string; // YYYY-MM-DD
@@ -48,7 +49,7 @@ export function dailyNutrition(signals: Signal[]): NutritionDay[] {
 
 /** Today's running totals (zeros if nothing logged yet). */
 export function todayNutrition(signals: Signal[], now = Date.now()): NutritionDay {
-  const today = new Date(now).toISOString().slice(0, 10);
+  const today = localTodayKey(now);
   return (
     dailyNutrition(signals).find((d) => d.date === today) ?? {
       date: today, kcal: 0, protein: 0, carbs: 0, fat: 0, water: 0,

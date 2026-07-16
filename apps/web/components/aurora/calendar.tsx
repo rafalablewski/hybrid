@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
+import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 
 const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = localTodayKey;
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6 }}>{label}</span>;
@@ -43,7 +43,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const today = todayKey();
   const go = (delta: number) => { const m = month + delta; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
   const jumpToday = () => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); };
-  const selSessions = sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
+  const selSessions = sessions.filter((s) => localDayKey(s.startedAt) === selected);
   const selEvents = eventsByDay[selected] ?? [];
   const selAssignments = assignmentsByDay[selected] ?? [];
   const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;

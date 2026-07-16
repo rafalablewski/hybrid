@@ -7,16 +7,18 @@
  */
 
 import type { LoggedSession } from "./session";
+import { localDayKey, localTodayKey } from "../day-key";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
 
 /** YYYY-MM-DD bucket for an ISO timestamp (UTC calendar day). */
-const dayKey = (iso: string) => iso.slice(0, 10);
-const dayNum = (iso: string) => Math.floor(Date.parse(`${dayKey(iso)}T00:00:00.000Z`) / DAY);
-const todayNum = (now: number) => Math.floor(now / DAY);
+const dayKey = localDayKey; // the athlete's LOCAL calendar day (day-key.ts)
+/** Day-NUMBER of a YYYY-MM-DD label — pure label math for streak gaps. */
+const labelNum = (label: string) => Math.floor(Date.parse(`${label}T00:00:00.000Z`) / DAY);
+const todayNum = (now: number) => labelNum(localTodayKey(now));
 
-/** Distinct active calendar days (UTC), newest-first. */
+/** Distinct active LOCAL calendar days, newest-first. */
 export function activeDays(sessions: LoggedSession[]): string[] {
   return [...new Set(sessions.map((s) => dayKey(s.startedAt)))].sort((a, b) => (a < b ? 1 : -1));
 }
@@ -45,7 +47,7 @@ export function streak(sessions: LoggedSession[], graceDays = 1, now = Date.now(
   if (days.length === 0) return { current: 0, longest: 0, lastActive: null, daysSinceLast: null, alive: false };
 
   // ascending day-numbers
-  const nums = days.map((d) => Math.floor(Date.parse(`${d}T00:00:00.000Z`) / DAY)).sort((a, b) => a - b);
+  const nums = days.map(labelNum).sort((a, b) => a - b);
 
   let longest = 1;
   let run = 1;
@@ -103,7 +105,7 @@ export function trainingDaysPerWeek(
     const days = new Set<string>();
     for (const s of sessions) {
       const t = Date.parse(s.startedAt);
-      if (t > start && t <= end) days.add(new Date(t).toISOString().slice(0, 10));
+      if (t > start && t <= end) days.add(localDayKey(t));
     }
     if (days.size) counts.push(days.size);
   }
@@ -143,7 +145,7 @@ const RECOVERY_KINDS = new Set<Signal["kind"]>(["hrv", "restingHr", "sleep", "sl
  * and did a wellness check-in. Derived from existing data — no new storage.
  */
 export function dailyChecklist(sessions: LoggedSession[], signals: Signal[], now = Date.now()): DailyChecklist {
-  const today = new Date(now).toISOString().slice(0, 10);
+  const today = localTodayKey(now);
   const trained = sessions.some((s) => dayKey(s.startedAt) === today);
   const nutritionLogged = signals.some((s) => s.kind === "energyIntake" && dayKey(s.ts) === today);
   const checkedIn = signals.some((s) => RECOVERY_KINDS.has(s.kind) && dayKey(s.ts) === today);

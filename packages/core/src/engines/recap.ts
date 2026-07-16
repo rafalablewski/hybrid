@@ -1,4 +1,5 @@
 import type { LoggedSession, SessionBlock } from "./session";
+import { localDayKey } from "../day-key";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import {
@@ -108,7 +109,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
   const blocks: SessionBlock[] = [];
   for (const s of thisWeek) {
     volume += sessionVolume(s.blocks, false, bwAt(bw, s.startedAt));
-    days.add(s.startedAt.slice(0, 10));
+    days.add(localDayKey(s.startedAt));
     for (const b of s.blocks) {
       blocks.push(b);
       if (b.kind === "strength") {

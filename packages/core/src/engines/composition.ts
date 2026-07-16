@@ -7,6 +7,7 @@
  */
 
 import type { Signal } from "./signals";
+import { localDayKey } from "../day-key";
 
 export interface WeightPoint {
   date: string; // YYYY-MM-DD
@@ -39,7 +40,7 @@ export function weightTrend(signals: Signal[], opts: { alpha?: number } = {}): W
   let ewma = pts[0]!.v;
   for (const p of pts) {
     ewma = alpha * p.v + (1 - alpha) * ewma;
-    points.push({ date: new Date(p.t).toISOString().slice(0, 10), raw: p.v, smoothed: Math.round(ewma * 100) / 100 });
+    points.push({ date: localDayKey(p.t), raw: p.v, smoothed: Math.round(ewma * 100) / 100 });
   }
 
   // weekly rate = least-squares slope of smoothed vs time(weeks)

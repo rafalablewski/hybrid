@@ -17,6 +17,10 @@ import {
   blockSummary,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
+  localDayKey,
+  localTodayKey,
+  localMondayMs,
+  addLocalDays,
   type HistoryViewId,
   type HistoryDayGroup,
   type LoggedSession,
@@ -165,14 +169,13 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
   const lime = txt(C, C.lime) as string;
 
   const week = useMemo(() => {
-    const now = new Date();
-    const base = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const monday = base - ((now.getUTCDay() + 6) % 7) * DAY;
+    const todayKey = localTodayKey();
+    const monday = localMondayMs(Date.now());
     const max = Math.max(1, ...Object.values(byDay).map((d) => d.load));
     return Array.from({ length: 7 }, (_, i) => {
-      const key = new Date(monday + i * DAY).toISOString().slice(0, 10);
+      const key = localDayKey(addLocalDays(monday, i));
       const load = byDay[key]?.load ?? 0;
-      return { key, dayNum: Number(key.slice(8, 10)), isToday: monday + i * DAY === base, future: monday + i * DAY > base, dot: load <= 0 ? 0 : load / max > 0.5 ? 2 : 1 };
+      return { key, dayNum: Number(key.slice(8, 10)), isToday: key === todayKey, future: key > todayKey, dot: load <= 0 ? 0 : load / max > 0.5 ? 2 : 1 };
     });
   }, [byDay]);
 
@@ -211,7 +214,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 
       {!todayHasGroup && !upcoming.some((u) => u.isToday) && (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-          <DayLabel C={C} text={`${t("w.analyze.cal.today")} – ${fmtDayLong(new Date().toISOString().slice(0, 10))}`} today />
+          <DayLabel C={C} text={`${t("w.analyze.cal.today")} – ${fmtDayLong(localTodayKey())}`} today />
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
         </View>
       )}
@@ -248,7 +251,7 @@ export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
   const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const lime = txt(C, C.lime) as string;
   const shade = ["transparent", withAlpha(C.lime, 0.24), withAlpha(C.lime, 0.42), withAlpha(C.lime, 0.66), C.lime];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayKey();
 
   const monthTicks = cols.map((col, i) => {
     const m = new Date(keyTs(col[0]!.date)).toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toUpperCase();
@@ -318,10 +321,10 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
   const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
   const [selected, setSelected] = useState(initKey);
   const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localTodayKey();
   const lime = txt(C, C.lime) as string;
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
-  const selSessions = ctx.sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
+  const selSessions = ctx.sessions.filter((s) => localDayKey(s.startedAt) === selected);
   const shadeAlpha = [0, 0.07, 0.11, 0.16, 0.24];
   const navBtn = { minWidth: 34, height: 34, paddingHorizontal: 10, borderRadius: 17, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };
 
@@ -407,7 +410,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             {w.totals.prs > 0 && <Chip C={C} color={C.lime} label={`↑ ${w.totals.prs} PR`} strong />}
           </View>
           {w.sessions.map((s) => {
-            const key = s.startedAt.slice(0, 10);
+            const key = localDayKey(s.startedAt);
             const km = keyMetric(s, ctx, t);
             return (
               <Pressable key={s.id} onPress={() => ctx.onOpen(s.id)} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>

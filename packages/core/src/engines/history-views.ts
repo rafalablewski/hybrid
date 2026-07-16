@@ -7,24 +7,23 @@
  * the date-anchored plan schedule), so all the grouping/aggregation math lives
  * here — pure and client-agnostic — and web + mobile only render.
  *
- * Day keys follow the calendar engine's UTC convention (`iso.slice(0, 10)`) so
- * every view shades/loads days exactly like the month calendar does.
+ * Day keys follow the app's canonical LOCAL calendar-day convention
+ * (day-key.ts) — the same keys the plan schedule and the calendar engine use,
+ * so every surface on the screen agrees on which day a session belongs to.
  */
 
 import type { LoggedSession } from "./session";
 import { sessionVolume, sessionShape } from "./session";
 import { sessionLoad } from "./load";
 import { prsForSession } from "./records";
-import { sessionsByDay, monthMatrix, utcDayKey, utcDayKeyOfMs, utcMondayOf, loadLevel, type MonthCell } from "./calendar";
+import { sessionsByDay, monthMatrix, loadLevel, type MonthCell } from "./calendar";
+import { localDayKey, localTodayKey, localMondayMs, addLocalDays, dayKeyDiff } from "../day-key";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import type { PlanScheduleResult } from "../plan-schedule";
 
-const DAY = 86_400_000;
-const dayKey = utcDayKey;
-const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
-const fmtKey = utcDayKeyOfMs;
-const todayKeyOf = (now: number) => fmtKey(now);
-const mondayOf = utcMondayOf;
+const dayKey = localDayKey;
+const todayKeyOf = (now: number) => localTodayKey(now);
+const mondayOf = localMondayMs;
 
 /** A per-session PR-count lookup. Both clients memoize one map of these; every
  *  view function accepts it so PR detection (O(n) per session) never re-runs. */
@@ -126,7 +125,7 @@ export function historyStream(
   const out: HistoryStreamItem[] = [];
   keys.forEach((k, i) => {
     if (i > 0) {
-      const gapDays = Math.round((keyTs(keys[i - 1]!) - keyTs(k)) / DAY) - 1;
+      const gapDays = dayKeyDiff(k, keys[i - 1]!) - 1;
       if (gapDays > 0) out.push({ kind: "gap", days: gapDays });
     }
     const group = byDay.get(k)!;
@@ -214,7 +213,8 @@ export function historyStats(
   const now = opts?.now ?? Date.now();
   const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
   const thisMonday = mondayOf(now);
-  const startMs = thisMonday - (weeks - 1) * 7 * DAY;
+  const startMs = addLocalDays(thisMonday, -(weeks - 1) * 7);
+  const endMs = addLocalDays(thisMonday, 7);
 
   let count = 0;
   let volume = 0;
@@ -223,7 +223,7 @@ export function historyStats(
   for (const s of all) {
     const ts = new Date(s.startedAt).getTime();
     weeksWith.add(mondayOf(ts));
-    if (ts < startMs || ts >= thisMonday + 7 * DAY) continue;
+    if (ts < startMs || ts >= endMs) continue;
     count++;
     volume += sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt));
     prs += prsOf(s.id);
@@ -231,10 +231,10 @@ export function historyStats(
 
   let streak = 0;
   let cursor = thisMonday;
-  if (!weeksWith.has(cursor)) cursor -= 7 * DAY; // current week may still be young
+  if (!weeksWith.has(cursor)) cursor = addLocalDays(cursor, -7); // current week may still be young
   while (weeksWith.has(cursor)) {
     streak++;
-    cursor -= 7 * DAY;
+    cursor = addLocalDays(cursor, -7);
   }
 
   return { sessions: count, volume: Math.round(volume), prs, streakWeeks: streak };
@@ -346,7 +346,7 @@ export function weekChapters(
       const group = byWeek.get(monday)!;
       const days: WeekChapterDay[] = [];
       for (let i = 0; i < 7; i++) {
-        const k = fmtKey(monday + i * DAY);
+        const k = dayKey(addLocalDays(monday, i));
         const daySessions = group.filter((s) => dayKey(s.startedAt) === k);
         days.push({
           dateKey: k,
@@ -356,8 +356,8 @@ export function weekChapters(
         });
       }
       return {
-        startKey: fmtKey(monday),
-        endKey: fmtKey(monday + 6 * DAY),
+        startKey: dayKey(monday),
+        endKey: dayKey(addLocalDays(monday, 6)),
         isCurrent: monday === currentMonday,
         days,
         totals: {

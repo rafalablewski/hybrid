@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { sessionsByDay, monthMatrix, loadIntensity } from "./calendar";
 import type { LoggedSession } from "./session";
 
+// LOCAL-constructed timestamps so day-grouping expectations hold in any TZ.
+const at = (day: number, hour: number) => new Date(2026, 5, day, hour).toISOString(); // June 2026, local time
 const sess = (id: string, iso: string): LoggedSession => ({
   id, title: "Lower", startedAt: iso,
   blocks: [{ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5", rpe: "8" }, { load: "100", reps: "5", rpe: "8" }] }],
@@ -10,9 +12,9 @@ const sess = (id: string, iso: string): LoggedSession => ({
 describe("sessionsByDay", () => {
   it("groups by UTC day and sums count/load/volume", () => {
     const by = sessionsByDay([
-      sess("a", "2026-06-01T08:00:00.000Z"),
-      sess("b", "2026-06-01T18:00:00.000Z"),
-      sess("c", "2026-06-02T08:00:00.000Z"),
+      sess("a", at(1, 8)),
+      sess("b", at(1, 18)),
+      sess("c", at(2, 8)),
     ]);
     expect(by["2026-06-01"]!.count).toBe(2);
     expect(by["2026-06-01"]!.volume).toBe(2 * (100 * 5 + 100 * 5)); // two sessions
@@ -42,7 +44,7 @@ describe("monthMatrix", () => {
 
 describe("loadIntensity", () => {
   it("scales 0..1 against the busiest day", () => {
-    const by = sessionsByDay([sess("a", "2026-06-01T08:00:00.000Z"), sess("b", "2026-06-01T18:00:00.000Z"), sess("c", "2026-06-03T08:00:00.000Z")]);
+    const by = sessionsByDay([sess("a", at(1, 8)), sess("b", at(1, 18)), sess("c", at(3, 8))]);
     const intensity = loadIntensity(by);
     expect(intensity("2026-06-01")).toBeCloseTo(1, 5); // busiest
     expect(intensity("2026-06-03")).toBeGreaterThan(0);
