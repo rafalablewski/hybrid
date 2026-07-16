@@ -335,7 +335,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{fmtMonth(year, month)}</Text>
           <View style={{ flexDirection: "row", gap: 6 }}>
             <Pressable accessibilityRole="button" accessibilityLabel={t("common.previousMonth")} onPress={() => go(-1)} style={navBtn}><Text style={{ fontFamily: F.bold, color: C.chalk }}>‹</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); }} style={navBtn}><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{t("w.analyze.cal.today")}</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(today); }} style={navBtn}><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{t("w.analyze.cal.today")}</Text></Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel={t("common.nextMonth")} onPress={() => go(1)} style={navBtn}><Text style={{ fontFamily: F.bold, color: C.chalk }}>›</Text></Pressable>
           </View>
         </View>

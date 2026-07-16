@@ -41,9 +41,11 @@ export const WEEKDAY_LABEL_KEYS = [
   "w.analyze.cal.weekdaySun",
 ] as const;
 
-/** Newest-first copy of the sessions (the order every view renders in). */
+/** Newest-first copy of the sessions (the order every view renders in).
+ *  startedAt is a uniform ISO-8601 string, so lexicographic order IS
+ *  chronological order — no Date allocation in the comparator. */
 const desc = (sessions: LoggedSession[]) =>
-  [...sessions].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  [...sessions].sort((a, b) => (b.startedAt < a.startedAt ? -1 : b.startedAt > a.startedAt ? 1 : 0));
 
 // ============================================================
 //  View registry
