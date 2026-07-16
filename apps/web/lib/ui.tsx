@@ -222,6 +222,50 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
   );
 }
 
+/** Pill button — mirrors mobile lib/ui Button (fill | outline). Fill paints the
+ *  brand accent (or an explicit `color`) with onAccent ink; outline is a
+ *  transparent ghost with a hairline border, `color` tinting the label + border
+ *  (muted ash/line when omitted) — e.g. destructive actions. */
+export function Button({
+  label,
+  onClick,
+  color,
+  variant = "fill",
+  disabled,
+  style,
+}: {
+  label: string;
+  onClick: () => void;
+  color?: string;
+  variant?: "fill" | "outline";
+  disabled?: boolean;
+  style?: CSSProperties;
+}) {
+  const outline = variant === "outline";
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...mono,
+        fontSize: fs.caption,
+        fontWeight: 700,
+        color: outline ? txt(color ?? ASH) : ON_ACCENT,
+        background: outline ? "none" : color ?? LIME,
+        border: outline ? `1px solid ${color ? `color-mix(in srgb, ${color} 45%, transparent)` : LINE}` : "none",
+        borderRadius: 999,
+        padding: "9px 20px",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        whiteSpace: "nowrap",
+        ...style,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 // Branded dropdown. Native <select> arrows + popups are OS-styled and clash
 // with the dark identity, so we strip the chrome (appearance:none), draw our
 // own chevron, and paint the control with brand tokens. One source of truth for

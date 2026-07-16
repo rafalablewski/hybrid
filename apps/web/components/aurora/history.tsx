@@ -7,14 +7,13 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
-import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
-// its component here is a type error, not a silent fall-back to the list.
-const VIEW_COMPONENTS: Record<Exclude<HistoryViewId, "list">, ComponentType<{ ctx: ViewCtx }>> = {
+// its component here is a type error, not a silent fall-back.
+const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
   agenda: AgendaView,
-  heatmap: HeatmapView,
   journal: JournalView,
   weeks: WeeksView,
   timeline: TimelineView,
@@ -23,7 +22,7 @@ const VIEW_COMPONENTS: Record<Exclude<HistoryViewId, "list">, ComponentType<{ ct
 
 const VIEW_KEY = "hybrid.historyView";
 const readView = (): HistoryViewId => {
-  try { return normalizeHistoryView(localStorage.getItem(VIEW_KEY)); } catch { return "list"; }
+  try { return normalizeHistoryView(localStorage.getItem(VIEW_KEY)); } catch { return normalizeHistoryView(null); }
 };
 
 const C = (v: string) => `var(--color-${v})`;
@@ -60,10 +59,10 @@ function SessionNoteView({ s }: { s: LoggedSession }) {
 
 type SwipeAction = { key: string; label: string; color: string; onPress: () => void };
 
-/** AURORA History (web) — bespoke session list with PR badges. Manage actions
- *  (archive/restore/delete) live behind a SWIPE: drag a card left (pointer or
- *  touch) to reveal them, so the resting card is clean — no footer buttons, no
- *  divider lines — and a tap opens the full breakdown (reusing SessionDetail). */
+/** AURORA History (web) — the five merged History × Calendar layouts behind a
+ *  view switcher. Live sessions are managed (archive/delete) from the full
+ *  breakdown (SessionDetail); the archived screen keeps the classic swipe list
+ *  — drag a card left (pointer or touch) to reveal restore/delete. */
 export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenExercise, onChanged }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; onOpenExercise?: (name: string) => void; onChanged?: () => void }) {
   const { t } = useLang();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -105,7 +104,9 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
     try {
       const res = await fetch(`/api/sessions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ archived: value }) });
       if (!res.ok) { alert(`${t("w.analyze.hist.couldntPre")} ${value ? t("w.analyze.hist.confirmArchive") : t("w.analyze.hist.confirmRestore")} ${t("w.analyze.hist.couldntTail")}`); return; }
-      onChanged?.(); if (showArchived || value) await loadArchived();
+      // Only refresh the archived list when it's on screen — toggleArchived
+      // loads it fresh anyway, so archiving from live needn't prefetch it.
+      onChanged?.(); if (showArchived) await loadArchived();
     } catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
   };
   const remove = async (id: string, title: string) => {
@@ -117,7 +118,22 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
   const toggleArchived = () => { const next = !showArchived; setShowArchived(next); if (next) void loadArchived(); };
 
   const open = openId ? sessions.find((s) => s.id === openId) : null;
-  if (open) return <SessionDetail session={open} all={sessions} onBack={() => setOpenId(null)} onOpenExercise={onOpenExercise} />;
+  // Archive/delete moved here from the retired classic-list swipe: once either
+  // succeeds the session leaves `sessions` (onChanged refetch) and the detail
+  // unmounts on its own; a cancelled confirm leaves it open.
+  if (open) {
+    return (
+      <SessionDetail
+        session={open}
+        all={sessions}
+        onBack={() => setOpenId(null)}
+        onOpenExercise={onOpenExercise}
+        onArchive={() => void setArchivedFlag(open.id, true)}
+        onDelete={() => void remove(open.id, open.title)}
+        manageBusy={busy === open.id}
+      />
+    );
+  }
 
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -127,9 +143,8 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
   );
 
   const list = showArchived ? archived : sessions;
-  // Archived management stays on the classic list; the six merged layouts
-  // (agenda/heatmap/journal/weeks/timeline/blocks) apply to live history.
-  const activeView: HistoryViewId = showArchived ? "list" : view;
+  // Live history renders the chosen merged layout (agenda/journal/weeks/
+  // timeline/blocks); archived management keeps the classic swipe list.
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {archivedToggle}
@@ -139,21 +154,19 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("w.analyze.hist.sessionsEmpty")}</p>
         </div>
-      ) : activeView !== "list" ? (
-        (() => { const View = VIEW_COMPONENTS[activeView]; return <View ctx={viewCtx} />; })()
+      ) : !showArchived ? (
+        (() => { const View = VIEW_COMPONENTS[view]; return <View ctx={viewCtx} />; })()
       ) : (
         <>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "right", marginTop: -4 }}>{t("w.analyze.hist.swipeHint")}</div>
           {list.map((s) => {
             const prCount = prCounts.get(s.id) ?? 0;
             const actions: SwipeAction[] = [
-              showArchived
-                ? { key: "restore", label: t("w.analyze.hist.restore"), color: C("lime"), onPress: () => setArchivedFlag(s.id, false) }
-                : { key: "archive", label: t("w.analyze.hist.archive"), color: C("ash"), onPress: () => setArchivedFlag(s.id, true) },
+              { key: "restore", label: t("w.analyze.hist.restore"), color: C("lime"), onPress: () => setArchivedFlag(s.id, false) },
               { key: "delete", label: t("w.analyze.hist.delete"), color: C("red"), onPress: () => remove(s.id, s.title) },
             ];
             return (
-              <SwipeCard key={s.id} actions={actions} busy={busy === s.id} openable={!showArchived} onOpen={() => setOpenId(s.id)}>
+              <SwipeCard key={s.id} actions={actions} busy={busy === s.id}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <div style={{ fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{fmtDate(s.startedAt)}</span>
@@ -162,7 +175,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
                   {/* Sport-aware headline chip — a run/match has no tonnage, so
                       cardio sessions read distance/time; conditioning-only
                       sessions fall back to summed minutes (matches the
-                      history-views keyMetric so List agrees with the layouts). */}
+                      history-views keyMetric so this list agrees with the layouts). */}
                   {sessionShape(s) === "cardio"
                     ? (() => {
                         const ct = sessionCardioTotals(s.blocks);
@@ -182,7 +195,6 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
                   </div>
                 ))}
                 {hasNote(s) && <SessionNoteView s={s} />}
-                {!showArchived && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10 }}>{t("w.analyze.hist.openBreakdown")}</div>}
               </SwipeCard>
             );
           })}
@@ -193,9 +205,10 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
 }
 
 /** A card whose manage actions are revealed by dragging it left (pointer or
- *  touch). Opaque surface so the actions don't bleed through; a tap opens the
- *  card unless it was a drag, and a tap while open closes the reveal. */
-function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: SwipeAction[]; busy: boolean; openable: boolean; onOpen: () => void; children: ReactNode }) {
+ *  touch). Opaque surface so the actions don't bleed through; a tap while open
+ *  closes the reveal (the card itself doesn't open anything — archived
+ *  breakdowns aren't openable). */
+function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: boolean; children: ReactNode }) {
   const TILE = 104;
   const reveal = TILE * actions.length;
   const [tx, setTx] = useState(0);
@@ -221,8 +234,7 @@ function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: Swi
   };
   const onClick = () => {
     if (drag.current.moved) return; // a drag, not a tap
-    if (openRef.current) { openRef.current = false; setTx(0); return; }
-    if (openable) onOpen();
+    if (openRef.current) { openRef.current = false; setTx(0); }
   };
 
   return (
@@ -248,7 +260,7 @@ function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: Swi
           onPointerUp={up}
           onPointerCancel={up}
           onClick={onClick}
-          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: openable ? "pointer" : "default", touchAction: "pan-y", userSelect: "none" }}
+          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
         >
           {children}
         </div>

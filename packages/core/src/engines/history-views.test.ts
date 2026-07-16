@@ -4,7 +4,6 @@ import {
   normalizeHistoryView,
   historyStream,
   upcomingPlanDays,
-  historyStats,
   journalMonth,
   latestTrainingDayKey,
   weekChapters,
@@ -38,11 +37,14 @@ const FIXTURE: LoggedSession[] = [
 ];
 
 describe("view registry", () => {
-  it("normalizes unknown ids to the classic list", () => {
-    expect(normalizeHistoryView("agenda")).toBe("agenda");
-    expect(normalizeHistoryView("nope")).toBe("list");
-    expect(normalizeHistoryView(undefined)).toBe("list");
-    expect(HISTORY_VIEWS[0]!.id).toBe("list");
+  it("normalizes unknown (and retired) ids to the agenda", () => {
+    expect(normalizeHistoryView("weeks")).toBe("weeks");
+    expect(normalizeHistoryView("nope")).toBe("agenda");
+    expect(normalizeHistoryView(undefined)).toBe("agenda");
+    // the retired layouts a device may still have persisted
+    expect(normalizeHistoryView("list")).toBe("agenda");
+    expect(normalizeHistoryView("heatmap")).toBe("agenda");
+    expect(HISTORY_VIEWS[0]!.id).toBe("agenda");
   });
 });
 
@@ -84,23 +86,6 @@ describe("historyStream", () => {
   });
 });
 
-describe("historyStats", () => {
-  it("counts sessions/volume in the window and the week streak", () => {
-    const s = historyStats(FIXTURE, { weeks: 12, now: NOW });
-    expect(s.sessions).toBe(6);
-    expect(s.volume).toBe(2 * 120 * 5 + 2 * 110 * 5 + 2 * 60 * 5 + 2 * 100 * 5);
-    // Jul 16 week + Jul 9 week + Jul 13 week are 2 distinct Mondays → streak 2
-    expect(s.streakWeeks).toBe(2);
-  });
-
-  it("doesn't break the streak on a young empty current week", () => {
-    const past = [lift("a", at(8, 8)), lift("b", at(1, 8))];
-    // now = Tue Jul 14, nothing logged this week yet → streak counts prior weeks
-    const s = historyStats(past, { now: new Date(2026, 6, 14, 12).getTime() });
-    expect(s.streakWeeks).toBe(2);
-  });
-});
-
 describe("journalMonth", () => {
   const j = journalMonth(FIXTURE, 2026, 6); // July 2026
 
@@ -121,8 +106,6 @@ describe("journalMonth", () => {
   it("uses the injected prs lookup instead of re-detecting", () => {
     const j2 = journalMonth(FIXTURE, 2026, 6, { prs: () => 0 });
     expect(Object.values(j2.days).every((d) => !d.pr)).toBe(true);
-    const s2 = historyStats(FIXTURE, { weeks: 12, now: NOW, prs: () => 1 });
-    expect(s2.prs).toBe(6); // one per in-window session
     const w2 = weekChapters(FIXTURE, { now: NOW, prs: () => 1 });
     expect(w2[0]!.totals.prs).toBe(w2[0]!.totals.sessions);
   });

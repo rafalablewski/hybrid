@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -30,12 +30,13 @@ import {
   type PrHit,
   type CardioPrHit,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
+import { useSessionsQuery } from "../../lib/queries";
+import { useSessionActions } from "../../lib/session-actions";
+import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";
@@ -53,17 +54,29 @@ export default function SessionDetail() {
   const bw = useBodyweightLookup();
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
-  const [all, setAll] = useState<LoggedSession[] | null>(null);
+  // The shared react-query sessions cache — coming from History this renders
+  // instantly with zero network I/O instead of re-downloading every session.
+  const q = useSessionsQuery();
+  const all = q.data ?? null;
+  const manage = useSessionActions();
+  const busy = manage.busyId !== null;
+  // A session logged seconds ago may not be in a still-fresh cache yet —
+  // refetch ONCE when the id is missing before declaring it not found.
+  const retriedRef = useRef(false);
+  // Depend on q.data/q.refetch (stable), not the whole q object — its identity
+  // changes every render, which would re-run the effect each time.
+  useEffect(() => {
+    if (!retriedRef.current && q.data && !q.data.some((s) => s.id === id)) {
+      retriedRef.current = true;
+      void q.refetch();
+    }
+  }, [id, q.data, q.refetch]);
   // Aurora wraps the review in the airy AuroraScreen (blob field + nav
   // clearance); classic keeps the glass Screen. Same content either way — the
   // shared Card/Mono primitives already round up on Aurora.
   const aurora = useTemplate().template === "aurora";
   const wrap = (node: ReactNode) =>
     aurora ? <AuroraScreen>{node}</AuroraScreen> : <Screen>{node}</Screen>;
-
-  useEffect(() => {
-    fetchSessions().then(setAll);
-  }, []);
 
   if (all === null) {
     return wrap(<Loading />);
@@ -72,6 +85,9 @@ export default function SessionDetail() {
   const session = all.find((s) => s.id === id);
   const bwHere = session ? bw(session.startedAt) : null;
   if (!session) {
+    // Still loading (or the one-shot cache-miss refetch is in flight) — don't
+    // flash "not found" for a session that's about to arrive.
+    if (q.isFetching || !retriedRef.current) return wrap(<Loading />);
     return wrap(
       <>
         <ABack />
@@ -108,6 +124,14 @@ export default function SessionDetail() {
   const bests: ShareBest[] = [...bestMap.entries()]
     .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
     .sort((a, b) => b.e1rm - a.e1rm);
+
+  // Manage this workout — lives on the breakdown since the classic History
+  // list (and its swipe actions) was retired for live sessions. The flow
+  // itself (busy, confirm, invalidation, errors) is the shared useSessionActions.
+  const doArchive = async () => {
+    if (await manage.archive(session.id, true)) router.back();
+  };
+  const doDelete = () => manage.confirmDelete(session, () => router.back());
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
@@ -237,6 +261,11 @@ export default function SessionDetail() {
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.share")}</Text>
         </Pressable>
       </>
+
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
+        <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
+        <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
+      </View>
     </>,
   );
 }

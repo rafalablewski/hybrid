@@ -9,10 +9,8 @@ import {
   sessionShape,
   sessionCardioTotals,
   sessionsByDay,
-  trainingHeatmap,
   historyStream,
   upcomingPlanDays,
-  historyStats,
   journalMonth,
   latestTrainingDayKey,
   weekChapters,
@@ -25,7 +23,6 @@ import {
   localMondayMs,
   addLocalDays,
   type HistoryViewId,
-  type HistoryDayGroup,
   type LoggedSession,
   type PlanScheduleResult,
   type WeightUnit,
@@ -34,18 +31,17 @@ import {
 import { useLang } from "@/lib/i18n";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
-// The six merged History × Calendar layouts (agenda / heatmap / journal /
-// weeks / timeline / blocks) behind the History screen's view switcher. All
-// grouping math lives in @hybrid/core (engines/history-views.ts); these
-// components only render. Chartreuse = lifting, teal = sport/cardio, shading =
-// sRPE load — the same encoding as the month calendar. Mirrored on mobile
+// The five merged History × Calendar layouts (agenda / journal / weeks /
+// timeline / blocks) behind the History screen's view switcher. All grouping
+// math lives in @hybrid/core (engines/history-views.ts); these components only
+// render. Chartreuse = lifting, teal = sport/cardio, shading = sRPE load — the
+// same encoding as the month calendar. Mirrored on mobile
 // (apps/mobile/components/aurora/history-views.tsx).
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16 } as const;
 
-const DAY = 86_400_000;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const fmtDayShort = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -55,8 +51,8 @@ export interface ViewCtx {
   sessions: LoggedSession[];
   units: WeightUnit;
   /** dated bodyweight lookup — passed into every engine call so aggregate
-   *  tonnage (day chips, weekly totals, heatmap stats) matches the
-   *  bodyweight-aware per-session cards. */
+   *  tonnage (day chips, weekly totals) matches the bodyweight-aware
+   *  per-session cards. */
   bw: BodyweightLookup;
   schedule: PlanScheduleResult | null;
   prs: (id: string) => number;
@@ -239,76 +235,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  2 — Heatmap ledger
-// ============================================================
-
-export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
-  const { t } = useLang();
-  const cols = useMemo(() => trainingHeatmap(ctx.sessions, 12), [ctx.sessions]);
-  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12, bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
-  const shade = [`color-mix(in srgb, ${C("ash")} 10%, transparent)`, `color-mix(in srgb, ${C("lime")} 24%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 66%, ${C("ink")})`, C("lime")];
-  const today = localTodayKey();
-
-  // Month tick under the first column whose Monday enters a new month.
-  const monthTicks = cols.map((col, i) => {
-    const m = new Date(keyTs(col[0]!.date)).toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toUpperCase();
-    const prev = i > 0 ? new Date(keyTs(cols[i - 1]![0]!.date)).getUTCMonth() : -1;
-    return new Date(keyTs(col[0]!.date)).getUTCMonth() !== prev ? m : "";
-  });
-
-  const stat = (v: string, k: string, lime = false) => (
-    <div style={{ textAlign: "center", flex: 1 }}>
-      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: fs.subtitle, color: lime ? "var(--lime-text)" : C("chalk") }}>{v}</div>
-      <div style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), letterSpacing: ".12em", textTransform: "uppercase", marginTop: 2 }}>{k}</div>
-    </div>
-  );
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ ...card }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontWeight: 800, fontSize: fs.note }}>{t("histview.lastWeeks")}</span>
-          <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.cal.legendPre").replace(" –", "")}</span>
-        </div>
-        <div style={{ display: "flex", gap: 4, justifyContent: "center", margin: "12px 0 4px" }}>
-          {cols.map((col, i) => (
-            <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {col.map((cell) => (
-                <span key={cell.date} title={`${cell.date} – ${cell.count}×`} style={{ width: 13, height: 13, borderRadius: 4, background: shade[cell.level], outline: cell.date === today ? `1.5px solid ${C("chalk")}` : "none", outlineOffset: 1 }} />
-              ))}
-              <span style={{ fontFamily: MONO, fontSize: 8, color: C("ash"), textAlign: "center", height: 10 }}>{monthTicks[i]}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, paddingTop: 12, marginTop: 8 }}>
-          {stat(String(stats.sessions), t("histview.sessionsLbl"))}
-          {stat(fmtTonnage(stats.volume, ctx.units), t("histview.tonnageLbl"))}
-          {stat(String(stats.prs), t("histview.prsLbl"), true)}
-          {stat(`${stats.streakWeeks} ${t("histview.wkAbbrev")}`, t("histview.streakLbl"), true)}
-        </div>
-      </div>
-
-      {stream.filter((x) => x.kind === "day").map((item) => {
-        const d = item as HistoryDayGroup;
-        return (
-          <div key={d.dateKey} style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 38, flex: "none", paddingTop: 14 }}>
-              <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), textTransform: "uppercase" }}>{new Date(keyTs(d.dateKey)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}</span>
-              <span style={{ fontFamily: MONO, fontSize: fs.subtitle, fontWeight: 700, color: d.isToday ? "var(--lime-text)" : C("chalk") }}>{Number(d.dateKey.slice(8, 10))}</span>
-            </div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-              {d.sessions.map((s) => <SessionCard key={s.id} s={s} ctx={ctx} lines={2} />)}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ============================================================
-//  3 — Month journal
+//  2 — Month journal
 // ============================================================
 
 export function JournalView({ ctx }: { ctx: ViewCtx }) {
@@ -374,7 +301,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  4 — Week chapters
+//  3 — Week chapters
 // ============================================================
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
@@ -429,7 +356,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  5 — Timeline rail
+//  4 — Timeline rail
 // ============================================================
 
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
@@ -466,7 +393,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  6 — Block chapters
+//  5 — Block chapters
 // ============================================================
 
 export function BlocksView({ ctx }: { ctx: ViewCtx }) {
