@@ -15,7 +15,7 @@ import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useNavScroll } from "../../lib/nav-scroll";
-import { AuroraIcon } from "./icons";
+import { AuroraSvgIcon } from "./icons";
 
 // The bottom nav: Today · Explore · [Train FAB] · More · Profile. Train is the
 // elevated centre action (a raised lime FAB that punches up through the bar).
@@ -225,9 +225,9 @@ export default function AuroraGlobalNav() {
           {!useGlass && (
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
           )}
-          <AuroraIcon name={tab.glyph} size={23} color={C.ash} />
+          <AuroraSvgIcon name={tab.glyph} size={23} color={C.ash} />
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", opacity: iconOp[tab.seg] }]}>
-            <AuroraIcon name={tab.glyph} size={23} color={activeIconColor} />
+            <AuroraSvgIcon name={tab.glyph} size={23} color={activeIconColor} />
           </Animated.View>
         </View>
       </Pressable>
