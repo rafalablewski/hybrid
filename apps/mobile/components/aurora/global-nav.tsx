@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
 import { Host, RoundedRectangle, ZStack } from "@expo/ui/swift-ui";
-import { glassEffect, frame, offset, animation, Animation } from "@expo/ui/swift-ui/modifiers";
+import { glassEffect, frame, offset, opacity, animation, Animation } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,8 +41,9 @@ const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 // (accidental nav mid-set loses context). Everything else gets it.
 const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade"]);
 
-// The sliding highlight's size (matches the old per-item pill).
-const PILL_W = 46;
+// The sliding highlight's size. Widened toward Instagram's proportions (the
+// lens reads as "the selection", not a small token drifting behind the glyph).
+const PILL_W = 56;
 const PILL_H = 40;
 
 /**
@@ -77,15 +78,21 @@ export default function AuroraGlobalNav() {
   const collapseShift = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) : 0;
   const collapseFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
 
-  // The selection highlight is a per-slot lens that CROSS-FADES between tabs
-  // (opacity only), NOT a single lens that slides across the bar: sliding a
-  // native glassEffect view re-samples its backdrop every frame and janks (the
-  // "laggy movement between tabs"). Each slot owns an opacity Animated.Value;
-  // selecting a tab fades its lens in and the others out, so nothing ever
-  // travels. Train (the centre FAB) → all lenses fade out.
+  // Android's selection highlight is a per-slot chalk pill that CROSS-FADES
+  // between tabs (opacity only; iOS gets the travelling native glass lens —
+  // see GlassMorphSelector). Each slot owns an opacity Animated.Value.
   const lensOpRef = useRef<Record<string, Animated.Value> | null>(null);
   if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
   const lensOp = lensOpRef.current;
+  // Active-glyph tint is a CROSSFADE synced to the lens ARRIVAL, not an instant
+  // flip on press. The instant flip was the biggest "lag" tell (Instagram
+  // audit): the destination icon lit up a full ~250ms before the lens got
+  // there, so the eye read "tap registered… now watch a slow bubble catch up".
+  // Incoming glyph fades in slightly DELAYED (meets the lens as it lands);
+  // outgoing fades back quickly as the lens departs.
+  const iconOpRef = useRef<Record<string, Animated.Value> | null>(null);
+  if (!iconOpRef.current) iconOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
+  const iconOp = iconOpRef.current;
   const firstRef = useRef(true);
   // Inner-row width — needed to lay the native glass-morph layer's slots out to
   // match the RN icons (SwiftUI frames take concrete widths, not flex).
@@ -127,13 +134,27 @@ export default function AuroraGlobalNav() {
   const activeIconColor = useGlass ? C.chalk : C.onAccent;
 
   useEffect(() => {
-    // Cross-fade: the selected slot's lens → 1, every other → 0. Opacity only
-    // (no translate/scale of the glass), so it stays smooth. Snap on first paint
-    // or reduced motion.
+    // Android lens cross-fade + (both platforms) the active-glyph tint
+    // crossfade. The glyph is timed to the lens: incoming waits ~a beat then
+    // fades in as the lens arrives (iOS spring lands ~250-300ms after press;
+    // Android's in-place fade is quicker, so the delay is shorter); outgoing
+    // fades back immediately as the lens leaves. Snap on first paint or
+    // reduced motion.
     SIDES.forEach((s) => {
       const to = s.seg === selectedSeg ? 1 : 0;
-      if (firstRef.current || reduceMotion) lensOp[s.seg].setValue(to);
-      else Animated.timing(lensOp[s.seg], { toValue: to, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+      if (firstRef.current || reduceMotion) {
+        lensOp[s.seg].setValue(to);
+        iconOp[s.seg].setValue(to);
+      } else {
+        Animated.timing(lensOp[s.seg], { toValue: to, duration: 170, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        Animated.timing(iconOp[s.seg], {
+          toValue: to,
+          duration: to ? 200 : 120,
+          delay: to ? (useGlass ? 90 : 40) : 0,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }).start();
+      }
     });
     firstRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -189,15 +210,20 @@ export default function AuroraGlobalNav() {
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
         {/* iOS: the selection highlight is a single native Liquid Glass lens that
-            MORPHS between slots (rendered once, behind all icons — see
+            TRAVELS between slots (rendered once, behind all icons — see
             GlassMorphSelector); nothing per-slot here. Android: an opaque chalk
             pill per slot that cross-fades (opacity only) so switching stays
-            smooth without a native glass view. */}
+            smooth without a native glass view. The glyph is TWO stacked icons
+            (ash base + active tint overlay) so the tint CROSSFADES in sync with
+            the lens instead of flipping instantly on press. */}
         <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
           {!useGlass && (
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
           )}
-          <AuroraIcon name={tab.glyph} size={23} color={isSel ? activeIconColor : C.ash} />
+          <AuroraIcon name={tab.glyph} size={23} color={C.ash} />
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", opacity: iconOp[tab.seg] }]}>
+            <AuroraIcon name={tab.glyph} size={23} color={activeIconColor} />
+          </Animated.View>
         </View>
       </Pressable>
     );
@@ -241,7 +267,7 @@ export default function AuroraGlobalNav() {
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
           onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w && w !== rowW) setRowW(w); }}
         >
-          {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} />}
+          {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} reduceMotion={reduceMotion} />}
           {LEFT.map(renderSideItem)}
           {/* centre gap — the raised Train FAB overlays this slot */}
           <View style={{ width: 64 }} />
@@ -298,7 +324,7 @@ export default function AuroraGlobalNav() {
 /**
  * The iOS selection highlight — a SINGLE, PERSISTENT native Liquid Glass lens
  * that TRAVELS between slots via an animated SwiftUI `.offset`, driven by
- * `.animation(_:value:)` keyed to selectedIndex.
+ * `.animation(_:value:)` keyed to a monotonic pose tick.
  *
  * Why this shape (from auditing @expo/ui's native Swift): matched-geometry
  * (GlassEffectContainer + glassEffectId) morphs on INSERT/REMOVE, but an
@@ -311,31 +337,86 @@ export default function AuroraGlobalNav() {
  * SwiftUI (not a JS-driven transform over the bridge, which is what janked
  * earlier), so the travel is smooth.
  *
+ * Instagram-audit refinements (the earlier build travelled but read "laggy"):
+ * (1) STRETCH — the lens elongates toward the target while moving (frame width
+ *     springs up scaled by travel distance, then settles back ~150ms later; two
+ *     poses, each animated natively under the same spring). IG's blob-stretch
+ *     is what makes an identical duration read as snappy instead of floaty.
+ * (2) Snappier spring: response 0.32 / damping 0.74 (was 0.38/0.82 — barely any
+ *     arrival energy) — a touch of overshoot on landing.
+ * (3) NEVER UNMOUNTS — selecting Train used to `return null`, so leaving or
+ *     re-entering a side tab POPPED (SwiftUI can't animate a remount; the very
+ *     trap documented above). The lens now stays mounted and fades via an
+ *     animated `opacity` instead.
+ * Every pose change bumps `tick`, the `.animation(value:)` key, so each phase
+ * (travel+stretch → settle → hide/show) animates natively in SwiftUI.
+ *
  * Offsets are from the row centre. Slots are (rowW−64)/4 wide with a 64pt centre
  * gap for the Train FAB, so the four slot centres sit at ∓(1.5·slotW+32) and
  * ∓(0.5·slotW+32) around centre. Rendered behind the RN glyphs, pointer-
  * transparent; the glyphs/FAB/taps are all RN so the bar works regardless.
  */
-function GlassMorphSelector({ rowW, selectedIndex }: { rowW: number; selectedIndex: number }) {
-  if (selectedIndex < 0) return null; // Train / none → no lens
+function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: number; selectedIndex: number; reduceMotion: boolean }) {
   const slotW = Math.max(0, (rowW - 64) / 4);
-  const offsetX =
-    selectedIndex === 0 ? -(1.5 * slotW) - 32
-    : selectedIndex === 1 ? -(0.5 * slotW) - 32
-    : selectedIndex === 2 ? 0.5 * slotW + 32
+  const xFor = (i: number) =>
+    i === 0 ? -(1.5 * slotW) - 32
+    : i === 1 ? -(0.5 * slotW) - 32
+    : i === 2 ? 0.5 * slotW + 32
     : 1.5 * slotW + 32;
+  const [pose, setPose] = useState(() => ({
+    x: selectedIndex >= 0 ? xFor(selectedIndex) : 0,
+    w: PILL_W,
+    shown: selectedIndex >= 0,
+    tick: 0,
+  }));
+  const prevIdxRef = useRef(selectedIndex);
+  const slotWRef = useRef(slotW);
+
+  useEffect(() => {
+    const prev = prevIdxRef.current;
+    prevIdxRef.current = selectedIndex;
+    if (selectedIndex === prev) return;
+    if (selectedIndex < 0) {
+      // Train: fade out IN PLACE (staying mounted is what keeps this animatable).
+      setPose((p) => ({ ...p, w: PILL_W, shown: false, tick: p.tick + 1 }));
+      return;
+    }
+    const x = xFor(selectedIndex);
+    if (prev < 0 || reduceMotion) {
+      // Reappear after Train (or reduced motion): settle at the slot, fading in.
+      setPose((p) => ({ x, w: PILL_W, shown: true, tick: p.tick + 1 }));
+      return;
+    }
+    // Travel: stretch toward the target on take-off, contract on arrival.
+    const stretchW = Math.min(PILL_W + Math.abs(x - xFor(prev)) * 0.3, PILL_W * 2);
+    setPose((p) => ({ x, w: stretchW, shown: true, tick: p.tick + 1 }));
+    const settle = setTimeout(() => setPose((p) => ({ ...p, w: PILL_W, tick: p.tick + 1 })), 150);
+    return () => clearTimeout(settle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, reduceMotion]);
+
+  // Bar relayout (rotation/resize): reposition WITHOUT animating (tick unchanged).
+  useEffect(() => {
+    if (slotWRef.current === slotW) return;
+    slotWRef.current = slotW;
+    setPose((p) => (prevIdxRef.current >= 0 ? { ...p, x: xFor(prevIdxRef.current), w: PILL_W } : p));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotW]);
+
   return (
     <Host style={StyleSheet.absoluteFill} pointerEvents="none">
       <ZStack>
         <RoundedRectangle
           cornerRadius={20}
           modifiers={[
-            frame({ width: PILL_W, height: PILL_H }),
+            frame({ width: pose.w, height: PILL_H }),
             glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 }),
-            // Animated offset = the travel. .animation(value: selectedIndex)
-            // animates this offset change natively when the selection moves.
-            offset({ x: offsetX, y: 0 }),
-            animation(Animation.spring({ response: 0.38, dampingFraction: 0.82 }), selectedIndex),
+            offset({ x: pose.x, y: 0 }),
+            opacity(pose.shown ? 1 : 0),
+            animation(
+              reduceMotion ? Animation.linear({ duration: 0 }) : Animation.spring({ response: 0.32, dampingFraction: 0.74 }),
+              pose.tick,
+            ),
           ]}
         />
       </ZStack>
