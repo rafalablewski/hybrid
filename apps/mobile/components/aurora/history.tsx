@@ -1,12 +1,15 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Alert, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
-import { archiveSession, deleteSession } from "../../lib/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { archiveSession, deleteSession, fetchMacrocycle } from "../../lib/api";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
@@ -14,6 +17,9 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+
+const VIEW_KEY = "hybrid.historyView";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const moodColorH = (C: Palette, m: MoodDef) => (m.tone === "red" ? C.red : m.tone === "amber" ? C.amber : (txt(C, C.lime) as string));
@@ -61,7 +67,24 @@ export default function AuroraHistory() {
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [view, setView] = useState<HistoryViewId>("list");
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
   const revalidate = useRevalidate();
+  const units = useLoggerPrefs().units;
+  const { overrides } = usePlanOverrides(planId);
+
+  // Hydrate the persisted layout choice + the enrolled plan (agenda ghosts and
+  // block chapters key off the date-anchored schedule; both degrade to nothing
+  // when no plan is enrolled).
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_KEY).then((v) => { if (v) setView(normalizeHistoryView(v)); }).catch(() => {});
+    fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
+  }, []);
+  const pickView = (v: HistoryViewId) => {
+    setView(v);
+    AsyncStorage.setItem(VIEW_KEY, v).catch(() => {});
+  };
 
   const insets = useSafeAreaInsets();
   const navScroll = useNavScrollProps();
@@ -79,6 +102,15 @@ export default function AuroraHistory() {
     for (const s of sessions) m.set(s.id, prsForSession(sessions, s.id).length);
     return m;
   }, [sessions]);
+
+  const schedule = useMemo(
+    () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions, overrides }) : null),
+    [planId, planStartedAt, sessions, overrides],
+  );
+  const viewCtx: ViewCtx = useMemo(
+    () => ({ sessions, units, bw, schedule, prs: (id: string) => prCounts.get(id) ?? 0, onOpen: (id: string) => router.push(`/session/${id}`) }),
+    [sessions, units, bw, schedule, prCounts, router],
+  );
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id); const ok = await archiveSession(id, archived); setBusy(null);
@@ -131,6 +163,10 @@ export default function AuroraHistory() {
     );
   };
 
+  // Archived management stays on the classic list; the six merged layouts
+  // (agenda/heatmap/journal/weeks/timeline/blocks) apply to live history.
+  const activeView: HistoryViewId = showArchived ? "list" : view;
+
   const header = (
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
@@ -140,8 +176,20 @@ export default function AuroraHistory() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
+      {!showArchived && <ViewSwitcher view={view} onChange={pickView} />}
       {/* Swipe hint, once at the top of the list. */}
-      {sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+      {activeView === "list" && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+      {/* The merged History × Calendar layouts render inside the list header, so
+          the FlatList stays the screen's sole scroller (nav-scroll + refresh). */}
+      {!loading && !q.isError && sessions.length > 0 && (
+        activeView === "agenda" ? <AgendaView ctx={viewCtx} />
+        : activeView === "heatmap" ? <HeatmapView ctx={viewCtx} />
+        : activeView === "journal" ? <JournalView ctx={viewCtx} />
+        : activeView === "weeks" ? <WeeksView ctx={viewCtx} />
+        : activeView === "timeline" ? <TimelineView ctx={viewCtx} />
+        : activeView === "blocks" ? <BlocksView ctx={viewCtx} />
+        : null
+      )}
     </>
   );
 
@@ -171,11 +219,11 @@ export default function AuroraHistory() {
     // entrance animation chrome.
     <AuroraScreen scroll={false} padding={0}>
       <FlatList
-        data={loading || q.isError ? [] : sessions}
+        data={activeView === "list" && !loading && !q.isError ? sessions : []}
         keyExtractor={(s) => s.id}
         renderItem={renderItem}
         ListHeaderComponent={header}
-        ListEmptyComponent={empty}
+        ListEmptyComponent={loading || q.isError || sessions.length === 0 ? empty : null}
         {...navScroll}
         showsVerticalScrollIndicator={false}
         initialNumToRender={8}

@@ -1,11 +1,18 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
-import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, type LoggedSession, type MoodDef } from "@hybrid/core";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
+import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
+import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+
+const VIEW_KEY = "hybrid.historyView";
+const readView = (): HistoryViewId => {
+  try { return normalizeHistoryView(localStorage.getItem(VIEW_KEY)); } catch { return "list"; }
+};
 
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
@@ -45,14 +52,38 @@ type SwipeAction = { key: string; label: string; color: string; onPress: () => v
  *  (archive/restore/delete) live behind a SWIPE: drag a card left (pointer or
  *  touch) to reveal them, so the resting card is clean — no footer buttons, no
  *  divider lines — and a tap opens the full breakdown (reusing SessionDetail). */
-export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void; onChanged?: () => void }) {
+export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenExercise, onChanged }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; onOpenExercise?: (name: string) => void; onChanged?: () => void }) {
   const { t } = useLang();
   const [openId, setOpenId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [archived, setArchived] = useState<LoggedSession[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [view, setView] = useState<HistoryViewId>(readView);
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  const { overrides } = usePlanOverrides(planId);
+
+  const pickView = (v: HistoryViewId) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ }
+  };
+
+  // The date-anchored plan schedule feeds the agenda ghosts + block chapters;
+  // everything degrades gracefully when no plan is enrolled.
+  const schedule = useMemo(
+    () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions, overrides }) : null),
+    [planId, planStartedAt, sessions, overrides],
+  );
+  // PR counts once per data change (prsForSession is O(n) per call).
+  const prCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of sessions) m.set(s.id, prsForSession(sessions, s.id).length);
+    return m;
+  }, [sessions]);
+  const viewCtx: ViewCtx = useMemo(
+    () => ({ sessions, units, bw, schedule, prs: (id: string) => prCounts.get(id) ?? 0, onOpen: setOpenId }),
+    [sessions, units, bw, schedule, prCounts],
+  );
 
   const loadArchived = async () => {
     try { const res = await fetch("/api/sessions?archived=1"); setArchived(res.ok ? ((await res.json()) as { sessions?: LoggedSession[] }).sessions ?? [] : []); } catch { setArchived([]); }
@@ -84,19 +115,35 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
   );
 
   const list = showArchived ? archived : sessions;
+  // Archived management stays on the classic list; the six merged layouts
+  // (agenda/heatmap/journal/weeks/timeline/blocks) apply to live history.
+  const activeView: HistoryViewId = showArchived ? "list" : view;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {archivedToggle}
+      {!showArchived && <ViewSwitcher view={view} onChange={pickView} />}
       {list.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 50 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("w.analyze.hist.sessionsEmpty")}</p>
         </div>
+      ) : activeView === "agenda" ? (
+        <AgendaView ctx={viewCtx} />
+      ) : activeView === "heatmap" ? (
+        <HeatmapView ctx={viewCtx} />
+      ) : activeView === "journal" ? (
+        <JournalView ctx={viewCtx} />
+      ) : activeView === "weeks" ? (
+        <WeeksView ctx={viewCtx} />
+      ) : activeView === "timeline" ? (
+        <TimelineView ctx={viewCtx} />
+      ) : activeView === "blocks" ? (
+        <BlocksView ctx={viewCtx} />
       ) : (
         <>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "right", marginTop: -4 }}>{t("w.analyze.hist.swipeHint")}</div>
           {list.map((s) => {
-            const prCount = prsForSession(sessions, s.id).length;
+            const prCount = prCounts.get(s.id) ?? 0;
             const actions: SwipeAction[] = [
               showArchived
                 ? { key: "restore", label: t("w.analyze.hist.restore"), color: C("lime"), onPress: () => setArchivedFlag(s.id, false) }

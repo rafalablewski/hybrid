@@ -887,7 +887,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />}
+        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} onOpenExercise={openExercise} onChanged={refresh} />}
 
         {screen === "coach" && <AuroraCoach />}
 
