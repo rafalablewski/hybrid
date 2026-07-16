@@ -1,6 +1,7 @@
 import { programCalendarDays, type PlanProgramTodayRow, type PlanDaySession } from "./plan-day";
 import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
+import type { PlanDiscipline } from "./plan-program";
 
 // ============================================================
 //  Plan schedule — the date-anchored week rail.
@@ -99,6 +100,77 @@ export interface PlanScheduleResult {
   /** index into `days` for today (exact match); else the next upcoming day; else
    *  the last day. The rail opens focused here. */
   todayIndex: number;
+  /** every logged-session id recognised as fulfilling SOME plan day — the
+   *  complement (sessions logged but never claimed) is the off-plan set. */
+  fulfilledSessionIds: string[];
+}
+
+/** The plan-composed title the clients write: "<plan name>" (the week-rail
+ *  handoff) or "<plan name> – …" (the plan-prefilled logger). */
+const titleMatches = (session: LoggedSession, planName: string): boolean =>
+  session.title === planName || session.title.startsWith(`${planName} – `);
+
+/** Run-plan reconcile: a run program day (endurance discipline, or any day
+ *  prescribing a cardio "…run…" block) is satisfied by a cardio-only session
+ *  that is itself a run — the quick sport log's natural output ("Running").
+ *  A racket/team sport stays off-plan: cardio-shaped, but not a run. */
+const RUN_RE = /\b(run|jog)/i;
+function runMatches(session: LoggedSession, dayBlocks: SessionBlock[], discipline: PlanDiscipline): boolean {
+  const runDay = discipline === "endurance" || dayBlocks.some((b) => b.kind === "cardio" && RUN_RE.test(b.name));
+  if (!runDay) return false;
+  return session.blocks.length > 0 && session.blocks.every((b) => b.kind === "cardio") && session.blocks.some((b) => RUN_RE.test(b.name));
+}
+
+/** Prescription-content match: the session shares enough exercise/block names
+ *  with the day's prescription — covers loggers that auto-title ("Evening
+ *  workout") and renamed sessions that still carry the plan's exercises. Needs
+ *  at least TWO shared names when the day prescribes two or more blocks, so a
+ *  freestyle session that merely contains one common lift (Back Squat) can't
+ *  silently swallow the plan day. */
+function blocksMatch(session: LoggedSession, dayBlocks: SessionBlock[], discipline: PlanDiscipline): boolean {
+  if (runMatches(session, dayBlocks, discipline)) return true;
+  const names = new Set(dayBlocks.map((b) => b.name.trim().toLowerCase()).filter(Boolean));
+  if (names.size === 0) return false;
+  const required = Math.min(2, names.size);
+  const shared = new Set(session.blocks.map((b) => b.name.trim().toLowerCase()).filter((n) => names.has(n)));
+  return shared.size >= required;
+}
+
+/**
+ * Whether a logged session is recognisably THIS plan day's workout: the
+ * client-composed plan title, a prescription-content match, or (for run days)
+ * a logged run. A quick sport log (e.g. "Tennis") on a lifting or intervals day
+ * matches none of these, so it can no longer swallow the plan day — it surfaces
+ * as an off-plan extra instead. NOTE: inside planSchedule the arms apply in
+ * claim ORDER (content first, plan-generic title as a fallback) so a catch-up
+ * session can't be stolen by the wrong day; this predicate is the OR of both.
+ */
+export function sessionMatchesPlanDay(
+  session: LoggedSession,
+  planName: string,
+  dayBlocks: SessionBlock[],
+  discipline: PlanDiscipline = "strength-percent",
+): boolean {
+  return titleMatches(session, planName) || blocksMatch(session, dayBlocks, discipline);
+}
+
+/**
+ * Today's logged sessions that did NOT fulfil a plan day — the "Also today —
+ * off-plan" list (quick sport logs, freestyle sessions). Newest first. Without
+ * a schedule (not enrolled / no start date / non-library plan) every session
+ * logged today is returned — the caller labels the card "Done today" then, not
+ * "off-plan". Keyed on the same local day-key convention as the schedule.
+ */
+export function offPlanSessionsOnDay(
+  sessions: LoggedSession[],
+  schedule: PlanScheduleResult | null | undefined,
+  now = Date.now(),
+): LoggedSession[] {
+  const todayKey = dateKeyOf(now);
+  const claimed = new Set(schedule?.fulfilledSessionIds ?? []);
+  return sessions
+    .filter((s) => dateKeyOf(new Date(s.startedAt).getTime()) === todayKey && !claimed.has(s.id))
+    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
 }
 
 /**
@@ -128,49 +200,48 @@ export function planSchedule(opts: {
   const todayKey = dateKeyOf(todayTs);
   const overrides = opts.overrides ?? {};
 
-  // Dates that carry at least one logged session → "done". First id per date wins
-  // (the session that fulfilled the day).
-  const doneByDate = new Map<string, string>();
+  // Sessions grouped by local date; each training day then claims only the ones
+  // that are recognisably ITS workout → "done". An unrelated session — a quick
+  // sport log, a freestyle lift — never completes a plan day; it stays unclaimed
+  // and surfaces as an off-plan extra on Today.
+  const byDate = new Map<string, LoggedSession[]>();
   for (const s of opts.sessions) {
     const k = dateKeyOf(new Date(s.startedAt).getTime());
-    if (!doneByDate.has(k)) doneByDate.set(k, s.id);
+    const arr = byDate.get(k);
+    if (arr) arr.push(s);
+    else byDate.set(k, [s]);
   }
+  const claimed = new Set<string>();
+  // All unclaimed sessions on a date passing `pred` → claimed; first id returned.
+  const claimAll = (dateKey: string, pred: (s: LoggedSession) => boolean): string | null => {
+    let first: string | null = null;
+    for (const s of byDate.get(dateKey) ?? []) {
+      if (claimed.has(s.id) || !pred(s)) continue;
+      claimed.add(s.id);
+      if (first == null) first = s.id;
+    }
+    return first;
+  };
 
   const totalTrainingDays = cal.trainingCount;
   let trainingSeen = 0;
 
+  // First lay every program day onto its date (no statuses yet — claiming is
+  // ordered across the WHOLE schedule, so it can't happen inside this map).
   const days: ScheduledDay[] = cal.days.map((d, i) => {
     const ts = addDays(startTs, i);
-    const dateKey = dateKeyOf(ts);
     const dt = new Date(ts);
-    const isToday = dateKey === todayKey;
-    const isRest = !d.isTraining;
     if (d.isTraining) trainingSeen++;
-
-    const doneId = doneByDate.get(dateKey) ?? null;
-    const ov = overrides[dateKey];
-
-    // Actual completion beats an explicit override — if a session was logged that
-    // date, the day is done even if it was earlier skipped/postponed.
-    let status: PlanDayStatus;
-    if (isRest) status = "rest";
-    else if (doneId) status = "done";
-    else if (ov?.status === "skipped") status = "skipped";
-    else if (ov?.status === "postponed") status = "postponed";
-    else if (ts < todayTs) status = "missed";
-    else if (isToday) status = "today";
-    else status = "upcoming";
-
     return {
       index: i,
-      dateKey,
+      dateKey: dateKeyOf(ts),
       ts,
       weekdayShort: WEEKDAY[dt.getDay()]!,
       dayOfMonth: dt.getDate(),
       monthShort: MONTH[dt.getMonth()]!,
-      isToday,
-      isRest,
-      status,
+      isToday: dateKeyOf(ts) === todayKey,
+      isRest: !d.isTraining,
+      status: "upcoming" as PlanDayStatus, // resolved below
       trainingDayNumber: d.isTraining ? trainingSeen : null,
       totalTrainingDays,
       week: d.week,
@@ -179,11 +250,57 @@ export function planSchedule(opts: {
       rows: d.rows,
       blocks: d.blocks,
       sessions: d.sessions,
-      sessionId: d.isTraining ? doneId : null,
-      postponedTo: status === "postponed" && ov?.status === "postponed" ? ov.toDateKey : null,
+      sessionId: null,
+      postponedTo: null,
       postponedIn: [],
     };
   });
+
+  // CLAIM PASSES, most-specific first, so a session can't be credited to the
+  // wrong day: (1) each day claims sessions on its own date whose CONTENT
+  // matches its prescription; (2) a postponed day claims a content-match on its
+  // TARGET date (the catch-up "Do it now" flow — the workout carries the moved
+  // day's blocks, so it must credit the SOURCE day, not swallow the target's);
+  // (3) plan-TITLED sessions ("<plan> – …") are a generic fallback for days
+  // still open on their own date (covers sessions whose exercises were edited).
+  const doneIds = new Map<number, string>();
+  for (const day of days) {
+    if (day.isRest) continue;
+    const id = claimAll(day.dateKey, (s) => blocksMatch(s, day.blocks, cal.discipline));
+    if (id) doneIds.set(day.index, id);
+  }
+  for (const day of days) {
+    if (day.isRest || doneIds.has(day.index)) continue;
+    const ov = overrides[day.dateKey];
+    if (ov?.status !== "postponed") continue;
+    const id = claimAll(ov.toDateKey, (s) => blocksMatch(s, day.blocks, cal.discipline));
+    if (id) doneIds.set(day.index, id);
+  }
+  for (const day of days) {
+    if (day.isRest || doneIds.has(day.index)) continue;
+    const id = claimAll(day.dateKey, (s) => titleMatches(s, cal.planName));
+    if (id) doneIds.set(day.index, id);
+  }
+
+  // Now resolve statuses. Actual completion beats an explicit override — a
+  // claimed day is done even if it was earlier skipped/postponed.
+  for (const day of days) {
+    const doneId = doneIds.get(day.index) ?? null;
+    const ov = overrides[day.dateKey];
+    if (day.isRest) day.status = "rest";
+    else if (doneId) {
+      day.status = "done";
+      day.sessionId = doneId;
+    }
+    else if (ov?.status === "skipped") day.status = "skipped";
+    else if (ov?.status === "postponed") {
+      day.status = "postponed";
+      day.postponedTo = ov.toDateKey;
+    }
+    else if (day.ts < todayTs) day.status = "missed";
+    else if (day.isToday) day.status = "today";
+    else day.status = "upcoming";
+  }
 
   // Second pass: relocate each postponed day's session onto its target date's
   // card (only when the target is within the schedule window and the source
@@ -206,6 +323,7 @@ export function planSchedule(opts: {
     totalTrainingDays,
     days,
     todayIndex: Math.max(0, todayIndex),
+    fulfilledSessionIds: [...claimed],
   };
 }
 

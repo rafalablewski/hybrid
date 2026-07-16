@@ -83,7 +83,10 @@ export default function AuroraWeekRail({
   planStartedAt: string;
   sessions: LoggedSession[];
   maxes?: Record<string, number>;
-  onStart: (planBlocks?: SessionBlock[]) => void;
+  /** `title` is the plan-composed session title ("<plan> – Week N, <day>") the
+   *  logger should save under, so the engine recognises the session as the
+   *  plan's own day. Mirrors the web rail exactly. */
+  onStart: (planBlocks?: SessionBlock[], title?: string) => void;
   onNavigate?: (screen: string) => void;
 }) {
   const { palette: C, scheme } = useTheme();
@@ -109,6 +112,12 @@ export default function AuroraWeekRail({
   const windowDays = schedule.days.slice(winStart, winStart + WINDOW);
 
   const dayLine = sel.trainingDayNumber != null ? `${t("w.home.today.day")} ${sel.trainingDayNumber} / ${schedule.totalTrainingDays}` : t("w.home.rail.rest");
+
+  // The plan-composed title the saved session should carry — the same shape the
+  // plan prefill writes ("<plan> – Week N, <day>"), so planSchedule's title arm
+  // recognises it even if the athlete edits the exercises. Mirrors web.
+  const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
+  const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
 
   return (
     <View
@@ -149,7 +158,7 @@ export default function AuroraWeekRail({
         C={C}
         scheme={scheme}
         day={sel}
-        onStart={onStart}
+        onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
         onPostpone={() => {
