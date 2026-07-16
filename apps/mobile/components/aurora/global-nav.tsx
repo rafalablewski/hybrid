@@ -78,11 +78,22 @@ export default function AuroraGlobalNav() {
   const collapseShift = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) : 0;
   const collapseFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
 
+  // Which side slot the ROUTE says is lit: a tab route matches on the second
+  // segment, a pushed route (e.g. Explore → /explore) on the first. Train /
+  // unknown routes → null (indicator hidden). Derived up here so the selection
+  // state + per-slot Animated.Values can be SEEDED with it — seeding everything
+  // to 0/null and reconciling after mount flashed the active tab dark for a
+  // frame, then animated it in, on every bar mount (review finding).
+  const top0 = segments[0];
+  const inTabs0 = top0 === "(tabs)";
+  const activeSeg0 = inTabs0 ? (segments[1] ?? "index") : null;
+  const focusedSeg = SIDES.find((s) => activeSeg0 === s.seg || (!inTabs0 && top0 === s.seg))?.seg ?? null;
+
   // Android's selection highlight is a per-slot chalk pill that CROSS-FADES
   // between tabs (opacity only; iOS gets the travelling native glass lens —
   // see GlassMorphSelector). Each slot owns an opacity Animated.Value.
   const lensOpRef = useRef<Record<string, Animated.Value> | null>(null);
-  if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
+  if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(s.seg === focusedSeg ? 1 : 0)]));
   const lensOp = lensOpRef.current;
   // Active-glyph tint is a CROSSFADE synced to the lens ARRIVAL, not an instant
   // flip on press. The instant flip was the biggest "lag" tell (Instagram
@@ -91,7 +102,7 @@ export default function AuroraGlobalNav() {
   // Incoming glyph fades in slightly DELAYED (meets the lens as it lands);
   // outgoing fades back quickly as the lens departs.
   const iconOpRef = useRef<Record<string, Animated.Value> | null>(null);
-  if (!iconOpRef.current) iconOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(0)]));
+  if (!iconOpRef.current) iconOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(s.seg === focusedSeg ? 1 : 0)]));
   const iconOp = iconOpRef.current;
   const firstRef = useRef(true);
   // Inner-row width — needed to lay the native glass-morph layer's slots out to
@@ -104,7 +115,8 @@ export default function AuroraGlobalNav() {
   // (useSegments) can take a beat to flip on a heavy screen, so previously the
   // tapped icon inverted to its dark on-pill colour immediately while the pill
   // was still waiting on the route. Now the pill leads; the route reconciles it.
-  const [selectedSeg, setSelectedSeg] = useState<string | null>(null);
+  // Seeded from the route so the first paint is already correct (no mount flash).
+  const [selectedSeg, setSelectedSeg] = useState<string | null>(focusedSeg);
 
   useEffect(() => {
     let alive = true;
@@ -113,13 +125,6 @@ export default function AuroraGlobalNav() {
     return () => { alive = false; sub.remove(); };
   }, []);
 
-  // Which side slot is lit, derived the same way as renderSideItem's `focused`:
-  // a tab route matches on the second segment, a pushed route (e.g. Explore →
-  // /explore) on the first. Train / unknown routes → null (indicator hidden).
-  const top0 = segments[0];
-  const inTabs0 = top0 === "(tabs)";
-  const activeSeg0 = inTabs0 ? (segments[1] ?? "index") : null;
-  const focusedSeg = SIDES.find((s) => activeSeg0 === s.seg || (!inTabs0 && top0 === s.seg))?.seg ?? null;
   // Reconcile the optimistic selection with the real route once it settles
   // (deep links, the back button, or a redirect that lands elsewhere than the
   // tapped tab). A press sets selectedSeg first; this keeps it honest after.
