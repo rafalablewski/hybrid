@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
-import { optimizeForEvent } from "@hybrid/core";
+import { optimizeForEvent, localDayKey } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
@@ -8,7 +8,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Marathon", "CrossFit", "Powerlifting", "Cycling", "Swimming", "Hybrid"];
-const plus8w = () => new Date(Date.now() + 56 * 86_400_000).toISOString().slice(0, 10);
+const plus8w = () => localDayKey(Date.now() + 56 * 86_400_000);
 const fmt = (d: string) => new Date(d).toLocaleDateString();
 
 /** AURORA Competition — peaking optimizer; back-solves the season so form

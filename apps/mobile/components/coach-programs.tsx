@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
+import { localTodayKey } from "@hybrid/core";
 import { fs, space, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
@@ -16,7 +17,7 @@ import {
 } from "../lib/api";
 
 const sessionsOf = (w: ProgramWeek[]) => w.reduce((n, x) => n + x.days.length, 0);
-const today = () => new Date().toISOString().slice(0, 10);
+const today = localTodayKey;
 
 /** Coach-authored multi-week program builder (mobile, both templates — built on
  *  the template-aware Card). Compose weeks → days → exercises, then assign to a

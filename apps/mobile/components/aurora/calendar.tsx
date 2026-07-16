@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -13,7 +13,7 @@ import { ABack, AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = localTodayKey;
 
 /** AURORA Calendar — month heat-grid + selected-day detail. Layers the athlete's
  *  sessions (lime heat) with coach/self events (amber dots) and coach
@@ -52,7 +52,7 @@ export default function AuroraCalendar() {
   const today = todayKey();
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
   const jumpToday = () => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); };
-  const selSessions = sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
+  const selSessions = sessions.filter((s) => localDayKey(s.startedAt) === selected);
   const selEvents = eventsByDay[selected] ?? [];
   const selAssignments = assignmentsByDay[selected] ?? [];
   const navBtn = { minWidth: 40, height: 40, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };

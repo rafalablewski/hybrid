@@ -1,4 +1,5 @@
 import { programCalendarDays, type PlanProgramTodayRow, type PlanDaySession } from "./plan-day";
+import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
 // ============================================================
@@ -50,25 +51,12 @@ const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 /** Local yyyy-mm-dd for a timestamp — the stable key we reconcile dates on
- *  (avoids UTC drift so a session logged at 11pm lands on the right day). */
-export function dateKeyOf(ts: number): string {
-  const d = new Date(ts);
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
-}
+ *  (avoids UTC drift so a session logged at 11pm lands on the right day).
+ *  Delegates to the app-wide canonical helper (day-key.ts). */
+export const dateKeyOf = (ts: number): string => localDayKey(ts);
 
-/** Local midnight for a timestamp. */
-function localMidnight(ts: number): number {
-  const d = new Date(ts);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
-
-/** Add whole calendar days to a local-midnight timestamp (handles month/DST rollover). */
-function addDays(ts: number, n: number): number {
-  const d = new Date(ts);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n).getTime();
-}
+const localMidnight = localMidnightMs;
+const addDays = addLocalDays;
 
 export interface ScheduledDay {
   /** position in the schedule (0-based, includes rest days). */

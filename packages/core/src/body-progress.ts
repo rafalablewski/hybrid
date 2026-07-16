@@ -5,6 +5,7 @@
 // verdict). Pure + unit-tested; the clients only render what these return.
 
 import { kgToUnit, type WeightUnit } from "./units";
+import { localDayKey } from "./day-key";
 
 /** A dated body measurement, as returned newest-first by GET /api/body. Every
  *  metric is optional — an entry logs whichever fields the athlete filled. */
@@ -152,7 +153,7 @@ export function weeklyReport(metrics: BodyMetric[], nowMs: number): WeeklyReport
   const days = new Set<string>();
   for (const m of metrics) {
     const ts = Date.parse(m.measuredAt);
-    if (Number.isFinite(ts) && ts >= nowMs - 7 * DAY) days.add(new Date(ts).toISOString().slice(0, 10));
+    if (Number.isFinite(ts) && ts >= nowMs - 7 * DAY) days.add(localDayKey(ts));
   }
   const cadence = Math.min(7, days.size);
 

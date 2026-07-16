@@ -7,6 +7,7 @@ import {
   buildTrainingWeek,
   trainingDaysPerWeek,
   toTrainingLog,
+  localTodayKey,
 } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
@@ -224,7 +225,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [assignId, setAssignId] = useState("");
-  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [assignDate, setAssignDate] = useState(() => localTodayKey());
   const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
   const [genWeek, setGenWeek] = useState(1);
   const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);

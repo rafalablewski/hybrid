@@ -3,8 +3,13 @@ import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets } 
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
-const NOW = Date.parse("2026-06-03T18:00:00.000Z");
-const at = (daysAgo: number, hour = 12) => new Date(NOW - daysAgo * DAY).toISOString().replace("T18", `T${String(hour).padStart(2, "0")}`);
+// LOCAL-constructed fixtures so same-day grouping holds in any timezone
+// (nutrition days are the athlete's local calendar days).
+const NOW = new Date(2026, 5, 3, 18).getTime();
+const at = (daysAgo: number, hour = 12) => {
+  const d = new Date(NOW - daysAgo * DAY);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour).toISOString();
+};
 
 const kcal = (v: number, daysAgo: number): Signal => ({ athleteId: "u", kind: "energyIntake", value: v, unit: "kcal", source: "manual", ts: at(daysAgo) });
 const mass = (v: number, daysAgo: number): Signal => ({ athleteId: "u", kind: "bodyMass", value: v, unit: "kg", source: "manual", ts: at(daysAgo) });

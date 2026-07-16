@@ -3,28 +3,19 @@
  *
  * Pure date + aggregation math behind the training calendar: group sessions by
  * day (count, sRPE load, tonnage, titles) and build a 6×7 month matrix the UI
- * paints. No timezone surprises — everything keys off the UTC calendar day the
- * rest of the engines already use.
+ * paints. Days follow the app's canonical LOCAL calendar-day convention
+ * (day-key.ts) — a session logged at 23:30 shades that evening's cell, and the
+ * plan schedule, streaks and history views all agree on the same day.
  */
 
 import type { LoggedSession } from "./session";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
+import { localDayKey, localMondayMs, addLocalDays } from "../day-key";
 import { sessionLoad } from "./load";
 
 const DAY = 86_400_000;
 
-/** The app's canonical UTC day key for a session timestamp (YYYY-MM-DD).
- *  Shared with the history views so every surface shades the same day. */
-export const utcDayKey = (iso: string) => iso.slice(0, 10);
-/** UTC day key for a millisecond timestamp. */
-export const utcDayKeyOfMs = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-/** UTC midnight of the Monday of the week containing `ms`. */
-export const utcMondayOf = (ms: number) => {
-  const d = new Date(ms);
-  const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-  return base - ((d.getUTCDay() + 6) % 7) * DAY;
-};
 /** Bucket a day's sRPE load into the calendar's 0–4 shading levels (0 = rest),
  *  relative to the athlete's busiest day. One source of truth for the heatmap,
  *  the journal grid and the agenda/timeline dots. */
@@ -34,8 +25,7 @@ export const loadLevel = (load: number, maxLoad: number): 0 | 1 | 2 | 3 | 4 => {
   return frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1;
 };
 
-const dayKey = utcDayKey;
-const fmt = utcDayKeyOfMs;
+const dayKey = localDayKey;
 
 export interface DaySummary {
   date: string; // YYYY-MM-DD
@@ -45,7 +35,7 @@ export interface DaySummary {
   titles: string[];
 }
 
-/** Group sessions by UTC day with summed load, volume and titles. */
+/** Group sessions by LOCAL calendar day with summed load, volume and titles. */
 export function sessionsByDay(sessions: LoggedSession[], bw?: BodyweightInput): Record<string, DaySummary> {
   const out: Record<string, DaySummary> = {};
   for (const s of sessions) {
@@ -80,7 +70,9 @@ export function monthMatrix(year: number, monthIndex0: number, weekStartsMonday 
     const row: MonthCell[] = [];
     for (let d = 0; d < 7; d++) {
       const ms = startMs + (w * 7 + d) * DAY;
-      row.push({ date: fmt(ms), inMonth: new Date(ms).getUTCMonth() === monthIndex0 });
+      // Label enumeration runs on UTC-midnight ms, so the label formatter must
+      // be UTC too — these are calendar-date LABELS, not instants.
+      row.push({ date: new Date(ms).toISOString().slice(0, 10), inMonth: new Date(ms).getUTCMonth() === monthIndex0 });
     }
     weeks.push(row);
   }
@@ -114,12 +106,14 @@ export interface HeatCell {
 export function trainingHeatmap(sessions: LoggedSession[], weeks = 26, now = Date.now()): HeatCell[][] {
   const days = sessionsByDay(sessions);
   const maxLoad = Math.max(1, ...Object.values(days).map((d) => d.load));
-  const startMs = utcMondayOf(now) - (weeks - 1) * 7 * DAY;
+  // Anchor on the LOCAL Monday and step calendar days (DST-safe), so the
+  // final column really is the athlete's current week.
+  const startMs = addLocalDays(localMondayMs(now), -(weeks - 1) * 7);
   const cols: HeatCell[][] = [];
   for (let w = 0; w < weeks; w++) {
     const col: HeatCell[] = [];
     for (let d = 0; d < 7; d++) {
-      const key = fmt(startMs + (w * 7 + d) * DAY);
+      const key = localDayKey(addLocalDays(startMs, w * 7 + d));
       const summary = days[key];
       const load = summary?.load ?? 0;
       col.push({ date: key, level: loadLevel(load, maxLoad), count: summary?.count ?? 0, load });

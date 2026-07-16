@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { trainingHeatmap } from "./calendar";
 import type { LoggedSession } from "./session";
 
-const now = Date.UTC(2026, 5, 17); // a fixed Wednesday
+// LOCAL-constructed fixtures so the expectations hold in any timezone
+// (the heatmap keys days by the athlete's local calendar day).
+const now = new Date(2026, 5, 17, 12).getTime(); // a fixed Wednesday, local noon
 
 const session = (daysAgo: number): LoggedSession => ({
   id: `s${daysAgo}`,

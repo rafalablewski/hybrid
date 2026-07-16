@@ -13,8 +13,11 @@ import {
 import { planSchedule } from "../plan-schedule";
 import type { LoggedSession } from "./session";
 
-// 2026-07-16 (Thu) noon UTC — the fixed "now" for every test.
-const NOW = Date.parse("2026-07-16T12:00:00.000Z");
+// 2026-07-16 (Thu) noon LOCAL — the fixed "now" for every test. All fixture
+// timestamps are LOCAL-constructed so the day-grouping expectations hold in
+// any timezone the tests run in (day keys are local calendar days).
+const NOW = new Date(2026, 6, 16, 12).getTime();
+const at = (day: number, hour: number) => new Date(2026, 6, day, hour).toISOString(); // July 2026, local time
 
 const lift = (id: string, iso: string, title = "Lower", load = "100"): LoggedSession => ({
   id, title, startedAt: iso,
@@ -26,12 +29,12 @@ const run = (id: string, iso: string, title = "Morning run"): LoggedSession => (
 });
 
 const FIXTURE: LoggedSession[] = [
-  run("t1", "2026-07-16T08:00:00.000Z", "Tennis"), // Thu (today)
-  lift("d2", "2026-07-13T18:00:00.000Z", "Soviet 8-Week Peaking – Week 2, Day 2", "120"), // Mon
-  lift("d1", "2026-07-13T08:00:00.000Z", "Soviet 8-Week Peaking – Week 2, Day 1", "110"),
-  lift("aft", "2026-07-13T20:00:00.000Z", "Afternoon workout", "60"),
-  lift("w1", "2026-07-09T08:00:00.000Z", "Soviet 8-Week Peaking – Week 1, Day 5", "100"), // prev Thu
-  run("r1", "2026-07-09T18:00:00.000Z"),
+  run("t1", at(16, 8), "Tennis"), // Thu (today)
+  lift("d2", at(13, 18), "Soviet 8-Week Peaking – Week 2, Day 2", "120"), // Mon
+  lift("d1", at(13, 8), "Soviet 8-Week Peaking – Week 2, Day 1", "110"),
+  lift("aft", at(13, 20), "Afternoon workout", "60"),
+  lift("w1", at(9, 8), "Soviet 8-Week Peaking – Week 1, Day 5", "100"), // prev Thu
+  run("r1", at(9, 18)),
 ];
 
 describe("view registry", () => {
@@ -91,9 +94,9 @@ describe("historyStats", () => {
   });
 
   it("doesn't break the streak on a young empty current week", () => {
-    const past = [lift("a", "2026-07-08T08:00:00.000Z"), lift("b", "2026-07-01T08:00:00.000Z")];
+    const past = [lift("a", at(8, 8)), lift("b", at(1, 8))];
     // now = Tue Jul 14, nothing logged this week yet → streak counts prior weeks
-    const s = historyStats(past, { now: Date.parse("2026-07-14T12:00:00.000Z") });
+    const s = historyStats(past, { now: new Date(2026, 6, 14, 12).getTime() });
     expect(s.streakWeeks).toBe(2);
   });
 });
@@ -177,7 +180,7 @@ describe("blockChapters + upcomingPlanDays (with a real schedule)", () => {
   const PLAN = "oly-soviet-8wk";
   const sched = planSchedule({
     planId: PLAN,
-    startedAt: "2026-07-06T00:00:00.000Z",
+    startedAt: new Date(2026, 6, 6).toISOString(),
     sessions: FIXTURE,
     now: NOW,
   });
@@ -219,7 +222,7 @@ describe("blockChapters + upcomingPlanDays (with a real schedule)", () => {
     // must surface as an isToday ghost ahead of the future ones.
     const sched2 = planSchedule({
       planId: PLAN,
-      startedAt: "2026-07-06T00:00:00.000Z",
+      startedAt: new Date(2026, 6, 6).toISOString(),
       sessions: FIXTURE.filter((s) => s.id !== "t1"),
       now: NOW,
     })!;
