@@ -25,7 +25,7 @@ const lift = (id: string, iso: string, title = "Lower", load = "100"): LoggedSes
 });
 const run = (id: string, iso: string, title = "Morning run"): LoggedSession => ({
   id, title, startedAt: iso,
-  blocks: [{ kind: "cardio", name: "Run", minutes: 30, rpe: 6, distanceKm: 5 }],
+  blocks: [{ kind: "cardio", name: "Run", minutes: 30, rpe: 6, distance: 5 }],
 });
 
 const FIXTURE: LoggedSession[] = [
