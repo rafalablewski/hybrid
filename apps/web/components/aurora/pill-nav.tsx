@@ -93,9 +93,13 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       const el = activeFlat ? flatRefs.current[activeFlat] : null;
       if (!bar || !el) {
         // Train / none: fade out where it stands (keep `ind`, so it can travel
-        // back from the same spot when a side tab is selected again).
+        // back from the same spot when a side tab is selected again). Reset the
+        // stretch too — the pending settle timer was cleared by the effect
+        // cleanup, so without this a mid-stretch hop to Train left the hidden
+        // indicator permanently elongated (review finding).
         indShownRef.current = false;
         setIndShown(false);
+        setStretch(1);
         return;
       }
       const next = { x: el.offsetLeft + (el.offsetWidth - 52) / 2, top: el.offsetTop + (el.offsetHeight - 52) / 2 };
@@ -105,12 +109,13 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       indShownRef.current = true;
       setInd(next);
       setIndShown(true);
-      if (!firstRef.current && !reducedNow && wasShown && prev) {
-        const dist = Math.abs(next.x - prev.x);
-        if (dist > 1) {
-          setStretch(Math.min(1 + dist / 240, 1.9));
-          stretchTimer = setTimeout(() => setStretch(1), 150);
-        }
+      if (!firstRef.current && !reducedNow && wasShown && prev && Math.abs(next.x - prev.x) > 1) {
+        setStretch(Math.min(1 + Math.abs(next.x - prev.x) / 240, 1.9));
+        stretchTimer = setTimeout(() => setStretch(1), 150);
+      } else {
+        // Any non-travelling placement (first paint, resize, reduced motion,
+        // reappearing after Train) settles at rest width.
+        setStretch(1);
       }
       firstRef.current = false;
     };
