@@ -6,10 +6,8 @@ import {
   sessionShape,
   sessionCardioTotals,
   sessionsByDay,
-  trainingHeatmap,
   historyStream,
   upcomingPlanDays,
-  historyStats,
   journalMonth,
   latestTrainingDayKey,
   weekChapters,
@@ -22,7 +20,6 @@ import {
   localMondayMs,
   addLocalDays,
   type HistoryViewId,
-  type HistoryDayGroup,
   type LoggedSession,
   type PlanScheduleResult,
   type WeightUnit,
@@ -34,11 +31,11 @@ import { fs, F } from "../../lib/ui";
 import { RADIUS, Ring, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
-// The six merged History × Calendar layouts (agenda / heatmap / journal /
-// weeks / timeline / blocks) behind the History screen's view switcher —
-// parity with apps/web/components/aurora/history-views.tsx. All grouping math
-// lives in @hybrid/core (engines/history-views.ts); these components only
-// render. Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
+// The five merged History × Calendar layouts (agenda / journal / weeks /
+// timeline / blocks) behind the History screen's view switcher — parity with
+// apps/web/components/aurora/history-views.tsx. All grouping math lives in
+// @hybrid/core (engines/history-views.ts); these components only render.
+// Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
 
 const DAY = 86_400_000;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
@@ -240,74 +237,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  2 — Heatmap ledger
-// ============================================================
-
-export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const cols = useMemo(() => trainingHeatmap(ctx.sessions, 12), [ctx.sessions]);
-  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12, bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
-  const lime = txt(C, C.lime) as string;
-  const shade = ["transparent", withAlpha(C.lime, 0.24), withAlpha(C.lime, 0.42), withAlpha(C.lime, 0.66), C.lime];
-  const today = localTodayKey();
-
-  const monthTicks = cols.map((col, i) => {
-    const m = new Date(keyTs(col[0]!.date)).toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toUpperCase();
-    const prev = i > 0 ? new Date(keyTs(cols[i - 1]![0]!.date)).getUTCMonth() : -1;
-    return new Date(keyTs(col[0]!.date)).getUTCMonth() !== prev ? m : "";
-  });
-
-  const stat = (v: string, k: string, isLime = false) => (
-    <View key={k} style={{ flex: 1, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: isLime ? lime : C.chalk }}>{v}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>{k}</Text>
-    </View>
-  );
-
-  return (
-    <View style={{ gap: 12, marginTop: 12 }}>
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 16 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("histview.lastWeeks")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>sRPE</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 4, justifyContent: "center", marginTop: 12, marginBottom: 4 }}>
-          {cols.map((col, i) => (
-            <View key={i} style={{ gap: 4 }}>
-              {col.map((cell) => (
-                <View key={cell.date} style={{ width: 13, height: 13, borderRadius: 4, backgroundColor: cell.level === 0 ? withAlpha(C.ash, 0.1) : shade[cell.level], borderWidth: cell.date === today ? 1.5 : 0, borderColor: C.chalk }} />
-              ))}
-              <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, textAlign: "center", height: 10 }}>{monthTicks[i]}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, marginTop: 8 }}>
-          {stat(String(stats.sessions), t("histview.sessionsLbl"))}
-          {stat(fmtTonnage(stats.volume, ctx.units), t("histview.tonnageLbl"))}
-          {stat(String(stats.prs), t("histview.prsLbl"), true)}
-          {stat(`${stats.streakWeeks} ${t("histview.wkAbbrev")}`, t("histview.streakLbl"), true)}
-        </View>
-      </View>
-
-      {stream.filter((x): x is HistoryDayGroup => x.kind === "day").map((d) => (
-        <View key={d.dateKey} style={{ flexDirection: "row", gap: 12 }}>
-          <View style={{ width: 38, alignItems: "center", paddingTop: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase" }}>{fmtWeekday(d.dateKey)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, fontWeight: "700", color: d.isToday ? lime : C.chalk }}>{Number(d.dateKey.slice(8, 10))}</Text>
-          </View>
-          <View style={{ flex: 1, gap: 8 }}>
-            {d.sessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} lines={2} />)}
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ============================================================
-//  3 — Month journal
+//  2 — Month journal
 // ============================================================
 
 export function JournalView({ ctx }: { ctx: ViewCtx }) {
@@ -377,7 +307,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  4 — Week chapters
+//  3 — Week chapters
 // ============================================================
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
@@ -435,7 +365,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  5 — Timeline rail
+//  4 — Timeline rail
 // ============================================================
 
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
@@ -472,7 +402,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  6 — Block chapters
+//  5 — Block chapters
 // ============================================================
 
 export function BlocksView({ ctx }: { ctx: ViewCtx }) {

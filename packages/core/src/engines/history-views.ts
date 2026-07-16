@@ -1,8 +1,9 @@
 /**
  * History views — the data behind the merged History × Calendar screen.
  *
- * The History screen offers seven switchable layouts (classic list + six
- * redesign concepts: agenda, heatmap, journal, weeks, timeline, blocks). Every
+ * The History screen offers five switchable layouts (agenda, journal, weeks,
+ * timeline, blocks — the classic list and the heatmap were trialled and
+ * retired; the list survives only as the archived-management surface). Every
  * layout is a different PROJECTION of the same logged sessions (+ optionally
  * the date-anchored plan schedule), so all the grouping/aggregation math lives
  * here — pure and client-agnostic — and web + mobile only render.
@@ -51,23 +52,23 @@ const desc = (sessions: LoggedSession[]) =>
 //  View registry
 // ============================================================
 
-/** The seven switchable History layouts. */
-export type HistoryViewId = "list" | "agenda" | "heatmap" | "journal" | "weeks" | "timeline" | "blocks";
+/** The five switchable History layouts. */
+export type HistoryViewId = "agenda" | "journal" | "weeks" | "timeline" | "blocks";
 
 /** Switcher entries, in display order. `labelKey` resolves via i18n `t()`. */
 export const HISTORY_VIEWS: ReadonlyArray<{ id: HistoryViewId; labelKey: string }> = [
-  { id: "list", labelKey: "histview.list" },
   { id: "agenda", labelKey: "histview.agenda" },
-  { id: "heatmap", labelKey: "histview.heatmap" },
   { id: "journal", labelKey: "histview.journal" },
   { id: "weeks", labelKey: "histview.weeks" },
   { id: "timeline", labelKey: "histview.timeline" },
   { id: "blocks", labelKey: "histview.blocks" },
 ];
 
-/** Normalize a persisted view id (old/unknown values fall back to the list). */
+/** Normalize a persisted view id. Unknown values — including the retired
+ *  "list" and "heatmap" ids a device may still have stored — fall back to
+ *  the agenda. */
 export const normalizeHistoryView = (v: unknown): HistoryViewId =>
-  HISTORY_VIEWS.some((x) => x.id === v) ? (v as HistoryViewId) : "list";
+  HISTORY_VIEWS.some((x) => x.id === v) ? (v as HistoryViewId) : "agenda";
 
 // ============================================================
 //  Day stream — training days + rest gaps (agenda + timeline)
@@ -188,58 +189,6 @@ export function upcomingPlanDays(
     blockNames: d.blocks.map((b) => b.name),
     isToday: d.status === "today",
   }));
-}
-
-// ============================================================
-//  Heatmap stats (heatmap view header)
-// ============================================================
-
-export interface HistoryStats {
-  /** sessions inside the window. */
-  sessions: number;
-  /** summed tonnage (kg) inside the window. */
-  volume: number;
-  /** PRs set inside the window (judged against the FULL history). */
-  prs: number;
-  /** consecutive training weeks ending now (a fresh, still-empty current week
-   *  doesn't break the streak). */
-  streakWeeks: number;
-}
-
-/** Aggregates for the heatmap header over the last `weeks` calendar weeks. */
-export function historyStats(
-  all: LoggedSession[],
-  opts?: { weeks?: number; now?: number; bw?: BodyweightInput; prs?: PrLookup },
-): HistoryStats {
-  const weeks = opts?.weeks ?? 12;
-  const now = opts?.now ?? Date.now();
-  const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
-  const thisMonday = mondayOf(now);
-  const startMs = addLocalDays(thisMonday, -(weeks - 1) * 7);
-  const endMs = addLocalDays(thisMonday, 7);
-
-  let count = 0;
-  let volume = 0;
-  let prs = 0;
-  const weeksWith = new Set<number>();
-  for (const s of all) {
-    const ts = new Date(s.startedAt).getTime();
-    weeksWith.add(mondayOf(ts));
-    if (ts < startMs || ts >= endMs) continue;
-    count++;
-    volume += sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt));
-    prs += prsOf(s.id);
-  }
-
-  let streak = 0;
-  let cursor = thisMonday;
-  if (!weeksWith.has(cursor)) cursor = addLocalDays(cursor, -7); // current week may still be young
-  while (weeksWith.has(cursor)) {
-    streak++;
-    cursor = addLocalDays(cursor, -7);
-  }
-
-  return { sessions: count, volume: Math.round(volume), prs, streakWeeks: streak };
 }
 
 // ============================================================

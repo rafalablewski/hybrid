@@ -74,11 +74,18 @@ export function SessionDetail({
   all,
   onBack,
   onOpenExercise,
+  onArchive,
+  onDelete,
 }: {
   session: LoggedSession;
   all: LoggedSession[];
   onBack: () => void;
   onOpenExercise?: (name: string) => void;
+  /** Owner-only manage actions (History passes these; other callers omit them
+   *  and the manage row doesn't render). Confirm/error handling stays with the
+   *  caller. */
+  onArchive?: () => void;
+  onDelete?: () => void;
 }) {
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -321,6 +328,23 @@ export function SessionDetail({
           </Card>
         ))}
       </div>
+
+      {/* Manage this workout — lives here since the classic list (and its swipe
+          actions) was retired; only rendered for callers that pass handlers. */}
+      {(onArchive || onDelete) && (
+        <div style={{ display: "flex", gap: space.sm, justifyContent: "flex-end", borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
+          {onArchive && (
+            <button onClick={onArchive} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 18px", cursor: "pointer" }}>
+              {t("w.analyze.hist.archive")}
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={onDelete} style={{ ...mono, fontSize: fs.caption, color: "var(--red-text)", background: "none", border: `1px solid color-mix(in srgb, var(--color-red) 45%, transparent)`, borderRadius: 999, padding: "8px 18px", cursor: "pointer" }}>
+              {t("w.analyze.hist.delete")}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

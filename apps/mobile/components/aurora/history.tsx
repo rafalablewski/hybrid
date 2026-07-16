@@ -17,14 +17,13 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
-import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
-// its component here is a type error, not a silent fall-back to the list.
-const VIEW_COMPONENTS: Record<Exclude<HistoryViewId, "list">, ComponentType<{ ctx: ViewCtx }>> = {
+// its component here is a type error, not a silent fall-back.
+const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
   agenda: AgendaView,
-  heatmap: HeatmapView,
   journal: JournalView,
   weeks: WeeksView,
   timeline: TimelineView,
@@ -68,10 +67,10 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
   );
 }
 
-/** AURORA History — logged-session list with PR badges. Manage actions
- *  (archive/restore/delete) live behind a SWIPE: drag a card left to reveal
- *  them (iOS-native pattern), so the resting card is clean — no footer buttons,
- *  no divider lines — and tap still opens the full breakdown. */
+/** AURORA History — the five merged History × Calendar layouts behind a view
+ *  switcher. Live sessions are managed (archive/delete) from the session
+ *  detail screen; the archived screen keeps the classic swipe list — drag a
+ *  card left to reveal restore/delete (iOS-native pattern). */
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -92,7 +91,7 @@ export default function AuroraHistory() {
   // block chapters key off the date-anchored schedule; both degrade to nothing
   // when no plan is enrolled).
   useEffect(() => {
-    AsyncStorage.getItem(VIEW_KEY).then((v) => setView(normalizeHistoryView(v))).catch(() => setView("list"));
+    AsyncStorage.getItem(VIEW_KEY).then((v) => setView(normalizeHistoryView(v))).catch(() => setView(normalizeHistoryView(null)));
     fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
   }, []);
   const pickView = (v: HistoryViewId) => {
@@ -137,12 +136,12 @@ export default function AuroraHistory() {
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
+  // Only archived sessions still render as the classic swipe list (restore /
+  // delete live behind the swipe); live history renders the merged layouts.
   const renderItem = ({ item: s }: { item: LoggedSession }) => {
     const prCount = prCounts.get(s.id) ?? 0;
     const actions: SwipeAction[] = [
-      showArchived
-        ? { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) }
-        : { key: "archive", label: t("common.archive"), color: C.ash, onPress: () => onArchive(s.id, true) },
+      { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) },
       { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
     ];
     return (
@@ -185,12 +184,11 @@ export default function AuroraHistory() {
     );
   };
 
-  // Archived management stays on the classic list; the six merged layouts
-  // (agenda/heatmap/journal/weeks/timeline/blocks) apply to live history.
-  // Until the persisted choice hydrates (view === null) nothing view-specific
-  // renders, so the saved layout never flashes the list first.
+  // Archived management keeps the classic swipe list; the five merged layouts
+  // (agenda/journal/weeks/timeline/blocks) apply to live history. Until the
+  // persisted choice hydrates (view === null) nothing view-specific renders,
+  // so the saved layout never flashes another one first.
   const hydrated = view !== null || showArchived;
-  const activeView: HistoryViewId = showArchived ? "list" : (view ?? "list");
 
   const header = (
     <>
@@ -201,16 +199,15 @@ export default function AuroraHistory() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
-      {!showArchived && hydrated && <ViewSwitcher view={activeView} onChange={pickView} />}
-      {/* Swipe hint, once at the top of the list. */}
-      {hydrated && activeView === "list" && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+      {!showArchived && view !== null && <ViewSwitcher view={view} onChange={pickView} />}
+      {/* Swipe hint, once at the top of the archived list. */}
+      {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
       {/* The merged History × Calendar layouts render inside the list header, so
           the FlatList stays the screen's sole scroller (nav-scroll + refresh).
-          Trade-off (known): unlike the list rows, these aggregate layouts are
-          NOT virtualized — acceptable while the layouts are being trialled;
-          revisit under the mobile-list-virtualization capability when a winner
-          is promoted to the default. */}
-      {hydrated && activeView !== "list" && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[activeView]; return <V ctx={viewCtx} />; })()}
+          Trade-off (known): unlike the archived-list rows, these aggregate
+          layouts are NOT virtualized — revisit under the
+          mobile-list-virtualization capability. */}
+      {!showArchived && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
     </>
   );
 
@@ -241,7 +238,7 @@ export default function AuroraHistory() {
     // entrance animation chrome.
     <AuroraScreen scroll={false} padding={0}>
       <FlatList
-        data={hydrated && activeView === "list" && !loading && !q.isError ? sessions : []}
+        data={showArchived && !loading && !q.isError ? sessions : []}
         keyExtractor={(s) => s.id}
         renderItem={renderItem}
         ListHeaderComponent={header}

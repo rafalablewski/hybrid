@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   sessionVolume,
@@ -30,11 +30,12 @@ import {
   type PrHit,
   type CardioPrHit,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { archiveSession, deleteSession, fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useRevalidate } from "../../lib/queries";
 import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
@@ -54,6 +55,8 @@ export default function SessionDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
   const [all, setAll] = useState<LoggedSession[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const revalidate = useRevalidate();
   // Aurora wraps the review in the airy AuroraScreen (blob field + nav
   // clearance); classic keeps the glass Screen. Same content either way — the
   // shared Card/Mono primitives already round up on Aurora.
@@ -108,6 +111,26 @@ export default function SessionDetail() {
   const bests: ShareBest[] = [...bestMap.entries()]
     .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
     .sort((a, b) => b.e1rm - a.e1rm);
+
+  // Manage this workout — lives on the breakdown since the classic History
+  // list (and its swipe actions) was retired for live sessions.
+  const doArchive = async () => {
+    setBusy(true);
+    const ok = await archiveSession(session.id, true);
+    setBusy(false);
+    if (ok) { void revalidate.sessions(); router.back(); }
+    else Alert.alert(t("common.error"), t("history.archiveError"));
+  };
+  const doDelete = () => Alert.alert(t("history.deleteWorkout"), `“${session.title}” ${t("history.deleteWorkoutBody")}`, [
+    { text: t("common.cancel"), style: "cancel" },
+    { text: t("common.delete"), style: "destructive", onPress: async () => {
+      setBusy(true);
+      const ok = await deleteSession(session.id);
+      setBusy(false);
+      if (ok) { void revalidate.sessions(); router.back(); }
+      else Alert.alert(t("common.error"), t("history.deleteError"));
+    } },
+  ]);
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
@@ -237,6 +260,15 @@ export default function SessionDetail() {
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.share")}</Text>
         </Pressable>
       </>
+
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
+        <Pressable disabled={busy} onPress={doArchive} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 999 : 14, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.ash }}>{t("common.archive")}</Text>
+        </Pressable>
+        <Pressable disabled={busy} onPress={doDelete} style={{ flex: 1, borderWidth: 1, borderColor: `${C.red}73`, borderRadius: aurora ? 999 : 14, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: txt(C, C.red) }}>{t("common.delete")}</Text>
+        </Pressable>
+      </View>
     </>,
   );
 }
