@@ -13,8 +13,29 @@ import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionLoad } from "./load";
 
 const DAY = 86_400_000;
-const dayKey = (iso: string) => iso.slice(0, 10);
-const fmt = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/** The app's canonical UTC day key for a session timestamp (YYYY-MM-DD).
+ *  Shared with the history views so every surface shades the same day. */
+export const utcDayKey = (iso: string) => iso.slice(0, 10);
+/** UTC day key for a millisecond timestamp. */
+export const utcDayKeyOfMs = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+/** UTC midnight of the Monday of the week containing `ms`. */
+export const utcMondayOf = (ms: number) => {
+  const d = new Date(ms);
+  const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return base - ((d.getUTCDay() + 6) % 7) * DAY;
+};
+/** Bucket a day's sRPE load into the calendar's 0–4 shading levels (0 = rest),
+ *  relative to the athlete's busiest day. One source of truth for the heatmap,
+ *  the journal grid and the agenda/timeline dots. */
+export const loadLevel = (load: number, maxLoad: number): 0 | 1 | 2 | 3 | 4 => {
+  if (load <= 0) return 0;
+  const frac = load / Math.max(1, maxLoad);
+  return frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1;
+};
+
+const dayKey = utcDayKey;
+const fmt = utcDayKeyOfMs;
 
 export interface DaySummary {
   date: string; // YYYY-MM-DD
@@ -93,10 +114,7 @@ export interface HeatCell {
 export function trainingHeatmap(sessions: LoggedSession[], weeks = 26, now = Date.now()): HeatCell[][] {
   const days = sessionsByDay(sessions);
   const maxLoad = Math.max(1, ...Object.values(days).map((d) => d.load));
-  const today = new Date(now);
-  const dow = (today.getUTCDay() + 6) % 7; // 0 = Monday
-  const mondayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - dow * DAY;
-  const startMs = mondayMs - (weeks - 1) * 7 * DAY;
+  const startMs = utcMondayOf(now) - (weeks - 1) * 7 * DAY;
   const cols: HeatCell[][] = [];
   for (let w = 0; w < weeks; w++) {
     const col: HeatCell[] = [];
@@ -104,9 +122,7 @@ export function trainingHeatmap(sessions: LoggedSession[], weeks = 26, now = Dat
       const key = fmt(startMs + (w * 7 + d) * DAY);
       const summary = days[key];
       const load = summary?.load ?? 0;
-      const frac = load / maxLoad;
-      const level = load <= 0 ? 0 : frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1;
-      col.push({ date: key, level: level as HeatCell["level"], count: summary?.count ?? 0, load });
+      col.push({ date: key, level: loadLevel(load, maxLoad), count: summary?.count ?? 0, load });
     }
     cols.push(col);
   }

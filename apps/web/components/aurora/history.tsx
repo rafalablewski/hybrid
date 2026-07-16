@@ -8,6 +8,18 @@ import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import type { ComponentType } from "react";
+
+// Compile-checked view→component table: adding a HistoryViewId without wiring
+// its component here is a type error, not a silent fall-back to the list.
+const VIEW_COMPONENTS: Record<Exclude<HistoryViewId, "list">, ComponentType<{ ctx: ViewCtx }>> = {
+  agenda: AgendaView,
+  heatmap: HeatmapView,
+  journal: JournalView,
+  weeks: WeeksView,
+  timeline: TimelineView,
+  blocks: BlocksView,
+};
 
 const VIEW_KEY = "hybrid.historyView";
 const readView = (): HistoryViewId => {
@@ -127,18 +139,8 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("w.analyze.hist.sessionsEmpty")}</p>
         </div>
-      ) : activeView === "agenda" ? (
-        <AgendaView ctx={viewCtx} />
-      ) : activeView === "heatmap" ? (
-        <HeatmapView ctx={viewCtx} />
-      ) : activeView === "journal" ? (
-        <JournalView ctx={viewCtx} />
-      ) : activeView === "weeks" ? (
-        <WeeksView ctx={viewCtx} />
-      ) : activeView === "timeline" ? (
-        <TimelineView ctx={viewCtx} />
-      ) : activeView === "blocks" ? (
-        <BlocksView ctx={viewCtx} />
+      ) : activeView !== "list" ? (
+        (() => { const View = VIEW_COMPONENTS[activeView]; return <View ctx={viewCtx} />; })()
       ) : (
         <>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "right", marginTop: -4 }}>{t("w.analyze.hist.swipeHint")}</div>
@@ -158,9 +160,17 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
                 </div>
                 <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px", flexWrap: "wrap" }}>
                   {/* Sport-aware headline chip — a run/match has no tonnage, so
-                      cardio sessions read distance·pace, not "0 kg" (#4). */}
+                      cardio sessions read distance/time; conditioning-only
+                      sessions fall back to summed minutes (matches the
+                      history-views keyMetric so List agrees with the layouts). */}
                   {sessionShape(s) === "cardio"
-                    ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C("blue"), parts.join(" – ") || t("w.analyze.hist.block")); })()
+                    ? (() => {
+                        const ct = sessionCardioTotals(s.blocks);
+                        const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                        if (parts.length) return chip(C("blue"), parts.join(" – "));
+                        const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
+                        return chip(C("blue"), minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`);
+                      })()
                     : chip(C("ash"), fmtTonnage(sessionVolume(s.blocks, false, bw(s.startedAt)), units))}
                   {chip(C("ash"), `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`)}
                   {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}

@@ -18,6 +18,18 @@ import { fs, space, F, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { ViewSwitcher, AgendaView, HeatmapView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import type { ComponentType } from "react";
+
+// Compile-checked view→component table: adding a HistoryViewId without wiring
+// its component here is a type error, not a silent fall-back to the list.
+const VIEW_COMPONENTS: Record<Exclude<HistoryViewId, "list">, ComponentType<{ ctx: ViewCtx }>> = {
+  agenda: AgendaView,
+  heatmap: HeatmapView,
+  journal: JournalView,
+  weeks: WeeksView,
+  timeline: TimelineView,
+  blocks: BlocksView,
+};
 
 const VIEW_KEY = "hybrid.historyView";
 
@@ -67,7 +79,9 @@ export default function AuroraHistory() {
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [view, setView] = useState<HistoryViewId>("list");
+  // null until AsyncStorage resolves — the screen shows a loader instead of
+  // painting the classic list and swapping to the saved layout a frame later.
+  const [view, setView] = useState<HistoryViewId | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
   const revalidate = useRevalidate();
@@ -78,7 +92,7 @@ export default function AuroraHistory() {
   // block chapters key off the date-anchored schedule; both degrade to nothing
   // when no plan is enrolled).
   useEffect(() => {
-    AsyncStorage.getItem(VIEW_KEY).then((v) => { if (v) setView(normalizeHistoryView(v)); }).catch(() => {});
+    AsyncStorage.getItem(VIEW_KEY).then((v) => setView(normalizeHistoryView(v))).catch(() => setView("list"));
     fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
   }, []);
   const pickView = (v: HistoryViewId) => {
@@ -138,10 +152,18 @@ export default function AuroraHistory() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-          {/* Sport-aware headline chip — a run/match has no tonnage, so
-              cardio sessions read distance·time, not "0 kg" (#4). */}
+          {/* Sport-aware headline chip — a run/match has no tonnage, so cardio
+              sessions read distance/time; conditioning-only sessions fall back
+              to summed minutes (matches the history-views keyMetric so List
+              agrees with the layouts). */}
           {sessionShape(s) === "cardio"
-            ? (() => { const ct = sessionCardioTotals(s.blocks); const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean); return chip(C.blue, parts.join(" – ") || t("history.block")); })()
+            ? (() => {
+                const ct = sessionCardioTotals(s.blocks);
+                const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                if (parts.length) return chip(C.blue, parts.join(" – "));
+                const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
+                return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`);
+              })()
             : chip(C.ash, `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}
           {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
           {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
@@ -165,7 +187,10 @@ export default function AuroraHistory() {
 
   // Archived management stays on the classic list; the six merged layouts
   // (agenda/heatmap/journal/weeks/timeline/blocks) apply to live history.
-  const activeView: HistoryViewId = showArchived ? "list" : view;
+  // Until the persisted choice hydrates (view === null) nothing view-specific
+  // renders, so the saved layout never flashes the list first.
+  const hydrated = view !== null || showArchived;
+  const activeView: HistoryViewId = showArchived ? "list" : (view ?? "list");
 
   const header = (
     <>
@@ -176,26 +201,23 @@ export default function AuroraHistory() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
-      {!showArchived && <ViewSwitcher view={view} onChange={pickView} />}
+      {!showArchived && hydrated && <ViewSwitcher view={activeView} onChange={pickView} />}
       {/* Swipe hint, once at the top of the list. */}
-      {activeView === "list" && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+      {hydrated && activeView === "list" && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
       {/* The merged History × Calendar layouts render inside the list header, so
-          the FlatList stays the screen's sole scroller (nav-scroll + refresh). */}
-      {!loading && !q.isError && sessions.length > 0 && (
-        activeView === "agenda" ? <AgendaView ctx={viewCtx} />
-        : activeView === "heatmap" ? <HeatmapView ctx={viewCtx} />
-        : activeView === "journal" ? <JournalView ctx={viewCtx} />
-        : activeView === "weeks" ? <WeeksView ctx={viewCtx} />
-        : activeView === "timeline" ? <TimelineView ctx={viewCtx} />
-        : activeView === "blocks" ? <BlocksView ctx={viewCtx} />
-        : null
-      )}
+          the FlatList stays the screen's sole scroller (nav-scroll + refresh).
+          Trade-off (known): unlike the list rows, these aggregate layouts are
+          NOT virtualized — acceptable while the layouts are being trialled;
+          revisit under the mobile-list-virtualization capability when a winner
+          is promoted to the default. */}
+      {hydrated && activeView !== "list" && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[activeView]; return <V ctx={viewCtx} />; })()}
     </>
   );
 
   // Loading / error / empty all render as the FlatList's empty component (its
   // data is [] in each of those states), so the header (title + toggle) stays.
-  const empty = loading ? (
+  // Pre-hydration (saved view not yet read) also shows the loader.
+  const empty = loading || !hydrated ? (
     <Loading />
   ) : q.isError ? (
     // A real fetch failure — distinct from a genuine empty history, so an
@@ -219,11 +241,11 @@ export default function AuroraHistory() {
     // entrance animation chrome.
     <AuroraScreen scroll={false} padding={0}>
       <FlatList
-        data={activeView === "list" && !loading && !q.isError ? sessions : []}
+        data={hydrated && activeView === "list" && !loading && !q.isError ? sessions : []}
         keyExtractor={(s) => s.id}
         renderItem={renderItem}
         ListHeaderComponent={header}
-        ListEmptyComponent={loading || q.isError || sessions.length === 0 ? empty : null}
+        ListEmptyComponent={!hydrated || loading || q.isError || sessions.length === 0 ? empty : null}
         {...navScroll}
         showsVerticalScrollIndicator={false}
         initialNumToRender={8}
