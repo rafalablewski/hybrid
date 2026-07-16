@@ -334,7 +334,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
           <span style={{ fontWeight: 900, fontSize: fs.title }}>{fmtMonth(year, month)}</span>
           <span style={{ display: "flex", gap: 6 }}>
             <button aria-label={t("common.previous")} onClick={() => go(-1)} style={navBtn}>‹</button>
-            <button onClick={() => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); }} style={navBtn}>{t("w.analyze.cal.today")}</button>
+            <button onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(today); }} style={navBtn}>{t("w.analyze.cal.today")}</button>
             <button aria-label={t("common.next")} onClick={() => go(1)} style={navBtn}>›</button>
           </span>
         </div>
