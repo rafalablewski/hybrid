@@ -81,6 +81,7 @@ export default function AuroraLogger({
   onHome,
   onUpgrade,
   initialBlocks,
+  initialTitle,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
@@ -89,6 +90,10 @@ export default function AuroraLogger({
   /** In-shell navigation to the upgrade screen (Save-as-routine is Full). */
   onUpgrade?: () => void;
   initialBlocks?: SessionBlock[];
+  /** Title a plan-seeded session saves under ("<plan> – Week N, <day>") so the
+   *  schedule engine recognises it as the plan's own — mobile-parity stamping.
+   *  Without it the session auto-titles by time of day as before. */
+  initialTitle?: string;
 }) {
   const { t } = useLang();
   const router = useRouter();
@@ -99,7 +104,7 @@ export default function AuroraLogger({
   // real name is only entered when saving a routine or via the optional rename
   // on the finish screen. `title` is internal state seeded by the default /
   // routine / AI label, no longer an input on this screen.
-  const [title, setTitle] = useState(() => defaultSessionTitle());
+  const [title, setTitle] = useState(() => initialTitle ?? defaultSessionTitle());
   const [blocks, setBlocks] = useState<EditableBlock[]>(
     () => initialBlocks?.map((b) => ({ uid: uid(), ...b }) as EditableBlock) ?? [],
   );

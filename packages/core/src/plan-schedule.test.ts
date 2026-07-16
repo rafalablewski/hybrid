@@ -97,16 +97,81 @@ describe("planSchedule", () => {
 
   it("matches an auto-titled session by shared block names (web logger parity)", () => {
     const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
-    const day = base.days.find((d) => !d.isRest && d.status === "missed")!;
+    const day = base.days.find((d) => !d.isRest && d.status === "missed" && d.blocks.length >= 2)!;
     const fromPlan: LoggedSession = {
       id: "auto-1",
       title: "Evening workout", // the web logger's auto-title — no plan prefix
       startedAt: new Date(day.ts + 12 * 3600_000).toISOString(),
-      blocks: [{ kind: "strength", name: day.blocks[0]!.name, sets: [] }],
+      blocks: [
+        { kind: "strength", name: day.blocks[0]!.name, sets: [] },
+        { kind: "strength", name: day.blocks[1]!.name, sets: [] },
+      ],
     };
     const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [fromPlan], now })!;
     expect(r.days[day.index]!.status).toBe("done");
     expect(r.days[day.index]!.sessionId).toBe("auto-1");
+  });
+
+  it("does NOT let one shared common lift complete a multi-lift plan day", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const day = base.days.find((d) => !d.isRest && d.status === "missed" && d.blocks.length >= 2)!;
+    const freestyle: LoggedSession = {
+      id: "free-1",
+      title: "Evening workout",
+      startedAt: new Date(day.ts + 12 * 3600_000).toISOString(),
+      // one prescription lift buried in an unrelated freestyle session
+      blocks: [
+        { kind: "strength", name: day.blocks[0]!.name, sets: [] },
+        { kind: "strength", name: "Lat Pulldown", sets: [] },
+        { kind: "strength", name: "Biceps Curl", sets: [] },
+      ],
+    };
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [freestyle], now })!;
+    expect(r.days[day.index]!.status).toBe("missed");
+    expect(r.fulfilledSessionIds).not.toContain("free-1");
+  });
+
+  it("lets a quick-logged run complete a run-plan day, but not a racket sport", () => {
+    const RUN_PLAN = "run-5k-beginner-9wk"; // discipline: endurance
+    const base = planSchedule({ planId: RUN_PLAN, startedAt: start, sessions: [], now })!;
+    const day = base.days.find((d) => !d.isRest && d.status === "missed")!;
+    const run = sportOn(day.ts, "run-1", "Running");
+    const tennis = sportOn(day.ts, "tennis-1", "Tennis");
+    const r = planSchedule({ planId: RUN_PLAN, startedAt: start, sessions: [tennis, run], now })!;
+    expect(r.days[day.index]!.status).toBe("done");
+    expect(r.days[day.index]!.sessionId).toBe("run-1");
+    expect(r.fulfilledSessionIds).not.toContain("tennis-1");
+  });
+
+  it("credits a postponed day when its catch-up workout is done on the target date", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const source = base.days.find((d) => !d.isRest && d.status === "missed" && d.blocks.length >= 2)!;
+    const target = base.days[source.index + 1]!;
+    // the catch-up "Do it now" seeds the SOURCE day's blocks; the web logger
+    // auto-titles it — logged on the TARGET date
+    const catchUp: LoggedSession = {
+      id: "catch-1",
+      title: "Evening workout",
+      startedAt: new Date(target.ts + 12 * 3600_000).toISOString(),
+      blocks: [
+        { kind: "strength", name: source.blocks[0]!.name, sets: [] },
+        { kind: "strength", name: source.blocks[1]!.name, sets: [] },
+      ],
+    };
+    const r = planSchedule({
+      planId: PLAN,
+      startedAt: start,
+      sessions: [catchUp],
+      overrides: { [source.dateKey]: { status: "postponed", toDateKey: target.dateKey } },
+      now,
+    })!;
+    // the SOURCE day is done (no longer postponed), credited with the session
+    expect(r.days[source.index]!.status).toBe("done");
+    expect(r.days[source.index]!.sessionId).toBe("catch-1");
+    // its catch-up item no longer haunts the target date's card
+    expect(r.days[target.index]!.postponedIn.length).toBe(0);
+    // and the workout is not mislabeled off-plan
+    expect(r.fulfilledSessionIds).toContain("catch-1");
   });
 
   it("splits today's log into plan-fulfilling vs off-plan extras", () => {

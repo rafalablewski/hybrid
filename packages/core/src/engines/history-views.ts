@@ -376,6 +376,10 @@ export function blockChapters(
 
   const schedule = opts?.schedule ?? null;
   if (schedule) {
+    // Claim EVERY session the schedule recognised as plan-fulfilling — not just
+    // each day's first (sessionId) — so the second session of an AM/PM day
+    // can't fall through to the Freestyle chapter while Today counts it as plan.
+    for (const id of schedule.fulfilledSessionIds) claimed.add(id);
     const weeks = new Map<number, typeof schedule.days>();
     for (const d of schedule.days) {
       if (d.isRest) continue;

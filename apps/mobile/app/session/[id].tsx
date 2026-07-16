@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  sessionClockTime,
   sessionVolume,
   blockBestE1rm,
   prsForSession,
@@ -43,7 +44,6 @@ import { AuroraScreen, ABack } from "../../components/aurora/kit";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
 export default function SessionDetail() {
   const C = useTheme().palette;
@@ -148,7 +148,7 @@ export default function SessionDetail() {
 
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
       <Mono style={{ marginTop: 4 }}>
-        {fmtDate(session.startedAt)} – {fmtTime(session.startedAt)}
+        {fmtDate(session.startedAt)} – {sessionClockTime(session.startedAt)}
         {session.readiness != null ? ` – ${t("home.readiness")} ${session.readiness}` : ""}
       </Mono>
 

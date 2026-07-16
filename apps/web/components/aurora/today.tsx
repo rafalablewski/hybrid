@@ -23,7 +23,8 @@ import { fs, space,
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
-  olympicSport,
+  sessionClockTime,
+  sessionIcon,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -76,6 +77,7 @@ export default function AuroraToday({
   planStartedAt,
   onStart,
   onNavigate,
+  onOpenSession,
   onSaved,
   loading = false,
 }: {
@@ -86,9 +88,14 @@ export default function AuroraToday({
   planId?: string | null;
   /** The enrolled plan's start date (Macrocycle.startedAt) — anchors the week rail. */
   planStartedAt?: string | null;
-  onStart: (planBlocks?: SessionBlock[]) => void;
+  /** `title` (plan starts only) is the plan-composed session title the logger
+   *  should save under, so the engine recognises the session as the plan's own. */
+  onStart: (planBlocks?: SessionBlock[], title?: string) => void;
   /** In-shell navigation (keeps the sidebar); falls back to a route push. */
   onNavigate?: (screen: string) => void;
+  /** Open one logged session's breakdown (History deep-link) — parity with
+   *  mobile's /session/{id}. Falls back to the plain history screen if absent. */
+  onOpenSession?: (sessionId: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
   /** True while the first sessions OR enrollment fetch is in flight —
@@ -155,10 +162,12 @@ export default function AuroraToday({
     [planId, planStartedAt, sessions],
   );
   // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
-  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
+  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest —
+  // and 0 when todayIndex is only the nearest fallback (plan not started yet, or
+  // already over), so an ended plan can't leave a phantom "0 of 1" forever.
   const plannedToday = useMemo(() => {
     const today = sched?.days[sched.todayIndex];
-    return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
+    return today && today.isToday && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
   }, [sched]);
   // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
   // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
@@ -362,9 +371,11 @@ export default function AuroraToday({
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--premium-accent-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
                 </button>
               )}
-              {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
+              {/* Primary action anchored at the BOTTOM of the plan card, below the note.
+                  Stamps the plan-composed title so the saved session is recognised
+                  as the plan's own (parity with the mobile plan prefill). */}
               <button
-                onClick={() => onStart(plan.blocks)}
+                onClick={() => onStart(plan.blocks, `${plan.planName} – ${plan.day}`)}
                 className="start-glow"
                 style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
@@ -420,9 +431,10 @@ export default function AuroraToday({
           was actually done besides it, teal-coded, each row tappable. */}
       <AlsoTodayCard
         extras={extrasToday}
+        onPlan={!!sched}
         units={units}
         bw={bw}
-        onOpen={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
+        onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
         onLog={() => setQuickOpen(true)}
       />
 
@@ -587,22 +599,20 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
   );
 }
 
-// Local time a session was logged at — "21:05" (locale clock, no seconds).
-function loggedAtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
-// The "Also today — off-plan" card (Design 1 separation): every workout logged
-// today that did NOT fulfil the scheduled plan day — a quick sport log, a
-// freestyle session — as first-class rows with a check, so a tennis match is
-// visible on Today instead of hiding behind the done-count ring. Teal-coded
-// (the Feel/conditioning accent) to read apart from the sand-free plan card.
+// The "Also today" card (Design 1 separation): every workout logged today that
+// did NOT fulfil the scheduled plan day — a quick sport log, a freestyle
+// session — as first-class rows with a check, so a tennis match is visible on
+// Today instead of hiding behind the done-count ring. Teal-coded (the Feel/
+// conditioning accent) to read apart from the plan card. With no schedule (not
+// enrolled / no start date) the kicker reads plain "Done today" — there is no
+// plan for anything to be "off" of. Rows open the session's breakdown.
 // Renders nothing when there's nothing extra. Mirrored on mobile (aurora/home.tsx).
-function AlsoTodayCard({ extras, units, bw, onOpen, onLog }: {
+function AlsoTodayCard({ extras, onPlan, units, bw, onOpen, onLog }: {
   extras: LoggedSession[];
+  onPlan: boolean;
   units: "kg" | "lb";
   bw: (isoDate?: string) => number | null;
-  onOpen: () => void;
+  onOpen: (sessionId: string) => void;
   onLog: () => void;
 }) {
   const { t } = useLang();
@@ -610,18 +620,20 @@ function AlsoTodayCard({ extras, units, bw, onOpen, onLog }: {
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--blue-text)" }}>{t("w.home.today.alsoToday")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--blue-text)" }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "2px 8px" }}>{extras.length}</span>
       </div>
       <div style={{ marginTop: 6 }}>
         {extras.map((s) => (
-          <button key={s.id} onClick={onOpen} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
+          <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
             <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 30%, transparent)` }}>
-              {sessionShape(s) === "strength" ? "🏋️" : (olympicSport(s.title)?.icon ?? "🏃")}
+              {sessionIcon(s)}
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units, bw(s.startedAt))} – {loggedAtTime(s.startedAt)}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+              </span>
             </span>
             <span style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 50%, transparent)` }}>✓</span>
           </button>

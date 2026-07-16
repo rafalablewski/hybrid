@@ -20,7 +20,8 @@ import {
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
-  olympicSport,
+  sessionClockTime,
+  sessionIcon,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -178,10 +179,12 @@ export default function AuroraHome() {
     [planId, planStartedAt, sessions],
   );
   // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
-  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
+  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest —
+  // and 0 when todayIndex is only the nearest fallback (plan not started yet, or
+  // already over), so an ended plan can't leave a phantom "0 of 1" forever.
   const plannedToday = useMemo(() => {
     const today = sched?.days[sched.todayIndex];
-    return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
+    return today && today.isToday && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
   }, [sched]);
   // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
   // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
@@ -220,11 +223,13 @@ export default function AuroraHome() {
     router.push(plan ? "/workout?source=plan" : isAthlete && hasData ? "/workout?source=ai" : "/workout?source=empty");
 
   // Start a SPECIFIC rail day: stash its exact (date-anchored) blocks so the
-  // logger prefills the day you tapped — not the count-based today. Falls back to
-  // the plan start when no blocks are supplied.
-  const startPlanDay = useCallback((blocks?: SessionBlock[]) => {
+  // logger prefills the day you tapped — not the count-based today. The rail
+  // passes the plan-composed title ("<plan> – Week N, <day>") so the saved
+  // session is recognisably the plan's own day, not just the plan. Falls back
+  // to the plan start when no blocks are supplied.
+  const startPlanDay = useCallback((blocks?: SessionBlock[], title?: string) => {
     if (blocks && blocks.length) {
-      AsyncStorage.setItem("hybrid.pendingPlanSession", JSON.stringify({ title: plan?.planName ?? "Plan", blocks }))
+      AsyncStorage.setItem("hybrid.pendingPlanSession", JSON.stringify({ title: title ?? plan?.planName ?? "Plan", blocks }))
         .then(() => router.push("/workout?source=plan-day"))
         .catch(() => startPrescribed());
       return;
@@ -333,7 +338,7 @@ export default function AuroraHome() {
               planStartedAt={planStartedAt!}
               sessions={sessions}
               maxes={planMaxes}
-              onStart={(blocks) => startPlanDay(blocks)}
+              onStart={(blocks, title) => startPlanDay(blocks, title)}
               onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
             />
           </View>
@@ -471,6 +476,7 @@ export default function AuroraHome() {
         <AlsoTodayCard
           C={C}
           extras={extrasToday}
+          onPlan={!!sched}
           units={units}
           bw={bw}
           onOpen={(id) => router.push(`/session/${id}`)}
@@ -599,20 +605,18 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
   return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }
 
-// Local time a session was logged at — "21:05" (locale clock, no seconds).
-function loggedAtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
-// The "Also today — off-plan" card (Design 1 separation): every workout logged
-// today that did NOT fulfil the scheduled plan day — a quick sport log, a
-// freestyle session — as first-class rows with a check, so a tennis match is
-// visible on Today instead of hiding behind the done-count ring. Teal-coded
-// (the Feel/conditioning accent) to read apart from the plan card. Renders
-// nothing when there's nothing extra. Mirrored on web (aurora/today.tsx).
-function AlsoTodayCard({ C, extras, units, bw, onOpen, onLog }: {
+// The "Also today" card (Design 1 separation): every workout logged today that
+// did NOT fulfil the scheduled plan day — a quick sport log, a freestyle
+// session — as first-class rows with a check, so a tennis match is visible on
+// Today instead of hiding behind the done-count ring. Teal-coded (the Feel/
+// conditioning accent) to read apart from the plan card. With no schedule (not
+// enrolled / no start date) the kicker reads plain "Done today" — there is no
+// plan for anything to be "off" of. Rows open the session's breakdown.
+// Renders nothing when there's nothing extra. Mirrored on web (aurora/today.tsx).
+function AlsoTodayCard({ C, extras, onPlan, units, bw, onOpen, onLog }: {
   C: P;
   extras: LoggedSession[];
+  onPlan: boolean;
   units: "kg" | "lb";
   bw: (isoDate?: string) => number | null;
   onOpen: (sessionId: string) => void;
@@ -623,7 +627,7 @@ function AlsoTodayCard({ C, extras, units, bw, onOpen, onLog }: {
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.alsoToday")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.blue) }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</Text>
         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: C.onAccent }}>{extras.length}</Text>
         </View>
@@ -632,11 +636,11 @@ function AlsoTodayCard({ C, extras, units, bw, onOpen, onLog }: {
         {extras.map((s) => (
           <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}24`, borderWidth: 1, borderColor: `${C.blue}4d` }}>
-              <Text style={{ fontSize: 18 }}>{sessionShape(s) === "strength" ? "🏋️" : (olympicSport(s.title)?.icon ?? "🏃")}</Text>
+              <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))} – {loggedAtTime(s.startedAt)}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
             </View>
             <View style={{ width: 24, height: 24, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}80` }}>
               <Text style={{ fontSize: 12, color: txt(C, C.lime) }}>✓</Text>

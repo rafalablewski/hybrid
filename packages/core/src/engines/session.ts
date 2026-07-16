@@ -2,7 +2,7 @@ import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS } from "./movements";
 import { gymExercise } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { sportPacePerMeters, formatSportDistance } from "../olympic-sports";
+import { sportPacePerMeters, formatSportDistance, olympicSport } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -415,6 +415,20 @@ export function sessionShape(session: LoggedSession): "strength" | "cardio" | "m
   if (strength && other) return "mixed";
   if (other && !strength) return "cardio";
   return "strength";
+}
+
+/** Local clock time a session was logged at — "21:05" (locale clock, no
+ *  seconds). One formatter shared by both clients (session rows, detail). */
+export function sessionClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+/** The emoji glyph a logged session wears in a list row: the sport catalog's
+ *  icon for a sport/cardio session (title = sport name for quick logs), the
+ *  barbell for gym work. Shared so web + mobile rows can't drift. */
+export function sessionIcon(session: LoggedSession): string {
+  if (sessionShape(session) === "strength") return "🏋️";
+  return olympicSport(session.title)?.icon ?? "🏃";
 }
 
 /**

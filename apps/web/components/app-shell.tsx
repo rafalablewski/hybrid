@@ -186,6 +186,14 @@ export default function AppShell() {
   // (the plan day prefills the session). Cleared on any manual nav so a normal
   // Log entry starts empty.
   const [pendingBlocks, setPendingBlocks] = useState<SessionBlock[] | undefined>(undefined);
+  // The plan-composed title a plan-seeded session saves under ("<plan> – Week N,
+  // <day>") so the schedule engine recognises it as the plan's own — set only
+  // by plan starts, alongside pendingBlocks (mobile-parity title stamping).
+  const [pendingTitle, setPendingTitle] = useState<string | undefined>(undefined);
+  // Today's "Also today" card deep-links one logged session's breakdown on the
+  // History screen (parity with mobile's /session/{id}); consumed on mount.
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const openSession = (id: string) => { setPendingSessionId(id); setScreen("history"); };
   // When the Trends hub opens a specific lift, focus it on the Exercises screen.
   const [exerciseFocus, setExerciseFocus] = useState("");
   const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
@@ -195,7 +203,7 @@ export default function AppShell() {
   // onNavigate("upgrade") opens the sheet instead of switching to a screen.
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const openUpgrade = () => { setPendingBlocks(undefined); setUpgradeOpen(true); };
-  const navigate = (s: string) => { if (s === "upgrade") { openUpgrade(); return; } setPendingBlocks(undefined); setScreen(s); };
+  const navigate = (s: string) => { if (s === "upgrade") { openUpgrade(); return; } setPendingBlocks(undefined); setPendingTitle(undefined); setPendingSessionId(null); setScreen(s); };
   // A casual user should never sit on the Full-only Periodize screen; if they
   // land there, bounce home and pop the upgrade sheet.
   useEffect(() => {
@@ -781,7 +789,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={navigate} onSaved={refresh} loading={sessionsLoading || macroLoading} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onSaved={refresh} loading={sessionsLoading || macroLoading} />
         )}
 
         {screen === "profile" && (
@@ -873,13 +881,16 @@ export default function AppShell() {
           <AuroraLogger
             sessions={sessions}
             initialBlocks={pendingBlocks}
+            initialTitle={pendingTitle}
             onSaved={() => {
               setPendingBlocks(undefined);
+              setPendingTitle(undefined);
               refresh();
               setScreen("history");
             }}
             onHome={() => {
               setPendingBlocks(undefined);
+              setPendingTitle(undefined);
               refresh();
               setScreen("today");
             }}
@@ -887,7 +898,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} onOpenExercise={openExercise} onChanged={refresh} />}
+        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} initialOpenId={pendingSessionId} onOpenExercise={openExercise} onChanged={refresh} />}
 
         {screen === "coach" && <AuroraCoach />}
 
