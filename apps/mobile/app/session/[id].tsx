@@ -63,12 +63,14 @@ export default function SessionDetail() {
   // A session logged seconds ago may not be in a still-fresh cache yet —
   // refetch ONCE when the id is missing before declaring it not found.
   const retriedRef = useRef(false);
+  // Depend on q.data/q.refetch (stable), not the whole q object — its identity
+  // changes every render, which would re-run the effect each time.
   useEffect(() => {
     if (!retriedRef.current && q.data && !q.data.some((s) => s.id === id)) {
       retriedRef.current = true;
       void q.refetch();
     }
-  }, [id, q.data, q]);
+  }, [id, q.data, q.refetch]);
   // Aurora wraps the review in the airy AuroraScreen (blob field + nav
   // clearance); classic keeps the glass Screen. Same content either way — the
   // shared Card/Mono primitives already round up on Aurora.
