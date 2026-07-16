@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   sessionVolume,
@@ -30,12 +30,12 @@ import {
   type PrHit,
   type CardioPrHit,
 } from "@hybrid/core";
-import { archiveSession, deleteSession, fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { useRevalidate } from "../../lib/queries";
+import { useSessionsQuery } from "../../lib/queries";
+import { useSessionActions } from "../../lib/session-actions";
 import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
@@ -54,19 +54,27 @@ export default function SessionDetail() {
   const bw = useBodyweightLookup();
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
-  const [all, setAll] = useState<LoggedSession[] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const revalidate = useRevalidate();
+  // The shared react-query sessions cache — coming from History this renders
+  // instantly with zero network I/O instead of re-downloading every session.
+  const q = useSessionsQuery();
+  const all = q.data ?? null;
+  const manage = useSessionActions();
+  const busy = manage.busyId !== null;
+  // A session logged seconds ago may not be in a still-fresh cache yet —
+  // refetch ONCE when the id is missing before declaring it not found.
+  const retriedRef = useRef(false);
+  useEffect(() => {
+    if (!retriedRef.current && q.data && !q.data.some((s) => s.id === id)) {
+      retriedRef.current = true;
+      void q.refetch();
+    }
+  }, [id, q.data, q]);
   // Aurora wraps the review in the airy AuroraScreen (blob field + nav
   // clearance); classic keeps the glass Screen. Same content either way — the
   // shared Card/Mono primitives already round up on Aurora.
   const aurora = useTemplate().template === "aurora";
   const wrap = (node: ReactNode) =>
     aurora ? <AuroraScreen>{node}</AuroraScreen> : <Screen>{node}</Screen>;
-
-  useEffect(() => {
-    fetchSessions().then(setAll);
-  }, []);
 
   if (all === null) {
     return wrap(<Loading />);
@@ -75,6 +83,9 @@ export default function SessionDetail() {
   const session = all.find((s) => s.id === id);
   const bwHere = session ? bw(session.startedAt) : null;
   if (!session) {
+    // Still loading (or the one-shot cache-miss refetch is in flight) — don't
+    // flash "not found" for a session that's about to arrive.
+    if (q.isFetching || !retriedRef.current) return wrap(<Loading />);
     return wrap(
       <>
         <ABack />
@@ -113,24 +124,12 @@ export default function SessionDetail() {
     .sort((a, b) => b.e1rm - a.e1rm);
 
   // Manage this workout — lives on the breakdown since the classic History
-  // list (and its swipe actions) was retired for live sessions.
+  // list (and its swipe actions) was retired for live sessions. The flow
+  // itself (busy, confirm, invalidation, errors) is the shared useSessionActions.
   const doArchive = async () => {
-    setBusy(true);
-    const ok = await archiveSession(session.id, true);
-    setBusy(false);
-    if (ok) { void revalidate.sessions(); router.back(); }
-    else Alert.alert(t("common.error"), t("history.archiveError"));
+    if (await manage.archive(session.id, true)) router.back();
   };
-  const doDelete = () => Alert.alert(t("history.deleteWorkout"), `“${session.title}” ${t("history.deleteWorkoutBody")}`, [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("common.delete"), style: "destructive", onPress: async () => {
-      setBusy(true);
-      const ok = await deleteSession(session.id);
-      setBusy(false);
-      if (ok) { void revalidate.sessions(); router.back(); }
-      else Alert.alert(t("common.error"), t("history.deleteError"));
-    } },
-  ]);
+  const doDelete = () => manage.confirmDelete(session, () => router.back());
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,

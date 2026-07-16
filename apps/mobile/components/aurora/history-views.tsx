@@ -37,7 +37,6 @@ import { RADIUS, Ring, withAlpha } from "./kit";
 // @hybrid/core (engines/history-views.ts); these components only render.
 // Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
 
-const DAY = 86_400_000;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const fmtDayShort = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });

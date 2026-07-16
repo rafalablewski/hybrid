@@ -76,6 +76,7 @@ export function SessionDetail({
   onOpenExercise,
   onArchive,
   onDelete,
+  manageBusy,
 }: {
   session: LoggedSession;
   all: LoggedSession[];
@@ -83,9 +84,10 @@ export function SessionDetail({
   onOpenExercise?: (name: string) => void;
   /** Owner-only manage actions (History passes these; other callers omit them
    *  and the manage row doesn't render). Confirm/error handling stays with the
-   *  caller. */
+   *  caller; `manageBusy` disables the row while a request is in flight. */
   onArchive?: () => void;
   onDelete?: () => void;
+  manageBusy?: boolean;
 }) {
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -334,12 +336,12 @@ export function SessionDetail({
       {(onArchive || onDelete) && (
         <div style={{ display: "flex", gap: space.sm, justifyContent: "flex-end", borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
           {onArchive && (
-            <button onClick={onArchive} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 18px", cursor: "pointer" }}>
+            <button onClick={onArchive} disabled={manageBusy} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 18px", cursor: manageBusy ? "default" : "pointer", opacity: manageBusy ? 0.5 : 1 }}>
               {t("w.analyze.hist.archive")}
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} style={{ ...mono, fontSize: fs.caption, color: "var(--red-text)", background: "none", border: `1px solid color-mix(in srgb, var(--color-red) 45%, transparent)`, borderRadius: 999, padding: "8px 18px", cursor: "pointer" }}>
+            <button onClick={onDelete} disabled={manageBusy} style={{ ...mono, fontSize: fs.caption, color: "var(--red-text)", background: "none", border: `1px solid color-mix(in srgb, var(--color-red) 45%, transparent)`, borderRadius: 999, padding: "8px 18px", cursor: manageBusy ? "default" : "pointer", opacity: manageBusy ? 0.5 : 1 }}>
               {t("w.analyze.hist.delete")}
             </button>
           )}

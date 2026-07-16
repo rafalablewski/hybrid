@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Alert, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
+import { View, Text, Pressable, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
-import { archiveSession, deleteSession, fetchMacrocycle } from "../../lib/api";
+import { fetchMacrocycle } from "../../lib/api";
+import { useSessionActions } from "../../lib/session-actions";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePlanOverrides } from "../../lib/plan-overrides";
-import { useSessionsQuery, useRevalidate } from "../../lib/queries";
+import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -77,13 +78,12 @@ export default function AuroraHistory() {
   const bw = useBodyweightLookup();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
   // null until AsyncStorage resolves — the screen shows a loader instead of
   // painting the classic list and swapping to the saved layout a frame later.
   const [view, setView] = useState<HistoryViewId | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
-  const revalidate = useRevalidate();
+  const manage = useSessionActions();
   const units = useLoggerPrefs().units;
   const { overrides } = usePlanOverrides(planId);
 
@@ -116,36 +116,31 @@ export default function AuroraHistory() {
     return m;
   }, [sessions]);
 
+  // No merged layout renders on the archived screen, so skip the schedule
+  // build there (the archived `sessions` array would feed it garbage anyway).
   const schedule = useMemo(
-    () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions, overrides }) : null),
-    [planId, planStartedAt, sessions, overrides],
+    () => (planId && planStartedAt && !showArchived ? planSchedule({ planId, startedAt: planStartedAt, sessions, overrides }) : null),
+    [planId, planStartedAt, sessions, overrides, showArchived],
   );
   const viewCtx: ViewCtx = useMemo(
     () => ({ sessions, units, bw, schedule, prs: (id: string) => prCounts.get(id) ?? 0, onOpen: (id: string) => router.push(`/session/${id}`) }),
     [sessions, units, bw, schedule, prCounts, router],
   );
 
-  const onArchive = async (id: string, archived: boolean) => {
-    setBusy(id); const ok = await archiveSession(id, archived); setBusy(null);
-    if (ok) revalidate.sessions(); else Alert.alert(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
-  };
-  const onDelete = (s: LoggedSession) => Alert.alert(t("history.deleteWorkout"), `“${s.title}” ${t("history.deleteWorkoutBody")}`, [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("common.delete"), style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) revalidate.sessions(); else Alert.alert(t("common.error"), t("history.deleteError")); } },
-  ]);
-
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   // Only archived sessions still render as the classic swipe list (restore /
   // delete live behind the swipe); live history renders the merged layouts.
+  // Archived cards don't open the breakdown — the detail route only serves
+  // live sessions (fetchable by owner), so tapping would dead-end on notFound.
   const renderItem = ({ item: s }: { item: LoggedSession }) => {
     const prCount = prCounts.get(s.id) ?? 0;
     const actions: SwipeAction[] = [
-      { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) },
-      { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
+      { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
+      { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
     ];
     return (
-      <SwipeCard C={C} busy={busy === s.id} actions={actions} onOpen={() => router.push(`/session/${s.id}`)}>
+      <SwipeCard C={C} busy={manage.busyId === s.id} actions={actions}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
@@ -176,10 +171,6 @@ export default function AuroraHistory() {
           ))}
         </View>
         {hasNote(s) && <SessionNoteView C={C} s={s} t={t} />}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("history.tapDetail")}</Text>
-          <AuroraIcon name="arrow-up" size={11} color={C.ash} style={{ transform: [{ rotate: "90deg" }] }} />
-        </View>
       </SwipeCard>
     );
   };
@@ -257,13 +248,13 @@ export default function AuroraHistory() {
 
 /** A card whose manage actions are revealed by dragging it left. Built on
  *  Animated + PanResponder (no gesture-handler dep — matches the live logger's
- *  SwipeRow). Only claims clearly-horizontal drags, so vertical scroll + tap
- *  still work; a tap when open closes the reveal instead of navigating. */
-function SwipeCard({ C, busy, actions, onOpen, children }: {
+ *  SwipeRow). Only claims clearly-horizontal drags, so vertical scroll still
+ *  works; a tap when open closes the reveal (the card itself doesn't open
+ *  anything — archived breakdowns aren't served by the detail route). */
+function SwipeCard({ C, busy, actions, children }: {
   C: Palette;
   busy: boolean;
   actions: SwipeAction[];
-  onOpen: () => void;
   children: ReactNode;
 }) {
   const TILE = 88;
@@ -309,7 +300,7 @@ function SwipeCard({ C, busy, actions, onOpen, children }: {
         </View>
         {/* The card itself — opaque so the actions don't bleed through. */}
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26 }}>
-          <Pressable onPress={() => (openRef.current ? animate(false) : onOpen())} style={{ padding: 18 }}>
+          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 18 }}>
             {children}
           </Pressable>
         </Animated.View>

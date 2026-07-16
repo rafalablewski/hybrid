@@ -104,7 +104,9 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
     try {
       const res = await fetch(`/api/sessions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ archived: value }) });
       if (!res.ok) { alert(`${t("w.analyze.hist.couldntPre")} ${value ? t("w.analyze.hist.confirmArchive") : t("w.analyze.hist.confirmRestore")} ${t("w.analyze.hist.couldntTail")}`); return; }
-      onChanged?.(); if (showArchived || value) await loadArchived();
+      // Only refresh the archived list when it's on screen — toggleArchived
+      // loads it fresh anyway, so archiving from live needn't prefetch it.
+      onChanged?.(); if (showArchived) await loadArchived();
     } catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
   };
   const remove = async (id: string, title: string) => {
@@ -128,6 +130,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
         onOpenExercise={onOpenExercise}
         onArchive={() => void setArchivedFlag(open.id, true)}
         onDelete={() => void remove(open.id, open.title)}
+        manageBusy={busy === open.id}
       />
     );
   }
@@ -163,7 +166,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
               { key: "delete", label: t("w.analyze.hist.delete"), color: C("red"), onPress: () => remove(s.id, s.title) },
             ];
             return (
-              <SwipeCard key={s.id} actions={actions} busy={busy === s.id} openable={false} onOpen={() => setOpenId(s.id)}>
+              <SwipeCard key={s.id} actions={actions} busy={busy === s.id}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <div style={{ fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{fmtDate(s.startedAt)}</span>
@@ -202,9 +205,10 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, onOpenE
 }
 
 /** A card whose manage actions are revealed by dragging it left (pointer or
- *  touch). Opaque surface so the actions don't bleed through; a tap opens the
- *  card unless it was a drag, and a tap while open closes the reveal. */
-function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: SwipeAction[]; busy: boolean; openable: boolean; onOpen: () => void; children: ReactNode }) {
+ *  touch). Opaque surface so the actions don't bleed through; a tap while open
+ *  closes the reveal (the card itself doesn't open anything — archived
+ *  breakdowns aren't openable). */
+function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: boolean; children: ReactNode }) {
   const TILE = 104;
   const reveal = TILE * actions.length;
   const [tx, setTx] = useState(0);
@@ -230,8 +234,7 @@ function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: Swi
   };
   const onClick = () => {
     if (drag.current.moved) return; // a drag, not a tap
-    if (openRef.current) { openRef.current = false; setTx(0); return; }
-    if (openable) onOpen();
+    if (openRef.current) { openRef.current = false; setTx(0); }
   };
 
   return (
@@ -257,7 +260,7 @@ function SwipeCard({ actions, busy, openable, onOpen, children }: { actions: Swi
           onPointerUp={up}
           onPointerCancel={up}
           onClick={onClick}
-          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: openable ? "pointer" : "default", touchAction: "pan-y", userSelect: "none" }}
+          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
         >
           {children}
         </div>
