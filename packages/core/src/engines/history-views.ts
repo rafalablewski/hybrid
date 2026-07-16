@@ -15,22 +15,32 @@ import type { LoggedSession } from "./session";
 import { sessionVolume, sessionShape } from "./session";
 import { sessionLoad } from "./load";
 import { prsForSession } from "./records";
-import { sessionsByDay, monthMatrix, type MonthCell } from "./calendar";
+import { sessionsByDay, monthMatrix, utcDayKey, utcDayKeyOfMs, utcMondayOf, loadLevel, type MonthCell } from "./calendar";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import type { PlanScheduleResult } from "../plan-schedule";
 
 const DAY = 86_400_000;
-const dayKey = (iso: string) => iso.slice(0, 10);
+const dayKey = utcDayKey;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
-const fmtKey = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+const fmtKey = utcDayKeyOfMs;
 const todayKeyOf = (now: number) => fmtKey(now);
+const mondayOf = utcMondayOf;
 
-/** UTC midnight of the Monday of the week containing `ms`. */
-const mondayOf = (ms: number) => {
-  const d = new Date(ms);
-  const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-  return base - ((d.getUTCDay() + 6) % 7) * DAY;
-};
+/** A per-session PR-count lookup. Both clients memoize one map of these; every
+ *  view function accepts it so PR detection (O(n) per session) never re-runs. */
+export type PrLookup = (id: string) => number;
+
+/** The seven weekday-header i18n keys (Mon→Sun), shared by the week strip,
+ *  the journal grid and the weeks sparkline so the clients can't drift. */
+export const WEEKDAY_LABEL_KEYS = [
+  "w.analyze.cal.weekdayMon",
+  "w.analyze.cal.weekdayTue",
+  "w.analyze.cal.weekdayWed",
+  "w.analyze.cal.weekdayThu",
+  "w.analyze.cal.weekdayFri",
+  "w.analyze.cal.weekdaySat",
+  "w.analyze.cal.weekdaySun",
+] as const;
 
 /** Newest-first copy of the sessions (the order every view renders in). */
 const desc = (sessions: LoggedSession[]) =>
@@ -94,7 +104,7 @@ export type HistoryStreamItem = HistoryDayGroup | HistoryRestGap;
  */
 export function historyStream(
   sessions: LoggedSession[],
-  opts?: { now?: number; bw?: BodyweightInput; prs?: (id: string) => number },
+  opts?: { now?: number; bw?: BodyweightInput; prs?: PrLookup },
 ): HistoryStreamItem[] {
   const now = opts?.now ?? Date.now();
   const today = todayKeyOf(now);
@@ -121,7 +131,6 @@ export function historyStream(
     }
     const group = byDay.get(k)!;
     const load = loads.get(k)!;
-    const frac = load / maxLoad;
     const shapes = new Set(group.map((s) => sessionShape(s)));
     out.push({
       kind: "day",
@@ -132,7 +141,7 @@ export function historyStream(
       volume: group.reduce((sum, s) => sum + sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt)), 0),
       prs: group.reduce((sum, s) => sum + prsOf(s.id), 0),
       shape: shapes.size > 1 ? "mixed" : shapes.has("cardio") ? "cardio" : "strength",
-      level: (frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1) as HistoryDayGroup["level"],
+      level: (loadLevel(load, maxLoad) || 1) as HistoryDayGroup["level"], // a training day is never level 0
     });
   });
   return out;
@@ -143,31 +152,41 @@ export function historyStream(
 // ============================================================
 
 export interface UpcomingPlanDay {
+  /** LOCAL date key (the plan schedule's convention). */
   dateKey: string;
-  /** "Week 2, Day 4" (single-week plans drop the week). */
-  label: string;
+  /** the plan week (1-based), or null for single-week plans — the client
+   *  composes the localized "Week N, {title}" label. */
+  week: number | null;
+  /** the day's title as authored ("Day 4"). */
+  title: string;
   planName: string;
   /** block names to preview (already capped by the caller's taste). */
   blockNames: string[];
+  /** true when this is TODAY's still-open plan session (due, nothing logged). */
+  isToday: boolean;
 }
 
-/** The next `limit` upcoming training days from the date-anchored schedule —
- *  rendered as dashed "planned" ghosts above today in the agenda view. */
+/** Today's still-open plan session plus the next `limit` upcoming training days
+ *  from the date-anchored schedule — rendered as dashed "planned" ghosts at the
+ *  top of the agenda view. */
 export function upcomingPlanDays(
   schedule: PlanScheduleResult | null | undefined,
   limit = 2,
 ): UpcomingPlanDay[] {
   if (!schedule) return [];
   const multiWeek = schedule.days.some((d) => d.week > 1);
-  return schedule.days
-    .filter((d) => d.status === "upcoming" && !d.isRest)
-    .slice(0, Math.max(0, limit))
-    .map((d) => ({
-      dateKey: d.dateKey,
-      label: multiWeek ? `Week ${d.week}, ${d.title}` : d.title,
-      planName: schedule.planName,
-      blockNames: d.blocks.map((b) => b.name),
-    }));
+  const open = schedule.days.filter((d) => (d.status === "today" || d.status === "upcoming") && !d.isRest);
+  // Always keep a due-today session; the limit caps the future ones.
+  const today = open.filter((d) => d.status === "today");
+  const upcoming = open.filter((d) => d.status === "upcoming").slice(0, Math.max(0, limit));
+  return [...today, ...upcoming].map((d) => ({
+    dateKey: d.dateKey,
+    week: multiWeek ? d.week : null,
+    title: d.title,
+    planName: schedule.planName,
+    blockNames: d.blocks.map((b) => b.name),
+    isToday: d.status === "today",
+  }));
 }
 
 // ============================================================
@@ -189,10 +208,11 @@ export interface HistoryStats {
 /** Aggregates for the heatmap header over the last `weeks` calendar weeks. */
 export function historyStats(
   all: LoggedSession[],
-  opts?: { weeks?: number; now?: number; bw?: BodyweightInput },
+  opts?: { weeks?: number; now?: number; bw?: BodyweightInput; prs?: PrLookup },
 ): HistoryStats {
   const weeks = opts?.weeks ?? 12;
   const now = opts?.now ?? Date.now();
+  const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
   const thisMonday = mondayOf(now);
   const startMs = thisMonday - (weeks - 1) * 7 * DAY;
 
@@ -206,7 +226,7 @@ export function historyStats(
     if (ts < startMs || ts >= thisMonday + 7 * DAY) continue;
     count++;
     volume += sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt));
-    prs += prsForSession(all, s.id, opts?.bw).length;
+    prs += prsOf(s.id);
   }
 
   let streak = 0;
@@ -245,11 +265,12 @@ export function journalMonth(
   all: LoggedSession[],
   year: number,
   monthIndex0: number,
-  opts?: { bw?: BodyweightInput },
+  opts?: { bw?: BodyweightInput; prs?: PrLookup },
 ): JournalMonth {
   const matrix = monthMatrix(year, monthIndex0);
   const summaries = sessionsByDay(all, opts?.bw);
   const maxLoad = Math.max(1, ...Object.values(summaries).map((d) => d.load));
+  const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
 
   const days: Record<string, JournalDay> = {};
   for (const s of desc(all)) {
@@ -257,11 +278,10 @@ export function journalMonth(
     const row = (days[k] ??= { count: 0, level: 0, ticks: [], pr: false });
     row.count++;
     row.ticks.push(sessionShape(s));
-    if (!row.pr && prsForSession(all, s.id, opts?.bw).length > 0) row.pr = true;
+    if (!row.pr && prsOf(s.id) > 0) row.pr = true;
   }
   for (const [k, row] of Object.entries(days)) {
-    const frac = (summaries[k]?.load ?? 0) / maxLoad;
-    row.level = (frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1) as JournalDay["level"];
+    row.level = loadLevel(summaries[k]?.load ?? 0, maxLoad) as JournalDay["level"];
   }
   return { matrix, days };
 }
@@ -306,9 +326,10 @@ export interface WeekChapter {
  *  from the date range jump, not from empty cards. */
 export function weekChapters(
   all: LoggedSession[],
-  opts?: { now?: number; bw?: BodyweightInput },
+  opts?: { now?: number; bw?: BodyweightInput; prs?: PrLookup },
 ): WeekChapter[] {
   const now = opts?.now ?? Date.now();
+  const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
   const currentMonday = mondayOf(now);
 
   const byWeek = new Map<number, LoggedSession[]>();
@@ -342,7 +363,7 @@ export function weekChapters(
         totals: {
           sessions: group.length,
           volume: Math.round(group.reduce((sum, s) => sum + sessionVolume(s.blocks, false, bwAt(opts?.bw, s.startedAt)), 0)),
-          prs: group.reduce((sum, s) => sum + prsForSession(all, s.id, opts?.bw).length, 0),
+          prs: group.reduce((sum, s) => sum + prsOf(s.id), 0),
         },
         sessions: group,
       };
@@ -377,6 +398,11 @@ export interface BlockChapter {
   sortKey: string;
 }
 
+/** Matches the client-composed plan-session title "<plan> – Week N, <day>"
+ *  (the workout screens set `${planName} – ${day}`, day from planProgramToday).
+ *  Known limit: single-week plans compose "<plan> – <day>" with no "Week N,"
+ *  segment, so their sessions fall into Freestyle on this fallback path — the
+ *  primary, schedule-based path (sessionId matching) is unaffected. */
 const PLAN_TITLE_RE = /^(.+) – Week (\d+), (.+)$/;
 
 /**
@@ -416,7 +442,7 @@ export function blockChapters(
           key: d.dateKey,
           title: d.title,
           dateKey: d.dateKey,
-          status: d.status === "rest" ? "upcoming" : d.status,
+          status: d.status as BlockChapterRow["status"], // rest days filtered above, so "rest" can't reach here
           sessionId: d.sessionId,
         };
       });
@@ -467,7 +493,9 @@ export function blockChapters(
     }
   }
 
-  const free = sorted.filter((s) => !claimed.has(s.id) && (schedule ? true : !PLAN_TITLE_RE.test(s.title)));
+  // With a schedule, every unclaimed session is freestyle regardless of title;
+  // on the title-parse path, plan-titled sessions were already grouped above.
+  const free = sorted.filter((s) => !claimed.has(s.id) && (!!schedule || !PLAN_TITLE_RE.test(s.title)));
   if (free.length) {
     chapters.push({
       kind: "free",

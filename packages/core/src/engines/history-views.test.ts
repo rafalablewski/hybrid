@@ -115,6 +115,15 @@ describe("journalMonth", () => {
     expect(j.days["2026-07-13"]!.pr).toBe(true);
   });
 
+  it("uses the injected prs lookup instead of re-detecting", () => {
+    const j2 = journalMonth(FIXTURE, 2026, 6, { prs: () => 0 });
+    expect(Object.values(j2.days).every((d) => !d.pr)).toBe(true);
+    const s2 = historyStats(FIXTURE, { weeks: 12, now: NOW, prs: () => 1 });
+    expect(s2.prs).toBe(6); // one per in-window session
+    const w2 = weekChapters(FIXTURE, { now: NOW, prs: () => 1 });
+    expect(w2[0]!.totals.prs).toBe(w2[0]!.totals.sessions);
+  });
+
   it("picks the latest training day as default selection", () => {
     expect(latestTrainingDayKey(FIXTURE, NOW)).toBe("2026-07-16");
     expect(latestTrainingDayKey([], NOW)).toBe("2026-07-16");
@@ -195,10 +204,33 @@ describe("blockChapters + upcomingPlanDays (with a real schedule)", () => {
 
   it("lists the next upcoming training days as agenda ghosts", () => {
     const up = upcomingPlanDays(sched, 2);
-    expect(up).toHaveLength(2);
-    expect(up[0]!.dateKey > "2026-07-16").toBe(true);
-    expect(up[0]!.planName).toBe(sched!.planName);
-    expect(up[0]!.label).toMatch(/Week \d+/);
+    // Jul 16 carries a logged session (t1) → today is "done", so only future
+    // ghosts appear, capped at the limit.
+    expect(up.filter((u) => !u.isToday)).toHaveLength(2);
+    const future = up.filter((u) => !u.isToday);
+    expect(future[0]!.dateKey > "2026-07-16").toBe(true);
+    expect(future[0]!.planName).toBe(sched!.planName);
+    expect(future[0]!.week).toBeGreaterThan(0); // multi-week plan → week set
+    expect(future[0]!.title.length).toBeGreaterThan(0);
+  });
+
+  it("includes TODAY's still-open plan session as an isToday ghost", () => {
+    // Same schedule but nothing logged today: if today is a training day it
+    // must surface as an isToday ghost ahead of the future ones.
+    const sched2 = planSchedule({
+      planId: PLAN,
+      startedAt: "2026-07-06T00:00:00.000Z",
+      sessions: FIXTURE.filter((s) => s.id !== "t1"),
+      now: NOW,
+    })!;
+    const dueToday = sched2.days.find((d) => d.isToday && !d.isRest);
+    const up = upcomingPlanDays(sched2, 2);
+    if (dueToday) {
+      expect(up[0]).toMatchObject({ isToday: true, dateKey: dueToday.dateKey });
+      expect(up.filter((u) => !u.isToday)).toHaveLength(2); // limit caps only the future ones
+    } else {
+      expect(up.every((u) => !u.isToday)).toBe(true);
+    }
   });
 
   it("returns [] without a schedule", () => {

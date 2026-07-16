@@ -19,11 +19,13 @@ import {
   blockChapters,
   blockSummary,
   HISTORY_VIEWS,
+  WEEKDAY_LABEL_KEYS,
   type HistoryViewId,
   type HistoryDayGroup,
   type LoggedSession,
   type PlanScheduleResult,
   type WeightUnit,
+  type BodyweightLookup,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
@@ -39,7 +41,6 @@ const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16 } as const;
 
-const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
 const DAY = 86_400_000;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -49,7 +50,10 @@ const fmtMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 1)).toLocaleS
 export interface ViewCtx {
   sessions: LoggedSession[];
   units: WeightUnit;
-  bw: (iso: string) => number | null | undefined;
+  /** dated bodyweight lookup — passed into every engine call so aggregate
+   *  tonnage (day chips, weekly totals, heatmap stats) matches the
+   *  bodyweight-aware per-session cards. */
+  bw: BodyweightLookup;
   schedule: PlanScheduleResult | null;
   prs: (id: string) => number;
   onOpen: (id: string) => void;
@@ -61,17 +65,22 @@ const chip = (color: string, label: string, strong = false) => (
 
 /** The one-line key metric of a session: tonnage for lifting, distance–time for
  *  cardio; conditioning-only sessions (a match, a circuit) fall back to their
- *  summed minutes, then to the block count. */
-function keyChip(s: LoggedSession, ctx: ViewCtx, t: (k: string) => string) {
+ *  summed minutes, then to the block count. One source of truth — the chip and
+ *  the weeks-view row text both read from it (mirrors mobile's keyMetric). */
+function keyMetric(s: LoggedSession, ctx: ViewCtx, t: (k: string) => string): { color: string; label: string } {
   if (sessionShape(s) === "cardio") {
     const ct = sessionCardioTotals(s.blocks);
     const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
-    if (parts.length) return chip("var(--blue-text)", parts.join(" – "));
+    if (parts.length) return { color: "var(--blue-text)", label: parts.join(" – ") };
     const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
-    return chip("var(--blue-text)", minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`);
+    return { color: "var(--blue-text)", label: minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}` };
   }
-  return chip(C("ash"), fmtTonnage(sessionVolumeOf(s, ctx), ctx.units));
+  return { color: C("ash"), label: fmtTonnage(sessionVolumeOf(s, ctx), ctx.units) };
 }
+const keyChip = (s: LoggedSession, ctx: ViewCtx, t: (k: string) => string) => {
+  const km = keyMetric(s, ctx, t);
+  return chip(km.color, km.label);
+};
 const sessionVolumeOf = (s: LoggedSession, ctx: ViewCtx) => sessionVolume(s.blocks, false, ctx.bw(s.startedAt));
 
 /** Compact tappable session card shared by agenda / timeline / journal. */
@@ -151,7 +160,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
 
 export function AgendaView({ ctx }: { ctx: ViewCtx }) {
   const { t } = useLang();
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const upcoming = useMemo(() => upcomingPlanDays(ctx.schedule, 2), [ctx.schedule]);
   const byDay = useMemo(() => sessionsByDay(ctx.sessions), [ctx.sessions]);
 
@@ -175,22 +184,23 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
         {week.map((d, i) => (
           <div key={d.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "8px 0 9px", borderRadius: 14, background: C("ink2"), border: `1px solid ${d.isToday ? C("lime") : C("line")}`, boxShadow: d.isToday ? `0 0 12px color-mix(in srgb, ${C("lime")} 25%, transparent)` : "none" }}>
-            <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash") }}>{t(WEEKDAY_KEYS[i]!).slice(0, 1)}</span>
+            <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash") }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</span>
             <span style={{ fontFamily: MONO, fontSize: fs.body, fontWeight: 700, color: d.isToday ? "var(--lime-text)" : d.future ? C("ash") : C("chalk") }}>{d.dayNum}</span>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: d.dot === 2 ? C("lime") : d.dot === 1 ? `color-mix(in srgb, ${C("lime")} 45%, transparent)` : "transparent" }} />
           </div>
         ))}
       </div>
 
-      {/* upcoming plan days as dashed ghosts (newest at the top of the stream) */}
+      {/* plan-day ghosts, furthest first so today's due session sits right above
+          the stream; a due-today ghost replaces the "nothing today" row */}
       {[...upcoming].reverse().map((u) => (
         <div key={u.dateKey} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <DayLabel text={fmtDayLong(u.dateKey)} />
-            {chip(C("ash"), t("histview.planned"))}
+            <DayLabel text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
+            {chip(u.isToday ? "var(--lime-text)" : C("ash"), t("histview.planned"))}
           </div>
-          <div style={{ ...card, padding: 15, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${C("ash")} 38%, transparent)` }}>
-            <div style={{ fontWeight: 800, fontSize: fs.note, color: C("ash") }}>{u.planName} – {u.label}</div>
+          <div style={{ ...card, padding: 15, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
+            <div style={{ fontWeight: 800, fontSize: fs.note, color: u.isToday ? C("chalk") : C("ash") }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</div>
             {u.blockNames.length > 0 && (
               <div style={{ fontFamily: MONO, fontSize: fs.caption, color: C("ash"), marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}</div>
             )}
@@ -198,7 +208,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
         </div>
       ))}
 
-      {!todayHasGroup && (
+      {!todayHasGroup && !upcoming.some((u) => u.isToday) && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <DayLabel text={`${t("w.analyze.cal.today")} – ${fmtDayLong(new Date().toISOString().slice(0, 10))}`} today />
           <span style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash") }}>{t("w.analyze.cal.nothing")}</span>
@@ -232,8 +242,8 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
   const { t } = useLang();
   const cols = useMemo(() => trainingHeatmap(ctx.sessions, 12), [ctx.sessions]);
-  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12 }), [ctx.sessions]);
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12, bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const shade = [`color-mix(in srgb, ${C("ash")} 10%, transparent)`, `color-mix(in srgb, ${C("lime")} 24%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`, `color-mix(in srgb, ${C("lime")} 66%, ${C("ink")})`, C("lime")];
   const today = new Date().toISOString().slice(0, 10);
 
@@ -301,10 +311,13 @@ export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
 export function JournalView({ ctx }: { ctx: ViewCtx }) {
   const { t } = useLang();
   const now = new Date();
-  const [year, setYear] = useState(now.getUTCFullYear());
-  const [month, setMonth] = useState(now.getUTCMonth());
-  const [selected, setSelected] = useState(() => latestTrainingDayKey(ctx.sessions));
-  const j = useMemo(() => journalMonth(ctx.sessions, year, month), [ctx.sessions, year, month]);
+  // Open on the latest training day's month so the default selection is
+  // actually visible (last session may be in an earlier month than today).
+  const [initKey] = useState(() => latestTrainingDayKey(ctx.sessions));
+  const [year, setYear] = useState(() => Number(initKey.slice(0, 4)));
+  const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
+  const [selected, setSelected] = useState(initKey);
+  const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
   const today = new Date().toISOString().slice(0, 10);
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
   const selSessions = ctx.sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
@@ -323,7 +336,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 4 }}>
-          {WEEKDAY_KEYS.map((k) => <span key={k} style={{ fontFamily: MONO, fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{t(k).slice(0, 1)}</span>)}
+          {WEEKDAY_LABEL_KEYS.map((k) => <span key={k} style={{ fontFamily: MONO, fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{t(k).slice(0, 1)}</span>)}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 }}>
           {j.matrix.flat().map((cell) => {
@@ -363,7 +376,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   const { t } = useLang();
-  const weeks = useMemo(() => weekChapters(ctx.sessions), [ctx.sessions]);
+  const weeks = useMemo(() => weekChapters(ctx.sessions, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
   const maxLoad = Math.max(1, ...weeks.flatMap((w) => w.days.map((d) => d.load)));
 
   return (
@@ -381,7 +394,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             })}
           </div>
           <div style={{ display: "flex", gap: 5 }}>
-            {WEEKDAY_KEYS.map((k) => <span key={k} style={{ flex: 1, textAlign: "center", fontFamily: MONO, fontSize: 8, color: C("ash") }}>{t(k).slice(0, 1)}</span>)}
+            {WEEKDAY_LABEL_KEYS.map((k) => <span key={k} style={{ flex: 1, textAlign: "center", fontFamily: MONO, fontSize: 8, color: C("ash") }}>{t(k).slice(0, 1)}</span>)}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "12px 0 4px" }}>
             {w.totals.volume > 0 && chip("var(--lime-text)", fmtTonnage(w.totals.volume, ctx.units))}
@@ -399,9 +412,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontWeight: 700, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
                   <span style={{ display: "block", fontFamily: MONO, fontSize: fs.micro, color: C("ash"), marginTop: 1 }}>
-                    {sessionShape(s) === "cardio"
-                      ? (() => { const ct = sessionCardioTotals(s.blocks); return [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean).join(" – ") || `${s.blocks.length} ${t("w.analyze.hist.blocks")}`; })()
-                      : `${fmtTonnage(sessionVolumeOf(s, ctx), ctx.units)} – ${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`}
+                    {keyMetric(s, ctx, t).label} – {s.blocks.length} {s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}
                   </span>
                 </span>
                 <span style={{ fontFamily: MONO, color: C("ash") }}>›</span>
@@ -420,7 +431,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
   const { t } = useLang();
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
 
   return (
     <div style={{ position: "relative", paddingLeft: 56 }}>

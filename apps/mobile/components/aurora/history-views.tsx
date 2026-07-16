@@ -16,11 +16,13 @@ import {
   blockChapters,
   blockSummary,
   HISTORY_VIEWS,
+  WEEKDAY_LABEL_KEYS,
   type HistoryViewId,
   type HistoryDayGroup,
   type LoggedSession,
   type PlanScheduleResult,
   type WeightUnit,
+  type BodyweightLookup,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -34,7 +36,6 @@ import { RADIUS, Ring, withAlpha } from "./kit";
 // lives in @hybrid/core (engines/history-views.ts); these components only
 // render. Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
 
-const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
 const DAY = 86_400_000;
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -45,7 +46,9 @@ const fmtMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 1)).toLocaleS
 export interface ViewCtx {
   sessions: LoggedSession[];
   units: WeightUnit;
-  bw: (iso: string) => number | null | undefined;
+  /** dated bodyweight lookup — passed into every engine call so aggregate
+   *  tonnage matches the bodyweight-aware per-session cards. */
+  bw: BodyweightLookup;
   schedule: PlanScheduleResult | null;
   prs: (id: string) => number;
   onOpen: (id: string) => void;
@@ -156,7 +159,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
 export function AgendaView({ ctx }: { ctx: ViewCtx }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const upcoming = useMemo(() => upcomingPlanDays(ctx.schedule, 2), [ctx.schedule]);
   const byDay = useMemo(() => sessionsByDay(ctx.sessions), [ctx.sessions]);
   const lime = txt(C, C.lime) as string;
@@ -180,21 +183,23 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
       <View style={{ flexDirection: "row", gap: 6 }}>
         {week.map((d, i) => (
           <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 9, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_KEYS[i]!).slice(0, 1)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
           </View>
         ))}
       </View>
 
+      {/* plan-day ghosts, furthest first so today's due session sits right above
+          the stream; a due-today ghost replaces the "nothing today" row */}
       {[...upcoming].reverse().map((u) => (
         <View key={u.dateKey} style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <DayLabel C={C} text={fmtDayLong(u.dateKey)} />
-            <Chip C={C} color={C.ash} label={t("histview.planned")} />
+            <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
+            <Chip C={C} color={u.isToday ? C.lime : C.ash} label={t("histview.planned")} />
           </View>
-          <View style={{ borderRadius: 22, padding: 15, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.38) }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash }}>{u.planName} – {u.label}</Text>
+          <View style={{ borderRadius: 22, padding: 15, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
                 {u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}
@@ -204,7 +209,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
         </View>
       ))}
 
-      {!todayHasGroup && (
+      {!todayHasGroup && !upcoming.some((u) => u.isToday) && (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
           <DayLabel C={C} text={`${t("w.analyze.cal.today")} – ${fmtDayLong(new Date().toISOString().slice(0, 10))}`} today />
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
@@ -239,8 +244,8 @@ export function HeatmapView({ ctx }: { ctx: ViewCtx }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const cols = useMemo(() => trainingHeatmap(ctx.sessions, 12), [ctx.sessions]);
-  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12 }), [ctx.sessions]);
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stats = useMemo(() => historyStats(ctx.sessions, { weeks: 12, bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const lime = txt(C, C.lime) as string;
   const shade = ["transparent", withAlpha(C.lime, 0.24), withAlpha(C.lime, 0.42), withAlpha(C.lime, 0.66), C.lime];
   const today = new Date().toISOString().slice(0, 10);
@@ -306,10 +311,13 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const now = new Date();
-  const [year, setYear] = useState(now.getUTCFullYear());
-  const [month, setMonth] = useState(now.getUTCMonth());
-  const [selected, setSelected] = useState(() => latestTrainingDayKey(ctx.sessions));
-  const j = useMemo(() => journalMonth(ctx.sessions, year, month), [ctx.sessions, year, month]);
+  // Open on the latest training day's month so the default selection is
+  // actually visible (last session may be in an earlier month than today).
+  const [initKey] = useState(() => latestTrainingDayKey(ctx.sessions));
+  const [year, setYear] = useState(() => Number(initKey.slice(0, 4)));
+  const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
+  const [selected, setSelected] = useState(initKey);
+  const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
   const today = new Date().toISOString().slice(0, 10);
   const lime = txt(C, C.lime) as string;
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
@@ -329,7 +337,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
           </View>
         </View>
         <View style={{ flexDirection: "row", marginBottom: 4 }}>
-          {WEEKDAY_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
+          {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
         </View>
         {j.matrix.map((week, wi) => (
           <View key={wi} style={{ flexDirection: "row" }}>
@@ -372,7 +380,7 @@ export function JournalView({ ctx }: { ctx: ViewCtx }) {
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const weeks = useMemo(() => weekChapters(ctx.sessions), [ctx.sessions]);
+  const weeks = useMemo(() => weekChapters(ctx.sessions, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
   const maxLoad = Math.max(1, ...weeks.flatMap((w) => w.days.map((d) => d.load)));
   const lime = txt(C, C.lime) as string;
 
@@ -391,7 +399,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>
-            {WEEKDAY_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
+            {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 4 }}>
             {w.totals.volume > 0 && <Chip C={C} color={C.lime} label={fmtTonnage(w.totals.volume, ctx.units)} />}
@@ -430,7 +438,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs }), [ctx.sessions, ctx.prs]);
+  const stream = useMemo(() => historyStream(ctx.sessions, { prs: ctx.prs, bw: ctx.bw }), [ctx.sessions, ctx.prs, ctx.bw]);
   const lime = txt(C, C.lime) as string;
 
   return (
