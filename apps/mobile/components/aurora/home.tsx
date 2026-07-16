@@ -19,6 +19,8 @@ import {
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
+  offPlanSessionsOnDay,
+  olympicSport,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -169,14 +171,23 @@ export default function AuroraHome() {
   // Sessions logged TODAY — the confirmation loop (a finished session OR a quick
   // sport log both land here the moment they save).
   const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
+  // The date-anchored schedule (no overrides — status colouring lives in the
+  // rail; here we only need today's prescription + which sessions fulfilled it).
+  const sched = useMemo(
+    () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
+    [planId, planStartedAt, sessions],
+  );
   // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
   // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
   const plannedToday = useMemo(() => {
-    if (!planId || !planStartedAt) return 0;
-    const sched = planSchedule({ planId, startedAt: planStartedAt, sessions });
     const today = sched?.days[sched.todayIndex];
     return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
-  }, [planId, planStartedAt, sessions]);
+  }, [sched]);
+  // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
+  // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
+  // (Design 1: scheduled plan vs what-was-done separation) instead of hiding
+  // behind the done-count ring.
+  const extrasToday = useMemo(() => offPlanSessionsOnDay(sessions, sched), [sessions, sched]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -453,6 +464,19 @@ export default function AuroraHome() {
           </ACard>
         )}
 
+        {/* ALSO TODAY — everything logged today that is NOT the plan's workout
+            (quick sport logs, freestyle sessions). Design 1 separation: the card
+            above is the SCHEDULED day (Start / Skip / Postpone); this one is what
+            was actually done besides it, teal-coded, each row tappable. */}
+        <AlsoTodayCard
+          C={C}
+          extras={extrasToday}
+          units={units}
+          bw={bw}
+          onOpen={(id) => router.push(`/session/${id}`)}
+          onLog={() => setQuickOpen(true)}
+        />
+
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
             four faces set today's readiness inline (one tap, no sheet); the footer
             keeps the two secondary affordances — log a session, and the done count. */}
@@ -573,6 +597,60 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
   const vol = sessionVolume(s.blocks, false, bw);
   const names = s.blocks.map((b) => b.name).join(" – ");
   return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
+}
+
+// Local time a session was logged at — "21:05" (locale clock, no seconds).
+function loggedAtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+// The "Also today — off-plan" card (Design 1 separation): every workout logged
+// today that did NOT fulfil the scheduled plan day — a quick sport log, a
+// freestyle session — as first-class rows with a check, so a tennis match is
+// visible on Today instead of hiding behind the done-count ring. Teal-coded
+// (the Feel/conditioning accent) to read apart from the plan card. Renders
+// nothing when there's nothing extra. Mirrored on web (aurora/today.tsx).
+function AlsoTodayCard({ C, extras, units, bw, onOpen, onLog }: {
+  C: P;
+  extras: LoggedSession[];
+  units: "kg" | "lb";
+  bw: (isoDate?: string) => number | null;
+  onOpen: (sessionId: string) => void;
+  onLog: () => void;
+}) {
+  const { t } = useLang();
+  if (extras.length === 0) return null;
+  return (
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.alsoToday")}</Text>
+        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: C.onAccent }}>{extras.length}</Text>
+        </View>
+      </View>
+      <View style={{ marginTop: 6 }}>
+        {extras.map((s) => (
+          <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}24`, borderWidth: 1, borderColor: `${C.blue}4d` }}>
+              <Text style={{ fontSize: 18 }}>{sessionShape(s) === "strength" ? "🏋️" : (olympicSport(s.title)?.icon ?? "🏃")}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))} – {loggedAtTime(s.startedAt)}</Text>
+            </View>
+            <View style={{ width: 24, height: 24, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}80` }}>
+              <Text style={{ fontSize: 12, color: txt(C, C.lime) }}>✓</Text>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+      <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLog")} style={{ marginTop: 12, borderWidth: 1, borderStyle: "dashed", borderColor: C.line, borderRadius: 999, paddingVertical: 10, alignItems: "center" }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: C.ash }}>
+          + <Text style={{ color: txt(C, C.lime), fontWeight: "600" }}>{t("w.home.today.alsoTodayLog")}</Text>
+        </Text>
+      </Pressable>
+    </View>
+  );
 }
 
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface

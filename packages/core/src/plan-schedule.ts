@@ -1,6 +1,6 @@
 import { programCalendarDays, type PlanProgramTodayRow, type PlanDaySession } from "./plan-day";
 import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
-import type { LoggedSession, SessionBlock } from "./engines/session";
+import { sessionsOnDay, type LoggedSession, type SessionBlock } from "./engines/session";
 
 // ============================================================
 //  Plan schedule — the date-anchored week rail.
@@ -99,6 +99,44 @@ export interface PlanScheduleResult {
   /** index into `days` for today (exact match); else the next upcoming day; else
    *  the last day. The rail opens focused here. */
   todayIndex: number;
+  /** every logged-session id recognised as fulfilling SOME plan day — the
+   *  complement (sessions logged but never claimed) is the off-plan set. */
+  fulfilledSessionIds: string[];
+}
+
+/**
+ * Whether a logged session is recognisably THIS plan day's workout. Two signals,
+ * either suffices:
+ *  1. the client-composed plan title — "<plan name>" (the week-rail handoff) or
+ *     "<plan name> – …" (the plan-prefilled logger);
+ *  2. at least one exercise/block name shared with the day's prescription —
+ *     covers loggers that auto-title ("Evening workout") and renamed sessions
+ *     that still carry the plan's exercises.
+ * A quick sport log (e.g. "Tennis") on a lifting day matches neither, so it can
+ * no longer swallow the plan day — it surfaces as an off-plan extra instead.
+ */
+export function sessionMatchesPlanDay(session: LoggedSession, planName: string, dayBlocks: SessionBlock[]): boolean {
+  if (session.title === planName || session.title.startsWith(`${planName} – `)) return true;
+  const names = new Set(dayBlocks.map((b) => b.name.trim().toLowerCase()).filter(Boolean));
+  if (names.size === 0) return false;
+  return session.blocks.some((b) => names.has(b.name.trim().toLowerCase()));
+}
+
+/**
+ * Today's logged sessions that did NOT fulfil a plan day — the "Also today —
+ * off-plan" list (quick sport logs, freestyle sessions). Newest first, matching
+ * sessionsOnDay. Without a schedule (not enrolled / no start date) every session
+ * logged today is off-plan by definition.
+ */
+export function offPlanSessionsOnDay(
+  sessions: LoggedSession[],
+  schedule: PlanScheduleResult | null | undefined,
+  now = Date.now(),
+): LoggedSession[] {
+  const today = sessionsOnDay(sessions, now);
+  if (!schedule) return today;
+  const claimed = new Set(schedule.fulfilledSessionIds);
+  return today.filter((s) => !claimed.has(s.id));
 }
 
 /**
@@ -128,13 +166,19 @@ export function planSchedule(opts: {
   const todayKey = dateKeyOf(todayTs);
   const overrides = opts.overrides ?? {};
 
-  // Dates that carry at least one logged session → "done". First id per date wins
-  // (the session that fulfilled the day).
-  const doneByDate = new Map<string, string>();
+  // Sessions grouped by local date; each training day then claims only the ones
+  // that are recognisably ITS workout (sessionMatchesPlanDay) → "done". First
+  // matching id per day wins (the session that fulfilled it). An unrelated
+  // session — a quick sport log, a freestyle lift — never completes a plan day;
+  // it stays unclaimed and surfaces as an off-plan extra on Today.
+  const byDate = new Map<string, LoggedSession[]>();
   for (const s of opts.sessions) {
     const k = dateKeyOf(new Date(s.startedAt).getTime());
-    if (!doneByDate.has(k)) doneByDate.set(k, s.id);
+    const arr = byDate.get(k);
+    if (arr) arr.push(s);
+    else byDate.set(k, [s]);
   }
+  const fulfilledSessionIds: string[] = [];
 
   const totalTrainingDays = cal.trainingCount;
   let trainingSeen = 0;
@@ -147,7 +191,11 @@ export function planSchedule(opts: {
     const isRest = !d.isTraining;
     if (d.isTraining) trainingSeen++;
 
-    const doneId = doneByDate.get(dateKey) ?? null;
+    const matched = d.isTraining
+      ? (byDate.get(dateKey) ?? []).filter((s) => sessionMatchesPlanDay(s, cal.planName, d.blocks))
+      : [];
+    for (const s of matched) fulfilledSessionIds.push(s.id);
+    const doneId = matched[0]?.id ?? null;
     const ov = overrides[dateKey];
 
     // Actual completion beats an explicit override — if a session was logged that
@@ -206,6 +254,7 @@ export function planSchedule(opts: {
     totalTrainingDays,
     days,
     todayIndex: Math.max(0, todayIndex),
+    fulfilledSessionIds,
   };
 }
 

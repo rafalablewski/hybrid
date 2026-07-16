@@ -1,15 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { planSchedule, planAdherence, dateKeyOf } from "./plan-schedule";
+import { planSchedule, planAdherence, dateKeyOf, sessionMatchesPlanDay, offPlanSessionsOnDay } from "./plan-schedule";
 import { programCalendarDays } from "./plan-day";
 import type { LoggedSession } from "./engines/session";
 
 const PLAN = "oly-soviet-8wk"; // multi-week %-based program with rest days
+const PLAN_NAME = "Soviet 8-Week Peaking";
 const start = new Date(2026, 5, 1); // Mon 1 Jun 2026, local
 const now = new Date(2026, 5, 21).getTime(); // 20 days in
 
-function sessionOn(ts: number, id: string): LoggedSession {
-  // noon on the day so the local date key is unambiguous
-  return { id, title: "Session", startedAt: new Date(ts + 12 * 3600_000).toISOString(), blocks: [] };
+function sessionOn(ts: number, id: string, title = `${PLAN_NAME} – Week 1, Day 1`): LoggedSession {
+  // noon on the day so the local date key is unambiguous; plan-titled by default
+  // (the client-composed "<plan> – …" title) so it fulfils the day it lands on
+  return { id, title, startedAt: new Date(ts + 12 * 3600_000).toISOString(), blocks: [] };
+}
+
+/** An off-plan quick sport log — a title and blocks the plan never prescribes. */
+function sportOn(ts: number, id: string, sport = "Tennis"): LoggedSession {
+  return {
+    id,
+    title: sport,
+    startedAt: new Date(ts + 12 * 3600_000).toISOString(),
+    blocks: [{ kind: "cardio", name: sport, minutes: 78, rpe: 6 }],
+  };
 }
 
 describe("planSchedule", () => {
@@ -61,6 +73,63 @@ describe("planSchedule", () => {
     const day = r.days[firstTraining.index]!;
     expect(day.status).toBe("done");
     expect(day.sessionId).toBe("sess-1");
+    expect(r.fulfilledSessionIds).toContain("sess-1");
+  });
+
+  it("does NOT let an unrelated session (quick sport log) complete a plan day", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    // anchor "now" on a TRAINING day so the day under test can read as open
+    const today = base.days.find((d) => !d.isRest && d.ts >= base.days[base.todayIndex]!.ts)!;
+    const trainingNow = today.ts + 12 * 3600_000;
+    const r = planSchedule({
+      planId: PLAN,
+      startedAt: start,
+      sessions: [sportOn(today.ts, "tennis-1")],
+      now: trainingNow,
+    })!;
+    const day = r.days[today.index]!;
+    // the tennis match neither carries the plan title nor shares a block name,
+    // so today stays open (Start / Skip / Postpone) instead of reading done
+    expect(day.status).toBe("today");
+    expect(day.sessionId).toBeNull();
+    expect(r.fulfilledSessionIds).not.toContain("tennis-1");
+  });
+
+  it("matches an auto-titled session by shared block names (web logger parity)", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const day = base.days.find((d) => !d.isRest && d.status === "missed")!;
+    const fromPlan: LoggedSession = {
+      id: "auto-1",
+      title: "Evening workout", // the web logger's auto-title — no plan prefix
+      startedAt: new Date(day.ts + 12 * 3600_000).toISOString(),
+      blocks: [{ kind: "strength", name: day.blocks[0]!.name, sets: [] }],
+    };
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [fromPlan], now })!;
+    expect(r.days[day.index]!.status).toBe("done");
+    expect(r.days[day.index]!.sessionId).toBe("auto-1");
+  });
+
+  it("splits today's log into plan-fulfilling vs off-plan extras", () => {
+    const base = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    // anchor "now" on a TRAINING day so the plan session has a day to fulfil
+    const today = base.days.find((d) => !d.isRest && d.ts >= base.days[base.todayIndex]!.ts)!;
+    const trainingNow = today.ts + 12 * 3600_000;
+    const sessions = [sportOn(today.ts, "tennis-1"), sessionOn(today.ts, "plan-1")];
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions, now: trainingNow })!;
+    const extras = offPlanSessionsOnDay(sessions, r, trainingNow);
+    expect(extras.map((s) => s.id)).toEqual(["tennis-1"]);
+    // without a schedule, everything logged today is off-plan by definition
+    expect(offPlanSessionsOnDay(sessions, null, trainingNow).length).toBe(2);
+  });
+
+  it("sessionMatchesPlanDay accepts both plan-title forms and rejects lookalikes", () => {
+    const blocks = [{ kind: "strength" as const, name: "Front Squat", sets: [] }];
+    const s = (title: string, own: typeof blocks = []): LoggedSession => ({ id: "x", title, startedAt: new Date(now).toISOString(), blocks: own });
+    expect(sessionMatchesPlanDay(s(PLAN_NAME), PLAN_NAME, blocks)).toBe(true); // rail handoff title
+    expect(sessionMatchesPlanDay(s(`${PLAN_NAME} – Week 2, Day 3`), PLAN_NAME, blocks)).toBe(true);
+    expect(sessionMatchesPlanDay(s(`${PLAN_NAME} 2`), PLAN_NAME, blocks)).toBe(false); // prefix lookalike
+    expect(sessionMatchesPlanDay(s("Morning workout", blocks), PLAN_NAME, blocks)).toBe(true); // block overlap
+    expect(sessionMatchesPlanDay(s("Morning workout"), PLAN_NAME, blocks)).toBe(false);
   });
 
   it("groups each training day's content into sessions (flat rows/blocks preserved)", () => {

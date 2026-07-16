@@ -22,6 +22,8 @@ import { fs, space,
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
+  offPlanSessionsOnDay,
+  olympicSport,
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
@@ -146,14 +148,23 @@ export default function AuroraToday({
   // and a quick sport log both land here the moment they save, so Today shows
   // "you did this" instead of forever prompting "Start".
   const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
+  // The date-anchored schedule (no overrides — status colouring lives in the
+  // rail; here we only need today's prescription + which sessions fulfilled it).
+  const sched = useMemo(
+    () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
+    [planId, planStartedAt, sessions],
+  );
   // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
   // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest.
   const plannedToday = useMemo(() => {
-    if (!planId || !planStartedAt) return 0;
-    const sched = planSchedule({ planId, startedAt: planStartedAt, sessions });
     const today = sched?.days[sched.todayIndex];
     return today && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
-  }, [planId, planStartedAt, sessions]);
+  }, [sched]);
+  // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
+  // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
+  // (Design 1: scheduled plan vs what-was-done separation) instead of hiding
+  // behind the done-count ring.
+  const extrasToday = useMemo(() => offPlanSessionsOnDay(sessions, sched), [sessions, sched]);
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
   const initials = useMemo(
@@ -403,6 +414,18 @@ export default function AuroraToday({
         </div>
       )}
 
+      {/* ALSO TODAY — everything logged today that is NOT the plan's workout
+          (quick sport logs, freestyle sessions). Design 1 separation: the card
+          above is the SCHEDULED day (Start / Skip / Postpone); this one is what
+          was actually done besides it, teal-coded, each row tappable. */}
+      <AlsoTodayCard
+        extras={extrasToday}
+        units={units}
+        bw={bw}
+        onOpen={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
+        onLog={() => setQuickOpen(true)}
+      />
+
       {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The four
           faces set today's readiness inline (one tap, no sheet); the footer keeps
           the two secondary affordances — log a session, and the day's done count. */}
@@ -561,6 +584,53 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
       </span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, flexShrink: 0 }}>›</span>
     </button>
+  );
+}
+
+// Local time a session was logged at — "21:05" (locale clock, no seconds).
+function loggedAtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+// The "Also today — off-plan" card (Design 1 separation): every workout logged
+// today that did NOT fulfil the scheduled plan day — a quick sport log, a
+// freestyle session — as first-class rows with a check, so a tennis match is
+// visible on Today instead of hiding behind the done-count ring. Teal-coded
+// (the Feel/conditioning accent) to read apart from the sand-free plan card.
+// Renders nothing when there's nothing extra. Mirrored on mobile (aurora/home.tsx).
+function AlsoTodayCard({ extras, units, bw, onOpen, onLog }: {
+  extras: LoggedSession[];
+  units: "kg" | "lb";
+  bw: (isoDate?: string) => number | null;
+  onOpen: () => void;
+  onLog: () => void;
+}) {
+  const { t } = useLang();
+  if (extras.length === 0) return null;
+  return (
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--blue-text)" }}>{t("w.home.today.alsoToday")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "2px 8px" }}>{extras.length}</span>
+      </div>
+      <div style={{ marginTop: 6 }}>
+        {extras.map((s) => (
+          <button key={s.id} onClick={onOpen} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
+            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 30%, transparent)` }}>
+              {sessionShape(s) === "strength" ? "🏋️" : (olympicSport(s.title)?.icon ?? "🏃")}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units, bw(s.startedAt))} – {loggedAtTime(s.startedAt)}</span>
+            </span>
+            <span style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 50%, transparent)` }}>✓</span>
+          </button>
+        ))}
+      </div>
+      <button onClick={onLog} style={{ marginTop: 12, width: "100%", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: 10, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>
+        + <span style={{ color: "var(--lime-text)", fontWeight: 600 }}>{t("w.home.today.alsoTodayLog")}</span>
+      </button>
+    </div>
   );
 }
 
