@@ -20,6 +20,8 @@ import { fs, space,
   ASH,
   BLUE,
   AMBER,
+  RED,
+  Button,
   disp,
   mono,
   tip,
@@ -335,16 +337,8 @@ export function SessionDetail({
           actions) was retired; only rendered for callers that pass handlers. */}
       {(onArchive || onDelete) && (
         <div style={{ display: "flex", gap: space.sm, justifyContent: "flex-end", borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
-          {onArchive && (
-            <button onClick={onArchive} disabled={manageBusy} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 18px", cursor: manageBusy ? "default" : "pointer", opacity: manageBusy ? 0.5 : 1 }}>
-              {t("w.analyze.hist.archive")}
-            </button>
-          )}
-          {onDelete && (
-            <button onClick={onDelete} disabled={manageBusy} style={{ ...mono, fontSize: fs.caption, color: "var(--red-text)", background: "none", border: `1px solid color-mix(in srgb, var(--color-red) 45%, transparent)`, borderRadius: 999, padding: "8px 18px", cursor: manageBusy ? "default" : "pointer", opacity: manageBusy ? 0.5 : 1 }}>
-              {t("w.analyze.hist.delete")}
-            </button>
-          )}
+          {onArchive && <Button label={t("w.analyze.hist.archive")} variant="outline" onClick={onArchive} disabled={manageBusy} />}
+          {onDelete && <Button label={t("w.analyze.hist.delete")} variant="outline" color={RED} onClick={onDelete} disabled={manageBusy} />}
         </div>
       )}
     </div>

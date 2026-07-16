@@ -36,7 +36,7 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
-import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";
@@ -261,12 +261,8 @@ export default function SessionDetail() {
       </>
 
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
-        <Pressable disabled={busy} onPress={doArchive} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 999 : 14, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-          <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.ash }}>{t("common.archive")}</Text>
-        </Pressable>
-        <Pressable disabled={busy} onPress={doDelete} style={{ flex: 1, borderWidth: 1, borderColor: `${C.red}73`, borderRadius: aurora ? 999 : 14, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-          <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: txt(C, C.red) }}>{t("common.delete")}</Text>
-        </Pressable>
+        <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
+        <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
     </>,
   );

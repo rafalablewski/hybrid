@@ -441,18 +441,25 @@ export function Button({
   label,
   onPress,
   color,
+  variant = "fill",
   disabled,
+  style,
 }: {
   label: string;
   onPress: () => void;
   color?: string;
+  /** "outline" = a transparent ghost with a hairline border; `color` tints the
+   *  label + border (muted ash/line when omitted) — e.g. destructive actions. */
+  variant?: "fill" | "outline";
   disabled?: boolean;
+  style?: ViewStyle;
 }) {
   const { palette } = useTheme();
   const aurora = useTemplate().template === "aurora";
   // Default fill = the theme's PRIMARY accent (clay on light, chartreuse on dark);
   // an explicit color still wins. Text is always the theme's onAccent ink.
   const fill = color ?? palette.lime;
+  const outline = variant === "outline";
   return (
     <Pressable
       onPress={onPress}
@@ -460,16 +467,21 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
-      style={{
-        backgroundColor: fill,
-        borderRadius: aurora ? 999 : 12,
-        paddingVertical: aurora ? 16 : 14,
-        paddingHorizontal: 24,
-        alignItems: "center",
-        opacity: disabled ? 0.5 : 1,
-      }}
+      style={[
+        {
+          backgroundColor: outline ? "transparent" : fill,
+          borderWidth: outline ? 1 : 0,
+          borderColor: color ? `${color}73` : palette.line,
+          borderRadius: aurora ? 999 : 12,
+          paddingVertical: aurora ? 16 : 14,
+          paddingHorizontal: 24,
+          alignItems: "center",
+          opacity: disabled ? 0.5 : 1,
+        },
+        style,
+      ]}
     >
-      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: palette.onAccent }}>{label}</Text>
+      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: outline ? (color ? txt(palette, color) : palette.ash) : palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }
