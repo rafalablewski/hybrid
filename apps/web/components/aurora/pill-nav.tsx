@@ -48,14 +48,28 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
   // Sliding selection indicator (the Instagram-style liquid pill): a single
   // chalk highlight that SPRINGS to the active flat slot and STRETCHES mid-
-  // travel, instead of a static per-tab background. barRef is the offset parent;
-  // flatRefs holds the four flat buttons (the centre Train FAB is excluded — it
-  // has its own glow, so the indicator hides while Train is active).
+  // travel (scaled by travel DISTANCE, like Instagram's blob), instead of a
+  // static per-tab background. barRef is the offset parent; flatRefs holds the
+  // four flat buttons. The centre Train FAB is excluded (it has its own glow) —
+  // while Train is active the indicator FADES OUT IN PLACE but stays mounted,
+  // so re-entering a side tab travels/fades instead of popping.
   const barRef = useRef<HTMLDivElement>(null);
   const flatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ind, setInd] = useState<{ x: number; top: number } | null>(null);
-  const [moving, setMoving] = useState(false);
+  const [indShown, setIndShown] = useState(false);
+  const [stretch, setStretch] = useState(1);
+  const [reduced, setReduced] = useState(false);
+  const indRef = useRef<{ x: number; top: number } | null>(null);
+  const indShownRef = useRef(false);
   const firstRef = useRef(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   // Which of the four flat slots is lit: Today/Explore/Profile by route, "more"
   // when its sheet is open or the active screen isn't a bar slot. Train (the
@@ -69,18 +83,34 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       : null;
 
   // Reposition the indicator whenever the active slot changes (and on resize).
-  // On the first paint it snaps into place; after that it springs + stretches.
+  // On the first paint it snaps into place; after that it springs, stretching
+  // mid-travel proportionally to the distance (further slot → longer blob).
   useLayoutEffect(() => {
-    const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedNow = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let stretchTimer: ReturnType<typeof setTimeout> | undefined;
     const place = () => {
       const bar = barRef.current;
       const el = activeFlat ? flatRefs.current[activeFlat] : null;
-      if (!bar || !el) { setInd(null); return; }
-      setInd({ x: el.offsetLeft + (el.offsetWidth - 52) / 2, top: el.offsetTop + (el.offsetHeight - 52) / 2 });
-      if (!firstRef.current && !reduced) {
-        setMoving(true);
-        stretchTimer = setTimeout(() => setMoving(false), 240);
+      if (!bar || !el) {
+        // Train / none: fade out where it stands (keep `ind`, so it can travel
+        // back from the same spot when a side tab is selected again).
+        indShownRef.current = false;
+        setIndShown(false);
+        return;
+      }
+      const next = { x: el.offsetLeft + (el.offsetWidth - 52) / 2, top: el.offsetTop + (el.offsetHeight - 52) / 2 };
+      const prev = indRef.current;
+      const wasShown = indShownRef.current;
+      indRef.current = next;
+      indShownRef.current = true;
+      setInd(next);
+      setIndShown(true);
+      if (!firstRef.current && !reducedNow && wasShown && prev) {
+        const dist = Math.abs(next.x - prev.x);
+        if (dist > 1) {
+          setStretch(Math.min(1 + dist / 240, 1.9));
+          stretchTimer = setTimeout(() => setStretch(1), 150);
+        }
       }
       firstRef.current = false;
     };
@@ -256,35 +286,57 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             no grain/sheen). */}
         <div ref={barRef} style={{ position: "relative", pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
           {/* The single sliding highlight — springs between flat slots (transform),
-              stretching mid-travel (scaleX) for the liquid feel; sits behind the
-              icons (zIndex 0). Hidden while Train is active (ind === null). */}
+              stretching mid-travel (scaleX, distance-scaled) for the liquid feel;
+              sits behind the icons (zIndex 0). While Train is active it fades out
+              in place (opacity) but stays MOUNTED, so the next selection travels
+              instead of popping in. */}
           {ind && (
             <span
               aria-hidden
-              style={{ position: "absolute", left: 0, top: ind.top, width: 52, height: 52, borderRadius: 26, background: C("chalk"), transformOrigin: "center", transform: `translateX(${ind.x}px) scaleX(${moving ? 1.32 : 1})`, transition: "transform .44s cubic-bezier(.34,1.36,.5,1)", zIndex: 0, pointerEvents: "none" }}
+              style={{
+                position: "absolute", left: 0, top: ind.top, width: 52, height: 52, borderRadius: 26,
+                background: C("chalk"), transformOrigin: "center",
+                transform: `translateX(${ind.x}px) scaleX(${stretch})`,
+                opacity: indShown ? 1 : 0,
+                transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease",
+                zIndex: 0, pointerEvents: "none",
+              }}
             />
           )}
           {/* Today · Explore | [Train] | More · Profile */}
           {tabs.map((tab) => (
-            <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
+            <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
-          <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
-          <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} onClick={() => go("profile")} />
+          <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} onClick={() => go("profile")} />
         </div>
       </div>
     </>
   );
 }
 
-function PillButton({ icon, label, active, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
+function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; reduced: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
   return (
     // zIndex 1 keeps the glyph above the shared sliding highlight; the highlight
-    // itself (chalk pill) is drawn once in the bar, not per-button, so the icon
-    // just tints ink when active.
+    // itself (chalk pill) is drawn once in the bar, not per-button. The active
+    // ink tint is a CROSSFADE overlay synced to the highlight's arrival — the
+    // incoming glyph waits a beat (~.1s delay) so it lands WITH the sliding
+    // pill; an instant flip reads as "icon changed, pill lagging" (the
+    // Instagram-audit finding). Outgoing fades back immediately.
     <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
-      <span style={{ width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center" }}>
-        <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={active ? C("ink") : C("ash")} />
+      <span style={{ position: "relative", width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center" }}>
+        <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={C("ash")} />
+        <span
+          aria-hidden
+          style={{
+            position: "absolute", inset: 0, display: "grid", placeItems: "center",
+            opacity: active ? 1 : 0,
+            transition: reduced ? "none" : active ? "opacity .2s ease .1s" : "opacity .12s ease",
+          }}
+        >
+          <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={C("ink")} />
+        </span>
       </span>
     </button>
   );
