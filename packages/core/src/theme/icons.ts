@@ -5,9 +5,12 @@
  * data (72×72 viewBox, stroke-based).
  *
  * Web renders these as inline <svg> with stroke=currentColor (see
- * apps/web/components/aurora/icons.tsx). Mobile renders the matching PNGs from
- * apps/mobile/assets/icons via <Image tintColor> (RN has no SVG dep here) — the
- * names below are kept in lockstep with those asset filenames.
+ * apps/web/components/aurora/icons.tsx). Mobile renders them two ways (see
+ * apps/mobile/components/aurora/icons.tsx): true vectors via react-native-svg
+ * (AuroraSvgIcon — used in the bottom-nav pill) and 216px PNGs from
+ * apps/mobile/assets/icons via <Image tintColor> (AuroraIcon, regenerated from
+ * this path data) — the names below are kept in lockstep with those asset
+ * filenames.
  */
 export type AuroraIconName =
   | "back"
