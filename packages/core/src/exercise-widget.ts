@@ -14,11 +14,21 @@ import {
   intensityDistribution,
   paceCurve,
   recentRunDeltas,
+  repMaxMatrix,
+  loadRepsScatter,
+  tonnageSurface,
+  exerciseConsistency,
+  blockCompare,
   type PrPoint,
   type WeekTonnage,
   type IntensityZone,
   type PaceBand,
   type RunDelta,
+  type RepMax,
+  type LoadRepsMap,
+  type TonnageSurface,
+  type ExerciseConsistency,
+  type BlockCompare,
 } from "./engines/exercise-analytics";
 import type { BodyweightInput } from "./bodyweight";
 
@@ -217,8 +227,12 @@ export type ExercisePageSlide =
   | { kind: "e1rmTrend"; points: PrPoint[]; bestE1rm: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "tonnage"; weeks: WeekTonnage[]; avgWeekKg: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "zones"; zones: IntensityZone[]; topZone: IntensityZone | null }
+  | { kind: "repMax"; cells: (RepMax | null)[]; heaviestKg: number }
+  | { kind: "loadReps"; map: LoadRepsMap; workingSets: number }
+  | { kind: "surface"; surface: TonnageSurface; peakKg: number }
+  | { kind: "compare"; compare: BlockCompare; deltaPct: number | null; improving: boolean | null }
   | { kind: "weeklyMinutes"; weeks: WeekMinutes[]; avgWeekMin: number; deltaPct: number | null; improving: boolean | null }
-  | { kind: "consistency"; weekly: number[]; weeksTrained: number; weeksTotal: number }
+  | { kind: "consistency"; weekly: number[]; weeksTrained: number; weeksTotal: number; detail: ExerciseConsistency }
   | { kind: "paceTrend"; points: PacePoint[]; bestSec: number | null; deltaPct: number | null; improving: boolean | null }
   | { kind: "paceCurve"; bands: PaceBand[]; fastestBandSec: number | null }
   | { kind: "runDeltas"; runs: RunDelta[]; avgSec: number | null; lastDeltaSec: number | null };
@@ -279,6 +293,18 @@ export function exercisePageModel(
     weekly,
     weeksTrained: weekly.filter((w) => w > 0).length,
     weeksTotal: CONSISTENCY_WEEKS,
+    detail: exerciseConsistency(sessions, name, CONSISTENCY_WEEKS, now),
+  };
+
+  // This block vs the previous 8 weeks — only when BOTH halves hold data (a
+  // one-sided compare is noise, matching the dashboard card's gate).
+  const compareSlide = (): ExercisePageSlide | null => {
+    const compare = blockCompare(sessions, name, 8, now, bw);
+    if (!compare.weeklyCur.some((v) => v > 0) || !compare.weeklyPrev.some((v) => v > 0)) return null;
+    const [curV, prevV] =
+      compare.kind === "strength" ? [compare.cur.volumeKg, compare.prev.volumeKg] : [compare.cur.distanceKm, compare.prev.distanceKm];
+    const deltaPct = pctChange(curV, prevV);
+    return { kind: "compare", compare, deltaPct, improving: deltaPct == null ? null : deltaPct > 0 };
   };
 
   const minutesSlide = (): ExercisePageSlide | null => {
@@ -303,6 +329,8 @@ export function exercisePageModel(
       if (bands.length > 0) slides.push({ kind: "paceCurve", bands, fastestBandSec: bands[0]?.bestAllSec ?? null });
       const rd = recentRunDeltas(sessions, name, 8, now);
       if (rd.runs.length > 0) slides.push({ kind: "runDeltas", runs: rd.runs, avgSec: rd.avgSec, lastDeltaSec: rd.runs.at(-1)?.deltaSec ?? null });
+      const cmp = compareSlide();
+      if (cmp) slides.push(cmp);
     } else {
       // minutes-only cardio (a match, a swim without distance)
       const m = minutesSlide();
@@ -357,6 +385,20 @@ export function exercisePageModel(
     const topZone = zones.reduce((a, b) => (b.share > a.share ? b : a));
     slides.push({ kind: "zones", zones, topZone });
   }
+
+  const cells = repMaxMatrix(sessions, name, now, bw);
+  if (cells.some(Boolean)) {
+    slides.push({ kind: "repMax", cells, heaviestKg: Math.max(...cells.filter((c): c is RepMax => c != null).map((c) => c.loadKg)) });
+  }
+
+  const map = loadRepsScatter(sessions, name, now, bw);
+  if (map.points.length >= 5) slides.push({ kind: "loadReps", map, workingSets: map.points.length });
+
+  const surface = tonnageSurface(sessions, name, 12, now, bw);
+  if (surface.maxKg > 0) slides.push({ kind: "surface", surface, peakKg: surface.maxKg });
+
+  const cmp = compareSlide();
+  if (cmp) slides.push(cmp);
 
   slides.push(consistency);
   return { name, kind, period, stats, sessionsInPeriod, slides };
