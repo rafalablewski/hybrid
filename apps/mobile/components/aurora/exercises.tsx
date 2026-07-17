@@ -14,6 +14,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import ExerciseAnalytics from "./exercise-charts";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
   { id: "8w", key: "w.analyze.ex.period8w" }, { id: "6m", key: "w.analyze.ex.period6m" }, { id: "1y", key: "w.analyze.ex.period1y" }, { id: "all", key: "w.analyze.ex.periodAll" },
@@ -83,14 +84,14 @@ export default function AuroraExercises() {
             })}
           </View>
 
-          {stats && <Dashboard stats={stats} units={units} />}
+          {stats && <Dashboard stats={stats} units={units} sessions={sessions} name={active} period={period} bw={bw} />}
         </>
       )}
     </AuroraScreen>
   );
 }
 
-function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }) {
+function Dashboard({ stats, units, sessions, name, period, bw }: { stats: ExerciseStats; units: WeightUnit; sessions: LoggedSession[]; name: string; period: ExercisePeriod; bw: ReturnType<typeof useBodyweightLookup> }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   if (stats.kind === "cardio") {
@@ -107,6 +108,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.paceTitle")}</Text>
           <TrendBars series={stats.pace.map((p) => p.secPerKm)} color={C.blue} lowerIsBetter unit="pace" />
         </ACard>
+        <ExerciseAnalytics sessions={sessions} name={name} kind="cardio" period={period} units={units} bw={bw} />
       </>
     );
   }
@@ -119,10 +121,6 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
         <Metric label={t("w.analyze.ex.volume")} value={fmtTonnage(stats.volume, units)} />
         <Metric label={t("w.analyze.ex.sessions")} value={String(stats.sessions)} />
       </View>
-      <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.e1rmTitle")}</Text>
-        <TrendBars series={stats.e1rm.map((p) => Math.round(kgToUnit(p.e1rm, units)))} color={C.lime} unit={units} />
-      </ACard>
       {stats.bestSet && (
         <ACard style={{ marginTop: 14 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
@@ -137,6 +135,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} – {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
         </ACard>
       )}
+      <ExerciseAnalytics sessions={sessions} name={name} kind="strength" period={period} units={units} bw={bw} />
     </>
   );
 }
