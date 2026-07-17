@@ -174,6 +174,30 @@ export function offPlanSessionsOnDay(
 }
 
 /**
+ * Copy selector for the "Also today" card — the web and mobile twins consume
+ * the SAME state machine so the captions can't drift. `doneCount` is the day's
+ * TOTAL (plan + off-plan), `extras` the off-plan rows shown on the card:
+ * - nothing done at all → the empty invitation;
+ * - off-plan rows under a plan → the "beyond the schedule" explainer;
+ * - otherwise (plan-only day done, or off-plan rows with no plan) → no
+ *   sub-line — the numeral + label carry it, nothing restates the visible.
+ * The log row's label flips to "another" as soon as ANY workout is done today,
+ * regardless of whether it was the plan's.
+ */
+export function alsoTodayCopy(opts: { extras: number; onPlan: boolean; doneCount: number }): {
+  subKey: "w.home.today.alsoTodaySubPlan" | "w.home.today.alsoTodaySubEmpty" | null;
+  logKey: "w.home.today.alsoTodayLog" | "w.home.today.alsoTodayLogFirst";
+} {
+  return {
+    subKey:
+      opts.doneCount === 0 ? "w.home.today.alsoTodaySubEmpty"
+      : opts.extras > 0 && opts.onPlan ? "w.home.today.alsoTodaySubPlan"
+      : null,
+    logKey: opts.doneCount > 0 ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst",
+  };
+}
+
+/**
  * Build the date-anchored schedule for an enrolled program. Returns null unless
  * `planId` resolves to a real PlanProgram AND a `startedAt` anchor is known — the
  * classic count-based "today" stays the fallback otherwise.
