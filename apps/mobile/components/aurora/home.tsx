@@ -465,8 +465,8 @@ export default function AuroraHome() {
             (quick sport logs, freestyle sessions). Design 1 separation: the card
             above is the SCHEDULED day (Start / Skip / Postpone); this one is what
             was actually done besides it, teal-coded, each row tappable. Always
-            rendered — empty it explains itself — and it carries the day's done
-            count as a ledger footer (moved in from the feeling card). */}
+            rendered — empty it explains itself — and it leads with the day's done
+            count as its display-weight stat (moved in from the feeling card). */}
         <AlsoTodayCard
           C={C}
           extras={extrasToday}
@@ -597,17 +597,15 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
   return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
 }
 
-// The "Also today" card (Design 1 separation): every workout logged today that
-// did NOT fulfil the scheduled plan day — a quick sport log, a freestyle
-// session — as first-class rows with a check, so a tennis match is visible on
-// Today instead of hiding behind the done-count ring. Teal-coded (the Feel/
-// conditioning accent) to read apart from the plan card. With no schedule (not
-// enrolled / no start date) the kicker reads plain "Done today" — there is no
-// plan for anything to be "off" of. Rows open the session's breakdown.
-// ALWAYS rendered ("ledger footer" redesign): empty, one line explains what
-// lands here; the day's total done count closes the card as a ledger line
-// (tap = the Done-Today sheet) with the log action on the right — or, once a
-// row exists, the dashed log bar. Mirrored on web (aurora/today.tsx).
+// The "Also today" card, "number is the card" redesign: the day's TOTAL done
+// count (plan + off-plan) is the card's display-weight headline — the whole
+// stat strip taps through to the Done-Today sheet — with the off-plan sessions
+// as rows beneath it and the log action as a ghost row in the same vocabulary.
+// Always rendered: empty, the numeral reads 0 and the sub-line does the
+// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
+// chips/pills) — the card's own edge is the only border. With no schedule the
+// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
+// Rows open the session's breakdown. Mirrored on web (aurora/today.tsx).
 function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
   C: P;
   extras: LoggedSession[];
@@ -621,59 +619,39 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
 }) {
   const { t } = useLang();
   const hasRows = extras.length > 0;
+  const quiet = `${C.ash}99`;
+  const sub = !hasRows ? t("w.home.today.alsoTodaySubEmpty") : onPlan ? t("w.home.today.alsoTodaySubPlan") : null;
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.blue) }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</Text>
-        {hasRows ? (
-          <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: C.onAccent }}>{extras.length}</Text>
-          </View>
-        ) : null}
-      </View>
-      {hasRows ? (
-        <View style={{ marginTop: 6 }}>
-          {extras.map((s) => (
-            <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}24`, borderWidth: 1, borderColor: `${C.blue}4d` }}>
-                <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
-              </View>
-              <View style={{ width: 24, height: 24, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}80` }}>
-                <Text style={{ fontSize: 12, color: txt(C, C.lime) }}>✓</Text>
-              </View>
-            </Pressable>
-          ))}
+      {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
+      <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
+        <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -2, lineHeight: 44, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
+          {sub ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{sub}</Text> : null}
         </View>
-      ) : (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: C.ash, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 2 }}>{t("w.home.today.alsoTodayEmpty")}</Text>
-      )}
-      {/* ledger footer — the day's TOTAL done count (plan + off-plan; tap =
-          Done-Today sheet). With rows the last row's hairline separates it;
-          empty it draws its own. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderTopWidth: hasRows ? 0 : 1, borderTopColor: C.line, paddingTop: hasRows ? 12 : 13 }}>
-        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
-            <Text style={{ fontFamily: F.bold, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text> {t("w.home.today.ledgerDone")}
-          </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: `${C.ash}8c` }}>›</Text>
-        </Pressable>
-        {!hasRows ? (
-          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLogFirst")}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.alsoTodayLogFirst")} →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 16, color: quiet }}>→</Text>
+      </Pressable>
+      {/* rows + the ghost action row — one vocabulary, separated by space alone */}
+      <View style={{ marginTop: 14, gap: 4 }}>
+        {extras.map((s) => (
+          <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}29` }}>
+              <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+            </View>
           </Pressable>
-        ) : null}
-      </View>
-      {hasRows ? (
-        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLog")} style={{ marginTop: 12, borderWidth: 1, borderStyle: "dashed", borderColor: C.line, borderRadius: 999, paddingVertical: 10, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: C.ash }}>
-            + <Text style={{ color: txt(C, C.lime), fontWeight: "600" }}>{t("w.home.today.alsoTodayLog")}</Text>
-          </Text>
+        ))}
+        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.ink }}>
+            <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")}</Text>
         </Pressable>
-      ) : null}
+      </View>
     </View>
   );
 }

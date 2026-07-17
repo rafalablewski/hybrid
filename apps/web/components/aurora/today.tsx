@@ -421,8 +421,8 @@ export default function AuroraToday({
           (quick sport logs, freestyle sessions). Design 1 separation: the card
           above is the SCHEDULED day (Start / Skip / Postpone); this one is what
           was actually done besides it, teal-coded, each row tappable. Always
-          rendered — empty it explains itself — and it carries the day's done
-          count as a ledger footer (moved in from the feeling card). */}
+          rendered — empty it explains itself — and it leads with the day's done
+          count as its display-weight stat (moved in from the feeling card). */}
       <AlsoTodayCard
         extras={extrasToday}
         onPlan={!!sched}
@@ -591,17 +591,15 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
   );
 }
 
-// The "Also today" card (Design 1 separation): every workout logged today that
-// did NOT fulfil the scheduled plan day — a quick sport log, a freestyle
-// session — as first-class rows with a check, so a tennis match is visible on
-// Today instead of hiding behind the done-count ring. Teal-coded (the Feel/
-// conditioning accent) to read apart from the plan card. With no schedule (not
-// enrolled / no start date) the kicker reads plain "Done today" — there is no
-// plan for anything to be "off" of. Rows open the session's breakdown.
-// ALWAYS rendered ("ledger footer" redesign): empty, one line explains what
-// lands here; the day's total done count closes the card as a ledger line
-// (tap = the Done-Today sheet) with the log action on the right — or, once a
-// row exists, the dashed log bar. Mirrored on mobile (aurora/home.tsx).
+// The "Also today" card, "number is the card" redesign: the day's TOTAL done
+// count (plan + off-plan) is the card's display-weight headline — the whole
+// stat strip taps through to the Done-Today sheet — with the off-plan sessions
+// as rows beneath it and the log action as a ghost row in the same vocabulary.
+// Always rendered: empty, the numeral reads 0 and the sub-line does the
+// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
+// chips/pills) — the card's own edge is the only border. With no schedule the
+// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
+// Rows open the session's breakdown. Mirrored on mobile (aurora/home.tsx).
 function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
   extras: LoggedSession[];
   onPlan: boolean;
@@ -614,51 +612,39 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
 }) {
   const { t } = useLang();
   const hasRows = extras.length > 0;
+  const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
+  const sub = !hasRows ? t("w.home.today.alsoTodaySubEmpty") : onPlan ? t("w.home.today.alsoTodaySubPlan") : null;
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--blue-text)" }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</span>
-        {hasRows && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "2px 8px" }}>{extras.length}</span>}
-      </div>
-      {hasRows ? (
-        <div style={{ marginTop: 6 }}>
-          {extras.map((s) => (
-            <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 30%, transparent)` }}>
-                {sessionIcon(s)}
+      {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
+      <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 44, letterSpacing: "-.05em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</span>
+          {sub && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{sub}</span>}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: quiet, flexShrink: 0 }}>→</span>
+      </button>
+      {/* rows + the ghost action row — one vocabulary, separated by space alone */}
+      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+        {extras.map((s) => (
+          <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 16%, transparent)` }}>
+              {sessionIcon(s)}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
               </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
-                </span>
-              </span>
-              <span style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 50%, transparent)` }}>✓</span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{ padding: "10px 2px 12px", fontSize: fs.body, lineHeight: 1.55, color: C("ash") }}>{t("w.home.today.alsoTodayEmpty")}</div>
-      )}
-      {/* ledger footer — the day's TOTAL done count (plan + off-plan; tap =
-          Done-Today sheet). With rows the last row's hairline separates it;
-          empty it draws its own. */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderTop: hasRows ? "none" : `1px solid ${C("line")}`, paddingTop: hasRows ? 12 : 13 }}>
-        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>
-          <b style={{ color: doneCount > 0 ? C("chalk") : C("ash"), fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{doneCount}</b> {t("w.home.today.ledgerDone")}
-          <span style={{ color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
-        </button>
-        {!hasRows && (
-          <button onClick={onLog} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)", fontWeight: 700 }}>
-            {t("w.home.today.alsoTodayLogFirst")} →
+            </span>
           </button>
-        )}
-      </div>
-      {hasRows && (
-        <button onClick={onLog} style={{ marginTop: 12, width: "100%", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: 10, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>
-          + <span style={{ color: "var(--lime-text)", fontWeight: 600 }}>{t("w.home.today.alsoTodayLog")}</span>
+        ))}
+        <button onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
+          <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: C("ink"), color: C("ash") }}>＋</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")}</span>
         </button>
-      )}
+      </div>
     </div>
   );
 }
