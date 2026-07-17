@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Exercises widget (Ive variant)</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* ── HYBRID Aurora tokens (unchanged) ── */
+:root {
+  --color-ink: #0c0d0c;
+  --color-ink2: #141614;
+  --color-line: #2a2d2a;
+  --color-lime: #c6f84f;
+  --color-chalk: #f3f4ef;
+  --color-ash: #8b8f86;
+  --color-blue: #3c787e;
+  --color-amber: #d0cd94;
+  --color-red: #d56f3e;
+  --lime-text: #c6f84f;
+  --blue-text: #6cb6bd;
+  --amber-text: #d0cd94;
+  --red-text: #e58a5c;
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--color-ink); color: var(--color-chalk); }
+body { font-family: var(--font-display); min-height: 100vh; display: grid; place-items: center; padding: 28px 12px 40px; overflow-x: hidden; }
+::-webkit-scrollbar { width: 0; height: 0; }
+button { font: inherit; }
+
+.stage { display: grid; gap: 18px; justify-items: center; }
+.preview-note { text-align: center; max-width: 430px; }
+.preview-note .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-ash); }
+.preview-note h1 { font-size: 19px; font-weight: 900; margin-top: 6px; }
+.preview-note p { font-size: 12px; color: var(--color-ash); margin-top: 6px; line-height: 1.55; }
+.preview-note b { color: var(--color-chalk); font-weight: 700; }
+
+.phone {
+  width: 393px; max-width: 100vw;
+  height: 830px; max-height: calc(100vh - 130px); min-height: 560px;
+  background: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: 54px; overflow: hidden; position: relative;
+  box-shadow: 0 40px 90px -40px rgba(0,0,0,.9), 0 0 0 8px #060706;
+}
+@media (max-width: 480px) {
+  body { padding: 10px 0 24px; }
+  .phone { border-radius: 0; box-shadow: none; border: none; max-height: none; height: 78vh; }
+}
+.statusbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 28px 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  pointer-events: none; background: linear-gradient(var(--color-ink) 40%, transparent);
+}
+.batt { display: inline-flex; align-items: center; gap: 5px; color: var(--color-ash); font-weight: 500; font-size: 10px; }
+.batt i { width: 20px; height: 10px; border: 1px solid var(--color-ash); border-radius: 3px; position: relative; }
+.batt i::after { content: ""; position: absolute; inset: 1.5px; right: 5px; background: var(--color-lime); border-radius: 1px; }
+
+.screen { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 58px 20px 96px; display: none; }
+.screen.on { display: block; animation: enter .26s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .screen.on { animation: none; } }
+
+.kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-ash); }
+
+/* ── TODAY ── */
+.t-head { margin: 8px 2px 16px; }
+.t-head h2 { font-size: 30px; font-weight: 900; letter-spacing: -.02em; margin-top: 4px; }
+.plan-card {
+  background: var(--color-ink2); border: 1px solid var(--color-line); border-radius: 28px;
+  padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;
+}
+.plan-card .big { font-size: 17px; font-weight: 800; margin-top: 5px; }
+.plan-card .sub { font-size: 11px; color: var(--color-ash); margin-top: 3px; }
+.start-pill {
+  flex: none; border: none; cursor: pointer; background: var(--color-lime); color: var(--color-ink);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; padding: 12px 20px; border-radius: 999px;
+}
+
+.wgt-bar { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 4px 10px; }
+.wgt-bar a { font-family: var(--font-mono); font-size: 11px; color: var(--lime-text); text-decoration: none; cursor: pointer; }
+
+/* THE IVE CARD — the chart is the material. No inner borders, no badges,
+   no icon tiles; type floats over a full-bleed data surface. */
+.rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -20px; padding: 4px 20px 6px; }
+.wgt {
+  flex: 0 0 84%; scroll-snap-align: center; cursor: pointer; text-align: left;
+  color: var(--color-chalk); font-family: var(--font-display);
+  background: var(--color-ink2); border: 1px solid var(--color-line); border-radius: 28px;
+  padding: 0; overflow: hidden; position: relative; height: 208px;
+  transition: transform .18s ease;
+}
+.wgt:hover { transform: translateY(-2px); }
+.wgt-text { position: absolute; inset: 18px 20px auto 20px; z-index: 2; }
+.wgt-row1 { display: flex; align-items: baseline; justify-content: space-between; }
+.wgt-name { font-size: 15px; font-weight: 600; letter-spacing: .01em; }
+.wgt-delta { font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.wgt-delta.up { color: var(--lime-text); }
+.wgt-delta.down { color: var(--red-text); }
+.wgt-num { margin-top: 10px; font-size: 36px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+.wgt-num span { font-size: 14px; font-weight: 500; color: var(--color-ash); letter-spacing: 0; margin-left: 5px; }
+.wgt-lab { margin-top: 7px; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-ash); }
+.wgt-chart { position: absolute; left: 0; right: 0; bottom: 0; height: 96px; }
+.wgt-chart svg { display: block; width: 100%; height: 100%; }
+.wgt-all {
+  flex: 0 0 40%; display: grid; place-items: center; align-content: center; gap: 8px;
+  border-style: dashed; cursor: pointer; color: var(--color-ash);
+  font-family: var(--font-mono); font-size: 11px; text-align: center; line-height: 1.6;
+}
+.wgt-all .plus { font-size: 22px; color: var(--lime-text); }
+
+.ghost-card { background: var(--color-ink2); border: 1px solid var(--color-line); border-radius: 28px; padding: 18px; opacity: .55; margin-top: 16px; }
+.ghost-card .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px; }
+.ghost-card .row span:last-child { font-family: var(--font-mono); font-size: 11px; color: var(--color-ash); }
+
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; justify-content: space-around; align-items: center; padding: 12px 10px 24px;
+  background: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%);
+  border-top: 1px solid var(--color-line);
+}
+.tab { display: grid; justify-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ash); }
+.tab svg { width: 20px; height: 20px; stroke: currentColor; }
+.tab.on { color: var(--lime-text); }
+
+/* ── DETAIL — no boxes. The screen is the card; hairlines are the only
+   structure. One number pairs with one chart; the number follows the swipe. */
+.d-head { display: flex; align-items: center; gap: 4px; margin: 6px 0 2px; }
+.back { border: none; background: none; color: var(--color-ash); cursor: pointer; font-size: 22px; padding: 6px 10px 6px 0; line-height: 1; }
+.back:hover { color: var(--color-chalk); }
+.d-head h2 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.periods { display: flex; gap: 18px; margin: 14px 2px 6px; }
+.pd {
+  border: none; background: none; cursor: pointer; padding: 4px 0;
+  font-family: var(--font-mono); font-size: 11px; color: var(--color-ash);
+  border-bottom: 2px solid transparent;
+}
+.pd.on { color: var(--color-chalk); border-bottom-color: var(--color-lime); }
+
+.hero { margin: 18px 2px 4px; min-height: 86px; transition: opacity .18s ease; }
+.hero.fade { opacity: 0; }
+.hero-num { font-size: 54px; font-weight: 800; letter-spacing: -.03em; line-height: 1; display: flex; align-items: baseline; gap: 10px; }
+.hero-num span.u { font-size: 17px; font-weight: 500; color: var(--color-ash); letter-spacing: 0; }
+.hero-num span.d { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-left: auto; }
+.hero-num span.d.up { color: var(--lime-text); }
+.hero-num span.d.down { color: var(--red-text); }
+.hero-lab { margin-top: 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-ash); }
+
+.pager-wrap { position: relative; margin: 10px -20px 0; }
+.pager { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
+.slide { flex: 0 0 100%; scroll-snap-align: center; padding: 0 20px; }
+.slide .chart svg { display: block; width: 100%; height: auto; }
+/* hover-reveal paging zones (desktop); invisible until needed */
+.pg-zone {
+  position: absolute; top: 0; bottom: 0; width: 64px; z-index: 5;
+  border: none; background: none; cursor: pointer; color: var(--color-chalk);
+  font-size: 22px; opacity: 0; transition: opacity .2s ease;
+  display: grid; place-items: center;
+}
+.pg-zone.l { left: 0; } .pg-zone.r { right: 0; }
+.pager-wrap:hover .pg-zone:not(:disabled) { opacity: .5; }
+.pg-zone:hover { opacity: 1 !important; }
+.pg-zone:disabled { opacity: 0 !important; cursor: default; }
+
+/* hairline segment indicator */
+.segs { display: flex; gap: 6px; justify-content: center; margin: 16px auto 0; width: 132px; }
+.seg { height: 2px; flex: 1; border-radius: 2px; background: var(--color-line); transition: background .25s ease; }
+.seg.on { background: var(--color-lime); }
+
+.allstats { display: grid; justify-content: center; margin-top: 18px; }
+.allstats button { border: none; background: none; cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-ash); padding: 8px 14px; }
+.allstats button:hover { color: var(--color-chalk); }
+
+/* expanded: the pager unrolls into hairline-separated sections */
+.detail-body.all .pager { flex-direction: column; overflow: visible; scroll-snap-type: none; }
+.detail-body.all .slide { padding: 22px 20px 26px; border-top: 1px solid var(--color-line); }
+.detail-body.all .slide:first-child { border-top: none; padding-top: 6px; }
+.detail-body.all .pg-zone, .detail-body.all .segs { display: none; }
+.slide-lab { display: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-ash); margin-bottom: 14px; }
+.detail-body.all .slide-lab { display: block; }
+/* the hero already titles the first chart */
+.detail-body.all .slide:first-child .slide-lab { display: none; }
+
+/* quiet secondary stats — typography only, one hairline above */
+.substats { display: flex; margin: 26px 2px 0; padding-top: 18px; border-top: 1px solid var(--color-line); }
+.substats > div { flex: 1; }
+.substats .v { font-size: 16px; font-weight: 700; }
+.substats .l { margin-top: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ash); }
+
+/* zones + heat, Ive treatment: thin lines and dots, no pills */
+.zone { display: grid; grid-template-columns: 56px 1fr 44px; align-items: center; gap: 12px; margin-top: 16px; }
+.zone .zl { font-family: var(--font-mono); font-size: 10px; color: var(--color-ash); }
+.zone .zt { height: 3px; border-radius: 2px; background: var(--color-line); }
+.zone .zf { height: 100%; border-radius: 2px; }
+.zone .zv { font-family: var(--font-mono); font-size: 11px; text-align: right; }
+.heat { display: flex; gap: 6px; margin-top: 22px; flex-wrap: wrap; }
+.heat i { width: 9px; height: 9px; border-radius: 999px; background: var(--color-line); }
+.heat .foot { flex-basis: 100%; margin-top: 12px; font-family: var(--font-mono); font-size: 9.5px; color: var(--color-ash); }
+
+.tip {
+  position: fixed; z-index: 99; pointer-events: none;
+  background: var(--color-ink); border: 1px solid var(--color-line); border-radius: 8px;
+  font-family: var(--font-mono); font-size: 11px; padding: 7px 10px;
+  opacity: 0; transition: opacity .12s ease; white-space: nowrap;
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.8);
+}
+.tip.on { opacity: 1; }
+.tip b { color: var(--lime-text); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="preview-note">
+    <div class="k">HYBRID – design preview B – "what would Ive do"</div>
+    <h1>Exercises widget — reduced</h1>
+    <p>The chart is the card; the number is the interface. <b>Swipe the rail</b>, tap a favourite, <b>swipe the chart</b> to change stat — the big number follows. No boxes, no badges, no dots.</p>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="batt">100 <i></i></span></div>
+
+    <!-- TODAY -->
+    <div class="screen on" id="scr-today">
+      <div class="t-head">
+        <div class="kicker">Friday 17 Jul – Week 6</div>
+        <h2>Today</h2>
+      </div>
+      <div class="plan-card">
+        <div>
+          <div class="kicker">Next up – Day 3</div>
+          <div class="big">Lower — Strength</div>
+          <div class="sub">5 blocks – 52 min est.</div>
+        </div>
+        <button class="start-pill">START</button>
+      </div>
+
+      <div class="wgt-bar">
+        <div class="kicker">Exercises – your favourites</div>
+        <a id="lnk-all">All ›</a>
+      </div>
+      <div class="rail" id="rail"></div>
+
+      <div class="ghost-card">
+        <div class="kicker">Also today</div>
+        <div class="row"><span>Zone 2 spin – optional</span><span>40 min</span></div>
+        <div class="row"><span>Evening mobility</span><span>12 min</span></div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="screen" id="scr-detail">
+      <div class="d-head">
+        <button class="back" id="btn-back" aria-label="Back">‹</button>
+        <h2 id="d-name"></h2>
+      </div>
+      <div class="periods" id="d-periods"></div>
+
+      <div class="detail-body" id="d-body">
+        <div class="hero" id="hero"></div>
+        <div class="pager-wrap">
+          <button class="pg-zone l" id="pg-prev" aria-label="Previous stat">‹</button>
+          <div class="pager" id="pager"></div>
+          <button class="pg-zone r" id="pg-next" aria-label="Next stat">›</button>
+        </div>
+        <div class="segs" id="segs"></div>
+        <div class="allstats"><button id="btn-all">All stats</button></div>
+        <div class="substats" id="substats"></div>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l9-8 9 8v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 7v10M18 7v10M2 10v4M22 10v4M6 12h12"/></svg>Train</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Analyze</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>Profile</div>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* Variant B — "the chart is the material". Same Aurora tokens, radically
+   reduced chrome. Purpose accent colours the data; trend colours only the
+   delta text. Demo data mirrors variant A. */
+const T = {
+  ink: "#0c0d0c", ink2: "#141614", line: "#2a2d2a",
+  lime: "#c6f84f", chalk: "#f3f4ef", ash: "#8b8f86",
+  blueText: "#6cb6bd", amberText: "#d0cd94", redText: "#e58a5c",
+  deepBase: "#84a01e", deepHard: "#bd871e",
+};
+const pace = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+const DL_DATES = ["8 Nov","2 Dec","20 Dec","10 Jan","31 Jan","21 Feb","14 Mar","4 Apr","25 Apr","16 May","6 Jun","4 Jul"];
+
+const EXERCISES = {
+  deadlift: {
+    name: "Deadlift", color: T.lime,
+    card: { num: "213", unit: "kg", delta: "▲ 4.2%", dir: "up", label: "Best e1RM – 8 weeks",
+      spark: [186,189,188,193,196,195,199,203,201,206,209,213] },
+    substats: [
+      { v: "148", l: "Sets" }, { v: "86.4 t", l: "Volume" }, { v: "31", l: "Sessions" }, { v: "200×3", l: "Best set" },
+    ],
+    slides: [
+      { num: "213", unit: "kg", delta: "▲ 4.2%", dir: "up", label: "Best estimated 1RM – 8 weeks",
+        render: (el) => lineFull(el, { labels: DL_DATES, values: [186,189,188,193,196,195,199,203,201,206,209,213], prs: [1,3,4,7,9,11], color: T.lime, fmt: v => v + " kg" }) },
+      { num: "3.9", unit: "t / wk", delta: "▲ 9%", dir: "up", label: "Tonnage – last 12 weeks",
+        render: (el) => barsFull(el, { base: [2.4,2.8,2.6,3.1,2.9,3.4,3.2,2.2,3.6,3.4,3.8,3.1], hard: [0.6,0.7,0.8,0.9,0.8,1.1,1.0,0.5,1.2,1.1,1.4,1.0] }) },
+      { num: "38", unit: "%", label: "Of working sets at 70–80% e1RM",
+        render: (el) => zones(el, [["< 70%",34],["70–80%",38],["80–90%",21],["90%+",7]], T.lime) },
+      { num: "24", unit: "of 26", label: "Weeks trained – consistency",
+        render: (el) => heat(el, [1,2,1,2,2,0,2,1,2,2,1,2,3,2,2,1,0,2,2,3,2,2,3,2,3,3], "sessions per week – last 26") },
+    ],
+  },
+  run: {
+    name: "Easy Run", color: T.blueText,
+    card: { num: "5:12", unit: "/km", delta: "▲ 3.2%", dir: "up", label: "Best pace – 8 weeks",
+      spark: [345,341,338,340,334,331,333,327,325,322,318,312], invert: true },
+    substats: [
+      { v: "42", l: "Runs" }, { v: "186 km", l: "Distance" }, { v: "14.2 km", l: "Longest" }, { v: "26", l: "Weeks" },
+    ],
+    slides: [
+      { num: "5:12", unit: "/km", delta: "▲ 3.2%", dir: "up", label: "Best pace – 8 weeks",
+        render: (el) => lineFull(el, { labels: DL_DATES, values: [345,341,338,340,334,331,333,327,325,322,318,312], color: T.blueText, reversed: true, fmt: v => pace(v) + " /km", yfmt: pace }) },
+      { num: "4:38", unit: "/km", label: "Fastest kilometre – pace curve",
+        render: (el) => lineFull(el, { labels: ["1 km","2 km","3 km","5 km","8 km","10 km"], values: [278,290,301,312,326,338], color: T.blueText, reversed: true, fmt: v => pace(v) + " /km", yfmt: pace, xAll: true }) },
+      { num: "-14", unit: "s", delta: "▲ faster", dir: "up", label: "Last run vs 8-week average",
+        render: (el) => deltas(el, [-6, 4, -10, -2, 8, -12, -5, -14]) },
+      { num: "26", unit: "of 26", label: "Weeks run – consistency",
+        render: (el) => heat(el, [2,3,2,3,3,1,3,2,3,3,2,2,3,3,2,3,1,3,3,3,2,3,3,3,3,3], "runs per week – last 26") },
+    ],
+  },
+  kbswing: {
+    name: "KB Swing", color: T.amberText,
+    card: { num: "3.3", unit: "t", delta: "▼ 8%", dir: "down", label: "Swing volume – 8 weeks",
+      spark: [3.4,3.8,3.6,4.0,3.9,3.7,3.5,3.3] },
+    substats: [
+      { v: "96", l: "Sets" }, { v: "41.2 t", l: "Volume" }, { v: "24", l: "Sessions" }, { v: "32×20", l: "Best set" },
+    ],
+    slides: [
+      { num: "3.3", unit: "t", delta: "▼ 8%", dir: "down", label: "Swing volume – 8 weeks",
+        render: (el) => lineFull(el, { labels: ["W1","W2","W3","W4","W5","W6","W7","W8"], values: [3.4,3.8,3.6,4.0,3.9,3.7,3.5,3.3], color: T.amberText, fmt: v => v + " t", xAll: true }) },
+      { num: "24", unit: "kg", label: "Most-used bell – load mix",
+        render: (el) => zones(el, [["20 kg",18],["24 kg",46],["28 kg",27],["32 kg",9]], T.amberText) },
+      { num: "22", unit: "of 26", label: "Weeks trained – consistency",
+        render: (el) => heat(el, [1,1,0,1,2,1,1,0,1,2,2,1,2,1,1,2,0,1,2,2,1,2,2,1,2,2], "sessions per week – last 26") },
+    ],
+  },
+};
+
+/* ── svg helpers ── */
+const NS = "http://www.w3.org/2000/svg";
+function sv(tag, attrs, parent) {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+const tipEl = document.getElementById("tip");
+function showTip(html, x, y) {
+  tipEl.innerHTML = html; tipEl.classList.add("on");
+  const r = tipEl.getBoundingClientRect();
+  tipEl.style.left = Math.min(Math.max(8, x - r.width / 2), innerWidth - r.width - 8) + "px";
+  tipEl.style.top = (y - r.height - 14) + "px";
+}
+const hideTip = () => tipEl.classList.remove("on");
+function smoothPath(pts) {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], mx = (x0 + x1) / 2;
+    d += ` C${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+  }
+  return d;
+}
+let gid = 0;
+
+/* widget spark — full-bleed area, no axes, endpoint glow */
+function sparkFull(el, cfg) {
+  const W = 330, H = 96, n = cfg.data.length;
+  let lo = Math.min(...cfg.data), hi = Math.max(...cfg.data);
+  const pad = (hi - lo) * 0.18 || 1; lo -= pad; hi += pad;
+  const X = (i) => (i / (n - 1)) * W;
+  const Y = (v) => {
+    const t = (v - lo) / (hi - lo);
+    return cfg.invert ? 12 + t * (H - 24) : H - 12 - t * (H - 24);
+  };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none" });
+  const id = "sf" + (++gid);
+  const grad = sv("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 }, sv("defs", {}, svg));
+  sv("stop", { offset: "0%", "stop-color": cfg.color, "stop-opacity": .22 }, grad);
+  sv("stop", { offset: "100%", "stop-color": cfg.color, "stop-opacity": 0 }, grad);
+  const pts = cfg.data.map((v, i) => [X(i), Y(v)]);
+  const line = smoothPath(pts);
+  sv("path", { d: `${line} L${W},${H} L0,${H} Z`, fill: `url(#${id})` }, svg);
+  sv("path", { d: line, fill: "none", stroke: cfg.color, "stroke-width": 2.2, "stroke-linecap": "round" }, svg);
+  const [lx, ly] = pts[n - 1];
+  sv("circle", { cx: lx - 4, cy: ly, r: 3.5, fill: cfg.color }, svg);
+  el.appendChild(svg);
+}
+
+/* detail line — full-bleed, one faint reference line, min/max ghosted inside */
+function lineFull(el, cfg) {
+  const W = 353, H = 230, pt = 18, pb = 30;
+  const vals = cfg.values, n = vals.length;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const padY = (hi - lo) * 0.14 || 1; lo -= padY; hi += padY;
+  const X = (i) => (i / (n - 1)) * W;
+  const Y = (v) => {
+    const t = (v - lo) / (hi - lo);
+    return cfg.reversed ? pt + t * (H - pt - pb) : H - pb - t * (H - pt - pb);
+  };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  const yf = cfg.yfmt || ((v) => Math.round(v));
+  const mid = lo + (hi - lo) / 2, ym = Y(mid);
+  sv("line", { x1: 0, x2: W, y1: ym, y2: ym, stroke: T.line, "stroke-dasharray": "3 4" }, svg);
+  sv("text", { x: 4, y: ym - 6, fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace", opacity: .8 }, svg).textContent = yf(mid);
+  const id = "lf" + (++gid);
+  const grad = sv("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 }, sv("defs", {}, svg));
+  sv("stop", { offset: "0%", "stop-color": cfg.color, "stop-opacity": .18 }, grad);
+  sv("stop", { offset: "100%", "stop-color": cfg.color, "stop-opacity": 0 }, grad);
+  const pts = vals.map((v, i) => [X(i), Y(v)]);
+  const line = smoothPath(pts);
+  sv("path", { d: `${line} L${W},${H - pb} L0,${H - pb} Z`, fill: `url(#${id})` }, svg);
+  sv("path", { d: line, fill: "none", stroke: cfg.color, "stroke-width": 2.5, "stroke-linecap": "round" }, svg);
+  (cfg.prs || []).forEach((i) => sv("circle", { cx: Math.min(X(i), W - 6), cy: Y(vals[i]), r: 4.5, fill: cfg.color, stroke: T.ink, "stroke-width": 2 }, svg));
+  const [lx, ly] = pts[n - 1];
+  sv("circle", { cx: Math.min(lx, W - 6), cy: ly, r: 4, fill: cfg.color, stroke: T.ink, "stroke-width": 2 }, svg);
+  const xIdx = cfg.xAll ? vals.map((_, i) => i) : [0, n - 1];
+  for (const i of xIdx)
+    sv("text", { x: i === 0 ? 4 : Math.min(X(i), W - 4), y: H - 10, "text-anchor": i === 0 ? "start" : "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = cfg.labels[i];
+  const cross = sv("line", { y1: pt, y2: H - pb, stroke: T.ash, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0 }, svg);
+  const hit = sv("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }, svg);
+  const move = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    const r = svg.getBoundingClientRect();
+    const px = ((t.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px / W) * (n - 1))));
+    cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", .5);
+    const isPr = (cfg.prs || []).includes(i) ? " – <b>PR</b>" : "";
+    showTip(`${cfg.labels[i]} – <b>${cfg.fmt(vals[i])}</b>${isPr}`, r.left + (X(i) / W) * r.width, r.top + (Y(vals[i]) / H) * r.height);
+  };
+  hit.addEventListener("mousemove", move);
+  hit.addEventListener("touchstart", move, { passive: true });
+  hit.addEventListener("touchmove", move, { passive: true });
+  hit.addEventListener("mouseleave", () => { cross.setAttribute("opacity", 0); hideTip(); });
+  hit.addEventListener("touchend", () => { cross.setAttribute("opacity", 0); hideTip(); });
+  el.appendChild(svg);
+}
+
+/* tonnage — thin full-bleed stacked bars, 2px gaps, no axis furniture */
+function barsFull(el, d) {
+  const W = 353, H = 230, pb = 26, pt = 16;
+  const n = d.base.length;
+  const tot = d.base.map((b, i) => b + d.hard[i]);
+  const hi = Math.max(...tot) * 1.08;
+  const bw = W / n - 6;
+  const Y = (v) => H - pb - (v / hi) * (H - pt - pb);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  for (let i = 0; i < n; i++) {
+    const x = (i + 0.5) * (W / n) - bw / 2;
+    const yb = Y(d.base[i]), yt = Y(tot[i]);
+    const g = sv("g", { cursor: "pointer" }, svg);
+    sv("rect", { x, y: yb, width: bw, height: H - pb - yb, fill: T.deepBase, rx: 2 }, g);
+    sv("rect", { x, y: yt, width: bw, height: Math.max(0, yb - yt - 2), fill: T.deepHard, rx: 3 }, g);
+    const over = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      showTip(`W${i + 1} – base <b>${d.base[i].toFixed(1)} t</b> – hard <b>${d.hard[i].toFixed(1)} t</b>`, t.clientX, t.clientY);
+    };
+    g.addEventListener("mousemove", over);
+    g.addEventListener("touchstart", over, { passive: true });
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("touchend", hideTip);
+  }
+  sv("text", { x: 4, y: H - 8, fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "12 wks ago";
+  sv("text", { x: W - 4, y: H - 8, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "now";
+  el.appendChild(svg);
+}
+
+/* run deltas — thin bars on a hairline baseline */
+function deltas(el, ds) {
+  const W = 353, H = 210, pt = 26, pb = 26;
+  const n = ds.length, mid = (H - pb + pt) / 2;
+  const hi = Math.max(...ds.map(Math.abs)) * 1.15;
+  const bw = W / n - 12;
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  sv("line", { x1: 0, x2: W, y1: mid, y2: mid, stroke: T.line }, svg);
+  ds.forEach((v, i) => {
+    const x = (i + 0.5) * (W / n) - bw / 2;
+    const h = (Math.abs(v) / hi) * (mid - pt);
+    const faster = v < 0;
+    const g = sv("g", { cursor: "pointer" }, svg);
+    sv("rect", { x, y: faster ? mid + 2 : mid - 2 - h, width: bw, height: h, rx: 2.5, fill: faster ? T.lime : T.redText }, g);
+    sv("text", { x: x + bw / 2, y: faster ? mid + h + 16 : mid - h - 8, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "JetBrains Mono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v;
+    const over = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      showTip(`Run ${i + 1} of 8 – <b>${v > 0 ? "+" : ""}${v} s/km</b> vs avg`, t.clientX, t.clientY);
+    };
+    g.addEventListener("mousemove", over);
+    g.addEventListener("touchstart", over, { passive: true });
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("touchend", hideTip);
+  });
+  el.appendChild(svg);
+}
+
+function zones(el, rows, color) {
+  const hi = Math.max(...rows.map((r) => r[1]));
+  const wrap = document.createElement("div");
+  wrap.style.padding = "26px 0 10px";
+  wrap.innerHTML = rows.map(([l, p]) => `
+    <div class="zone">
+      <span class="zl">${l}</span>
+      <span class="zt"><span class="zf" style="width:${(p / hi) * 100}%; background:${color}; opacity:${.45 + (p / hi) * .55}"></span></span>
+      <span class="zv">${p}%</span>
+    </div>`).join("");
+  el.appendChild(wrap);
+}
+
+function heat(el, weeks, foot) {
+  const wrap = document.createElement("div");
+  wrap.className = "heat";
+  wrap.style.padding = "26px 0 0";
+  wrap.innerHTML = weeks.map((w) => `<i style="${w ? `background: color-mix(in srgb, ${T.lime} ${[0,26,52,88][w]}%, ${T.ink2})` : ""}"></i>`).join("")
+    + `<span class="foot">${foot}</span>`;
+  el.appendChild(wrap);
+}
+
+/* ── TODAY rail ── */
+const rail = document.getElementById("rail");
+Object.keys(EXERCISES).forEach((k) => {
+  const e = EXERCISES[k];
+  const b = document.createElement("button");
+  b.className = "wgt";
+  b.innerHTML = `
+    <div class="wgt-text">
+      <div class="wgt-row1"><span class="wgt-name">${e.name}</span><span class="wgt-delta ${e.card.dir}">${e.card.delta}</span></div>
+      <div class="wgt-num">${e.card.num}<span>${e.card.unit}</span></div>
+      <div class="wgt-lab">${e.card.label}</div>
+    </div>
+    <div class="wgt-chart"></div>`;
+  sparkFull(b.querySelector(".wgt-chart"), { data: e.card.spark, color: e.color, invert: e.card.invert });
+  b.addEventListener("click", () => openDetail(k));
+  rail.appendChild(b);
+});
+const allCard = document.createElement("button");
+allCard.className = "wgt wgt-all";
+allCard.innerHTML = `<span class="plus">＋</span><span>All exercises<br/>&amp; favourites</span>`;
+allCard.addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
+rail.appendChild(allCard);
+document.getElementById("lnk-all").addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
+
+/* ── DETAIL ── */
+const scrToday = document.getElementById("scr-today");
+const scrDetail = document.getElementById("scr-detail");
+const pager = document.getElementById("pager");
+const segs = document.getElementById("segs");
+const hero = document.getElementById("hero");
+const dBody = document.getElementById("d-body");
+let slides = [], heroTimer = null;
+
+function heroHTML(s) {
+  return `
+    <div class="hero-num">${s.num}<span class="u">${s.unit}</span>${s.delta ? `<span class="d ${s.dir}">${s.delta}</span>` : ""}</div>
+    <div class="hero-lab">${s.label}</div>`;
+}
+
+function openDetail(key) {
+  const e = EXERCISES[key];
+  document.getElementById("d-name").textContent = e.name;
+  document.getElementById("d-periods").innerHTML =
+    ["8W", "6M", "1Y", "All"].map((p, i) => `<button class="pd${i === 3 ? " on" : ""}">${p}</button>`).join("");
+  document.querySelectorAll("#d-periods .pd").forEach((b) =>
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#d-periods .pd").forEach((x) => x.classList.remove("on"));
+      b.classList.add("on");
+    }));
+  document.getElementById("substats").innerHTML =
+    e.substats.map((s) => `<div><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join("");
+
+  pager.innerHTML = ""; segs.innerHTML = "";
+  dBody.classList.remove("all");
+  document.getElementById("btn-all").textContent = "All stats";
+  slides = e.slides;
+  e.slides.forEach((s, i) => {
+    const sl = document.createElement("div");
+    sl.className = "slide";
+    const lab = document.createElement("div");
+    lab.className = "slide-lab";
+    lab.textContent = s.label;
+    sl.appendChild(lab);
+    const c = document.createElement("div");
+    c.className = "chart";
+    s.render(c);
+    sl.appendChild(c);
+    pager.appendChild(sl);
+    const g = document.createElement("i");
+    g.className = "seg" + (i === 0 ? " on" : "");
+    segs.appendChild(g);
+  });
+  pager.scrollLeft = 0;
+  hero.classList.remove("fade");
+  hero.innerHTML = heroHTML(e.slides[0]);
+  setPage(0, true);
+  scrToday.classList.remove("on");
+  scrDetail.classList.add("on");
+  scrDetail.scrollTop = 0;
+}
+
+let curPage = 0;
+function setPage(i, instant) {
+  [...segs.children].forEach((d, j) => d.classList.toggle("on", j === i));
+  document.getElementById("pg-prev").disabled = i === 0;
+  document.getElementById("pg-next").disabled = i === slides.length - 1;
+  if (i === curPage && !instant) return;
+  curPage = i;
+  if (instant) { hero.innerHTML = heroHTML(slides[i]); return; }
+  /* the number follows the swipe — quiet crossfade */
+  hero.classList.add("fade");
+  clearTimeout(heroTimer);
+  heroTimer = setTimeout(() => {
+    hero.innerHTML = heroHTML(slides[i]);
+    hero.classList.remove("fade");
+  }, 160);
+}
+pager.addEventListener("scroll", () => {
+  if (dBody.classList.contains("all")) return;
+  const i = Math.min(slides.length - 1, Math.round(pager.scrollLeft / pager.clientWidth));
+  setPage(i);
+}, { passive: true });
+document.getElementById("pg-prev").addEventListener("click", () => pager.scrollBy({ left: -pager.clientWidth, behavior: "smooth" }));
+document.getElementById("pg-next").addEventListener("click", () => pager.scrollBy({ left: pager.clientWidth, behavior: "smooth" }));
+document.addEventListener("keydown", (e) => {
+  if (!scrDetail.classList.contains("on") || dBody.classList.contains("all")) return;
+  if (e.key === "ArrowLeft") pager.scrollBy({ left: -pager.clientWidth, behavior: "smooth" });
+  if (e.key === "ArrowRight") pager.scrollBy({ left: pager.clientWidth, behavior: "smooth" });
+});
+document.getElementById("btn-all").addEventListener("click", (ev) => {
+  const all = dBody.classList.toggle("all");
+  ev.target.textContent = all ? "Less" : "All stats";
+  /* the hero pairs with the visible chart — expanded, that's the first one */
+  pager.scrollLeft = 0;
+  setPage(0, true);
+});
+document.getElementById("btn-back").addEventListener("click", () => {
+  scrDetail.classList.remove("on");
+  scrToday.classList.add("on");
+});
+</script>
+</body>
+</html>
