@@ -29,6 +29,7 @@ export * from "./body-progress";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";
+export * from "./exercise-widget";
 export * from "./capabilities";
 export * from "./rpe";
 export * from "./agents";
