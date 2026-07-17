@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Off-plan card — 5 reduction passes</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--line:#242724;--line2:#33372f;
+    --chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1200px;margin:0 auto 18px}
+  .kick{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kick::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:780px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  .gallery{max-width:1200px;margin:40px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:48px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:400px}
+  .cap{margin:0 2px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .cap .cut{margin-top:8px;font:600 10.5px/1.6 var(--mono);color:var(--ash2)}
+  .cap .cut b{color:var(--red-text,#e58a5c);font-weight:700}
+  .ctx{font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:14px 4px 8px}
+  .ctx:first-of-type{margin-top:0}
+
+  .card{border:1px solid var(--line);border-radius:22px;padding:18px;background:var(--ink2);box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--blue-text)}
+  .khead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+  /* session row — check chips deleted everywhere on this page */
+  .row{display:flex;align-items:center;gap:12px;padding:11px 0;cursor:pointer}
+  .row + .row{border-top:1px solid var(--line)}
+  .row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--blue) 14%,transparent);border:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
+  .row .tx{flex:1;min-width:0}
+  .row .tx .t{display:block;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .tx .m{display:block;font:400 11px/1 var(--mono);color:var(--ash);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .dash{width:100%;background:transparent;border:1px dashed var(--line);border-radius:999px;padding:10px;cursor:pointer;font:400 11.5px var(--mono);color:var(--ash);text-align:center}
+  .dash b{color:var(--lime-text);font-weight:600}
+
+  .count-quiet{font:600 11px/1 var(--mono);color:var(--ash);cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex:none}
+  .count-quiet b{color:var(--chalk);font-weight:700;font-variant-numeric:tabular-nums}
+  .count-quiet .ar{color:var(--ash2)}
+
+  .empty-line{padding:12px 2px;color:var(--ash);font-size:13px;line-height:1.55}
+
+  /* c2 — the number is the card */
+  .numhead{display:flex;align-items:center;gap:16px;cursor:pointer;padding:6px 0 14px}
+  .numhead .big{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
+  .numhead .lbl{flex:1;min-width:0}
+  .numhead .lbl .k{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .numhead .lbl .s{font:400 11px/1.5 var(--mono);color:var(--ash2);margin-top:6px}
+  .numhead .ar{font:400 16px var(--mono);color:var(--ash2);flex:none}
+
+  /* c3 — receipt */
+  .sum{display:flex;align-items:baseline;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:13px;cursor:pointer}
+  .sum .k{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .sum .v{font-size:22px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .sum .ar{font:400 13px var(--mono);color:var(--ash2)}
+
+  /* c4 — action as a row */
+  .ghost{display:flex;align-items:center;gap:12px;padding:11px 0;cursor:pointer}
+  .ghost + .ghost,.row + .ghost{border-top:1px solid var(--line)}
+  .ghost .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;border:1px dashed var(--line2);color:var(--ash2);font-size:17px}
+  .ghost .t{font:600 12px/1 var(--mono);color:var(--lime-text)}
+
+  /* c5 — flight board */
+  .board .ln{display:flex;align-items:baseline;gap:14px;padding:10px 2px;font-family:var(--mono);cursor:pointer}
+  .board .ln + .ln{border-top:1px solid var(--line)}
+  .board .tm{font:600 11px/1 var(--mono);color:var(--ash);font-variant-numeric:tabular-nums;flex:none}
+  .board .nm{font:700 12.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .board .du{font:400 11px/1 var(--mono);color:var(--ash);flex:none}
+  .board .nil{padding:14px 2px;text-align:center;font:600 10px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--ash2)}
+  .board .ft{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:13px;margin-top:2px}
+  .board .ft .log{font:700 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lime-text);cursor:pointer}
+  .board .ft .tot{font:600 11px/1 var(--mono);color:var(--ash);cursor:pointer}
+  .board .ft .tot b{color:var(--chalk);font-weight:700;font-variant-numeric:tabular-nums}
+
+  footer{max-width:1200px;margin:56px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kick">Also today — the reduction pass</div>
+  <h1>What can we remove? <span>— 5 answers</span></h1>
+  <p>The shipped ledger-footer card says its number three ways: a lime pill counting rows, a ledger line counting the day, a kicker that sometimes repeats the ledger's words. These five each take a different <b>single-number, single-action</b> position. Common cuts across all five: <b>the lime pill is gone</b> (a short list is its own count), <b>the per-row ✓ is gone</b> (everything in this card is by definition done), and the count is a <b>real, honest tap target</b> that opens the day's log. Every concept keeps the brief: always visible, count lives here, the current dashed bar where it earns its place.</p>
+</div>
+
+<div class="gallery">
+
+  <!-- 1 · ONE LINE -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>One line</div>
+      <h2>The header absorbs the count</h2>
+      <p>Kicker left, a quiet <b>"1 today →"</b> right — count and tap-through fused into one element where the pill used to sit. Rows are clean; the dashed bar is the card's only action, <b>present in both states</b>, so the card behaves identically full or empty.</p>
+      <div class="cut">DELETED: pill – ledger line – per-row ✓ – empty-state link (one action rule)</div>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span class="count-quiet"><b>1</b> today <span class="ar">→</span></span>
+      </div>
+      <div style="margin-top:6px">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+        </div>
+      </div>
+      <button class="dash">+ <b>Log another workout</b></button>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span class="count-quiet"><b>0</b> today <span class="ar">→</span></span>
+      </div>
+      <div class="empty-line">Quick sport logs and freestyle sessions land here.</div>
+      <button class="dash">+ <b>Log a workout</b></button>
+    </div>
+  </div>
+
+  <!-- 2 · THE NUMBER IS THE CARD -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>The number is the card</div>
+      <h2>One numeral, display weight</h2>
+      <p>If the count matters enough to move here, let it <b>be the object</b>: a 44px numeral, the label beside it, the whole header one tap target for the day's log. Rows sit under a hairline as supporting evidence. Zero isn't hidden — it's the same numeral in ash, and the sub-line does the inviting.</p>
+      <div class="cut">DELETED: pill – kicker row (label folds into the stat) – ✓ chips – separate ledger</div>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="numhead">
+        <span class="big">1</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">off-plan — beyond the schedule</span>
+        </span>
+        <span class="ar">→</span>
+      </div>
+      <div style="border-top:1px solid var(--line)">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+        </div>
+      </div>
+      <button class="dash">+ <b>Log another workout</b></button>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="numhead" style="padding-bottom:2px">
+        <span class="big" style="color:var(--ash2)">0</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">a match, a run, a swim — it lands here</span>
+        </span>
+        <span class="ar">→</span>
+      </div>
+      <button class="dash" style="margin-top:14px">+ <b>Log a workout</b></button>
+    </div>
+  </div>
+
+  <!-- 3 · RECEIPT -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Receipt</div>
+      <h2>Rows, then the total</h2>
+      <p>A card that works like a till receipt: the entries first, then a rule, then the <b>sum — right-aligned, tabular, tappable</b>. The total is the only number and it sits where totals live: at the bottom, after what it counts. The kicker stays as the receipt's letterhead.</p>
+      <div class="cut">DELETED: pill – ✓ chips – "done today" prose (the sum's label carries it)</div>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="kicker">Also today — off-plan</div>
+      <div style="margin-top:6px;margin-bottom:12px">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+        </div>
+      </div>
+      <div class="sum"><span class="k">Today</span><span class="v">1</span><span class="ar">→</span></div>
+      <button class="dash" style="margin-top:14px">+ <b>Log another workout</b></button>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="kicker">Also today — off-plan</div>
+      <div class="empty-line">Nothing beyond the plan yet.</div>
+      <div class="sum"><span class="k">Today</span><span class="v" style="color:var(--ash2)">0</span><span class="ar">→</span></div>
+      <button class="dash" style="margin-top:14px">+ <b>Log a workout</b></button>
+    </div>
+  </div>
+
+  <!-- 4 · ACTION AS A ROW -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>Action as a row</div>
+      <h2>One vocabulary, no copy</h2>
+      <p>The card speaks a single language: rows. The log action stops being a differently-shaped bar and becomes a <b>ghost row</b> — dashed tile, lime label — stacked with the real ones. Empty, the ghost row <b>is</b> the empty state: it shows the shape of what will appear, so no explanatory sentence is needed at all.</p>
+      <div class="cut">DELETED: pill – ✓ chips – dashed bar (re-formed as a row) – empty-state copy entirely</div>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span class="count-quiet"><b>1</b> today <span class="ar">→</span></span>
+      </div>
+      <div style="margin-top:6px">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+        </div>
+        <div class="ghost">
+          <span class="av">＋</span>
+          <span class="t">Log another workout</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span class="count-quiet"><b>0</b> today <span class="ar">→</span></span>
+      </div>
+      <div style="margin-top:6px">
+        <div class="ghost">
+          <span class="av">＋</span>
+          <span class="t">Log a workout</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · FLIGHT BOARD -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Flight board</div>
+      <h2>Typography is the interface</h2>
+      <p>The furthest cut: no icon tiles, no chips, no pills — <b>only type on the surface</b>. Each session is a mono line (time, name, duration) like a departures board; the footer is one instrument strip: <b>+ LOG</b> left, <b>TODAY 1 →</b> right. Empty, the board says so in its own voice — a dimmed station line.</p>
+      <div class="cut">DELETED: emoji tiles – ✓ chips – pill – sans type inside the card (mono carries everything)</div>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card board">
+      <div class="kicker" style="margin-bottom:4px">Also today — off-plan</div>
+      <div class="ln">
+        <span class="tm">10:17</span>
+        <span class="nm">Tennis</span>
+        <span class="du">5 min</span>
+      </div>
+      <div class="ft">
+        <span class="log">+ Log workout</span>
+        <span class="tot">Today <b>1</b> →</span>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card board">
+      <div class="kicker" style="margin-bottom:4px">Also today — off-plan</div>
+      <div class="nil">— nothing off-plan —</div>
+      <div class="ft">
+        <span class="log">+ Log workout</span>
+        <span class="tot">Today <b>0</b> →</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <b>The rule under all five: one number, one action, nothing that restates the visible.</b> The count is always the day's total, always a real tap target opening the Done-Today sheet (the "→" is earned, not decorative). The no-plan fallback ("Done today" kicker) stops colliding with the ledger because the ledger's words are gone — the number carries itself. Aurora tokens, standalone preview, no build step. Web + mobile parity applies to whichever ships.
+</footer>
+
+</body>
+</html>
