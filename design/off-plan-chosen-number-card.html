@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Off-plan card — chosen: number-is-the-card + row action</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--line:#242724;--line2:#33372f;
+    --chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:900px;margin:0 auto 34px}
+  .kick{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kick::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(28px,4.5vw,40px);line-height:1.05;letter-spacing:-.03em;font-weight:800;margin-bottom:14px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:720px;font-size:15px;line-height:1.6}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  .stage{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:34px;align-items:start;justify-items:center}
+  .col{width:100%;max-width:400px}
+  .ctx{font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:0 4px 10px}
+
+  .card{border:1px solid var(--line);border-radius:22px;padding:18px;background:var(--ink2);box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+
+  /* the stat header — the number IS the card; whole strip taps → Done-Today sheet */
+  .numhead{display:flex;align-items:center;gap:16px;cursor:pointer;padding:6px 0 14px}
+  .numhead .big{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
+  .numhead .lbl{flex:1;min-width:0}
+  .numhead .lbl .k{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .numhead .lbl .s{font:400 11px/1.5 var(--mono);color:var(--ash2);margin-top:6px}
+  .numhead .ar{font:400 16px var(--mono);color:var(--ash2);flex:none}
+
+  /* session rows + the ghost action row — one vocabulary */
+  .row{display:flex;align-items:center;gap:12px;padding:11px 0;cursor:pointer}
+  .row + .row{border-top:1px solid var(--line)}
+  .row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--blue) 14%,transparent);border:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
+  .row .tx{flex:1;min-width:0}
+  .row .tx .t{display:block;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .tx .m{display:block;font:400 11px/1 var(--mono);color:var(--ash);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row.ghost .av{background:none;border:1px dashed var(--line2);color:var(--ash2);font-size:17px}
+  .row.ghost .t{font:600 12px/1 var(--mono);color:var(--lime-text)}
+
+  .note{max-width:900px;margin:44px auto 0;border-top:1px solid var(--line);padding-top:24px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  .note b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kick">Chosen — final check before build</div>
+  <h1>The number is the card <span>+ the action is a row</span></h1>
+  <p>Concept 2's stat header — the day's total as a <b>44px numeral</b>, label beside it, the whole strip one tap target for the Done-Today sheet — with concept 4's <b>ghost row</b> as the log action when workouts exist: same row vocabulary as the sessions above it, dashed tile, lime label. Empty, the ghost row does the same job (and replaces the dashed bar there too, so the card has one action shape everywhere). No pill, no ✓ chips, no restated words.</p>
+</div>
+
+<div class="stage">
+
+  <div class="col">
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="numhead">
+        <span class="big">1</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">off-plan — beyond the schedule</span>
+        </span>
+        <span class="ar">→</span>
+      </div>
+      <div style="border-top:1px solid var(--line)">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+        </div>
+        <div class="row ghost">
+          <span class="av">＋</span>
+          <span class="tx"><span class="t">Log another workout</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="numhead">
+        <span class="big" style="color:var(--ash2)">0</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">a match, a run, a swim — it lands here</span>
+        </span>
+        <span class="ar">→</span>
+      </div>
+      <div style="border-top:1px solid var(--line)">
+        <div class="row ghost">
+          <span class="av">＋</span>
+          <span class="tx"><span class="t">Log a workout</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Anatomy, top to bottom:</b> stat strip (numeral = day's TOTAL done, plan + off-plan; tap anywhere on it → Done-Today sheet) – hairline – off-plan session rows (tap → session breakdown) – ghost action row (tap → quick-log sheet). The no-plan case needs no special words anymore: the numeral + DONE TODAY label carry it, and the "off-plan" sub-line simply drops when there is no plan. Aurora tokens, standalone preview.
+</div>
+
+</body>
+</html>
