@@ -57,8 +57,8 @@
   .row .tx .t{display:block;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .row .tx .m{display:block;font:400 11px/1 var(--mono);color:var(--ash);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* the action row — same anatomy, the tile is a quiet inset surface (no dash) */
-  .row.act .av{background:var(--ink);color:var(--ash);font-size:17px}
-  .card.float .row.act .av{background:var(--ink2)}
+  /* the add affordance is the one deliberate dash in the card (user call) */
+  .row.act .av{background:transparent;border:1px dashed color-mix(in srgb,var(--ash) 40%,transparent);color:var(--ash);font-size:17px}
   .row.act .t{font:600 12px/1 var(--mono);color:var(--lime-text)}
 
   .note{max-width:900px;margin:44px auto 0;border-top:1px solid var(--line);padding-top:24px;color:var(--ash2);font:600 12px/1.7 var(--mono)}

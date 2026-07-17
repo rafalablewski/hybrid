@@ -609,7 +609,8 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 // as rows beneath it and the log action as a ghost row in the same vocabulary.
 // Always rendered: empty, the numeral reads 0 and the sub-line does the
 // inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border. With no schedule the
+// chips/pills) — the card's own edge is the only border, with one deliberate
+// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
 // "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
 // Rows open the session's breakdown. Mirrored on web (aurora/today.tsx).
 function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
@@ -653,7 +654,7 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
           </Pressable>
         ))}
         <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={logLabel} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.ink }}>
+          <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
             <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>

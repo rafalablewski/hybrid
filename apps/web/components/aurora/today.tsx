@@ -603,7 +603,8 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 // as rows beneath it and the log action as a ghost row in the same vocabulary.
 // Always rendered: empty, the numeral reads 0 and the sub-line does the
 // inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border. With no schedule the
+// chips/pills) — the card's own edge is the only border, with one deliberate
+// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
 // "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
 // Rows open the session's breakdown. Mirrored on mobile (aurora/home.tsx).
 function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
@@ -647,7 +648,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
           </button>
         ))}
         <button type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
-          <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: C("ink"), color: C("ash") }}>＋</span>
+          <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
         </button>
       </div>
