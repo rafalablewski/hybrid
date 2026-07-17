@@ -623,7 +623,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
-      <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
+      <button type="button" onClick={onDone} aria-label={`${doneCount} ${t("w.home.today.glanceDone")}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 44, letterSpacing: "-.05em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</span>
@@ -634,7 +634,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
         {extras.map((s) => (
-          <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+          <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
             <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 16%, transparent)` }}>
               {sessionIcon(s)}
             </span>
@@ -646,7 +646,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
             </span>
           </button>
         ))}
-        <button onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
+        <button type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
           <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: C("ink"), color: C("ash") }}>＋</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
         </button>
