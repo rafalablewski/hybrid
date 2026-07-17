@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Off-plan card — chosen: number-is-the-card + row action</title>
+<title>Off-plan card — chosen: number-is-the-card, borderless</title>
 <style>
   :root{
-    --ink:#0c0d0c;--ink2:#141614;--line:#242724;--line2:#33372f;
+    --ink:#0c0d0c;--ink2:#141614;--ink3:#181b17;
+    --line:#242724;--line2:#33372f;
     --chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
     --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
     --blue:#3c787e;--blue-text:#6cb6bd;
@@ -27,29 +28,38 @@
   .page-head p{color:var(--ash);max-width:720px;font-size:15px;line-height:1.6}
   .page-head p b{color:var(--chalk);font-weight:600}
 
-  .stage{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:34px;align-items:start;justify-items:center}
+  .band{max-width:900px;margin:38px auto 0}
+  .band-title{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin:0 2px 6px}
+  .band-sub{color:var(--ash2);font-size:12.5px;line-height:1.55;margin:0 2px 16px;max-width:640px}
+  .stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:34px;align-items:start;justify-items:center}
   .col{width:100%;max-width:400px}
   .ctx{font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:0 4px 10px}
 
+  /* A — the system shell: the card keeps its single hairline edge */
   .card{border:1px solid var(--line);border-radius:22px;padding:18px;background:var(--ink2);box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  /* B — fully borderless: surface + depth only */
+  .card.float{border:none;background:var(--ink3);box-shadow:0 14px 34px -14px rgba(0,0,0,.75),0 2px 8px rgba(0,0,0,.35)}
 
-  /* the stat header — the number IS the card; whole strip taps → Done-Today sheet */
-  .numhead{display:flex;align-items:center;gap:16px;cursor:pointer;padding:6px 0 14px}
+  /* the stat strip — the number IS the card; whole strip taps → Done-Today sheet.
+     NO rule underneath: separation is space. */
+  .numhead{display:flex;align-items:center;gap:16px;cursor:pointer;padding:6px 0 4px}
   .numhead .big{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
   .numhead .lbl{flex:1;min-width:0}
   .numhead .lbl .k{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
   .numhead .lbl .s{font:400 11px/1.5 var(--mono);color:var(--ash2);margin-top:6px}
   .numhead .ar{font:400 16px var(--mono);color:var(--ash2);flex:none}
 
-  /* session rows + the ghost action row — one vocabulary */
-  .row{display:flex;align-items:center;gap:12px;padding:11px 0;cursor:pointer}
-  .row + .row{border-top:1px solid var(--line)}
-  .row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--blue) 14%,transparent);border:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
+  /* rows — NO hairlines, NO tile outlines. Objects are soft fills; rhythm is spacing. */
+  .rows{margin-top:14px;display:flex;flex-direction:column;gap:4px}
+  .row{display:flex;align-items:center;gap:12px;padding:8px 0;cursor:pointer;border:none;background:none}
+  .row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--blue) 16%,transparent)}
   .row .tx{flex:1;min-width:0}
   .row .tx .t{display:block;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .row .tx .m{display:block;font:400 11px/1 var(--mono);color:var(--ash);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .row.ghost .av{background:none;border:1px dashed var(--line2);color:var(--ash2);font-size:17px}
-  .row.ghost .t{font:600 12px/1 var(--mono);color:var(--lime-text)}
+  /* the action row — same anatomy, the tile is a quiet inset surface (no dash) */
+  .row.act .av{background:var(--ink);color:var(--ash);font-size:17px}
+  .card.float .row.act .av{background:var(--ink2)}
+  .row.act .t{font:600 12px/1 var(--mono);color:var(--lime-text)}
 
   .note{max-width:900px;margin:44px auto 0;border-top:1px solid var(--line);padding-top:24px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
   .note b{color:var(--ash)}
@@ -58,61 +68,111 @@
 <body>
 
 <div class="page-head">
-  <div class="kick">Chosen — final check before build</div>
-  <h1>The number is the card <span>+ the action is a row</span></h1>
-  <p>Concept 2's stat header — the day's total as a <b>44px numeral</b>, label beside it, the whole strip one tap target for the Done-Today sheet — with concept 4's <b>ghost row</b> as the log action when workouts exist: same row vocabulary as the sessions above it, dashed tile, lime label. Empty, the ghost row does the same job (and replaces the dashed bar there too, so the card has one action shape everywhere). No pill, no ✓ chips, no restated words.</p>
+  <div class="kick">Chosen — border pass</div>
+  <h1>Same card, no lines <span>— surface and space do the work</span></h1>
+  <p>Every interior border is gone: <b>no dashed tile</b> on the action row (it's a quiet inset fill now), <b>no outline</b> on the session tile (soft teal fill only), <b>no hairline rules</b> — the stat strip, the rows and the action separate by spacing alone. Two shell depths below: <b>A</b> keeps the card's single system hairline (what every other card on Today wears), <b>B</b> deletes even that — a lifted surface held by shadow. Pick the shell; the inside is identical.</p>
 </div>
 
-<div class="stage">
-
-  <div class="col">
-    <div class="ctx">With a workout</div>
-    <div class="card">
-      <div class="numhead">
-        <span class="big">1</span>
-        <span class="lbl">
-          <span class="k" style="display:block">Done today</span>
-          <span class="s" style="display:block">off-plan — beyond the schedule</span>
-        </span>
-        <span class="ar">→</span>
-      </div>
-      <div style="border-top:1px solid var(--line)">
-        <div class="row">
-          <span class="av">🎾</span>
-          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+<div class="band">
+  <div class="band-title">A — system shell</div>
+  <div class="band-sub">One line total: the card's own edge, matching the rest of the Today screen. Everything inside is line-free.</div>
+  <div class="stage">
+    <div class="col">
+      <div class="ctx">With a workout</div>
+      <div class="card">
+        <div class="numhead">
+          <span class="big">1</span>
+          <span class="lbl">
+            <span class="k" style="display:block">Done today</span>
+            <span class="s" style="display:block">off-plan — beyond the schedule</span>
+          </span>
+          <span class="ar">→</span>
         </div>
-        <div class="row ghost">
-          <span class="av">＋</span>
-          <span class="tx"><span class="t">Log another workout</span></span>
+        <div class="rows">
+          <div class="row">
+            <span class="av">🎾</span>
+            <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          </div>
+          <div class="row act">
+            <span class="av">＋</span>
+            <span class="tx"><span class="t">Log another workout</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="ctx">Empty</div>
+      <div class="card">
+        <div class="numhead">
+          <span class="big" style="color:var(--ash2)">0</span>
+          <span class="lbl">
+            <span class="k" style="display:block">Done today</span>
+            <span class="s" style="display:block">a match, a run, a swim — it lands here</span>
+          </span>
+          <span class="ar">→</span>
+        </div>
+        <div class="rows">
+          <div class="row act">
+            <span class="av">＋</span>
+            <span class="tx"><span class="t">Log a workout</span></span>
+          </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="col">
-    <div class="ctx">Empty</div>
-    <div class="card">
-      <div class="numhead">
-        <span class="big" style="color:var(--ash2)">0</span>
-        <span class="lbl">
-          <span class="k" style="display:block">Done today</span>
-          <span class="s" style="display:block">a match, a run, a swim — it lands here</span>
-        </span>
-        <span class="ar">→</span>
+<div class="band">
+  <div class="band-title">B — no shell at all</div>
+  <div class="band-sub">Zero lines anywhere: a slightly lighter surface, lifted by shadow. Purest, but it steps outside the current card system — shipping it means the other Today cards should follow.</div>
+  <div class="stage">
+    <div class="col">
+      <div class="ctx">With a workout</div>
+      <div class="card float">
+        <div class="numhead">
+          <span class="big">1</span>
+          <span class="lbl">
+            <span class="k" style="display:block">Done today</span>
+            <span class="s" style="display:block">off-plan — beyond the schedule</span>
+          </span>
+          <span class="ar">→</span>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="av">🎾</span>
+            <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          </div>
+          <div class="row act">
+            <span class="av">＋</span>
+            <span class="tx"><span class="t">Log another workout</span></span>
+          </div>
+        </div>
       </div>
-      <div style="border-top:1px solid var(--line)">
-        <div class="row ghost">
-          <span class="av">＋</span>
-          <span class="tx"><span class="t">Log a workout</span></span>
+    </div>
+    <div class="col">
+      <div class="ctx">Empty</div>
+      <div class="card float">
+        <div class="numhead">
+          <span class="big" style="color:var(--ash2)">0</span>
+          <span class="lbl">
+            <span class="k" style="display:block">Done today</span>
+            <span class="s" style="display:block">a match, a run, a swim — it lands here</span>
+          </span>
+          <span class="ar">→</span>
+        </div>
+        <div class="rows">
+          <div class="row act">
+            <span class="av">＋</span>
+            <span class="tx"><span class="t">Log a workout</span></span>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
 </div>
 
 <div class="note">
-  <b>Anatomy, top to bottom:</b> stat strip (numeral = day's TOTAL done, plan + off-plan; tap anywhere on it → Done-Today sheet) – hairline – off-plan session rows (tap → session breakdown) – ghost action row (tap → quick-log sheet). The no-plan case needs no special words anymore: the numeral + DONE TODAY label carry it, and the "off-plan" sub-line simply drops when there is no plan. Aurora tokens, standalone preview.
+  <b>Anatomy unchanged from the approved combo:</b> stat strip (numeral = day's TOTAL done; tap → Done-Today sheet) – off-plan session rows (tap → breakdown) – action row (tap → quick-log). What changed: the action tile's dashed outline → inset fill, the session tile's outline → fill only, all hairline rules → spacing. The no-plan case still just drops the "off-plan" sub-line. Aurora tokens, standalone preview.
 </div>
 
 </body>
