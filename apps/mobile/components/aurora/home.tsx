@@ -631,7 +631,7 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
-      <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
+      <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={`${doneCount} ${t("w.home.today.glanceDone")}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
         <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -2, lineHeight: 44, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
