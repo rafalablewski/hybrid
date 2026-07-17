@@ -2,10 +2,9 @@ import { useMemo } from "react";
 import { View, Text } from "react-native";
 import Svg, { Path, Polyline, Circle, Line as SvgLine } from "react-native-svg";
 import {
-  e1rmTrendWithPRs, repMaxMatrix, loadRepsScatter, weeklyTonnage, intensityDistribution,
-  tonnageSurface, exerciseConsistency, paceCurve, recentRunDeltas, blockCompare,
-  paceClock, fmtWeight, fmtTonnage, kgToUnit,
-  type LoggedSession, type ExercisePeriod, type WeightUnit, type HeatCell, type BlockCompare,
+  repMaxMatrix, loadRepsScatter, tonnageSurface, exerciseConsistency, paceCurve, blockCompare,
+  paceClock, fmtTonnage, kgToUnit,
+  type LoggedSession, type WeightUnit, type HeatCell, type BlockCompare,
 } from "@hybrid/core";
 import type { BodyweightInput } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -13,9 +12,8 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
 
-// Chart-only raw hexes (mirrors web aurora/exercises.tsx): the CVD-validated
-// deep chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
-const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";
+// Chart-only raw hex (mirrors web aurora/exercise-analytics.tsx): the lime
+// landscape ramp for the tonnage surface.
 const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", "#c6f84f"];
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -49,12 +47,16 @@ function MiniTile({ v, l, c }: { v: string | number; l: string; c?: string }) {
   );
 }
 
-/** All the v2 analytics cards for one movement — strength or cardio flavour.
- *  The exact mirror of the web aurora/exercises.tsx card stack, computed from
- *  the SAME @hybrid/core aggregators. */
-export default function ExerciseAnalytics({ sessions, name, kind, period, units, bw }: {
+/** The v2 analytics cards that the exercise page's slides DON'T already cover —
+ *  rendered below the page's substats as its deep-dive stack. (e1RM/PR trend,
+ *  weekly tonnage, %e1RM zones, pace trend and run deltas live as slides; the
+ *  rep-max matrix, load×reps map, tonnage landscape, consistency heat calendar,
+ *  recent-vs-all pace curve and block compare live here.) The exact mirror of
+ *  web aurora/exercise-analytics.tsx, computed from the SAME @hybrid/core
+ *  aggregators. */
+export default function ExerciseAnalytics({ sessions, name, kind, units, bw }: {
   sessions: LoggedSession[]; name: string; kind: "strength" | "cardio" | "conditioning";
-  period: ExercisePeriod; units: WeightUnit; bw?: BodyweightInput;
+  units: WeightUnit; bw?: BodyweightInput;
 }) {
   const consistency = useMemo(() => exerciseConsistency(sessions, name, 26), [sessions, name]);
   const compare = useMemo(() => blockCompare(sessions, name, 8, Date.now(), bw), [sessions, name, bw]);
@@ -62,54 +64,18 @@ export default function ExerciseAnalytics({ sessions, name, kind, period, units,
     return (
       <>
         <PaceCurveCard sessions={sessions} name={name} />
-        <RunDeltasCard sessions={sessions} name={name} />
         <ConsistencyCard c={consistency} />
         <CompareCard compare={compare} units={units} />
       </>
     );
   return (
     <>
-      <PrTrendCard sessions={sessions} name={name} period={period} units={units} bw={bw} />
       <RepMaxCard sessions={sessions} name={name} units={units} bw={bw} />
-      <TonnageCard sessions={sessions} name={name} units={units} bw={bw} />
-      <ZonesCard sessions={sessions} name={name} period={period} bw={bw} />
       <ScatterCard sessions={sessions} name={name} units={units} bw={bw} />
       <SurfaceCard sessions={sessions} name={name} units={units} bw={bw} />
       <ConsistencyCard c={consistency} />
       <CompareCard compare={compare} units={units} />
     </>
-  );
-}
-
-// ---------------------------------------------------------------- 1. PR trend
-
-function PrTrendCard({ sessions, name, period, units, bw }: { sessions: LoggedSession[]; name: string; period: ExercisePeriod; units: WeightUnit; bw?: BodyweightInput }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const trend = useMemo(() => e1rmTrendWithPRs(sessions, name, period, Date.now(), bw), [sessions, name, period, bw]);
-  if (trend.length < 2) return null;
-  const vals = trend.map((p) => kgToUnit(p.e1rm, units));
-  const min = Math.min(...vals), max = Math.max(...vals), range = max - min || 1;
-  const W = 340, H = 150, L = 6, R = 6, T = 12, B = 8;
-  const X = (i: number) => L + (i * (W - L - R)) / (trend.length - 1);
-  const Y = (v: number) => T + ((max - v) * (H - T - B)) / range;
-  return (
-    <ACard style={{ marginTop: 14 }}>
-      <Kicker color={txt(C, C.lime)}>{t("w.analyze.ex.prTrendTitle")}</Kicker>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{Math.round(vals[vals.length - 1] ?? 0)} {units}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{Math.round(min)}–{Math.round(max)} {units}</Text>
-      </View>
-      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H, marginTop: 6 }}>
-        <Polyline points={vals.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.lime} strokeWidth={2.5} strokeLinejoin="round" />
-        {trend.map((p, i) =>
-          p.pr
-            ? <Circle key={i} cx={X(i)} cy={Y(vals[i] ?? 0)} r={5} fill={C.lime} stroke={C.ink} strokeWidth={2} />
-            : <Circle key={i} cx={X(i)} cy={Y(vals[i] ?? 0)} r={2.5} fill={C.ink2} stroke={C.lime} strokeWidth={1.5} />,
-        )}
-      </Svg>
-      <LegendRow items={[{ c: C.lime, label: t("w.analyze.ex.allTimePr") }]} />
-    </ACard>
   );
 }
 
@@ -133,66 +99,6 @@ function RepMaxCard({ sessions, name, units, bw }: { sessions: LoggedSession[]; 
         ))}
       </View>
       <LegendRow items={[{ c: C.lime, label: t("w.analyze.ex.repmaxRecent") }, { c: C.line, label: t("w.analyze.ex.repmaxOlder") }]} />
-    </ACard>
-  );
-}
-
-// ------------------------------------------------------- 4. weekly tonnage
-
-function TonnageCard({ sessions, name, units, bw }: { sessions: LoggedSession[]; name: string; units: WeightUnit; bw?: BodyweightInput }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const rows = useMemo(() => weeklyTonnage(sessions, name, 12, Date.now(), bw), [sessions, name, bw]);
-  if (rows.every((r) => r.baseKg + r.hardKg === 0)) return null;
-  const max = Math.max(...rows.map((r) => r.baseKg + r.hardKg), 1);
-  return (
-    <ACard style={{ marginTop: 14 }}>
-      <Kicker>{t("w.analyze.ex.tonnageTitle")}</Kicker>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{fmtTonnage(rows[rows.length - 1] ? rows[rows.length - 1]!.baseKg + rows[rows.length - 1]!.hardKg : 0, units)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>max {fmtTonnage(max, units)}</Text>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 96, gap: 4, marginTop: 8 }}>
-        {rows.map((r, i) => {
-          const total = r.baseKg + r.hardKg;
-          const hBase = (r.baseKg / max) * 88;
-          const hHard = (r.hardKg / max) * 88;
-          return (
-            <View key={i} style={{ flex: 1, alignItems: "stretch", justifyContent: "flex-end" }}>
-              {r.hardKg > 0 && <View style={{ height: Math.max(2, hHard), borderRadius: 3, backgroundColor: DEEP_HARD, marginBottom: 2 }} />}
-              <View style={{ height: total > 0 ? Math.max(2, hBase) : 2, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: total > 0 ? DEEP_BASE : C.line }} />
-            </View>
-          );
-        })}
-      </View>
-      <LegendRow items={[{ c: DEEP_BASE, label: t("w.analyze.ex.tonnageBase") }, { c: DEEP_HARD, label: t("w.analyze.ex.tonnageHard") }]} />
-    </ACard>
-  );
-}
-
-// --------------------------------------------------- 5. intensity distribution
-
-function ZonesCard({ sessions, name, period, bw }: { sessions: LoggedSession[]; name: string; period: ExercisePeriod; bw?: BodyweightInput }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const zones = useMemo(() => intensityDistribution(sessions, name, period, Date.now(), bw), [sessions, name, period, bw]);
-  if (zones.reduce((a, z) => a + z.count, 0) === 0) return null;
-  const tags = [t("w.analyze.ex.zoneSpeed"), t("w.analyze.ex.zoneVolume"), t("w.analyze.ex.zoneBuild"), t("w.analyze.ex.zoneStrength"), t("w.analyze.ex.zonePeak")];
-  const labels = ["<60%", "60–70", "70–80", "80–90", "90%+"];
-  const max = Math.max(...zones.map((z) => z.share), 0.01);
-  return (
-    <ACard style={{ marginTop: 14 }}>
-      <Kicker>{t("w.analyze.ex.zonesTitle")}</Kicker>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 12 }}>
-        {zones.map((z, i) => (
-          <View key={z.zone} style={{ flex: 1, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: C.chalk, marginBottom: 5 }}>{Math.round(z.share * 100)}%</Text>
-            <View style={{ alignSelf: "stretch", height: Math.max(4, (z.share / max) * 92), borderTopLeftRadius: 5, borderTopRightRadius: 5, backgroundColor: C.lime, opacity: 0.5 + i * 0.12 }} />
-            <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.chalk, marginTop: 6 }}>{labels[i]}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 6.5, color: C.ash, marginTop: 1, textAlign: "center" }} numberOfLines={1}>{tags[i]?.toUpperCase()}</Text>
-          </View>
-        ))}
-      </View>
     </ACard>
   );
 }
@@ -340,37 +246,6 @@ function PaceCurveCard({ sessions, name }: { sessions: LoggedSession[]; name: st
         ))}
       </View>
       <LegendRow items={[{ c: C.blue, label: t("w.analyze.ex.paceCurveRecent") }, { c: C.ash, label: t("w.analyze.ex.paceCurveAll") }]} />
-    </ACard>
-  );
-}
-
-// ---------------------------------------------------- 9b. recent-run deltas
-
-function RunDeltasCard({ sessions, name }: { sessions: LoggedSession[]; name: string }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const d = useMemo(() => recentRunDeltas(sessions, name, 10, Date.now()), [sessions, name]);
-  if (d.avgSec == null || d.runs.length < 3) return null;
-  const maxAbs = Math.max(...d.runs.map((r) => Math.abs(r.deltaSec)), 1);
-  return (
-    <ACard style={{ marginTop: 14 }}>
-      <Kicker color={txt(C, C.blue)}>{t("w.analyze.ex.runDeltasTitle")}</Kicker>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 6 }}>{t("w.analyze.ex.runDeltasAvg")} {paceClock(d.avgSec)} /km</Text>
-      <View style={{ height: 100, marginTop: 8, justifyContent: "center" }}>
-        <View style={{ position: "absolute", left: 0, right: 0, top: "50%", borderTopWidth: 1, borderColor: C.line, borderStyle: "dashed" }} />
-        <View style={{ flexDirection: "row", gap: 6, height: "100%" }}>
-          {d.runs.map((r, i) => {
-            const frac = Math.abs(r.deltaSec) / maxAbs;
-            const faster = r.deltaSec <= 0;
-            return (
-              <View key={i} style={{ flex: 1 }}>
-                <View style={{ position: "absolute", left: "16%", right: "16%", borderRadius: 3, backgroundColor: faster ? C.blue : C.red, ...(faster ? { bottom: "50%", height: `${Math.max(3, frac * 44)}%` } : { top: "50%", height: `${Math.max(3, frac * 44)}%` }) }} />
-              </View>
-            );
-          })}
-        </View>
-      </View>
-      <LegendRow items={[{ c: C.blue, label: t("w.analyze.ex.runDeltasFaster") }, { c: C.red, label: t("w.analyze.ex.runDeltasSlower") }]} />
     </ACard>
   );
 }

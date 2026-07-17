@@ -20,6 +20,7 @@ import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { tip } from "@/lib/ui";
 import { KIND_STROKE, TickerDelta, UP_HEX, DOWN_HEX } from "./exercise-widget";
+import ExerciseAnalytics, { card, kicker } from "./exercise-analytics";
 
 const C = (v: string) => `var(--color-${v})`;
 const LINE_HEX = "#2a2d2a", INK_HEX = "#0c0d0c";
@@ -415,6 +416,28 @@ export default function AuroraExercisePage({
             <div style={{ marginTop: 4, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{st.l}</div>
           </div>
         ))}
+      </div>
+
+      {/* DEEP DIVE — the full analytics stack (absorbed from the retired
+          Exercises dashboard): best set + velocity, then the cards the slides
+          don't cover (rep-max matrix, load×reps map, tonnage landscape,
+          consistency calendar, pace curve, block compare). */}
+      <div style={{ display: "flex", flexDirection: "column", gap: space.lg, marginTop: 22 }}>
+        {s.kind === "strength" && s.bestSet && (
+          <div style={card}>
+            <div style={{ ...kicker, color: C("lime"), marginBottom: 0 }}>{t("w.analyze.ex.bestSet")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps} <span style={{ color: C("ash") }}>– {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</span></div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</div>
+          </div>
+        )}
+        {s.kind === "strength" && s.velocity && (
+          <div style={card}>
+            <div style={{ ...kicker, marginBottom: 0 }}>{t("w.analyze.ex.velocityProfile")}</div>
+            <div style={{ fontWeight: 800, fontSize: 22, color: "var(--lime-text)", marginTop: 8 }}>{fmtWeight(s.velocity.e1rm, units)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {s.velocity.r2} – {s.velocity.n} {t("w.analyze.ex.velEstTail")}</div>
+          </div>
+        )}
+        <ExerciseAnalytics sessions={sessions} name={name} kind={model.kind} units={units} bw={bw} />
       </div>
     </div>
   );

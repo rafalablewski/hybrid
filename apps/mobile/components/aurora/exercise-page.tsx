@@ -19,8 +19,9 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, ABack } from "./kit";
+import { AuroraScreen, ABack, ACard } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
+import ExerciseAnalytics from "./exercise-charts";
 
 // Chart-only raw hexes (mirror aurora/exercise-charts.tsx / web exercise-page).
 const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";
@@ -436,6 +437,26 @@ export default function AuroraExercisePage() {
           </View>
         ))}
       </View>
+
+      {/* DEEP DIVE — the full analytics stack (absorbed from the retired
+          Exercises dashboard): best set + velocity, then the cards the slides
+          don't cover (rep-max matrix, load×reps map, tonnage landscape,
+          consistency calendar, pace curve, block compare). */}
+      {s.kind === "strength" && s.bestSet && (
+        <ACard style={{ marginTop: 22 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>
+        </ACard>
+      )}
+      {s.kind === "strength" && s.velocity && (
+        <ACard style={{ marginTop: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.velocityProfile")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime), marginTop: 6 }}>{fmtWeight(s.velocity.e1rm, units)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {s.velocity.r2} – {s.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
+        </ACard>
+      )}
+      <ExerciseAnalytics sessions={sessions} name={name} kind={model.kind} units={units} bw={bw} />
     </AuroraScreen>
   );
 }

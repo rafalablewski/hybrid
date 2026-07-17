@@ -201,7 +201,7 @@ export default function SessionDetail() {
                     {prSet.has(b.name) ? "🏆 " : ""}{b.name}
                   </Text>
                 ) : (
-                  <Pressable onPress={() => router.push({ pathname: "/exercises", params: { name: b.name } })}>
+                  <Pressable onPress={() => router.push({ pathname: "/exercise", params: { name: b.name } })}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
                       {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: fs.body }}>›</Text>
                     </Text>

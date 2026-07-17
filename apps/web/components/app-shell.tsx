@@ -195,12 +195,16 @@ export default function AppShell() {
   // History screen (parity with mobile's /session/{id}); consumed on mount.
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const openSession = (id: string) => { setPendingSessionId(id); setScreen("history"); };
-  // When the Trends hub opens a specific lift, focus it on the Exercises screen.
+  // ONE canonical route for an individual movement: the exercise page (variant
+  // B). Every entry point — the Today widget, the Exercises picker, Trends,
+  // History/session detail — lands here; back returns to wherever you came from.
   const [exerciseFocus, setExerciseFocus] = useState("");
-  const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
-  // The Today widget's tap-through: ONE movement's page (variant B), not the
-  // full Analyze dashboard — back returns to Today.
-  const openExercisePage = (name: string) => { setExerciseFocus(name); setScreen("exercise"); };
+  const [exerciseReturn, setExerciseReturn] = useState("today");
+  const openExercisePage = (name: string) => {
+    if (screen !== "exercise") setExerciseReturn(screen);
+    setExerciseFocus(name);
+    setScreen("exercise");
+  };
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -822,11 +826,11 @@ export default function AppShell() {
 
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 
-        {screen === "exercises" && <AuroraExercises sessions={sessions} focus={exerciseFocus} />}
+        {screen === "exercises" && <AuroraExercises sessions={sessions} onOpen={openExercisePage} />}
 
-        {screen === "exercise" && exerciseFocus && <AuroraExercisePage sessions={sessions} name={exerciseFocus} onBack={() => setScreen("today")} />}
+        {screen === "exercise" && exerciseFocus && <AuroraExercisePage sessions={sessions} name={exerciseFocus} onBack={() => setScreen(exerciseReturn)} />}
 
-        {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
+        {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercisePage} onOpenVolume={() => setScreen("volume")} />}
 
         {screen === "forceplate" && <AuroraForcePlate />}
 
@@ -904,7 +908,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} initialOpenId={pendingSessionId} onOpenExercise={openExercise} onChanged={refresh} />}
+        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} initialOpenId={pendingSessionId} onOpenExercise={openExercisePage} onChanged={refresh} />}
 
         {screen === "coach" && <AuroraCoach />}
 
