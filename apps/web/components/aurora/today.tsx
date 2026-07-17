@@ -161,14 +161,6 @@ export default function AuroraToday({
     () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
     [planId, planStartedAt, sessions],
   );
-  // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
-  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest —
-  // and 0 when todayIndex is only the nearest fallback (plan not started yet, or
-  // already over), so an ended plan can't leave a phantom "0 of 1" forever.
-  const plannedToday = useMemo(() => {
-    const today = sched?.days[sched.todayIndex];
-    return today && today.isToday && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
-  }, [sched]);
   // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
   // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
   // (Design 1: scheduled plan vs what-was-done separation) instead of hiding
@@ -428,26 +420,26 @@ export default function AuroraToday({
       {/* ALSO TODAY — everything logged today that is NOT the plan's workout
           (quick sport logs, freestyle sessions). Design 1 separation: the card
           above is the SCHEDULED day (Start / Skip / Postpone); this one is what
-          was actually done besides it, teal-coded, each row tappable. */}
+          was actually done besides it, teal-coded, each row tappable. Always
+          rendered — empty it explains itself — and it carries the day's done
+          count as a ledger footer (moved in from the feeling card). */}
       <AlsoTodayCard
         extras={extrasToday}
         onPlan={!!sched}
+        doneCount={doneToday.length}
         units={units}
         bw={bw}
         onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
         onLog={() => setQuickOpen(true)}
+        onDone={() => setDoneOpen(true)}
       />
 
       {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The four
-          faces set today's readiness inline (one tap, no sheet); the footer keeps
-          the two secondary affordances — log a session, and the day's done count. */}
+          faces set today's readiness inline (one tap, no sheet) — nothing else;
+          the done count + log action live on the Also Today card above. */}
       <FeelingCard
         feeling={feeling}
         loggedAt={feelingAt}
-        doneCount={doneToday.length}
-        plannedCount={plannedToday}
-        onLog={() => setQuickOpen(true)}
-        onDone={() => setDoneOpen(true)}
         onPicked={loadFeeling}
       />
 
@@ -606,56 +598,78 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 // conditioning accent) to read apart from the plan card. With no schedule (not
 // enrolled / no start date) the kicker reads plain "Done today" — there is no
 // plan for anything to be "off" of. Rows open the session's breakdown.
-// Renders nothing when there's nothing extra. Mirrored on mobile (aurora/home.tsx).
-function AlsoTodayCard({ extras, onPlan, units, bw, onOpen, onLog }: {
+// ALWAYS rendered ("ledger footer" redesign): empty, one line explains what
+// lands here; the day's total done count closes the card as a ledger line
+// (tap = the Done-Today sheet) with the log action on the right — or, once a
+// row exists, the dashed log bar. Mirrored on mobile (aurora/home.tsx).
+function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
   extras: LoggedSession[];
   onPlan: boolean;
+  doneCount: number;
   units: "kg" | "lb";
   bw: (isoDate?: string) => number | null;
   onOpen: (sessionId: string) => void;
   onLog: () => void;
+  onDone: () => void;
 }) {
   const { t } = useLang();
-  if (extras.length === 0) return null;
+  const hasRows = extras.length > 0;
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--blue-text)" }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "2px 8px" }}>{extras.length}</span>
+        {hasRows && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "2px 8px" }}>{extras.length}</span>}
       </div>
-      <div style={{ marginTop: 6 }}>
-        {extras.map((s) => (
-          <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
-            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 30%, transparent)` }}>
-              {sessionIcon(s)}
-            </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+      {hasRows ? (
+        <div style={{ marginTop: 6 }}>
+          {extras.map((s) => (
+            <button key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}>
+              <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 30%, transparent)` }}>
+                {sessionIcon(s)}
               </span>
-            </span>
-            <span style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 50%, transparent)` }}>✓</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+                </span>
+              </span>
+              <span style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 50%, transparent)` }}>✓</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: "10px 2px 12px", fontSize: fs.body, lineHeight: 1.55, color: C("ash") }}>{t("w.home.today.alsoTodayEmpty")}</div>
+      )}
+      {/* ledger footer — the day's TOTAL done count (plan + off-plan; tap =
+          Done-Today sheet). With rows the last row's hairline separates it;
+          empty it draws its own. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderTop: hasRows ? "none" : `1px solid ${C("line")}`, paddingTop: hasRows ? 12 : 13 }}>
+        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>
+          <b style={{ color: doneCount > 0 ? C("chalk") : C("ash"), fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{doneCount}</b> {t("w.home.today.ledgerDone")}
+          <span style={{ color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
+        </button>
+        {!hasRows && (
+          <button onClick={onLog} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)", fontWeight: 700 }}>
+            {t("w.home.today.alsoTodayLogFirst")} →
           </button>
-        ))}
+        )}
       </div>
-      <button onClick={onLog} style={{ marginTop: 12, width: "100%", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: 10, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>
-        + <span style={{ color: "var(--lime-text)", fontWeight: 600 }}>{t("w.home.today.alsoTodayLog")}</span>
-      </button>
+      {hasRows && (
+        <button onClick={onLog} style={{ marginTop: 12, width: "100%", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: 10, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>
+          + <span style={{ color: "var(--lime-text)", fontWeight: 600 }}>{t("w.home.today.alsoTodayLog")}</span>
+        </button>
+      )}
     </div>
   );
 }
 
 // The feeling-led daily card — "How ready do you feel?" with the four faces set
 // today's readiness inline (one tap → POST /api/checkins, the same write the full
-// check-in makes), and a quiet footer: log a session, and the day's done count.
-// The picked face lights in its own semantic feeling colour.
-function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone, onPicked }: { feeling: ReadinessFeeling | null; loggedAt: number | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+// check-in makes). Single-purpose: the done count + log action moved up into the
+// Also Today card. The picked face lights in its own semantic feeling colour.
+function FeelingCard({ feeling, loggedAt, onPicked }: { feeling: ReadinessFeeling | null; loggedAt: number | null; onPicked: () => void }) {
   const { t } = useLang();
   const [busy, setBusy] = useState(false);
-  // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
-  // session fills it whole; nothing logged leaves it an empty bezel.
-  const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
   // The 6h re-log window: while it's open, show "next in Xh Ym" beside today's
   // last logged feeling. Purely informational — the faces stay tappable.
   const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
@@ -682,7 +696,7 @@ function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{t("w.recovery.readiness.title")}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0 2px" }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = feeling === key;
           const at = `var(--${READINESS_FACE[key].accent}-text)`;
@@ -698,7 +712,7 @@ function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone
       {/* today's last logged feeling + the re-log cooldown chip (added; the
           faces above are unchanged). Only shows once something's logged today. */}
       {feeling && loggedAt != null && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
             {t("w.home.today.feelLogged")} <b style={{ color: C("chalk"), fontWeight: 700 }}>{t(`w.recovery.readiness.${feeling}`)}</b>, {relativeTime(loggedAt)}
           </span>
@@ -709,20 +723,6 @@ function FeelingCard({ feeling, loggedAt, doneCount, plannedCount, onLog, onDone
           )}
         </div>
       )}
-      {/* range ring — a live gauge: the arc lights toward today's scheduled
-          sessions (tap = today's log). The action is a state-aware prompt. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 15 }}>
-        <button onClick={onDone} aria-label={t("w.home.today.glanceDone")} style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
-          <Ring value={progress} color={C("lime")} size={58} center={<span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums", color: doneCount > 0 ? C("chalk") : C("ash") }}>{doneCount}</span>} />
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</div>
-          <button onClick={onLog} style={{ marginTop: 9, display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>
-            {doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")}
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

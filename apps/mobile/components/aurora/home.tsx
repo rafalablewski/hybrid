@@ -178,14 +178,6 @@ export default function AuroraHome() {
     () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
     [planId, planStartedAt, sessions],
   );
-  // Sessions the plan SCHEDULES for today — the gauge's denominator, so the ring
-  // fills as you complete the day (1 of 2 done → half-lit). 0 when off-plan/rest —
-  // and 0 when todayIndex is only the nearest fallback (plan not started yet, or
-  // already over), so an ended plan can't leave a phantom "0 of 1" forever.
-  const plannedToday = useMemo(() => {
-    const today = sched?.days[sched.todayIndex];
-    return today && today.isToday && !today.isRest ? Math.max(1, today.sessions?.length ?? 1) : 0;
-  }, [sched]);
   // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
   // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
   // (Design 1: scheduled plan vs what-was-done separation) instead of hiding
@@ -472,28 +464,28 @@ export default function AuroraHome() {
         {/* ALSO TODAY — everything logged today that is NOT the plan's workout
             (quick sport logs, freestyle sessions). Design 1 separation: the card
             above is the SCHEDULED day (Start / Skip / Postpone); this one is what
-            was actually done besides it, teal-coded, each row tappable. */}
+            was actually done besides it, teal-coded, each row tappable. Always
+            rendered — empty it explains itself — and it carries the day's done
+            count as a ledger footer (moved in from the feeling card). */}
         <AlsoTodayCard
           C={C}
           extras={extrasToday}
           onPlan={!!sched}
+          doneCount={doneToday.length}
           units={units}
           bw={bw}
           onOpen={(id) => router.push(`/session/${id}`)}
           onLog={() => setQuickOpen(true)}
+          onDone={() => setDoneOpen(true)}
         />
 
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
-            four faces set today's readiness inline (one tap, no sheet); the footer
-            keeps the two secondary affordances — log a session, and the done count. */}
+            four faces set today's readiness inline (one tap, no sheet) — nothing
+            else; the done count + log action live on the Also Today card above. */}
         <FeelingCard
           C={C}
           feeling={feeling}
           loggedAt={feelingAt}
-          doneCount={doneToday.length}
-          plannedCount={plannedToday}
-          onLog={() => setQuickOpen(true)}
-          onDone={() => setDoneOpen(true)}
           onPicked={loadFeeling}
         />
 
@@ -612,47 +604,76 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 // conditioning accent) to read apart from the plan card. With no schedule (not
 // enrolled / no start date) the kicker reads plain "Done today" — there is no
 // plan for anything to be "off" of. Rows open the session's breakdown.
-// Renders nothing when there's nothing extra. Mirrored on web (aurora/today.tsx).
-function AlsoTodayCard({ C, extras, onPlan, units, bw, onOpen, onLog }: {
+// ALWAYS rendered ("ledger footer" redesign): empty, one line explains what
+// lands here; the day's total done count closes the card as a ledger line
+// (tap = the Done-Today sheet) with the log action on the right — or, once a
+// row exists, the dashed log bar. Mirrored on web (aurora/today.tsx).
+function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
   C: P;
   extras: LoggedSession[];
   onPlan: boolean;
+  doneCount: number;
   units: "kg" | "lb";
   bw: (isoDate?: string) => number | null;
   onOpen: (sessionId: string) => void;
   onLog: () => void;
+  onDone: () => void;
 }) {
   const { t } = useLang();
-  if (extras.length === 0) return null;
+  const hasRows = extras.length > 0;
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.blue) }}>{t(onPlan ? "w.home.today.alsoToday" : "w.home.today.glanceDone")}</Text>
-        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: C.onAccent }}>{extras.length}</Text>
+        {hasRows ? (
+          <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: C.onAccent }}>{extras.length}</Text>
+          </View>
+        ) : null}
+      </View>
+      {hasRows ? (
+        <View style={{ marginTop: 6 }}>
+          {extras.map((s) => (
+            <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+              <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}24`, borderWidth: 1, borderColor: `${C.blue}4d` }}>
+                <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+              </View>
+              <View style={{ width: 24, height: 24, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}80` }}>
+                <Text style={{ fontSize: 12, color: txt(C, C.lime) }}>✓</Text>
+              </View>
+            </Pressable>
+          ))}
         </View>
-      </View>
-      <View style={{ marginTop: 6 }}>
-        {extras.map((s) => (
-          <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}24`, borderWidth: 1, borderColor: `${C.blue}4d` }}>
-              <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
-            </View>
-            <View style={{ width: 24, height: 24, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}80` }}>
-              <Text style={{ fontSize: 12, color: txt(C, C.lime) }}>✓</Text>
-            </View>
+      ) : (
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: C.ash, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 2 }}>{t("w.home.today.alsoTodayEmpty")}</Text>
+      )}
+      {/* ledger footer — the day's TOTAL done count (plan + off-plan; tap =
+          Done-Today sheet). With rows the last row's hairline separates it;
+          empty it draws its own. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderTopWidth: hasRows ? 0 : 1, borderTopColor: C.line, paddingTop: hasRows ? 12 : 13 }}>
+        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+            <Text style={{ fontFamily: F.bold, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text> {t("w.home.today.ledgerDone")}
+          </Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: `${C.ash}8c` }}>›</Text>
+        </Pressable>
+        {!hasRows ? (
+          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLogFirst")}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.alsoTodayLogFirst")} →</Text>
           </Pressable>
-        ))}
+        ) : null}
       </View>
-      <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLog")} style={{ marginTop: 12, borderWidth: 1, borderStyle: "dashed", borderColor: C.line, borderRadius: 999, paddingVertical: 10, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: C.ash }}>
-          + <Text style={{ color: txt(C, C.lime), fontWeight: "600" }}>{t("w.home.today.alsoTodayLog")}</Text>
-        </Text>
-      </Pressable>
+      {hasRows ? (
+        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t("w.home.today.alsoTodayLog")} style={{ marginTop: 12, borderWidth: 1, borderStyle: "dashed", borderColor: C.line, borderRadius: 999, paddingVertical: 10, alignItems: "center" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: C.ash }}>
+            + <Text style={{ color: txt(C, C.lime), fontWeight: "600" }}>{t("w.home.today.alsoTodayLog")}</Text>
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -683,15 +704,12 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 // The feeling-led daily card — "How ready do you feel?" with the four faces set
 // today's readiness inline (one tap → createCheckin, the same write the full
-// check-in makes), and a quiet footer: log a session, and the day's done count.
-// The picked face lights in its own semantic feeling colour.
-function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onDone, onPicked }: { C: P; feeling: ReadinessFeeling | null; loggedAt: number | null; doneCount: number; plannedCount: number; onLog: () => void; onDone: () => void; onPicked: () => void }) {
+// check-in makes). Single-purpose: the done count + log action moved up into the
+// Also Today card. The picked face lights in its own semantic feeling colour.
+function FeelingCard({ C, feeling, loggedAt, onPicked }: { C: P; feeling: ReadinessFeeling | null; loggedAt: number | null; onPicked: () => void }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
-  // Gauge fill: done vs today's scheduled sessions (capped). Off-plan, any logged
-  // session fills it whole; nothing logged leaves it an empty bezel.
-  const progress = plannedCount > 0 ? Math.min(100, (doneCount / plannedCount) * 100) : doneCount > 0 ? 100 : 0;
   // The 6h re-log window: while open, show "next in Xh Ym" beside today's last
   // logged feeling. Informational — the faces stay tappable.
   const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
@@ -714,7 +732,7 @@ function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onD
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: 16 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = feeling === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
@@ -730,7 +748,7 @@ function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onD
       {/* today's last logged feeling + the re-log cooldown chip (added; the
           faces above are unchanged). Only shows once something's logged today. */}
       {feeling && loggedAt != null ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 15 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
           <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
             {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
           </Text>
@@ -741,22 +759,6 @@ function FeelingCard({ C, feeling, loggedAt, doneCount, plannedCount, onLog, onD
           ) : null}
         </View>
       ) : null}
-      {/* range ring — the tally is an instrument readout (tap = today's log);
-          the action is a state-aware prompt (tap = log a session). */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 15 }}>
-        <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")}>
-          <Ring value={progress} size={58} color={txt(C, C.lime)} track={C.line}>
-            <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.6, color: doneCount > 0 ? C.chalk : C.ash }}>{doneCount}</Text>
-          </Ring>
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
-          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 9 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, C.lime) }}>{doneCount > 0 ? t("w.home.today.logAnother") : t("w.home.today.alreadyTrained")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>→</Text>
-          </Pressable>
-        </View>
-      </View>
     </View>
   );
 }
