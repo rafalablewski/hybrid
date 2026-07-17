@@ -52,6 +52,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F, serifIf, startGlow, useEntrance } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
+import ExerciseWidgetRail from "./exercise-widget";
 import { CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
@@ -487,6 +488,18 @@ export default function AuroraHome() {
               </>
             )}
           </ACard>
+        )}
+
+        {/* EXERCISES — the favourites widget rail (free for everyone):
+            swipeable full-bleed cards, one favourite per purpose, stock-ticker
+            deltas; tap opens that movement's own stats page. Hidden until
+            there's history — an empty rail would just be chrome. */}
+        {sessions.length > 0 && (
+          <ExerciseWidgetRail
+            sessions={sessions}
+            onOpen={(name) => router.push(`/exercise?name=${encodeURIComponent(name)}`)}
+            onAll={() => router.push("/exercises")}
+          />
         )}
 
         {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the
