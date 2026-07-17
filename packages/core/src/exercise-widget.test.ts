@@ -25,11 +25,11 @@ const run = (daysAgo: number, km: number, minutes: number, name = "Run"): Logged
   startedAt: new Date(now - daysAgo * DAY).toISOString(),
   blocks: [{ kind: "cardio", name, distance: km, minutes }],
 });
-const cond = (daysAgo: number, sets: Partial<StrengthSet>[], name = "KB Swing"): LoggedSession => ({
+const cond = (daysAgo: number, minutes: number, name = "Assault Bike"): LoggedSession => ({
   id: `c${id++}`,
   title: "C",
   startedAt: new Date(now - daysAgo * DAY).toISOString(),
-  blocks: [{ kind: "conditioning", name, sets: sets.map((s) => ({ load: "24", reps: "20", ...s })) }],
+  blocks: [{ kind: "conditioning", name, minutes }],
 });
 
 describe("pctChange", () => {
@@ -70,13 +70,21 @@ describe("exerciseWidgetCard", () => {
     expect(c.improving).toBe(true); // …which is an improvement
   });
 
-  it("builds a conditioning card on 8-week tonnage", () => {
-    const sessions = [cond(80, [{}, {}]), cond(20, [{}, {}, {}]), cond(6, [{}, {}, {}])];
-    const c = exerciseWidgetCard(sessions, "KB Swing", now)!;
-    expect(c.metric).toBe("volume");
-    expect(c.value).toBe(6 * 24 * 20);
-    expect(c.improving).toBe(true);
+  it("builds a conditioning card on 8-week minutes (no per-set loads exist)", () => {
+    const sessions = [cond(80, 12), cond(20, 15), cond(6, 18)];
+    const c = exerciseWidgetCard(sessions, "Assault Bike", now)!;
+    expect(c.metric).toBe("time");
+    expect(c.value).toBe(33); // this window's total minutes
+    expect(c.improving).toBe(true); // 33 vs 12 the 8 weeks before
     expect(c.spark).toHaveLength(8);
+  });
+
+  it("derives conditioning minutes from the interval format when unlogged", () => {
+    const sessions: LoggedSession[] = [{
+      id: "i1", title: "I", startedAt: new Date(now - 5 * DAY).toISOString(),
+      blocks: [{ kind: "conditioning", name: "EMOM", rounds: 10, work: 40, rest: 20 }],
+    }];
+    expect(exerciseWidgetCard(sessions, "EMOM", now)!.value).toBe(10); // 10×60 s
   });
 
   it("returns null for a movement never logged", () => {
@@ -89,7 +97,7 @@ describe("exerciseWidgetCards", () => {
     lift(10, [{}]), lift(5, [{}]), // Deadlift ×2
     lift(8, [{}], "Bench Press"), // Bench ×1
     run(6, 5, 26), run(3, 5, 27), run(1, 8, 44), // Run ×3
-    cond(4, [{}]), // KB Swing ×1
+    cond(4, 15), // Assault Bike ×1
   ];
 
   it("leads with one favourite per purpose, most-trained first", () => {
@@ -97,7 +105,7 @@ describe("exerciseWidgetCards", () => {
     expect(cards.map((c) => c.kind)).toEqual(["strength", "cardio", "conditioning"]);
     expect(cards[0]!.name).toBe("Deadlift"); // beats Bench on 8-week count
     expect(cards[1]!.name).toBe("Run");
-    expect(cards[2]!.name).toBe("KB Swing");
+    expect(cards[2]!.name).toBe("Assault Bike");
   });
 
   it("honours explicit favourites first, in their order", () => {
@@ -155,13 +163,22 @@ describe("exercisePageModel", () => {
     expect(rd.lastDeltaSec).toBeLessThan(0); // last run faster than its average
   });
 
-  it("gives conditioning tonnage + load-mix slides (no e1RM/zones)", () => {
-    const sessions = [cond(20, [{}, {}]), cond(6, [{ load: "32" }, {}, {}])];
-    const m = exercisePageModel(sessions, "KB Swing", "8w", { now });
-    expect(m.slides.map((s) => s.kind)).toEqual(["tonnage", "loadMix", "consistency"]);
-    const mix = m.slides[1]!;
-    if (mix.kind !== "loadMix") throw new Error("wrong slide");
-    expect(mix.topLoadKg).toBe(24); // 4 of 5 sets at the 24 kg bell
-    expect(mix.loads[0]!.share).toBe(0.8);
+  it("gives conditioning duration-led slides (no per-set loads in the model)", () => {
+    const sessions = [cond(60, 12), cond(20, 15), cond(6, 18)];
+    const m = exercisePageModel(sessions, "Assault Bike", "8w", { now });
+    expect(m.slides.map((s) => s.kind)).toEqual(["weeklyMinutes", "consistency"]);
+    const wm = m.slides[0]!;
+    if (wm.kind !== "weeklyMinutes") throw new Error("wrong slide");
+    expect(wm.weeks.reduce((a, w) => a + w.minutes, 0)).toBe(45);
+    expect(wm.improving).toBe(true); // 33 min recent half vs 12 before
+  });
+
+  it("falls back to minutes for minutes-only cardio (no distance → no pace)", () => {
+    const sessions: LoggedSession[] = [{
+      id: "t1", title: "T", startedAt: new Date(now - 4 * DAY).toISOString(),
+      blocks: [{ kind: "cardio", name: "Tennis", minutes: 60 }],
+    }];
+    const m = exercisePageModel(sessions, "Tennis", "8w", { now });
+    expect(m.slides.map((s) => s.kind)).toEqual(["weeklyMinutes", "consistency"]);
   });
 });

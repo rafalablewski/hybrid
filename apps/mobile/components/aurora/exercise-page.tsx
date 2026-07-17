@@ -62,11 +62,13 @@ function slideHero(s: ExercisePageSlide, units: WeightUnit, t: (k: string) => st
         u: "%",
         label: `${t("w.analyze.exp.zones")} ${s.topZone ? (s.topZone.zone === "<60" ? "<60" : s.topZone.zone + "+") : ""}% e1RM`,
       };
-    case "loadMix":
+    case "weeklyMinutes":
       return {
-        v: s.topLoadKg != null ? String(Math.round(kgToUnit(s.topLoadKg, units))) : "–",
-        u: units,
-        label: t("w.analyze.exp.loadMix"),
+        v: String(s.avgWeekMin),
+        u: `min ${t("w.analyze.exp.perWeek")}`,
+        deltaPct: s.deltaPct,
+        improving: s.improving,
+        label: t("w.analyze.exp.weeklyMinutes"),
       };
     case "consistency":
       return { v: String(s.weeksTrained), u: `${t("w.analyze.exp.of")} ${s.weeksTotal}`, label: t("w.analyze.exp.consistency") };
@@ -167,6 +169,25 @@ function TonnageChart({ C, weeks, units, t }: { C: Palette; weeks: { baseKg: num
   );
 }
 
+function MinutesChart({ C, weeks, stroke, t }: { C: Palette; weeks: { minutes: number }[]; stroke: string; t: (k: string) => string }) {
+  const W = 353, H = 220, T = 14, B = 8;
+  const n = weeks.length;
+  const hi = Math.max(...weeks.map((w) => w.minutes), 1) * 1.08;
+  const bw = W / n - 6;
+  return (
+    <View>
+      <Svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ aspectRatio: W / H }}>
+        {weeks.map((w, i) => {
+          const x = (i + 0.5) * (W / n) - bw / 2;
+          const y = H - B - (w.minutes / hi) * (H - T - B);
+          return <Rect key={i} x={x} y={y} width={bw} height={H - B - y} fill={stroke} rx={2.5} />;
+        })}
+      </Svg>
+      <CornerLabels C={C} l={t("w.analyze.exp.weeksAgo").replace("{n}", String(n))} r={t("w.analyze.exp.now")} />
+    </View>
+  );
+}
+
 function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: number }[] }) {
   const W = 353, H = 200, T = 26, B = 26;
   const n = runs.length;
@@ -242,8 +263,8 @@ function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: Exercis
       return <TonnageChart C={C} weeks={slide.weeks} units={units} t={t} />;
     case "zones":
       return <MeterRows C={C} color={stroke} rows={slide.zones.map((z) => ({ label: z.zone === "<60" ? "<60%" : `${z.zone}%+`, pct: z.share, value: `${Math.round(z.share * 100)}%` }))} />;
-    case "loadMix":
-      return <MeterRows C={C} color={stroke} rows={slide.loads.map((l) => ({ label: fmtWeight(l.loadKg, units), pct: l.share, value: `${Math.round(l.share * 100)}%` }))} />;
+    case "weeklyMinutes":
+      return <MinutesChart C={C} weeks={slide.weeks} stroke={stroke} t={t} />;
     case "paceCurve":
       return <MeterRows C={C} color={stroke} rows={slide.bands.map((b) => ({ label: b.label, pct: b.bestAllSec ? 1 / b.bestAllSec : 0, value: b.bestAllSec ? paceClock(b.bestAllSec) : "–" }))} />;
     case "runDeltas":
@@ -302,8 +323,19 @@ export default function AuroraExercisePage() {
   };
 
   const s = model.stats;
-  const substats: { v: string; l: string }[] =
-    s.kind === "cardio"
+  // duration movements (conditioning + minutes-only cardio): the dashboard's
+  // strength/cardio aggregates read 0 for them, so the row speaks in minutes
+  const minSlide = model.slides.find((sl) => sl.kind === "weeklyMinutes");
+  const consSlide = model.slides.find((sl) => sl.kind === "consistency");
+  const substats: { v: string; l: string }[] = minSlide && minSlide.kind === "weeklyMinutes"
+    ? [
+        { v: String(model.sessionsInPeriod), l: t("w.analyze.ex.sessions") },
+        { v: `${minSlide.weeks.reduce((a, w) => a + w.minutes, 0)} min`, l: t("w.analyze.exp.minutes") },
+        ...(consSlide && consSlide.kind === "consistency"
+          ? [{ v: `${consSlide.weeksTrained}/${consSlide.weeksTotal}`, l: t("w.analyze.exp.weeksTrained") }]
+          : []),
+      ]
+    : s.kind === "cardio"
       ? [
           { v: String(s.efforts), l: t("w.analyze.ex.runs") },
           { v: `${s.distanceKm} km`, l: t("w.analyze.ex.distance") },
