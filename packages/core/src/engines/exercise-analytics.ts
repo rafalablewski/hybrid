@@ -50,7 +50,9 @@ function liftSets(sessions: LoggedSession[], name: string, bw?: BodyweightInput)
         if (!isWorkingSet(set)) continue;
         const loadKg = effectiveSetLoadKg(name, set.load, kg);
         const reps = num(set.reps);
-        if (loadKg <= 0 || Number.isNaN(reps) || reps <= 0) continue;
+        // Finite-guard both values: every aggregator in this module feeds from
+        // here, so a single non-finite load/rep must never reach a chart.
+        if (!Number.isFinite(loadKg) || loadKg <= 0 || !Number.isFinite(reps) || reps <= 0) continue;
         const rpe = num(set.rpe);
         out.push({ t, date: s.startedAt, loadKg, reps, rpe: Number.isNaN(rpe) ? null : rpe });
       }
