@@ -229,9 +229,9 @@
   <!-- 3 · LEDGER FOOTER -->
   <div class="concept">
     <div class="cap">
-      <div class="n"><i>3</i>Ledger footer</div>
+      <div class="n"><i>3</i>Ledger footer — CHOSEN, as shipped</div>
       <h2>Count closes the card</h2>
-      <p>Header stays exactly as shipped; the count reads as a <b>ledger line at the bottom</b> — "1 done today" — with <b>Log another → on the right</b>, where the dashed bar used to be. Empty, the footer still anchors the card at "0 done today", so the section never vanishes.</p>
+      <p>Header stays exactly as shipped; the count reads as a <b>ledger line under the rows</b> — "1 done today", tap opens the day's log. Per the follow-up note, with a workout the <b>current dashed "+ Log another workout" bar stays</b> as the card's final action. Empty, the footer anchors the card at "0 done today" with Log a workout → on the right, so the section never vanishes.</p>
     </div>
     <div class="ctx">With a workout</div>
     <div class="card">
@@ -239,26 +239,26 @@
         <span class="kicker">Also today — off-plan</span>
         <span class="pill">1</span>
       </div>
-      <div style="margin-top:6px;margin-bottom:10px">
-        <div class="row" style="border-bottom:none">
+      <div style="margin-top:6px">
+        <div class="row" style="border-bottom:1px solid var(--line)">
           <span class="av">🎾</span>
           <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
           <span class="ok">✓</span>
         </div>
       </div>
-      <div class="fstrip">
-        <span class="cnt"><b>1</b> done today</span>
-        <button class="btn link">Log another →</button>
+      <div class="fstrip" style="border-top:none;padding-top:12px">
+        <span class="cnt"><b>1</b> done today <span style="color:var(--ash2)">›</span></span>
       </div>
+      <button style="margin-top:12px;width:100%;background:transparent;border:1px dashed var(--line);border-radius:999px;padding:10px;cursor:pointer;font:400 11.5px var(--mono);color:var(--ash)">+ <span style="color:var(--lime-text);font-weight:600">Log another workout</span></button>
     </div>
     <div class="ctx">Empty</div>
     <div class="card">
       <div class="khead">
         <span class="kicker">Also today — off-plan</span>
       </div>
-      <div class="empty-line" style="padding-bottom:12px">Off-plan work lands here — nothing logged yet.</div>
+      <div class="empty-line" style="padding-bottom:12px">Nothing off-plan yet — quick sport logs and freestyle sessions land here.</div>
       <div class="fstrip">
-        <span class="cnt"><b>0</b> done today</span>
+        <span class="cnt"><b>0</b> done today <span style="color:var(--ash2)">›</span></span>
         <button class="btn link">Log a workout →</button>
       </div>
     </div>
