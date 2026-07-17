@@ -151,37 +151,29 @@ body {
 .wgt-ic {
   width: 30px; height: 30px; border-radius: 10px; flex: none;
   display: grid; place-items: center;
-  background: color-mix(in srgb, var(--wa, var(--color-lime)) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--wa, var(--color-lime)) 40%, transparent);
+  background: color-mix(in srgb, var(--wa, var(--color-lime)) 16%, transparent);
 }
 .wgt-ic svg { width: 15px; height: 15px; stroke: var(--wat, var(--lime-text)); }
 .chip {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--wat, var(--lime-text));
-  border: 1px solid color-mix(in srgb, var(--wa, var(--color-lime)) 45%, transparent);
-  background: color-mix(in srgb, var(--wa, var(--color-lime)) 10%, transparent);
-  padding: 4px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--wa, var(--color-lime)) 16%, transparent);
+  padding: 4px 10px; border-radius: 999px;
 }
 .wgt-hero { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 2px; }
 .wgt-hero .v { font-size: 30px; font-weight: 900; letter-spacing: -.02em; }
 .wgt-hero .u { font-family: var(--font-mono); font-size: 12px; color: var(--color-ash); }
-/* stock-ticker trend badge — green up / red down, independent of card accent */
+/* stock-ticker trend badge — the one deliberate accent on the card. Solid fill
+   with ink text, the same language as the START pill; green up / red down,
+   independent of the card's purpose accent. */
 .tick {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
   font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-  padding: 4px 10px; border-radius: 999px;
+  padding: 4px 10px; border-radius: 999px; color: var(--color-ink);
 }
 .tick i { font-style: normal; font-size: 8px; line-height: 1; }
-.tick.up {
-  color: var(--lime-text);
-  background: color-mix(in srgb, var(--color-lime) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-lime) 40%, transparent);
-}
-.tick.down {
-  color: var(--red-text);
-  background: color-mix(in srgb, var(--color-red) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-red) 45%, transparent);
-}
+.tick.up { background: var(--color-lime); }
+.tick.down { background: var(--color-red); }
 .wgt .kicker { margin-top: 2px; }
 .wgt-spark { margin: 10px 0 4px; }
 .wgt-spark svg { display: block; width: 100%; height: 56px; }
@@ -269,6 +261,9 @@ body {
 .detail-body.all .pager { flex-direction: column; overflow: visible; scroll-snap-type: none; margin: 0; padding: 0; }
 .detail-body.all .slide { flex: none; width: 100%; }
 .detail-body.all .pg-bar, .detail-body.all .pager-dots { display: none; }
+/* one title at a time: the pager bar names the visible stat, so the in-card
+   kicker only appears in the expanded all-stats list */
+.detail-body:not(.all) .slide-kicker { display: none; }
 .detail-body.all .slide + .slide { margin-top: 0; }
 
 .slide-kicker { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
@@ -326,7 +321,7 @@ body {
   <div class="preview-note">
     <div class="k">HYBRID – design preview – not wired to real data</div>
     <h1>Today tab — Exercises widget</h1>
-    <p><b>Swipe the widget rail</b>, tap a favourite to open its stats screen, flip charts with <b>‹ ›</b> (or swipe), and expand with <b>View everything</b>.</p>
+    <p><b>Swipe the widget rail</b>, tap a favourite to open its stats screen, flip charts with <b>‹ ›</b> (or swipe), and expand with <b>Show all</b>.</p>
   </div>
 
   <div class="phone">
@@ -355,7 +350,6 @@ body {
         <a id="lnk-all">All ›</a>
       </div>
       <div class="rail" id="rail"></div>
-      <div class="dots" id="rail-dots"></div>
 
       <!-- existing "also today" (context, abbreviated) -->
       <div class="card ghost-card">
@@ -378,12 +372,12 @@ body {
       <div class="detail-body" id="d-body">
         <div class="pg-bar">
           <button class="pg-btn" id="pg-prev" aria-label="Previous stat">‹</button>
-          <div class="pg-title"><div class="t" id="pg-name"></div><div class="n" id="pg-count"></div></div>
+          <div class="pg-title"><div class="t" id="pg-name"></div></div>
           <button class="pg-btn" id="pg-next" aria-label="Next stat">›</button>
         </div>
         <div class="pager" id="pager"></div>
         <div class="dots pager-dots" id="pg-dots"></div>
-        <div class="viewall-row"><button class="viewall" id="btn-all">View everything</button></div>
+        <div class="viewall-row"><button class="viewall" id="btn-all">Show all</button></div>
       </div>
     </div>
 
@@ -424,8 +418,8 @@ const EXERCISES = {
   deadlift: {
     name: "Deadlift", purpose: "Strength", icon: "barbell",
     accent: "--color-lime", accentText: "--lime-text",
-    hero: { v: "213", u: "kg", label: "Best e1RM", delta: "4.2%", dir: "up" },
-    meta: "31 sessions – 86.4 t lifted – all time",
+    hero: { v: "213", u: "kg", kicker: "Strength – best e1RM – 8 weeks", delta: "4.2%", dir: "up" },
+    meta: "14 sessions – 21.6 t lifted",
     spark: { data: [186,189,188,193,196,195,199,203,201,206,209,213], color: T.lime, pr: 11 },
     stats: [
       { v: "213 kg", l: "Best e1RM", c: T.lime }, { v: "148", l: "Working sets" },
@@ -449,8 +443,8 @@ const EXERCISES = {
   run: {
     name: "Easy Run", purpose: "Running", icon: "run",
     accent: "--color-blue", accentText: "--blue-text",
-    hero: { v: "5:12", u: "/km", label: "Best pace", delta: "3.2%", dir: "up" },
-    meta: "24.6 km this week – 6 runs",
+    hero: { v: "5:12", u: "/km", kicker: "Running – best pace – 8 weeks", delta: "3.2%", dir: "up" },
+    meta: "18 runs – 92 km",
     spark: { data: [345,341,338,340,334,331,333,327,325,322,318,312], color: T.blueText, invert: true },
     stats: [
       { v: "42", l: "Runs" }, { v: "186 km", l: "Distance", c: T.blueText },
@@ -473,8 +467,8 @@ const EXERCISES = {
   kbswing: {
     name: "KB Swing", purpose: "Conditioning", icon: "kb",
     accent: "--color-amber", accentText: "--amber-text",
-    hero: { v: "3.3", u: "t / 8 wks", label: "Swing volume", delta: "8%", dir: "down" },
-    meta: "24 sessions – best set 32 kg × 20",
+    hero: { v: "3.3", u: "t", kicker: "Conditioning – swing volume – 8 weeks", delta: "8%", dir: "down" },
+    meta: "12 sessions – best set 32 kg × 20",
     spark: { data: [3.4,3.8,3.6,4.0,3.9,3.7,3.5,3.3], color: T.amberText },
     stats: [
       { v: "96", l: "Working sets" }, { v: "41.2 t", l: "Volume", c: T.amberText },
@@ -720,7 +714,6 @@ function heatCard(el, weeks, unit) {
 
 /* ════════════════ TODAY: build the widget rail ════════════════ */
 const rail = document.getElementById("rail");
-const railDots = document.getElementById("rail-dots");
 const keys = Object.keys(EXERCISES);
 
 keys.forEach((k) => {
@@ -732,13 +725,12 @@ keys.forEach((k) => {
   b.innerHTML = `
     <div class="wgt-top">
       <div class="wgt-name"><span class="wgt-ic">${ICONS[e.icon]}</span>${e.name}</div>
-      <span class="chip">${e.purpose}</span>
+      <span class="tick ${e.hero.dir}"><i>${e.hero.dir === "up" ? "▲" : "▼"}</i>${e.hero.delta}</span>
     </div>
     <div class="wgt-hero">
       <span class="v">${e.hero.v}</span><span class="u">${e.hero.u}</span>
-      <span class="tick ${e.hero.dir}"><i>${e.hero.dir === "up" ? "▲" : "▼"}</i>${e.hero.delta}</span>
     </div>
-    <div class="kicker">${e.hero.label} – 8 weeks</div>
+    <div class="kicker">${e.hero.kicker}</div>
     <div class="wgt-spark"></div>
     <div class="wgt-meta">${e.meta}</div>`;
   sparkline(b.querySelector(".wgt-spark"), e.spark);
@@ -751,16 +743,6 @@ allCard.innerHTML = `<span class="plus">＋</span><span>All exercises<br/>&amp; 
 allCard.addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
 rail.appendChild(allCard);
 
-const railCards = [...rail.children];
-railCards.forEach((_, i) => {
-  const d = document.createElement("i");
-  d.className = "dot" + (i === 0 ? " on" : "");
-  railDots.appendChild(d);
-});
-rail.addEventListener("scroll", () => {
-  const i = Math.min(railCards.length - 1, Math.round(rail.scrollLeft / (railCards[0].offsetWidth + 12)));
-  [...railDots.children].forEach((d, j) => d.classList.toggle("on", j === i));
-}, { passive: true });
 document.getElementById("lnk-all").addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
 
 /* ════════════════ DETAIL screen ════════════════ */
@@ -769,7 +751,6 @@ const scrDetail = document.getElementById("scr-detail");
 const pager = document.getElementById("pager");
 const pgDots = document.getElementById("pg-dots");
 const pgName = document.getElementById("pg-name");
-const pgCount = document.getElementById("pg-count");
 const dBody = document.getElementById("d-body");
 let slides = [];
 
@@ -794,7 +775,7 @@ function openDetail(key) {
 
   pager.innerHTML = ""; pgDots.innerHTML = "";
   dBody.classList.remove("all");
-  document.getElementById("btn-all").textContent = "View everything";
+  document.getElementById("btn-all").textContent = "Show all";
   slides = e.slides;
   e.slides.forEach((s, i) => {
     const sl = document.createElement("div");
@@ -830,7 +811,6 @@ function pageIndex() {
 }
 function setPage(i) {
   pgName.textContent = slides[i].title;
-  pgCount.textContent = `stat ${i + 1} of ${slides.length} – swipe or ‹ ›`;
   [...pgDots.children].forEach((d, j) => d.classList.toggle("on", j === i));
   document.getElementById("pg-prev").disabled = i === 0;
   document.getElementById("pg-next").disabled = i === slides.length - 1;
@@ -843,7 +823,7 @@ document.getElementById("pg-next").addEventListener("click", () =>
 
 document.getElementById("btn-all").addEventListener("click", (ev) => {
   const all = dBody.classList.toggle("all");
-  ev.target.textContent = all ? "Back to one-at-a-time" : "View everything";
+  ev.target.textContent = all ? "Collapse" : "Show all";
   if (!all) { pager.scrollLeft = 0; setPage(0); }
 });
 document.getElementById("btn-back").addEventListener("click", () => {
