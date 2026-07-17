@@ -20,6 +20,7 @@ import {
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
+  alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
   READINESS_FEELINGS,
@@ -49,7 +50,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F, serifIf, startGlow, useEntrance } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, RADIUS, Ring } from "./kit";
+import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
@@ -466,18 +467,23 @@ export default function AuroraHome() {
             above is the SCHEDULED day (Start / Skip / Postpone); this one is what
             was actually done besides it, teal-coded, each row tappable. Always
             rendered — empty it explains itself — and it leads with the day's done
-            count as its display-weight stat (moved in from the feeling card). */}
-        <AlsoTodayCard
-          C={C}
-          extras={extrasToday}
-          onPlan={!!sched}
-          doneCount={doneToday.length}
-          units={units}
-          bw={bw}
-          onOpen={(id) => router.push(`/session/${id}`)}
-          onLog={() => setQuickOpen(true)}
-          onDone={() => setDoneOpen(true)}
-        />
+            count as its display-weight stat (moved in from the feeling card).
+            Hidden only for a true first run (no plan, nothing ever logged): the
+            "How do you want to start?" chooser above already owns that state, and
+            a 0-count card under it would be a second competing log CTA. */}
+        {(!!sched || sessions.length > 0) && (
+          <AlsoTodayCard
+            C={C}
+            extras={extrasToday}
+            onPlan={!!sched}
+            doneCount={doneToday.length}
+            units={units}
+            bw={bw}
+            onOpen={(id) => router.push(`/session/${id}`)}
+            onLog={() => setQuickOpen(true)}
+            onDone={() => setDoneOpen(true)}
+          />
+        )}
 
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
             four faces set today's readiness inline (one tap, no sheet) — nothing
@@ -618,9 +624,10 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
   onDone: () => void;
 }) {
   const { t } = useLang();
-  const hasRows = extras.length > 0;
-  const quiet = `${C.ash}99`;
-  const sub = !hasRows ? t("w.home.today.alsoTodaySubEmpty") : onPlan ? t("w.home.today.alsoTodaySubPlan") : null;
+  const quiet = withAlpha(C.ash, 0.6);
+  // caption + log-label state machine lives in core so the web twin can't drift
+  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount });
+  const logLabel = t(copy.logKey);
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
@@ -628,7 +635,7 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
         <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -2, lineHeight: 44, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
-          {sub ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{sub}</Text> : null}
+          {copy.subKey ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</Text> : null}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: 16, color: quiet }}>→</Text>
       </Pressable>
@@ -645,11 +652,11 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
             </View>
           </Pressable>
         ))}
-        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={logLabel} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
           <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: C.ink }}>
             <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>
         </Pressable>
       </View>
     </View>

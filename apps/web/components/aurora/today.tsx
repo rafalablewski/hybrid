@@ -23,6 +23,7 @@ import { fs, space,
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
+  alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
   READINESS_FEELINGS,
@@ -422,17 +423,22 @@ export default function AuroraToday({
           above is the SCHEDULED day (Start / Skip / Postpone); this one is what
           was actually done besides it, teal-coded, each row tappable. Always
           rendered — empty it explains itself — and it leads with the day's done
-          count as its display-weight stat (moved in from the feeling card). */}
-      <AlsoTodayCard
-        extras={extrasToday}
-        onPlan={!!sched}
-        doneCount={doneToday.length}
-        units={units}
-        bw={bw}
-        onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
-        onLog={() => setQuickOpen(true)}
-        onDone={() => setDoneOpen(true)}
-      />
+          count as its display-weight stat (moved in from the feeling card).
+          Hidden only for a true first run (no plan, nothing ever logged): the
+          "How do you want to start?" chooser above already owns that state, and
+          a 0-count card under it would be a second competing log CTA. */}
+      {(!!sched || sessions.length > 0) && (
+        <AlsoTodayCard
+          extras={extrasToday}
+          onPlan={!!sched}
+          doneCount={doneToday.length}
+          units={units}
+          bw={bw}
+          onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
+          onLog={() => setQuickOpen(true)}
+          onDone={() => setDoneOpen(true)}
+        />
+      )}
 
       {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The four
           faces set today's readiness inline (one tap, no sheet) — nothing else;
@@ -611,9 +617,9 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
   onDone: () => void;
 }) {
   const { t } = useLang();
-  const hasRows = extras.length > 0;
   const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
-  const sub = !hasRows ? t("w.home.today.alsoTodaySubEmpty") : onPlan ? t("w.home.today.alsoTodaySubPlan") : null;
+  // caption + log-label state machine lives in core so the mobile twin can't drift
+  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount });
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
@@ -621,7 +627,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 44, letterSpacing: "-.05em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.glanceDone")}</span>
-          {sub && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{sub}</span>}
+          {copy.subKey && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</span>}
         </span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: quiet, flexShrink: 0 }}>→</span>
       </button>
@@ -642,7 +648,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, units, bw, onOpen, onLog, on
         ))}
         <button onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
           <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: C("ink"), color: C("ash") }}>＋</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(hasRows ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
         </button>
       </div>
     </div>
