@@ -94,14 +94,15 @@ describe("navForPersona", () => {
 
   it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
     // The lean loop PLUS the universal lightweight tools every user gets:
-    // Notifications (activity feed), the Interval timer, Statistics, the user's
+    // Notifications (activity feed), the Interval timer, Statistics, the
+    // per-movement Exercises dashboard (free for all), the user's
     // own Profile, the routine Builder (composing your own workout is free) —
     // and the pre-built Plan library (browse & enroll is free; periodizing it
     // is paid). PLUS the Social surface (everyone): the friends feed, find
     // friends, the friends leaderboard and the coach marketplace. (The public
     // profile lives inside the account Profile screen, not its own nav item.)
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["builder", "calendar", "checkin", "coaches", "discover", "feed", "history", "leaderboard", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "settings", "statistics", "timer", "today"],
+      ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "history", "leaderboard", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "settings", "statistics", "timer", "today"],
     );
   });
 

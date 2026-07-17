@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Exercise Analytics, 10 design concepts</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
+<style>
+  /* ============ HYBRID brand tokens (packages/core/src/theme/tokens.ts) ============ */
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
+    --teal:#3c787e; --steel:#8296c4; --sand:#d0cd94; --terra:#d56f3e;
+    /* chart-tuned deep categorical steps (validated: CVD + normal-vision + contrast, dark surface) */
+    --c1:#84a01e; --c2:#0f97a8; --c3:#bd871e; --c4:#6c86d8; --c5:#d0562b;
+    /* sequential lime ramp (magnitude, low → high) */
+    --s1:#232b10; --s2:#33420f; --s3:#4c6414; --s4:#6f8f1c; --s5:#9cc32d; --s6:#c6f84f;
+    --font-display:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+
+  /* ============ shared app chrome ============ */
+  .kicker{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ash)}
+  .kicker.lime{color:var(--lime)} .kicker.teal{color:#6fb3ba} .kicker.sand{color:var(--sand)} .kicker.terra{color:#e08a5f} .kicker.steel{color:var(--steel)}
+  h1{font-weight:900;font-size:30px;margin:6px 0 4px;letter-spacing:-.01em}
+  h2{font-weight:800;font-size:20px;margin:4px 0 2px}
+  .sub{font-size:13px;color:var(--ash);line-height:1.55;max-width:760px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55);padding:20px}
+  .concept{margin-top:46px}
+  .concept-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .num{font-family:var(--font-mono);font-weight:700;font-size:12px;color:var(--ink);background:var(--lime);border-radius:999px;padding:3px 10px}
+  .why{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:12px;line-height:1.6;border-top:1px solid var(--line);padding-top:12px}
+  .why b{color:var(--chalk);font-weight:600}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+  .stat .v{font-weight:800;font-size:24px}
+  .stat .l{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-top:4px;color:var(--ash)}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{font-family:var(--font-mono);font-size:12px;padding:5px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ash);background:transparent}
+  .pill.on{background:var(--lime);border-color:var(--lime);color:var(--ink);font-weight:700}
+  .charttitle{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--ash);margin-bottom:12px}
+  .charttitle.lime{color:var(--lime)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11px;color:var(--ash)}
+  .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .scroll{overflow-x:auto}
+  svg{display:block}
+  svg text{font-family:var(--font-mono)}
+  details.tbl{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  details.tbl summary{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);cursor:pointer}
+  details.tbl table{border-collapse:collapse;margin-top:10px;font-family:var(--font-mono);font-size:11px}
+  details.tbl th,details.tbl td{border:1px solid var(--line);padding:4px 10px;text-align:right;color:var(--chalk)}
+  details.tbl th{color:var(--ash);font-weight:500;text-transform:uppercase;font-size:9px;letter-spacing:.08em}
+  #tip{position:fixed;pointer-events:none;z-index:50;background:#101210;border:1px solid var(--line);border-radius:12px;padding:8px 11px;font-family:var(--font-mono);font-size:11px;color:var(--chalk);box-shadow:0 8px 24px -8px rgba(0,0,0,.7);display:none;max-width:240px;line-height:1.5}
+  #tip .t{color:var(--ash);font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+  .toc{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .toc a{font-family:var(--font-mono);font-size:11px;color:var(--ash);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .toc a:hover{color:var(--lime);border-color:var(--lime)}
+  .free{display:inline-flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--lime) 10%,transparent);border:1px solid var(--lime);border-radius:14px;padding:8px 14px;font-family:var(--font-mono);font-size:11px;color:var(--lime);margin-top:14px}
+  .exhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .exname{font-weight:800;font-size:22px}
+  .exmeta{font-family:var(--font-mono);font-size:11px;color:var(--ash)}
+  .rank-row{display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .rank-row:last-child{border-bottom:0}
+  .rank-row .pos{width:26px;color:var(--ash)} .rank-row .nm{flex:1} .rank-row .val{font-weight:700}
+  .rank-row.you{color:var(--lime)} .rank-row.you .pos{color:var(--lime)}
+  .delta{font-family:var(--font-mono);font-size:11px;border-radius:999px;padding:3px 10px;font-weight:700}
+  .delta.up{background:color-mix(in srgb,var(--teal) 22%,transparent);color:#7fc4cb}
+  .delta.dn{background:color-mix(in srgb,var(--terra) 20%,transparent);color:#e59a74}
+  footer{margin-top:60px;border-top:1px solid var(--line);padding-top:20px;font-family:var(--font-mono);font-size:11px;color:var(--ash);line-height:1.7}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+<div class="wrap">
+
+  <header>
+    <div class="kicker lime">HYBRID – ANALYZE – EXERCISES</div>
+    <h1>Exercise analytics — 10 design concepts</h1>
+    <p class="sub">Per-movement deep analytics for the <b>Exercises</b> tab, in the HYBRID dark system — ink surfaces, hairline borders, 28-px cards, JetBrains&nbsp;Mono numbers, Aurora accents. Every concept is computed purely from logged sessions (<span style="font-family:var(--font-mono)">exerciseDashboard</span>-style aggregators in <span style="font-family:var(--font-mono)">@hybrid/core</span>), so it works for both clients and offline. Worked examples: <b>Deadlift</b> (strength) and <b>Running</b> (cardio).</p>
+    <div class="free">FREE FOR ALL — the Exercises tab is ungated: casual/free users get every concept below. No paywall inside this screen.</div>
+    <nav class="toc">
+      <a href="#c1">1 PR hero + trend</a><a href="#c2">2 Rep-max matrix</a><a href="#c3">3 Load–reps map</a>
+      <a href="#c4">4 Tonnage engine</a><a href="#c5">5 Intensity zones</a><a href="#c6">6 3D landscape</a>
+      <a href="#c7">7 Rankings</a><a href="#c8">8 Consistency</a><a href="#c9">9 Pace curve + splits</a><a href="#c10">10 Compare</a>
+    </nav>
+  </header>
+
+  <!-- ============================================================= 1 -->
+  <section class="concept" id="c1">
+    <div class="concept-head"><span class="num">01</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>PR hero + e1RM trend</h2></div></div>
+    <div class="card">
+      <div class="exhead">
+        <div><div class="exname">Deadlift</div><div class="exmeta">barbell – 64 sessions – last: 2 days ago</div></div>
+        <div class="pillrow"><span class="pill">8W</span><span class="pill">6M</span><span class="pill on">1Y</span><span class="pill">ALL</span></div>
+      </div>
+      <div class="grid g4" style="margin-bottom:14px">
+        <div class="card stat" style="padding:16px;border-color:var(--lime)"><div class="v" style="color:var(--lime)">181&nbsp;kg</div><div class="l">best e1RM – all-time PR</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">+29&nbsp;kg</div><div class="l">gained this period</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">165×3</div><div class="l">best set @ RPE 9</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">1.3<span style="font-size:14px;color:var(--ash)">/wk</span></div><div class="l">frequency</div></div>
+      </div>
+      <div class="charttitle lime">ESTIMATED 1RM — 12 MONTHS – PR SESSIONS MARKED</div>
+      <div id="ch-e1rm"></div>
+      <details class="tbl"><summary>Data table</summary><table><tr><th>Month</th><th>e1RM kg</th><th>PR</th></tr><tbody id="tbl-e1rm"></tbody></table></details>
+      <div class="why"><b>Why it earns the tab:</b> the first thing anyone asks of a lift is "am I getting stronger?" One hero number (all-time e1RM), the delta for the selected window, and a trend where PR sessions get a bright marker. Hover any point for the session behind it.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 2 -->
+  <section class="concept" id="c2">
+    <div class="concept-head"><span class="num">02</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>Rep-max matrix</h2></div></div>
+    <div class="card">
+      <div class="charttitle">BEST EVER LOAD AT EVERY REP COUNT — 1RM → 10RM</div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,96px),1fr))" id="rm-grid"></div>
+      <div class="legend"><span><span class="sw" style="background:var(--s6)"></span>recent (≤ 8 wks)</span><span><span class="sw" style="background:var(--s3)"></span>older</span><span><span class="sw" style="background:var(--card);border:1px dashed var(--line)"></span>never attempted</span></div>
+      <div class="why"><b>Why:</b> strength is a curve, not one number. The matrix shows your best double, triple, five… at a glance, shaded by how fresh each record is — stale cells are an instant session idea ("your 5RM is 14 months old"). Tap a cell → the session that set it.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 3 -->
+  <section class="concept" id="c3">
+    <div class="concept-head"><span class="num">03</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>Load–reps map with e1RM isolines</h2></div></div>
+    <div class="card">
+      <div class="charttitle">EVERY WORKING SET EVER — LOAD × REPS – EPLEY ISOLINES</div>
+      <div id="ch-scatter"></div>
+      <div class="legend"><span><span class="sw" style="background:var(--lime)"></span>last 8 weeks</span><span><span class="sw" style="background:#4a5545"></span>older sets</span><span><span class="sw" style="width:14px;height:0;border-top:2px dashed var(--ash);border-radius:0"></span>equal-e1RM isoline</span></div>
+      <div class="why"><b>Why:</b> the whole training history of the lift on one canvas. Each dot is a set; dashed isolines are equal-strength curves — a dot above the 160-line beats a 160 kg single no matter the rep count. Recent sets glow lime, so you literally see the cloud migrating up-right as you get stronger.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 4 -->
+  <section class="concept" id="c4">
+    <div class="concept-head"><span class="num">04</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>Tonnage engine — weekly volume, split by effort</h2></div></div>
+    <div class="card">
+      <div class="charttitle">WEEKLY TONNAGE — LAST 12 WEEKS</div>
+      <div id="ch-tonnage"></div>
+      <div class="legend"><span><span class="sw" style="background:var(--c1)"></span>base sets (RPE &lt; 8)</span><span><span class="sw" style="background:var(--c3)"></span>hard sets (RPE ≥ 8)</span></div>
+      <details class="tbl"><summary>Data table</summary><table><tr><th>Week</th><th>Base t</th><th>Hard t</th><th>Total t</th></tr><tbody id="tbl-ton"></tbody></table></details>
+      <div class="why"><b>Why:</b> volume drives growth, but not all tonnage is equal. Stacked bars split easy volume from hard sets (RPE ≥ 8), with a 2-px gap so segments stay countable. Deload weeks are self-evident; a rising hard-set share warns before the fatigue engine does.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 5 -->
+  <section class="concept" id="c5">
+    <div class="concept-head"><span class="num">05</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>Intensity distribution — where your sets live</h2></div></div>
+    <div class="card">
+      <div class="charttitle">SHARE OF WORKING SETS BY % OF E1RM — THIS YEAR</div>
+      <div id="ch-zones"></div>
+      <div class="why"><b>Why:</b> a histogram of every set by relative intensity, with the training quality named under each band (speed / volume / strength / peak). One glance answers "am I grinding maxes too often?" or "have I touched 90 %+ at all this block?" — the classic coach's-eye check, automated.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 6 -->
+  <section class="concept" id="c6">
+    <div class="concept-head"><span class="num">06</span><div><div class="kicker lime">STRENGTH – DEADLIFT</div><h2>3D lift landscape — load × reps × time</h2></div></div>
+    <div class="card">
+      <div class="charttitle">TONNAGE SURFACE — 12 WEEKS × REP RANGE (ISOMETRIC)</div>
+      <div class="scroll"><div id="ch-iso" style="min-width:640px"></div></div>
+      <div class="legend"><span><span class="sw" style="background:var(--s6)"></span>high tonnage</span><span><span class="sw" style="background:var(--s3)"></span>low</span></div>
+      <div class="why"><b>Why:</b> the showpiece. An isometric column field — weeks run right, rep ranges run back, column height + lime intensity = tonnage. You watch a block shift from 8–10-rep volume ridges toward tall 1–3-rep peaks as a meso progresses. Drag to spin on mobile; the running variant plots pace × distance × time.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 7 -->
+  <section class="concept" id="c7">
+    <div class="concept-head"><span class="num">07</span><div><div class="kicker sand">DEADLIFT + RUNNING</div><h2>Rankings — standards, percentiles, club board</h2></div></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="charttitle">DEADLIFT — VS STRENGTH STANDARDS (BW 82 KG)</div>
+        <div id="ch-standards"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-family:var(--font-mono);font-size:11px;color:var(--ash)"><span>e1RM 181 kg = <b style="color:var(--chalk)">2.21 × BW</b></span><span>87th percentile in class</span></div>
+      </div>
+      <div class="card">
+        <div class="charttitle">CLUB LEADERBOARD — DEADLIFT E1RM ÷ BW</div>
+        <div id="club-board"></div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <div class="charttitle">RUNNING — 5K PERCENTILE, AGE + SEX GRADED</div>
+        <div id="ch-runpct"></div>
+        <div class="why" style="border:0;padding:0;margin-top:10px"><b>Why:</b> progress needs context. Strength standards place your relative lift on the beginner→elite ladder; the club board makes it social (opt-in, bodyweight-normalised so it's fair); the running percentile age-grades your 5K against the population. Rankings are the single stickiest analytics surface we can ship.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 8 -->
+  <section class="concept" id="c8">
+    <div class="concept-head"><span class="num">08</span><div><div class="kicker teal">DEADLIFT + RUNNING</div><h2>Consistency — calendar heat + streaks</h2></div></div>
+    <div class="card">
+      <div class="grid g4" style="margin-bottom:14px">
+        <div class="card stat" style="padding:16px"><div class="v" style="color:var(--lime)">23</div><div class="l">day streak</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">4.2<span style="font-size:14px;color:var(--ash)">/wk</span></div><div class="l">sessions per week</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">92%</div><div class="l">planned days hit</div></div>
+        <div class="card stat" style="padding:16px"><div class="v">6</div><div class="l">longest gap, days</div></div>
+      </div>
+      <div class="charttitle">LAST 26 WEEKS — EVERY DAY, SHADED BY WORK DONE</div>
+      <div class="scroll"><div id="ch-heat" style="min-width:640px"></div></div>
+      <div class="legend"><span><span class="sw" style="background:var(--card);border:1px solid var(--line)"></span>rest</span><span><span class="sw" style="background:var(--s3)"></span>light</span><span><span class="sw" style="background:var(--s5)"></span>solid</span><span><span class="sw" style="background:var(--s6)"></span>big day</span></div>
+      <div class="why"><b>Why:</b> adherence beats programming. The GitHub-style year grid is instantly legible, the streak number is the retention hook, and "planned days hit" ties it back to the active plan. Works identically for a lift, a sport, or running mileage.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 9 -->
+  <section class="concept" id="c9">
+    <div class="concept-head"><span class="num">09</span><div><div class="kicker teal">CARDIO – RUNNING</div><h2>Pace curve + split waterfall</h2></div></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="charttitle" style="color:#6fb3ba">BEST PACE PER DISTANCE — ALL-TIME VS THIS BLOCK</div>
+        <div id="ch-pacecurve"></div>
+        <div class="legend"><span><span class="sw" style="background:#5cb6bd"></span>this block</span><span><span class="sw" style="background:#3a5a5e"></span>all-time best</span></div>
+      </div>
+      <div class="card">
+        <div class="charttitle" style="color:#6fb3ba">LAST 10K — KM SPLITS VS TARGET 4:55</div>
+        <div id="ch-splits"></div>
+        <details class="tbl"><summary>Data table</summary><table><tr><th>Km</th><th>Split</th><th>vs target</th></tr><tbody id="tbl-splits"></tbody></table></details>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="charttitle" style="color:#6fb3ba">5K PACE TREND — 12 WEEKS (LOWER IS FASTER)</div>
+      <div id="ch-pacetrend"></div>
+      <div class="why"><b>Why:</b> the runner's holy trinity. The pace curve is the cardio twin of the e1RM isolines — your speed across every distance, this block vs ever. The split waterfall colours each km by delta to target (teal under, terracotta over) and shows the negative split. The trend chart keeps the y-axis reversed so up always means better.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 10 -->
+  <section class="concept" id="c10">
+    <div class="concept-head"><span class="num">10</span><div><div class="kicker steel">CARDIO – RUNNING</div><h2>Compare — this block vs last, or vs a friend</h2></div></div>
+    <div class="card">
+      <div class="exhead">
+        <div class="exmeta">RUNNING — LAST 8 WEEKS <span style="color:var(--chalk);font-weight:700">vs</span> PREVIOUS 8 WEEKS</div>
+        <div class="pillrow"><span class="pill on">vs my last block</span><span class="pill">vs friend</span><span class="pill">vs club avg</span></div>
+      </div>
+      <div class="grid g4" id="cmp-tiles"></div>
+      <div style="margin-top:16px" class="charttitle">WEEKLY DISTANCE — BOTH BLOCKS OVERLAID (WEEK 1 ALIGNED)</div>
+      <div id="ch-compare"></div>
+      <div class="legend"><span><span class="sw" style="background:#96abe6"></span>this block</span><span><span class="sw" style="background:#4a5568"></span>previous block</span></div>
+      <div class="why"><b>Why:</b> every metric with a delta chip — teal when you improved, terracotta when you slipped — plus the two blocks overlaid week-for-week. The same engine powers "vs a friend" (social, opt-in) and "vs club average". For deadlift the tiles become e1RM, tonnage, hard sets, frequency.</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="kicker lime" style="margin-bottom:8px">IMPLEMENTATION NOTES</div>
+    All ten concepts derive from data we already log (sets × reps × load × RPE, runs with distance + time) — no new capture needed. Aggregators live in <b>@hybrid/core</b> beside exerciseDashboard; web renders recharts/SVG, mobile renders the same view-model with RN SVG. Rankings (7) needs the social schema for the club board; standards + percentile tables ship as static core data. Everything else is pure client math — free-tier friendly, offline-capable.
+  </footer>
+</div>
+
+<script>
+/* ================= shared helpers ================= */
+const NS="http://www.w3.org/2000/svg";
+const el=(t,a)=>{const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);return n};
+const tipEl=document.getElementById("tip");
+function bindTips(root){
+  root.querySelectorAll("[data-tip]").forEach(n=>{
+    n.addEventListener("pointerenter",e=>{tipEl.innerHTML=n.dataset.tip;tipEl.style.display="block"});
+    n.addEventListener("pointermove",e=>{
+      const pad=14, w=tipEl.offsetWidth;
+      let x=e.clientX+pad; if(x+w>window.innerWidth-8)x=e.clientX-w-pad;
+      tipEl.style.left=x+"px"; tipEl.style.top=(e.clientY+pad)+"px";
+    });
+    n.addEventListener("pointerleave",()=>tipEl.style.display="none");
+  });
+}
+const T={ink:"#0c0d0c",card:"#161816",line:"#2a2d2a",lime:"#c6f84f",chalk:"#f3f4ef",ash:"#8b8f86"};
+const pace=s=>`${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+
+/* ================= 1: e1RM trend with PR markers ================= */
+(function(){
+  const months=["Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul"];
+  const v=[152,155,154,158,161,160,165,168,167,172,176,181];
+  let best=0; const pr=v.map(x=>{const p=x>best;best=Math.max(best,x);return p});
+  const W=980,H=280,L=52,R=16,Tp=18,B=34,lo=145,hi=190;
+  const X=i=>L+i*(W-L-R)/(v.length-1), Y=x=>Tp+(hi-x)*(H-Tp-B)/(hi-lo);
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=150;g<=190;g+=10){
+    s.append(el("line",{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:T.line,"stroke-dasharray":"3 4"}));
+    const t=el("text",{x:L-10,y:Y(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=g;s.append(t);
+  }
+  months.forEach((m,i)=>{const t=el("text",{x:X(i),y:H-12,"text-anchor":"middle",fill:T.ash,"font-size":10});t.textContent=m;s.append(t)});
+  const area=el("path",{d:v.map((x,i)=>`${i?"L":"M"}${X(i)},${Y(x)}`).join("")+`L${X(v.length-1)},${Y(lo)}L${X(0)},${Y(lo)}Z`,fill:"url(#gl)",opacity:.5});
+  const defs=el("defs",{});const gr=el("linearGradient",{id:"gl",x1:0,y1:0,x2:0,y2:1});
+  gr.append(el("stop",{offset:"0%","stop-color":T.lime,"stop-opacity":.28}),el("stop",{offset:"100%","stop-color":T.lime,"stop-opacity":0}));
+  defs.append(gr);s.append(defs,area);
+  s.append(el("path",{d:v.map((x,i)=>`${i?"L":"M"}${X(i)},${Y(x)}`).join(""),fill:"none",stroke:T.lime,"stroke-width":2.5,"stroke-linejoin":"round"}));
+  v.forEach((x,i)=>{
+    if(pr[i]){s.append(el("circle",{cx:X(i),cy:Y(x),r:6,fill:T.lime,stroke:T.ink,"stroke-width":2}))}
+    else s.append(el("circle",{cx:X(i),cy:Y(x),r:3.5,fill:T.card,stroke:T.lime,"stroke-width":2}));
+    const hit=el("rect",{x:X(i)-((W-L-R)/(v.length-1))/2,y:Tp,width:(W-L-R)/(v.length-1),height:H-Tp-B,fill:"transparent"});
+    hit.dataset.tip=`<div class="t">${months[i]} 2025/26</div><b>${x} kg</b> e1RM${pr[i]?' — <span style="color:var(--lime)">NEW PR</span>':""}<br>best set that month`;
+    s.append(hit);
+  });
+  const lbl=el("text",{x:X(11)-10,y:Y(181)-14,"text-anchor":"end",fill:T.lime,"font-size":11,"font-weight":"700"});lbl.textContent="181 kg PR";s.append(lbl);
+  document.getElementById("ch-e1rm").append(s);bindTips(s);
+  document.getElementById("tbl-e1rm").innerHTML=v.map((x,i)=>`<tr><td>${months[i]}</td><td>${x}</td><td>${pr[i]?"●":""}</td></tr>`).join("");
+})();
+
+/* ================= 2: rep-max matrix ================= */
+(function(){
+  const rm=[
+    {r:1,kg:172.5,when:"3 wks ago",fresh:1},{r:2,kg:167.5,when:"6 wks ago",fresh:1},{r:3,kg:162.5,when:"2 wks ago",fresh:1},
+    {r:4,kg:null},{r:5,kg:150,when:"14 mo ago",fresh:0},{r:6,kg:145,when:"5 mo ago",fresh:0},
+    {r:8,kg:132.5,when:"7 wks ago",fresh:1},{r:10,kg:120,when:"11 mo ago",fresh:0}];
+  document.getElementById("rm-grid").innerHTML=rm.map(c=>{
+    if(c.kg==null)return `<div style="border:1px dashed var(--line);border-radius:18px;padding:14px;text-align:center"><div style="font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.08em">${c.r}RM</div><div style="font-weight:800;font-size:20px;color:var(--ash);margin:6px 0 2px">–</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--ash)">try it</div></div>`;
+    const bg=c.fresh?"color-mix(in srgb,var(--lime) 14%,transparent)":"var(--ink2)";
+    const bd=c.fresh?"var(--lime)":"var(--line)";
+    return `<div style="background:${bg};border:1px solid ${bd};border-radius:18px;padding:14px;text-align:center;cursor:pointer" data-tip="<div class='t'>${c.r}RM — set ${c.when}</div><b>${c.kg} kg × ${c.r}</b><br>e1RM ${Math.round(c.kg*(1+c.r/30))} kg">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.08em">${c.r}RM</div>
+      <div style="font-weight:800;font-size:20px;margin:6px 0 2px;color:${c.fresh?"var(--lime)":"var(--chalk)"}">${c.kg}</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--ash)">${c.when}</div></div>`;
+  }).join("");
+  bindTips(document.getElementById("rm-grid"));
+})();
+
+/* ================= 3: scatter + isolines ================= */
+(function(){
+  const W=980,H=340,L=52,R=16,Tp=14,B=36;
+  const xr=i=>L+(i-0.5)*(W-L-R)/10.5, ykg=k=>Tp+(185-k)*(H-Tp-B)/(185-85);
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=90;g<=180;g+=15){s.append(el("line",{x1:L,x2:W-R,y1:ykg(g),y2:ykg(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L-10,y:ykg(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=g;s.append(t)}
+  for(let r=1;r<=10;r++){const t=el("text",{x:xr(r),y:H-12,"text-anchor":"middle",fill:T.ash,"font-size":10});t.textContent=r;s.append(t)}
+  const xl=el("text",{x:(L+W-R)/2,y:H-1,"text-anchor":"middle",fill:T.ash,"font-size":9,"letter-spacing":".1em"});xl.textContent="REPS";s.append(xl);
+  [140,160,180].forEach(e1=>{
+    let d="";for(let r=1;r<=10.4;r+=.2){const kg=e1/(1+r/30);if(kg<85)break;d+=`${d?"L":"M"}${xr(r)},${ykg(kg)}`}
+    s.append(el("path",{d,fill:"none",stroke:T.ash,"stroke-width":1.4,"stroke-dasharray":"5 5",opacity:.75}));
+    const t=el("text",{x:L+8,y:ykg(e1/(1+1/30))-7,fill:T.ash,"font-size":10});t.textContent=e1+" e1RM";s.append(t);
+  });
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const old=[],rec=[];
+  for(let i=0;i<90;i++){const r=1+Math.floor(rnd()*10);const base=150/(1+r/30);old.push([r,base*(0.78+rnd()*0.2)])}
+  for(let i=0;i<26;i++){const r=1+Math.floor(rnd()*10);const base=176/(1+r/30);rec.push([r,base*(0.86+rnd()*0.15)])}
+  old.forEach(([r,kg])=>{const c=el("circle",{cx:xr(r)+(rnd()-0.5)*16,cy:ykg(kg),r:4,fill:"#4a5545",stroke:T.ink,"stroke-width":1.5});c.dataset.tip=`<div class="t">older set</div><b>${Math.round(kg*2)/2} kg × ${r}</b>`;s.append(c)});
+  rec.forEach(([r,kg])=>{const c=el("circle",{cx:xr(r)+(rnd()-0.5)*16,cy:ykg(kg),r:4.5,fill:T.lime,stroke:T.ink,"stroke-width":1.5});c.dataset.tip=`<div class="t">last 8 weeks</div><b>${Math.round(kg*2)/2} kg × ${r}</b> — e1RM ${Math.round(kg*(1+r/30))}`;s.append(c)});
+  document.getElementById("ch-scatter").append(s);bindTips(s);
+})();
+
+/* ================= 4: stacked weekly tonnage ================= */
+(function(){
+  const wk=["W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12"];
+  const base=[4.1,4.6,5.0,2.2,4.8,5.2,5.6,2.4,5.1,5.7,6.0,4.9];
+  const hard=[1.2,1.4,1.8,0.4,1.5,1.9,2.2,0.5,1.8,2.1,2.6,3.1];
+  const W=980,H=260,L=44,R=16,Tp=14,B=30,max=9;
+  const bw=(W-L-R)/wk.length, Y=t=>Tp+(max-t)*(H-Tp-B)/max;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=0;g<=8;g+=2){s.append(el("line",{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L-8,y:Y(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=g+"t";s.append(t)}
+  wk.forEach((w,i)=>{
+    const x=L+i*bw+bw*0.2, wid=bw*0.6;
+    const g=el("g",{});
+    g.append(el("rect",{x,y:Y(base[i]),width:wid,height:Y(0)-Y(base[i]),fill:"#84a01e",rx:0}));
+    g.append(el("rect",{x,y:Y(base[i]+hard[i]),width:wid,height:Y(base[i])-Y(base[i]+hard[i])-2,fill:"#bd871e",rx:4}));
+    g.append(el("rect",{x:x-2,y:Tp,width:wid+4,height:H-Tp-B,fill:"transparent"}));
+    g.dataset.tip=`<div class="t">${w}${(i+1)%4===0?" — deload":""}</div><b>${(base[i]+hard[i]).toFixed(1)} t</b> total<br>${base[i].toFixed(1)} t base + ${hard[i].toFixed(1)} t hard`;
+    s.append(g);
+    const t=el("text",{x:x+wid/2,y:H-10,"text-anchor":"middle",fill:T.ash,"font-size":10});t.textContent=w;s.append(t);
+  });
+  document.getElementById("ch-tonnage").append(s);bindTips(s);
+  document.getElementById("tbl-ton").innerHTML=wk.map((w,i)=>`<tr><td>${w}</td><td>${base[i].toFixed(1)}</td><td>${hard[i].toFixed(1)}</td><td>${(base[i]+hard[i]).toFixed(1)}</td></tr>`).join("");
+})();
+
+/* ================= 5: intensity zones ================= */
+(function(){
+  const zones=[
+    {b:"< 60%",p:12,tag:"speed / technique"},{b:"60–70%",p:22,tag:"volume"},{b:"70–80%",p:34,tag:"hypertrophy–strength"},
+    {b:"80–90%",p:24,tag:"strength"},{b:"90%+",p:8,tag:"peak"}];
+  const W=980,H=250,L=44,R=16,Tp=16,B=52,max=40;
+  const bw=(W-L-R)/zones.length,Y=p=>Tp+(max-p)*(H-Tp-B)/max;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=0;g<=40;g+=10){s.append(el("line",{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L-8,y:Y(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=g+"%";s.append(t)}
+  zones.forEach((z,i)=>{
+    const x=L+i*bw+bw*0.18,wid=bw*0.64;
+    const r=el("rect",{x,y:Y(z.p),width:wid,height:Y(0)-Y(z.p),fill:T.lime,rx:4,opacity:.55+i*0.11});
+    r.dataset.tip=`<div class="t">${z.b} of e1RM — ${z.tag}</div><b>${z.p}%</b> of working sets`;s.append(r);
+    const v=el("text",{x:x+wid/2,y:Y(z.p)-8,"text-anchor":"middle",fill:T.chalk,"font-size":12,"font-weight":700});v.textContent=z.p+"%";s.append(v);
+    const b=el("text",{x:x+wid/2,y:H-32,"text-anchor":"middle",fill:T.chalk,"font-size":11});b.textContent=z.b;s.append(b);
+    const g=el("text",{x:x+wid/2,y:H-16,"text-anchor":"middle",fill:T.ash,"font-size":9,"letter-spacing":".06em"});g.textContent=z.tag.toUpperCase();s.append(g);
+  });
+  document.getElementById("ch-zones").append(s);bindTips(s);
+})();
+
+/* ================= 6: isometric 3D landscape ================= */
+(function(){
+  const weeks=12,bins=["1–3","4–6","7–10","10+"];
+  const data=[]; // tonnage per [bin][week]
+  for(let b=0;b<4;b++){data.push([]);for(let w=0;w<weeks;w++){
+    const early=[0.4,0.9,1.8,1.4],late=[1.9,1.6,0.9,0.4];
+    const m=w/(weeks-1);let v=early[b]*(1-m)+late[b]*m;
+    if((w+1)%4===0)v*=0.45;
+    data[b].push(v*(0.9+((w*7+b*3)%10)/50));
+  }}
+  const ix=52,iy=23,zh=100,ox=90,oy=168,W=980,H=470;
+  const px=(w,b)=>ox+w*ix+b*ix*0.72, py=(w,b,z)=>oy+b*iy*1.6+w*iy*0.52-z;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  const ramp=["#33420f","#4c6414","#6f8f1c","#9cc32d","#c6f84f"];
+  const maxv=Math.max(...data.flat());
+  // draw back-to-front: bins 0..3 are back..front? draw farthest first (small b = back-left)
+  for(let b=0;b<4;b++)for(let w=weeks-1;w>=0;w--){
+    const v=data[b][w],h=v/maxv*zh+4;
+    const x=px(w,b),y=py(w,b,0);
+    const c=ramp[Math.min(4,Math.floor(v/maxv*4.99))];
+    const wdt=ix*0.56,dep=iy*0.9;
+    const top=`M${x},${y-h} l${wdt},${-dep*0.5} l${wdt*0.6},${dep*0.35} l${-wdt},${dep*0.5} Z`;
+    const front=`M${x},${y-h} l0,${h} l${wdt},${-dep*0.5} l0,${-h} Z`;
+    const side=`M${x+wdt},${y-h-dep*0.5} l0,${h} l${wdt*0.6},${dep*0.35} l0,${-h} Z`;
+    const g=el("g",{});
+    g.append(el("path",{d:front,fill:c,opacity:.55}));
+    g.append(el("path",{d:side,fill:c,opacity:.32}));
+    g.append(el("path",{d:top,fill:c,stroke:T.ink,"stroke-width":.75}));
+    g.dataset.tip=`<div class="t">Week ${w+1} — ${bins[b]} reps</div><b>${v.toFixed(1)} t</b> tonnage`;
+    s.append(g);
+  }
+  bins.forEach((bn,b)=>{const t=el("text",{x:px(weeks-1,b)+ix*1.5,y:py(weeks-1,b,0)+12,fill:T.ash,"font-size":10});t.textContent=bn+" reps";s.append(t)});
+  for(let w=0;w<weeks;w+=2){const t=el("text",{x:px(w,0)-4,y:py(w,0,0)-zh-22,fill:T.ash,"font-size":10});t.textContent="W"+(w+1);s.append(t)}
+  const ax=el("text",{x:ox-24,y:oy+40,fill:T.ash,"font-size":9,"letter-spacing":".1em",transform:`rotate(-90 ${ox-24} ${oy+40})`});ax.textContent="TONNAGE ↑";s.append(ax);
+  document.getElementById("ch-iso").append(s);bindTips(s);
+})();
+
+/* ================= 7: standards band + club board + run percentile ================= */
+(function(){
+  const W=460,H=120,L=8,R=8;
+  const bands=[{n:"BEG",to:1.0},{n:"NOV",to:1.25},{n:"INT",to:1.5},{n:"ADV",to:2.0},{n:"ELITE",to:2.5}];
+  const maxR=2.75,you=2.21;
+  const X=r=>L+r/maxR*(W-L-R);
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  let from=0;
+  bands.forEach((b,i)=>{
+    const x=X(from),wd=X(b.to)-x-2;
+    const r=el("rect",{x,y:44,width:wd,height:22,rx:4,fill:T.lime,opacity:.14+i*0.17});
+    r.dataset.tip=`<div class="t">${b.n}</div>${from.toFixed(2)}–${b.to.toFixed(2)} × bodyweight`;s.append(r);
+    const t=el("text",{x:x+wd/2,y:86,"text-anchor":"middle",fill:T.ash,"font-size":8,"letter-spacing":".08em"});t.textContent=b.n;s.append(t);
+    from=b.to;
+  });
+  s.append(el("line",{x1:X(you),x2:X(you),y1:30,y2:74,stroke:T.chalk,"stroke-width":2.5}));
+  s.append(el("circle",{cx:X(you),cy:30,r:5,fill:T.lime,stroke:T.ink,"stroke-width":2}));
+  const yt=el("text",{x:X(you),y:18,"text-anchor":"middle",fill:T.lime,"font-size":11,"font-weight":700});yt.textContent="YOU 2.21×";s.append(yt);
+  document.getElementById("ch-standards").append(s);bindTips(s);
+
+  const rows=[["1","Kasia W.","2.61×"],["2","Marek T.","2.44×"],["3","YOU","2.21×",1],["4","Jon B.","2.18×"],["5","Ola D.","2.02×"]];
+  document.getElementById("club-board").innerHTML=rows.map(r=>`<div class="rank-row${r[3]?" you":""}"><span class="pos">${r[0]}</span><span class="nm">${r[1]}</span><span class="val">${r[2]}</span></div>`).join("");
+
+  const W2=980,H2=76;
+  const s2=el("svg",{viewBox:`0 0 ${W2} ${H2}`,width:"100%"});
+  s2.append(el("rect",{x:8,y:34,width:W2-16,height:12,rx:6,fill:"#1e2420"}));
+  s2.append(el("rect",{x:8,y:34,width:(W2-16)*0.73,height:12,rx:6,fill:"#5cb6bd"}));
+  s2.append(el("circle",{cx:8+(W2-16)*0.73,cy:40,r:7,fill:"#5cb6bd",stroke:T.ink,"stroke-width":2}));
+  const t2=el("text",{x:8+(W2-16)*0.73,y:20,"text-anchor":"middle",fill:"#7fc4cb","font-size":12,"font-weight":700});t2.textContent="22:55 5K — 73rd percentile";s2.append(t2);
+  [["0",0],["25",0.25],["50",0.5],["75",0.75],["100",1]].forEach(([l,f])=>{const t=el("text",{x:8+(W2-16)*f,y:66,"text-anchor":f===0?"start":(f===1?"end":"middle"),fill:T.ash,"font-size":9});t.textContent=l;s2.append(t)});
+  document.getElementById("ch-runpct").append(s2);
+})();
+
+/* ================= 8: calendar heatmap ================= */
+(function(){
+  const weeks=26,cell=17,gap=3,padL=34,padT=18;
+  const W=padL+weeks*(cell+gap),H=padT+7*(cell+gap)+8;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  const cols=["","#33420f","#6f8f1c","#9cc32d","#c6f84f"];
+  const days=["M","","W","","F","","S"];
+  days.forEach((d,i)=>{if(d){const t=el("text",{x:padL-10,y:padT+i*(cell+gap)+cell-4,fill:T.ash,"font-size":9,"text-anchor":"end"});t.textContent=d;s.append(t)}});
+  let seed=13;const rnd=()=>(seed=(seed*48271)%2147483647)/2147483647;
+  for(let w=0;w<weeks;w++){
+    if(w%4===0){const t=el("text",{x:padL+w*(cell+gap),y:10,fill:T.ash,"font-size":9});t.textContent=`-${(weeks-w)}w`;s.append(t)}
+    for(let d=0;d<7;d++){
+      const r=rnd();let lvl=0;
+      if(d<5){lvl=r<0.18?0:(r<0.42?1:(r<0.78?2:(r<0.94?3:4)))}else{lvl=r<0.55?0:(r<0.8?1:2)}
+      if(w>weeks-4&&d<6&&lvl===0)lvl=2; /* current streak */
+      const c=el("rect",{x:padL+w*(cell+gap),y:padT+d*(cell+gap),width:cell,height:cell,rx:4,
+        fill:lvl?cols[lvl]:T.card,stroke:lvl?"none":T.line});
+      c.dataset.tip=lvl?`<div class="t">${["","light session","solid session","hard session","big day — 2 sessions"][lvl]}</div>${(lvl*3+2)} sets logged`:`<div class="t">rest day</div>no session`;
+      s.append(c);
+    }
+  }
+  document.getElementById("ch-heat").append(s);bindTips(s);
+})();
+
+/* ================= 9: pace curve + splits + trend ================= */
+(function(){
+  const dist=["400m","1K","2K","5K","10K","Half"];
+  const cur=[225,238,258,275,292,310]; /* sec/km this block */
+  const all=[221,236,252,271,288,305];
+  const W=460,H=250,L=48,R=10,Tp=14,B=30,lo=210,hi=320;
+  const X=i=>L+i*(W-L-R)/(dist.length-1),Y=v=>Tp+(v-lo)*(H-Tp-B)/(hi-lo);
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=220;g<=320;g+=20){s.append(el("line",{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L-8,y:Y(g)+4,"text-anchor":"end",fill:T.ash,"font-size":9});t.textContent=pace(g);s.append(t)}
+  dist.forEach((d,i)=>{const t=el("text",{x:X(i),y:H-10,"text-anchor":"middle",fill:T.ash,"font-size":9});t.textContent=d;s.append(t)});
+  s.append(el("path",{d:all.map((v,i)=>`${i?"L":"M"}${X(i)},${Y(v)}`).join(""),fill:"none",stroke:"#3a5a5e","stroke-width":2}));
+  s.append(el("path",{d:cur.map((v,i)=>`${i?"L":"M"}${X(i)},${Y(v)}`).join(""),fill:"none",stroke:"#5cb6bd","stroke-width":2.5}));
+  cur.forEach((v,i)=>{
+    s.append(el("circle",{cx:X(i),cy:Y(v),r:4,fill:"#5cb6bd",stroke:T.ink,"stroke-width":1.5}));
+    s.append(el("circle",{cx:X(i),cy:Y(all[i]),r:3,fill:"#3a5a5e",stroke:T.ink,"stroke-width":1.5}));
+    const hit=el("rect",{x:X(i)-((W-L-R)/(dist.length-1))/2,y:Tp,width:(W-L-R)/(dist.length-1),height:H-Tp-B,fill:"transparent"});
+    hit.dataset.tip=`<div class="t">${dist[i]} best pace</div>this block <b>${pace(v)}/km</b><br>all-time ${pace(all[i])}/km`;
+    s.append(hit);
+  });
+  document.getElementById("ch-pacecurve").append(s);bindTips(s);
+
+  /* splits */
+  const sp=[298,296,299,295,294,296,292,291,289,285],target=295;
+  const W2=460,H2=250,L2=44,R2=10,T2=14,B2=30,lo2=280,hi2=305;
+  const bw=(W2-L2-R2)/sp.length,Y2=v=>T2+(v-lo2)*(H2-T2-B2)/(hi2-lo2);
+  const s2=el("svg",{viewBox:`0 0 ${W2} ${H2}`,width:"100%"});
+  s2.append(el("line",{x1:L2,x2:W2-R2,y1:Y2(target),y2:Y2(target),stroke:T.ash,"stroke-width":1.4,"stroke-dasharray":"5 5"}));
+  const tl=el("text",{x:L2+4,y:Y2(target)-6,"text-anchor":"start",fill:T.ash,"font-size":9});tl.textContent="target 4:55";s2.append(tl);
+  sp.forEach((v,i)=>{
+    const x=L2+i*bw+bw*0.2,wid=bw*0.6,fast=v<=target;
+    const y0=Y2(target),y1=Y2(v);
+    const r=el("rect",{x,y:Math.min(y0,y1),width:wid,height:Math.max(3,Math.abs(y1-y0)),rx:3,fill:fast?"#5cb6bd":"#d0562b"});
+    r.dataset.tip=`<div class="t">km ${i+1}</div><b>${pace(v)}/km</b> — ${fast?(target-v)+"s under":(v-target)+"s over"} target`;
+    s2.append(r);
+    const t=el("text",{x:x+wid/2,y:H2-10,"text-anchor":"middle",fill:T.ash,"font-size":9});t.textContent=i+1;s2.append(t);
+  });
+  const cap=el("text",{x:L2,y:H2-10,"text-anchor":"end",fill:T.ash,"font-size":9});cap.textContent="km";s2.append(cap);
+  document.getElementById("ch-splits").append(s2);bindTips(s2);
+  document.getElementById("tbl-splits").innerHTML=sp.map((v,i)=>`<tr><td>${i+1}</td><td>${pace(v)}</td><td>${v<=target?"-":"+"}${Math.abs(v-target)}s</td></tr>`).join("");
+
+  /* pace trend, reversed axis */
+  const wkp=[305,303,300,301,296,294,295,290,288,285,281,275];
+  const W3=980,H3=230,L3=52,R3=16,T3=14,B3=30,lo3=270,hi3=310;
+  const X3=i=>L3+i*(W3-L3-R3)/(wkp.length-1),Y3=v=>T3+(v-lo3)*(H3-T3-B3)/(hi3-lo3);
+  const s3=el("svg",{viewBox:`0 0 ${W3} ${H3}`,width:"100%"});
+  for(let g=270;g<=310;g+=10){s3.append(el("line",{x1:L3,x2:W3-R3,y1:Y3(g),y2:Y3(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L3-8,y:Y3(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=pace(g);s3.append(t)}
+  s3.append(el("path",{d:wkp.map((v,i)=>`${i?"L":"M"}${X3(i)},${Y3(v)}`).join(""),fill:"none",stroke:"#5cb6bd","stroke-width":2.5}));
+  wkp.forEach((v,i)=>{
+    s3.append(el("circle",{cx:X3(i),cy:Y3(v),r:3.5,fill:T.card,stroke:"#5cb6bd","stroke-width":2}));
+    const t=el("text",{x:X3(i),y:H3-10,"text-anchor":"middle",fill:T.ash,"font-size":10});t.textContent="W"+(i+1);s3.append(t);
+    const hit=el("rect",{x:X3(i)-((W3-L3-R3)/(wkp.length-1))/2,y:T3,width:(W3-L3-R3)/(wkp.length-1),height:H3-T3-B3,fill:"transparent"});
+    hit.dataset.tip=`<div class="t">week ${i+1} — best 5K effort</div><b>${pace(v)}/km</b> (${pace(v*5)} 5K)`;
+    s3.append(hit);
+  });
+  const bl=el("text",{x:X3(11)-8,y:Y3(275)-12,"text-anchor":"end",fill:"#7fc4cb","font-size":11,"font-weight":700});bl.textContent="4:35/km — block best";s3.append(bl);
+  document.getElementById("ch-pacetrend").append(s3);bindTips(s3);
+})();
+
+/* ================= 10: compare ================= */
+(function(){
+  const tiles=[
+    {l:"distance",a:"118 km",b:"96 km",d:"+23%",up:1},
+    {l:"runs",a:"22",b:"18",d:"+4",up:1},
+    {l:"avg pace",a:"4:48",b:"5:02",d:"-14s/km",up:1},
+    {l:"best 5K",a:"22:55",b:"24:10",d:"-1:15",up:1},
+  ];
+  document.getElementById("cmp-tiles").innerHTML=tiles.map(t=>`
+    <div class="card stat" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div class="v" style="font-size:22px">${t.a}</div>
+        <span class="delta ${t.up?"up":"dn"}">${t.d}</span>
+      </div>
+      <div class="l">${t.l} — was ${t.b}</div>
+    </div>`).join("");
+  const cur=[9,12,14,11,15,17,19,21],prev=[8,10,11,9,12,13,15,18];
+  const W=980,H=240,L=44,R=16,Tp=14,B=30,max=24;
+  const X=i=>L+i*(W-L-R)/(cur.length-1),Y=v=>Tp+(max-v)*(H-Tp-B)/max;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%"});
+  for(let g=0;g<=24;g+=6){s.append(el("line",{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:T.line,"stroke-dasharray":"3 4"}));const t=el("text",{x:L-8,y:Y(g)+4,"text-anchor":"end",fill:T.ash,"font-size":10});t.textContent=g;s.append(t)}
+  s.append(el("path",{d:prev.map((v,i)=>`${i?"L":"M"}${X(i)},${Y(v)}`).join(""),fill:"none",stroke:"#4a5568","stroke-width":2}));
+  s.append(el("path",{d:cur.map((v,i)=>`${i?"L":"M"}${X(i)},${Y(v)}`).join(""),fill:"none",stroke:"#96abe6","stroke-width":2.5}));
+  cur.forEach((v,i)=>{
+    s.append(el("circle",{cx:X(i),cy:Y(v),r:4,fill:"#96abe6",stroke:T.ink,"stroke-width":1.5}));
+    s.append(el("circle",{cx:X(i),cy:Y(prev[i]),r:3,fill:"#4a5568",stroke:T.ink,"stroke-width":1.5}));
+    const t=el("text",{x:X(i),y:H-10,"text-anchor":"middle",fill:T.ash,"font-size":10});t.textContent="W"+(i+1);s.append(t);
+    const hit=el("rect",{x:X(i)-((W-L-R)/(cur.length-1))/2,y:Tp,width:(W-L-R)/(cur.length-1),height:H-Tp-B,fill:"transparent"});
+    hit.dataset.tip=`<div class="t">week ${i+1} distance</div>this block <b>${v} km</b><br>previous ${prev[i]} km`;
+    s.append(hit);
+  });
+  const yl=el("text",{x:L-30,y:Tp+40,fill:T.ash,"font-size":9,"letter-spacing":".1em",transform:`rotate(-90 ${L-30} ${Tp+40})`});yl.textContent="KM / WEEK";s.append(yl);
+  document.getElementById("ch-compare").append(s);bindTips(s);
+})();
+</script>
+</body>
+</html>

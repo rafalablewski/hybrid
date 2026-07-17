@@ -109,7 +109,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete" },
   { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
-  { id: "exercises", label: "Exercises", group: "analyze", minPersona: "athlete" },
+  { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
   { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
   { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
   { id: "running", label: "Running", group: "analyze", minPersona: "athlete" },
