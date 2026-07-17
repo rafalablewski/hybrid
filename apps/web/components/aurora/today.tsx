@@ -45,6 +45,7 @@ import { usePersona } from "@/lib/persona";
 import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
 import QuickSportLog from "../quick-sport";
+import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import Sheet from "./sheet";
 import AuroraNutrition from "./nutrition";
@@ -80,6 +81,7 @@ export default function AuroraToday({
   onStart,
   onNavigate,
   onOpenSession,
+  onOpenExercise,
   onSaved,
   loading = false,
 }: {
@@ -98,6 +100,8 @@ export default function AuroraToday({
   /** Open one logged session's breakdown (History deep-link) — parity with
    *  mobile's /session/{id}. Falls back to the plain history screen if absent. */
   onOpenSession?: (sessionId: string) => void;
+  /** Open ONE movement's stats page (the Exercises widget tap-through). */
+  onOpenExercise?: (name: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
   /** True while the first sessions OR enrollment fetch is in flight —
@@ -446,6 +450,14 @@ export default function AuroraToday({
             </>
           )}
         </div>
+      )}
+
+      {/* EXERCISES — the favourites widget rail (free for everyone): swipeable
+          full-bleed cards, one favourite per purpose, stock-ticker deltas; tap
+          opens that movement's own stats page. Hidden until there's history —
+          an empty rail would just be chrome. */}
+      {onOpenExercise && sessions.length > 0 && (
+        <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
       )}
 
       {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the plan's

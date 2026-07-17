@@ -58,6 +58,7 @@ const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false }
 const AuroraRunning = dynamic(() => import("./aurora/running"), { ssr: false });
 const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
+const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
 const AuroraTrends = dynamic(() => import("./aurora/trends"), { ssr: false });
 import { FIRST_RUN_TOUR } from "./tour";
 const Tour = dynamic(() => import("./tour"), { ssr: false });
@@ -197,6 +198,9 @@ export default function AppShell() {
   // When the Trends hub opens a specific lift, focus it on the Exercises screen.
   const [exerciseFocus, setExerciseFocus] = useState("");
   const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
+  // The Today widget's tap-through: ONE movement's page (variant B), not the
+  // full Analyze dashboard — back returns to Today.
+  const openExercisePage = (name: string) => { setExerciseFocus(name); setScreen("exercise"); };
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -789,7 +793,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onSaved={refresh} loading={sessionsLoading || macroLoading} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} />
         )}
 
         {screen === "profile" && (
@@ -819,6 +823,8 @@ export default function AppShell() {
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 
         {screen === "exercises" && <AuroraExercises sessions={sessions} focus={exerciseFocus} />}
+
+        {screen === "exercise" && exerciseFocus && <AuroraExercisePage sessions={sessions} name={exerciseFocus} onBack={() => setScreen("today")} />}
 
         {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
 
