@@ -1,6 +1,5 @@
 import type { LoggedSession } from "./engines/session";
-import { e1rmSeries, paceSeries, isWorkingSet, effectiveSetLoadKg, type PacePoint } from "./engines/session";
-import { bwAt } from "./bodyweight";
+import { e1rmSeries, paceSeries, type PacePoint } from "./engines/session";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -33,13 +32,14 @@ const DAY = 86_400_000;
 /** The widget's comparison window: this 8 weeks vs the previous 8 weeks. */
 export const WIDGET_WINDOW_DAYS = 56;
 
-export type ExerciseWidgetMetric = "e1rm" | "pace" | "volume";
+export type ExerciseWidgetMetric = "e1rm" | "pace" | "volume" | "time";
 
 export interface ExerciseWidgetCard {
   name: string;
   kind: "strength" | "cardio" | "conditioning";
   metric: ExerciseWidgetMetric;
-  /** headline value — kg (e1rm), sec/km (pace) or total kg (volume), 8-week window */
+  /** headline value — kg (e1rm), sec/km (pace), total kg (volume) or total
+   *  minutes (time), 8-week window */
   value: number;
   /** signed % change vs the previous 8-week window, 1 decimal; null = no baseline */
   deltaPct: number | null;
@@ -67,59 +67,43 @@ const sessionCount = (sessions: LoggedSession[], name: string, now: number, days
     return t <= now && t > now - days * DAY && s.blocks.some((b) => b.name === name);
   }).length;
 
-// Working sets of the movement in ANY set-bearing block (strength AND
-// conditioning — the analytics module's liftSets is strength-only, which
-// leaves conditioning moves like KB Swing without volume numbers).
-interface VolSet {
-  t: number;
-  loadKg: number;
-  reps: number;
-  rpe: number | null;
-}
-function volumeSets(sessions: LoggedSession[], name: string, now: number, bw?: BodyweightInput): VolSet[] {
-  const out: VolSet[] = [];
-  for (const s of sessions) {
-    const t = ts(s.startedAt);
-    if (t > now) continue;
-    const bwKg = bwAt(bw, s.startedAt);
-    for (const b of s.blocks) {
-      if (b.kind === "cardio" || b.name !== name || !("sets" in b) || !b.sets) continue;
-      for (const set of b.sets) {
-        if (!isWorkingSet(set)) continue;
-        const loadKg = effectiveSetLoadKg(name, set.load, bwKg);
-        const reps = parseFloat(set.reps ?? "");
-        if (!Number.isFinite(loadKg) || loadKg <= 0 || !Number.isFinite(reps) || reps <= 0) continue;
-        const rpe = parseFloat(set.rpe ?? "");
-        out.push({ t, loadKg, reps, rpe: Number.isFinite(rpe) ? rpe : null });
-      }
-    }
-  }
-  return out.sort((a, b) => a.t - b.t);
+/** A conditioning/cardio block's duration in minutes: logged minutes first,
+ *  else derived from the interval format (rounds × (work+rest) seconds). */
+const blockMinutes = (b: LoggedSession["blocks"][number]): number => {
+  if (b.kind === "strength") return 0;
+  if (b.minutes != null && Number.isFinite(b.minutes) && b.minutes > 0) return b.minutes;
+  if (b.kind === "conditioning" && b.rounds && b.work) return (b.rounds * (b.work + (b.rest ?? 0))) / 60;
+  return 0;
+};
+
+export interface WeekMinutes {
+  /** YYYY-MM-DD of the trailing 7-day bucket's start. */
+  weekStart: string;
+  minutes: number;
 }
 
-/** Weekly base/hard tonnage over trailing 7-day buckets, oldest → newest —
- *  the kind-agnostic counterpart of weeklyTonnage for conditioning moves. */
-export function weeklyVolume(
+/** Weekly minutes of the movement over trailing 7-day buckets, oldest →
+ *  newest — the duration metric for conditioning (which has no per-set loads:
+ *  ConditioningBlock is format/work/rest/rounds/minutes) and for minutes-only
+ *  cardio (a tennis match, a swim without distance). */
+export function weeklyMinutes(
   sessions: LoggedSession[],
   name: string,
   weeks: number,
   now = Date.now(),
-  bw?: BodyweightInput,
-): WeekTonnage[] {
-  const rows: WeekTonnage[] = Array.from({ length: weeks }, (_, w) => ({
+): WeekMinutes[] {
+  const rows: WeekMinutes[] = Array.from({ length: weeks }, (_, w) => ({
     weekStart: new Date(now - (weeks - w) * 7 * DAY).toISOString().slice(0, 10),
-    baseKg: 0,
-    hardKg: 0,
+    minutes: 0,
   }));
-  for (const s of volumeSets(sessions, name, now, bw)) {
-    const weeksAgo = Math.floor((now - s.t) / (7 * DAY));
+  for (const s of sessions) {
+    const t = ts(s.startedAt);
+    if (t > now) continue;
+    const weeksAgo = Math.floor((now - t) / (7 * DAY));
     if (weeksAgo >= weeks) continue;
-    const row = rows[weeks - 1 - weeksAgo]!;
-    const kg = s.loadKg * s.reps;
-    if (s.rpe != null && s.rpe >= 8) row.hardKg += kg;
-    else row.baseKg += kg;
+    for (const b of s.blocks) if (b.name === name) rows[weeks - 1 - weeksAgo]!.minutes += blockMinutes(b);
   }
-  return rows.map((r) => ({ ...r, baseKg: Math.round(r.baseKg), hardKg: Math.round(r.hardKg) }));
+  return rows.map((r) => ({ ...r, minutes: Math.round(r.minutes) }));
 }
 
 type Windowed<P> = { cur: P[]; prev: P[] };
@@ -146,14 +130,16 @@ export function exerciseWidgetCard(
 
   if (kind === "cardio") {
     const all = paceSeries(sessions, name).filter((p) => ts(p.date) <= now);
-    if (all.length === 0) return null;
-    const { cur, prev } = splitWindows(all, now);
-    const best = (pts: PacePoint[]) => (pts.length ? Math.min(...pts.map((p) => p.secPerKm)) : NaN);
-    const value = cur.length ? best(cur) : best(all.slice(-1));
-    // pace: sign of the raw change, improvement = got faster (negative change)
-    const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
-    const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.secPerKm);
-    return { name, kind, metric: "pace", value, deltaPct, improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count };
+    if (all.length > 0) {
+      const { cur, prev } = splitWindows(all, now);
+      const best = (pts: PacePoint[]) => (pts.length ? Math.min(...pts.map((p) => p.secPerKm)) : NaN);
+      const value = cur.length ? best(cur) : best(all.slice(-1));
+      // pace: sign of the raw change, improvement = got faster (negative change)
+      const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
+      const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.secPerKm);
+      return { name, kind, metric: "pace", value, deltaPct, improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count };
+    }
+    // minutes-only cardio (a match, a swim without distance) → time metric
   }
 
   if (kind === "strength") {
@@ -166,17 +152,25 @@ export function exerciseWidgetCard(
       const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.e1rm);
       return { name, kind, metric: "e1rm", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark, sessions: count };
     }
-    // strength logged without loads (e.g. band work) falls through to volume
+    // strength logged without parseable loads: weekly tonnage as the fallback
+    const weeks = weeklyTonnage(sessions, name, 16, now, bw).map((w) => w.baseKg + w.hardKg);
+    const curW = weeks.slice(8), prevW = weeks.slice(0, 8);
+    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+    if (sum(curW) > 0) {
+      const deltaPct = pctChange(sum(curW), sum(prevW));
+      return { name, kind, metric: "volume", value: sum(curW), deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
+    }
+    return null;
   }
 
-  // conditioning (and load-less strength): 8-week tonnage vs the 8 before
-  const weeks = weeklyVolume(sessions, name, 16, now, bw).map((w) => w.baseKg + w.hardKg);
+  // conditioning + minutes-only cardio: 8-week minutes vs the 8 before
+  const weeks = weeklyMinutes(sessions, name, 16, now).map((w) => w.minutes);
   const curW = weeks.slice(8), prevW = weeks.slice(0, 8);
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
   const value = sum(curW);
-  if (value <= 0 && count === 0) return null;
+  if (value <= 0) return null;
   const deltaPct = pctChange(value, sum(prevW));
-  return { name, kind, metric: "volume", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
+  return { name, kind, metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
 }
 
 /**
@@ -223,7 +217,7 @@ export type ExercisePageSlide =
   | { kind: "e1rmTrend"; points: PrPoint[]; bestE1rm: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "tonnage"; weeks: WeekTonnage[]; avgWeekKg: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "zones"; zones: IntensityZone[]; topZone: IntensityZone | null }
-  | { kind: "loadMix"; loads: { loadKg: number; share: number }[]; topLoadKg: number | null }
+  | { kind: "weeklyMinutes"; weeks: WeekMinutes[]; avgWeekMin: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "consistency"; weekly: number[]; weeksTrained: number; weeksTotal: number }
   | { kind: "paceTrend"; points: PacePoint[]; bestSec: number | null; deltaPct: number | null; improving: boolean | null }
   | { kind: "paceCurve"; bands: PaceBand[]; fastestBandSec: number | null }
@@ -235,6 +229,10 @@ export interface ExercisePageModel {
   period: ExercisePeriod;
   /** the existing per-movement dashboard — feeds the quiet substats row */
   stats: ExerciseStats;
+  /** sessions that trained this movement inside the period (any block kind —
+   *  the dashboard's own count is strength-blocks-only, so it reads 0 for
+   *  conditioning; the substats row uses THIS one for duration movements) */
+  sessionsInPeriod: number;
   slides: ExercisePageSlide[];
 }
 
@@ -268,6 +266,11 @@ export function exercisePageModel(
   const { now = Date.now(), bw, countWarmupsInVolume = false } = opts;
   const kind = exerciseKind(sessions, name);
   const stats = exerciseDashboard(sessions, name, period, now, countWarmupsInVolume, bw);
+  const cutoff = periodCutoff(period, now);
+  const sessionsInPeriod = sessions.filter((s) => {
+    const t = ts(s.startedAt);
+    return t <= now && t > cutoff && s.blocks.some((b) => b.name === name);
+  }).length;
   const slides: ExercisePageSlide[] = [];
 
   const weekly = weeklySessionCounts(sessions, name, CONSISTENCY_WEEKS, now);
@@ -278,19 +281,43 @@ export function exercisePageModel(
     weeksTotal: CONSISTENCY_WEEKS,
   };
 
+  const minutesSlide = (): ExercisePageSlide | null => {
+    const weeks = weeklyMinutes(sessions, name, PERIOD_WEEKS[period], now);
+    const totals = weeks.map((w) => w.minutes);
+    if (!totals.some((m) => m > 0)) return null;
+    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+    const half = Math.floor(totals.length / 2);
+    const deltaPct = pctChange(sum(totals.slice(half)), sum(totals.slice(0, half)));
+    return { kind: "weeklyMinutes", weeks, avgWeekMin: Math.round(sum(totals) / totals.length), deltaPct, improving: deltaPct == null ? null : deltaPct > 0 };
+  };
+
   if (kind === "cardio") {
     const points = paceSeries(sessions, name).filter((p) => ts(p.date) <= now);
-    const { cur, prev } = splitWindows(points, now);
-    const best = (pts: PacePoint[]) => (pts.length ? Math.min(...pts.map((p) => p.secPerKm)) : null);
-    const bestSec = best(cur) ?? best(points);
-    const deltaPct = cur.length && prev.length ? pctChange(best(cur)!, best(prev)!) : null;
-    slides.push({ kind: "paceTrend", points, bestSec, deltaPct, improving: deltaPct == null ? null : deltaPct < 0 });
-    const bands = paceCurve(sessions, name, now);
-    slides.push({ kind: "paceCurve", bands, fastestBandSec: bands[0]?.bestAllSec ?? null });
-    const rd = recentRunDeltas(sessions, name, 8, now);
-    slides.push({ kind: "runDeltas", runs: rd.runs, avgSec: rd.avgSec, lastDeltaSec: rd.runs.at(-1)?.deltaSec ?? null });
+    if (points.length > 0) {
+      const { cur, prev } = splitWindows(points, now);
+      const best = (pts: PacePoint[]) => (pts.length ? Math.min(...pts.map((p) => p.secPerKm)) : null);
+      const bestSec = best(cur) ?? best(points);
+      const deltaPct = cur.length && prev.length ? pctChange(best(cur)!, best(prev)!) : null;
+      slides.push({ kind: "paceTrend", points, bestSec, deltaPct, improving: deltaPct == null ? null : deltaPct < 0 });
+      const bands = paceCurve(sessions, name, now);
+      if (bands.length > 0) slides.push({ kind: "paceCurve", bands, fastestBandSec: bands[0]?.bestAllSec ?? null });
+      const rd = recentRunDeltas(sessions, name, 8, now);
+      if (rd.runs.length > 0) slides.push({ kind: "runDeltas", runs: rd.runs, avgSec: rd.avgSec, lastDeltaSec: rd.runs.at(-1)?.deltaSec ?? null });
+    } else {
+      // minutes-only cardio (a match, a swim without distance)
+      const m = minutesSlide();
+      if (m) slides.push(m);
+    }
     slides.push(consistency);
-    return { name, kind, period, stats, slides };
+    return { name, kind, period, stats, sessionsInPeriod, slides };
+  }
+
+  if (kind === "conditioning") {
+    // no per-set loads in the conditioning model — duration is the volume
+    const m = minutesSlide();
+    if (m) slides.push(m);
+    slides.push(consistency);
+    return { name, kind, period, stats, sessionsInPeriod, slides };
   }
 
   if (kind === "strength") {
@@ -310,12 +337,7 @@ export function exercisePageModel(
     }
   }
 
-  // tonnage: the strength engine's Monday-aligned weeks when they have data,
-  // else the kind-agnostic buckets (conditioning moves live outside liftSets)
-  const weeks =
-    kind === "strength"
-      ? weeklyTonnage(sessions, name, PERIOD_WEEKS[period], now, bw)
-      : weeklyVolume(sessions, name, PERIOD_WEEKS[period], now, bw);
+  const weeks = weeklyTonnage(sessions, name, PERIOD_WEEKS[period], now, bw);
   const totals = weeks.map((w) => w.baseKg + w.hardKg);
   if (totals.some((t) => t > 0)) {
     const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -330,26 +352,12 @@ export function exercisePageModel(
     });
   }
 
-  if (kind === "strength") {
-    const zones = intensityDistribution(sessions, name, period, now, bw);
-    if (zones.some((z) => z.count > 0)) {
-      const topZone = zones.reduce((a, b) => (b.share > a.share ? b : a));
-      slides.push({ kind: "zones", zones, topZone });
-    }
-  } else {
-    // conditioning: which loads the work happened at ("most-used bell")
-    const sets = volumeSets(sessions, name, now, bw).filter((s) => s.t > periodCutoff(period, now));
-    if (sets.length > 0) {
-      const byLoad = new Map<number, number>();
-      for (const s of sets) byLoad.set(s.loadKg, (byLoad.get(s.loadKg) ?? 0) + 1);
-      const loads = [...byLoad.entries()]
-        .map(([loadKg, n]) => ({ loadKg, share: Math.round((n / sets.length) * 100) / 100 }))
-        .sort((a, b) => b.share - a.share || a.loadKg - b.loadKg)
-        .slice(0, 4);
-      slides.push({ kind: "loadMix", loads, topLoadKg: loads[0]?.loadKg ?? null });
-    }
+  const zones = intensityDistribution(sessions, name, period, now, bw);
+  if (zones.some((z) => z.count > 0)) {
+    const topZone = zones.reduce((a, b) => (b.share > a.share ? b : a));
+    slides.push({ kind: "zones", zones, topZone });
   }
 
   slides.push(consistency);
-  return { name, kind, period, stats, slides };
+  return { name, kind, period, stats, sessionsInPeriod, slides };
 }

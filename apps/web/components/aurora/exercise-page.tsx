@@ -63,11 +63,13 @@ function slideHero(s: ExercisePageSlide, units: WeightUnit, t: (k: string) => st
         u: "%",
         label: `${t("w.analyze.exp.zones")} ${s.topZone ? (s.topZone.zone === "<60" ? "<60" : s.topZone.zone + "+") : ""}% e1RM`,
       };
-    case "loadMix":
+    case "weeklyMinutes":
       return {
-        v: s.topLoadKg != null ? String(Math.round(kgToUnit(s.topLoadKg, units))) : "–",
-        u: units,
-        label: t("w.analyze.exp.loadMix"),
+        v: String(s.avgWeekMin),
+        u: `min ${t("w.analyze.exp.perWeek")}`,
+        deltaPct: s.deltaPct,
+        improving: s.improving,
+        label: t("w.analyze.exp.weeklyMinutes"),
       };
     case "consistency":
       return { v: String(s.weeksTrained), u: `${t("w.analyze.exp.of")} ${s.weeksTotal}`, label: t("w.analyze.exp.consistency") };
@@ -149,6 +151,23 @@ function TonnageChart({ weeks, units, t }: { weeks: { baseKg: number; hardKg: nu
   );
 }
 
+function MinutesChart({ weeks, stroke, t }: { weeks: { minutes: number }[]; stroke: string; t: (k: string) => string }) {
+  const data = weeks.map((w, i) => ({ i, y: w.minutes }));
+  return (
+    <>
+      <ResponsiveContainer width="100%" height={230}>
+        <BarChart data={data} margin={{ top: 14, right: 0, bottom: 4, left: 0 }} barCategoryGap="18%">
+          <XAxis dataKey="i" hide />
+          <YAxis hide />
+          <Tooltip contentStyle={tip} formatter={(v) => `${v} min`} />
+          <Bar dataKey="y" fill={stroke} isAnimationActive={false} radius={[3, 3, 2, 2]} />
+        </BarChart>
+      </ResponsiveContainer>
+      <CornerLabels l={t("w.analyze.exp.weeksAgo").replace("{n}", String(weeks.length))} r={t("w.analyze.exp.now")} />
+    </>
+  );
+}
+
 function DeltasChart({ runs }: { runs: { date: string; deltaSec: number }[] }) {
   const data = runs.map((r) => ({ x: fmtDate(r.date), y: r.deltaSec }));
   return (
@@ -210,13 +229,8 @@ function SlideChart({ slide, stroke, units, t }: { slide: ExercisePageSlide; str
           rows={slide.zones.map((z) => ({ label: z.zone === "<60" ? "<60%" : `${z.zone}%+`, pct: z.share, value: `${Math.round(z.share * 100)}%` }))}
         />
       );
-    case "loadMix":
-      return (
-        <MeterRows
-          color={stroke}
-          rows={slide.loads.map((l) => ({ label: fmtWeight(l.loadKg, units), pct: l.share, value: `${Math.round(l.share * 100)}%` }))}
-        />
-      );
+    case "weeklyMinutes":
+      return <MinutesChart weeks={slide.weeks} stroke={stroke} t={t} />;
     case "paceCurve":
       return (
         <MeterRows
@@ -278,8 +292,19 @@ export default function AuroraExercisePage({
   };
 
   const s = model.stats;
-  const substats: { v: string; l: string }[] =
-    s.kind === "cardio"
+  // duration movements (conditioning + minutes-only cardio): the dashboard's
+  // strength/cardio aggregates read 0 for them, so the row speaks in minutes
+  const minSlide = model.slides.find((sl) => sl.kind === "weeklyMinutes");
+  const consSlide = model.slides.find((sl) => sl.kind === "consistency");
+  const substats: { v: string; l: string }[] = minSlide && minSlide.kind === "weeklyMinutes"
+    ? [
+        { v: String(model.sessionsInPeriod), l: t("w.analyze.ex.sessions") },
+        { v: `${minSlide.weeks.reduce((a, w) => a + w.minutes, 0)} min`, l: t("w.analyze.exp.minutes") },
+        ...(consSlide && consSlide.kind === "consistency"
+          ? [{ v: `${consSlide.weeksTrained}/${consSlide.weeksTotal}`, l: t("w.analyze.exp.weeksTrained") }]
+          : []),
+      ]
+    : s.kind === "cardio"
       ? [
           { v: String(s.efforts), l: t("w.analyze.ex.runs") },
           { v: `${s.distanceKm} km`, l: t("w.analyze.ex.distance") },
