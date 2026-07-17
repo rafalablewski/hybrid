@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, Animated, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
-import Svg, { G, Path, Rect, Circle, Defs, LinearGradient, Stop, Line as SvgLine, Text as SvgText } from "react-native-svg";
+import Svg, { G, Path, Polyline, Rect, Circle, Defs, LinearGradient, Stop, Line as SvgLine, Text as SvgText } from "react-native-svg";
 import { useLocalSearchParams } from "expo-router";
 import {
   exercisePageModel,
@@ -19,12 +19,13 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { AuroraScreen, ABack, ACard } from "./kit";
+import { AuroraScreen, ABack } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
-import ExerciseAnalytics from "./exercise-charts";
 
-// Chart-only raw hexes (mirror aurora/exercise-charts.tsx / web exercise-page).
+// Chart-only raw hexes (mirror web exercise-page): the CVD-validated deep
+// chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
 const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";
+const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", "#c6f84f"];
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
   { id: "8w", key: "w.analyze.ex.period8w" },
@@ -71,6 +72,16 @@ function slideHero(s: ExercisePageSlide, units: WeightUnit, t: (k: string) => st
         improving: s.improving,
         label: t("w.analyze.exp.weeklyMinutes"),
       };
+    case "repMax":
+      return { ...splitVal(fmtWeight(s.heaviestKg, units)), label: t("w.analyze.ex.repmaxTitle") };
+    case "loadReps":
+      return { v: String(s.workingSets), u: "", label: t("w.analyze.ex.mapTitle") };
+    case "surface":
+      return { ...splitVal(fmtTonnage(s.peakKg, units)), label: t("w.analyze.ex.surfaceTitle") };
+    case "compare":
+      return s.compare.kind === "strength"
+        ? { ...splitVal(fmtTonnage(s.compare.cur.volumeKg, units)), deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.ex.compareTitle") }
+        : { v: String(s.compare.cur.distanceKm), u: "km", deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.ex.compareTitle") };
     case "consistency":
       return { v: String(s.weeksTrained), u: `${t("w.analyze.exp.of")} ${s.weeksTotal}`, label: t("w.analyze.exp.consistency") };
     case "paceTrend":
@@ -242,6 +253,198 @@ function MeterRows({ C, rows, color }: { C: Palette; rows: { label: string; pct:
   );
 }
 
+type SlideOf<K extends ExercisePageSlide["kind"]> = Extract<ExercisePageSlide, { kind: K }>;
+
+/* ── deep-dive slides — the retired dashboard's charts, unboxed & full-bleed ── */
+
+function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax">; units: WeightUnit; t: (k: string) => string }) {
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, paddingTop: 16, paddingBottom: 6 }}>
+      {slide.cells.map((cell, i) => (
+        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 14, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{i + 1}RM</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 16, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 7, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ScatterChart({ C, slide, stroke, units, t }: { C: Palette; slide: SlideOf<"loadReps">; stroke: string; units: WeightUnit; t: (k: string) => string }) {
+  const map = slide.map;
+  const W = 353, H = 220, L = 8, R = 8, T = 12, B = 8;
+  const topIso = map.isolines[map.isolines.length - 1] ?? map.maxLoadKg;
+  const yMax = Math.max(map.maxLoadKg, topIso) * 1.06;
+  const yMin = Math.min(...map.points.map((p) => p.loadKg)) * 0.9;
+  const X = (r: number) => L + ((r - 0.5) * (W - L - R)) / 12;
+  const Y = (kg: number) => T + ((yMax - kg) * (H - T - B)) / (yMax - yMin || 1);
+  return (
+    <View>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        {map.isolines.map((iso) => {
+          let d = "";
+          for (let r = 0.6; r <= 12.4; r += 0.3) {
+            const kg = iso / (1 + r / 30);
+            if (kg < yMin || kg > yMax) continue;
+            d += `${d ? "L" : "M"}${X(r).toFixed(1)},${Y(kg).toFixed(1)}`;
+          }
+          return <Path key={iso} d={d} fill="none" stroke={C.ash} strokeWidth={1.2} strokeDasharray="4 4" opacity={0.7} />;
+        })}
+        {map.points.map((p, i) => (
+          <Circle key={i} cx={X(p.reps) + ((i % 5) - 2) * 1.6} cy={Y(p.loadKg)} r={p.recent ? 3.6 : 2.8} fill={p.recent ? stroke : C.ash} opacity={p.recent ? 1 : 0.45} />
+        ))}
+      </Svg>
+      <CornerLabels C={C} l={`${Math.round(kgToUnit(yMin, units))}–${Math.round(kgToUnit(yMax, units))} ${units}`} r={`1–12 ${t("w.analyze.ex.mapReps")}`} />
+    </View>
+  );
+}
+
+function SurfaceChart({ C, slide, t }: { C: Palette; slide: SlideOf<"surface">; t: (k: string) => string }) {
+  const s = slide.surface;
+  const weeks = s.weeks.length, bins = s.bins.length;
+  const ix = 24, iy = 11, zh = 48, ox = 30, oy = 76, W = 460, H = 220;
+  const px = (w: number, b: number) => ox + w * ix + b * ix * 0.72;
+  const py = (w: number, b: number) => oy + b * iy * 1.6 + w * iy * 0.52;
+  const nodes: React.ReactNode[] = [];
+  for (let b = 0; b < bins; b++)
+    for (let w = weeks - 1; w >= 0; w--) {
+      const v = s.grid[b]?.[w] ?? 0;
+      const h = (v / s.maxKg) * zh + 2;
+      const x = px(w, b), y = py(w, b);
+      const c = RAMP[Math.min(4, Math.floor((v / s.maxKg) * 4.99))]!;
+      const wdt = ix * 0.56, dep = iy * 0.9;
+      nodes.push(
+        <Path key={`f${b}-${w}`} d={`M${x},${y - h} l0,${h} l${wdt},${-dep * 0.5} l0,${-h} Z`} fill={c} opacity={0.55} />,
+        <Path key={`s${b}-${w}`} d={`M${x + wdt},${y - h - dep * 0.5} l0,${h} l${wdt * 0.6},${dep * 0.35} l0,${-h} Z`} fill={c} opacity={0.32} />,
+        <Path key={`t${b}-${w}`} d={`M${x},${y - h} l${wdt},${-dep * 0.5} l${wdt * 0.6},${dep * 0.35} l${-wdt},${dep * 0.5} Z`} fill={c} stroke={C.ink} strokeWidth={0.6} />,
+      );
+    }
+  return (
+    <View>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>{nodes}</Svg>
+      <CornerLabels C={C} l={`W1 → W${weeks}`} r={`${s.bins.join(" / ")} ${t("w.analyze.ex.surfaceReps")}`} />
+    </View>
+  );
+}
+
+function PaceCurveChart({ C, slide, stroke, t }: { C: Palette; slide: SlideOf<"paceCurve">; stroke: string; t: (k: string) => string }) {
+  const bands = slide.bands;
+  if (bands.length < 2)
+    return <MeterRows C={C} color={stroke} rows={bands.map((b) => ({ label: b.label, pct: b.bestAllSec ? 1 / b.bestAllSec : 0, value: b.bestAllSec ? paceClock(b.bestAllSec) : "–" }))} />;
+  const secs = bands.flatMap((b) => [b.bestAllSec, b.bestRecentSec]).filter((v): v is number => v != null);
+  const min = Math.min(...secs), max = Math.max(...secs), range = max - min || 1;
+  const W = 353, H = 190, L = 10, R = 10, T = 14, B = 10;
+  const X = (i: number) => L + (i * (W - L - R)) / (bands.length - 1);
+  const Y = (v: number) => T + ((v - min) * (H - T - B)) / range; // reversed: faster on top
+  const recentPts = bands.map((b, i) => (b.bestRecentSec != null ? `${X(i)},${Y(b.bestRecentSec)}` : null)).filter(Boolean).join(" ");
+  return (
+    <View>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        <Polyline points={bands.map((b, i) => `${X(i)},${Y(b.bestAllSec ?? max)}`).join(" ")} fill="none" stroke={C.ash} strokeWidth={2} strokeLinejoin="round" />
+        {recentPts.length > 0 && <Polyline points={recentPts} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" />}
+        {bands.map((b, i) => (
+          <Circle key={i} cx={X(i)} cy={Y(b.bestAllSec ?? max)} r={2.5} fill={C.ash} />
+        ))}
+        {bands.map((b, i) => (b.bestRecentSec != null ? <Circle key={`r${i}`} cx={X(i)} cy={Y(b.bestRecentSec)} r={3.5} fill={stroke} stroke={C.ink} strokeWidth={1} /> : null))}
+      </Svg>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 2, paddingTop: 4 }}>
+        {bands.map((b) => (
+          <Text key={b.label} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center" }}>{b.label}{"\n"}{b.bestAllSec != null ? paceClock(b.bestAllSec) : "–"}</Text>
+        ))}
+      </View>
+      <Text style={{ marginTop: 10, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.ex.paceCurveRecent")} — {t("w.analyze.ex.paceCurveAll")}</Text>
+    </View>
+  );
+}
+
+function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"compare">; units: WeightUnit; t: (k: string) => string }) {
+  const compare = slide.compare;
+  const tiles =
+    compare.kind === "strength"
+      ? [
+          { l: t("w.analyze.ex.bestE1rm"), cur: String(Math.round(kgToUnit(compare.cur.bestE1rm, units))), was: String(Math.round(kgToUnit(compare.prev.bestE1rm, units))), good: compare.cur.bestE1rm >= compare.prev.bestE1rm, same: compare.cur.bestE1rm === compare.prev.bestE1rm },
+          { l: t("w.analyze.ex.cmpVolume"), cur: fmtTonnage(compare.cur.volumeKg, units), was: fmtTonnage(compare.prev.volumeKg, units), good: compare.cur.volumeKg >= compare.prev.volumeKg, same: compare.cur.volumeKg === compare.prev.volumeKg },
+          { l: t("w.analyze.ex.cmpHardSets"), cur: String(compare.cur.hardSets), was: String(compare.prev.hardSets), good: compare.cur.hardSets >= compare.prev.hardSets, same: compare.cur.hardSets === compare.prev.hardSets },
+          { l: t("w.analyze.ex.cmpSessions"), cur: String(compare.cur.sessions), was: String(compare.prev.sessions), good: compare.cur.sessions >= compare.prev.sessions, same: compare.cur.sessions === compare.prev.sessions },
+        ]
+      : [
+          { l: t("w.analyze.ex.cmpDistance"), cur: `${compare.cur.distanceKm}`, was: `${compare.prev.distanceKm}`, good: compare.cur.distanceKm >= compare.prev.distanceKm, same: compare.cur.distanceKm === compare.prev.distanceKm },
+          { l: t("w.analyze.ex.cmpRuns"), cur: String(compare.cur.runs), was: String(compare.prev.runs), good: compare.cur.runs >= compare.prev.runs, same: compare.cur.runs === compare.prev.runs },
+          { l: t("w.analyze.ex.cmpAvgPace"), cur: compare.cur.avgPaceSec != null ? paceClock(compare.cur.avgPaceSec) : "–", was: compare.prev.avgPaceSec != null ? paceClock(compare.prev.avgPaceSec) : "–", good: (compare.cur.avgPaceSec ?? Infinity) <= (compare.prev.avgPaceSec ?? Infinity), same: compare.cur.avgPaceSec === compare.prev.avgPaceSec },
+          { l: t("w.analyze.ex.cmpBestPace"), cur: compare.cur.bestPaceSec != null ? paceClock(compare.cur.bestPaceSec) : "–", was: compare.prev.bestPaceSec != null ? paceClock(compare.prev.bestPaceSec) : "–", good: (compare.cur.bestPaceSec ?? Infinity) <= (compare.prev.bestPaceSec ?? Infinity), same: compare.cur.bestPaceSec === compare.prev.bestPaceSec },
+        ];
+
+  const all = [...compare.weeklyCur, ...compare.weeklyPrev];
+  const max = Math.max(...all, 1);
+  const W = 353, H = 130, L = 6, R = 6, T = 10, B = 8;
+  const X = (i: number) => L + (i * (W - L - R)) / (compare.weeks - 1);
+  const Y = (v: number) => T + ((max - v) * (H - T - B)) / max;
+
+  return (
+    <View>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        <SvgLine x1={L} x2={W - R} y1={Y(0)} y2={Y(0)} stroke={C.line} strokeWidth={1} />
+        <Polyline points={compare.weeklyPrev.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.ash} strokeWidth={2} strokeLinejoin="round" />
+        <Polyline points={compare.weeklyCur.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.violet} strokeWidth={2.5} strokeLinejoin="round" />
+        {compare.weeklyCur.map((v, i) => <Circle key={i} cx={X(i)} cy={Y(v)} r={3} fill={C.violet} stroke={C.ink} strokeWidth={1} />)}
+      </Svg>
+      <CornerLabels C={C} l={t("w.analyze.ex.comparePrev")} r={t("w.analyze.ex.compareCur")} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 14 }}>
+        {tiles.map((tile) => (
+          <View key={tile.l} style={{ width: "50%", paddingVertical: 8, paddingRight: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
+              {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const heatColor = (level: number, C: Palette): string => {
+  if (level <= 0) return C.line;
+  if (level >= 4) return C.lime;
+  const op = level === 1 ? 0.28 : level === 2 ? 0.5 : 0.74;
+  return `${C.lime}${Math.round(op * 255).toString(16).padStart(2, "0")}`;
+};
+
+function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"consistency">; foot: string; t: (k: string) => string }) {
+  const d = slide.detail;
+  if (d.activeDays === 0) return <ConsistencyDots C={C} weekly={slide.weekly} foot={foot} />;
+  const stats = [
+    { v: String(d.weekStreak), l: t("w.analyze.ex.weekStreak") },
+    { v: String(d.perWeek), l: t("w.analyze.ex.perWeek") },
+    { v: String(d.longestGapDays), l: t("w.analyze.ex.longestGap") },
+    { v: String(d.activeDays), l: t("w.analyze.ex.activeDays") },
+  ];
+  return (
+    <View style={{ paddingTop: 16 }}>
+      <View style={{ flexDirection: "row", gap: 2.5 }}>
+        {d.heat.map((col, ci) => (
+          <View key={ci} style={{ flex: 1, gap: 2.5 }}>
+            {col.map((cell, ri) => (
+              <View key={ri} style={{ aspectRatio: 1, borderRadius: 2, backgroundColor: heatColor(cell.level, C) }} />
+            ))}
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", marginTop: 16 }}>
+        {stats.map((st) => (
+          <View key={st.l} style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
+            <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={{ marginTop: 12, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{foot}</Text>
+    </View>
+  );
+}
+
 function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; foot: string }) {
   const steps = [0, 0.26, 0.52, 0.88];
   return (
@@ -264,14 +467,22 @@ function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: Exercis
       return <TonnageChart C={C} weeks={slide.weeks} units={units} t={t} />;
     case "zones":
       return <MeterRows C={C} color={stroke} rows={slide.zones.map((z) => ({ label: z.zone === "<60" ? "<60%" : `${z.zone}%+`, pct: z.share, value: `${Math.round(z.share * 100)}%` }))} />;
+    case "repMax":
+      return <RepMaxGrid C={C} slide={slide} units={units} t={t} />;
+    case "loadReps":
+      return <ScatterChart C={C} slide={slide} stroke={stroke} units={units} t={t} />;
+    case "surface":
+      return <SurfaceChart C={C} slide={slide} t={t} />;
+    case "compare":
+      return <CompareChart C={C} slide={slide} units={units} t={t} />;
     case "weeklyMinutes":
       return <MinutesChart C={C} weeks={slide.weeks} stroke={stroke} t={t} />;
     case "paceCurve":
-      return <MeterRows C={C} color={stroke} rows={slide.bands.map((b) => ({ label: b.label, pct: b.bestAllSec ? 1 / b.bestAllSec : 0, value: b.bestAllSec ? paceClock(b.bestAllSec) : "–" }))} />;
+      return <PaceCurveChart C={C} slide={slide} stroke={stroke} t={t} />;
     case "runDeltas":
       return <DeltasChart C={C} runs={slide.runs} />;
     case "consistency":
-      return <ConsistencyDots C={C} weekly={slide.weekly} foot={t("w.analyze.exp.consistencyFoot")} />;
+      return <ConsistencyHeat C={C} slide={slide} foot={t("w.analyze.exp.consistencyFoot")} t={t} />;
   }
 }
 
@@ -438,25 +649,18 @@ export default function AuroraExercisePage() {
         ))}
       </View>
 
-      {/* DEEP DIVE — the full analytics stack (absorbed from the retired
-          Exercises dashboard): best set + velocity, then the cards the slides
-          don't cover (rep-max matrix, load×reps map, tonnage landscape,
-          consistency calendar, pace curve, block compare). */}
+      {/* BEST SET + velocity — quiet typography over one hairline (the rest of
+          the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
-        <ACard style={{ marginTop: 22 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
+        <View style={{ marginTop: 18, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>
-        </ACard>
+          {s.velocity && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.analyze.ex.velocityProfile")} <Text style={{ color: txt(C, C.lime) }}>{fmtWeight(s.velocity.e1rm, units)}</Text> – {t("w.analyze.ex.velEstPre")} {s.velocity.r2} – {s.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
+          )}
+        </View>
       )}
-      {s.kind === "strength" && s.velocity && (
-        <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.velocityProfile")}</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime), marginTop: 6 }}>{fmtWeight(s.velocity.e1rm, units)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {s.velocity.r2} – {s.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
-        </ACard>
-      )}
-      <ExerciseAnalytics sessions={sessions} name={name} kind={model.kind} units={units} bw={bw} />
     </AuroraScreen>
   );
 }

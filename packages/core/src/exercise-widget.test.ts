@@ -129,7 +129,7 @@ describe("weeklySessionCounts", () => {
 });
 
 describe("exercisePageModel", () => {
-  it("orders strength slides e1RM → tonnage → zones → consistency with heroes", () => {
+  it("orders strength slides e1RM → tonnage → zones → deep-dive → consistency with heroes", () => {
     const sessions = [
       lift(70, [{ load: "180", reps: "5", rpe: "8" }]),
       lift(30, [{ load: "185", reps: "5" }]),
@@ -137,22 +137,32 @@ describe("exercisePageModel", () => {
     ];
     const m = exercisePageModel(sessions, "Deadlift", "all", { now });
     expect(m.kind).toBe("strength");
-    expect(m.slides.map((s) => s.kind)).toEqual(["e1rmTrend", "tonnage", "zones", "consistency"]);
+    // loadReps needs ≥5 working sets, so it's absent with only 3
+    expect(m.slides.map((s) => s.kind)).toEqual(["e1rmTrend", "tonnage", "zones", "repMax", "surface", "compare", "consistency"]);
     const e1 = m.slides[0]!;
     if (e1.kind !== "e1rmTrend") throw new Error("wrong slide");
     expect(e1.bestE1rm).toBe(Math.round(195 * (1 + 5 / 30)));
     expect(e1.improving).toBe(true);
+    const rm = m.slides[3]!;
+    if (rm.kind !== "repMax") throw new Error("wrong slide");
+    expect(rm.heaviestKg).toBe(195);
+    expect(rm.cells[4]?.loadKg).toBe(195); // best-ever 5RM
+    const cmp = m.slides[5]!;
+    if (cmp.kind !== "compare") throw new Error("wrong slide");
+    expect(cmp.compare.kind).toBe("strength");
+    expect(cmp.improving).toBe(true); // two sessions this block vs one before
     const cons = m.slides.at(-1)!;
     if (cons.kind !== "consistency") throw new Error("wrong slide");
     expect(cons.weeksTotal).toBe(26);
     expect(cons.weeksTrained).toBe(3);
+    expect(cons.detail.activeDays).toBe(3);
   });
 
-  it("orders cardio slides pace → curve → deltas → consistency", () => {
+  it("orders cardio slides pace → curve → deltas → compare → consistency", () => {
     const sessions = [run(70, 5, 30), run(20, 5, 28), run(6, 5, 26)];
     const m = exercisePageModel(sessions, "Run", "8w", { now });
     expect(m.kind).toBe("cardio");
-    expect(m.slides.map((s) => s.kind)).toEqual(["paceTrend", "paceCurve", "runDeltas", "consistency"]);
+    expect(m.slides.map((s) => s.kind)).toEqual(["paceTrend", "paceCurve", "runDeltas", "compare", "consistency"]);
     const pace = m.slides[0]!;
     if (pace.kind !== "paceTrend") throw new Error("wrong slide");
     expect(pace.bestSec).toBe(312);
