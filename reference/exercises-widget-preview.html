@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Today: Exercises widget (preview)</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* ── HYBRID Aurora tokens (mirror packages/core/src/theme/tokens.ts) ── */
+:root {
+  --color-ink: #0c0d0c;
+  --color-ink2: #141614;
+  --color-card: #161816;
+  --color-line: #2a2d2a;
+  --color-lime: #c6f84f;
+  --color-chalk: #f3f4ef;
+  --color-ash: #8b8f86;
+  --color-blue: #3c787e;
+  --color-violet: #8296c4;
+  --color-amber: #d0cd94;
+  --color-red: #d56f3e;
+  --lime-text: #c6f84f;
+  --blue-text: #6cb6bd;
+  --amber-text: #d0cd94;
+  --red-text: #e58a5c;
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --r-card: 28px;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--color-ink); color: var(--color-chalk); }
+body {
+  font-family: var(--font-display);
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px 12px 40px;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ambient Aurora blob field, refracted behind everything */
+.lg-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.lg-blob { position: absolute; width: 42vmax; height: 42vmax; border-radius: 50%; filter: blur(70px); opacity: .12; mix-blend-mode: screen; }
+.lg-a { background: var(--color-lime); top: -10vmax; left: -8vmax; }
+.lg-b { background: var(--color-blue); top: 10vmax; right: -12vmax; }
+.lg-c { background: var(--color-violet); bottom: -16vmax; left: 36%; }
+
+.stage { position: relative; z-index: 1; display: grid; gap: 18px; justify-items: center; }
+.preview-note { text-align: center; max-width: 420px; }
+.preview-note .k {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--color-ash);
+}
+.preview-note h1 { font-size: 19px; font-weight: 900; margin-top: 6px; }
+.preview-note p { font-size: 12px; color: var(--color-ash); margin-top: 6px; line-height: 1.55; }
+.preview-note b { color: var(--color-chalk); font-weight: 700; }
+
+/* ── phone frame ─────────────────────────────────────────────────── */
+.phone {
+  width: 393px; max-width: 100vw;
+  height: 830px; max-height: calc(100vh - 130px); min-height: 560px;
+  background: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: 54px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 90px -40px rgba(0,0,0,.9), 0 0 0 8px #060706;
+}
+@media (max-width: 480px) {
+  body { padding: 10px 0 24px; }
+  .phone { border-radius: 0; box-shadow: none; border: none; max-height: none; height: 78vh; }
+}
+.statusbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 28px 8px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  pointer-events: none;
+  background: linear-gradient(var(--color-ink) 40%, transparent);
+}
+.batt { display: inline-flex; align-items: center; gap: 5px; color: var(--color-ash); font-weight: 500; font-size: 10px; }
+.batt i { width: 20px; height: 10px; border: 1px solid var(--color-ash); border-radius: 3px; position: relative; }
+.batt i::after { content: ""; position: absolute; inset: 1.5px; right: 5px; background: var(--color-lime); border-radius: 1px; }
+
+.screen {
+  position: absolute; inset: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 58px 18px 96px;
+  display: none;
+}
+.screen.on { display: block; animation: enter .26s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .screen.on { animation: none; } }
+
+/* ── shared type ─────────────────────────────────────────────────── */
+.kicker {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--color-ash);
+}
+.card {
+  background: var(--color-ink2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--r-card);
+  box-shadow: 0 6px 22px -12px rgba(0,0,0,.55);
+  padding: 18px;
+}
+.mono { font-family: var(--font-mono); }
+
+/* ── TODAY screen ────────────────────────────────────────────────── */
+.t-head { margin: 8px 2px 16px; }
+.t-head h2 { font-size: 30px; font-weight: 900; letter-spacing: -.02em; margin-top: 4px; }
+
+.plan-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.plan-card .big { font-size: 17px; font-weight: 800; margin-top: 5px; }
+.plan-card .sub { font-size: 11px; color: var(--color-ash); margin-top: 3px; }
+.start-pill {
+  flex: none; border: none; cursor: pointer;
+  background: var(--color-lime); color: var(--color-ink);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  padding: 12px 20px; border-radius: 999px;
+  transition: box-shadow .25s ease, transform .18s ease;
+}
+.start-pill:hover { box-shadow: 0 0 34px -4px color-mix(in srgb, var(--color-lime) 55%, transparent); transform: translateY(-1px); }
+
+/* the new EXERCISES widget rail */
+.wgt-bar { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 4px 10px; }
+.wgt-bar a {
+  font-family: var(--font-mono); font-size: 11px; color: var(--lime-text);
+  text-decoration: none; cursor: pointer;
+}
+.rail {
+  display: flex; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  margin: 0 -18px; padding: 4px 18px 6px;
+}
+.wgt {
+  flex: 0 0 86%;
+  scroll-snap-align: center;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-chalk);
+  font-family: var(--font-display);
+  transition: transform .18s ease, border-color .18s ease;
+  position: relative;
+}
+.wgt:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--wa, var(--color-lime)) 45%, var(--color-line)); }
+.wgt-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wgt-name { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 9px; }
+.wgt-ic {
+  width: 30px; height: 30px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--wa, var(--color-lime)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wa, var(--color-lime)) 40%, transparent);
+}
+.wgt-ic svg { width: 15px; height: 15px; stroke: var(--wat, var(--lime-text)); }
+.chip {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--wat, var(--lime-text));
+  border: 1px solid color-mix(in srgb, var(--wa, var(--color-lime)) 45%, transparent);
+  background: color-mix(in srgb, var(--wa, var(--color-lime)) 10%, transparent);
+  padding: 4px 9px; border-radius: 999px;
+}
+.wgt-hero { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 2px; }
+.wgt-hero .v { font-size: 30px; font-weight: 900; letter-spacing: -.02em; }
+.wgt-hero .u { font-family: var(--font-mono); font-size: 12px; color: var(--color-ash); }
+.wgt-hero .d { font-family: var(--font-mono); font-size: 11px; font-weight: 700; margin-left: auto; }
+.wgt .kicker { margin-top: 2px; }
+.wgt-spark { margin: 10px 0 4px; }
+.wgt-spark svg { display: block; width: 100%; height: 56px; }
+.wgt-meta { font-family: var(--font-mono); font-size: 10px; color: var(--color-ash); margin-top: 6px; }
+.wgt-all {
+  flex: 0 0 44%;
+  display: grid; place-items: center; gap: 8px; align-content: center;
+  border-style: dashed; cursor: pointer; color: var(--color-ash);
+  font-family: var(--font-mono); font-size: 11px; text-align: center;
+}
+.wgt-all .plus { font-size: 22px; color: var(--lime-text); font-weight: 400; }
+.dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+.dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-line); transition: all .2s ease; }
+.dot.on { background: var(--color-lime); width: 16px; }
+
+.ghost-card { opacity: .55; margin-top: 16px; }
+.ghost-card .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px; }
+.ghost-card .row span:last-child { font-family: var(--font-mono); font-size: 11px; color: var(--color-ash); }
+
+/* bottom tab bar */
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 12px 10px 24px;
+  background: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border-top: 1px solid var(--color-line);
+}
+.tab { display: grid; justify-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ash); }
+.tab svg { width: 20px; height: 20px; stroke: currentColor; }
+.tab.on { color: var(--lime-text); }
+
+/* ── DETAIL screen ───────────────────────────────────────────────── */
+.d-head { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
+.back {
+  width: 38px; height: 38px; flex: none; cursor: pointer;
+  border: 1px solid var(--color-line); border-radius: 13px;
+  background: transparent; color: var(--color-chalk);
+  display: grid; place-items: center; font-size: 16px;
+}
+.back:hover { border-color: var(--color-ash); }
+.d-head h2 { font-size: 22px; font-weight: 900; letter-spacing: -.01em; }
+.d-head .chip { margin-left: auto; }
+.periods { display: flex; gap: 6px; margin-bottom: 14px; }
+.pd {
+  font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+  padding: 6px 14px; border-radius: 999px;
+  color: var(--color-ash); background: transparent; border: 1px solid var(--color-line);
+}
+.pd.on { color: var(--color-ink); background: var(--color-lime); border-color: var(--color-lime); font-weight: 700; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat { padding: 14px 16px; border-radius: 22px; }
+.stat .v { font-size: 21px; font-weight: 800; }
+.stat .l { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--color-ash); margin-top: 4px; }
+
+/* stat pager */
+.pg-bar { display: flex; align-items: center; gap: 10px; margin: 4px 2px 10px; }
+.pg-btn {
+  width: 34px; height: 34px; flex: none; cursor: pointer;
+  border: 1px solid var(--color-line); border-radius: 999px;
+  background: transparent; color: var(--color-chalk); font-size: 14px;
+  display: grid; place-items: center;
+}
+.pg-btn:hover { border-color: var(--color-lime); color: var(--lime-text); }
+.pg-btn:disabled { opacity: .3; cursor: default; }
+.pg-title { flex: 1; text-align: center; }
+.pg-title .t { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+.pg-title .n { font-family: var(--font-mono); font-size: 9px; color: var(--color-ash); margin-top: 3px; }
+.pager { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -18px; padding: 0 18px; gap: 14px; }
+.slide { flex: 0 0 100%; scroll-snap-align: center; }
+.slide .card { min-height: 120px; }
+.pager-dots { margin-top: 12px; }
+.viewall-row { display: grid; margin-top: 14px; }
+.viewall {
+  cursor: pointer; text-align: center;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: var(--lime-text); background: color-mix(in srgb, var(--color-lime) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-lime) 45%, transparent);
+  border-radius: 999px; padding: 12px 20px;
+}
+.viewall:hover { background: color-mix(in srgb, var(--color-lime) 14%, transparent); }
+/* view-everything: the pager unrolls into a vertical stack */
+.detail-body.all .pager { flex-direction: column; overflow: visible; scroll-snap-type: none; margin: 0; padding: 0; }
+.detail-body.all .slide { flex: none; width: 100%; }
+.detail-body.all .pg-bar, .detail-body.all .pager-dots { display: none; }
+.detail-body.all .slide + .slide { margin-top: 0; }
+
+.slide-kicker { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 10px; color: var(--color-ash); }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* rep-max matrix */
+.rm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rm { border-radius: 16px; padding: 12px 6px; text-align: center; background: var(--color-ink); border: 1px solid var(--color-line); }
+.rm.recent { background: color-mix(in srgb, var(--color-lime) 14%, transparent); border-color: var(--color-lime); }
+.rm.empty { background: transparent; border-style: dashed; }
+.rm .k { font-family: var(--font-mono); font-size: 9px; color: var(--color-ash); letter-spacing: .08em; }
+.rm .v { font-weight: 800; font-size: 18px; margin: 5px 0 2px; }
+.rm.recent .v { color: var(--lime-text); }
+.rm.empty .v { color: var(--color-ash); }
+.rm .d { font-family: var(--font-mono); font-size: 9px; color: var(--color-ash); }
+
+/* zones h-bars */
+.zone { display: grid; grid-template-columns: 64px 1fr 40px; align-items: center; gap: 10px; margin-top: 10px; }
+.zone .zl { font-family: var(--font-mono); font-size: 10px; color: var(--color-ash); }
+.zone .zt { height: 14px; border-radius: 999px; background: var(--color-ink); overflow: hidden; }
+.zone .zf { height: 100%; border-radius: 999px; }
+.zone .zv { font-family: var(--font-mono); font-size: 11px; text-align: right; }
+
+/* consistency heat strip */
+.heat { display: grid; grid-template-columns: repeat(13, 1fr); gap: 5px; }
+.heat i { aspect-ratio: 1; border-radius: 5px; background: var(--color-ink); border: 1px solid var(--color-line); }
+.heat i.l1 { background: color-mix(in srgb, var(--color-lime) 18%, var(--color-ink)); border-color: transparent; }
+.heat i.l2 { background: color-mix(in srgb, var(--color-lime) 42%, var(--color-ink)); border-color: transparent; }
+.heat i.l3 { background: color-mix(in srgb, var(--color-lime) 78%, var(--color-ink)); border-color: transparent; }
+
+/* best-set line */
+.bestset .v { font-family: var(--font-mono); font-size: 15px; margin-top: 8px; }
+.bestset .v span { color: var(--color-ash); }
+.bestset .foot { font-family: var(--font-mono); font-size: 10px; color: var(--color-ash); margin-top: 8px; }
+
+/* chart svg + tooltip */
+.chart svg { display: block; width: 100%; height: auto; }
+.tip {
+  position: fixed; z-index: 99; pointer-events: none;
+  background: var(--color-ink); border: 1px solid var(--color-line); border-radius: 8px;
+  font-family: var(--font-mono); font-size: 11px; padding: 7px 10px;
+  opacity: 0; transition: opacity .12s ease; white-space: nowrap;
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.8);
+}
+.tip.on { opacity: 1; }
+.tip b { color: var(--lime-text); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="lg-field"><div class="lg-blob lg-a"></div><div class="lg-blob lg-b"></div><div class="lg-blob lg-c"></div></div>
+
+<div class="stage">
+  <div class="preview-note">
+    <div class="k">HYBRID – design preview – not wired to real data</div>
+    <h1>Today tab — Exercises widget</h1>
+    <p><b>Swipe the widget rail</b>, tap a favourite to open its stats screen, flip charts with <b>‹ ›</b> (or swipe), and expand with <b>View everything</b>.</p>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="batt">100 <i></i></span></div>
+
+    <!-- ═══════════ TODAY ═══════════ -->
+    <div class="screen on" id="scr-today">
+      <div class="t-head">
+        <div class="kicker">Friday 17 Jul – Week 6</div>
+        <h2>Today</h2>
+      </div>
+
+      <!-- existing plan card (context, abbreviated) -->
+      <div class="card plan-card">
+        <div>
+          <div class="kicker">Next up – Day 3</div>
+          <div class="big">Lower — Strength</div>
+          <div class="sub">5 blocks – 52 min est.</div>
+        </div>
+        <button class="start-pill">START</button>
+      </div>
+
+      <!-- ── NEW: Exercises widget rail ── -->
+      <div class="wgt-bar">
+        <div class="kicker">Exercises – your favourites</div>
+        <a id="lnk-all">All ›</a>
+      </div>
+      <div class="rail" id="rail"></div>
+      <div class="dots" id="rail-dots"></div>
+
+      <!-- existing "also today" (context, abbreviated) -->
+      <div class="card ghost-card">
+        <div class="kicker">Also today</div>
+        <div class="row"><span>Zone 2 spin – optional</span><span>40 min</span></div>
+        <div class="row"><span>Evening mobility</span><span>12 min</span></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ EXERCISE DETAIL ═══════════ -->
+    <div class="screen" id="scr-detail">
+      <div class="d-head">
+        <button class="back" id="btn-back" aria-label="Back">‹</button>
+        <h2 id="d-name"></h2>
+        <span class="chip" id="d-chip"></span>
+      </div>
+      <div class="periods" id="d-periods"></div>
+      <div class="stats" id="d-stats"></div>
+
+      <div class="detail-body" id="d-body">
+        <div class="pg-bar">
+          <button class="pg-btn" id="pg-prev" aria-label="Previous stat">‹</button>
+          <div class="pg-title"><div class="t" id="pg-name"></div><div class="n" id="pg-count"></div></div>
+          <button class="pg-btn" id="pg-next" aria-label="Next stat">›</button>
+        </div>
+        <div class="pager" id="pager"></div>
+        <div class="dots pager-dots" id="pg-dots"></div>
+        <div class="viewall-row"><button class="viewall" id="btn-all">View everything</button></div>
+      </div>
+    </div>
+
+    <!-- bottom tabs -->
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l9-8 9 8v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 7v10M18 7v10M2 10v4M22 10v4M6 12h12"/></svg>Train</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Analyze</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>Profile</div>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   Standalone mock — demo data + hand-rolled SVG charts in the Aurora
+   chart language (lime e1RM line with PR dots, teal pace line, the
+   CVD-deep base/hard tonnage stack). No libraries.
+   ════════════════════════════════════════════════════════════════════ */
+const T = {
+  ink: "#0c0d0c", ink2: "#141614", card: "#161816", line: "#2a2d2a",
+  lime: "#c6f84f", chalk: "#f3f4ef", ash: "#8b8f86",
+  blueText: "#6cb6bd", amberText: "#d0cd94", redText: "#e58a5c",
+  deepBase: "#84a01e", deepHard: "#bd871e",
+};
+
+const ICONS = {
+  barbell: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 7v10M18 7v10M2 10v4M22 10v4M6 12h12"/></svg>',
+  run: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="14" cy="4.5" r="1.8"/><path d="M4 21l4-6 3 2 2-5-3.5-2L13 6l4 3h4M9 12l-2-1.5L10 7"/></svg>',
+  kb: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M8.5 8.5V6a3.5 3.5 0 017 0v2.5"/><circle cx="12" cy="14.5" r="6"/></svg>',
+};
+
+/* ── demo data ── */
+const DL_DATES = ["8 Nov","2 Dec","20 Dec","10 Jan","31 Jan","21 Feb","14 Mar","4 Apr","25 Apr","16 May","6 Jun","4 Jul"];
+const EXERCISES = {
+  deadlift: {
+    name: "Deadlift", purpose: "Strength", icon: "barbell",
+    accent: "--color-lime", accentText: "--lime-text",
+    hero: { v: "213", u: "kg", label: "Best e1RM", delta: "+4.2%", deltaC: T.lime },
+    meta: "31 sessions – 86.4 t lifted – all time",
+    spark: { data: [186,189,188,193,196,195,199,203,201,206,209,213], color: T.lime, pr: 11 },
+    stats: [
+      { v: "213 kg", l: "Best e1RM", c: T.lime }, { v: "148", l: "Working sets" },
+      { v: "86.4 t", l: "Volume" }, { v: "31", l: "Sessions" },
+    ],
+    slides: [
+      { key: "pr", title: "e1RM – PR trend", accent: T.lime,
+        render: (el) => lineChart(el, { labels: DL_DATES, values: [186,189,188,193,196,195,199,203,201,206,209,213],
+          prs: [1,3,4,7,9,11], color: T.lime, fmt: v => v + " kg" }),
+        legend: [{ c: T.lime, l: "All-time PR" }] },
+      { key: "best", title: "Best set", accent: T.lime, render: bestSetCard },
+      { key: "rm", title: "Rep-max matrix", render: repMaxCard,
+        legend: [{ c: T.lime, l: "Set in last 8 weeks" }, { c: T.line, l: "Older" }] },
+      { key: "ton", title: "Weekly tonnage", render: (el) => tonnageChart(el, TON_DL),
+        legend: [{ c: T.deepBase, l: "Base" }, { c: T.deepHard, l: "Hard (RPE 8+)" }] },
+      { key: "zone", title: "Intensity zones", render: (el) => zonesCard(el, [
+          { l: "< 70%", pct: 34 }, { l: "70–80%", pct: 38 }, { l: "80–90%", pct: 21 }, { l: "90%+", pct: 7 }]) },
+      { key: "cons", title: "Consistency", render: (el) => heatCard(el, HEAT_DL, "sessions / week") },
+    ],
+  },
+  run: {
+    name: "Easy Run", purpose: "Running", icon: "run",
+    accent: "--color-blue", accentText: "--blue-text",
+    hero: { v: "5:12", u: "/km", label: "Best pace", delta: "-18 s", deltaC: T.blueText },
+    meta: "24.6 km this week – 6 runs",
+    spark: { data: [345,341,338,340,334,331,333,327,325,322,318,312], color: T.blueText, invert: true },
+    stats: [
+      { v: "42", l: "Runs" }, { v: "186 km", l: "Distance", c: T.blueText },
+      { v: "14.2 km", l: "Longest" }, { v: "5:12", l: "Best pace", c: T.blueText },
+    ],
+    slides: [
+      { key: "pace", title: "Pace trend", accent: T.blueText,
+        render: (el) => lineChart(el, { labels: DL_DATES, values: [345,341,338,340,334,331,333,327,325,322,318,312],
+          color: T.blueText, reversed: true, fmt: v => pace(v) + " /km", yfmt: pace }) },
+      { key: "curve", title: "Pace curve – best by distance", accent: T.blueText,
+        render: (el) => lineChart(el, { labels: ["1 km","2 km","3 km","5 km","8 km","10 km"],
+          values: [278,290,301,312,326,338], color: T.blueText, reversed: true,
+          fmt: v => pace(v) + " /km", yfmt: pace, xAll: true }) },
+      { key: "deltas", title: "Recent runs vs 8-week avg", render: (el) => deltaCard(el,
+          [-6, 4, -10, -2, 8, -12, -5, -14]),
+        legend: [{ c: T.lime, l: "Faster" }, { c: T.redText, l: "Slower" }] },
+      { key: "cons", title: "Consistency", render: (el) => heatCard(el, HEAT_RUN, "runs / week") },
+    ],
+  },
+  kbswing: {
+    name: "KB Swing", purpose: "Conditioning", icon: "kb",
+    accent: "--color-amber", accentText: "--amber-text",
+    hero: { v: "4.2", u: "t / 8 wks", label: "Swing volume", delta: "+12%", deltaC: T.amberText },
+    meta: "24 sessions – best set 32 kg × 20",
+    spark: { data: [2.5,2.8,2.7,3.1,3.4,3.3,3.8,4.2], color: T.amberText },
+    stats: [
+      { v: "96", l: "Working sets" }, { v: "41.2 t", l: "Volume", c: T.amberText },
+      { v: "24", l: "Sessions" }, { v: "32 × 20", l: "Best set" },
+    ],
+    slides: [
+      { key: "ton", title: "Weekly tonnage", render: (el) => tonnageChart(el, TON_KB),
+        legend: [{ c: T.deepBase, l: "Base" }, { c: T.deepHard, l: "Hard (RPE 8+)" }] },
+      { key: "zone", title: "Bell sizes used", render: (el) => zonesCard(el, [
+          { l: "20 kg", pct: 18 }, { l: "24 kg", pct: 46 }, { l: "28 kg", pct: 27 }, { l: "32 kg", pct: 9 }]) },
+      { key: "cons", title: "Consistency", render: (el) => heatCard(el, HEAT_KB, "sessions / week") },
+    ],
+  },
+};
+const TON_DL = { base: [2.4,2.8,2.6,3.1,2.9,3.4,3.2,2.2,3.6,3.4,3.8,3.1], hard: [0.6,0.7,0.8,0.9,0.8,1.1,1.0,0.5,1.2,1.1,1.4,1.0] };
+const TON_KB = { base: [0.9,1.1,1.0,1.3,1.2,1.5,1.4,0.8,1.6,1.5,1.8,1.6], hard: [0.2,0.2,0.3,0.3,0.3,0.4,0.4,0.2,0.5,0.4,0.6,0.5] };
+const HEAT_DL = [1,2,1,2,2,0,2,1,2,2,1,2,3,2,2,1,0,2,2,3,2,2,3,2,3,3];
+const HEAT_RUN = [2,3,2,3,3,1,3,2,3,3,2,2,3,3,2,3,1,3,3,3,2,3,3,3,3,3];
+const HEAT_KB = [1,1,0,1,2,1,1,0,1,2,2,1,2,1,1,2,0,1,2,2,1,2,2,1,2,2];
+
+const pace = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+
+/* ── svg helpers ── */
+const NS = "http://www.w3.org/2000/svg";
+function sv(tag, attrs, parent) {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+const tipEl = document.getElementById("tip");
+function showTip(html, x, y) {
+  tipEl.innerHTML = html;
+  tipEl.classList.add("on");
+  const r = tipEl.getBoundingClientRect();
+  tipEl.style.left = Math.min(Math.max(8, x - r.width / 2), innerWidth - r.width - 8) + "px";
+  tipEl.style.top = (y - r.height - 14) + "px";
+}
+const hideTip = () => tipEl.classList.remove("on");
+
+/* smooth monotone-ish path */
+function smoothPath(pts) {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], mx = (x0 + x1) / 2;
+    d += ` C${mx},${y0} ${mx},${y1} ${x1},${y1}`;
+  }
+  return d;
+}
+
+/* line chart — lime/teal Aurora style: dashed hairline grid, 2.5px line,
+   hollow dots, filled PR dots, crosshair hover tooltip */
+function lineChart(el, cfg) {
+  const W = 340, H = 205, pl = 46, pr = 12, pt = 14, pb = 28;
+  const vals = cfg.values, n = vals.length;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const padY = (hi - lo) * 0.12 || 1; lo -= padY; hi += padY;
+  const X = (i) => pl + (i / (n - 1)) * (W - pl - pr);
+  const Y = (v) => {
+    const t = (v - lo) / (hi - lo);
+    return cfg.reversed ? pt + t * (H - pt - pb) : H - pb - t * (H - pt - pb);
+  };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  const yf = cfg.yfmt || ((v) => Math.round(v));
+  for (const f of [0, .5, 1]) {
+    const v = lo + f * (hi - lo), y = Y(v);
+    sv("line", { x1: pl, x2: W - pr, y1: y, y2: y, stroke: T.line, "stroke-dasharray": "3 3" }, svg);
+    sv("text", { x: pl - 8, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = yf(v);
+  }
+  const xIdx = cfg.xAll ? vals.map((_, i) => i) : [0, Math.round((n - 1) / 3), Math.round(2 * (n - 1) / 3), n - 1];
+  for (const i of xIdx)
+    sv("text", { x: X(i), y: H - 8, "text-anchor": i === 0 ? "start" : i === n - 1 ? "end" : "middle", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = cfg.labels[i];
+  const pts = vals.map((v, i) => [X(i), Y(v)]);
+  sv("path", { d: smoothPath(pts), fill: "none", stroke: cfg.color, "stroke-width": 2.5, "stroke-linecap": "round" }, svg);
+  const cross = sv("line", { y1: pt, y2: H - pb, stroke: T.ash, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0 }, svg);
+  pts.forEach(([x, y], i) => {
+    const isPr = (cfg.prs || []).includes(i);
+    isPr
+      ? sv("circle", { cx: x, cy: y, r: 5.5, fill: cfg.color, stroke: T.ink, "stroke-width": 2 }, svg)
+      : sv("circle", { cx: x, cy: y, r: 3, fill: T.ink2, stroke: cfg.color, "stroke-width": 2 }, svg);
+  });
+  const hit = sv("rect", { x: pl, y: 0, width: W - pl - pr, height: H, fill: "transparent" }, svg);
+  const move = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    const r = svg.getBoundingClientRect();
+    const px = ((t.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(n - 1, Math.round(((px - pl) / (W - pl - pr)) * (n - 1))));
+    cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", .6);
+    const pr = (cfg.prs || []).includes(i) ? " – <b>PR</b>" : "";
+    showTip(`${cfg.labels[i]} – <b>${cfg.fmt(vals[i])}</b>${pr}`, r.left + (X(i) / W) * r.width, r.top + (Y(vals[i]) / H) * r.height);
+  };
+  hit.addEventListener("mousemove", move);
+  hit.addEventListener("touchstart", move, { passive: true });
+  hit.addEventListener("touchmove", move, { passive: true });
+  const out = () => { cross.setAttribute("opacity", 0); hideTip(); };
+  hit.addEventListener("mouseleave", out);
+  hit.addEventListener("touchend", out);
+  el.appendChild(svg);
+}
+
+/* widget sparkline — soft area + line + endpoint dot */
+function sparkline(el, cfg) {
+  const W = 300, H = 60, p = 6;
+  const vals = cfg.data, n = vals.length;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.15 || 1; lo -= pad; hi += pad;
+  const X = (i) => p + (i / (n - 1)) * (W - 2 * p);
+  const Y = (v) => {
+    const t = (v - lo) / (hi - lo);
+    return cfg.invert ? p + t * (H - 2 * p) : H - p - t * (H - 2 * p);
+  };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none" });
+  const gid = "g" + Math.abs(vals.reduce((a, v) => a * 31 + v * 7, 5) | 0);
+  const grad = sv("linearGradient", { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 }, sv("defs", {}, svg));
+  sv("stop", { offset: "0%", "stop-color": cfg.color, "stop-opacity": .26 }, grad);
+  sv("stop", { offset: "100%", "stop-color": cfg.color, "stop-opacity": 0 }, grad);
+  const pts = vals.map((v, i) => [X(i), Y(v)]);
+  const line = smoothPath(pts);
+  sv("path", { d: `${line} L${W - p},${H} L${p},${H} Z`, fill: `url(#${gid})`, stroke: "none" }, svg);
+  sv("path", { d: line, fill: "none", stroke: cfg.color, "stroke-width": 2, "stroke-linecap": "round" }, svg);
+  const [lx, ly] = pts[n - 1];
+  if (cfg.pr === n - 1) sv("circle", { cx: lx, cy: ly, r: 5, fill: cfg.color, stroke: T.ink2, "stroke-width": 2 }, svg);
+  else sv("circle", { cx: lx, cy: ly, r: 3.5, fill: cfg.color }, svg);
+  el.appendChild(svg);
+}
+
+/* weekly tonnage — stacked base/hard, 2px surface gap between segments */
+function tonnageChart(el, d) {
+  const W = 340, H = 190, pl = 34, pr = 8, pt = 12, pb = 24;
+  const n = d.base.length;
+  const tot = d.base.map((b, i) => b + d.hard[i]);
+  const hi = Math.max(...tot) * 1.1;
+  const plotW = W - pl - pr, bw = plotW / n - 5;
+  const Y = (v) => H - pb - (v / hi) * (H - pt - pb);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  for (const f of [.5, 1]) {
+    const y = Y(hi * f / 1.1);
+    sv("line", { x1: pl, x2: W - pr, y1: y, y2: y, stroke: T.line, "stroke-dasharray": "3 3" }, svg);
+    sv("text", { x: pl - 6, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = (hi * f / 1.1).toFixed(1) + "t";
+  }
+  for (let i = 0; i < n; i++) {
+    const x = pl + (i + 0.5) * (plotW / n) - bw / 2;
+    const yb = Y(d.base[i]), yt = Y(tot[i]);
+    const g = sv("g", { cursor: "pointer" }, svg);
+    sv("rect", { x, y: yb, width: bw, height: H - pb - yb, fill: T.deepBase, rx: 2 }, g);
+    sv("rect", { x, y: yt, width: bw, height: Math.max(0, yb - yt - 2), fill: T.deepHard, rx: 3 }, g);
+    if (i % 2 === 0 || i === n - 1)
+      sv("text", { x: x + bw / 2, y: H - 7, "text-anchor": "middle", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "W" + (i + 1);
+    const over = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      showTip(`W${i + 1} – base <b>${d.base[i].toFixed(1)} t</b> – hard <b>${d.hard[i].toFixed(1)} t</b>`, t.clientX, t.clientY);
+    };
+    g.addEventListener("mousemove", over);
+    g.addEventListener("touchstart", over, { passive: true });
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("touchend", hideTip);
+  }
+  el.appendChild(svg);
+}
+
+/* delta bars around a zero baseline — faster (lime, down = less time) vs slower */
+function deltaCard(el, deltas) {
+  const W = 340, H = 180, pl = 10, pr = 10, pt = 20, pb = 20;
+  const n = deltas.length, mid = (H - pb + pt) / 2;
+  const hi = Math.max(...deltas.map(Math.abs)) * 1.15;
+  const plotW = W - pl - pr, bw = plotW / n - 8;
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}` });
+  sv("line", { x1: pl, x2: W - pr, y1: mid, y2: mid, stroke: T.line }, svg);
+  deltas.forEach((v, i) => {
+    const x = pl + (i + 0.5) * (plotW / n) - bw / 2;
+    const h = (Math.abs(v) / hi) * (mid - pt);
+    const faster = v < 0;
+    const y = faster ? mid + 2 : mid - 2 - h;
+    const g = sv("g", { cursor: "pointer" }, svg);
+    sv("rect", { x, y: faster ? mid + 2 : y, width: bw, height: h, rx: 3, fill: faster ? T.lime : T.redText }, g);
+    sv("text", { x: x + bw / 2, y: faster ? mid + h + 14 : y - 6, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "JetBrains Mono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v + "s";
+    const over = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      showTip(`Run ${i + 1} of 8 – <b>${v > 0 ? "+" : ""}${v} s/km</b> vs avg`, t.clientX, t.clientY);
+    };
+    g.addEventListener("mousemove", over);
+    g.addEventListener("touchstart", over, { passive: true });
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("touchend", hideTip);
+  });
+  el.appendChild(svg);
+  const f = document.createElement("div");
+  f.className = "kicker"; f.style.textAlign = "center"; f.style.marginTop = "6px";
+  f.textContent = "last 8 runs – sec/km vs 8-week average";
+  el.appendChild(f);
+}
+
+/* rep-max matrix (HTML tiles) */
+function repMaxCard(el) {
+  const cells = [
+    { rm: 1, v: 205, d: "16 May" }, { rm: 2, v: 195, d: "20 Jun" }, { rm: 3, v: 187.5, d: "4 Jul", recent: true },
+    { rm: 4, v: null }, { rm: 5, v: 180, d: "27 Jun", recent: true }, { rm: 6, v: null },
+  ];
+  const g = document.createElement("div");
+  g.className = "rm-grid";
+  g.innerHTML = cells.map((c) => c.v == null
+    ? `<div class="rm empty"><div class="k">${c.rm}RM</div><div class="v">–</div><div class="d">try one</div></div>`
+    : `<div class="rm${c.recent ? " recent" : ""}"><div class="k">${c.rm}RM</div><div class="v">${c.v}</div><div class="d">${c.d}</div></div>`
+  ).join("");
+  el.appendChild(g);
+}
+
+/* best set (HTML) */
+function bestSetCard(el) {
+  el.innerHTML += `
+    <div class="bestset">
+      <div class="v">200 kg × 3 <span>– e1RM 213 kg – 4 Jul</span></div>
+      <div class="foot">1 482 total reps – heaviest single 205 kg – all-time best e1RM 213 kg</div>
+    </div>`;
+}
+
+/* zones / distribution h-bars */
+function zonesCard(el, rows) {
+  const hi = Math.max(...rows.map((r) => r.pct));
+  el.innerHTML += rows.map((r) => `
+    <div class="zone">
+      <span class="zl">${r.l}</span>
+      <span class="zt"><span class="zf" style="width:${(r.pct / hi) * 100}%; background: color-mix(in srgb, var(--color-lime) ${30 + (r.pct / hi) * 70}%, var(--color-ink))"></span></span>
+      <span class="zv">${r.pct}%</span>
+    </div>`).join("");
+}
+
+/* consistency heat strip */
+function heatCard(el, weeks, unit) {
+  const g = document.createElement("div");
+  g.className = "heat";
+  g.innerHTML = weeks.map((w) => `<i class="${w ? "l" + w : ""}"></i>`).join("");
+  el.appendChild(g);
+  const f = document.createElement("div");
+  f.className = "legend";
+  f.innerHTML = `<span><i style="background:${T.card};border:1px solid ${T.line}"></i>0</span>
+    <span><i style="background:color-mix(in srgb, ${T.lime} 18%, ${T.ink})"></i>1</span>
+    <span><i style="background:color-mix(in srgb, ${T.lime} 42%, ${T.ink})"></i>2</span>
+    <span><i style="background:color-mix(in srgb, ${T.lime} 78%, ${T.ink})"></i>3+ ${unit} – last 26 weeks</span>`;
+  el.appendChild(f);
+}
+
+/* ════════════════ TODAY: build the widget rail ════════════════ */
+const rail = document.getElementById("rail");
+const railDots = document.getElementById("rail-dots");
+const keys = Object.keys(EXERCISES);
+
+keys.forEach((k) => {
+  const e = EXERCISES[k];
+  const b = document.createElement("button");
+  b.className = "wgt card";
+  b.style.setProperty("--wa", `var(${e.accent})`);
+  b.style.setProperty("--wat", `var(${e.accentText})`);
+  b.innerHTML = `
+    <div class="wgt-top">
+      <div class="wgt-name"><span class="wgt-ic">${ICONS[e.icon]}</span>${e.name}</div>
+      <span class="chip">${e.purpose}</span>
+    </div>
+    <div class="wgt-hero">
+      <span class="v">${e.hero.v}</span><span class="u">${e.hero.u}</span>
+      <span class="d" style="color:${e.hero.deltaC}">${e.hero.delta}</span>
+    </div>
+    <div class="kicker">${e.hero.label} – 8 weeks</div>
+    <div class="wgt-spark"></div>
+    <div class="wgt-meta">${e.meta}</div>`;
+  sparkline(b.querySelector(".wgt-spark"), e.spark);
+  b.addEventListener("click", () => openDetail(k));
+  rail.appendChild(b);
+});
+const allCard = document.createElement("button");
+allCard.className = "wgt wgt-all card";
+allCard.innerHTML = `<span class="plus">＋</span><span>All exercises<br/>&amp; favourites</span>`;
+allCard.addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
+rail.appendChild(allCard);
+
+const railCards = [...rail.children];
+railCards.forEach((_, i) => {
+  const d = document.createElement("i");
+  d.className = "dot" + (i === 0 ? " on" : "");
+  railDots.appendChild(d);
+});
+rail.addEventListener("scroll", () => {
+  const i = Math.min(railCards.length - 1, Math.round(rail.scrollLeft / (railCards[0].offsetWidth + 12)));
+  [...railDots.children].forEach((d, j) => d.classList.toggle("on", j === i));
+}, { passive: true });
+document.getElementById("lnk-all").addEventListener("click", () => alert("→ opens the Exercises tab (free for everyone)"));
+
+/* ════════════════ DETAIL screen ════════════════ */
+const scrToday = document.getElementById("scr-today");
+const scrDetail = document.getElementById("scr-detail");
+const pager = document.getElementById("pager");
+const pgDots = document.getElementById("pg-dots");
+const pgName = document.getElementById("pg-name");
+const pgCount = document.getElementById("pg-count");
+const dBody = document.getElementById("d-body");
+let slides = [];
+
+function openDetail(key) {
+  const e = EXERCISES[key];
+  document.getElementById("d-name").textContent = e.name;
+  const chip = document.getElementById("d-chip");
+  chip.textContent = e.purpose;
+  chip.style.setProperty("--wa", `var(${e.accent})`);
+  chip.style.setProperty("--wat", `var(${e.accentText})`);
+
+  document.getElementById("d-periods").innerHTML =
+    ["8W", "6M", "1Y", "ALL"].map((p, i) => `<button class="pd${i === 3 ? " on" : ""}">${p}</button>`).join("");
+  document.querySelectorAll("#d-periods .pd").forEach((b) =>
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#d-periods .pd").forEach((x) => x.classList.remove("on"));
+      b.classList.add("on");
+    }));
+
+  document.getElementById("d-stats").innerHTML = e.stats.map((s) => `
+    <div class="stat card"><div class="v" style="${s.c ? `color:${s.c}` : ""}">${s.v}</div><div class="l">${s.l}</div></div>`).join("");
+
+  pager.innerHTML = ""; pgDots.innerHTML = "";
+  dBody.classList.remove("all");
+  document.getElementById("btn-all").textContent = "View everything";
+  slides = e.slides;
+  e.slides.forEach((s, i) => {
+    const sl = document.createElement("div");
+    sl.className = "slide";
+    const c = document.createElement("div");
+    c.className = "card chart";
+    const kick = document.createElement("div");
+    kick.className = "slide-kicker";
+    kick.innerHTML = `<span class="kicker" style="${s.accent ? `color:${s.accent}` : ""}">${s.title}</span>`;
+    c.appendChild(kick);
+    s.render(c);
+    if (s.legend) {
+      const lg = document.createElement("div");
+      lg.className = "legend";
+      lg.innerHTML = s.legend.map((x) => `<span><i style="background:${x.c}"></i>${x.l}</span>`).join("");
+      c.appendChild(lg);
+    }
+    sl.appendChild(c);
+    pager.appendChild(sl);
+    const d = document.createElement("i");
+    d.className = "dot" + (i === 0 ? " on" : "");
+    pgDots.appendChild(d);
+  });
+  pager.scrollLeft = 0;
+  setPage(0);
+  scrToday.classList.remove("on");
+  scrDetail.classList.add("on");
+  scrDetail.scrollTop = 0;
+}
+
+function pageIndex() {
+  return Math.min(slides.length - 1, Math.round(pager.scrollLeft / (pager.clientWidth * 0.92)));
+}
+function setPage(i) {
+  pgName.textContent = slides[i].title;
+  pgCount.textContent = `stat ${i + 1} of ${slides.length} – swipe or ‹ ›`;
+  [...pgDots.children].forEach((d, j) => d.classList.toggle("on", j === i));
+  document.getElementById("pg-prev").disabled = i === 0;
+  document.getElementById("pg-next").disabled = i === slides.length - 1;
+}
+pager.addEventListener("scroll", () => { if (!dBody.classList.contains("all")) setPage(pageIndex()); }, { passive: true });
+document.getElementById("pg-prev").addEventListener("click", () =>
+  pager.scrollBy({ left: -pager.clientWidth, behavior: "smooth" }));
+document.getElementById("pg-next").addEventListener("click", () =>
+  pager.scrollBy({ left: pager.clientWidth, behavior: "smooth" }));
+
+document.getElementById("btn-all").addEventListener("click", (ev) => {
+  const all = dBody.classList.toggle("all");
+  ev.target.textContent = all ? "Back to one-at-a-time" : "View everything";
+  if (!all) { pager.scrollLeft = 0; setPage(0); }
+});
+document.getElementById("btn-back").addEventListener("click", () => {
+  scrDetail.classList.remove("on");
+  scrToday.classList.add("on");
+});
+</script>
+</body>
+</html>
