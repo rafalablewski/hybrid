@@ -37,8 +37,9 @@ import {
   type Experience,
   type Equipment,
   type AuroraIconName,
+  type ScheduledDay,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, type Assignment } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, type Assignment, type Checkin } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useSession } from "../../lib/session";
@@ -115,20 +116,16 @@ export default function AuroraHome() {
   // Plan hero: lead with the first lift; the rest collapse behind a toggle so
   // the card reads at a glance instead of a wall of percentage schemes.
   const [liftsOpen, setLiftsOpen] = useState(false);
-  // Today's readiness FEELING — the emoji the athlete picked in the quick
-  // check-in (primed/good/flat/wrecked), not a computed score. null until they
-  // check in today; refreshed on focus, pull-to-refresh, and after the sheet saves.
-  const [feeling, setFeeling] = useState<ReadinessFeeling | null>(null);
-  const [feelingAt, setFeelingAt] = useState<number | null>(null);
+  // The readiness FEELING log — the emoji the athlete picked in the quick
+  // check-in (primed/good/flat/wrecked), not a computed score. The raw list is
+  // kept so the feeling card can be scoped to WHICHEVER day the week rail has
+  // selected; refreshed on focus, pull-to-refresh, and after a face saves.
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
   const loadFeeling = useCallback(async () => {
     // Self-contained try/catch: this runs inside the home-load Promise.all, so a
     // throw here must never block sessions/assignments/macrocycle from loading.
     try {
-      const checkins = await fetchCheckins();
-      const today = new Date().toDateString();
-      const todays = checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === today);
-      setFeeling(todays ? checkinFeeling(todays) : null);
-      setFeelingAt(todays?.weekOf ? new Date(todays.weekOf).getTime() : null);
+      setCheckins(await fetchCheckins());
     } catch (err) {
       console.error("Failed to load readiness feeling:", err);
     }
@@ -170,20 +167,46 @@ export default function AuroraHome() {
   const hasData = sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
-  // Sessions logged TODAY — the confirmation loop (a finished session OR a quick
-  // sport log both land here the moment they save).
-  const doneToday = useMemo(() => sessionsOnDay(sessions), [sessions]);
+  // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
+  // so the Also-today and feeling cards follow the viewed day instead of
+  // staying pinned to the real today; null (or tapping today's chip) = today.
+  const [railDay, setRailDay] = useState<ScheduledDay | null>(null);
+  const dayIsToday = !railDay || railDay.isToday;
+  // undefined lets every core day-helper fall through to its Date.now() default.
+  const dayTs = dayIsToday ? undefined : railDay!.ts;
+  const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
+  const dayIsFuture = !dayIsToday && railDay!.ts > Date.now();
+  // Sessions logged on the VIEWED day — the confirmation loop (a finished
+  // session OR a quick sport log both land here the moment they save).
+  const doneOnDay = useMemo(() => sessionsOnDay(sessions, dayTs), [sessions, dayTs]);
   // The date-anchored schedule (no overrides — status colouring lives in the
   // rail; here we only need today's prescription + which sessions fulfilled it).
   const sched = useMemo(
     () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
     [planId, planStartedAt, sessions],
   );
-  // Workouts logged today that did NOT fulfil a plan day — the tennis match, a
-  // quick sport log, a freestyle lift. Surfaced on their own "Also today" card
-  // (Design 1: scheduled plan vs what-was-done separation) instead of hiding
-  // behind the done-count ring.
-  const extrasToday = useMemo(() => offPlanSessionsOnDay(sessions, sched), [sessions, sched]);
+  // Workouts logged on the viewed day that did NOT fulfil a plan day — the
+  // tennis match, a quick sport log, a freestyle lift. Surfaced on their own
+  // "Also today" card (Design 1: scheduled plan vs what-was-done separation)
+  // instead of hiding behind the done-count ring.
+  const extrasOnDay = useMemo(() => offPlanSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
+  // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
+  // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
+  // global 6h re-log cooldown, which also holds when back-logging a past day.
+  const dayCheckin = useMemo(() => {
+    const dstr = new Date(dayTs ?? Date.now()).toDateString();
+    return checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === dstr) ?? null;
+  }, [checkins, dayTs]);
+  const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
+  const feelingAt = dayCheckin?.weekOf ? new Date(dayCheckin.weekOf).getTime() : null;
+  const lastCheckinAt = useMemo(
+    () =>
+      checkins.reduce<number | null>((m, c) => {
+        const ts = Date.parse(c?.createdAt ?? c?.weekOf ?? "");
+        return Number.isFinite(ts) && (m == null || ts > m) ? ts : m;
+      }, null),
+    [checkins],
+  );
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -333,6 +356,7 @@ export default function AuroraHome() {
               maxes={planMaxes}
               onStart={(blocks, title) => startPlanDay(blocks, title)}
               onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+              onSelectDay={setRailDay}
             />
           </View>
         ) : (
@@ -462,21 +486,26 @@ export default function AuroraHome() {
           </ACard>
         )}
 
-        {/* ALSO TODAY — everything logged today that is NOT the plan's workout
-            (quick sport logs, freestyle sessions). Design 1 separation: the card
-            above is the SCHEDULED day (Start / Skip / Postpone); this one is what
-            was actually done besides it, teal-coded, each row tappable. Always
-            rendered — empty it explains itself — and it leads with the day's done
-            count as its display-weight stat (moved in from the feeling card).
-            Hidden only for a true first run (no plan, nothing ever logged): the
-            "How do you want to start?" chooser above already owns that state, and
-            a 0-count card under it would be a second competing log CTA. */}
+        {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the
+            plan's workout (quick sport logs, freestyle sessions). Design 1
+            separation: the card above is the SCHEDULED day (Start / Skip /
+            Postpone); this one is what was actually done besides it, teal-coded,
+            each row tappable. Always rendered — empty it explains itself — and
+            it leads with the day's done count as its display-weight stat (moved
+            in from the feeling card). Follows the week rail's selected day
+            (dayTs) — on another day the label carries the date and the log row
+            hides (quick logs save at "now"). Hidden only for a true first run
+            (no plan, nothing ever logged): the "How do you want to start?"
+            chooser above already owns that state, and a 0-count card under it
+            would be a second competing log CTA. */}
         {(!!sched || sessions.length > 0) && (
           <AlsoTodayCard
             C={C}
-            extras={extrasToday}
+            extras={extrasOnDay}
             onPlan={!!sched}
-            doneCount={doneToday.length}
+            doneCount={doneOnDay.length}
+            isToday={dayIsToday}
+            dayLabel={dayLabel}
             units={units}
             bw={bw}
             onOpen={(id) => router.push(`/session/${id}`)}
@@ -486,12 +515,19 @@ export default function AuroraHome() {
         )}
 
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
-            four faces set today's readiness inline (one tap, no sheet) — nothing
-            else; the done count + log action live on the Also Today card above. */}
+            four faces set the day's readiness inline (one tap, no sheet) —
+            nothing else; the done count + log action live on the Also Today card
+            above. Follows the rail's selected day: a past day shows (and can
+            back-log) THAT day's feeling; a future day is read-only. */}
         <FeelingCard
           C={C}
           feeling={feeling}
           loggedAt={feelingAt}
+          cooldownFrom={lastCheckinAt}
+          isToday={dayIsToday}
+          isFuture={dayIsFuture}
+          dayTs={railDay?.ts ?? null}
+          dayLabel={dayLabel}
           onPicked={loadFeeling}
         />
 
@@ -540,12 +576,17 @@ export default function AuroraHome() {
         <CoachRail onOpen={() => { setCoachOpen(false); router.push("/coaches"); }} />
       </Sheet>
 
-      {/* DONE TODAY sheet — everything logged today + the full calendar. */}
-      <Sheet visible={doneOpen} onClose={() => setDoneOpen(false)} title={t("w.home.today.doneModalTitle")} sub={`${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}`}>
+      {/* DONE TODAY sheet — everything logged on the viewed day + the calendar. */}
+      <Sheet
+        visible={doneOpen}
+        onClose={() => setDoneOpen(false)}
+        title={dayIsToday ? t("w.home.today.doneModalTitle") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}
+        sub={dayIsToday ? `${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}` : dayLabel ?? ""}
+      >
         <View style={{ marginTop: 12 }}>
-          {doneToday.length === 0 ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t("w.home.today.doneModalEmpty")}</Text>
-          ) : doneToday.map((s) => (
+          {doneOnDay.length === 0 ? (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t(dayIsToday ? "w.home.today.doneModalEmpty" : "w.home.today.doneModalEmptyDay")}</Text>
+          ) : doneOnDay.map((s) => (
             <Pressable
               key={s.id}
               onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
@@ -613,11 +654,15 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 // exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
 // "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
 // Rows open the session's breakdown. Mirrored on web (aurora/today.tsx).
-function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog, onDone }: {
+function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
   C: P;
   extras: LoggedSession[];
   onPlan: boolean;
   doneCount: number;
+  /** false when the week rail has another day selected — the label carries the
+   *  date and the log row hides (a quick log always saves at "now"). */
+  isToday: boolean;
+  dayLabel: string | null;
   units: "kg" | "lb";
   bw: (isoDate?: string) => number | null;
   onOpen: (sessionId: string) => void;
@@ -627,15 +672,16 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
   const { t } = useLang();
   const quiet = withAlpha(C.ash, 0.6);
   // caption + log-label state machine lives in core so the web twin can't drift
-  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount });
+  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount, isToday });
   const logLabel = t(copy.logKey);
+  const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
-      <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={`${doneCount} ${t("w.home.today.glanceDone")}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
+      <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
         <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -2, lineHeight: 44, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.glanceDone")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{doneLabel}</Text>
           {copy.subKey ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</Text> : null}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: 16, color: quiet }}>→</Text>
@@ -653,12 +699,14 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, units, bw, onOpen, onLog,
             </View>
           </Pressable>
         ))}
-        <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={logLabel} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
-            <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>
-        </Pressable>
+        {isToday ? (
+          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={logLabel} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
+              <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -689,25 +737,43 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 // The feeling-led daily card — "How ready do you feel?" with the four faces set
-// today's readiness inline (one tap → createCheckin, the same write the full
+// the day's readiness inline (one tap → createCheckin, the same write the full
 // check-in makes). Single-purpose: the done count + log action moved up into the
 // Also Today card. The picked face lights in its own semantic feeling colour.
-function FeelingCard({ C, feeling, loggedAt, onPicked }: { C: P; feeling: ReadinessFeeling | null; loggedAt: number | null; onPicked: () => void }) {
+// Day-scoped via the week rail: a past day shows THAT day's feeling and a tap
+// back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
+// cooldown mirrors the server's — global across days (keyed on the last WRITE),
+// so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
+function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+  C: P;
+  feeling: ReadinessFeeling | null;
+  loggedAt: number | null;
+  cooldownFrom: number | null;
+  isToday: boolean;
+  isFuture: boolean;
+  dayTs: number | null;
+  dayLabel: string | null;
+  onPicked: () => void;
+}) {
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
-  // The 6h re-log window: while open, show "next in Xh Ym" beside today's last
-  // logged feeling. Informational — the faces stay tappable.
-  const coolMs = loggedAt != null ? checkinCooldownRemainingMs(loggedAt) : 0;
+  // The 6h re-log window: while open, show "next in Xh Ym". The faces lock
+  // while cooling (the server would reject the write anyway) and on future days.
+  const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
   const cooling = coolMs > 0;
+  const locked = busy || cooling || isFuture;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
   const pick = async (rating: number) => {
-    if (busy || cooling) return;
+    if (locked) return;
     setBusy(true);
+    // Back-logging a past day stamps that day's noon (local) so the check-in
+    // lands on the viewed date regardless of timezone; today logs "now".
+    const weekOf = isToday || dayTs == null ? new Date().toISOString() : new Date(dayTs + 12 * 3600 * 1000).toISOString();
     const r = await createCheckin({
-      weekOf: new Date().toISOString(),
+      weekOf,
       bodyMassKg: null,
       energy: rating, sleep: rating, soreness: rating, mood: rating,
       adherencePct: null, note: null, sharedWithCoach: false,
@@ -717,28 +783,35 @@ function FeelingCard({ C, feeling, loggedAt, onPicked }: { C: P; feeling: Readin
   };
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
+        {/* viewing another day — the date names the scope, no extra copy */}
+        {!isToday && dayLabel ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text> : null}
+      </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = feeling === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
-            <Pressable key={key} onPress={() => pick(i + 2)} disabled={busy || cooling} accessibilityRole="button" accessibilityState={{ selected: on, disabled: busy || cooling }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: (busy || cooling) && !on ? 0.45 : 1 }}>
+            <Pressable key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </Pressable>
           );
         })}
       </View>
-      {/* today's last logged feeling + the re-log cooldown chip (added; the
-          faces above are unchanged). Only shows once something's logged today. */}
-      {feeling && loggedAt != null ? (
+      {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
+          alone while cooling (it explains why the faces are locked on a day
+          without its own check-in). */}
+      {(feeling && loggedAt != null) || cooling ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
-          <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-            {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
-          </Text>
-          {coolMs > 0 ? (
+          {feeling && loggedAt != null ? (
+            <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+              {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
+            </Text>
+          ) : null}
+          {cooling ? (
             <View style={{ marginLeft: "auto", borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
             </View>

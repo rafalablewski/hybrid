@@ -83,6 +83,7 @@ export default function AuroraWeekRail({
   maxes,
   onStart,
   onNavigate,
+  onSelectDay,
 }: {
   planId: string;
   planStartedAt: string;
@@ -93,6 +94,10 @@ export default function AuroraWeekRail({
    *  plan's own (mobile stamps the same shape via its pendingPlanSession). */
   onStart: (planBlocks?: SessionBlock[], title?: string) => void;
   onNavigate?: (screen: string) => void;
+  /** Fires when the athlete taps a day chip, so the caller can scope the rest
+   *  of the screen (Also-today / feeling cards) to the viewed day. Until the
+   *  first tap the caller should assume today. */
+  onSelectDay?: (day: ScheduledDay) => void;
 }) {
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
@@ -136,7 +141,7 @@ export default function AuroraWeekRail({
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
         {windowDays.map((d) => (
-          <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => setPicked(d.index)} t={t} />
+          <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </div>
 
