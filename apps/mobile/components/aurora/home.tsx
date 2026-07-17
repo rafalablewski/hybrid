@@ -167,11 +167,20 @@ export default function AuroraHome() {
   const hasData = sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
+  // enrolled program + a start date resolve (parity with web home). The shared
+  // engine (planSchedule) reconciles each calendar date against logged sessions
+  // and skips; the classic "Your plan today" card stays the fallback otherwise.
+  const useRail = !!(plan && planId && planStartedAt);
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
   // so the Also-today and feeling cards follow the viewed day instead of
   // staying pinned to the real today; null (or tapping today's chip) = today.
+  // Re-anchors to today whenever the enrolled plan changes (the rail resets its
+  // own selection the same way), and is ignored entirely once the rail is gone
+  // (un-enrolled) — a stale day must never scope the cards with no rail visible.
   const [railDay, setRailDay] = useState<ScheduledDay | null>(null);
-  const dayIsToday = !railDay || railDay.isToday;
+  useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
+  const dayIsToday = !useRail || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
@@ -253,12 +262,6 @@ export default function AuroraHome() {
     startPrescribed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan?.planName]);
-
-  // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
-  // enrolled program + a start date resolve (parity with web home). The shared
-  // engine (planSchedule) reconciles each calendar date against logged sessions
-  // and skips; the classic "Your plan today" card stays the fallback otherwise.
-  const useRail = !!(plan && planId && planStartedAt);
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,

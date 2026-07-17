@@ -103,8 +103,11 @@ export default function AuroraWeekRail({
     [planId, planStartedAt, sessions, overrides, maxes],
   );
 
-  // Selected day: follows today until the athlete taps another day.
+  // Selected day: follows today until the athlete taps another day. Resets when
+  // the enrolled plan changes — a picked index is meaningless across schedules
+  // (the caller's lifted onSelectDay copy re-anchors to today the same way).
   const [picked, setPicked] = useState<number | null>(null);
+  useEffect(() => { setPicked(null); }, [planId]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
   if (!schedule || !schedule.days.length) return null;

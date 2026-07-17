@@ -156,8 +156,12 @@ export default function AuroraToday({
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
   // so the Also-today and feeling cards follow the viewed day instead of
   // staying pinned to the real today; null (or tapping today's chip) = today.
+  // Re-anchors to today whenever the enrolled plan changes (the rail resets its
+  // own selection the same way), and is ignored entirely once the rail is gone
+  // (un-enrolled) — a stale day must never scope the cards with no rail visible.
   const [railDay, setRailDay] = useState<ScheduledDay | null>(null);
-  const dayIsToday = !railDay || railDay.isToday;
+  useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
+  const dayIsToday = !useRail || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
