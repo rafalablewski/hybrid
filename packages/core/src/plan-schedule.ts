@@ -177,20 +177,24 @@ export function offPlanSessionsOnDay(
  * Copy selector for the "Also today" card — the web and mobile twins consume
  * the SAME state machine so the captions can't drift. `doneCount` is the day's
  * TOTAL (plan + off-plan), `extras` the off-plan rows shown on the card:
- * - nothing done at all → the empty invitation;
+ * - nothing done at all → the empty invitation (or, when the card is scoped to
+ *   a NON-today day via the week rail, a plain past-tense empty line — the
+ *   "it lands here" invitation only makes sense for a day you can still log);
  * - off-plan rows under a plan → the "beyond the schedule" explainer;
  * - otherwise (plan-only day done, or off-plan rows with no plan) → no
  *   sub-line — the numeral + label carry it, nothing restates the visible.
  * The log row's label flips to "another" as soon as ANY workout is done today,
- * regardless of whether it was the plan's.
+ * regardless of whether it was the plan's. (The log row itself only renders on
+ * today — quick logs always save at "now", so they can't land on another day.)
  */
-export function alsoTodayCopy(opts: { extras: number; onPlan: boolean; doneCount: number }): {
-  subKey: "w.home.today.alsoTodaySubPlan" | "w.home.today.alsoTodaySubEmpty" | null;
+export function alsoTodayCopy(opts: { extras: number; onPlan: boolean; doneCount: number; isToday?: boolean }): {
+  subKey: "w.home.today.alsoTodaySubPlan" | "w.home.today.alsoTodaySubEmpty" | "w.home.today.alsoDayEmpty" | null;
   logKey: "w.home.today.alsoTodayLog" | "w.home.today.alsoTodayLogFirst";
 } {
+  const isToday = opts.isToday !== false;
   return {
     subKey:
-      opts.doneCount === 0 ? "w.home.today.alsoTodaySubEmpty"
+      opts.doneCount === 0 ? (isToday ? "w.home.today.alsoTodaySubEmpty" : "w.home.today.alsoDayEmpty")
       : opts.extras > 0 && opts.onPlan ? "w.home.today.alsoTodaySubPlan"
       : null,
     logKey: opts.doneCount > 0 ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst",

@@ -316,4 +316,18 @@ describe("alsoTodayCopy", () => {
       logKey: "w.home.today.alsoTodayLog",
     });
   });
+
+  it("a NON-today empty day gets the past-tense empty line, not the log invitation", () => {
+    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: false }).subKey).toBe(
+      "w.home.today.alsoDayEmpty",
+    );
+    // non-empty non-today days keep the same sub-line machine as today
+    expect(alsoTodayCopy({ extras: 1, onPlan: true, doneCount: 1, isToday: false }).subKey).toBe(
+      "w.home.today.alsoTodaySubPlan",
+    );
+    // explicit isToday keeps today's invitation
+    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: true }).subKey).toBe(
+      "w.home.today.alsoTodaySubEmpty",
+    );
+  });
 });
