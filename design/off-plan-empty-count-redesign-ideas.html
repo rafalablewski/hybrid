@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Off-plan card — count + empty state, 5 redesigns</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--lime-text:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#3c787e;--blue-text:#6cb6bd;--amber:#d0cd94;--amber-text:#d0cd94;
+    --red:#d56f3e;--red-text:#e58a5c;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:46px 20px 100px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1200px;margin:0 auto 18px}
+  .kick{font:700 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kick::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:16px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:780px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  /* the shared "what leaves the feeling card" aside */
+  .aside{max-width:1200px;margin:26px auto 0;display:flex;flex-wrap:wrap;gap:16px;align-items:stretch}
+  .aside .note{flex:1;min-width:260px;border:1px dashed var(--line2);border-radius:18px;padding:16px 18px;color:var(--ash);font-size:13px;line-height:1.6}
+  .aside .note b{color:var(--chalk);font-weight:600}
+  .aside .mini{width:340px;max-width:100%}
+
+  .gallery{max-width:1200px;margin:40px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:48px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:400px}
+  .cap{margin:0 2px 16px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:11px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:21px;letter-spacing:-.02em;font-weight:800;margin-bottom:7px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.58}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .ctx{font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:14px 4px 8px}
+  .ctx:first-of-type{margin-top:0}
+
+  /* ── card shell (the real AlsoTodayCard) ── */
+  .card{border:1px solid var(--line);border-radius:22px;padding:18px;background:var(--ink2);box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--blue-text)}
+  .khead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+  /* session row — as shipped */
+  .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .row:last-of-type{border-bottom:none}
+  .row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--blue) 14%,transparent);border:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
+  .row .tx{flex:1;min-width:0}
+  .row .tx .t{display:block;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .tx .m{display:block;font:400 11px/1 var(--mono);color:var(--ash);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .ok{width:24px;height:24px;border-radius:999px;flex:none;display:grid;place-items:center;font-size:12px;color:var(--lime-text);background:color-mix(in srgb,var(--lime) 14%,transparent);border:1px solid color-mix(in srgb,var(--lime) 50%,transparent)}
+
+  /* count pill (as shipped, lime) */
+  .pill{font:700 10px/1 var(--mono);color:var(--on-accent);background:var(--lime);border-radius:999px;padding:3px 8px}
+
+  /* buttons */
+  .btn{border:none;cursor:pointer;font-family:var(--mono)}
+  .btn.solid{background:var(--lime);color:var(--on-accent);border-radius:999px;padding:8px 14px;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;flex:none}
+  .btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--lime-text);border-radius:999px;padding:8px 13px;font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;flex:none}
+  .btn.round{width:38px;height:38px;border-radius:999px;background:var(--lime);color:var(--on-accent);font:800 18px/1 var(--sans);display:grid;place-items:center;flex:none}
+  .btn.link{background:none;color:var(--lime-text);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:7px;padding:0}
+
+  /* empty-state vocab */
+  .empty-line{padding:14px 2px 4px;color:var(--ash);font-size:13px;line-height:1.55}
+  .empty-line b{color:var(--chalk);font-weight:600}
+  .ghost-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px dashed var(--line2);border-radius:14px;margin-top:12px}
+  .ghost-row .av{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;border:1px dashed var(--line2);color:var(--ash2);font-size:16px}
+  .ghost-row .tx{flex:1;min-width:0;color:var(--ash);font-size:12.5px;line-height:1.5}
+
+  /* tick ring (the real Ring: 32 ticks) */
+  .tring{position:relative;flex:none;display:grid;place-items:center}
+  .tring .num{position:relative;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .tring .tk{position:absolute;top:0;left:50%;transform-origin:bottom center}
+  .tring .tk i{display:block;border-radius:99px}
+
+  /* stat header (concept 4) */
+  .stat{display:flex;align-items:center;gap:14px;margin-top:12px}
+  .stat .big{font-size:34px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+  .stat .lbl{flex:1;min-width:0}
+  .stat .lbl .k{font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .stat .lbl .s{font:400 11px/1.4 var(--mono);color:var(--ash2);margin-top:5px}
+
+  /* footer strip (concept 3) */
+  .fstrip{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:14px;margin-top:4px}
+  .fstrip .cnt{font:600 12px/1 var(--mono);color:var(--ash)}
+  .fstrip .cnt b{color:var(--chalk);font-weight:700;font-variant-numeric:tabular-nums}
+  .fstrip .btn{margin-left:auto}
+
+  /* tally dots (concept 5) */
+  .dots{display:inline-flex;align-items:center;gap:5px}
+  .dots i{width:8px;height:8px;border-radius:99px;background:var(--line2)}
+  .dots i.on{background:var(--lime)}
+
+  /* trimmed feeling card (the aside) */
+  .faces{display:flex;justify-content:space-between;gap:6px;margin-top:16px}
+  .faces .fb{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0;border-radius:16px;border:1px solid transparent}
+  .faces .fb .lb{font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash)}
+  .title{font-weight:700;font-size:16px;letter-spacing:-.01em}
+  .face{display:inline-grid;place-items:center;flex:none}
+  .gone{position:relative;border:1px dashed color-mix(in srgb,var(--red) 45%,transparent);border-radius:14px;padding:12px;margin-top:16px;opacity:.55}
+  .gone::after{content:"MOVES UP ↑";position:absolute;top:-8px;right:12px;font:800 8.5px/1 var(--mono);letter-spacing:.14em;color:var(--red-text);background:var(--ink2);padding:2px 6px;border-radius:6px}
+  .gone .in{display:flex;align-items:center;gap:14px}
+  .gone .k{font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .gone .lnk{margin-top:8px;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lime-text)}
+
+  footer{max-width:1200px;margin:56px auto 0;border-top:1px solid var(--line);padding-top:26px;color:var(--ash2);font:600 12px/1.7 var(--mono)}
+  footer b{color:var(--ash)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="kick">Today home — "Also today, off-plan" card</div>
+  <h1>Off-plan, always on <span>— 5 ideas</span></h1>
+  <p>Two notes folded into one redesign of <b>AlsoTodayCard</b> (today.tsx): <b>(1)</b> the card no longer disappears when nothing extra was logged — it stays on Today with a quiet empty state, so the surface is discoverable before the first quick log. <b>(2)</b> the DONE-TODAY count leaves the feeling card's footer and lives here, with the <b>log action as a button on the right</b>. Every concept shows both states — with a workout, and empty.</p>
+</div>
+
+<div class="aside">
+  <div class="note">
+    <b>What this removes below:</b> the feeling card drops its footer — the tick ring, the DONE TODAY count and the LOG ANOTHER link all migrate into the off-plan card above it. "How ready do you feel?" becomes a single-purpose card: the four faces, nothing else.
+  </div>
+  <div class="mini">
+    <div class="card">
+      <div class="title">How ready do you feel?</div>
+      <div class="faces">
+        <span class="fb"><span class="face" data-face="wrecked" data-size="34"></span><span class="lb">Wrecked</span></span>
+        <span class="fb"><span class="face" data-face="flat" data-size="34"></span><span class="lb">Flat</span></span>
+        <span class="fb"><span class="face" data-face="good" data-size="34"></span><span class="lb">Good</span></span>
+        <span class="fb"><span class="face" data-face="primed" data-size="34"></span><span class="lb">Primed</span></span>
+      </div>
+      <div class="gone">
+        <div class="in">
+          <span class="tring" data-ring="1" data-pct="100" data-size="44"></span>
+          <span><span class="k">Done today</span><div class="lnk">Log another →</div></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- 1 · HEADER ACTION -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>1</i>Header action</div>
+      <h2>Smallest change: button up top</h2>
+      <p>The shipped card, kept — but the dashed "Log another workout" bar becomes a solid <b>+ Log button in the header</b>, next to the count pill. Empty, the card stays: one calm line explains what lands here, and the same button is the way in.</p>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span style="display:inline-flex;align-items:center;gap:8px">
+          <span class="pill">1</span>
+          <button class="btn solid">+ Log</button>
+        </span>
+      </div>
+      <div style="margin-top:6px">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          <span class="ok">✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <button class="btn solid">+ Log</button>
+      </div>
+      <div class="empty-line">Nothing off-plan yet. Quick sport logs and freestyle sessions land here.</div>
+    </div>
+  </div>
+
+  <!-- 2 · RING MOVES IN -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>2</i>The ring moves in</div>
+      <h2>Done-today ring, new home</h2>
+      <p>The tick ring from the feeling card's footer docks into this header — the count keeps its familiar face, just in the right card now. <b>LOG sits right</b> as a ghost button. Empty, the ring reads 0 in ash and the line under it does the explaining.</p>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span style="display:inline-flex;align-items:center;gap:12px;min-width:0">
+          <span class="tring" data-ring="1" data-pct="100" data-size="40"></span>
+          <span style="min-width:0">
+            <span class="kicker" style="display:block">Also today — off-plan</span>
+            <span style="display:block;font:400 10px/1 var(--mono);color:var(--ash2);margin-top:5px">1 done today</span>
+          </span>
+        </span>
+        <button class="btn ghost">Log →</button>
+      </div>
+      <div style="margin-top:8px;border-top:1px solid var(--line)">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          <span class="ok">✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span style="display:inline-flex;align-items:center;gap:12px;min-width:0">
+          <span class="tring" data-ring="0" data-pct="0" data-size="40"></span>
+          <span style="min-width:0">
+            <span class="kicker" style="display:block">Also today — off-plan</span>
+            <span style="display:block;font:400 10px/1 var(--mono);color:var(--ash2);margin-top:5px">0 done today</span>
+          </span>
+        </span>
+        <button class="btn ghost">Log →</button>
+      </div>
+      <div class="empty-line">Anything you do beyond the plan — a match, a swim, a walk — shows up here.</div>
+    </div>
+  </div>
+
+  <!-- 3 · LEDGER FOOTER -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>3</i>Ledger footer</div>
+      <h2>Count closes the card</h2>
+      <p>Header stays exactly as shipped; the count reads as a <b>ledger line at the bottom</b> — "1 done today" — with <b>Log another → on the right</b>, where the dashed bar used to be. Empty, the footer still anchors the card at "0 done today", so the section never vanishes.</p>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+        <span class="pill">1</span>
+      </div>
+      <div style="margin-top:6px;margin-bottom:10px">
+        <div class="row" style="border-bottom:none">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          <span class="ok">✓</span>
+        </div>
+      </div>
+      <div class="fstrip">
+        <span class="cnt"><b>1</b> done today</span>
+        <button class="btn link">Log another →</button>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span class="kicker">Also today — off-plan</span>
+      </div>
+      <div class="empty-line" style="padding-bottom:12px">Off-plan work lands here — nothing logged yet.</div>
+      <div class="fstrip">
+        <span class="cnt"><b>0</b> done today</span>
+        <button class="btn link">Log a workout →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · STAT HEADER -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>4</i>Stat header</div>
+      <h2>The number is the headline</h2>
+      <p>The count stops hiding in a 10px pill and becomes the card's <b>display-weight stat</b> — big numeral, DONE TODAY label — with a <b>round + button on the right</b>. Rows list under a hairline. Empty, the 0 goes ash and the sub-line invites the first log.</p>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="kicker">Also today — off-plan</div>
+      <div class="stat">
+        <span class="big">1</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">beyond the plan</span>
+        </span>
+        <button class="btn round">+</button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--line)">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          <span class="ok">✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="kicker">Also today — off-plan</div>
+      <div class="stat">
+        <span class="big" style="color:var(--ash2)">0</span>
+        <span class="lbl">
+          <span class="k" style="display:block">Done today</span>
+          <span class="s" style="display:block">log a match, a run, anything extra</span>
+        </span>
+        <button class="btn round">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · TALLY DOTS + GHOST ROW -->
+  <div class="concept">
+    <div class="cap">
+      <div class="n"><i>5</i>Tally + ghost row</div>
+      <h2>Every workout is a lit dot</h2>
+      <p>The count becomes a <b>tally of dots</b> beside the kicker — one lights per workout, so 3 sessions read at a glance without reading a number. <b>+ LOG holds the right edge.</b> Empty, a <b>ghost row</b> shaped like a real entry teaches what the section will hold.</p>
+    </div>
+    <div class="ctx">With a workout</div>
+    <div class="card">
+      <div class="khead">
+        <span style="display:inline-flex;align-items:center;gap:10px;min-width:0">
+          <span class="kicker">Also today — off-plan</span>
+          <span class="dots"><i class="on"></i><i></i><i></i></span>
+        </span>
+        <button class="btn ghost">+ Log</button>
+      </div>
+      <div style="margin-top:6px">
+        <div class="row">
+          <span class="av">🎾</span>
+          <span class="tx"><span class="t">Tennis</span><span class="m">5 min – 10:17</span></span>
+          <span class="ok">✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctx">Empty</div>
+    <div class="card">
+      <div class="khead">
+        <span style="display:inline-flex;align-items:center;gap:10px;min-width:0">
+          <span class="kicker">Also today — off-plan</span>
+          <span class="dots"><i></i><i></i><i></i></span>
+        </span>
+        <button class="btn ghost">+ Log</button>
+      </div>
+      <div class="ghost-row">
+        <span class="av">＋</span>
+        <span class="tx">Your first off-plan session shows here — sport, duration and time, checked off.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <b>Same data, one card fewer jobs.</b> All five: the off-plan card renders even at zero (the empty copy replaces the row list), the done-today count moves in from the feeling card's footer, and the log action is a button on the right instead of the dashed full-width bar. The feeling card keeps only the four faces. Counts respect the no-schedule case (kicker falls back to "Done today", as shipped). Aurora tokens, standalone preview, no build step. Web + mobile parity applies to whichever concept ships.
+</footer>
+
+<script>
+  function faceSVG(feeling, size){
+    var M={primed:'M12 23 Q20 31 28 23',good:'M13 23 Q20 30 27 23',flat:'M13 25 L27 25',wrecked:'M13 28 Q20 21 27 28'};
+    var C={primed:'#c6f84f',good:'#6cb6bd',flat:'#d0cd94',wrecked:'#e58a5c'};
+    var c=C[feeling]||'#8b8f86', m=M[feeling]||M.flat;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 40 40" fill="none">'
+      +'<circle cx="13" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<circle cx="27" cy="16" r="2.3" fill="'+c+'"/>'
+      +'<path d="'+m+'" stroke="'+c+'" stroke-width="2.8" stroke-linecap="round" fill="none"/>'
+      +'</svg>';
+  }
+  document.querySelectorAll('[data-face]').forEach(function(el){
+    el.innerHTML=faceSVG(el.dataset.face, +el.dataset.size||34);
+  });
+
+  /* the real Ring: 32 tick marks, lit up to the value, number centred */
+  document.querySelectorAll('[data-ring]').forEach(function(el){
+    var size=+el.dataset.size||44, ticks=32, pct=+el.dataset.pct||0, n=el.dataset.ring;
+    var lit=Math.round(pct/100*ticks);
+    var tickLen=Math.max(4,Math.round(size*0.16)), tickW=Math.max(2,Math.round(size*0.045));
+    el.style.width=size+'px'; el.style.height=size+'px';
+    var html='';
+    for(var i=0;i<ticks;i++){
+      html+='<span class="tk" style="width:'+tickW+'px;height:'+(size/2)+'px;transform:translateX(-50%) rotate('+(i/ticks*360)+'deg)">'
+        +'<i style="width:'+tickW+'px;height:'+tickLen+'px;background:'+(i<lit?'var(--lime)':'var(--line)')+'"></i></span>';
+    }
+    html+='<span class="num" style="font-size:'+Math.round(size*0.34)+'px;color:'+(pct>0?'var(--chalk)':'var(--ash)')+'">'+n+'</span>';
+    el.innerHTML=html;
+  });
+</script>
+</body>
+</html>
