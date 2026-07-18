@@ -3,14 +3,21 @@
 import { useMemo, useEffect, useState, type CSSProperties } from "react";
 import {
   planSchedule,
+  doneReceipt,
+  doneReceiptStats,
+  stripWeekdayPrefix,
   fs,
+  type DoneReceipt,
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
   type PlanDaySession,
+  type WeightUnit,
 } from "@hybrid/core";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { CtaLabel } from "./cta-label";
 
 // ── AURORA Week rail (web) ──────────────────────────────────────────────────
@@ -101,6 +108,8 @@ export default function AuroraWeekRail({
 }) {
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
+  const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
 
   const schedule = useMemo(
     () => planSchedule({ planId, startedAt: planStartedAt, sessions, overrides, maxes }),
@@ -131,6 +140,11 @@ export default function AuroraWeekRail({
   const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
   const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
 
+  // The receipt behind a done day — built from the logged session that
+  // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
+  const doneSession = (sel.status === "done" && sel.sessionId && sessions.find((s) => s.id === sel.sessionId)) || null;
+  const receipt = doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
+
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
   return (
@@ -155,6 +169,8 @@ export default function AuroraWeekRail({
       <DayDetail
         key={sel.dateKey}
         day={sel}
+        receipt={receipt}
+        units={units}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -258,8 +274,11 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
   );
 }
 
-function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ day, receipt, units, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
+  /** the fulfilled day's summary (null when the logged session isn't loaded). */
+  receipt: DoneReceipt | null;
+  units: WeightUnit;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -294,6 +313,63 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
         </div>
+      </div>
+    );
+  }
+
+  // Sessions postponed ONTO this date — a light catch-up list (all states).
+  const catchUp = day.postponedIn.length > 0 && (
+    <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
+      {day.postponedIn.map((it, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
+            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
+          </span>
+          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+        </div>
+      ))}
+    </div>
+  );
+
+  // DONE — the day collapses to a receipt ("The receipt, corrected", see
+  // design/done-card-redesign-ideas.html): one headline, the day's work as an
+  // en-dash meta line, only trustworthy figures, and a quiet text link into
+  // History instead of a pill. The prescription is settled — it doesn't re-list.
+  if (day.status === "done") {
+    const stats = receipt ? doneReceiptStats(receipt, units) : [];
+    const finished = receipt?.finishedClock
+      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      : "";
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, minWidth: 0 }}>
+            <span style={{ color: "var(--lime-text)", fontSize: 19, fontWeight: 800, flexShrink: 0 }} aria-hidden>✓</span>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>
+              {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
+            </div>
+          </div>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
+          {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
+        </div>
+        {stats.length > 0 && (
+          <div style={{ display: "flex", gap: 26, margin: "16px 0 0 31px" }}>
+            {stats.map((s) => (
+              <span key={s.labelKey}>
+                <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "18px 0 0", padding: "14px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+          {t("w.home.rail.viewHistory")} →
+        </button>
+        {catchUp}
       </div>
     );
   }
@@ -364,26 +440,9 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t("w.home.rail.doItNow")}</CtaLabel></button>
           <button onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
         </>)}
-        {day.status === "done" && (
-          <button onClick={onHistory} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.viewHistory")}</button>
-        )}
       </div>
 
-      {/* Sessions postponed ONTO this date — a light catch-up list. */}
-      {day.postponedIn.length > 0 && (
-        <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
-          {day.postponedIn.map((it, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
-              </span>
-              <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
-            </div>
-          ))}
-        </div>
-      )}
+      {catchUp}
     </div>
   );
 }

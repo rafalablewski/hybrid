@@ -59,6 +59,7 @@ export * from "./units";
 export * from "./plates";
 export * from "./logger-prefs";
 export * from "./live-stats";
+export * from "./done-receipt";
 export * from "./guidance";
 export * from "./account";
 export * from "./settings-nav";

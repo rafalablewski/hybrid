@@ -3,10 +3,15 @@ import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planSchedule,
+  doneReceipt,
+  doneReceiptStats,
+  stripWeekdayPrefix,
+  type DoneReceipt,
   type LoggedSession,
   type SessionBlock,
   type ScheduledDay,
   type PlanDaySession,
+  type WeightUnit,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -14,6 +19,8 @@ import { fs, F, serifIf, startGlow } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { usePlanOverrides } from "../../lib/plan-overrides";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
 // The date-anchored replacement for the count-based "Your plan today". A static
@@ -97,6 +104,8 @@ export default function AuroraWeekRail({
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
+  const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
 
   const schedule = useMemo(
     () => planSchedule({ planId, startedAt: planStartedAt, sessions, overrides, maxes }),
@@ -126,6 +135,11 @@ export default function AuroraWeekRail({
   // recognises it even if the athlete edits the exercises. Mirrors web.
   const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
   const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
+
+  // The receipt behind a done day — built from the logged session that
+  // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
+  const doneSession = (sel.status === "done" && sel.sessionId && sessions.find((s) => s.id === sel.sessionId)) || null;
+  const receipt = doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
 
   return (
     <View
@@ -166,6 +180,8 @@ export default function AuroraWeekRail({
         C={C}
         scheme={scheme}
         day={sel}
+        receipt={receipt}
+        units={units}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -264,10 +280,13 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
   );
 }
 
-function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: ScheduledDay;
+  /** the fulfilled day's summary (null when the logged session isn't loaded). */
+  receipt: DoneReceipt | null;
+  units: WeightUnit;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -302,6 +321,68 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 17 }}>{t("w.home.rail.restNote")}</Text>
         </View>
+      </View>
+    );
+  }
+
+  // Sessions postponed ONTO this date — a light catch-up list (all states).
+  const catchUp = day.postponedIn.length > 0 && (
+    <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.home.rail.catchUp")}</Text>
+      {day.postponedIn.map((it, i) => (
+        <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
+          <View style={{ flex: 1 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
+          </View>
+          <GhostBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
+        </View>
+      ))}
+    </View>
+  );
+
+  // DONE — the day collapses to a receipt ("The receipt, corrected", see
+  // design/done-card-redesign-ideas.html): one headline, the day's work as an
+  // en-dash meta line, only trustworthy figures, and a quiet text link into
+  // History instead of a pill. The prescription is settled — it doesn't
+  // re-list. Mirrors the web rail exactly.
+  if (day.status === "done") {
+    const stats = receipt ? doneReceiptStats(receipt, units) : [];
+    const finished = receipt?.finishedClock
+      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      : "";
+    return (
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, flex: 1 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 19, lineHeight: 22, color: txt(C, C.lime) }}>✓</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk }}>
+              {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
+            </Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
+          {stripWeekdayPrefix(day.title)}<Text style={{ opacity: 0.65 }}>{finished}</Text>
+        </Text>
+        {stats.length > 0 && (
+          <View style={{ flexDirection: "row", gap: 26, marginTop: 16, marginLeft: 31 }}>
+            {stats.map((s) => (
+              <View key={s.labelKey}>
+                <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <Pressable
+          onPress={onHistory}
+          accessibilityRole="button"
+          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 18, paddingTop: 14, paddingLeft: 31 }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.rail.viewHistory")} →</Text>
+        </Pressable>
+        {catchUp}
       </View>
     );
   }
@@ -388,24 +469,9 @@ function DayDetail({ C, scheme, day, onStart, onSkip, onUnskip, onPostpone, canP
             <GhostBtn C={C} label={t("w.home.rail.unpostpone")} onPress={onUnskip} />
           </>
         )}
-        {day.status === "done" && <GhostBtn C={C} label={t("w.home.rail.viewHistory")} onPress={onHistory} flex1 />}
       </View>
 
-      {/* Sessions postponed ONTO this date — a light catch-up list. */}
-      {day.postponedIn.length > 0 && (
-        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.home.rail.catchUp")}</Text>
-          {day.postponedIn.map((it, i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
-              </View>
-              <GhostBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
-            </View>
-          ))}
-        </View>
-      )}
+      {catchUp}
     </View>
   );
 }
