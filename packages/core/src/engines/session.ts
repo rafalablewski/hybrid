@@ -457,6 +457,31 @@ export function sessionCardioTotals(blocks: SessionBlock[]): {
 }
 
 /**
+ * Compact totals for a finished session — the week rail's done-day receipt
+ * line ("48 min – 6.2 t – 14 sets"). Minutes prefer the real completedAt −
+ * startedAt span, falling back to summed cardio minutes; volume is working-set
+ * tonnage; sets counts working strength sets; distance sums cardio km. Shared
+ * so the web + mobile rails render identical receipts.
+ */
+export function sessionDoneStats(
+  session: LoggedSession,
+  bodyweightKg?: number | null,
+): { minutes: number; volumeKg: number; sets: number; distanceKm: number } {
+  const start = Date.parse(session.startedAt);
+  const end = Date.parse(session.completedAt ?? "");
+  const cardio = sessionCardioTotals(session.blocks);
+  const span = Number.isFinite(start) && Number.isFinite(end) ? Math.max(0, Math.round((end - start) / 60000)) : 0;
+  let sets = 0;
+  for (const b of session.blocks) if (isStrength(b)) sets += workingSets(b).length;
+  return {
+    minutes: span > 0 ? span : Math.round(cardio.minutes),
+    volumeKg: sessionVolume(session.blocks, false, bodyweightKg),
+    sets,
+    distanceKm: cardio.distanceKm,
+  };
+}
+
+/**
  * The most recent prior strength performance of EACH lift (newest session
  * first), keyed by lift name. One pass over a single sort, so the live logger
  * can show a "last time" reference per exercise without re-sorting history on

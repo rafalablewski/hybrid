@@ -23,6 +23,8 @@ import { fs, space,
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
+  planSessionsOnDay,
+  planSessionRowTitle,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -185,6 +187,10 @@ export default function AuroraToday({
   // "Also today" card (Design 1: scheduled plan vs what-was-done separation)
   // instead of hiding behind the done-count ring.
   const extrasOnDay = useMemo(() => offPlanSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
+  // The complement: the viewed day's sessions that DID fulfil a plan day. Once
+  // the week rail collapses to "All done for today", the finished workout lives
+  // on the Done-today card as a first-class row (lime ✓ tile + Plan tag).
+  const planDoneOnDay = useMemo(() => planSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
   const initials = useMemo(
@@ -460,21 +466,24 @@ export default function AuroraToday({
         <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
       )}
 
-      {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the plan's
-          workout (quick sport logs, freestyle sessions). Design 1 separation: the
-          card above is the SCHEDULED day (Start / Skip / Postpone); this one is
-          what was actually done besides it, teal-coded, each row tappable. Always
+      {/* ALSO TODAY — everything logged on the VIEWED day. Design 1 separation:
+          the card above is the SCHEDULED day (Start / Skip / Postpone,
+          collapsing to "All done for today" once finished); this one is what
+          was actually done — the plan's fulfilled workout leads (lime ✓ + Plan
+          tag), then the teal off-plan extras, each row tappable. Always
           rendered — empty it explains itself — and it leads with the day's done
           count as its display-weight stat (moved in from the feeling card).
-          Follows the week rail's selected day (dayTs) — on another day the label
-          carries the date and the log row hides (quick logs save at "now").
-          Hidden only for a true first run (no plan, nothing ever logged): the
-          "How do you want to start?" chooser above already owns that state, and
-          a 0-count card under it would be a second competing log CTA. */}
+          Follows the week rail's selected day (dayTs) — on another day the
+          label carries the date and the log row hides (quick logs save at
+          "now"). Hidden only for a true first run (no plan, nothing ever
+          logged): the "How do you want to start?" chooser above already owns
+          that state, and a 0-count card under it would be a second competing
+          log CTA. */}
       {(!!sched || sessions.length > 0) && (
         <AlsoTodayCard
           extras={extrasOnDay}
-          onPlan={!!sched}
+          planDone={planDoneOnDay}
+          planName={sched?.planName ?? null}
           doneCount={doneOnDay.length}
           isToday={dayIsToday}
           dayLabel={dayLabel}
@@ -657,17 +666,21 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
-// stat strip taps through to the Done-Today sheet — with the off-plan sessions
-// as rows beneath it and the log action as a ghost row in the same vocabulary.
-// Always rendered: empty, the numeral reads 0 and the sub-line does the
-// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border, with one deliberate
-// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
-// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
-// Rows open the session's breakdown. Mirrored on mobile (aurora/home.tsx).
-function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
+// stat strip taps through to the Done-Today sheet — with the day's sessions as
+// rows beneath it and the log action as a ghost row in the same vocabulary.
+// Plan-fulfilling sessions lead the list (lime ✓ tile + Plan tag — the week
+// rail's card collapses to "All done for today", so THIS is where the finished
+// workout lives), followed by the teal off-plan extras. Always rendered:
+// empty, the numeral reads 0 and the sub-line does the inviting. Line-free
+// inside (surface fills + spacing, no hairlines/outlines/chips/pills) — the
+// card's own edge is the only border, with one deliberate exception: the ghost
+// ＋ tile wears a dashed outline (the add affordance). Rows open the session's
+// breakdown. Mirrored on mobile (aurora/home.tsx).
+function AlsoTodayCard({ extras, planDone, planName, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
   extras: LoggedSession[];
-  onPlan: boolean;
+  /** the viewed day's plan-fulfilling sessions (lead rows, ✓ + Plan tag). */
+  planDone: LoggedSession[];
+  planName: string | null;
   doneCount: number;
   /** false when the week rail has another day selected — the label carries the
    *  date and the log row hides (a quick log always saves at "now"). */
@@ -682,7 +695,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw
   const { t } = useLang();
   const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
   // caption + log-label state machine lives in core so the mobile twin can't drift
-  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount, isToday });
+  const copy = alsoTodayCopy({ doneCount, isToday });
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
@@ -697,6 +710,18 @@ function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw
       </button>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+        {planDone.map((s) => (
+          <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 16, fontWeight: 800, color: "var(--lime-text)", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)` }}>✓</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{planName ? planSessionRowTitle(s.title, planName) : s.title}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+              </span>
+            </span>
+            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)", border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "4px 8px" }}>{t("w.home.today.donePlanTag")}</span>
+          </button>
+        ))}
         {extras.map((s) => (
           <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
             <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 16%, transparent)` }}>

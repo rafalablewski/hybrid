@@ -20,6 +20,8 @@ import {
   relativeTime,
   planSchedule,
   offPlanSessionsOnDay,
+  planSessionsOnDay,
+  planSessionRowTitle,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -200,6 +202,10 @@ export default function AuroraHome() {
   // "Also today" card (Design 1: scheduled plan vs what-was-done separation)
   // instead of hiding behind the done-count ring.
   const extrasOnDay = useMemo(() => offPlanSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
+  // The complement: the viewed day's sessions that DID fulfil a plan day. Once
+  // the week rail collapses to "All done for today", the finished workout lives
+  // on the Done-today card as a first-class row (lime ✓ tile + Plan tag).
+  const planDoneOnDay = useMemo(() => planSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
   // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
   // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
   // global 6h re-log cooldown, which also holds when back-logging a past day.
@@ -502,23 +508,25 @@ export default function AuroraHome() {
           />
         )}
 
-        {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the
-            plan's workout (quick sport logs, freestyle sessions). Design 1
+        {/* ALSO TODAY — everything logged on the VIEWED day. Design 1
             separation: the card above is the SCHEDULED day (Start / Skip /
-            Postpone); this one is what was actually done besides it, teal-coded,
-            each row tappable. Always rendered — empty it explains itself — and
-            it leads with the day's done count as its display-weight stat (moved
-            in from the feeling card). Follows the week rail's selected day
-            (dayTs) — on another day the label carries the date and the log row
-            hides (quick logs save at "now"). Hidden only for a true first run
-            (no plan, nothing ever logged): the "How do you want to start?"
-            chooser above already owns that state, and a 0-count card under it
-            would be a second competing log CTA. */}
+            Postpone, collapsing to "All done for today" once finished); this
+            one is what was actually done — the plan's fulfilled workout leads
+            (lime ✓ + Plan tag), then the teal off-plan extras, each row
+            tappable. Always rendered — empty it explains itself — and it leads
+            with the day's done count as its display-weight stat (moved in from
+            the feeling card). Follows the week rail's selected day (dayTs) —
+            on another day the label carries the date and the log row hides
+            (quick logs save at "now"). Hidden only for a true first run (no
+            plan, nothing ever logged): the "How do you want to start?" chooser
+            above already owns that state, and a 0-count card under it would be
+            a second competing log CTA. */}
         {(!!sched || sessions.length > 0) && (
           <AlsoTodayCard
             C={C}
             extras={extrasOnDay}
-            onPlan={!!sched}
+            planDone={planDoneOnDay}
+            planName={sched?.planName ?? null}
             doneCount={doneOnDay.length}
             isToday={dayIsToday}
             dayLabel={dayLabel}
@@ -662,18 +670,22 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
-// stat strip taps through to the Done-Today sheet — with the off-plan sessions
-// as rows beneath it and the log action as a ghost row in the same vocabulary.
-// Always rendered: empty, the numeral reads 0 and the sub-line does the
-// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border, with one deliberate
-// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
-// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
-// Rows open the session's breakdown. Mirrored on web (aurora/today.tsx).
-function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
+// stat strip taps through to the Done-Today sheet — with the day's sessions as
+// rows beneath it and the log action as a ghost row in the same vocabulary.
+// Plan-fulfilling sessions lead the list (lime ✓ tile + Plan tag — the week
+// rail's card collapses to "All done for today", so THIS is where the finished
+// workout lives), followed by the teal off-plan extras. Always rendered:
+// empty, the numeral reads 0 and the sub-line does the inviting. Line-free
+// inside (surface fills + spacing, no hairlines/outlines/chips/pills) — the
+// card's own edge is the only border, with one deliberate exception: the ghost
+// ＋ tile wears a dashed outline (the add affordance). Rows open the session's
+// breakdown. Mirrored on web (aurora/today.tsx).
+function AlsoTodayCard({ C, extras, planDone, planName, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
   C: P;
   extras: LoggedSession[];
-  onPlan: boolean;
+  /** the viewed day's plan-fulfilling sessions (lead rows, ✓ + Plan tag). */
+  planDone: LoggedSession[];
+  planName: string | null;
   doneCount: number;
   /** false when the week rail has another day selected — the label carries the
    *  date and the log row hides (a quick log always saves at "now"). */
@@ -688,7 +700,7 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units,
   const { t } = useLang();
   const quiet = withAlpha(C.ash, 0.6);
   // caption + log-label state machine lives in core so the web twin can't drift
-  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount, isToday });
+  const copy = alsoTodayCopy({ doneCount, isToday });
   const logLabel = t(copy.logKey);
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
@@ -704,6 +716,20 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units,
       </Pressable>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <View style={{ marginTop: 14, gap: 4 }}>
+        {planDone.map((s) => (
+          <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24` }}>
+              <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.lime) }}>✓</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{planName ? planSessionRowTitle(s.title, planName) : s.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+            </View>
+            <View style={{ borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.donePlanTag")}</Text>
+            </View>
+          </Pressable>
+        ))}
         {extras.map((s) => (
           <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
             <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}29` }}>

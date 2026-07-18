@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planSchedule, planAdherence, dateKeyOf, sessionMatchesPlanDay, offPlanSessionsOnDay, alsoTodayCopy } from "./plan-schedule";
+import { planSchedule, planAdherence, dateKeyOf, sessionMatchesPlanDay, offPlanSessionsOnDay, planSessionsOnDay, planSessionRowTitle, alsoTodayCopy } from "./plan-schedule";
 import { programCalendarDays } from "./plan-day";
 import type { LoggedSession } from "./engines/session";
 
@@ -185,6 +185,15 @@ describe("planSchedule", () => {
     expect(extras.map((s) => s.id)).toEqual(["tennis-1"]);
     // without a schedule, everything logged today is off-plan by definition
     expect(offPlanSessionsOnDay(sessions, null, trainingNow).length).toBe(2);
+    // the complement — the plan-fulfilling session — powers the Done-today row
+    expect(planSessionsOnDay(sessions, r, trainingNow).map((s) => s.id)).toEqual(["plan-1"]);
+    expect(planSessionsOnDay(sessions, null, trainingNow)).toEqual([]);
+  });
+
+  it("planSessionRowTitle strips only the plan-composed prefix", () => {
+    expect(planSessionRowTitle(`${PLAN_NAME} – Week 2, Day 3`, PLAN_NAME)).toBe("Week 2, Day 3");
+    expect(planSessionRowTitle(PLAN_NAME, PLAN_NAME)).toBe(PLAN_NAME);
+    expect(planSessionRowTitle("Evening workout", PLAN_NAME)).toBe("Evening workout");
   });
 
   it("sessionMatchesPlanDay accepts both plan-title forms and rejects lookalikes", () => {
@@ -289,45 +298,23 @@ describe("planSchedule", () => {
 
 describe("alsoTodayCopy", () => {
   it("invites the first log only when NOTHING is done today", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0 })).toEqual({
+    expect(alsoTodayCopy({ doneCount: 0 })).toEqual({
       subKey: "w.home.today.alsoTodaySubEmpty",
       logKey: "w.home.today.alsoTodayLogFirst",
     });
-    expect(alsoTodayCopy({ extras: 0, onPlan: false, doneCount: 0 }).subKey).toBe("w.home.today.alsoTodaySubEmpty");
   });
 
-  it("plan day done with no extras: no contradictory empty invite, log label reads 'another'", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 1 })).toEqual({
+  it("anything done: no sub-line (the rows carry the story), log label reads 'another'", () => {
+    expect(alsoTodayCopy({ doneCount: 1 })).toEqual({
       subKey: null,
       logKey: "w.home.today.alsoTodayLog",
     });
-  });
-
-  it("off-plan rows under a plan get the beyond-the-schedule explainer", () => {
-    expect(alsoTodayCopy({ extras: 1, onPlan: true, doneCount: 2 })).toEqual({
-      subKey: "w.home.today.alsoTodaySubPlan",
-      logKey: "w.home.today.alsoTodayLog",
-    });
-  });
-
-  it("rows without a plan get no sub-line (nothing is 'off' anything)", () => {
-    expect(alsoTodayCopy({ extras: 2, onPlan: false, doneCount: 2 })).toEqual({
-      subKey: null,
-      logKey: "w.home.today.alsoTodayLog",
-    });
+    expect(alsoTodayCopy({ doneCount: 2, isToday: false }).subKey).toBeNull();
   });
 
   it("a NON-today empty day gets the past-tense empty line, not the log invitation", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: false }).subKey).toBe(
-      "w.home.today.alsoDayEmpty",
-    );
-    // non-empty non-today days keep the same sub-line machine as today
-    expect(alsoTodayCopy({ extras: 1, onPlan: true, doneCount: 1, isToday: false }).subKey).toBe(
-      "w.home.today.alsoTodaySubPlan",
-    );
+    expect(alsoTodayCopy({ doneCount: 0, isToday: false }).subKey).toBe("w.home.today.alsoDayEmpty");
     // explicit isToday keeps today's invitation
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: true }).subKey).toBe(
-      "w.home.today.alsoTodaySubEmpty",
-    );
+    expect(alsoTodayCopy({ doneCount: 0, isToday: true }).subKey).toBe("w.home.today.alsoTodaySubEmpty");
   });
 });

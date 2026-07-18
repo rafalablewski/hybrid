@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   e1rm,
   sessionVolume,
+  sessionDoneStats,
   totalVolume,
   e1rmSeries,
   bestE1rmByLift,
@@ -231,6 +232,26 @@ describe("session stats", () => {
     const squat = log[1]!.items.find((i) => i.move === "Back Squat");
     expect(squat?.e1rm).toBe(Math.round(e1rm(120, 3)));
     expect(squat?.topRpe).toBe(8);
+  });
+
+  it("sessionDoneStats: real span beats cardio minutes; working sets + tonnage + km summed", () => {
+    const s: LoggedSession = {
+      id: "d1",
+      title: "Upper + Engine",
+      startedAt: "2026-05-20T10:00:00.000Z",
+      completedAt: "2026-05-20T10:48:00.000Z",
+      blocks: [
+        { kind: "strength", name: "Bench Press", sets: [{ load: "60", reps: "5", role: "warmup" }, { load: "100", reps: "5" }, { load: "100", reps: "5" }] },
+        { kind: "cardio", name: "Easy Run", distance: 5, minutes: 30 },
+      ],
+    };
+    const r = sessionDoneStats(s);
+    expect(r.minutes).toBe(48); // completedAt − startedAt, not the cardio sum
+    expect(r.sets).toBe(2); // warm-up excluded
+    expect(r.volumeKg).toBe(1000); // working sets only
+    expect(r.distanceKm).toBe(5);
+    // no completedAt → fall back to summed cardio minutes
+    expect(sessionDoneStats({ ...s, completedAt: null }).minutes).toBe(30);
   });
 });
 

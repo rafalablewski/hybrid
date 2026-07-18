@@ -3,6 +3,9 @@
 import { useMemo, useEffect, useState, type CSSProperties } from "react";
 import {
   planSchedule,
+  sessionDoneStats,
+  sessionClockTime,
+  fmtTonnage,
   fs,
   type LoggedSession,
   type SessionBlock,
@@ -10,6 +13,7 @@ import {
   type PlanDaySession,
 } from "@hybrid/core";
 import { usePlanOverrides } from "@/lib/plan-overrides";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { CtaLabel } from "./cta-label";
 
@@ -100,6 +104,7 @@ export default function AuroraWeekRail({
   onSelectDay?: (day: ScheduledDay) => void;
 }) {
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const { overrides, setOverride } = usePlanOverrides(planId);
 
   const schedule = useMemo(
@@ -116,6 +121,9 @@ export default function AuroraWeekRail({
 
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
+  // The logged session that fulfilled the selected done day — powers the
+  // "All done for today" receipt (finish time + minutes/volume/sets).
+  const doneSession = (sel.sessionId && sessions.find((s) => s.id === sel.sessionId)) || null;
 
   // The visible week: a WINDOW-day slice centred on the selected day, clamped to
   // the plan. Tapping an edge day re-centres it, walking through the schedule.
@@ -155,6 +163,8 @@ export default function AuroraWeekRail({
       <DayDetail
         key={sel.dateKey}
         day={sel}
+        doneSession={doneSession}
+        units={units}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -258,8 +268,11 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
   );
 }
 
-function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ day, doneSession, units, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
+  /** the logged session that fulfilled a done day (for the receipt line). */
+  doneSession: LoggedSession | null;
+  units: "kg" | "lb";
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -294,6 +307,67 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
         </div>
+      </div>
+    );
+  }
+
+  // Sessions postponed ONTO this date — a light catch-up list. Rendered on the
+  // normal detail AND the done state (a finished day can still owe a moved one).
+  const catchUp = day.postponedIn.length > 0 ? (
+    <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
+      {day.postponedIn.map((it, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
+            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
+          </span>
+          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  // DONE — the rest-day twin with receipts ("Concept 3"): the prescription
+  // collapses into a calm confirmation (lime ✓, "All done for today", the
+  // session's totals) instead of re-describing a workout that's already logged.
+  // The workout itself moves to the Done-today card below the rail.
+  if (day.status === "done") {
+    const stats = doneSession ? sessionDoneStats(doneSession) : null;
+    const finishedClock = doneSession ? sessionClockTime(doneSession.completedAt ?? doneSession.startedAt) : null;
+    const receipts: { v: string; k: string }[] = [];
+    if (stats) {
+      if (stats.minutes > 0) receipts.push({ v: String(stats.minutes), k: t("w.home.rail.statMin") });
+      if (stats.volumeKg > 0) receipts.push({ v: fmtTonnage(stats.volumeKg, units), k: t("w.home.rail.statVolume") });
+      if (stats.sets > 0) receipts.push({ v: String(stats.sets), k: t("w.home.rail.statSets") });
+      if (stats.distanceKm > 0) receipts.push({ v: String(Math.round(stats.distanceKm * 10) / 10), k: t("w.home.rail.statKm") });
+    }
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+          <span style={{ color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><Check c="var(--lime-text)" s={24} /></span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{day.isToday ? t("w.home.rail.allDone") : t("w.home.rail.done")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>
+              <span style={{ color: C("chalk") }}>{day.title}</span>
+              {finishedClock ? `, ${t("w.home.rail.finishedAt").replace("{t}", finishedClock)}` : ""}.
+            </div>
+          </div>
+        </div>
+        {receipts.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 18px", marginTop: 12 }}>
+            {receipts.map((r, i) => (
+              <span key={i} style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
+                <b style={{ fontWeight: 600, fontSize: fs.bodyLg, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{r.v}</b>
+                <i style={{ fontFamily: "var(--font-mono)", fontStyle: "normal", fontSize: fs.micro, letterSpacing: ".05em", textTransform: "uppercase", color: C("ash") }}>{r.k}</i>
+              </span>
+            ))}
+          </div>
+        )}
+        <button onClick={onHistory} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 13, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>
+          {t("w.home.rail.viewHistory")} →
+        </button>
+        {catchUp}
       </div>
     );
   }
@@ -364,26 +438,9 @@ function DayDetail({ day, onStart, onSkip, onUnskip, onPostpone, canPostpone, on
           <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t("w.home.rail.doItNow")}</CtaLabel></button>
           <button onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
         </>)}
-        {day.status === "done" && (
-          <button onClick={onHistory} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.viewHistory")}</button>
-        )}
       </div>
 
-      {/* Sessions postponed ONTO this date — a light catch-up list. */}
-      {day.postponedIn.length > 0 && (
-        <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
-          {day.postponedIn.map((it, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
-              </span>
-              <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
-            </div>
-          ))}
-        </div>
-      )}
+      {catchUp}
     </div>
   );
 }
