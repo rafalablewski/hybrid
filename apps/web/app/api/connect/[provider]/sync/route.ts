@@ -77,11 +77,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
       })),
       skipDuplicates: true,
     });
-    if (provider !== "apple")
-      await prisma.connection.updateMany({
-        where: { userId: user.id, provider },
-        data: { lastSyncAt: new Date() },
-      });
+    // apple included: its row is created by /api/connect/apple/register when
+    // the phone grants Health access; updateMany no-ops if it isn't there yet.
+    await prisma.connection.updateMany({
+      where: { userId: user.id, provider },
+      data: { lastSyncAt: new Date() },
+    });
   }
 
   return NextResponse.json({ written: signals.length });

@@ -146,6 +146,20 @@ export const web_account = {
     "w.account.connections.status-active": "active",
     "w.account.connections.status-revoked": "revoked",
     "w.account.connections.status-error": "error",
+    // --- per-provider detail pages (connection-page.tsx, both clients) ---
+    "w.account.connections.open": "Open",
+    "w.account.connections.recent": "Recent data",
+    "w.account.connections.recent-empty": "No data from this source yet.",
+    "w.account.connections.disconnect": "Disconnect",
+    // --- Apple Health (HealthKit) on-device flow (mobile lib/healthkit.ts) ---
+    "w.account.connections.hk-intro": "HYBRID reads the recovery data your Apple Watch writes to Apple Health — HRV, resting heart rate and sleep — and folds it into your readiness.",
+    "w.account.connections.hk-connect": "Connect Apple Health",
+    "w.account.connections.hk-connected": "Apple Health access granted",
+    "w.account.connections.hk-unavailable": "Needs the iOS build with HealthKit — install the TestFlight build to connect.",
+    "w.account.connections.hk-error": "Couldn't get Health access — allow HYBRID in Settings → Privacy & Security → Health.",
+    "w.account.connections.hk-sync-failed": "Sync failed — check your connection and try again.",
+    "w.account.connections.hk-synced": "Synced",
+    "w.account.connections.hk-samples": "new samples",
 
     // --- upgrade (aurora/upgrade.tsx) ---
     "w.account.upgrade.cat-train": "Train smarter",
@@ -599,6 +613,20 @@ export const web_account = {
     "w.account.connections.status-active": "aktywne",
     "w.account.connections.status-revoked": "odwołane",
     "w.account.connections.status-error": "błąd",
+    // --- per-provider detail pages ---
+    "w.account.connections.open": "Otwórz",
+    "w.account.connections.recent": "Ostatnie dane",
+    "w.account.connections.recent-empty": "Brak danych z tego źródła.",
+    "w.account.connections.disconnect": "Odłącz",
+    // --- Apple Health (HealthKit) ---
+    "w.account.connections.hk-intro": "HYBRID odczytuje dane regeneracji zapisywane przez Apple Watch w Apple Health — HRV, tętno spoczynkowe i sen — i uwzględnia je w Twojej gotowości.",
+    "w.account.connections.hk-connect": "Połącz Apple Health",
+    "w.account.connections.hk-connected": "Przyznano dostęp do Apple Health",
+    "w.account.connections.hk-unavailable": "Wymaga kompilacji iOS z HealthKit — zainstaluj wersję z TestFlight, aby połączyć.",
+    "w.account.connections.hk-error": "Nie udało się uzyskać dostępu do Health — zezwól HYBRID w Ustawienia → Prywatność i ochrona → Zdrowie.",
+    "w.account.connections.hk-sync-failed": "Synchronizacja nie powiodła się — sprawdź połączenie i spróbuj ponownie.",
+    "w.account.connections.hk-synced": "Zsynchronizowano",
+    "w.account.connections.hk-samples": "nowych próbek",
 
     // --- upgrade ---
     "w.account.upgrade.cat-train": "Trenuj mądrzej",

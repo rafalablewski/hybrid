@@ -116,6 +116,12 @@
           "cameraPermission": "HYBRID uses the camera so you can take progress photos."
         }
       ],
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "HYBRID reads your heart-rate variability, resting heart rate and sleep from Apple Health to compute your daily readiness."
+        }
+      ],
       "react-native-iap",
       "./plugins/with-no-aps-environment.js"
     ],

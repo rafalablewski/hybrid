@@ -3,18 +3,20 @@
 import { useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-
+import AuroraConnectionPage from "./connection-page";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
 
-/** AURORA Connections (web) — same /api/connections + /api/connect/:id flow as
- *  the classic, in the rounded Aurora style. */
+/** AURORA Connections (web) — the provider DIRECTORY. Each provider opens its
+ *  own page (connection-page.tsx, the same focus-page pattern as the exercise
+ *  page; mobile parity: /connections/[provider]). The hub only lists status at
+ *  a glance — connect/sync actions and recent data live on the provider page. */
 export default function AuroraConnections() {
   const { t } = useLang();
   const [connections, setConnections] = useState<Conn[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
   const C = (v: string) => `var(--color-${v})`;
 
   const refresh = async () => {
@@ -27,17 +29,12 @@ export default function AuroraConnections() {
   };
   useEffect(() => { refresh(); }, []);
 
-  const connected = (id: string) => connections.find((c) => c.provider === id);
-  const sync = async (id: string) => {
-    setBusy(id);
-    await fetch(`/api/connect/${id}/sync`, { method: "POST" });
-    await refresh();
-    setBusy(null);
-  };
+  if (focus) return <AuroraConnectionPage id={focus} onBack={() => { setFocus(null); refresh(); }} />;
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const connected = (id: string) => connections.find((c) => c.provider === id && c.status !== "revoked");
+
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, cursor: "pointer", textAlign: "left" as const, color: "inherit", fontFamily: "inherit" };
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
-  const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -48,28 +45,14 @@ export default function AuroraConnections() {
         {providers.map((p) => {
           const c = connected(p.id);
           return (
-            <div key={p.id} style={card}>
+            <button key={p.id} onClick={() => setFocus(p.id)} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={{ fontWeight: 800, fontSize: fs.title }}>{p.label}</div>
                 {c ? chip(c.status === "active" ? C("lime") : C("amber"), t(`w.account.connections.status-${c.status}`)) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" – ")}</div>
-              <div style={{ marginTop: 14 }}>
-                {p.auth === "native" ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.native")}</span>
-                ) : p.auth === "team" ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.team")}</span>
-                ) : !p.configured ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber") }}>{t("w.account.connections.awaiting-creds")}</span>
-                ) : c ? (
-                  <button onClick={() => sync(p.id)} disabled={busy === p.id} style={pill(C("lime"), false)}>
-                    {busy === p.id ? t("w.account.connections.syncing") : c.lastSyncAt ? `${t("w.account.connections.sync-last")} ${new Date(c.lastSyncAt).toLocaleDateString()}` : t("w.account.connections.sync-now")}
-                  </button>
-                ) : (
-                  <a href={`/api/connect/${p.id}`} style={pill(C("lime"), true)}>{t("w.account.connections.connect")} →</a>
-                )}
-              </div>
-            </div>
+              <div style={{ fontWeight: 700, fontSize: fs.caption, marginTop: 14 }}>{t("w.account.connections.open")} →</div>
+            </button>
           );
         })}
       </div>
