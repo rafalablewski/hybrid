@@ -19,7 +19,6 @@ import {
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
-  offPlanSessionsOnDay,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -195,11 +194,10 @@ export default function AuroraHome() {
     () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
     [planId, planStartedAt, sessions],
   );
-  // Workouts logged on the viewed day that did NOT fulfil a plan day — the
-  // tennis match, a quick sport log, a freestyle lift. Surfaced on their own
-  // "Also today" card (Design 1: scheduled plan vs what-was-done separation)
-  // instead of hiding behind the done-count ring.
-  const extrasOnDay = useMemo(() => offPlanSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
+  // Sessions the schedule claimed for SOME plan day — the Done-Today card tags
+  // those rows "Plan" so the plan workout and the off-plan extras (the tennis
+  // match, a freestyle lift) read apart while ALL of them stay listed.
+  const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
   // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
   // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
   // global 6h re-log cooldown, which also holds when back-logging a past day.
@@ -502,23 +500,24 @@ export default function AuroraHome() {
           />
         )}
 
-        {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the
-            plan's workout (quick sport logs, freestyle sessions). Design 1
-            separation: the card above is the SCHEDULED day (Start / Skip /
-            Postpone); this one is what was actually done besides it, teal-coded,
-            each row tappable. Always rendered — empty it explains itself — and
-            it leads with the day's done count as its display-weight stat (moved
-            in from the feeling card). Follows the week rail's selected day
-            (dayTs) — on another day the label carries the date and the log row
-            hides (quick logs save at "now"). Hidden only for a true first run
-            (no plan, nothing ever logged): the "How do you want to start?"
-            chooser above already owns that state, and a 0-count card under it
-            would be a second competing log CTA. */}
+        {/* DONE TODAY — every session logged on the VIEWED day, one row each:
+            the plan's workout (wearing a Plan tag, lime tile) AND the off-plan
+            extras (teal tile — quick sport logs, freestyle sessions). The card
+            above is the SCHEDULED day (Start / Skip / Postpone); this one is
+            what was actually done, complete — the count and the rows always
+            agree. Always rendered — empty it explains itself — and it leads
+            with the day's done count as its display-weight stat (moved in from
+            the feeling card). Follows the week rail's selected day (dayTs) —
+            on another day the label carries the date and the log row hides
+            (quick logs save at "now"). Hidden only for a true first run (no
+            plan, nothing ever logged): the "How do you want to start?" chooser
+            above already owns that state, and a 0-count card under it would be
+            a second competing log CTA. */}
         {(!!sched || sessions.length > 0) && (
           <AlsoTodayCard
             C={C}
-            extras={extrasOnDay}
-            onPlan={!!sched}
+            rows={doneOnDay}
+            planIds={fulfilledIds}
             doneCount={doneOnDay.length}
             isToday={dayIsToday}
             dayLabel={dayLabel}
@@ -662,18 +661,19 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
-// stat strip taps through to the Done-Today sheet — with the off-plan sessions
-// as rows beneath it and the log action as a ghost row in the same vocabulary.
-// Always rendered: empty, the numeral reads 0 and the sub-line does the
-// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border, with one deliberate
-// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
-// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
+// stat strip taps through to the Done-Today sheet — with EVERY done session as
+// a row beneath it (the count and the rows always agree: a plan-claimed row
+// wears a lime tile + Plan tag, an off-plan one the teal tile) and the log
+// action as a ghost row in the same vocabulary. Always rendered: empty, the
+// numeral reads 0 and the sub-line does the inviting. Line-free inside
+// (surface fills + spacing, no hairlines/outlines/chips/pills) — the card's
+// own edge is the only border, with one deliberate exception: the ghost ＋
+// tile wears a dashed outline (the add affordance).
 // Rows open the session's breakdown. Mirrored on web (aurora/today.tsx).
-function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
+function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
   C: P;
-  extras: LoggedSession[];
-  onPlan: boolean;
+  rows: LoggedSession[];
+  planIds: Set<string>;
   doneCount: number;
   /** false when the week rail has another day selected — the label carries the
    *  date and the log row hides (a quick log always saves at "now"). */
@@ -688,7 +688,7 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units,
   const { t } = useLang();
   const quiet = withAlpha(C.ash, 0.6);
   // caption + log-label state machine lives in core so the web twin can't drift
-  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount, isToday });
+  const copy = alsoTodayCopy({ doneCount, isToday });
   const logLabel = t(copy.logKey);
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
@@ -704,17 +704,23 @@ function AlsoTodayCard({ C, extras, onPlan, doneCount, isToday, dayLabel, units,
       </Pressable>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <View style={{ marginTop: 14, gap: 4 }}>
-        {extras.map((s) => (
-          <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.blue}29` }}>
-              <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
-            </View>
-          </Pressable>
-        ))}
+        {rows.map((s) => {
+          const onPlanRow = planIds.has(s.id);
+          return (
+            <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${onPlanRow ? C.lime : C.blue}29` }}>
+                <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+              </View>
+              {onPlanRow ? (
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+              ) : null}
+            </Pressable>
+          );
+        })}
         {isToday ? (
           <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={logLabel} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
             <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
