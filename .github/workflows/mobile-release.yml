@@ -72,6 +72,31 @@ jobs:
       - name: Set up Apple signing automatically (from the API key)
         run: |
           keychain initialize
+
+          # The App ID must carry every capability the entitlements request.
+          # Apple bakes an App ID's capabilities into a provisioning profile at
+          # CREATION time, so a profile minted before a capability was enabled
+          # stays ACTIVE-but-stale, gets reused by fetch-signing-files, and
+          # fails the archive ("Provisioning profile doesn't include the
+          # HealthKit capability" — runs 29661636610 / 29662930353). Enforce
+          # the capability here (no manual portal toggle) and delete this
+          # app's App Store profiles that predate it; a fresh one is minted
+          # below in seconds.
+          BUNDLE_RESOURCE_ID=$(app-store-connect bundle-ids list \
+            --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json | jq -r '.[0].id')
+          if ! app-store-connect bundle-ids capabilities "$BUNDLE_RESOURCE_ID" --json \
+              | jq -e 'map(select(.attributes.capabilityType == "HEALTHKIT")) | length > 0' >/dev/null; then
+            app-store-connect bundle-ids enable-capabilities "$BUNDLE_RESOURCE_ID" --capability HealthKit
+          fi
+          PROFILES_JSON=$(app-store-connect bundle-ids profiles --bundle-ids "$BUNDLE_RESOURCE_ID" --type IOS_APP_STORE --json)
+          for PROFILE_ID in $(echo "$PROFILES_JSON" | jq -r '.[].id'); do
+            CONTENT=$(echo "$PROFILES_JSON" | jq -r --arg id "$PROFILE_ID" '.[] | select(.id == $id) | .attributes.profileContent')
+            if ! echo "$CONTENT" | base64 -d | grep -aq "com.apple.developer.healthkit"; then
+              echo "Deleting stale profile $PROFILE_ID (missing the healthkit entitlement)"
+              app-store-connect profiles delete "$PROFILE_ID"
+            fi
+          done
+
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --platform IOS \
             --type IOS_APP_STORE \
