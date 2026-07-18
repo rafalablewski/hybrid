@@ -104,5 +104,5 @@ const WEEKDAY_PREFIX_RE = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,\s*/;
  * date line — the weekday is said twice. Titles without the prefix pass through.
  */
 export function stripWeekdayPrefix(title: string): string {
-  return title.replace(WEEKDAY_PREFIX_RE, "");
+  return (title || "").replace(WEEKDAY_PREFIX_RE, "");
 }

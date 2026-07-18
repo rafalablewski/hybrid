@@ -123,6 +123,16 @@ export default function AuroraWeekRail({
   useEffect(() => { setPicked(null); }, [planId]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
+  // The receipt behind a done day — built from the logged session that
+  // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
+  // Memoized ABOVE the no-schedule early return (hooks can't be conditional),
+  // deriving the selected day itself.
+  const receipt = useMemo(() => {
+    const day = schedule?.days[selectedIndex] ?? schedule?.days[schedule.todayIndex];
+    const doneSession = (day?.status === "done" && day.sessionId && sessions.find((s) => s.id === day.sessionId)) || null;
+    return doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
+  }, [schedule, selectedIndex, sessions, bw]);
+
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
 
@@ -139,11 +149,6 @@ export default function AuroraWeekRail({
   // title arm recognises it even if the athlete edits the exercises.
   const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
   const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
-
-  // The receipt behind a done day — built from the logged session that
-  // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
-  const doneSession = (sel.status === "done" && sel.sessionId && sessions.find((s) => s.id === sel.sessionId)) || null;
-  const receipt = doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
