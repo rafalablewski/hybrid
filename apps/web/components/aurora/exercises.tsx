@@ -36,8 +36,8 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
     [filtered, mode, q],
   );
   const flat = useMemo(
-    () => (mode === "az" && !q ? [...filtered].sort((a, b) => a.name.localeCompare(b.name)) : filtered),
-    [filtered, mode, q],
+    () => (mode === "az" ? [...filtered].sort((a, b) => a.name.localeCompare(b.name)) : filtered),
+    [filtered, mode],
   );
 
   const days = (e: ExerciseBrowseEntry) =>
