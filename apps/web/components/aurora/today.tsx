@@ -22,7 +22,6 @@ import { fs, space,
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
-  offPlanSessionsOnDay,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -180,11 +179,10 @@ export default function AuroraToday({
     () => (planId && planStartedAt ? planSchedule({ planId, startedAt: planStartedAt, sessions }) : null),
     [planId, planStartedAt, sessions],
   );
-  // Workouts logged on the viewed day that did NOT fulfil a plan day — the
-  // tennis match, a quick sport log, a freestyle lift. Surfaced on their own
-  // "Also today" card (Design 1: scheduled plan vs what-was-done separation)
-  // instead of hiding behind the done-count ring.
-  const extrasOnDay = useMemo(() => offPlanSessionsOnDay(sessions, sched, dayTs), [sessions, sched, dayTs]);
+  // Sessions the schedule claimed for SOME plan day — the Done-Today card tags
+  // those rows "Plan" so the plan workout and the off-plan extras (the tennis
+  // match, a freestyle lift) read apart while ALL of them stay listed.
+  const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
   const initials = useMemo(
@@ -460,10 +458,11 @@ export default function AuroraToday({
         <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
       )}
 
-      {/* ALSO TODAY — everything logged on the VIEWED day that is NOT the plan's
-          workout (quick sport logs, freestyle sessions). Design 1 separation: the
-          card above is the SCHEDULED day (Start / Skip / Postpone); this one is
-          what was actually done besides it, teal-coded, each row tappable. Always
+      {/* DONE TODAY — every session logged on the VIEWED day, one row each: the
+          plan's workout (wearing a Plan tag, lime tile) AND the off-plan extras
+          (teal tile — quick sport logs, freestyle sessions). The card above is
+          the SCHEDULED day (Start / Skip / Postpone); this one is what was
+          actually done, complete — the count and the rows always agree. Always
           rendered — empty it explains itself — and it leads with the day's done
           count as its display-weight stat (moved in from the feeling card).
           Follows the week rail's selected day (dayTs) — on another day the label
@@ -473,8 +472,8 @@ export default function AuroraToday({
           a 0-count card under it would be a second competing log CTA. */}
       {(!!sched || sessions.length > 0) && (
         <AlsoTodayCard
-          extras={extrasOnDay}
-          onPlan={!!sched}
+          rows={doneOnDay}
+          planIds={fulfilledIds}
           doneCount={doneOnDay.length}
           isToday={dayIsToday}
           dayLabel={dayLabel}
@@ -655,19 +654,20 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
   );
 }
 
-// The "Also today" card, "number is the card" redesign: the day's TOTAL done
+// The "Done today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
-// stat strip taps through to the Done-Today sheet — with the off-plan sessions
-// as rows beneath it and the log action as a ghost row in the same vocabulary.
-// Always rendered: empty, the numeral reads 0 and the sub-line does the
-// inviting. Line-free inside (surface fills + spacing, no hairlines/outlines/
-// chips/pills) — the card's own edge is the only border, with one deliberate
-// exception: the ghost ＋ tile wears a dashed outline (the add affordance). With no schedule the
-// "off-plan" sub-line drops: the numeral + DONE TODAY label carry the story.
+// stat strip taps through to the Done-Today sheet — with EVERY done session as
+// a row beneath it (the count and the rows always agree: a plan-claimed row
+// wears a lime tile + Plan tag, an off-plan one the teal tile) and the log
+// action as a ghost row in the same vocabulary. Always rendered: empty, the
+// numeral reads 0 and the sub-line does the inviting. Line-free inside
+// (surface fills + spacing, no hairlines/outlines/chips/pills) — the card's
+// own edge is the only border, with one deliberate exception: the ghost ＋
+// tile wears a dashed outline (the add affordance).
 // Rows open the session's breakdown. Mirrored on mobile (aurora/home.tsx).
-function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
-  extras: LoggedSession[];
-  onPlan: boolean;
+function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
+  rows: LoggedSession[];
+  planIds: Set<string>;
   doneCount: number;
   /** false when the week rail has another day selected — the label carries the
    *  date and the log row hides (a quick log always saves at "now"). */
@@ -682,7 +682,7 @@ function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw
   const { t } = useLang();
   const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
   // caption + log-label state machine lives in core so the mobile twin can't drift
-  const copy = alsoTodayCopy({ extras: extras.length, onPlan, doneCount, isToday });
+  const copy = alsoTodayCopy({ doneCount, isToday });
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
@@ -697,19 +697,25 @@ function AlsoTodayCard({ extras, onPlan, doneCount, isToday, dayLabel, units, bw
       </button>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
-        {extras.map((s) => (
-          <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
-            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C("blue")} 16%, transparent)` }}>
-              {sessionIcon(s)}
-            </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+        {rows.map((s) => {
+          const onPlanRow = planIds.has(s.id);
+          return (
+            <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+              <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
+                {sessionIcon(s)}
               </span>
-            </span>
-          </button>
-        ))}
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+                </span>
+              </span>
+              {onPlanRow && (
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
+              )}
+            </button>
+          );
+        })}
         {isToday && (
           <button type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
             <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>

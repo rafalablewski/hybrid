@@ -289,45 +289,25 @@ describe("planSchedule", () => {
 
 describe("alsoTodayCopy", () => {
   it("invites the first log only when NOTHING is done today", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0 })).toEqual({
+    expect(alsoTodayCopy({ doneCount: 0 })).toEqual({
       subKey: "w.home.today.alsoTodaySubEmpty",
       logKey: "w.home.today.alsoTodayLogFirst",
     });
-    expect(alsoTodayCopy({ extras: 0, onPlan: false, doneCount: 0 }).subKey).toBe("w.home.today.alsoTodaySubEmpty");
   });
 
-  it("plan day done with no extras: no contradictory empty invite, log label reads 'another'", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 1 })).toEqual({
+  it("anything done: no sub-line (the rows carry it), log label reads 'another'", () => {
+    expect(alsoTodayCopy({ doneCount: 1 })).toEqual({
       subKey: null,
       logKey: "w.home.today.alsoTodayLog",
     });
-  });
-
-  it("off-plan rows under a plan get the beyond-the-schedule explainer", () => {
-    expect(alsoTodayCopy({ extras: 1, onPlan: true, doneCount: 2 })).toEqual({
-      subKey: "w.home.today.alsoTodaySubPlan",
-      logKey: "w.home.today.alsoTodayLog",
-    });
-  });
-
-  it("rows without a plan get no sub-line (nothing is 'off' anything)", () => {
-    expect(alsoTodayCopy({ extras: 2, onPlan: false, doneCount: 2 })).toEqual({
-      subKey: null,
-      logKey: "w.home.today.alsoTodayLog",
-    });
+    expect(alsoTodayCopy({ doneCount: 2 }).subKey).toBeNull();
   });
 
   it("a NON-today empty day gets the past-tense empty line, not the log invitation", () => {
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: false }).subKey).toBe(
-      "w.home.today.alsoDayEmpty",
-    );
-    // non-empty non-today days keep the same sub-line machine as today
-    expect(alsoTodayCopy({ extras: 1, onPlan: true, doneCount: 1, isToday: false }).subKey).toBe(
-      "w.home.today.alsoTodaySubPlan",
-    );
+    expect(alsoTodayCopy({ doneCount: 0, isToday: false }).subKey).toBe("w.home.today.alsoDayEmpty");
+    // non-empty non-today days show rows, no sub-line — same machine as today
+    expect(alsoTodayCopy({ doneCount: 1, isToday: false }).subKey).toBeNull();
     // explicit isToday keeps today's invitation
-    expect(alsoTodayCopy({ extras: 0, onPlan: true, doneCount: 0, isToday: true }).subKey).toBe(
-      "w.home.today.alsoTodaySubEmpty",
-    );
+    expect(alsoTodayCopy({ doneCount: 0, isToday: true }).subKey).toBe("w.home.today.alsoTodaySubEmpty");
   });
 });
