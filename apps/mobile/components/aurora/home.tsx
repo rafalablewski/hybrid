@@ -708,7 +708,7 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
           const onPlanRow = planIds.has(s.id);
           return (
             <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${onPlanRow ? C.lime : C.blue}29` }}>
+              <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
                 <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
