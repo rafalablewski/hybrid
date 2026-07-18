@@ -116,6 +116,7 @@
           "cameraPermission": "HYBRID uses the camera so you can take progress photos."
         }
       ],
+      "./plugins/with-plain-healthkit.js",
       [
         "react-native-health",
         {
