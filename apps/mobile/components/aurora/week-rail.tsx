@@ -363,7 +363,7 @@ function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
-          {stripWeekdayPrefix(day.title)}<Text style={{ opacity: 0.65 }}>{finished}</Text>
+          {stripWeekdayPrefix(day.title)}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
         </Text>
         {stats.length > 0 && (
           <View style={{ flexDirection: "row", gap: 26, marginTop: 16, marginLeft: 31 }}>
