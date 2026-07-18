@@ -98,9 +98,10 @@ export function exerciseBucket(name: string, kind?: SessionBlock["kind"]): Exerc
  *  letters of a single-word name ("Back Squat" → BS, "Snatch" → SN). */
 export function exerciseInitials(name: string): string {
   const words = name.split(/[^\p{L}\p{N}]+/u).filter((w) => /\p{L}/u.test(w) && !/^(and|the|of)$/i.test(w));
-  if (words.length >= 2) return (words[0]![0]! + words[1]![0]!).toUpperCase();
-  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase();
-  return name.trim().slice(0, 2).toUpperCase();
+  // Spread to code points so surrogate pairs (non-BMP characters) never split.
+  if (words.length >= 2) return ([...words[0]!][0]! + [...words[1]!][0]!).toUpperCase();
+  if (words.length === 1) return [...words[0]!].slice(0, 2).join("").toUpperCase();
+  return [...name.trim()].slice(0, 2).join("").toUpperCase();
 }
 
 export interface ExerciseBrowseEntry {
@@ -137,7 +138,7 @@ export function exerciseBrowse(sessions: LoggedSession[], now: number = Date.now
   for (const s of sessions) {
     const ts = Date.parse(s.startedAt);
     if (Number.isNaN(ts)) continue;
-    for (const b of s.blocks) {
+    for (const b of s.blocks ?? []) {
       const cur = uses.get(b.name);
       if (cur) {
         cur.times.push(ts);
