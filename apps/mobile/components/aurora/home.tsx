@@ -369,12 +369,12 @@ export default function AuroraHome() {
              anatomy with its corner glow, the hue confined to glyph + CTA,
              and IS the start — no separate Start pill. Mirrors web today.tsx. */
           <View style={{ marginTop: 18 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 12 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.lime }} />
-              <MetaLine
-                parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
-                textStyle={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}
-              />
+            {/* Explore-standard section head — bold display title, "Free" said
+                ONCE as the mono right-side meta, NO marker dot (decorative dots
+                before text are banned; Explore's SectionHead is the standard). */}
+            <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 12, marginHorizontal: 2 }}>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.howStart")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
             </View>
             <View style={{ gap: space.sm }}>
               <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
@@ -559,21 +559,21 @@ export default function AuroraHome() {
           onPicked={loadFeeling}
         />
 
-        {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
+        {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
+            Explore-standard section head (bold display title); the ✦ stays —
+            it's the semantic premium signifier, not a decorative marker. ───── */}
+        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.ash }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>
-            {t("w.home.today.recoverMore")}
-          </Text>
+        {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
+            Explore-standard section head — no marker dot. ───── */}
+        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
         </View>
         <View style={{ gap: 10 }}>
           <DeferRow C={C} icon="heart" tint={C.ash} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />

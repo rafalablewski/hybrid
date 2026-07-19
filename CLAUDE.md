@@ -97,3 +97,14 @@ client. Replace it by context:
   spaced en/em dash (`–`/`—`) — never a middot.
 A standalone `·` used as content (e.g. an empty-avatar placeholder glyph) is not
 a separator — leave those.
+
+## RULE: no decorative dot/marker before section headers (always)
+A small dot, circle or square placed before a section label reads as AI slop.
+Never render one in front of a heading, kicker, or cluster label, on either
+client. The **golden standard is the Explore tab's `SectionHead`**: a bold
+display-face title in chalk (web `--font-heading` 800/18; mobile
+`serifIf(scheme, F.black)` 18), with any meta or action ("See all →", "Free")
+as small mono uppercase on the RIGHT side of the same row — never a marker on
+the left. SEMANTIC dots are not decoration and stay: status/live dots, mood
+dots, chart legend swatches, calendar event markers, notification badges, and
+the ✦ premium signifier.

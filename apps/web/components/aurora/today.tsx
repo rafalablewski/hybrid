@@ -304,17 +304,17 @@ export default function AuroraToday({
         /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the page:
            no wrapper card (a box around three cards reads as chrome) and one
            stacked column (side-by-side columns crowd the copy and orphan the
-           third card at phone widths). The question is the kicker, "Free" said
-           ONCE behind the hairline; each full-width card wears the Go-Full
-           anatomy with its corner glow, the hue confined to glyph + CTA, and
-           IS the start — no separate Start pill. Mirrored on mobile. */
+           third card at phone widths). The question is an Explore-standard
+           section head — bold display title, "Free" said ONCE as the mono
+           right-side meta, NO marker dot (decorative dots before text are
+           banned; Explore's SectionHead is the golden standard). Each
+           full-width card wears the Go-Full anatomy with its corner glow, the
+           hue confined to glyph + CTA, and IS the start — no separate Start
+           pill. Mirrored on mobile. */
         <div data-tour="today-plan" style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 2px 12px" }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: C("lime"), flexShrink: 0 }} />
-            <MetaLine
-              parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
-              style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}
-            />
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 2px 12px" }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.howStart")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
           </div>
           <div style={{ display: "grid", gap: 10 }}>
             <ChooserCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
@@ -516,9 +516,11 @@ export default function AuroraToday({
         onPicked={loadFeeling}
       />
 
-      {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell) ───── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}><span style={{ color: "var(--premium-accent-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
+      {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
+          Explore-standard section head (bold display title); the ✦ stays — it's
+          the semantic premium signifier, not a decorative marker. ───── */}
+      <div style={{ margin: "26px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}><span style={{ color: "var(--premium-accent-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <AccessCard
@@ -535,10 +537,10 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── RECOVER & MORE — deferred rows (nutrition · coaches) ───── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
-        <span style={{ width: 6, height: 6, borderRadius: 999, background: C("ash"), flexShrink: 0 }} />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.today.recoverMore")}</span>
+      {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
+          Explore-standard section head — no marker dot. ───── */}
+      <div style={{ margin: "26px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.recoverMore")}</span>
       </div>
       <div style={{ display: "grid", gap: 10 }}>
         <DeferRow glyph="◍" tint="ash" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />

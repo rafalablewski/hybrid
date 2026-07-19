@@ -31,9 +31,6 @@ const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
 
 const C = (v: string) => `var(--color-${v})`;
 
-// Per-cluster accent tint (the mobile GROUP_META spectrum), so the springboard
-// tiles read the same across all three More surfaces. Ash for Account.
-const GROUP_ACCENT: Record<string, string> = { home: "lime", train: "lime", analyze: "blue", recovery: "amber", social: "violet", teams: "red", account: "ash" };
 export default function AuroraPillNav({ activeId, onSelect }: { activeId?: string; onSelect: (id: string) => void }) {
   const aurora = useTemplate().template === "aurora";
   const persona = usePersona();
@@ -242,17 +239,16 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             </div>
 
             {shown.map((g) => {
-              const accent = C(GROUP_ACCENT[g.group] ?? "lime");
               const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
               return (
               <div key={g.group} style={{ marginBottom: 18 }}>
-                {/* Cluster header — accent marker + label (no count; parity with the mobile More tab + the drawer). */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: 2, background: accent, flex: "none" }} />
+                {/* Cluster header — label only, no marker (decorative dots/squares
+                    before text are banned; parity with the mobile More tab). */}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{groupName}</span>
                 </div>
-                {/* Springboard grid — 4-col neutral bordered cells (icon + label inside),
-                    section colour on the header marker, sand lock for premium. */}
+                {/* Springboard grid — 4-col neutral bordered cells (icon + label
+                    inside), sand lock for premium. */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: space.xs }}>
                   {g.items.map(({ item: { id, label: fb }, locked }) => {
                     const name = label(id, fb);
