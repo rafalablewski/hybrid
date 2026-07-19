@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 
 /** AURORA Periodize — the enrolled macrocycle: phase timeline + load/recovery
  *  microcycles, reusing the exact currentPhase engine + macrocycle API. */
@@ -16,13 +17,18 @@ export default function AuroraPeriodize() {
   const router = useRouter();
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [week, setWeek] = useState(1);
+  const [season, setSeason] = useState<EnrolledSeason | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
     fetchMacrocycle()
-      .then((m) => { setMacro(m?.macro ?? null); setWeek(m?.currentWeek ?? 1); })
+      .then((m) => {
+        setMacro(m?.macro ?? null);
+        setWeek(m?.currentWeek ?? 1);
+        setSeason(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null);
+      })
       .finally(() => { setLoaded(true); setRefreshing(false); });
   };
   useEffect(() => { load(); }, []);
@@ -91,6 +97,11 @@ export default function AuroraPeriodize() {
           </View>
         </ACard>
       ))}
+
+      {/* Goal-only seasons (no named plan → no plan detail page to host the
+          quiet leave link) get their leave surface here instead; named-plan
+          seasons keep their single exit on the plan's own page. */}
+      {season && season.planId === null && <LeavePlanSection enrolled={season} onLeft={load} />}
       <View style={{ height: 16 }} />
     </AuroraScreen>
   );

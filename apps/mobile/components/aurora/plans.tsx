@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { enrollPlan, leavePlan, fetchMacrocycle } from "../../lib/api";
+import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
-type EnrolledSeason = { macroId: string; planId: string | null; goal: string; startedAt: string | null };
-
 export default function AuroraPlans() {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -94,80 +93,6 @@ function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
       <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 4 }}>{planName}</Text>
       {started && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</Text>}
-    </ACard>
-  );
-}
-
-/** The leave flow, tucked at the BOTTOM of the enrolled plan's own detail page
- *  (the parent only renders it on the plan you're enrolled in): a quiet text
- *  link that expands into the explicit keep-vs-delete choice for the workouts
- *  logged during the plan, with a typed-DELETE confirm arming the destructive
- *  branch (same pattern as the settings danger zone). Mirrors the web. */
-function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeason; onLeft: () => void }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const [open, setOpen] = useState(false);
-  const [wipe, setWipe] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  const armed = !wipe || confirmText.trim().toUpperCase() === "DELETE";
-
-  const leave = async () => {
-    if (!armed || busy) return;
-    setBusy(true);
-    setError(false);
-    const ok = await leavePlan(enrolled.macroId, wipe);
-    setBusy(false);
-    if (!ok) { setError(true); return; }
-    onLeft();
-  };
-
-  const option = (selected: boolean, tone: string, title: string, sub: string, pick: () => void) => (
-    <Pressable
-      accessibilityRole="radio" accessibilityState={{ selected }} onPress={pick}
-      style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", padding: 13, borderRadius: RADIUS.field, backgroundColor: selected ? `${tone}1a` : C.ink, borderWidth: 1, borderColor: selected ? tone : C.line, marginTop: 8 }}
-    >
-      <Text style={{ fontFamily: F.bold, color: txt(C, tone), width: 16 }}>{selected ? "✓" : ""}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 16 }}>{sub}</Text>
-      </View>
-    </Pressable>
-  );
-
-  if (!open)
-    return (
-      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 20, marginBottom: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textDecorationLine: "underline" }}>{t("w.train.plans.leavePlan")}…</Text>
-      </Pressable>
-    );
-
-  return (
-    <ACard style={{ marginTop: 20 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
-      <View style={{ marginTop: 10 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.train.plans.leaveExplain")}</Text>
-          {option(!wipe, C.lime, t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
-          {option(wipe, C.red, t("w.train.plans.leaveWipe"), t("w.train.plans.leaveWipeSub"), () => setWipe(true))}
-          {wipe && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.train.plans.leaveTypeDelete")}</Text>
-              <TextInput
-                value={confirmText} onChangeText={setConfirmText} placeholder="DELETE" placeholderTextColor={C.ash}
-                autoCapitalize="characters" autoCorrect={false}
-                style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginTop: 8 }}
-              />
-            </View>
-          )}
-          {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
-          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 14 }}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}</Text>}
-          </Pressable>
-          <Pressable onPress={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.plans.leaveCancel")}</Text>
-          </Pressable>
-      </View>
     </ACard>
   );
 }
