@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — greeting → chooser: 8 concepts</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/palette.ts */
+    --ink: #0c0d0c;
+    --ink2: #141614;
+    --card: #151715;
+    --line: #242724;
+    --chalk: #f3f4ef;
+    --ash: #8b8f86;
+    --lime: #c6f84f;
+    --teal: #6cb6bd;
+    --sand: #d0cd94;
+    --terra: #e58a5c;
+    --on-accent: #0c0d0c;
+    --font-display: "Archivo", system-ui, -apple-system, sans-serif;
+    --font-serif: "Fraunces", "New York", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--ink); color: var(--chalk);
+    font-family: var(--font-display); -webkit-font-smoothing: antialiased;
+    padding: 52px 20px 140px;
+  }
+  main { max-width: 880px; margin: 0 auto; }
+
+  /* ── page chrome ─────────────────────────────────────────── */
+  .page-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); }
+  h1 { font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -.02em; margin: 12px 0 12px; }
+  h1 em { font-style: normal; color: var(--lime); }
+  .lede { color: var(--ash); font-size: 16px; line-height: 1.7; max-width: 66ch; }
+  .lede strong, .why em, .diag li strong { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  .diag { margin: 26px 0 0; padding: 22px 24px; background: var(--ink2); border: 1px solid var(--line); border-radius: 18px; }
+  .diag h3 { font-size: 13px; font-family: var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--terra); font-weight: 600; margin-bottom: 12px; }
+  .diag ul { list-style: none; }
+  .diag li { color: var(--ash); font-size: 14.5px; line-height: 1.65; padding-left: 18px; position: relative; margin-bottom: 8px; }
+  .diag li::before { content: "—"; position: absolute; left: 0; color: var(--ash); }
+  .ive-creed { margin-top: 14px; color: var(--ash); font-size: 14.5px; line-height: 1.7; }
+  .ive-creed q { font-family: var(--font-serif); font-style: italic; color: var(--chalk); }
+
+  /* ── concept scaffolding ─────────────────────────────────── */
+  .concept { margin-top: 96px; display: grid; grid-template-columns: 1fr 400px; gap: 40px; align-items: start; }
+  @media (max-width: 860px) { .concept { grid-template-columns: 1fr; } .concept .copy { max-width: 62ch; } }
+  .concept .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .concept .k b { color: var(--lime); font-weight: 600; }
+  .concept h2 { font-weight: 800; font-size: 26px; letter-spacing: -.015em; margin-bottom: 10px; }
+  .concept .why { color: var(--ash); font-size: 14.5px; line-height: 1.7; margin-bottom: 16px; }
+  .concept .ive { color: var(--ash); font-size: 14px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+  .concept .ive b { color: var(--sand); font-weight: 600; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+  /* ── the phone ───────────────────────────────────────────── */
+  .phone {
+    width: 100%; max-width: 400px; margin: 0 auto;
+    background: linear-gradient(180deg, #101210, var(--ink) 60%);
+    border: 1px solid var(--line); border-radius: 34px;
+    padding: 24px 18px 0; overflow: hidden; position: relative;
+    box-shadow: 0 24px 70px -30px rgba(0,0,0,.85);
+    min-height: 560px;
+  }
+  .p-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; position: relative; z-index: 2; }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 14px; position: relative;
+    background: rgba(198,248,79,.13); border: 1px solid var(--lime);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 13px; color: var(--lime);
+  }
+  .avatar i { position: absolute; right: -3px; bottom: -3px; width: 10px; height: 10px; border-radius: 999px; background: var(--lime); border: 2px solid var(--ink); }
+  .wordmark { text-align: center; font-weight: 900; font-size: 18px; letter-spacing: -.03em; }
+  .wordmark span { color: var(--lime); }
+  .wordmark i { display: block; width: 26px; height: 3px; border-radius: 2px; background: var(--lime); margin: 5px auto 0; }
+  .wordmark .wm-date { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); margin-top: 6px; }
+  .bell { width: 42px; height: 42px; border-radius: 14px; background: var(--ink2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ash); }
+  .bell svg { width: 18px; height: 18px; }
+
+  /* the faded next-card stub anchoring every mock in real context */
+  .stub {
+    margin: 16px -4px 0; background: var(--card); border: 1px solid var(--line);
+    border-bottom: none; border-radius: 22px 22px 0 0; padding: 18px 18px 26px;
+    opacity: .38;
+  }
+  .stub .t { font-weight: 800; font-size: 16px; }
+  .stub .faces { display: flex; justify-content: space-around; margin-top: 14px; }
+  .stub .faces b { font-family: var(--font-mono); font-weight: 500; font-size: 9px; letter-spacing: .12em; color: var(--ash); display: block; text-align: center; margin-top: 6px; }
+  .face { width: 30px; height: 30px; border-radius: 999px; border: 2px solid currentColor; position: relative; margin: 0 auto; }
+  .face::before { content: ""; position: absolute; left: 6px; right: 6px; top: 9px; border-top: 2px solid currentColor; }
+  .f1 { color: var(--terra); } .f2 { color: var(--sand); } .f3 { color: var(--teal); } .f4 { color: var(--lime); }
+
+  /* shared chooser-card anatomy (the current ChooserCard, faithfully) */
+  .cc {
+    background:
+      radial-gradient(130% 90% at 92% -14%, var(--glow, rgba(198,248,79,.10)), transparent 52%),
+      var(--card);
+    border: 1px solid var(--line); border-radius: 22px; padding: 18px 18px 16px;
+  }
+  .cc .gl { font-size: 15px; color: var(--acc, var(--lime)); margin-bottom: 10px; display: block; }
+  .cc .t { font-weight: 800; font-size: 21px; letter-spacing: -.015em; }
+  .cc .s { color: var(--ash); font-size: 14px; line-height: 1.5; margin-top: 5px; }
+  .cc .cta { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--acc, var(--lime)); margin-top: 14px; display: block; }
+  .cc.teal { --acc: var(--teal); --glow: rgba(108,182,189,.10); }
+  .cc.sand { --acc: var(--sand); --glow: rgba(208,205,148,.10); }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+
+  .mono-meta { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  .hairline { height: 1px; background: var(--line); border: none; }
+
+  /* ── C0 · current state (annotated) ──────────────────────── */
+  .c0-greet { margin-top: 16px; font-weight: 800; font-size: 22px; letter-spacing: -.015em; }
+  .c0-date { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 3px; }
+  .c0-head { display: flex; align-items: flex-end; justify-content: space-between; margin: 20px 2px 12px; }
+  .c0-head .t { font-weight: 800; font-size: 18px; }
+  .ann { position: absolute; right: 10px; font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; color: var(--terra); text-transform: uppercase; text-align: right; line-height: 1.5; z-index: 3; }
+  .ann::after { content: ""; display: block; margin: 4px 0 0 auto; width: 34px; border-top: 1px dashed var(--terra); }
+
+  /* ── C1 · One Question ───────────────────────────────────── */
+  .c1-kick { display: flex; justify-content: space-between; align-items: baseline; margin-top: 22px; }
+  .c1-h { font-weight: 800; font-size: 25px; letter-spacing: -.02em; line-height: 1.18; margin: 10px 0 18px; max-width: 20ch; }
+
+  /* ── C2 · Nothing to Narrate ─────────────────────────────── */
+  .c2-greet { margin-top: 22px; font-weight: 800; font-size: 28px; letter-spacing: -.02em; }
+  .c2-meta { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 20px; }
+
+  /* ── C3 · The Ladder ─────────────────────────────────────── */
+  .c3-eyebrow { margin-top: 22px; }
+  .c3-greet { font-weight: 800; font-size: 26px; letter-spacing: -.02em; margin-top: 6px; }
+  .c3-zone { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 20px; padding-top: 14px; margin-bottom: 12px; }
+  .c3-zone .t { font-size: 14px; font-weight: 700; letter-spacing: .01em; color: var(--chalk); }
+
+  /* ── C4 · One Surface ────────────────────────────────────── */
+  .c4-card { margin-top: 20px; background: var(--card); border: 1px solid var(--line); border-radius: 26px; padding: 20px 18px 6px; }
+  .c4-greet { font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
+  .c4-meta { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 16px; }
+  .c4-row { display: flex; align-items: center; gap: 14px; padding: 15px 2px; border-top: 1px solid var(--line); }
+  .c4-row .gl { font-size: 16px; width: 24px; text-align: center; }
+  .c4-row .tx { flex: 1; }
+  .c4-row .t { font-weight: 800; font-size: 17px; }
+  .c4-row .s { color: var(--ash); font-size: 12.5px; margin-top: 2px; }
+  .c4-row .cta { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+
+  /* ── C5 · Dialogue ───────────────────────────────────────── */
+  .c5-greet { margin-top: 26px; font-family: var(--font-serif); font-size: 25px; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; }
+  .c5-greet .q { color: var(--ash); font-style: italic; display: block; }
+  .c5-opts { margin-top: 22px; }
+  .c5-row { padding: 14px 2px; border-top: 1px solid var(--line); }
+  .c5-row .top { display: flex; align-items: baseline; justify-content: space-between; }
+  .c5-row .t { font-weight: 700; font-size: 17px; }
+  .c5-row .s { color: var(--ash); font-size: 13px; margin-top: 3px; }
+  .c5-free { text-align: right; margin: 10px 2px 0; }
+
+  /* ── C6 · Monolith ───────────────────────────────────────── */
+  .c6-greet { margin-top: 30px; font-weight: 800; font-size: 28px; letter-spacing: -.02em; }
+  .c6-date { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 4px; }
+  .c6-mono { margin-top: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
+  .c6-row { display: flex; align-items: center; gap: 14px; padding: 17px 18px; }
+  .c6-row + .c6-row { border-top: 1px solid var(--line); }
+  .c6-row .gl { font-size: 16px; width: 22px; text-align: center; }
+  .c6-row .tx { flex: 1; }
+  .c6-row .t { font-weight: 800; font-size: 18px; }
+  .c6-row .s { color: var(--ash); font-size: 12.5px; margin-top: 2px; }
+  .c6-row .ch { color: var(--ash); font-size: 18px; }
+  .c6-foot { border-top: 1px solid var(--line); padding: 10px 18px; text-align: center; }
+
+  /* ── C7 · Time as Material ───────────────────────────────── */
+  .phone.c7 { background:
+      radial-gradient(120% 55% at 50% -8%, rgba(208,205,148,.14), transparent 60%),
+      linear-gradient(180deg, #101210, var(--ink) 60%); }
+  .c7-greet { margin-top: 26px; font-weight: 800; font-size: 27px; letter-spacing: -.02em; }
+  .c7-meta { margin: 6px 0 22px; }
+  .c7-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .c7-tile { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px 12px 14px; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; }
+  .c7-tile .gl { font-size: 17px; }
+  .c7-tile .t { font-weight: 800; font-size: 14.5px; letter-spacing: -.01em; line-height: 1.2; }
+  .c7-tile .cta { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-top: 4px; }
+
+  /* ── C8 · The Question Is the Greeting ───────────────────── */
+  .c8-h { margin-top: 28px; font-weight: 800; font-size: 27px; letter-spacing: -.02em; line-height: 1.16; max-width: 15ch; }
+  .c8-h .nm { color: var(--lime); }
+  .c8-stack { margin-top: 22px; }
+  .c8-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; background:
+      radial-gradient(130% 120% at 94% -20%, var(--glow, rgba(198,248,79,.10)), transparent 52%), var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+  .c8-card + .c8-card { margin-top: 10px; }
+  .c8-card .l { display: flex; align-items: center; gap: 13px; }
+  .c8-card .gl { color: var(--acc, var(--lime)); font-size: 15px; }
+  .c8-card .t { font-weight: 800; font-size: 19px; letter-spacing: -.015em; }
+  .c8-card .cta { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--acc, var(--lime)); }
+  .c8-card.teal { --acc: var(--teal); --glow: rgba(108,182,189,.10); }
+  .c8-card.sand { --acc: var(--sand); --glow: rgba(208,205,148,.10); }
+
+  .acc-lime { color: var(--lime); } .acc-teal { color: var(--teal); } .acc-sand { color: var(--sand); }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding-top: 26px; color: var(--ash); font-size: 14px; line-height: 1.7; max-width: 66ch; }
+  footer b { color: var(--chalk); }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="page-kicker">HYBRID — Today screen, first-run state</div>
+  <h1>Greeting → chooser: <em>8 concepts</em></h1>
+  <p class="lede">The screenshot shows the first-run Today screen. Between <strong>“Good afternoon, Rafal”</strong> and <strong>“How do you want to start?”</strong> the page loses its thread — this file diagnoses why, then shows eight ways to fix it, each one rendered in the real Aurora tokens.</p>
+
+  <div class="diag">
+    <h3>The diagnosis</h3>
+    <ul>
+      <li><strong>Two competing headlines.</strong> The greeting (22, bold) and the chooser question (18, extra-bold) are nearly the same size and the same weight, stacked four lines apart. Neither wins, so the eye bounces.</li>
+      <li><strong>Three type voices in four lines.</strong> Bold display greeting, mono date, bold display question, mono “FREE” — the ramp never steps down cleanly; it alternates.</li>
+      <li><strong>Both lines address you.</strong> The greeting speaks (“Good afternoon”), then the question speaks again (“How do you want to…”). Two openings to one conversation.</li>
+      <li><strong>“FREE” floats.</strong> It hangs off the question’s baseline with no relationship to anything — it reads as a stray label, not a fact about the three cards below.</li>
+    </ul>
+    <p class="ive-creed">The Ive lens for everything below: <q>Simplicity is not the absence of clutter — it is describing the purpose of an object in the most efficient way.</q> One screen, one voice, one hierarchy. When a label only narrates what the eye already sees, delete it; when two elements say one thing, fuse them.</p>
+  </div>
+
+  <!-- ═══ C0 · CURRENT ═══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>00</b> — FOR REFERENCE</div>
+      <h2>Current state</h2>
+      <p class="why">What ships today, with the two seams marked: the headline collision, and the floating “FREE”. Every concept that follows resolves both.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="ann" style="top: 108px;">headline no. 1</div>
+      <div class="c0-greet">Good afternoon, Rafal</div>
+      <div class="c0-date">Sunday, 19 July</div>
+      <div class="ann" style="top: 172px;">headline no. 2<br/>same weight, no step</div>
+      <div class="c0-head">
+        <div class="t">How do you want to start?</div>
+        <div class="mono-meta">Free</div>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C1 · ONE QUESTION ══════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>01</b> — FUSE THE TWO HEADLINES</div>
+      <h2>One Question</h2>
+      <p class="why">The greeting and the question merge into a single headline: <em>“How do you want to start, Rafal?”</em> The time-of-day and date demote to one mono kicker line, with “FREE” finally anchored on the same line — it now describes the zone it sits above. Four lines become three; two headlines become one.</p>
+      <p class="ive"><b>The Ive move</b>Fusion. Two elements that address the same person in the same breath are one element. The warmth survives — the name simply moves into the question.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c1-kick">
+        <span class="mono-meta">Good afternoon – Sun 19 July</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="c1-h">How do you want to start, Rafal?</div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C2 · NOTHING TO NARRATE ════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>02</b> — DELETE THE SECOND HEADLINE</div>
+      <h2>Nothing to Narrate</h2>
+      <p class="why">The greeting is the screen’s only headline — promoted to 28 so it clearly owns the page. The chooser header is deleted entirely: three cards that each say <em>Follow a plan / Build your own / Just train</em> do not need a sentence announcing that a choice is available. “FREE” slides onto the date line, where meta already lives.</p>
+      <p class="ive"><b>The Ive move</b>Deference. The interface shouldn’t narrate what the athlete can already see — the same principle the plan card in this codebase already follows (“no kicker or eyebrow: the plan names itself”). Apply it one card earlier.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c2-greet">Good afternoon, Rafal</div>
+      <div class="c2-meta">
+        <span class="mono-meta">Sunday, 19 July</span>
+        <span class="mono-meta">Free to start</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C3 · THE LADDER ════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>03</b> — KEEP BOTH, ENFORCE A RAMP</div>
+      <h2>The Ladder</h2>
+      <p class="why">Both lines survive, but on a strict typographic ladder that only ever steps <em>down</em>: mono eyebrow date → 26 greeting → hairline → 14 zone label → cards. The question stops competing because it drops two full sizes and sits behind a rule that marks the zone change. This is the least invasive fix — pure scale discipline, no copy changes.</p>
+      <p class="ive"><b>The Ive move</b>Order. When everything is bold, nothing is. A hierarchy you can feel without reading is the cheapest kind of calm.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="mono-meta c3-eyebrow">Sunday, 19 July</div>
+      <div class="c3-greet">Good afternoon, Rafal</div>
+      <div class="c3-zone">
+        <span class="t">How do you want to start?</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C4 · ONE SURFACE ═══════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>04</b> — ONE OBJECT, ONE MATERIAL</div>
+      <h2>One Surface</h2>
+      <p class="why">Greeting, date, question and options fuse into a single card — one object the athlete reads top to bottom. The question shrinks to a mono zone label inside the surface, and the three options become hairline-divided rows instead of three floating boxes. The page goes from five separate objects to one.</p>
+      <p class="ive"><b>The Ive move</b>Unity of material. Related things share one enclosure; the enclosure itself communicates the relationship, so no header has to.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c4-card">
+        <div class="c4-greet">Good afternoon, Rafal</div>
+        <div class="c4-meta">
+          <span class="mono-meta">Sunday, 19 July</span>
+          <span class="mono-meta">Start free</span>
+        </div>
+        <div class="c4-row">
+          <span class="gl acc-lime">▤</span>
+          <div class="tx"><div class="t">Follow a plan</div><div class="s">Proven programs, tomorrow already planned.</div></div>
+          <span class="cta acc-lime">Browse →</span>
+        </div>
+        <div class="c4-row">
+          <span class="gl acc-teal">⌗</span>
+          <div class="tx"><div class="t">Build your own</div><div class="s">Compose a program from any discipline.</div></div>
+          <span class="cta acc-teal">Compose →</span>
+        </div>
+        <div class="c4-row">
+          <span class="gl acc-sand">↯</span>
+          <div class="tx"><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div></div>
+          <span class="cta acc-sand">Log →</span>
+        </div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C5 · DIALOGUE ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>05</b> — ONE VOICE, TWO SENTENCES</div>
+      <h2>Dialogue</h2>
+      <p class="why">If both lines must speak, let them speak in <em>one voice</em>: the greeting and the question become two sentences of a single serif utterance — same face, same size, the question stepping back into ash italic. The date retires to the header, under the wordmark. Below, the options shed their boxes entirely and become a quiet hairline list — the words carry everything.</p>
+      <p class="ive"><b>The Ive move</b>Warmth through restraint. The most human treatment isn’t a bigger greeting — it’s the app speaking like a person, once, and then getting out of the way.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i><span class="wm-date">Sun 19 July</span></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c5-greet">Good afternoon, Rafal.<span class="q">How do you want to start?</span></div>
+      <div class="c5-opts">
+        <div class="c5-row">
+          <div class="top"><span class="t">Follow a plan</span><span class="cta mono-meta acc-lime">Browse →</span></div>
+          <div class="s">Proven programs for every discipline.</div>
+        </div>
+        <div class="c5-row">
+          <div class="top"><span class="t">Build your own</span><span class="cta mono-meta acc-teal">Compose →</span></div>
+          <div class="s">A custom program from any discipline.</div>
+        </div>
+        <div class="c5-row">
+          <div class="top"><span class="t">Just train</span><span class="cta mono-meta acc-sand">Log →</span></div>
+          <div class="s">A one-time workout. No plan needed.</div>
+        </div>
+      </div>
+      <div class="c5-free mono-meta">All three are free</div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C6 · MONOLITH ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>06</b> — ONE HEADLINE, ONE SLAB</div>
+      <h2>Monolith</h2>
+      <p class="why">The greeting stands alone in generous air — the only headline. The three options fuse into a single machined slab: one radius, equal rows, thin dividers, colour confined to the glyphs, a chevron promising depth. “FREE” is engraved once into the slab’s footer, where it describes exactly the object it belongs to. No section header exists because the slab <em>is</em> the section.</p>
+      <p class="ive"><b>The Ive move</b>Honest material. Three choices of equal rank should look like one instrument with three positions, not three products on a shelf.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c6-greet">Good afternoon, Rafal</div>
+      <div class="c6-date">Sunday, 19 July</div>
+      <div class="c6-mono">
+        <div class="c6-row">
+          <span class="gl acc-lime">▤</span>
+          <div class="tx"><div class="t">Follow a plan</div><div class="s">Proven programs, tomorrow already planned</div></div>
+          <span class="ch">›</span>
+        </div>
+        <div class="c6-row">
+          <span class="gl acc-teal">⌗</span>
+          <div class="tx"><div class="t">Build your own</div><div class="s">Compose from any discipline</div></div>
+          <span class="ch">›</span>
+        </div>
+        <div class="c6-row">
+          <span class="gl acc-sand">↯</span>
+          <div class="tx"><div class="t">Just train</div><div class="s">Log a one-time workout</div></div>
+          <span class="ch">›</span>
+        </div>
+        <div class="c6-foot mono-meta">Free — no card, no trial clock</div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C7 · TIME AS MATERIAL ══════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>07</b> — SAY IT WITH LIGHT, NOT WORDS</div>
+      <h2>Time as Material</h2>
+      <p class="why">“Good afternoon” stops being only a string — the aurora field itself warms with the hour (sand at midday, terracotta at dusk, teal at dawn), so the time-of-day is <em>felt</em> before it’s read. With atmosphere carrying the mood, the copy compresses hard: one meta line, no question, and the three options tighten into a compact tile row — titles and verbs only, subtitles cut.</p>
+      <p class="ive"><b>The Ive move</b>Let the material do the talking. Colour and light communicate faster than a sentence, and a screen that needs fewer words was designed better.</p>
+    </div>
+    <div class="phone c7">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c7-greet">Good afternoon, Rafal</div>
+      <div class="c7-meta mono-meta">Sunday 19 July – free to start</div>
+      <div class="c7-grid">
+        <div class="c7-tile">
+          <span class="gl acc-lime">▤</span>
+          <div><div class="t">Follow a plan</div><div class="cta acc-lime">Browse →</div></div>
+        </div>
+        <div class="c7-tile">
+          <span class="gl acc-teal">⌗</span>
+          <div><div class="t">Build your own</div><div class="cta acc-teal">Compose →</div></div>
+        </div>
+        <div class="c7-tile">
+          <span class="gl acc-sand">↯</span>
+          <div><div class="t">Just train</div><div class="cta acc-sand">Log →</div></div>
+        </div>
+      </div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ C8 · THE QUESTION IS THE GREETING ══════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>08</b> — THE DEEPEST CUT</div>
+      <h2>The Question Is the Greeting</h2>
+      <p class="why">Delete “Good afternoon” altogether. One sentence carries the name, the warmth and the purpose: <em>“Rafal, how do you want to start?”</em> — the name set in chartreuse so the personal note survives the cut. The date tucks under the wordmark; the cards shed their subtitles and become title-plus-verb rows, because a first-run user decides on the titles alone. This is the fewest elements any of the eight concepts uses.</p>
+      <p class="ive"><b>The Ive move</b>Ruthless subtraction. Keep removing until removing one more thing would break it — the greeting was ceremony; the question, with your name in it, is the product.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i><span class="wm-date">Sun 19 July</span></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c8-h"><span class="nm">Rafal,</span> how do you want to start?</div>
+      <div class="c8-stack">
+        <div class="c8-card">
+          <div class="l"><span class="gl">▤</span><span class="t">Follow a plan</span></div>
+          <span class="cta">Browse →</span>
+        </div>
+        <div class="c8-card teal">
+          <div class="l"><span class="gl">⌗</span><span class="t">Build your own</span></div>
+          <span class="cta">Compose →</span>
+        </div>
+        <div class="c8-card sand">
+          <div class="l"><span class="gl">↯</span><span class="t">Just train</span></div>
+          <span class="cta">Log →</span>
+        </div>
+      </div>
+      <div class="c5-free mono-meta" style="margin-top:12px;">Free</div>
+      <div class="stub"><div class="t">How ready do you feel?</div><div class="faces"><div><div class="face f1"></div><b>WRECKED</b></div><div><div class="face f2"></div><b>FLAT</b></div><div><div class="face f3"></div><b>GOOD</b></div><div><div class="face f4"></div><b>PRIMED</b></div></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <b>A recommendation, if you want one:</b> Concept 01 (One Question) is the strongest single fix — it removes the exact seam you noticed with the smallest change, keeps the warmth, and finally gives “FREE” a home. Concept 03 (The Ladder) is the safest if you want zero copy changes, and Concept 06 (Monolith) is the most “Ive” as a piece of hardware-feeling UI. Whichever wins ships to <b>both clients</b> (apps/mobile home.tsx + apps/web today.tsx) per the parity rule.
+  </footer>
+
+</main>
+</body>
+</html>
