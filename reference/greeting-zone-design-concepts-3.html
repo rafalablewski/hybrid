@@ -119,6 +119,25 @@
   .c2-h { font-weight: 900; font-size: 33px; letter-spacing: -.03em; margin: 2px 0 2px; }
   .c2-sub { color: var(--ash); font-size: 14px; margin-bottom: 16px; }
 
+  /* ── C2 · day-scrubbing strip ────────────────────────────── */
+  .scrub-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--chalk); margin: 40px 0 6px; }
+  .scrub-why { color: var(--ash); font-size: 14px; line-height: 1.7; max-width: 68ch; margin-bottom: 18px; }
+  .scrub-why em { color: var(--chalk); font-style: normal; font-weight: 600; }
+  .scrub { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .sc { background: linear-gradient(180deg, #101210, var(--ink2)); border: 1px solid var(--line); border-radius: 20px; padding: 14px 14px 0; overflow: hidden; }
+  .sc.now { border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); }
+  .sc .cap { font-family: var(--font-mono); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); display: flex; justify-content: space-between; gap: 6px; }
+  .sc .cap b { color: var(--sand); font-weight: 500; }
+  .sc .h { font-weight: 900; font-size: 21px; letter-spacing: -.03em; margin: 3px 0 2px; }
+  .sc.now .h { color: var(--chalk); }
+  .sc .sub { font-size: 10.5px; color: var(--ash); min-height: 15px; }
+  .sc .sub.back { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
+  .sc .stub { border-top: 1px solid var(--line); margin-top: 12px; padding: 10px 2px 12px; opacity: .55; }
+  .sc .stub .st { font-weight: 800; font-size: 11.5px; }
+  .sc .stub .sm { font-family: var(--font-mono); font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); margin-top: 3px; }
+  .scrub-note { color: var(--ash); font-size: 13.5px; line-height: 1.7; max-width: 68ch; margin-top: 16px; }
+  .scrub-note b { color: var(--chalk); font-weight: 600; }
+
   /* ── C3 · Masthead ───────────────────────────────────────── */
   .c3 { margin-top: 20px; display: flex; align-items: center; gap: 15px; }
   .c3 .num { font-family: var(--font-serif); font-weight: 600; font-size: 52px; line-height: .95; letter-spacing: -.02em; }
@@ -301,6 +320,42 @@
         </div>
       </div>
     </div>
+
+    <div class="scrub-head">Addendum — scrubbing the week rail: the rule 02 needs</div>
+    <p class="scrub-why">A static “Today” over Friday’s session would lie in the largest type on the screen. So the masthead <em>lives</em>: today and its neighbours get relative names (“Yesterday”, “Today”, “Tomorrow”); anything further gets the <em>weekday name</em> — one strong word that survives EN/PL/DE, with the relative distance as a small tag on the caption line. The greeting sentence exists <em>only on today</em>; on any other day its slot becomes the way back.</p>
+    <div class="scrub">
+      <div class="sc">
+        <div class="cap"><span>Fri, 17 July</span><b>2 days back</b></div>
+        <div class="h">Friday</div>
+        <div class="sub back">Back to today →</div>
+        <div class="stub"><div class="st">Nothing logged</div><div class="sm">Before your plan began</div></div>
+      </div>
+      <div class="sc">
+        <div class="cap"><span>Sat, 18 July</span><b>1 day back</b></div>
+        <div class="h">Yesterday</div>
+        <div class="sub back">Back to today →</div>
+        <div class="stub"><div class="st">Nothing logged</div><div class="sm">Before your plan began</div></div>
+      </div>
+      <div class="sc now">
+        <div class="cap"><span>Sun, 19 July</span></div>
+        <div class="h">Today</div>
+        <div class="sub">Good afternoon, Rafal.</div>
+        <div class="stub"><div class="st">Mon, Push (Bench)</div><div class="sm">Day 1 / 6 – Start →</div></div>
+      </div>
+      <div class="sc">
+        <div class="cap"><span>Mon, 20 July</span><b>1 day out</b></div>
+        <div class="h">Tomorrow</div>
+        <div class="sub back">Back to today →</div>
+        <div class="stub"><div class="st">Tue, Pull (Row)</div><div class="sm">Day 2 / 6 – Preview</div></div>
+      </div>
+      <div class="sc">
+        <div class="cap"><span>Tue, 21 July</span><b>2 days out</b></div>
+        <div class="h">Tuesday</div>
+        <div class="sub back">Back to today →</div>
+        <div class="stub"><div class="st">Wed, Legs (Squat)</div><div class="sm">Day 3 / 6 – Preview</div></div>
+      </div>
+    </div>
+    <p class="scrub-note"><b>The full rule:</b> selected day = today → “Today” + caption date + greeting. ±1 day → “Yesterday” / “Tomorrow”. Beyond ±1 → the weekday name (“Friday”, “Tuesday”), never “2 days ago” — clumsy as a headline and worse inflected in Polish and German; the distance rides the caption line as a mono tag instead. The greeting appears only on today; elsewhere its line becomes <b>“Back to today →”</b>, which doubles as the return affordance — so the headline itself is the loudest possible signal that you’ve left today, and the way home is always one tap, in the same place. Past days show what was logged (or that nothing was); future days show the upcoming plan day with Start replaced by a preview state. The same rule ports to 03 (the big serif date tracks the viewed day) and 07 (the spine label becomes “Day 3 of 6”).</p>
   </section>
 
   <!-- ═══ C3 · MASTHEAD ══════════════════════════════════════ -->
