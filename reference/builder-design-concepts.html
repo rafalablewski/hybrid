@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Builder redesign concepts</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --card: #161816; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --teal-text: #6cb6bd; --sand: #d0cd94; --terra-text: #e58a5c;
+    --on-accent: #101401;
+    --font-display: "Archivo", system-ui, sans-serif;
+    --font-serif: "Fraunces", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { background: var(--ink); color: var(--chalk); font-family: var(--font-display); -webkit-font-smoothing: antialiased; padding: 48px 20px 120px; }
+  main { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-weight: 800; font-size: clamp(28px, 5vw, 40px); letter-spacing: -.02em; margin: 0 0 10px; }
+  .lede { color: var(--ash); font-size: 16px; line-height: 1.65; max-width: 64ch; }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+
+  .concept { margin-top: 84px; }
+  .concept-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .concept-kicker b { color: var(--lime); font-weight: 600; }
+  .concept h2 { font-weight: 800; font-size: 24px; letter-spacing: -.015em; margin-bottom: 8px; }
+  .concept .why { color: var(--ash); font-size: 14.5px; line-height: 1.65; max-width: 68ch; margin-bottom: 22px; }
+  .concept .why em { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  /* phone frame */
+  .frame {
+    width: min(420px, 100%); margin: 0 auto; background: var(--ink);
+    border: 1px solid var(--line); border-radius: 34px; padding: 22px 18px 0;
+    box-shadow: 0 24px 60px -32px rgba(0,0,0,.9); overflow: hidden; position: relative;
+  }
+  .frame .screen { min-height: 560px; display: flex; flex-direction: column; }
+
+  /* shared vocabulary */
+  .h-title { font-weight: 800; font-size: 26px; letter-spacing: -.02em; }
+  .mono { font-family: var(--font-mono); }
+  .micro { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; color: var(--ash); }
+  .meta .sep { width: 1px; height: .85em; background: currentColor; opacity: .32; }
+  .savebar-note { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--ash); text-align: center; }
+  .cta { display: block; width: 100%; text-align: center; background: var(--lime); color: var(--on-accent); font-weight: 700; font-size: 15.5px; border: none; border-radius: 999px; padding: 14px; cursor: pointer; box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--lime) 45%, transparent); }
+  .ghost-add { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1px dashed color-mix(in srgb, var(--ash) 45%, transparent); border-radius: 16px; background: none; color: var(--ash); font-weight: 600; font-size: 14px; padding: 13px; cursor: pointer; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; text-align: left; }
+
+  /* simulated floating tab bar — every concept clears it by construction */
+  .tabbar { position: relative; margin: 18px -18px 0; padding: 14px 26px 18px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: color-mix(in srgb, var(--ink) 88%, transparent); }
+  .tabbar span { color: var(--ash); font-size: 17px; opacity: .75; }
+  .tabbar .fab { width: 52px; height: 52px; border-radius: 999px; background: var(--lime); color: var(--on-accent); display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-top: -34px; box-shadow: 0 0 34px color-mix(in srgb, var(--lime) 55%, transparent); }
+
+  /* ── Concept 1 · The Ledger ─────────────────────────────── */
+  .c1-slab { background: var(--ink2); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; margin-top: 14px; }
+  .c1-row { padding: 15px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .c1-row:last-child { border-bottom: none; }
+  .c1-row .t { font-weight: 700; font-size: 15.5px; letter-spacing: -.01em; display: block; }
+  .c1-row .grip { margin-left: auto; color: color-mix(in srgb, var(--ash) 55%, transparent); font-family: var(--font-mono); letter-spacing: 2px; }
+  .c1-open { background: color-mix(in srgb, var(--chalk) 2.5%, transparent); }
+  .c1-sets { width: 100%; border-spacing: 0; margin-top: 10px; font-family: var(--font-mono); font-size: 13px; }
+  .c1-sets td { padding: 7px 0; border-top: 1px solid var(--line); }
+  .c1-sets td:first-child { color: var(--ash); width: 2.2em; }
+  .c1-sets .ghost { color: color-mix(in srgb, var(--ash) 45%, transparent); font-style: italic; }
+
+  /* ── Concept 2 · One Number ─────────────────────────────── */
+  .c2-hero { text-align: left; padding: 8px 2px 4px; }
+  .c2-num { font-family: var(--font-mono); font-weight: 700; font-size: 64px; letter-spacing: -.04em; line-height: 1; }
+  .c2-num small { font-size: 22px; color: var(--ash); font-weight: 500; letter-spacing: 0; }
+  .c2-balance { height: 4px; border-radius: 4px; margin: 18px 0 6px; background: linear-gradient(90deg, var(--lime) 0 78%, var(--teal-text) 78% 100%); }
+  .c2-list { margin-top: 16px; display: flex; flex-direction: column; }
+  .c2-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 13px 2px; border-top: 1px solid var(--line); }
+  .c2-item .t { font-weight: 700; font-size: 15px; }
+  .c2-item .m { font-family: var(--font-mono); font-size: 11.5px; color: var(--ash); }
+
+  /* ── Concept 3 · One at a Time ──────────────────────────── */
+  .c3-step { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .c3-name { font-family: var(--font-serif); font-weight: 500; font-size: 30px; letter-spacing: -.01em; line-height: 1.1; }
+  .c3-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 22px; padding: 16px; margin-top: 16px; }
+  .c3-set { display: grid; grid-template-columns: 2em 1fr 1fr 1fr; gap: 10px; align-items: center; padding: 11px 2px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 14px; }
+  .c3-set:first-of-type { border-top: none; }
+  .c3-set .n { color: var(--ash); }
+  .c3-set input { width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 10px; color: var(--chalk); font: inherit; text-align: center; padding: 8px 4px; }
+  .c3-set input::placeholder { color: color-mix(in srgb, var(--ash) 40%, transparent); font-style: italic; }
+  .c3-queue { margin-top: 16px; display: flex; gap: 8px; }
+  .c3-chip { flex: 1; padding: 9px 10px; border: 1px solid var(--line); border-radius: 12px; font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c3-chip.done { color: var(--chalk); border-color: color-mix(in srgb, var(--lime) 40%, var(--line)); }
+
+  /* ── Concept 4 · The Bar ────────────────────────────────── */
+  .c4-row { display: flex; align-items: center; gap: 14px; width: 100%; background: var(--ink2); border: 1px solid var(--line); border-radius: 18px; padding: 14px 15px; margin-top: 10px; }
+  .c4-tile { width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0; display: grid; place-items: center; background: var(--ink); border: 1px solid var(--line); color: var(--ash); font-size: 17px; }
+  .c4-row .t { font-weight: 700; font-size: 15px; display: block; }
+  .c4-row .m { font-family: var(--font-mono); font-size: 11px; color: var(--ash); display: block; margin-top: 3px; }
+  .c4-row .chev { margin-left: auto; color: color-mix(in srgb, var(--ash) 55%, transparent); font-family: var(--font-mono); }
+  .c4-bar { margin: 16px -18px 0; padding: 12px 18px calc(12px + 6px); background: color-mix(in srgb, var(--ink2) 92%, transparent); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 14px; backdrop-filter: blur(8px); }
+  .c4-bar .cta { width: auto; flex: 1; padding: 12px 18px; }
+
+  /* ── Concept 5 · Just the Numbers ───────────────────────── */
+  .c5-name { font-family: var(--font-serif); font-weight: 500; font-size: 26px; letter-spacing: -.01em; margin-top: 18px; }
+  .c5-line { display: grid; grid-template-columns: 2em 1fr auto; gap: 12px; align-items: baseline; padding: 12px 2px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 15px; }
+  .c5-line .n { color: var(--ash); font-size: 12px; }
+  .c5-line .v b { color: var(--chalk); font-weight: 600; border-bottom: 1px solid color-mix(in srgb, var(--lime) 55%, transparent); padding-bottom: 1px; }
+  .c5-line .v { color: var(--ash); }
+  .c5-line .rpe { color: var(--ash); font-size: 12px; }
+  .c5-addset { font-family: var(--font-mono); font-size: 12px; color: var(--ash); padding: 12px 2px; }
+
+  footer { margin-top: 96px; color: var(--ash); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; line-height: 1.8; }
+</style>
+</head>
+<body>
+<main>
+  <div class="concept-kicker"><b>Hybrid</b> — design exploration</div>
+  <h1>Builder — five redesign concepts</h1>
+  <p class="lede">
+    The routine Builder, re-thought in the Jony-Ive vocabulary. Every concept fixes the same four
+    sins of the current screen: <strong>the save-slots note is never occluded</strong> (the layout
+    reserves clearance for the floating nav by construction), <strong>exactly one chartreuse
+    action per screen</strong> ("+ Add set" stops impersonating the primary), <strong>ghost
+    placeholders that cannot be mistaken for data</strong> (dim, italic, or simply absent), and
+    <strong>each number is said once</strong> — the card no longer narrates the table that
+    narrates the tiles.
+  </p>
+
+  <!-- ══════════════ CONCEPT 1 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 01</b> — The Ledger</div>
+    <h2>One slab. The routine is a list, not a stack of machines.</h2>
+    <p class="why">
+      The current screen wraps every exercise in its own heavy card with its own summary strip —
+      boxes in boxes. Here the whole routine is <em>one machined slab</em> divided by hairlines:
+      collapsed exercises read as a scannable ledger line (name + one hairline meta), the open one
+      expands in place with a plain mono set table. Totals live in ONE meta line under the title —
+      nowhere else. Drag handle for reorder; no ↑↓ buttons.
+    </p>
+    <div class="frame"><div class="screen">
+      <div class="h-title">New routine</div>
+      <div class="meta" style="margin-top: 8px">24 min<span class="sep"></span>2.4 t<span class="sep"></span>3 moves<span class="sep"></span>78% str</div>
+      <div class="c1-slab">
+        <div class="c1-row c1-open" style="display:block">
+          <div style="display:flex; align-items:center; gap:12px">
+            <span style="min-width:0"><span class="t">Barbell Glute Bridge</span><span class="meta" style="font-size:11px; margin-top:2px">3 × 8<span class="sep"></span>100 kg<span class="sep"></span>~10 min</span></span>
+            <span class="grip">≡</span>
+          </div>
+          <table class="c1-sets">
+            <tr><td>1</td><td>100 kg × 8</td><td style="text-align:right; color: var(--ash)">@8</td></tr>
+            <tr><td>2</td><td>100 kg × 8</td><td style="text-align:right; color: var(--ash)">@8</td></tr>
+            <tr><td>3</td><td class="ghost">add set…</td><td></td></tr>
+          </table>
+        </div>
+        <button class="c1-row"><span><span class="t">Back Squat</span><span class="meta" style="font-size:11px; margin-top:2px">5 × 5<span class="sep"></span>140 kg</span></span><span class="grip">≡</span></button>
+        <button class="c1-row"><span><span class="t">Row Intervals</span><span class="meta" style="font-size:11px; margin-top:2px">4 × 500 m</span></span><span class="grip">≡</span></button>
+      </div>
+      <button class="ghost-add" style="margin-top:12px">＋ Add exercise</button>
+      <div style="flex:1"></div>
+      <button class="cta" style="margin-top:18px">Save routine →</button>
+      <div class="savebar-note" style="margin-top:10px">0 of 2 free slots used</div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 2 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 02</b> — One Number</div>
+    <h2>The routine has a weight. Feel it grow.</h2>
+    <p class="why">
+      Ive's instinct: find the <em>one honest number</em> and let it be the interface. The three
+      stat tiles and the balance card collapse into a single live readout — the session's estimated
+      time — with tonnage and balance as its quiet meta. Every exercise you add visibly moves the
+      number, so composing feels like loading a bar, not filling a form. The list below is
+      deliberately plain; the number is the product.
+    </p>
+    <div class="frame"><div class="screen">
+      <div class="micro">New routine</div>
+      <div class="c2-hero">
+        <div class="c2-num">24<small> min</small></div>
+        <div class="meta" style="margin-top:10px">2.4 t<span class="sep"></span>3 moves<span class="sep"></span>78% strength</div>
+        <div class="c2-balance"></div>
+        <div class="meta" style="font-size:10px">strength<span style="margin-left:auto"></span></div>
+      </div>
+      <div class="c2-list">
+        <button class="c2-item"><span class="t">Barbell Glute Bridge</span><span class="m">3 × 8 – 100 kg</span></button>
+        <button class="c2-item"><span class="t">Back Squat</span><span class="m">5 × 5 – 140 kg</span></button>
+        <button class="c2-item" style="border-bottom:1px solid var(--line)"><span class="t">Row Intervals</span><span class="m">4 × 500 m</span></button>
+      </div>
+      <button class="ghost-add" style="margin-top:14px">＋ Add exercise</button>
+      <div style="flex:1"></div>
+      <button class="cta" style="margin-top:18px">Save routine →</button>
+      <div class="savebar-note" style="margin-top:10px">0 of 2 free slots used</div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 3 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 03</b> — One at a Time</div>
+    <h2>Edit one exercise. The rest wait their turn.</h2>
+    <p class="why">
+      The current screen shows every set grid of every exercise at once — a wall of inputs. Here the
+      Builder becomes a <em>focused flow</em>: one exercise fills the screen (its name in the serif
+      display voice, its sets as the only inputs), the others wait as a quiet queue below. One
+      chartreuse action that reads "Next" until the last exercise, where it becomes "Save".
+      Placeholders are italic ghosts — unmistakably not data.
+    </p>
+    <div class="frame"><div class="screen">
+      <div class="c3-step"><span class="micro">Exercise 2 of 3</span><span class="micro" style="color: var(--ash)">24 min total</span></div>
+      <div class="c3-name">Back Squat</div>
+      <div class="meta" style="margin-top:8px">Strength<span class="sep"></span>~12 min</div>
+      <div class="c3-card">
+        <div class="c3-set" style="font-size:10.5px; color: var(--ash); text-transform: uppercase; letter-spacing:.1em"><span></span><span style="text-align:center">kg</span><span style="text-align:center">reps</span><span style="text-align:center">rpe</span></div>
+        <div class="c3-set"><span class="n">1</span><input value="140" /><input value="5" /><input value="8" /></div>
+        <div class="c3-set"><span class="n">2</span><input value="140" /><input value="5" /><input value="8" /></div>
+        <div class="c3-set"><span class="n">3</span><input placeholder="140" /><input placeholder="5" /><input placeholder="rpe" /></div>
+        <button class="ghost-add" style="margin-top:12px; padding:10px">＋ Add set</button>
+      </div>
+      <div class="c3-queue">
+        <span class="c3-chip done">✓ Glute Bridge</span>
+        <span class="c3-chip" style="border-color: color-mix(in srgb, var(--chalk) 25%, var(--line)); color: var(--chalk)">Back Squat</span>
+        <span class="c3-chip">Row Intervals</span>
+      </div>
+      <div style="flex:1"></div>
+      <button class="cta" style="margin-top:18px">Next: Row Intervals →</button>
+      <div class="savebar-note" style="margin-top:10px">Save comes after the last exercise</div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 4 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 04</b> — The Bar</div>
+    <h2>A clean list, a sheet to edit, a bar that owns Save.</h2>
+    <p class="why">
+      Separate <em>scanning</em> from <em>editing</em>. The screen itself is just tidy exercise rows
+      in the Today deferred-row anatomy — tap one and a bottom sheet opens with its set grid (the
+      editing chrome never lives on the list). A persistent action bar carries the live totals and
+      the ONE chartreuse Save, docked above the tab bar — the occlusion bug becomes structurally
+      impossible, because the bar is part of the layout, not content scrolled under the nav.
+    </p>
+    <div class="frame"><div class="screen">
+      <div class="h-title">New routine</div>
+      <div style="margin-top:12px">
+        <button class="c4-row"><span class="c4-tile">▤</span><span style="min-width:0"><span class="t">Barbell Glute Bridge</span><span class="m">3 × 8 – 100 kg – ~10 min</span></span><span class="chev">›</span></button>
+        <button class="c4-row"><span class="c4-tile">▲</span><span style="min-width:0"><span class="t">Back Squat</span><span class="m">5 × 5 – 140 kg – ~12 min</span></span><span class="chev">›</span></button>
+        <button class="c4-row"><span class="c4-tile">≋</span><span style="min-width:0"><span class="t">Row Intervals</span><span class="m">4 × 500 m – ~8 min</span></span><span class="chev">›</span></button>
+      </div>
+      <button class="ghost-add" style="margin-top:12px">＋ Add exercise</button>
+      <div class="savebar-note" style="margin-top:14px">0 of 2 free slots used</div>
+      <div style="flex:1"></div>
+      <div class="c4-bar">
+        <span class="meta" style="flex-direction:column; align-items:flex-start; gap:2px"><span style="color:var(--chalk); font-weight:600">24 min</span><span style="font-size:10px">2.4 t – 3 moves</span></span>
+        <button class="cta">Save →</button>
+      </div>
+      <div class="tabbar" style="margin-top:0; border-top:none"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 5 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 05</b> — Just the Numbers</div>
+    <h2>No boxes. The numbers are the interface.</h2>
+    <p class="why">
+      The most radical cut: <em>remove the input chrome entirely</em>. Exercise names in the serif
+      editorial voice; each set is a line of pure mono type on a hairline — tap any number and it
+      underlines in chartreuse and becomes editable in place (the underline is the only accent on
+      screen besides Save). Nothing looks like a form, so nothing looks pre-filled: a set you
+      haven't touched simply isn't there yet. "+ set" is quiet type, not a pill.
+    </p>
+    <div class="frame"><div class="screen">
+      <div class="h-title">New routine</div>
+      <div class="meta" style="margin-top:8px">24 min<span class="sep"></span>2.4 t<span class="sep"></span>78% str</div>
+      <div class="c5-name">Barbell Glute Bridge</div>
+      <div class="c5-line"><span class="n">1</span><span class="v"><b>100 kg</b> × <b>8</b></span><span class="rpe">@8</span></div>
+      <div class="c5-line"><span class="n">2</span><span class="v"><b>100 kg</b> × <b>8</b></span><span class="rpe">@8</span></div>
+      <div class="c5-line"><span class="n">3</span><span class="v"><b>100 kg</b> × <b>8</b></span><span class="rpe">@8</span></div>
+      <button class="c5-addset">＋ set&ensp;&ensp;rest 150 s</button>
+      <div class="c5-name" style="font-size:22px; color: var(--ash)">Back Squat</div>
+      <div class="meta" style="font-size:11px; margin:6px 0 4px">5 × 5 – 140 kg — tap to expand</div>
+      <div style="flex:1"></div>
+      <button class="ghost-add">＋ Add exercise</button>
+      <button class="cta" style="margin-top:12px">Save routine →</button>
+      <div class="savebar-note" style="margin:10px 0 0">0 of 2 free slots used</div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+    </div></div>
+  </section>
+
+  <footer>
+    HYBRID — reference/builder-design-concepts.html<br />
+    Rendered in the live Aurora tokens (tokens.ts) — Archivo, Fraunces, JetBrains Mono.
+  </footer>
+</main>
+</body>
+</html>
