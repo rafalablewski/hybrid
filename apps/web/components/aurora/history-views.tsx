@@ -40,7 +40,7 @@ import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, boxShadow: "var(--shadow-card)", padding: 16 } as const;
 
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });

@@ -154,7 +154,7 @@ export default function AuroraWeekRail({
   const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
   const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>

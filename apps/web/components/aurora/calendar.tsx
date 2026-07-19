@@ -9,7 +9,7 @@ import { useLang } from "@/lib/i18n";
 const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
 const todayKey = localTodayKey;
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6 }}>{label}</span>;
 type EventRow = { id: string; name: string; sport: string; date: string };
 type AssignmentRow = { id: string; name: string; date: string; status: string };

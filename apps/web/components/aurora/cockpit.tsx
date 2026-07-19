@@ -23,7 +23,7 @@ const acwrVar = (b: AcwrBand): string =>
   b === "sweet-spot" ? "lime" : b === "caution" ? "amber" : b === "danger" ? "red" : b === "detraining" ? "blue" : "ash";
 const C = (v: string) => `var(--color-${v})`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
-const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
 /** AURORA Cockpit (web) — a command center: a sticky season-context rail, then
  *  Performance State → Injury risk → This week → Breakdown (tabbed) → Horizon →

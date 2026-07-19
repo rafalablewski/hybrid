@@ -33,7 +33,7 @@ export default function AuroraConnections() {
 
   const connected = (id: string) => connections.find((c) => c.provider === id && c.status !== "revoked");
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, cursor: "pointer", textAlign: "left" as const, color: "inherit", fontFamily: "inherit" };
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20, cursor: "pointer", textAlign: "left" as const, color: "inherit", fontFamily: "inherit" };
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
 
   return (

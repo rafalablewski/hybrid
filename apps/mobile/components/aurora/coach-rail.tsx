@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { F, serifIf } from "../../lib/ui";
 import { getCoaches } from "../../lib/social-api";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
@@ -18,7 +18,12 @@ function initials(name: string) {
 // parent (Explore) can supply the shared, unified SectionHead instead. Today
 // keeps the default header.
 export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
+  // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
+  // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
+  const cardShadow = scheme === "light"
+    ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const)
+    : ({ shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const);
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
 
   useEffect(() => {
@@ -34,23 +39,27 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
       {!headerless && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <View>
-            <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 17 }}>Follow a coach</Text>
+            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>Follow a coach</Text>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>Swipe to find a coach for your goal</Text>
           </View>
           <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>Browse all →</Text></Pressable>
         </View>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" contentContainerStyle={{ gap: 12, paddingRight: 8 }}>
+      {/* Vertical padding inside the scroller (pulled back by the margins) so
+          card shadows render instead of clipping at the scroll bounds. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" style={{ marginVertical: -10 }} contentContainerStyle={{ gap: 12, paddingRight: 8, paddingVertical: 10 }}>
         {items.map((c, i) => (
-          <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16 }}>
+          <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, ...cardShadow }}>
             <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 16 }}>
               <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
+                {/* Name in the display face — Mincho under Kyoto Hour — so the
+                    person leads the card the way a byline leads an article. */}
+                <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 15 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
                 {c.rating == null ? (
                   <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, marginTop: 4 }}>New</Text>
                 ) : (

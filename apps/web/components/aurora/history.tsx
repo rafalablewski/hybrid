@@ -27,7 +27,7 @@ const readView = (): HistoryViewId => {
 
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 const moodColor = (m: MoodDef) => (m.tone === "red" ? C("red") : m.tone === "amber" ? C("amber") : "var(--lime-text)");
 
@@ -241,7 +241,7 @@ function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: 
   };
 
   return (
-    <div style={{ position: "relative", borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}>
+    <div style={{ position: "relative", borderRadius: 28, boxShadow: "var(--shadow-card)" }}>
       <div style={{ position: "relative", borderRadius: 28, overflow: "hidden" }}>
         {/* Revealed actions, pinned right behind the card. */}
         <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, display: "flex" }}>

@@ -56,7 +56,7 @@ export default function AuroraTeamMonitor() {
       .finally(() => setLoading(false));
   }, []);
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 4, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
@@ -187,7 +187,7 @@ export default function AuroraTeamMonitor() {
 
 function SummaryCard({ label, value, c }: { label: string; value: number; c: string }) {
   return (
-    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, flex: 1, minWidth: 130 }}>
+    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20, flex: 1, minWidth: 130 }}>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 30, color: C(c) }}>{value}</div>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{label}</span>
     </div>

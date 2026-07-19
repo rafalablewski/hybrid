@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
 import { feedCardView } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { F, serifIf } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
@@ -13,7 +13,12 @@ import { MetaLine } from "./meta";
 // lays them in a left/right slider (fixed-width cards); otherwise full-width
 // stacked. Renders nothing when the feed is empty. Mirrors the web feed-preview.
 export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
+  // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
+  // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
+  const cardShadow = scheme === "light"
+    ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const)
+    : ({ shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const);
   const { t } = useLang();
   const { width } = useWindowDimensions();
   const cardW = Math.min(320, width * 0.82);
@@ -39,7 +44,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // Vertical stacks full-width; horizontal is a left/right scroll-snap slider.
   const Wrap = ({ children }: { children: ReactNode }) =>
     horizontal
-      ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 2, paddingBottom: 4 }}>{children}</ScrollView>
+      ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: -10 }} contentContainerStyle={{ gap: 12, paddingHorizontal: 2, paddingVertical: 10 }}>{children}</ScrollView>
       : <View style={{ gap: 16 }}>{children}</View>;
 
   // Loading → pulsing card skeletons that reserve the feed's space.
@@ -68,7 +73,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // X / Twitter-style post — avatar left, name ✓ @handle, time inline, prose,
   // an optional attached-content card, and a reply/repost/like/share row.
   const postStyle = horizontal
-    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, width: cardW } as const)
+    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, width: cardW, ...cardShadow } as const)
     : ({ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line } as const);
   return (
     <Wrap>
@@ -94,8 +99,13 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
                   pills (each chip its own element, never a ·-joined string) */}
               {(v.lead || v.chips.length > 0) && (
                 <View style={{ marginTop: v.body ? 8 : 12 }}>
-                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: F.mono, fontSize: 11, fontWeight: "600", letterSpacing: 0.4 }}>{v.lead}</Text>}
-                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 5 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 12.5, color: C.ash }} /></View>}
+                  {/* Three voices, not one: the lead (workout name / "PR") is
+                      the card's TITLE in the display face — Mincho under Kyoto
+                      Hour — prose stays sans, mono is reserved for the fact
+                      line + counts. All-mono flattened every card into the
+                      same texture. */}
+                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 16.5, lineHeight: 21 }}>{v.lead}</Text>}
+                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 6 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 12.5, color: C.ash }} /></View>}
                 </View>
               )}
 
@@ -116,7 +126,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={t("w.explore.seeAll")}
-          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12 }}
+          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
         >
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>

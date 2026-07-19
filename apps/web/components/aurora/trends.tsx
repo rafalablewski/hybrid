@@ -16,7 +16,7 @@ const C = (v: string) => `var(--color-${v})`;
 const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: "lime" }, down: { g: "▼", c: "amber" }, flat: { g: "→", c: "ash" } };
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
 /** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
  *  recharts volume/tonnage/muscle bars. */

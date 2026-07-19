@@ -125,7 +125,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     setScanning(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
 
   // The Today "Nutrition" sheet — a focused Add-a-meal, not the whole tracker.
@@ -370,7 +370,7 @@ function MacroRow({ label, cur, target, color }: { label: string; cur: number; t
   const { t } = useLang();
   const C = (v: string) => `var(--color-${v})`;
   return (
-    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, marginTop: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16, marginTop: 12 }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t(label)}</div>
         <Bar cur={cur} target={target} color={color} />

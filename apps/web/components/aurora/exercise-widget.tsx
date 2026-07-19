@@ -118,7 +118,7 @@ export default function ExerciseWidgetRail({
                 flex: "0 0 min(86%, 340px)", scrollSnapAlign: "center", cursor: "pointer", textAlign: "left",
                 position: "relative", height: 200, overflow: "hidden", padding: 0,
                 background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,
-                boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", color: C("chalk"), fontFamily: "var(--font-display)",
+                boxShadow: "var(--shadow-card)", color: C("chalk"), fontFamily: "var(--font-display)",
               }}
             >
               <div style={{ position: "absolute", inset: "16px 18px auto 18px", zIndex: 2 }}>

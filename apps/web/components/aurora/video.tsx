@@ -9,7 +9,7 @@ type Metrics = { movement: string; reps: number; minKneeAngle: number | null; kn
 type Analysis = { id: string; movement: string; metrics: Metrics; createdAt: string };
 const C = (v: string) => `var(--color-${v})`;
 const scoreVar = (s: number) => (s >= 85 ? "lime" : s >= 70 ? "blue" : s >= 50 ? "amber" : "red");
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
 
 /** AURORA Video (web) — markerless technique-analysis results, reusing /api/video. */

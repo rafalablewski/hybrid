@@ -31,8 +31,10 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
 
   // A horizontal slider lays the post cards in a left/right scroll-snapping row
   // (fixed-width cards); vertical stacks them full-width. Shared card body.
+  // The slider gets internal breathing room (pulled back by negative margins)
+  // so card shadows render inside the scroll clip instead of truncating.
   const wrap = horizontal
-    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollbarWidth: "none" as const, padding: "2px 2px 6px" }
+    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollbarWidth: "none" as const, padding: "8px 4px 20px", margin: "-8px -4px -14px" }
     : { display: "flex", flexDirection: "column" as const, gap: 16 };
   const cardWidth = horizontal ? { flex: "0 0 82%", maxWidth: 320, scrollSnapAlign: "start" as const, boxSizing: "border-box" as const } : { width: "100%" };
 
@@ -63,7 +65,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // facts and action row use the FULL card width beneath (no left avatar gutter,
   // no nested attached-box). Column layout.
   const postStyle = horizontal
-    ? { ...cardWidth, display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", color: C("chalk") }
+    ? { ...cardWidth, display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }
     : { width: "100%", display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "16px 2px", cursor: "pointer", color: C("chalk") };
   return (
     <div style={wrap}>
@@ -94,8 +96,13 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
                   pills (each chip its own element, never a ·-joined string) */}
               {(v.lead || v.chips.length > 0) && (
                 <span style={{ display: "block", marginTop: v.body ? 8 : 12 }}>
-                  {v.lead && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".04em", color: C("chalk") }}>{v.lead}</span>}
-                  {v.chips.length > 0 && <MetaLine parts={v.chips} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), marginTop: v.lead ? 5 : 0 }} />}
+                  {/* Three voices, not one: the lead (workout name / "PR") is
+                      the card's TITLE in the display face — Mincho under Kyoto
+                      Hour — prose stays sans, mono is reserved for the fact
+                      line + counts. All-mono flattened every card into the
+                      same texture. */}
+                  {v.lead && <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16.5, letterSpacing: "-.01em", lineHeight: 1.25, color: C("chalk") }}>{v.lead}</span>}
+                  {v.chips.length > 0 && <MetaLine parts={v.chips} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), marginTop: v.lead ? 6 : 0 }} />}
                 </span>
               )}
 
@@ -115,7 +122,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
         <button
           onClick={onOpen}
           aria-label={t("w.explore.seeAll")}
-          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash") }}
+          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
         >
           <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeAll")}</span>

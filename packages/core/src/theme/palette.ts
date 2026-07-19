@@ -76,9 +76,11 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     // steel/slate blue coach accent) is lifted to #8ba0cc for the same reason.
     accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#8ba0cc", amber: "#d0cd94", red: "#e58a5c" },
   },
-  // KYOTO HOUR — the warm light theme. Surfaces run as a WASHI ramp:
-  // ground #f6f3ea → raised #efebdf → near-white card #fcfaf3, each a clear step
-  // so cards float, with a soft warm hairline #e6e1d2. The PRIMARY action is a
+  // KYOTO HOUR — the warm light theme. Surfaces run as a WASHI ramp that gets
+  // LIGHTER as it rises: ground #f6f3ea → raised #faf7ef → near-white card
+  // #fcfaf3, each a clear step so cards float (the first cut shipped ink2
+  // DARKER than the ground — an inverted ramp that sank every card into the
+  // page and read flat), with a soft warm hairline #e6e1d2. The PRIMARY action is a
   // deep PINE (#44584c) carrying an ivory ink (#f2f5ef, 6.95:1). The SAGE
   // secondary (#5f6d4b) lives on the `blue`/conditioning channel (see
   // globals.css --color-blue + mobile paletteFor). accent-text: `lime` is the
@@ -89,7 +91,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
   // apps/mobile/lib/theme.tsx.
   light: {
     ink: "#f6f3ea",
-    ink2: "#efebdf",
+    ink2: "#faf7ef",
     card: "#fcfaf3",
     line: "#e6e1d2",
     chalk: "#2b2a26",

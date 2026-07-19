@@ -41,7 +41,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
     if (!Object.keys(next[m]!).length) delete next[m];
     setLoggerPref("landmarkOverrides", next);
   };
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>

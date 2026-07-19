@@ -156,7 +156,7 @@ export default function AuroraOrg() {
   const canSeeAthletes = detail ? canRead(detail.myRole, "performance") : false;
   const teamName = (tid: string | null) => tree.find((t) => t.id === tid)?.name ?? "—";
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
   const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });

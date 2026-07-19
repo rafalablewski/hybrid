@@ -55,14 +55,17 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
       {!headerless && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
           </div>
           <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>Browse all →</button>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 4 }}>
+      {/* The scroller gets internal breathing room (padding pulled back by the
+          negative margins) so the card shadows render inside the scroll clip
+          instead of being TRUNCATED at its edge — the "cut gradient" artifact. */}
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", padding: "8px 4px 20px", margin: "-8px -4px -14px" }}>
         {items.map((c, i) => (
           <div
             key={c.userId ?? c.handle ?? i}
@@ -71,13 +74,15 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
             aria-label={`Open ${c.name}`}
-            style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 220, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+            style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 220, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", boxShadow: "var(--shadow-card)" }}
           >
             <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
             <div style={{ display: "flex", alignItems: "center", gap: 12, paddingRight: 18 }}>
               <span style={{ width: 46, height: 46, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("ash"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {/* Name in the display face — Mincho under Kyoto Hour — so the
+                    person leads the card the way a byline leads an article. */}
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, letterSpacing: "-.01em", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {c.name}{c.verified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
                 </div>
                 <div style={{ marginTop: 4 }}><Stars rating={c.rating} reviews={c.reviews} /></div>

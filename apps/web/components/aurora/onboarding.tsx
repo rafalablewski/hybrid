@@ -73,7 +73,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
         ) : (
           <Step title={t("w.account.onboarding.plan-title")} sub={plan ? "" : t("w.account.onboarding.plan-sub")}>
             {plan ? (
-              <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
+              <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} – {plan.weeklyTarget}×/wk – {plan.weeks} {t("w.account.onboarding.weeks")}</div>
                 <div style={{ fontSize: fs.bodyLg, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>

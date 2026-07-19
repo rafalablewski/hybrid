@@ -45,7 +45,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
     setBusy(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
   const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
 

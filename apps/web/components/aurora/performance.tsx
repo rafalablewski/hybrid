@@ -52,7 +52,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 export default function AuroraPerformance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
   const { t } = useLang();
   const isMobile = useIsMobile();
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>

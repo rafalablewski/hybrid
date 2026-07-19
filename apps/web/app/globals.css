@@ -34,6 +34,11 @@
 :root {
   --back-surface: transparent;
   --back-shadow: none;
+  /* The one card shadow. AURORA (dark) keeps the deep black bloom; KYOTO HOUR
+     (light) overrides it to a soft WARM umbra — a 55%-black shadow under a
+     washi card reads as a truncated dark band, not depth. Every aurora card
+     reads this var instead of a hardcoded rgba. */
+  --shadow-card: 0 6px 22px -12px rgba(0, 0, 0, 0.55);
 }
 
 html,
@@ -212,7 +217,7 @@ html {
      test guards the ratios. Only surfaces/text/accents change; the glass material
      math is unchanged. */
   --color-ink: #f6f3ea;
-  --color-ink2: #efebdf;
+  --color-ink2: #faf7ef;
   --color-card: #fcfaf3;
   --color-line: #e6e1d2;
   --color-chalk: #2b2a26;
@@ -252,6 +257,8 @@ html {
   --amber-text: #875427;
   --red-text: #a3442f;
   --glass-glow-rgb: 68, 88, 76; /* pine — matches the primary accent fill */
+  /* Soft warm card shadow — sumi-wash, not black (see :root --shadow-card). */
+  --shadow-card: 0 14px 30px -18px rgba(88, 74, 52, 0.38);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -279,7 +286,7 @@ html {
   background: var(--color-ink2);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: 0 6px 22px -12px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-card);
 }
 [data-template="aurora"] .liquid-glass::before,
 [data-template="aurora"] .liquid-glass::after,
