@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — greeting zone: 8 concepts × both scenarios</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/palette.ts */
+    --ink: #0c0d0c;
+    --ink2: #141614;
+    --card: #151715;
+    --line: #242724;
+    --chalk: #f3f4ef;
+    --ash: #8b8f86;
+    --lime: #c6f84f;
+    --teal: #6cb6bd;
+    --sand: #d0cd94;
+    --terra: #e58a5c;
+    --on-accent: #0c0d0c;
+    --font-display: "Archivo", system-ui, -apple-system, sans-serif;
+    --font-serif: "Fraunces", "New York", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { background: var(--ink); color: var(--chalk); font-family: var(--font-display); -webkit-font-smoothing: antialiased; padding: 52px 20px 140px; }
+  main { max-width: 900px; margin: 0 auto; }
+
+  .page-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); }
+  h1 { font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -.02em; margin: 12px 0 12px; }
+  h1 em { font-style: normal; color: var(--lime); }
+  .lede { color: var(--ash); font-size: 16px; line-height: 1.7; max-width: 68ch; }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+
+  .concept { margin-top: 110px; }
+  .concept .copy { max-width: 68ch; }
+  .concept .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .concept .k b { color: var(--lime); font-weight: 600; }
+  .concept h2 { font-weight: 800; font-size: 26px; letter-spacing: -.015em; margin-bottom: 10px; }
+  .concept .why { color: var(--ash); font-size: 14.5px; line-height: 1.7; margin-bottom: 10px; }
+  .concept .why em { color: var(--chalk); font-style: normal; font-weight: 600; }
+  .concept .plannote { color: var(--ash); font-size: 14px; line-height: 1.7; margin-bottom: 6px; }
+  .concept .plannote b { color: var(--sand); font-weight: 600; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 26px; margin-top: 26px; }
+  .scen { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); text-align: center; margin-bottom: 12px; }
+  .scen b { color: var(--chalk); font-weight: 600; }
+
+  /* ── the phone ───────────────────────────────────────────── */
+  .phone {
+    width: 100%; max-width: 400px; margin: 0 auto;
+    background: linear-gradient(180deg, #101210, var(--ink) 60%);
+    border: 1px solid var(--line); border-radius: 34px;
+    padding: 22px 16px 26px; overflow: hidden; position: relative;
+    box-shadow: 0 24px 70px -30px rgba(0,0,0,.85);
+  }
+  .p-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .avatar { width: 40px; height: 40px; border-radius: 13px; position: relative; background: rgba(198,248,79,.13); border: 1px solid var(--lime); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--lime); }
+  .avatar i { position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px; border-radius: 999px; background: var(--lime); border: 2px solid var(--ink); }
+  .wordmark { text-align: center; font-weight: 900; font-size: 17px; letter-spacing: -.03em; }
+  .wordmark span { color: var(--lime); }
+  .wordmark i { display: block; width: 24px; height: 3px; border-radius: 2px; background: var(--lime); margin: 5px auto 0; }
+  .bell { width: 40px; height: 40px; border-radius: 13px; background: var(--ink2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ash); }
+  .bell svg { width: 17px; height: 17px; }
+
+  .mono-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── FROZEN OBJECT 1 · the chooser cards ─────────────────── */
+  .cc {
+    background:
+      radial-gradient(130% 90% at 92% -14%, var(--glow, rgba(198,248,79,.10)), transparent 52%),
+      var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 16px 16px 14px;
+  }
+  .cc .gl { font-size: 14px; color: var(--acc, var(--lime)); margin-bottom: 8px; display: block; }
+  .cc .t { font-weight: 800; font-size: 19px; letter-spacing: -.015em; }
+  .cc .s { color: var(--ash); font-size: 13px; line-height: 1.5; margin-top: 4px; }
+  .cc .cta { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--acc, var(--lime)); margin-top: 12px; display: block; }
+  .cc.teal { --acc: var(--teal); --glow: rgba(108,182,189,.10); }
+  .cc.sand { --acc: var(--sand); --glow: rgba(208,205,148,.10); }
+  .stack { display: flex; flex-direction: column; gap: 9px; }
+
+  /* ── FROZEN OBJECT 2 · the plan card ─────────────────────── */
+  .plan { background: var(--card); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
+  .plan .top { padding: 18px 18px 14px; }
+  .plan .toprow { display: flex; justify-content: space-between; align-items: baseline; }
+  .plan .pt { font-weight: 800; font-size: 22px; letter-spacing: -.02em; }
+  .rail { display: flex; justify-content: space-between; margin-top: 14px; }
+  .rail .d { text-align: center; width: 36px; }
+  .rail .d b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 8.5px; letter-spacing: .1em; color: var(--ash); margin-bottom: 7px; }
+  .rail .d span { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; font-weight: 800; font-size: 14px; color: var(--chalk); border-radius: 999px; }
+  .rail .d.sel span { background: var(--lime); color: var(--on-accent); }
+  .rail .d.dim span { color: var(--ash); }
+  .plan .day { border-top: 1px solid var(--line); padding: 16px 18px 18px; }
+  .plan .dayrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .plan .dt { font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+  .ex { padding: 8px 0; }
+  .ex + .ex { border-top: 1px solid var(--line); }
+  .ex .n { font-weight: 600; font-size: 14.5px; }
+  .ex .m { font-family: var(--font-mono); font-size: 11px; color: var(--ash); }
+  .ex .sch { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 3px; }
+  .plan .more { text-align: center; font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); padding: 8px 0 4px; }
+  .plan .actions { display: flex; gap: 9px; margin-top: 12px; }
+  .plan .start { flex: 1; background: var(--lime); color: var(--on-accent); border-radius: 999px; height: 46px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; box-shadow: 0 0 26px rgba(198,248,79,.28); }
+  .plan .rnd { width: 46px; height: 46px; border-radius: 999px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ash); font-size: 15px; }
+
+  /* ── C1 · The Inversion ──────────────────────────────────── */
+  .c1-kick { margin-top: 20px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--sand); }
+  .c1-h { font-weight: 800; font-size: 25px; letter-spacing: -.02em; line-height: 1.16; margin: 8px 0 6px; max-width: 16ch; }
+  .c1-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .c1-meta-plan { margin: 6px 0 14px; }
+
+  /* ── C2 · Today ──────────────────────────────────────────── */
+  .c2-date { margin-top: 20px; display: flex; justify-content: space-between; align-items: baseline; }
+  .c2-h { font-weight: 900; font-size: 33px; letter-spacing: -.03em; margin: 2px 0 2px; }
+  .c2-sub { color: var(--ash); font-size: 14px; margin-bottom: 16px; }
+
+  /* ── C3 · Masthead ───────────────────────────────────────── */
+  .c3 { margin-top: 20px; display: flex; align-items: center; gap: 15px; }
+  .c3 .num { font-family: var(--font-serif); font-weight: 600; font-size: 52px; line-height: .95; letter-spacing: -.02em; }
+  .c3 .side { border-left: 1px solid var(--line); padding-left: 15px; }
+  .c3 .side .mo { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ash); }
+  .c3 .side .greet { font-weight: 800; font-size: 17.5px; letter-spacing: -.015em; margin-top: 4px; }
+  .c3-kick { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 11px; }
+  .c3-gap { height: 14px; }
+
+  /* ── C4 · Engraved ───────────────────────────────────────── */
+  .c4-greet { margin-top: 20px; font-weight: 800; font-size: 24px; letter-spacing: -.02em; }
+  .c4-date { font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); margin-top: 4px; }
+  .c4-eng { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 2px 11px; }
+  .c4-eng .q { font-weight: 600; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--ash); }
+  .c4-gap { height: 18px; }
+
+  /* ── C5 · The Rule ───────────────────────────────────────── */
+  .c5-greet { margin-top: 20px; font-weight: 800; font-size: 24px; letter-spacing: -.02em; }
+  .c5-date { font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); margin-top: 4px; }
+  .c5-rule { display: flex; align-items: center; gap: 11px; margin: 18px 0 11px; }
+  .c5-rule .seg { width: 24px; height: 3px; border-radius: 2px; background: var(--lime); flex-shrink: 0; }
+  .c5-rule .q { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--chalk); white-space: nowrap; }
+  .c5-rule .ln { flex: 1; height: 1px; background: var(--line); }
+  .c5-rule .free { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── C6 · One Line ───────────────────────────────────────── */
+  .c6-row { margin-top: 20px; display: flex; justify-content: space-between; align-items: baseline; }
+  .c6-row .g { font-weight: 800; font-size: 21px; letter-spacing: -.02em; }
+  .c6-free { text-align: right; margin: 12px 0 8px; }
+  .c6-gap { height: 16px; }
+
+  /* ── C7 · The Spine ──────────────────────────────────────── */
+  .c7-greet { margin-top: 20px; font-weight: 800; font-size: 24px; letter-spacing: -.02em; }
+  .c7-date { font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); margin-top: 4px; }
+  .c7-zone { display: flex; gap: 12px; margin-top: 18px; }
+  .c7-spine { width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--lime), rgba(198,248,79,.05)); flex-shrink: 0; }
+  .c7-body { flex: 1; min-width: 0; }
+  .c7-q { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 11px; }
+  .c7-q .t { font-weight: 700; font-size: 13.5px; letter-spacing: .01em; }
+
+  /* ── C8 · Settle ─────────────────────────────────────────── */
+  .c8-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 460px; margin: 0 auto; }
+  .c8-pair .phone { padding: 14px 11px 16px; border-radius: 24px; height: 470px; }
+  .c8-pair .lbl { text-align: center; margin-bottom: 10px; }
+  .c8-pair .p-head { transform: scale(.8); transform-origin: top center; }
+  .c8a-greet { margin-top: 58px; text-align: center; font-weight: 800; font-size: 20px; letter-spacing: -.02em; line-height: 1.2; }
+  .c8a-date { text-align: center; font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); margin-top: 6px; }
+  .c8a-below { margin-top: 48px; opacity: .22; transform: translateY(12px); }
+  .c8b-row { margin-top: 8px; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+  .c8b-row .g { font-weight: 800; font-size: 14px; letter-spacing: -.015em; }
+  .c8b-row .d { font-family: var(--font-mono); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .c8-pair .cc { border-radius: 15px; padding: 11px 12px 10px; }
+  .c8-pair .cc .gl { font-size: 11px; margin-bottom: 5px; }
+  .c8-pair .cc .t { font-size: 13.5px; }
+  .c8-pair .cc .s { font-size: 9.5px; margin-top: 2px; }
+  .c8-pair .cc .cta { font-size: 8px; margin-top: 8px; }
+  .c8-pair .stack { gap: 7px; }
+  .c8-pair .plan { border-radius: 17px; }
+  .c8-pair .plan .top { padding: 12px 12px 10px; }
+  .c8-pair .plan .pt { font-size: 14.5px; }
+  .c8-pair .plan .toprow .mono-meta { font-size: 8px; }
+  .c8-pair .rail .d { width: 24px; }
+  .c8-pair .rail .d b { font-size: 6.5px; margin-bottom: 4px; }
+  .c8-pair .rail .d span { width: 21px; height: 21px; font-size: 10px; }
+  .c8-pair .plan .day { padding: 11px 12px 12px; }
+  .c8-pair .plan .dt { font-size: 13.5px; }
+  .c8-pair .plan .dayrow .mono-meta { font-size: 8px; }
+  .c8-pair .ex .n { font-size: 10.5px; }
+  .c8-pair .ex .m, .c8-pair .ex .sch { font-size: 8px; }
+  .c8-pair .plan .actions { margin-top: 8px; }
+  .c8-pair .plan .start { height: 32px; font-size: 11px; }
+  .c8-pair .plan .rnd { width: 32px; height: 32px; font-size: 11px; }
+  .c8-scenhead { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--chalk); text-align: center; margin: 34px 0 14px; }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding-top: 26px; color: var(--ash); font-size: 14px; line-height: 1.7; max-width: 68ch; }
+  footer b { color: var(--chalk); }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="page-kicker">HYBRID — Today screen — round three</div>
+  <h1>8 concepts × <em>both scenarios</em></h1>
+  <p class="lede">Same eight ideas, now stress-tested against reality: each concept renders <strong>Scenario A</strong> (no plan — the frozen chooser cards) and <strong>Scenario B</strong> (enrolled — the frozen plan card with its week rail and Start). The greeting treatment has to be <strong>one system that survives both states</strong>, because the athlete crosses from A to B the day they enrol — and back, the day a plan ends. Both card blocks are untouched in every mock; only the strip above them changes.</p>
+
+  <!-- ═══ C1 · THE INVERSION ═════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>01</b> — FLIP THE HIERARCHY</div>
+      <h2>The Inversion</h2>
+      <p class="why">The greeting becomes a warm sand kicker; the headline slot belongs to whatever the screen is actually about. No plan: the question <em>“How do you want to start?”</em> takes the slot. On a plan: the slot goes empty and the plan card’s own title becomes the de-facto headline — the kicker plus one meta line is the entire zone.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — this is the concept’s best argument: after enrolling, nothing above the card competes with “6-Day Push/Pull/Legs”. The greeting never fights your plan for attention.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c1-kick">Good afternoon, Rafal</div>
+          <div class="c1-h">How do you want to start?</div>
+          <div class="c1-meta"><span class="mono-meta">Sunday, 19 July</span><span class="mono-meta">Free</span></div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c1-kick">Good afternoon, Rafal</div>
+          <div class="c1-meta c1-meta-plan"><span class="mono-meta">Sunday, 19 July</span></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C2 · TODAY ═════════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>02</b> — THE APP STORE MOVE</div>
+      <h2>Today</h2>
+      <p class="why">Caption date, one enormous <em>Today</em>, the greeting as a small warm sentence. The masthead is byte-for-byte identical in both scenarios — only what sits beneath it changes, which is exactly the point: the page identity is stable while the content swaps.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — “FREE” simply vanishes from the caption line (an enrolled athlete doesn’t need it), and “Today” reads even better over a concrete session than over a chooser.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c2-date"><span class="mono-meta">Sunday, 19 July</span><span class="mono-meta">Free</span></div>
+          <div class="c2-h">Today</div>
+          <div class="c2-sub">Good afternoon, Rafal.</div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c2-date"><span class="mono-meta">Sunday, 19 July</span></div>
+          <div class="c2-h">Today</div>
+          <div class="c2-sub">Good afternoon, Rafal.</div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C3 · MASTHEAD ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>03</b> — A TRAINING JOURNAL COVER</div>
+      <h2>Masthead</h2>
+      <p class="why">The big serif <em>19</em> with the month and greeting stacked behind a hairline — today’s journal cover. Identical in both scenarios; the no-plan state adds the question as a mono kicker matched to “FREE”, the plan state needs no kicker at all.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — the serif date and the week rail’s lime “19” now rhyme: the masthead names the day, the rail locates it in the week. Two views of the same fact, no duplication of words.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c3"><div class="num">19</div><div class="side"><div class="mo">Sunday – July</div><div class="greet">Good afternoon, Rafal</div></div></div>
+          <div class="c3-kick"><span class="mono-meta" style="color: var(--chalk);">How do you want to start?</span><span class="mono-meta">Free</span></div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c3"><div class="num">19</div><div class="side"><div class="mo">Sunday – July</div><div class="greet">Good afternoon, Rafal</div></div></div>
+          <div class="c3-gap"></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C4 · ENGRAVED ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>04</b> — BRAUN ON THE FACEPLATE</div>
+      <h2>Engraved</h2>
+      <p class="why">The greeting is the page’s one voice; zone labels are wide-tracked uppercase engravings that can’t compete. No plan: the engraving reads <em>HOW DO YOU WANT TO START</em> with “FREE” balancing it. On a plan: an engraving would only repeat what the card already says — so it disappears entirely.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — the honest test of a label system: when the content names itself, the label is deleted, not re-worded. Greeting, date, card. Three elements, done.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c4-greet">Good afternoon, Rafal</div>
+          <div class="c4-date">Sunday, 19 July</div>
+          <div class="c4-eng"><span class="q">How do you want to start</span><span class="mono-meta">Free</span></div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c4-greet">Good afternoon, Rafal</div>
+          <div class="c4-date">Sunday, 19 July</div>
+          <div class="c4-gap"></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C5 · THE RULE ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>05</b> — BORROW THE BRAND’S OWN MOTIF</div>
+      <h2>The Rule</h2>
+      <p class="why">The lime dash from under <em>HYBRID.</em> becomes the zone divider. No plan: the dash anchors a fence line carrying the question and “FREE”. On a plan: the same dash-and-line runs <em>wordless</em> — pure structure marking “here ends the greeting, here begins today” — because the plan card supplies its own words.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — one gesture, two voltages: with words when the zone needs naming, silent when it doesn’t. The athlete learns it once and reads it forever.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c5-greet">Good afternoon, Rafal</div>
+          <div class="c5-date">Sunday, 19 July</div>
+          <div class="c5-rule"><span class="seg"></span><span class="q">How do you want to start?</span><span class="ln"></span><span class="free">Free</span></div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c5-greet">Good afternoon, Rafal</div>
+          <div class="c5-date">Sunday, 19 July</div>
+          <div class="c5-rule"><span class="seg"></span><span class="ln"></span></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C6 · ONE LINE ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>06</b> — MAXIMUM COMPRESSION</div>
+      <h2>One Line</h2>
+      <p class="why">Greeting left, date right, one letterhead baseline — in both scenarios. No plan: “FREE” right-aligns quietly above the stack. On a plan: nothing else at all, and the entire plan card — including the <em>Start</em> button — rises roughly a hundred pixels toward the fold.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — this is where the concept earns its keep: the enrolled athlete opens the app and Start is comfortably above the fold with the Done-today card peeking in. Space returned to training, daily.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c6-row"><span class="g">Good afternoon, Rafal</span><span class="mono-meta">Sun 19 Jul</span></div>
+          <div class="c6-free mono-meta">Free to start</div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c6-row"><span class="g">Good afternoon, Rafal</span><span class="mono-meta">Sun 19 Jul</span></div>
+          <div class="c6-gap"></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="more">Show 3 more ⌄</div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C7 · THE SPINE ═════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>07</b> — BIND, DON’T HEADLINE</div>
+      <h2>The Spine</h2>
+      <p class="why">A thin chartreuse spine in the left margin binds a zone to its label. No plan: it runs from the small question down the chooser stack. On a plan: it runs from a small <em>Day 1 of 6</em> waypoint down the plan card — the spine becomes today’s thread, and its length is literally how much today holds.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — the label the spine carries changes from a question (“how do you want to start?”) to a position (“Day 1 of 6”), which is exactly what changed in the athlete’s life. Structure mirrors state.</p>
+    </div>
+    <div class="duo">
+      <div>
+        <div class="scen"><b>A</b> — no plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c7-greet">Good afternoon, Rafal</div>
+          <div class="c7-date">Sunday, 19 July</div>
+          <div class="c7-zone">
+            <div class="c7-spine"></div>
+            <div class="c7-body">
+              <div class="c7-q"><span class="t">How do you want to start?</span><span class="mono-meta">Free</span></div>
+              <div class="stack">
+                <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+                <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+                <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="scen"><b>B</b> — on a plan</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c7-greet">Good afternoon, Rafal</div>
+          <div class="c7-date">Sunday, 19 July</div>
+          <div class="c7-zone">
+            <div class="c7-spine"></div>
+            <div class="c7-body">
+              <div class="c7-q"><span class="t">Day 1 of 6</span><span class="mono-meta">Push week</span></div>
+              <div class="plan">
+                <div class="top">
+                  <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+                  <div class="rail">
+                    <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+                  </div>
+                </div>
+                <div class="day">
+                  <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+                  <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift — progressive overload)</span><div class="sch">4×6 @9</div></div>
+                  <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+                  <div class="more">Show 3 more ⌄</div>
+                  <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C8 · SETTLE ════════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>08</b> — THE GREETING AS AN EVENT</div>
+      <h2>Settle</h2>
+      <p class="why">On open the greeting appears alone, centered and generous; after ~600&nbsp;ms it settles into a compact one-line row as the content rises. The choreography is <em>identical in both scenarios</em> — only what rises differs: the chooser for a new athlete, the plan card for an enrolled one. The settled layout is Concept 06.</p>
+      <p class="plannote"><b>Plan-state behaviour</b> — arguably better than in the no-plan state: the daily ritual becomes hello → your session slides up → Start. Reduced-motion users get the settled frame directly.</p>
+    </div>
+
+    <div class="c8-scenhead">Scenario A — no plan</div>
+    <div class="c8-pair">
+      <div>
+        <div class="lbl mono-meta">Moment 1 — on open</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c8a-greet">Good afternoon,<br/>Rafal</div>
+          <div class="c8a-date">Sunday, 19 July</div>
+          <div class="c8a-below">
+            <div class="stack">
+              <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline.</div><span class="cta">Browse →</span></div>
+              <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program.</div><span class="cta">Compose →</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl mono-meta">Moment 2 — settled (+0.6 s)</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c8b-row"><span class="g">Good afternoon, Rafal</span><span class="d">Sun 19 Jul</span></div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c8-scenhead">Scenario B — on a plan</div>
+    <div class="c8-pair">
+      <div>
+        <div class="lbl mono-meta">Moment 1 — on open</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c8a-greet">Good afternoon,<br/>Rafal</div>
+          <div class="c8a-date">Sunday, 19 July</div>
+          <div class="c8a-below">
+            <div class="plan">
+              <div class="top">
+                <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+                <div class="rail">
+                  <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl mono-meta">Moment 2 — settled (+0.6 s)</div>
+        <div class="phone">
+          <div class="p-head"><div class="avatar">RA<i></i></div><div class="wordmark">HYBRID<span>.</span><i></i></div><div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div></div>
+          <div class="c8b-row"><span class="g">Good afternoon, Rafal</span><span class="d">Sun 19 Jul</span></div>
+          <div class="plan">
+            <div class="top">
+              <div class="toprow"><div class="pt">6-Day Push/Pull/Legs</div><div class="mono-meta">Day 1 / 6</div></div>
+              <div class="rail">
+                <div class="d sel"><b>SUN</b><span>19</span></div><div class="d"><b>MON</b><span>20</span></div><div class="d"><b>TUE</b><span>21</span></div><div class="d"><b>WED</b><span>22</span></div><div class="d"><b>THU</b><span>23</span></div><div class="d"><b>FRI</b><span>24</span></div><div class="d dim"><b>SAT</b><span>25</span></div>
+              </div>
+            </div>
+            <div class="day">
+              <div class="dayrow"><div class="dt">Mon, Push (Bench)</div><div class="mono-meta">Sun 19 Jul</div></div>
+              <div class="ex"><span class="n">Bench Press</span> <span class="m">(Main lift)</span><div class="sch">4×6 @9</div></div>
+              <div class="ex"><span class="n">Incline Bench Press</span><div class="sch">3×8 @8</div></div>
+              <div class="actions"><div class="start">Start →</div><div class="rnd">»</div><div class="rnd">↦</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <b>Reading the two-scenario test:</b> the concepts that get <b>stronger</b> on a plan are 01 (nothing competes with the plan title), 05 (the wordless rule), 06 (Start rises above the fold) and 07 (the spine's label becomes “Day 1 of 6”). Concepts 02 and 03 are the most stable — identical mastheads in both states. Concept 04's plan state collapses into plain greeting + card, which is honest but loses its signature. My pick across both scenarios is <b>05 (The Rule)</b>, with <b>01 (The Inversion)</b> as the bold alternative — both ship to web and mobile together per the parity rule. Both card blocks were left untouched in every mock.
+  </footer>
+
+</main>
+</body>
+</html>
