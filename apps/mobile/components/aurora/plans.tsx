@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, type GoalNode, type GoalPlan } from "@hybrid/core";
@@ -13,6 +13,8 @@ import PercentProgram from "../percent-program";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
+type EnrolledSeason = { macroId: string; planId: string | null; goal: string; startedAt: string | null };
+
 export default function AuroraPlans() {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -21,15 +23,30 @@ export default function AuroraPlans() {
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
+  // The enrolled season, fetched here once and shared: the info-only card on
+  // the browse root, and the leave section on the enrolled plan's detail page.
+  const [enrolled, setEnrolled] = useState<EnrolledSeason | null>(null);
+  const loadEnrolled = useCallback(() => {
+    fetchMacrocycle().then((m) => setEnrolled(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null));
+  }, []);
+  // Re-fetched on tab focus AND on detail open/close, so enrolling on a detail
+  // page (this screen stays mounted in the tab stack) is reflected right away.
+  useFocusEffect(useCallback(() => { loadEnrolled(); }, [loadEnrolled]));
+  useEffect(() => { loadEnrolled(); }, [planId, loadEnrolled]);
+
   if (goal && plan) {
+    const leaveSection = enrolled && enrolled.planId === plan.id
+      ? <LeavePlanSection enrolled={enrolled} onLeft={() => setEnrolled(null)} />
+      : null;
     const program = programFor(plan.id);
     if (program)
       return (
         <AuroraScreen>
           <PercentProgram goal={goal} plan={plan} program={program} back={() => setPlanId(null)} />
+          {leaveSection}
         </AuroraScreen>
       );
-    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} />;
+    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={loadEnrolled} leaveSection={leaveSection} />;
   }
   if (goal) return <PlanList goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
@@ -40,7 +57,7 @@ export default function AuroraPlans() {
         <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
       </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
-      <EnrolledCard />
+      <EnrolledCard enrolled={enrolled} />
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
@@ -62,33 +79,38 @@ export default function AuroraPlans() {
   );
 }
 
-/** The season you're currently enrolled in, shown above the goal grid — with
- *  the leave flow: an explicit keep-vs-delete choice for the workouts logged
- *  during the plan, and a typed-DELETE confirm arming the destructive branch
- *  (same pattern as the settings danger zone). Mirrors the web Plans card. */
-function EnrolledCard() {
+/** The season you're currently enrolled in, shown above the goal grid.
+ *  INFO-ONLY by design: no leave affordance here — a permanent exit button on
+ *  the browse surface reads as an invitation to quit. Leaving lives at the
+ *  bottom of the enrolled plan's own detail page (LeavePlanSection). */
+function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const [enrolled, setEnrolled] = useState<{ macroId: string; planId: string | null; goal: string; startedAt: string | null } | null>(null);
+  if (!enrolled) return null;
+  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === enrolled.planId)?.name ?? enrolled.goal;
+  const started = enrolled.startedAt ? new Date(enrolled.startedAt) : null;
+  return (
+    <ACard style={{ marginBottom: 16 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 4 }}>{planName}</Text>
+      {started && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</Text>}
+    </ACard>
+  );
+}
+
+/** The leave flow, tucked at the BOTTOM of the enrolled plan's own detail page
+ *  (the parent only renders it on the plan you're enrolled in): a quiet text
+ *  link that expands into the explicit keep-vs-delete choice for the workouts
+ *  logged during the plan, with a typed-DELETE confirm arming the destructive
+ *  branch (same pattern as the settings danger zone). Mirrors the web. */
+function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeason; onLeft: () => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [wipe, setWipe] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-
-  // Re-fetched on every focus so enrolling from a Detail below (this screen
-  // stays mounted in the tab stack) is reflected when you come back.
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    fetchMacrocycle().then((m) => {
-      if (active) setEnrolled(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null);
-    });
-    return () => { active = false; };
-  }, []));
-
-  if (!enrolled) return null;
-  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === enrolled.planId)?.name ?? enrolled.goal;
-  const started = enrolled.startedAt ? new Date(enrolled.startedAt) : null;
   const armed = !wipe || confirmText.trim().toUpperCase() === "DELETE";
 
   const leave = async () => {
@@ -98,10 +120,7 @@ function EnrolledCard() {
     const ok = await leavePlan(enrolled.macroId, wipe);
     setBusy(false);
     if (!ok) { setError(true); return; }
-    setEnrolled(null);
-    setOpen(false);
-    setWipe(false);
-    setConfirmText("");
+    onLeft();
   };
 
   const option = (selected: boolean, tone: string, title: string, sub: string, pick: () => void) => (
@@ -117,23 +136,17 @@ function EnrolledCard() {
     </Pressable>
   );
 
-  return (
-    <ACard style={{ marginBottom: 16 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 4 }}>{planName}</Text>
-          {started && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</Text>}
-        </View>
-        {!open && (
-          <Pressable onPress={() => setOpen(true)} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
-          </Pressable>
-        )}
-      </View>
+  if (!open)
+    return (
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 20, marginBottom: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textDecorationLine: "underline" }}>{t("w.train.plans.leavePlan")}…</Text>
+      </Pressable>
+    );
 
-      {open && (
-        <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+  return (
+    <ACard style={{ marginTop: 20 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
+      <View style={{ marginTop: 10 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.train.plans.leaveExplain")}</Text>
           {option(!wipe, C.lime, t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
           {option(wipe, C.red, t("w.train.plans.leaveWipe"), t("w.train.plans.leaveWipeSub"), () => setWipe(true))}
@@ -154,8 +167,7 @@ function EnrolledCard() {
           <Pressable onPress={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 12 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.plans.leaveCancel")}</Text>
           </Pressable>
-        </View>
-      )}
+      </View>
     </ACard>
   );
 }
@@ -186,12 +198,17 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   );
 }
 
-function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
+function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode; plan: GoalPlan; back: () => void; onEnrolled?: () => void; leaveSection?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
-  const enroll = async () => { setEnrolled("busy"); setEnrolled((await enrollPlan(goal.name, plan.id)) ? "done" : "error"); };
+  const enroll = async () => {
+    setEnrolled("busy");
+    const ok = await enrollPlan(goal.name, plan.id);
+    setEnrolled(ok ? "done" : "error");
+    if (ok) onEnrolled?.();
+  };
   return (
     <AuroraScreen>
       <Back onPress={back} label={goal.name} />
@@ -233,6 +250,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
         onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
       />
       {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
+      {leaveSection}
     </AuroraScreen>
   );
 }

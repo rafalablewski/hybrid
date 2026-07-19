@@ -53,23 +53,42 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
   );
 }
 
-/** The season you're currently enrolled in, shown above the goal grid — with
- *  the leave flow: an explicit keep-vs-delete choice for the workouts logged
- *  during the plan, and a typed-DELETE confirm arming the destructive branch
- *  (same pattern as the account danger zone). */
+/** The season you're currently enrolled in, shown above the goal grid.
+ *  INFO-ONLY by design: no leave affordance here — a permanent exit button on
+ *  the browse surface reads as an invitation to quit. Leaving lives at the
+ *  bottom of the enrolled plan's own detail page (LeavePlanSection). */
 function EnrolledCard() {
   const { t } = useLang();
-  const { macro, planId, planStartedAt, macroId, refresh } = useMacrocycle();
+  const { macro, planId, planStartedAt } = useMacrocycle();
+  if (!macro) return null;
+
+  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === planId)?.name ?? macro.goalOrSport;
+  const started = planStartedAt ? new Date(planStartedAt) : null;
+  return (
+    <div style={{ ...card, marginBottom: 24 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.currentPlan")}</div>
+      <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 4 }}>{planName}</div>
+      {started && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</div>}
+    </div>
+  );
+}
+
+/** The leave flow, tucked at the BOTTOM of the enrolled plan's own detail page
+ *  (renders nothing on plans you're not enrolled in): a quiet text link that
+ *  expands into the explicit keep-vs-delete choice for the workouts logged
+ *  during the plan, with a typed-DELETE confirm arming the destructive branch
+ *  (same pattern as the account danger zone). */
+function LeavePlanSection({ planId }: { planId: string }) {
+  const { t } = useLang();
+  const { planId: enrolledPlanId, macroId, refresh } = useMacrocycle();
   const revalidate = useRevalidate();
   const [open, setOpen] = useState(false);
   const [wipe, setWipe] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  if (!macro || !macroId) return null;
+  if (!macroId || enrolledPlanId !== planId) return null;
 
-  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === planId)?.name ?? macro.goalOrSport;
-  const started = planStartedAt ? new Date(planStartedAt) : null;
   const armed = !wipe || confirmText.trim().toUpperCase() === "DELETE";
 
   const leave = async () => {
@@ -110,22 +129,16 @@ function EnrolledCard() {
   );
 
   return (
-    <div style={{ ...card, marginBottom: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.currentPlan")}</div>
-          <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 4 }}>{planName}</div>
-          {started && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</div>}
-        </div>
-        {!open && (
-          <button onClick={() => setOpen(true)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "9px 16px", cursor: "pointer" }}>
-            {t("w.train.plans.leavePlan")}
-          </button>
-        )}
-      </div>
+    <div style={{ marginTop: 28 }}>
+      {!open && (
+        <button onClick={() => setOpen(true)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+          {t("w.train.plans.leavePlan")}…
+        </button>
+      )}
 
       {open && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
+        <div style={card}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red"), marginBottom: 10 }}>{t("w.train.plans.leavePlan")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), margin: 0 }}>{t("w.train.plans.leaveExplain")}</p>
           <div style={{ display: "grid", gap: space.sm, marginTop: 14 }} role="radiogroup" aria-label={t("w.train.plans.leavePlan")}>
             {option(!wipe, C("lime"), t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
@@ -223,6 +236,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
         {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
       </button>
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      <LeavePlanSection planId={plan.id} />
     </div>
   );
 }
@@ -290,6 +304,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
       </button>
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      <LeavePlanSection planId={plan.id} />
     </div>
   );
 }
