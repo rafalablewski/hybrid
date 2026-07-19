@@ -99,10 +99,20 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   }, [rooms]);
 
   const q = query.trim().toLowerCase();
-  const exact = all.some((e) => e.name.toLowerCase() === q) || (recent ?? []).some((e) => e.name.toLowerCase() === q);
+  // Search covers the catalog PLUS the athlete's recent lifts — a previously
+  // logged CUSTOM movement lives only in `recent`, and it must both surface in
+  // results and count as `exact` (else typing its name is a dead end: no row,
+  // and the custom-add suppressed). Alias names also count as exact so an
+  // aliased built-in ("Bench Press" behind "Barbell Bench Press") is never
+  // re-offered as a new custom spelling.
+  const searchPool = (() => {
+    const seen = new Set(all.map((e) => e.name));
+    return [...(recent ?? []).filter((e) => !seen.has(e.name)), ...all];
+  })();
+  const exact = searchPool.some((e) => e.name.toLowerCase() === q) || [...aliases].some((a) => a.toLowerCase() === q);
   // Capped so a one-letter query doesn't mount the whole catalog in one frame;
   // every further character narrows it well under the cap.
-  const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 60) : [];
+  const results = q ? searchPool.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 60) : [];
   const az = useMemo(() => {
     const sorted = [...all].sort((a, b) => a.name.localeCompare(b.name));
     const letters: { letter: string; entries: Entry[] }[] = [];
@@ -255,7 +265,9 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
               <View pointerEvents="box-none" style={{ position: "absolute", right: -6, top: 0, bottom: 0, justifyContent: "center" }}>
                 <View style={{ gap: 1 }}>
                   {letters.map((L) => (
-                    <Pressable key={L} onPress={() => scrollRef.current?.scrollTo({ y: letterY.current[L] ?? 0, animated: true })} hitSlop={{ left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={L}>
+                    // Instant jump (animated: false) — the index can be
+                    // thousands of px away; a rail should snap, not glide.
+                    <Pressable key={L} onPress={() => scrollRef.current?.scrollTo({ y: letterY.current[L] ?? 0, animated: false })} hitSlop={{ left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={L}>
                       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
                     </Pressable>
                   ))}

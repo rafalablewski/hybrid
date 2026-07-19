@@ -809,7 +809,9 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
   const seen = new Set<string>();
   const all: Entry[] = [];
   for (const r of rooms) for (const e of r.entries) if (!seen.has(e.name)) { seen.add(e.name); all.push(e); }
-  const exact = all.some((e) => e.name.toLowerCase() === q);
+  // Alias names count as exact so an aliased built-in ("Bench Press" behind
+  // "Barbell Bench Press") is never re-offered as a new custom spelling.
+  const exact = all.some((e) => e.name.toLowerCase() === q) || [...aliases].some((a) => a.toLowerCase() === q);
   const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : [];
   const az: { letter: string; entries: Entry[] }[] = [];
   for (const e of [...all].sort((a, b) => a.name.localeCompare(b.name))) {
@@ -930,7 +932,10 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
           {view === "az" && !q && (
             <div style={{ position: "absolute", right: 4, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 1 }}>
               {az.map((sec) => (
-                <button key={sec.letter} type="button" aria-label={sec.letter} onClick={() => document.getElementById(`xpk-${sec.letter}`)?.scrollIntoView({ block: "start", behavior: "smooth" })}
+                // Instant jump (no smooth) — the index can be thousands of px
+                // away and a long smooth scroll lags or aborts; a rail snaps,
+                // like the iOS contacts index.
+                <button key={sec.letter} type="button" aria-label={sec.letter} onClick={() => document.getElementById(`xpk-${sec.letter}`)?.scrollIntoView({ block: "start" })}
                   style={{ ...mono, fontSize: 9, color: ASH, background: "none", border: 0, cursor: "pointer", padding: "0 4px", textAlign: "center" }}>
                   {sec.letter}
                 </button>
