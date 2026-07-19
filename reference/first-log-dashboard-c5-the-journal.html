@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — first log → calendar — C5 The Journal</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#6cb6bd; --amber:#d0cd94; --red:#e58a5c;
+    --disp:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;padding:48px 20px 120px}
+  main{max-width:1320px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  h1{font-weight:900;font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin:10px 0}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lede{color:var(--ash);font-size:15.5px;line-height:1.7;max-width:76ch}
+  .lede strong{color:var(--chalk);font-weight:600}
+  .ive{margin-top:20px;border-left:2px solid var(--lime);padding:2px 0 2px 16px;max-width:72ch}
+  .ive .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .ive p{color:var(--ash);font-size:14.5px;line-height:1.75}
+  .ive p em{color:var(--chalk);font-style:normal;font-weight:600}
+  .states{margin-top:48px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center;align-items:flex-start}
+  .state{width:392px;max-width:100%}
+  .state-k{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 10px}
+  .state-k .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:600}
+  .state-k .d{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .note{margin:12px 6px 0;color:var(--ash);font-size:13px;line-height:1.65}
+  .note em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  .phone{background:linear-gradient(180deg,#101210,var(--ink) 62%);border:1px solid var(--line);border-radius:34px;padding:22px 16px 26px;box-shadow:0 24px 70px -30px rgba(0,0,0,.85);overflow:hidden;position:relative}
+  .ph-head{display:flex;align-items:center;justify-content:space-between}
+  .avatar{width:40px;height:40px;border-radius:14px;background:rgba(198,248,79,.13);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:var(--lime);position:relative}
+  .avatar i{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:999px;background:var(--lime);border:2px solid var(--ink)}
+  .wordmark{font-weight:900;font-size:17px;letter-spacing:-.03em;text-align:center}
+  .wordmark b{color:var(--lime)}
+  .wordmark i{display:block;width:24px;height:3px;border-radius:2px;background:var(--lime);margin:4px auto 0}
+  .h-right{display:flex;gap:8px;align-items:center}
+  .streak{height:38px;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;background:rgba(229,138,92,.14);border:1px solid rgba(229,138,92,.4);font-family:var(--mono);font-size:10.5px;color:var(--red);white-space:nowrap}
+  .bell{width:38px;height:38px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:14px}
+  .mast{margin-top:20px}
+  .mast .row{display:flex;justify-content:space-between;align-items:baseline}
+  .mast .date{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .mast h2{font-weight:900;font-size:34px;letter-spacing:-.03em;margin-top:2px}
+  .mast .greet{color:var(--ash);font-size:14.5px;margin-top:2px}
+
+  /* ── the journal ── */
+  .journal{margin-top:18px}
+  .entry{display:flex;gap:13px}
+  .entry + .entry{margin-top:14px}
+  .when{width:44px;flex-shrink:0;text-align:right;padding-top:14px}
+  .when .wd{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);display:block}
+  .when .dn{font-weight:800;font-size:17px;color:var(--ash);margin-top:1px}
+  .entry.today .when .wd{color:var(--lime)}
+  .entry.today .when .dn{color:var(--chalk)}
+  .entry.past .when .dn{color:var(--chalk)}
+  .entry.future .when .dn{color:#4a4e49}
+  .body{flex:1;min-width:0}
+
+  .ecard{background:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:15px 16px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .ecard.today-card{border-color:rgba(198,248,79,.35)}
+  .slotcard{border:1px dashed #3c403b;border-radius:20px;padding:15px 16px;background:transparent}
+  .dd-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .dd-k b{color:var(--lime);font-weight:600}
+  .rt{display:flex;align-items:center;gap:9px;margin-top:5px}
+  .rt .tick{color:var(--lime);font-size:15px}
+  .rt .t{font-weight:800;font-size:16px;letter-spacing:-.01em}
+  .meta{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:5px}
+  .slot-t{font-weight:800;font-size:15.5px;color:var(--ash);margin-top:4px}
+  .slot-s{font-size:12.5px;color:var(--ash);line-height:1.55;margin-top:4px}
+  .slot-s em{color:var(--chalk);font-style:normal;font-weight:600}
+  .srow{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:7px 12px;border:1px solid var(--line);color:var(--ash)}
+  .pill.hot{background:var(--lime);color:var(--on-accent);border-color:var(--lime);font-weight:700;box-shadow:0 0 26px -8px rgba(198,248,79,.55)}
+  .pill.amb{color:var(--amber);border-color:rgba(208,205,148,.4)}
+  .pill.blu{color:var(--blue);border-color:rgba(108,182,189,.4)}
+  .logrow{display:flex;align-items:center;gap:10px;margin-top:11px}
+  .logrow .plus{width:32px;height:32px;border-radius:11px;border:1px dashed #3c403b;display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:13px}
+  .logrow .t{font-family:var(--mono);font-size:11px;color:var(--lime)}
+  .lift{margin-top:9px}
+  .lift .nm{font-weight:700;font-size:13.5px}
+  .lift .ld{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-top:1px}
+  .lift .ld b{color:var(--chalk);font-weight:700;font-family:var(--disp);font-size:13.5px}
+  .pbtn{margin-top:12px;background:var(--lime);color:var(--on-accent);border-radius:999px;padding:11px;text-align:center;font-weight:800;font-size:13px;box-shadow:0 0 30px -8px rgba(198,248,79,.5)}
+  .rest .slot-t{color:#4a4e49}
+  .fadeout{position:relative;max-height:56px;overflow:hidden}
+  .fadeout::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--ink))}
+
+  .cc{background:radial-gradient(130% 90% at 92% -14%,var(--glow,rgba(198,248,79,.10)),transparent 52%),var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 15px 13px}
+  .cc + .cc{margin-top:8px}
+  .cc .gl{font-size:13px;color:var(--acc,var(--lime));display:block;margin-bottom:7px}
+  .cc .t{font-weight:800;font-size:17px;letter-spacing:-.015em}
+  .cc .s{color:var(--ash);font-size:12.5px;line-height:1.5;margin-top:3px}
+  .cc .cta{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc,var(--lime));margin-top:10px;display:block}
+  .cc.blue{--acc:var(--blue);--glow:rgba(108,182,189,.10)}
+  .cc.amber{--acc:var(--amber);--glow:rgba(208,205,148,.10)}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">HYBRID — Today dashboard — after the first logged workout — concept 5 of 5</p>
+  <h1>The Journal — <em>yesterday, today, tomorrow: one page</em></h1>
+  <p class="lede">
+    Grids are for planners; this user is a diarist. The Journal replaces the hero area with a short vertical
+    timeline — <strong>yesterday's receipt above, today's entry in focus, tomorrow as an open slot below</strong> —
+    the exact shape of how a plan-less athlete actually thinks about training. Every day is the same kind of slot:
+    a logged day is a filled entry, an un-logged past day simply doesn't appear, an open future day is a dashed page
+    waiting to be written. The three original choices become <strong>tomorrow's slot actions</strong>. And on day zero
+    the journal has exactly one entry — today — holding the three cards. When a plan arrives, prescriptions are simply
+    written into the future pages. Same book, different author.
+  </p>
+  <div class="ive">
+    <div class="who">The design argument</div>
+    <p>A calendar grid asks "which day is it?" — a journal asks <em>"what happened, and what's next?"</em> That is the
+    only question this athlete has. By making past, present and future the same physical object — a page — enrolment in
+    a plan stops being a mode-switch and becomes something gentler: the book starts writing itself one page ahead of you.</p>
+  </div>
+
+  <div class="states">
+
+    <!-- STATE A -->
+    <div class="state">
+      <div class="state-k"><span class="n">A — Day zero</span><span class="d">the journal opens with one page: today</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="journal">
+          <div class="entry today">
+            <div class="when"><span class="wd">Sun</span><span class="dn">19</span></div>
+            <div class="body">
+              <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+              <div class="cc blue"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+              <div class="cc amber"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+            </div>
+          </div>
+          <div class="entry future">
+            <div class="when"><span class="wd">Mon</span><span class="dn">20</span></div>
+            <div class="body"><div class="slotcard rest"><div class="slot-t">Unwritten</div></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">The three cards are already <em>inside</em> the journal — today's first page. The dashboard never abandons this structure later; it only fills it. Consistency is built in from the first pixel.</p>
+    </div>
+
+    <!-- STATE B -->
+    <div class="state">
+      <div class="state-k"><span class="n">B — Logger</span><span class="d">no plan, 5 sessions — the proposal</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="journal">
+          <div class="entry past">
+            <div class="when"><span class="wd">Fri</span><span class="dn">17</span></div>
+            <div class="body">
+              <div class="ecard" style="padding:12px 16px">
+                <div class="rt" style="margin-top:0"><span class="tick">✓</span><span class="t" style="font-size:14px">Pull day</span></div>
+                <div class="meta">0.7 t – Row, Chin-Up – 17:12</div>
+              </div>
+            </div>
+          </div>
+          <div class="entry today">
+            <div class="when"><span class="wd">Sun</span><span class="dn">19</span></div>
+            <div class="body">
+              <div class="ecard today-card">
+                <span class="dd-k"><b>Today</b> — logged</span>
+                <div class="rt"><span class="tick">✓</span><span class="t">Afternoon workout</span></div>
+                <div class="meta">0.5 t – Barbell Deadlift – 15:57 – 42 min</div>
+                <div class="logrow"><div class="plus">＋</div><div class="t">Log another workout</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="entry future">
+            <div class="when"><span class="wd">Mon</span><span class="dn">20</span></div>
+            <div class="body">
+              <div class="slotcard">
+                <span class="dd-k">Tomorrow</span>
+                <div class="slot-t">Open page</div>
+                <div class="slot-s">Nothing planned. Let a program write it — or show up and write it yourself, like <em>5 times</em> this week.</div>
+                <div class="srow">
+                  <span class="pill hot">▤ Plan it</span>
+                  <span class="pill blu">⌗ Build</span>
+                  <span class="pill amb">↯ Just train</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="entry future">
+            <div class="when"><span class="wd">Tue</span><span class="dn">21</span></div>
+            <div class="body fadeout"><div class="slotcard rest"><div class="slot-t">Unwritten</div></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="note"><em>The star of this concept.</em> Skipped past days never appear — a journal holds no blank guilt pages. The three choices live on tomorrow's page as pills, ranked: lime commits, the others stay grey and sand.</p>
+    </div>
+
+    <!-- STATE C -->
+    <div class="state">
+      <div class="state-k"><span class="n">C — Plan enrolled</span><span class="d">the book writes itself a page ahead</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="journal">
+          <div class="entry past">
+            <div class="when"><span class="wd">Fri</span><span class="dn">17</span></div>
+            <div class="body">
+              <div class="ecard" style="padding:12px 16px">
+                <div class="rt" style="margin-top:0"><span class="tick">✓</span><span class="t" style="font-size:14px">Pull day</span></div>
+                <div class="meta">0.7 t – Row, Chin-Up – 17:12</div>
+              </div>
+            </div>
+          </div>
+          <div class="entry today">
+            <div class="when"><span class="wd">Sun</span><span class="dn">19</span></div>
+            <div class="body">
+              <div class="ecard today-card">
+                <span class="dd-k"><b>Today</b> — Soviet 8-Week – Squat day</span>
+                <div class="lift"><div class="nm">Back Squat</div><div class="ld"><b>80%</b> ×2×6</div></div>
+                <div class="lift"><div class="nm">Bench Press</div><div class="ld"><b>75%</b> ×3×5</div></div>
+                <div class="pbtn">Start session</div>
+              </div>
+            </div>
+          </div>
+          <div class="entry future">
+            <div class="when"><span class="wd">Mon</span><span class="dn">20</span></div>
+            <div class="body">
+              <div class="slotcard">
+                <span class="dd-k">Tomorrow — planned</span>
+                <div class="slot-t" style="color:var(--chalk)">Deadlift day</div>
+                <div class="meta">Deadlift 82% ×2×5 – Press 70% ×3×6</div>
+              </div>
+            </div>
+          </div>
+          <div class="entry future">
+            <div class="when"><span class="wd">Tue</span><span class="dn">21</span></div>
+            <div class="body fadeout"><div class="slotcard rest"><div class="slot-t">Rest ☾</div></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">With a plan, tomorrow's dashed page arrives pre-written — same slot, same position, new author. Un-enrolling would simply return the pages to the user's pen. No layout ever changes; only authorship does.</p>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>

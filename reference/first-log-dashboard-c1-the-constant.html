@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — first log → calendar — C1 The Constant</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#6cb6bd; --amber:#d0cd94; --red:#e58a5c;
+    --disp:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;padding:48px 20px 120px}
+  main{max-width:1320px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  h1{font-weight:900;font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin:10px 0}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lede{color:var(--ash);font-size:15.5px;line-height:1.7;max-width:76ch}
+  .lede strong{color:var(--chalk);font-weight:600}
+  .ive{margin-top:20px;border-left:2px solid var(--lime);padding:2px 0 2px 16px;max-width:72ch}
+  .ive .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .ive p{color:var(--ash);font-size:14.5px;line-height:1.75}
+  .ive p em{color:var(--chalk);font-style:normal;font-weight:600}
+  .states{margin-top:48px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center;align-items:flex-start}
+  .state{width:392px;max-width:100%}
+  .state-k{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 10px}
+  .state-k .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:600}
+  .state-k .d{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .note{margin:12px 6px 0;color:var(--ash);font-size:13px;line-height:1.65}
+  .note em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  /* ── phone frame ── */
+  .phone{background:linear-gradient(180deg,#101210,var(--ink) 62%);border:1px solid var(--line);border-radius:34px;padding:22px 16px 26px;box-shadow:0 24px 70px -30px rgba(0,0,0,.85);overflow:hidden;position:relative}
+  .ph-head{display:flex;align-items:center;justify-content:space-between}
+  .avatar{width:40px;height:40px;border-radius:14px;background:rgba(198,248,79,.13);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:var(--lime);position:relative}
+  .avatar i{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:999px;background:var(--lime);border:2px solid var(--ink)}
+  .wordmark{font-weight:900;font-size:17px;letter-spacing:-.03em;text-align:center}
+  .wordmark b{color:var(--lime)}
+  .wordmark i{display:block;width:24px;height:3px;border-radius:2px;background:var(--lime);margin:4px auto 0}
+  .h-right{display:flex;gap:8px;align-items:center}
+  .streak{height:38px;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;background:rgba(229,138,92,.14);border:1px solid rgba(229,138,92,.4);font-family:var(--mono);font-size:10.5px;color:var(--red);white-space:nowrap}
+  .bell{width:38px;height:38px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:14px}
+  .mast{margin-top:20px}
+  .mast .row{display:flex;justify-content:space-between;align-items:baseline}
+  .mast .date{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .mast h2{font-weight:900;font-size:34px;letter-spacing:-.03em;margin-top:2px}
+  .mast .greet{color:var(--ash);font-size:14.5px;margin-top:2px}
+
+  /* ── chooser cards (day zero, untouched) ── */
+  .cc{background:radial-gradient(130% 90% at 92% -14%,var(--glow,rgba(198,248,79,.10)),transparent 52%),var(--card);border:1px solid var(--line);border-radius:24px;padding:17px 17px 15px}
+  .cc .gl{font-size:14px;color:var(--acc,var(--lime));display:block;margin-bottom:9px}
+  .cc .t{font-weight:800;font-size:20px;letter-spacing:-.015em}
+  .cc .s{color:var(--ash);font-size:13.5px;line-height:1.5;margin-top:4px}
+  .cc .cta{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc,var(--lime));margin-top:12px;display:block}
+  .cc.blue{--acc:var(--blue);--glow:rgba(108,182,189,.10)}
+  .cc.amber{--acc:var(--amber);--glow:rgba(208,205,148,.10)}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+
+  /* ── week rail (the constant object) ── */
+  .rail{margin-top:16px;background:var(--ink2);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .rail-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .rail-h .t{font-weight:800;font-size:16px;letter-spacing:-.01em}
+  .rail-h .m{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .chips{display:flex;justify-content:space-between}
+  .chip{width:34px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .chip .wd{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .chip .num{width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--ash)}
+  .chip.today .num{background:var(--lime);color:var(--on-accent);font-weight:900}
+  .chip.done .num{color:var(--chalk)}
+  .chip .g{height:12px;font-size:10px;line-height:12px;font-family:var(--mono);color:transparent}
+  .chip.done .g{color:var(--chalk)}
+  .chip.missed .g{color:var(--red)}
+  .chip.missed .num{color:var(--red)}
+  .chip.skipped .g{color:var(--ash)}
+  .chip.rest{opacity:.45}
+  .chip.rest .g{color:var(--ash)}
+  .hair{height:1px;background:var(--line);margin:14px -18px}
+
+  /* ── day detail / receipt ── */
+  .dd-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .receipt .big{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .receipt .tick{color:var(--lime);font-size:17px}
+  .receipt .t{font-weight:900;font-size:19px;letter-spacing:-.015em}
+  .receipt .meta{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-top:7px}
+  .stats{display:flex;gap:24px;margin-top:14px}
+  .stat .v{font-weight:900;font-size:16px}
+  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:2px}
+  .linky{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:15px;display:inline-block}
+  .linky b{color:var(--lime);font-weight:600}
+  .pbtn{margin-top:15px;background:var(--lime);color:var(--on-accent);border-radius:999px;padding:13px;text-align:center;font-weight:800;font-size:14px;box-shadow:0 0 34px -6px rgba(198,248,79,.45)}
+  .lift{margin-top:12px}
+  .lift .nm{font-weight:700;font-size:14px}
+  .lift .nm span{font-family:var(--mono);font-size:11px;color:var(--ash);font-weight:400}
+  .lift .ld{font-family:var(--mono);font-size:12px;color:var(--ash);margin-top:2px}
+  .lift .ld b{color:var(--chalk);font-weight:700;font-family:var(--disp);font-size:14px}
+
+  /* ── demoted chooser (slim rows) ── */
+  .shead{display:flex;align-items:baseline;justify-content:space-between;margin:22px 2px 10px}
+  .shead .t{font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .shead .a{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .slim{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 15px}
+  .slim + .slim{margin-top:8px}
+  .slim .gl{color:var(--acc,var(--lime));font-size:13px;width:16px;text-align:center}
+  .slim .tt{font-weight:700;font-size:14.5px;flex:1}
+  .slim .tt span{display:block;font-weight:400;font-size:12px;color:var(--ash);margin-top:1px}
+  .slim .cta{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc,var(--lime))}
+  .slim.blue{--acc:var(--blue)} .slim.amber{--acc:var(--amber)}
+  .fade{position:relative;margin-top:18px;max-height:70px;overflow:hidden}
+  .fade::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--ink))}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">HYBRID — Today dashboard — after the first logged workout — concept 1 of 5</p>
+  <h1>The Constant — <em>one calendar for the whole life of the account</em></h1>
+  <p class="lede">
+    The dilemma: a plan-less logger sees the three onboarding cards forever — five workouts by Friday and still no calendar.
+    The move: the week rail that plan users already get is <strong>not a plan feature — it is the account's spine</strong>.
+    After the very first logged session it mounts in <strong>logbook mode</strong>: same chips, same receipts, same geometry —
+    only the content differs (logged days instead of prescribed days). The three cards demote to three slim rows under a
+    quiet "Add structure" head. When a plan is enrolled, nothing is replaced — the same rail simply starts showing
+    prescriptions. One object, filling up with the user's life.
+  </p>
+  <div class="ive">
+    <div class="who">The design argument</div>
+    <p>We don't add a calendar as a reward. We admit it was <em>always there</em> — training just makes it visible.
+    A logbook day has no "missed" state: greyscale means "no promise was made", so an un-logged Wednesday is silence,
+    never terracotta guilt. The interface never changes shape on the user; it only changes <em>fill</em>.</p>
+  </div>
+
+  <div class="states">
+
+    <!-- ── STATE A — day zero ── -->
+    <div class="state">
+      <div class="state-k"><span class="n">A — Day zero</span><span class="d">no plan, no sessions — unchanged</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="stack">
+          <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+          <div class="cc blue"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+          <div class="cc amber"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+        </div>
+      </div>
+      <p class="note">Day zero keeps the full three-card chooser — a blank calendar would greet a new user with emptiness. The cards are the right first face.</p>
+    </div>
+
+    <!-- ── STATE B — after the first log (THE PROPOSAL) ── -->
+    <div class="state">
+      <div class="state-k"><span class="n">B — First log → logbook rail</span><span class="d">no plan, 5 sessions — the proposal</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+
+        <!-- THE SAME AuroraWeekRail, in logbook mode -->
+        <div class="rail">
+          <div class="rail-h"><span class="t">Your training</span><span class="m">Week of 13 Jul</span></div>
+          <div class="chips">
+            <div class="chip done"><span class="wd">Mon</span><span class="num">13</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Tue</span><span class="num">14</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Wed</span><span class="num">15</span><span class="g">·</span></div>
+            <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+            <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+          </div>
+          <div class="hair"></div>
+          <div class="receipt">
+            <span class="dd-k">Today</span>
+            <div class="big"><span class="tick">✓</span><span class="t">All done for today</span></div>
+            <div class="meta">Afternoon workout – finished 15:57</div>
+            <div class="stats">
+              <div class="stat"><div class="v">42 min</div><div class="l">Duration</div></div>
+              <div class="stat"><div class="v">0.5 t</div><div class="l">Volume</div></div>
+              <div class="stat"><div class="v">12</div><div class="l">Sets</div></div>
+            </div>
+            <span class="linky">View in history →</span>
+          </div>
+        </div>
+
+        <!-- demoted chooser -->
+        <div class="shead"><span class="t">Add structure</span><span class="a">Optional</span></div>
+        <div class="slim"><span class="gl">▤</span><div class="tt">Follow a plan<span>Tomorrow already planned</span></div><span class="cta">Browse →</span></div>
+        <div class="slim blue"><span class="gl">⌗</span><div class="tt">Build your own<span>Any discipline</span></div><span class="cta">Compose →</span></div>
+        <div class="slim amber"><span class="gl">↯</span><div class="tt">Just train<span>Log a one-time workout</span></div><span class="cta">Log →</span></div>
+
+        <div class="fade">
+          <div class="shead" style="margin-top:6px"><span class="t">Exercises</span><span class="a">All →</span></div>
+          <div class="slim"><div class="tt">Barbell Deadlift<span>117 kg – best e1RM – 8 weeks</span></div></div>
+        </div>
+      </div>
+      <p class="note"><em>The star of this concept.</em> The rail header reads "Your training" instead of a plan name. Un-logged days are quiet greyscale — no ✕, no terracotta — because a logbook makes no promises. Tapping any chip shows that day's receipt, exactly as in plan mode.</p>
+    </div>
+
+    <!-- ── STATE C — plan enrolled (existing, unchanged) ── -->
+    <div class="state">
+      <div class="state-k"><span class="n">C — Plan enrolled</span><span class="d">same rail, now prescriptive — shipped today</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+
+        <div class="rail">
+          <div class="rail-h"><span class="t">Soviet 8-Week</span><span class="m">Day 7 / 56</span></div>
+          <div class="chips">
+            <div class="chip done"><span class="wd">Mon</span><span class="num">13</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Tue</span><span class="num">14</span><span class="g">✓</span></div>
+            <div class="chip missed"><span class="wd">Wed</span><span class="num">15</span><span class="g">✕</span></div>
+            <div class="chip rest"><span class="wd">Thu</span><span class="num">16</span><span class="g">☾</span></div>
+            <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+            <div class="chip rest"><span class="wd">Sat</span><span class="num">18</span><span class="g">☾</span></div>
+            <div class="chip today"><span class="wd">Sun</span><span class="num">19</span><span class="g">·</span></div>
+          </div>
+          <div class="hair"></div>
+          <span class="dd-k">Today – Squat day</span>
+          <div class="lift">
+            <div class="nm">Back Squat</div>
+            <div class="ld"><b>80%</b> ×2×6</div>
+          </div>
+          <div class="lift">
+            <div class="nm">Bench Press <span>(paused)</span></div>
+            <div class="ld"><b>75%</b> ×3×5</div>
+          </div>
+          <div class="pbtn">Start session</div>
+        </div>
+
+        <div class="shead"><span class="t">Exercises</span><span class="a">All →</span></div>
+        <div class="slim"><div class="tt">Barbell Deadlift<span>117 kg – best e1RM – 8 weeks</span></div></div>
+      </div>
+      <p class="note">Enrolling swaps nothing visually — the same rail gains a plan name, prescriptions, and the promise-glyphs (✕ missed, ☾ rest). The user's mental model never resets.</p>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>

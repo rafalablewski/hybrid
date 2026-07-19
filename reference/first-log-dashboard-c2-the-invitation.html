@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — first log → calendar — C2 The Invitation</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#6cb6bd; --amber:#d0cd94; --red:#e58a5c;
+    --disp:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;padding:48px 20px 120px}
+  main{max-width:1320px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  h1{font-weight:900;font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin:10px 0}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lede{color:var(--ash);font-size:15.5px;line-height:1.7;max-width:76ch}
+  .lede strong{color:var(--chalk);font-weight:600}
+  .ive{margin-top:20px;border-left:2px solid var(--lime);padding:2px 0 2px 16px;max-width:72ch}
+  .ive .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .ive p{color:var(--ash);font-size:14.5px;line-height:1.75}
+  .ive p em{color:var(--chalk);font-style:normal;font-weight:600}
+  .states{margin-top:48px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center;align-items:flex-start}
+  .state{width:392px;max-width:100%}
+  .state-k{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 10px}
+  .state-k .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:600}
+  .state-k .d{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .note{margin:12px 6px 0;color:var(--ash);font-size:13px;line-height:1.65}
+  .note em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  .phone{background:linear-gradient(180deg,#101210,var(--ink) 62%);border:1px solid var(--line);border-radius:34px;padding:22px 16px 26px;box-shadow:0 24px 70px -30px rgba(0,0,0,.85);overflow:hidden;position:relative}
+  .ph-head{display:flex;align-items:center;justify-content:space-between}
+  .avatar{width:40px;height:40px;border-radius:14px;background:rgba(198,248,79,.13);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:var(--lime);position:relative}
+  .avatar i{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:999px;background:var(--lime);border:2px solid var(--ink)}
+  .wordmark{font-weight:900;font-size:17px;letter-spacing:-.03em;text-align:center}
+  .wordmark b{color:var(--lime)}
+  .wordmark i{display:block;width:24px;height:3px;border-radius:2px;background:var(--lime);margin:4px auto 0}
+  .h-right{display:flex;gap:8px;align-items:center}
+  .streak{height:38px;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;background:rgba(229,138,92,.14);border:1px solid rgba(229,138,92,.4);font-family:var(--mono);font-size:10.5px;color:var(--red);white-space:nowrap}
+  .bell{width:38px;height:38px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:14px}
+  .mast{margin-top:20px}
+  .mast .row{display:flex;justify-content:space-between;align-items:baseline}
+  .mast .date{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .mast h2{font-weight:900;font-size:34px;letter-spacing:-.03em;margin-top:2px}
+  .mast .greet{color:var(--ash);font-size:14.5px;margin-top:2px}
+
+  .cc{background:radial-gradient(130% 90% at 92% -14%,var(--glow,rgba(198,248,79,.10)),transparent 52%),var(--card);border:1px solid var(--line);border-radius:24px;padding:17px 17px 15px}
+  .cc .gl{font-size:14px;color:var(--acc,var(--lime));display:block;margin-bottom:9px}
+  .cc .t{font-weight:800;font-size:20px;letter-spacing:-.015em}
+  .cc .s{color:var(--ash);font-size:13.5px;line-height:1.5;margin-top:4px}
+  .cc .cta{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc,var(--lime));margin-top:12px;display:block}
+  .cc.blue{--acc:var(--blue);--glow:rgba(108,182,189,.10)}
+  .cc.amber{--acc:var(--amber);--glow:rgba(208,205,148,.10)}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+
+  .rail{margin-top:16px;background:var(--ink2);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .rail-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .rail-h .t{font-weight:800;font-size:16px;letter-spacing:-.01em}
+  .rail-h .m{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .chips{display:flex;justify-content:space-between}
+  .chip{width:34px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .chip .wd{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .chip .num{width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--ash)}
+  .chip.today .num{background:var(--lime);color:var(--on-accent);font-weight:900}
+  .chip.done .num{color:var(--chalk)}
+  .chip .g{height:12px;font-size:10px;line-height:12px;font-family:var(--mono);color:transparent}
+  .chip.done .g{color:var(--chalk)}
+  .chip.missed .g{color:var(--red)} .chip.missed .num{color:var(--red)}
+  .chip.rest{opacity:.45} .chip.rest .g{color:var(--ash)}
+  .chip.slot .num{border:1px dashed #3c403b;color:#565b54;font-weight:500}
+  .chip.slot.sel .num{border:1px dashed var(--amber);color:var(--amber)}
+  .hair{height:1px;background:var(--line);margin:14px -18px}
+
+  .dd-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .open-day .t{font-weight:900;font-size:19px;letter-spacing:-.015em;margin-top:6px}
+  .open-day .s{color:var(--ash);font-size:13.5px;line-height:1.6;margin-top:6px}
+  .open-day .s em{color:var(--chalk);font-style:normal;font-weight:600}
+  .pbtn{margin-top:15px;background:var(--lime);color:var(--on-accent);border-radius:999px;padding:13px;text-align:center;font-weight:800;font-size:14px;box-shadow:0 0 34px -6px rgba(198,248,79,.45)}
+  .btnrow{display:flex;gap:8px;margin-top:8px}
+  .gbtn{flex:1;border:1px solid var(--line);border-radius:999px;padding:11px;text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .receipt .big{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .receipt .tick{color:var(--lime);font-size:17px}
+  .receipt .t{font-weight:900;font-size:19px;letter-spacing:-.015em}
+  .receipt .meta{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-top:7px}
+  .stats{display:flex;gap:24px;margin-top:14px}
+  .stat .v{font-weight:900;font-size:16px}
+  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:2px}
+  .caption{margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--ash);text-align:center;letter-spacing:.06em}
+  .caption b{color:var(--amber);font-weight:600}
+  .lift{margin-top:12px}
+  .lift .nm{font-weight:700;font-size:14px}
+  .lift .ld{font-family:var(--mono);font-size:12px;color:var(--ash);margin-top:2px}
+  .lift .ld b{color:var(--chalk);font-weight:700;font-family:var(--disp);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">HYBRID — Today dashboard — after the first logged workout — concept 2 of 5</p>
+  <h1>The Invitation — <em>empty days are the pitch</em></h1>
+  <p class="lede">
+    Marketing never says a word. After the first log the week rail appears, and its <strong>future days render as
+    dashed, open slots</strong>. Tapping tomorrow doesn't show an error or an empty screen — it shows an honest state:
+    <strong>"Monday is open."</strong> One primary action fills the week with a plan; one ghost action says
+    "I'll just show up." The three onboarding cards disappear entirely after the first log — the calendar itself
+    carries all three choices, placed exactly where the user's eye already is: on the day they're thinking about.
+  </p>
+  <div class="ive">
+    <div class="who">The design argument</div>
+    <p>The most persuasive advertisement for a plan is <em>the absence it fills</em>. A dashed circle around
+    Monday says more than a card ever could: here is a day, it belongs to you, it is currently silent.
+    We let the void do the selling — quietly, in sand, never in guilt.</p>
+  </div>
+
+  <div class="states">
+
+    <!-- STATE A -->
+    <div class="state">
+      <div class="state-k"><span class="n">A — Day zero</span><span class="d">no plan, no sessions — unchanged</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="stack">
+          <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+          <div class="cc blue"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+          <div class="cc amber"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+        </div>
+      </div>
+      <p class="note">Unchanged. The cards do their one job — the first decision — then retire permanently.</p>
+    </div>
+
+    <!-- STATE B1 — today selected -->
+    <div class="state">
+      <div class="state-k"><span class="n">B — Logger, today selected</span><span class="d">no plan, 5 sessions — the proposal</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-h"><span class="t">Your week</span><span class="m">5 logged</span></div>
+          <div class="chips">
+            <div class="chip done"><span class="wd">Wed</span><span class="num">15</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+            <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+            <div class="chip slot"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+            <div class="chip slot"><span class="wd">Tue</span><span class="num">21</span><span class="g">·</span></div>
+          </div>
+          <div class="hair"></div>
+          <div class="receipt">
+            <span class="dd-k">Today</span>
+            <div class="big"><span class="tick">✓</span><span class="t">All done for today</span></div>
+            <div class="meta">Afternoon workout – finished 15:57</div>
+            <div class="stats">
+              <div class="stat"><div class="v">42 min</div><div class="l">Duration</div></div>
+              <div class="stat"><div class="v">0.5 t</div><div class="l">Volume</div></div>
+              <div class="stat"><div class="v">12</div><div class="l">Sets</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="caption">Tomorrow is <b>open</b> — tap it</div>
+      </div>
+      <p class="note">The rail slides its 7-day window past today: yesterday's proof on the left, <em>dashed open slots</em> on the right. The onboarding cards are gone — one whispered caption points at the void.</p>
+    </div>
+
+    <!-- STATE B2 — tomorrow selected -->
+    <div class="state">
+      <div class="state-k"><span class="n">B′ — Logger, tomorrow tapped</span><span class="d">the open-day sheet — where choice lives now</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-h"><span class="t">Your week</span><span class="m">5 logged</span></div>
+          <div class="chips">
+            <div class="chip done"><span class="wd">Wed</span><span class="num">15</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+            <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+            <div class="chip slot sel"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+            <div class="chip slot"><span class="wd">Tue</span><span class="num">21</span><span class="g">·</span></div>
+          </div>
+          <div class="hair"></div>
+          <div class="open-day">
+            <span class="dd-k">Tomorrow – Monday 20</span>
+            <div class="t">This day is open</div>
+            <div class="s">Nothing is planned yet. Give the week a program and Monday fills itself — or just show up and log, like you did <em>five times</em> this week.</div>
+            <div class="pbtn">Plan this week</div>
+            <div class="btnrow">
+              <div class="gbtn">⌗ Build my own</div>
+              <div class="gbtn">↯ I'll just train</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">All three original choices survive — relocated into the open day, ranked by commitment. "Plan this week" earns the lime; the other two stand quietly beneath it.</p>
+    </div>
+
+    <!-- STATE C -->
+    <div class="state">
+      <div class="state-k"><span class="n">C — Plan enrolled</span><span class="d">the slot fills — shipped rail, unchanged</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔</div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-h"><span class="t">Soviet 8-Week</span><span class="m">Day 2 / 56</span></div>
+          <div class="chips">
+            <div class="chip done"><span class="wd">Wed</span><span class="num">15</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+            <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+            <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+            <div class="chip"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+            <div class="chip rest"><span class="wd">Tue</span><span class="num">21</span><span class="g">☾</span></div>
+          </div>
+          <div class="hair"></div>
+          <span class="dd-k">Tomorrow – Squat day</span>
+          <div class="lift">
+            <div class="nm">Back Squat</div>
+            <div class="ld"><b>80%</b> ×2×6</div>
+          </div>
+          <div class="lift">
+            <div class="nm">Bench Press</div>
+            <div class="ld"><b>75%</b> ×3×5</div>
+          </div>
+          <div class="btnrow" style="margin-top:14px">
+            <div class="gbtn">Start early</div>
+          </div>
+        </div>
+      </div>
+      <p class="note">After enrolling, Monday's dashed circle becomes a solid prescribed day. The transition is literal: the void the user tapped is now full. Cause and effect, drawn on the same pixels.</p>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>
