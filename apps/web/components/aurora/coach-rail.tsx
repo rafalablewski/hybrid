@@ -71,7 +71,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
       {/* The scroller gets internal breathing room (padding pulled back by the
           negative margins) so the card shadows render inside the scroll clip
           instead of being TRUNCATED at its edge — the "cut gradient" artifact. */}
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
+      {/* scrollPadding matches the horizontal padding: mandatory snap ignores
+          the scroller's own padding, so without it the browser snaps the FIRST
+          card to the scrollport start — glued to the bezel on a bleed rail. */}
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 16px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => (
           <div
             key={c.userId ?? c.handle ?? i}
