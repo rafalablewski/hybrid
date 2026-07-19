@@ -118,9 +118,11 @@
       ],
       "./plugins/with-plain-healthkit.js",
       [
-        "react-native-health",
+        "@kingstinct/react-native-healthkit",
         {
-          "healthSharePermission": "HYBRID reads your heart-rate variability, resting heart rate and sleep from Apple Health to compute your daily readiness."
+          "NSHealthShareUsageDescription": "HYBRID reads your heart-rate variability, resting heart rate and sleep from Apple Health to compute your daily readiness.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
         }
       ],
       "react-native-iap",

@@ -26,9 +26,6 @@
       "prisma",
       "esbuild",
       "sharp"
-    ],
-    "patchedDependencies": {
-      "react-native-health": "patches/react-native-health.patch"
-    }
+    ]
   }
 }
