@@ -19,6 +19,7 @@ import {
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
+  masthead,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -185,6 +186,15 @@ export default function AuroraHome() {
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
   const dayIsFuture = !dayIsToday && railDay!.ts > Date.now();
+  // LIVING MASTHEAD — the headline names the VIEWED day ("Today" until the
+  // rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name beyond;
+  // never "2 days ago" — clumsy as a headline, worse inflected in PL/DE).
+  // The naming rule lives in @hybrid/core masthead.ts so web can't drift.
+  const mast = masthead(dayTs);
+  // "Back to today" re-anchors BOTH the lifted day scope and the rail's own
+  // internal selection (via resetToken) in one tap.
+  const [railResetToken, setRailResetToken] = useState(0);
+  const backToToday = () => { setRailDay(null); setRailResetToken((n) => n + 1); };
   // Sessions logged on the VIEWED day — the confirmation loop (a finished
   // session OR a quick sport log both land here the moment they save).
   const doneOnDay = useMemo(() => sessionsOnDay(sessions, dayTs), [sessions, dayTs]);
@@ -235,6 +245,21 @@ export default function AuroraHome() {
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, [t]);
   const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
+  // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
+  // the masthead's caption line says "Free" ONLY when the chooser renders.
+  const firstRun = !initialLoad && !plan && !(isAthlete && hasData);
+  // Masthead strings for the viewed day: headline, caption date, and (beyond
+  // ±1 day, where the headline stops saying it) the scrub-distance tag.
+  const mastTitle =
+    mast.kind === "today" ? t("w.home.today.mastToday")
+    : mast.kind === "yesterday" ? t("w.home.today.mastYesterday")
+    : mast.kind === "tomorrow" ? t("w.home.today.mastTomorrow")
+    : new Date(dayTs!).toLocaleDateString(undefined, { weekday: "long" });
+  const mastCaption = dayIsToday ? dateStr : new Date(dayTs!).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const mastTag =
+    Math.abs(mast.diffDays) >= 2
+      ? t(mast.diffDays < 0 ? "w.home.today.daysBack" : "w.home.today.daysOut").replace("{n}", String(Math.abs(mast.diffDays)))
+      : null;
 
   // Readiness (and the AI prescription it feeds) is only real when there's
   // logged history — a bare macrocycle phase (auto-created at onboarding) must
@@ -338,10 +363,34 @@ export default function AuroraHome() {
           </View>
         </View>
 
-        {/* GREETING — the streak moved up to the header row, so this line breathes */}
+        {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
+            chooser's "Free", or the scrub-distance tag), ONE big headline, and
+            the greeting demoted to a single warm sentence beneath it. The old
+            layout stacked two near-equal bold headlines (greeting 22 + "How do
+            you want to start?" 18) four lines apart; now the page has one. The
+            headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
+            until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
+            weekday name beyond — a static "Today" over Friday's session would
+            lie in the largest type on screen. Off today, the greeting line
+            becomes the "Back to today" return affordance, teal, in the same
+            spot every time. Mirrors web today.tsx. */}
         <View style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{mastCaption || " "}</Text>
+            {firstRun ? (
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
+            ) : mastTag ? (
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{mastTag}</Text>
+            ) : null}
+          </View>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 34, letterSpacing: -1, color: C.chalk, marginTop: 2 }}>{mastTitle}</Text>
+          {dayIsToday ? (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2 }}>{greeting ? `${greeting}, ${firstName}.` : " "}</Text>
+          ) : (
+            <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.backToToday")} →</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
@@ -359,23 +408,21 @@ export default function AuroraHome() {
               onStart={(blocks, title) => startPlanDay(blocks, title)}
               onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
               onSelectDay={setRailDay}
+              resetToken={railResetToken}
             />
           </View>
-        ) : !initialLoad && !plan && !(isAthlete && hasData) ? (
+        ) : firstRun ? (
           /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the
              page: no wrapper ACard (a box around three cards reads as chrome)
-             and one stacked column. The question is the kicker, "Free" said
-             ONCE behind the hairline; each full-width card wears the Go-Full
+             and one stacked column. NO section head — the "How do you want to
+             start?" question was retired with the masthead redesign (the page
+             already opens with "Today" + the greeting, and three cards titled
+             Follow a plan / Build your own / Just train need no sentence
+             announcing that a choice is available); "Free" is said ONCE on the
+             masthead's caption line. Each full-width card wears the Go-Full
              anatomy with its corner glow, the hue confined to glyph + CTA,
              and IS the start — no separate Start pill. Mirrors web today.tsx. */
-          <View style={{ marginTop: 18 }}>
-            {/* Explore-standard section head — bold display title, "Free" said
-                ONCE as the mono right-side meta, NO marker dot (decorative dots
-                before text are banned; Explore's SectionHead is the standard). */}
-            <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 12, marginHorizontal: 2 }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.howStart")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
-            </View>
+          <View style={{ marginTop: 16 }}>
             <View style={{ gap: space.sm }}>
               <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />

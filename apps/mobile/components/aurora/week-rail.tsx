@@ -86,6 +86,7 @@ export default function AuroraWeekRail({
   onStart,
   onNavigate,
   onSelectDay,
+  resetToken,
 }: {
   planId: string;
   planStartedAt: string;
@@ -100,6 +101,9 @@ export default function AuroraWeekRail({
    *  of the screen (Also-today / feeling cards) to the viewed day. Until the
    *  first tap the caller should assume today. Mirrors the web rail. */
   onSelectDay?: (day: ScheduledDay) => void;
+  /** Bump to snap the rail's internal selection back to today (the masthead's
+   *  "Back to today" affordance). Mirrors the web rail. */
+  resetToken?: number;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -116,7 +120,7 @@ export default function AuroraWeekRail({
   // the enrolled plan changes — a picked index is meaningless across schedules
   // (the caller's lifted onSelectDay copy re-anchors to today the same way).
   const [picked, setPicked] = useState<number | null>(null);
-  useEffect(() => { setPicked(null); }, [planId]);
+  useEffect(() => { setPicked(null); }, [planId, resetToken]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
   // The receipt behind a done day — built from the logged session that

@@ -22,6 +22,7 @@ import { fs, space,
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
+  masthead,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -169,6 +170,15 @@ export default function AuroraToday({
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
   const dayIsFuture = !dayIsToday && railDay!.ts > Date.now();
+  // LIVING MASTHEAD — the headline names the VIEWED day ("Today" until the
+  // rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name beyond;
+  // never "2 days ago" — clumsy as a headline, worse inflected in PL/DE).
+  // The naming rule lives in @hybrid/core masthead.ts so mobile can't drift.
+  const mast = masthead(dayTs);
+  // "Back to today" re-anchors BOTH the lifted day scope and the rail's own
+  // internal selection (via resetToken) in one tap.
+  const [railResetToken, setRailResetToken] = useState(0);
+  const backToToday = () => { setRailDay(null); setRailResetToken((n) => n + 1); };
   // Sessions logged on the VIEWED day — the confirmation loop. A finished
   // prescribed session and a quick sport log both land here the moment they
   // save, so Today shows "you did this" instead of forever prompting "Start".
@@ -234,6 +244,23 @@ export default function AuroraToday({
     setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening"));
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, [t]);
+  // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
+  // the masthead's caption line says "Free" ONLY when the chooser renders.
+  const firstRun = !plan && !loading && !(isAthlete && hasData);
+  // Masthead strings for the viewed day: headline, caption date, and (beyond
+  // ±1 day, where the headline stops saying it) the scrub-distance tag. The
+  // non-today branches only exist after a rail tap, so they never render on
+  // the server — no hydration-mismatch risk from the locale date formatting.
+  const mastTitle =
+    mast.kind === "today" ? t("w.home.today.mastToday")
+    : mast.kind === "yesterday" ? t("w.home.today.mastYesterday")
+    : mast.kind === "tomorrow" ? t("w.home.today.mastTomorrow")
+    : new Date(dayTs!).toLocaleDateString(undefined, { weekday: "long" });
+  const mastCaption = dayIsToday ? dateStr : new Date(dayTs!).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const mastTag =
+    Math.abs(mast.diffDays) >= 2
+      ? t(mast.diffDays < 0 ? "w.home.today.daysBack" : "w.home.today.daysOut").replace("{n}", String(Math.abs(mast.diffDays)))
+      : null;
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
@@ -277,12 +304,37 @@ export default function AuroraToday({
         </div>
       </div>
 
-      {/* GREETING — the streak moved up to the header row, so this line breathes */}
+      {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
+          chooser's "Free", or the scrub-distance tag), ONE big headline, and
+          the greeting demoted to a single warm sentence beneath it. The old
+          layout stacked two near-equal bold headlines (greeting 22 + "How do
+          you want to start?" 18) four lines apart; now the page has one. The
+          headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
+          until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
+          weekday name beyond — a static "Today" over Friday's session would
+          lie in the largest type on screen. Off today, the greeting line
+          becomes the "Back to today" return affordance, teal, in the same
+          spot every time. Mirrors mobile home.tsx. */}
       <div style={{ margin: "16px 2px 2px" }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
+          {firstRun ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
+          ) : mastTag ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
+          ) : null}
         </div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>{mastTitle}</div>
+        {dayIsToday ? (
+          <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 2 }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}.` : ` `}</div>
+        ) : (
+          <button
+            onClick={backToToday}
+            style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--blue-text)" }}
+          >
+            {t("w.home.today.backToToday")} →
+          </button>
+        )}
       </div>
 
       {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
@@ -299,23 +351,21 @@ export default function AuroraToday({
           onStart={onStart}
           onNavigate={onNavigate}
           onSelectDay={setRailDay}
+          resetToken={railResetToken}
         />
-      ) : !plan && !loading && !(isAthlete && hasData) ? (
+      ) : firstRun ? (
         /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the page:
            no wrapper card (a box around three cards reads as chrome) and one
            stacked column (side-by-side columns crowd the copy and orphan the
-           third card at phone widths). The question is an Explore-standard
-           section head — bold display title, "Free" said ONCE as the mono
-           right-side meta, NO marker dot (decorative dots before text are
-           banned; Explore's SectionHead is the golden standard). Each
-           full-width card wears the Go-Full anatomy with its corner glow, the
-           hue confined to glyph + CTA, and IS the start — no separate Start
-           pill. Mirrored on mobile. */
-        <div data-tour="today-plan" style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 2px 12px" }}>
-            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.howStart")}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
-          </div>
+           third card at phone widths). NO section head — the "How do you want
+           to start?" question was retired with the masthead redesign (the page
+           already opens with "Today" + the greeting, and three cards titled
+           Follow a plan / Build your own / Just train need no sentence
+           announcing that a choice is available); "Free" is said ONCE on the
+           masthead's caption line. Each full-width card wears the Go-Full
+           anatomy with its corner glow, the hue confined to glyph + CTA, and
+           IS the start — no separate Start pill. Mirrored on mobile. */
+        <div data-tour="today-plan" style={{ marginTop: 16 }}>
           <div style={{ display: "grid", gap: 10 }}>
             <ChooserCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
             <ChooserCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
