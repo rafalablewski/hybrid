@@ -25,7 +25,7 @@
   .note b { color: var(--chalk); font-weight: 600; }
 
   .frame { width: min(420px, 100%); background: var(--ink); border: 1px solid var(--line); border-radius: 36px; box-shadow: 0 30px 70px -35px rgba(0,0,0,.95); overflow: hidden; position: relative; }
-  .screen { height: 820px; overflow-y: auto; padding: 24px 18px 130px; }
+  .screen { height: 840px; overflow-y: auto; padding: 24px 18px 130px; }
 
   .mono { font-family: var(--font-mono); }
   .h-title { font-weight: 800; font-size: 27px; letter-spacing: -.02em; display: flex; align-items: center; gap: 12px; }
@@ -67,14 +67,17 @@
   .field { width: 100%; height: 38px; font-family: var(--font-mono); font-size: 14px; text-align: center; color: var(--chalk); background: var(--ink); border: 1px solid var(--line); border-radius: 10px; outline: none; }
   .field::placeholder, .srow input::placeholder { color: color-mix(in srgb, var(--ash) 53%, transparent); font-style: italic; }
   .pace { font-family: var(--font-mono); font-size: 11.5px; color: var(--blue-text); margin-top: 2px; }
+  .bwnote { font-family: var(--font-mono); font-size: 10px; color: var(--ash); margin: 2px 0 8px; }
 
-  .shead { display: grid; grid-template-columns: 36px 1fr 1fr 1fr 24px; gap: 7px; margin-bottom: 5px; align-items: end; }
+  .shead, .srow { display: grid; gap: 7px; margin-bottom: 6px; align-items: center; }
+  .shead { margin-bottom: 5px; align-items: end; }
+  .cols-load { grid-template-columns: 36px 1fr 1fr 1fr 24px; }
+  .cols-noload { grid-template-columns: 36px 1fr 1fr 24px; }
   .shead .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
   .shead .toggle { cursor: pointer; user-select: none; background: none; border: none; padding: 0; text-align: left; }
   .shead .info { background: none; border: none; color: var(--ash); cursor: pointer; font-family: var(--font-mono); font-size: 10px; padding: 0 0 0 4px; }
   .shead .info.on { color: var(--lime-text); }
   .rpehelp { font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); line-height: 1.6; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
-  .srow { display: grid; grid-template-columns: 36px 1fr 1fr 1fr 24px; gap: 7px; margin-bottom: 6px; align-items: center; }
   .badge { height: 38px; border-radius: 8px; border: 1px solid var(--line); background: none; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--ash); cursor: pointer; }
   .badge.warmup { color: var(--amber-text); border-color: color-mix(in srgb, var(--amber-text) 55%, var(--line)); background: color-mix(in srgb, var(--amber-text) 12%, transparent); }
   .badge.cooldown { color: var(--blue-text); border-color: color-mix(in srgb, var(--blue-text) 55%, var(--line)); background: color-mix(in srgb, var(--blue-text) 12%, transparent); }
@@ -110,8 +113,8 @@
 
   /* picker sheet */
   .sheet-veil { position: absolute; inset: 0; background: #0009; z-index: 40; display: none; }
-  .sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 64px; z-index: 41; background: var(--ink); border: 1px solid var(--line); border-radius: 24px 24px 0 0; padding: 20px 18px 0; display: none; flex-direction: column; }
-  .sheet.on, .sheet-veil.on { display: flex; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 56px; z-index: 41; background: var(--ink); border: 1px solid var(--line); border-radius: 24px 24px 0 0; padding: 20px 18px 0; display: none; flex-direction: column; }
+  .sheet.on { display: flex; } .sheet-veil.on { display: block; }
   .sheet .shd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
   .sheet .shd b { font-size: 17px; font-weight: 800; }
   .sheet .close { background: none; border: none; color: var(--ash); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
@@ -120,7 +123,9 @@
   .sheet .list { flex: 1; overflow-y: auto; padding: 6px 0 24px; }
   .sheet .cat { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); margin: 14px 0 4px; }
   .sheet .opt { display: flex; align-items: center; gap: 11px; width: 100%; background: none; border: none; color: var(--chalk); font-weight: 600; font-size: 14.5px; padding: 10px 2px; cursor: pointer; text-align: left; }
-  .sheet .dotk { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+  .sheet .opt .hint { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--ash); }
+  .sheet .dotk { width: 22px; text-align: center; flex: none; }
+  .sheet .dotk i { display: inline-block; width: 8px; height: 8px; border-radius: 4px; }
   .sheet .custom { width: 100%; background: var(--lime); color: var(--on-accent); font-weight: 800; font-size: 14.5px; border: none; border-radius: 999px; padding: 13px; cursor: pointer; margin-top: 14px; }
 
   .tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; padding: 14px 28px 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: color-mix(in srgb, var(--ink) 90%, transparent); backdrop-filter: blur(10px); }
@@ -131,11 +136,13 @@
 <body>
 <div>
   <p class="note">
-    <b>Builder — “One Number”, full option set.</b> All live: strength cards (set-type badges,
-    RPE ⇄ RIR header toggle, ⓘ help, per-set delete, <b>Special ▾</b> for warm-up / auto ramp /
-    cool-down / drop, rest stepper), a cardio card (distance, minutes, HR zone — live pace), a
-    conditioning card (format, rounds, work/rest), ↑↓⧉✕ on every card, collapse for the metric
-    summary, the exercise picker sheet with search + custom add, and the saved-routines library.
+    <b>Builder — “One Number”, full option set + every exercise shape.</b> Tap <b>＋ Add exercise</b>
+    and try them all — each renders its true form: <b>Pull-Up</b> (bodyweight — no load column),
+    <b>Weighted Pull-Up</b> (+kg added), <b>Plank</b> (seconds, not reps), <b>Farmer Carry</b>
+    (metres), <b>Treadmill Run</b> (incline), <b>Trail Run</b> (elevation), <b>Swim</b> (stroke),
+    or type an unknown name for a <b>custom</b> add. Strength cards keep the set-type badges,
+    Special ▾ (warm-up / auto ramp / cool-down / drop), RPE ⇄ RIR and the rest stepper; everything
+    feeds the one live number.
   </p>
 
   <div class="frame">
@@ -175,6 +182,41 @@
 </div>
 
 <script>
+  // ── exercise profiles (mirrors core exerciseProfile) ───────────────
+  // loadMode: external | bodyweight | bodyweight-plus | assisted
+  // measure:  reps | time | distance      fields: cardio extras
+  const PROFILES = {
+    "Pull-Up":          { kind: "strength", loadMode: "bodyweight" },
+    "Dip":              { kind: "strength", loadMode: "bodyweight" },
+    "Hanging Leg Raise":{ kind: "strength", loadMode: "bodyweight" },
+    "Weighted Pull-Up": { kind: "strength", loadMode: "bodyweight-plus" },
+    "Assisted Pull-Up": { kind: "strength", loadMode: "assisted" },
+    "Plank":            { kind: "strength", loadMode: "bodyweight", measure: "time" },
+    "Farmer Carry":     { kind: "strength", measure: "distance" },
+    "Run":              { kind: "cardio", unit: "km", fields: ["zone"] },
+    "Treadmill Run":    { kind: "cardio", unit: "km", fields: ["incline", "zone"] },
+    "Trail Run":        { kind: "cardio", unit: "km", fields: ["elevation", "zone"] },
+    "Row Intervals":    { kind: "cardio", unit: "m", fields: ["zone"] },
+    "Bike Erg":         { kind: "cardio", unit: "km", fields: ["zone"] },
+    "Swim":             { kind: "cardio", unit: "m", fields: ["stroke", "zone"] },
+    "Burpee AMRAP":     { kind: "conditioning" },
+    "Assault Bike EMOM":{ kind: "conditioning" },
+    "Sled Push":        { kind: "conditioning" },
+  };
+  const prof = (name) => PROFILES[name] ?? { kind: "strength", loadMode: "external" };
+  const CATALOG = [
+    { cat: "Hinge / Glutes", names: ["Barbell Glute Bridge", "Romanian Deadlift", "KB Swing"] },
+    { cat: "Squat", names: ["Back Squat", "Front Squat", "Goblet Squat"] },
+    { cat: "Upper push", names: ["Bench Press", "Overhead Press", "Dip"] },
+    { cat: "Upper pull", names: ["Pull-Up", "Weighted Pull-Up", "Assisted Pull-Up", "Lat Pulldown"] },
+    { cat: "Core / Carry", names: ["Plank", "Farmer Carry", "Hanging Leg Raise"] },
+    { cat: "Endurance sports", icon: { "Run": "🏃", "Treadmill Run": "🏃", "Trail Run": "⛰️", "Row Intervals": "🚣", "Bike Erg": "🚴", "Swim": "🏊" },
+      names: ["Run", "Treadmill Run", "Trail Run", "Row Intervals", "Bike Erg", "Swim"] },
+    { cat: "Conditioning", names: ["Burpee AMRAP", "Assault Bike EMOM", "Sled Push"] },
+  ];
+  const KCOLOR = { strength: "var(--lime-text)", cardio: "var(--blue-text)", conditioning: "var(--violet-text)" };
+  const KDOT = { strength: "var(--lime)", cardio: "var(--blue-text)", conditioning: "var(--violet)" };
+
   // ── state ──────────────────────────────────────────────────────────
   const TYPES = ["working", "warmup", "cooldown", "drop"];
   const uid = () => Math.random().toString(36).slice(2);
@@ -185,18 +227,13 @@
         sets: [ { load: "100", reps: "8", rpe: "8", type: "working" },
                 { load: "100", reps: "8", rpe: "8", type: "working" },
                 { load: "", reps: "", rpe: "", type: "working" } ] },
-      { id: uid(), kind: "cardio", name: "Row Intervals", open: false, distance: "2", minutes: "10", zone: "3" },
+      { id: uid(), kind: "strength", name: "Pull-Up", rest: 120, open: true,
+        sets: [ { load: "", reps: "10", rpe: "8", type: "working" },
+                { load: "", reps: "10", rpe: "9", type: "working" } ] },
+      { id: uid(), kind: "cardio", name: "Row Intervals", open: false, distance: "2000", minutes: "10", zone: "3" },
       { id: uid(), kind: "conditioning", name: "KB Swing AMRAP", open: false, format: "AMRAP", rounds: "8", work: "40", restS: "20", minutes: "12" },
     ],
   };
-  const CATALOG = [
-    { cat: "Hinge / Glutes", kind: "strength", names: ["Barbell Glute Bridge", "Romanian Deadlift", "KB Swing"] },
-    { cat: "Squat", kind: "strength", names: ["Back Squat", "Front Squat", "Goblet Squat"] },
-    { cat: "Upper", kind: "strength", names: ["Bench Press", "Overhead Press", "Pull-Up"] },
-    { cat: "Cardio", kind: "cardio", names: ["Run", "Row Intervals", "Bike Erg", "Swim"] },
-    { cat: "Conditioning", kind: "conditioning", names: ["Burpee AMRAP", "Assault Bike EMOM", "Sled Push"] },
-  ];
-  const KCOLOR = { strength: "var(--lime-text)", cardio: "var(--blue-text)", conditioning: "var(--violet-text)" };
 
   // ── derived: the One Number ────────────────────────────────────────
   const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
@@ -224,9 +261,14 @@
   const badgeLabel = (s, i) => s.type === "warmup" ? "W" : s.type === "cooldown" ? "C" : s.type === "drop" ? "↓" : String(i + 1);
   const rpeShow = (v) => v === "" ? "" : String(state.rir ? Math.max(0, 10 - num(v)) : num(v));
   function pace(b) {
-    const d = num(b.distance), m = num(b.minutes);
+    const p = prof(b.name), d = num(b.distance), m = num(b.minutes);
     if (!(d > 0 && m > 0)) return null;
-    const sec = Math.round((m * 60) / d);
+    const km = p.unit === "m" ? d / 1000 : d;
+    if (p.unit === "m" && d <= 1000 && b.name === "Swim") {
+      const sec = Math.round((m * 60) / (d / 100));
+      return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} /100m`;
+    }
+    const sec = Math.round((m * 60) / km);
     return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} /km`;
   }
   const topLoad = (b) => Math.max(0, ...b.sets.filter((s) => s.type !== "warmup" && s.type !== "cooldown").map((s) => num(s.load)));
@@ -249,16 +291,18 @@
     <input class="field" inputmode="numeric" data-f="${f}" value="${b[f] ?? ""}" placeholder="${ph}" /></div>`;
 
   function metricRow(b) {
+    const p = prof(b.name);
     if (b.kind === "strength") {
       const t = topLoad(b);
-      return `<span class="m"><span class="l">set × reps</span><br/><span class="v">${b.sets.length} × ${b.sets[0]?.reps || "—"}</span></span>
-              ${t > 0 ? `<span class="m"><span class="l">load (kg)</span><br/><span class="v">${t}</span></span>` : ""}
+      const unitCol = p.measure === "time" ? "s" : p.measure === "distance" ? "m" : "";
+      return `<span class="m"><span class="l">set × ${p.measure === "time" ? "secs" : p.measure === "distance" ? "m" : "reps"}</span><br/><span class="v">${b.sets.length} × ${b.sets[0]?.reps || "—"}${unitCol}</span></span>
+              ${t > 0 ? `<span class="m"><span class="l">${p.loadMode === "bodyweight-plus" ? "+ load" : "load (kg)"}</span><br/><span class="v">${t}</span></span>` : ""}
               <span class="m"><span class="l">est. time</span><br/><span class="v">${Math.round(blockMinutes(b))} min</span></span>`;
     }
     if (b.kind === "cardio") {
-      const p = pace(b);
-      return `<span class="m"><span class="l">dist (km)</span><br/><span class="v">${b.distance || "—"}</span></span>
-              ${p ? `<span class="m"><span class="l">pace</span><br/><span class="v" style="color:var(--blue-text)">${p}</span></span>` : ""}
+      const pc = pace(b);
+      return `<span class="m"><span class="l">dist (${p.unit})</span><br/><span class="v">${b.distance || "—"}</span></span>
+              ${pc ? `<span class="m"><span class="l">pace</span><br/><span class="v" style="color:var(--blue-text)">${pc}</span></span>` : ""}
               <span class="m"><span class="l">minutes</span><br/><span class="v">${b.minutes || "—"}</span></span>`;
     }
     return `<span class="m"><span class="l">format</span><br/><span class="v">${b.format || "—"}</span></span>
@@ -267,8 +311,15 @@
   }
 
   function strengthBody(b) {
+    const p = prof(b.name);
+    const showLoad = p.loadMode !== "bodyweight";
+    const cols = showLoad ? "cols-load" : "cols-noload";
+    const loadPh = p.loadMode === "bodyweight-plus" ? "+kg" : p.loadMode === "assisted" ? "−kg" : "100";
+    const repsLabel = p.measure === "time" ? "secs" : p.measure === "distance" ? "metres" : "reps";
+    const repsPh = p.measure === "time" ? "30" : p.measure === "distance" ? "20" : "8";
     return `
-      <div class="shead"><span class="l">set</span><span class="l">load (kg)</span><span class="l">reps</span>
+      ${p.loadMode === "bodyweight" && !p.measure ? `<div class="bwnote">Bodyweight lift — sets are BW × reps; tonnage uses your logged bodyweight.</div>` : ""}
+      <div class="shead ${cols}"><span class="l">set</span>${showLoad ? `<span class="l">${p.loadMode === "bodyweight-plus" ? "+ kg" : p.loadMode === "assisted" ? "− kg" : "load (kg)"}</span>` : ""}<span class="l">${repsLabel}</span>
         <span style="display:flex;align-items:end">
           <button class="l toggle" data-a="mode" title="Switch RPE/RIR">${state.rir ? "rir" : "rpe"} ⇄</button>
           <button class="info ${state.rpeHelp ? "on" : ""}" data-a="help">ⓘ</button>
@@ -277,10 +328,10 @@
         ? "RIR = reps in reserve. 2 = you could have done 2 more reps. 0 = nothing left."
         : "RPE = effort out of 10. 8 = two reps left in the tank. 10 = maximal."}</div>` : ""}
       ${b.sets.map((s, i) => `
-        <div class="srow">
+        <div class="srow ${cols}">
           <button class="badge ${s.type}" data-a="type" data-i="${i}" title="Tap to change set type (working / warm-up / cool-down / drop)">${badgeLabel(s, i)}</button>
-          <input inputmode="numeric" data-f="load" data-i="${i}" value="${s.load}" placeholder="100" />
-          <input inputmode="numeric" data-f="reps" data-i="${i}" value="${s.reps}" placeholder="8" />
+          ${showLoad ? `<input inputmode="numeric" data-f="load" data-i="${i}" value="${s.load}" placeholder="${loadPh}" />` : ""}
+          <input inputmode="numeric" data-f="reps" data-i="${i}" value="${s.reps}" placeholder="${repsPh}" />
           <input inputmode="numeric" data-f="rpe" data-i="${i}" value="${rpeShow(s.rpe)}" placeholder="${state.rir ? "2" : "8"}" />
           <button class="del" data-a="delset" data-i="${i}" title="Remove set">−</button>
         </div>`).join("")}
@@ -305,10 +356,16 @@
   }
 
   function cardioBody(b) {
-    const p = pace(b);
+    const p = prof(b.name), pc = pace(b);
+    const extras = (p.fields ?? []).map((f) =>
+      f === "incline" ? fld(b, "incline", "1.5", "Incline %")
+      : f === "elevation" ? fld(b, "elevation", "120", "Elev (m)")
+      : f === "stroke" ? `<div><span class="flabel">Stroke</span><input class="field" data-f="stroke" value="${b.stroke ?? ""}" placeholder="Free" /></div>`
+      : fld(b, "zone", "2", "HR zone")).join("");
     return `
-      <div class="frow">${fld(b, "distance", "8", "Dist (km)")}${fld(b, "minutes", "45", "Minutes")}${fld(b, "zone", "2", "HR zone")}</div>
-      ${p ? `<div class="pace">Pace ${p}</div>` : ""}`;
+      <div class="frow">${fld(b, "distance", p.unit === "m" ? "400" : "8", `Dist (${p.unit})`)}${fld(b, "minutes", "45", "Minutes")}</div>
+      ${extras ? `<div class="frow">${extras}</div>` : ""}
+      ${pc ? `<div class="pace">Pace ${pc}</div>` : ""}`;
   }
 
   function condBody(b) {
@@ -379,22 +436,35 @@
 
   // ── exercise picker sheet ─────────────────────────────────────────
   const sheet = document.getElementById("sheet"), veil = document.getElementById("veil"), q = document.getElementById("q");
+  const hintFor = (n) => {
+    const p = prof(n);
+    if (p.kind === "cardio") return (p.fields ?? []).filter((f) => f !== "zone").join(" + ") || "";
+    if (p.kind === "conditioning") return "";
+    return p.loadMode === "bodyweight" ? (p.measure === "time" ? "seconds" : "bodyweight")
+      : p.loadMode === "bodyweight-plus" ? "BW + load" : p.loadMode === "assisted" ? "assisted"
+      : p.measure === "distance" ? "metres" : "";
+  };
   function renderList() {
     const query = q.value.trim().toLowerCase();
     const groups = CATALOG.map((g) => ({ ...g, names: g.names.filter((n) => !query || n.toLowerCase().includes(query)) })).filter((g) => g.names.length);
     document.getElementById("list").innerHTML =
-      groups.map((g) => `<div class="cat">${g.cat}</div>` + g.names.map((n) =>
-        `<button class="opt" data-name="${n}" data-kind="${g.kind}"><span class="dotk" style="background:${KCOLOR[g.kind].replace("-text","")}"></span>${n}</button>`).join("")).join("") +
+      groups.map((g) => `<div class="cat">${g.cat}</div>` + g.names.map((n) => {
+        const p = prof(n), h = hintFor(n);
+        const lead = g.icon?.[n] ? g.icon[n] : `<i style="background:${KDOT[p.kind]}"></i>`;
+        return `<button class="opt" data-name="${n}"><span class="dotk">${lead}</span>${n}${h ? `<span class="hint">${h}</span>` : ""}</button>`;
+      }).join("")).join("") +
       (query && !groups.some((g) => g.names.some((n) => n.toLowerCase() === query))
-        ? `<button class="custom" data-name="${q.value.trim()}" data-kind="strength">+ “${q.value.trim()}”</button>` : "");
+        ? `<button class="custom" data-name="${q.value.trim()}">+ “${q.value.trim()}”</button>` : "");
   }
-  function addBlock(name, kind) {
-    const base = { id: uid(), name, kind, open: true };
-    state.blocks.push(kind === "strength"
+  function addBlock(name) {
+    const p = prof(name);
+    const base = { id: uid(), name, kind: p.kind, open: true };
+    state.blocks.push(p.kind === "strength"
       ? { ...base, rest: 150, sets: [{ load: "", reps: "", rpe: "", type: "working" }] }
-      : kind === "cardio" ? { ...base, distance: "", minutes: "", zone: "" }
+      : p.kind === "cardio" ? { ...base, distance: "", minutes: "", zone: "", stroke: "", incline: "", elevation: "" }
       : { ...base, format: "", rounds: "", work: "", restS: "", minutes: "" });
     closePicker(); render();
+    document.getElementById("screen").scrollTo({ top: 1e6, behavior: "smooth" });
   }
   const openPicker = () => { sheet.classList.add("on"); veil.classList.add("on"); q.value = ""; renderList(); q.focus(); };
   const closePicker = () => { sheet.classList.remove("on"); veil.classList.remove("on"); };
@@ -403,7 +473,7 @@
   veil.addEventListener("click", closePicker);
   q.addEventListener("input", renderList);
   document.getElementById("list").addEventListener("click", (e) => {
-    const el = e.target.closest("[data-name]"); if (el) addBlock(el.dataset.name, el.dataset.kind);
+    const el = e.target.closest("[data-name]"); if (el) addBlock(el.dataset.name);
   });
 
   render();
