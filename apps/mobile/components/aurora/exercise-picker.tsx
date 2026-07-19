@@ -100,7 +100,9 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
 
   const q = query.trim().toLowerCase();
   const exact = all.some((e) => e.name.toLowerCase() === q) || (recent ?? []).some((e) => e.name.toLowerCase() === q);
-  const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : [];
+  // Capped so a one-letter query doesn't mount the whole catalog in one frame;
+  // every further character narrows it well under the cap.
+  const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 60) : [];
   const az = useMemo(() => {
     const sorted = [...all].sort((a, b) => a.name.localeCompare(b.name));
     const letters: { letter: string; entries: Entry[] }[] = [];
@@ -115,11 +117,14 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const pick = (e: Entry) => onPick(e.name, e.kind);
   const close = () => { setQuery(""); setRoom(null); onClose(); };
 
-  const Row = ({ e, last }: { e: Entry; last: boolean }) => {
+  // Plain render helpers (NOT nested components) — a component defined inside
+  // render gets a new identity every render, which would unmount + remount
+  // every visible row on each search keystroke. Matches the web picker.
+  const row = (e: Entry, last: boolean) => {
     const c = kindColor(e.kind, C);
     const hint = shapeHint(e);
     return (
-      <Pressable onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+      <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
@@ -130,12 +135,12 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
       </Pressable>
     );
   };
-  const Slab = ({ entries }: { entries: Entry[] }) => (
+  const slab = (entries: Entry[]) => (
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 3 }}>
-      {entries.map((e, i) => <Row key={e.name} e={e} last={i === entries.length - 1} />)}
+      {entries.map((e, i) => row(e, i === entries.length - 1))}
     </View>
   );
-  const Head = ({ label, count }: { label: string; count: number }) => (
+  const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 18, marginBottom: 10, marginHorizontal: 2 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>{count}</Text>
@@ -195,7 +200,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
               {q ? (
                 /* SEARCH — one flat list across every room, then custom add. */
                 <>
-                  {results.length > 0 && <View style={{ marginTop: 10 }}><Slab entries={results} /></View>}
+                  {results.length > 0 && <View style={{ marginTop: 10 }}>{slab(results)}</View>}
                   {customAdd}
                 </>
               ) : view === "az" ? (
@@ -203,7 +208,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 az.map((sec) => (
                   <View key={sec.letter} onLayout={(ev) => { letterY.current[sec.letter] = ev.nativeEvent.layout.y; }}>
                     <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
-                    <Slab entries={sec.entries} />
+                    {slab(sec.entries)}
                   </View>
                 ))
               ) : roomData ? (
@@ -212,16 +217,16 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                   <Pressable onPress={() => setRoom(null)} hitSlop={8} style={{ marginTop: 10, marginBottom: 2 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("w.train.picker.all")}</Text>
                   </Pressable>
-                  <Head label={roomData.label} count={roomData.entries.length} />
-                  <Slab entries={roomData.entries} />
+                  {head(roomData.label, roomData.entries.length)}
+                  {slab(roomData.entries)}
                 </>
               ) : (
                 /* ROOMS — your lifts first (logger), then the pattern grid. */
                 <>
                   {(recent?.length ?? 0) > 0 && (
                     <>
-                      <Head label={t("workout.yourLifts")} count={Math.min(recent!.length, 8)} />
-                      <Slab entries={recent!.slice(0, 8)} />
+                      {head(t("workout.yourLifts"), Math.min(recent!.length, 8))}
+                      {slab(recent!.slice(0, 8))}
                     </>
                   )}
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
