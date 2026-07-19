@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — greeting zone only: 8 fresh concepts (cards untouched)</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/palette.ts */
+    --ink: #0c0d0c;
+    --ink2: #141614;
+    --card: #151715;
+    --line: #242724;
+    --chalk: #f3f4ef;
+    --ash: #8b8f86;
+    --lime: #c6f84f;
+    --teal: #6cb6bd;
+    --sand: #d0cd94;
+    --terra: #e58a5c;
+    --font-display: "Archivo", system-ui, -apple-system, sans-serif;
+    --font-serif: "Fraunces", "New York", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { background: var(--ink); color: var(--chalk); font-family: var(--font-display); -webkit-font-smoothing: antialiased; padding: 52px 20px 140px; }
+  main { max-width: 880px; margin: 0 auto; }
+
+  .page-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); }
+  h1 { font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -.02em; margin: 12px 0 12px; }
+  h1 em { font-style: normal; color: var(--lime); }
+  .lede { color: var(--ash); font-size: 16px; line-height: 1.7; max-width: 66ch; }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+  .lede code { font-family: var(--font-mono); font-size: 13px; color: var(--sand); }
+
+  .concept { margin-top: 96px; display: grid; grid-template-columns: 1fr 400px; gap: 40px; align-items: start; }
+  @media (max-width: 860px) { .concept { grid-template-columns: 1fr; } .concept .copy { max-width: 62ch; } }
+  .concept .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .concept .k b { color: var(--lime); font-weight: 600; }
+  .concept h2 { font-weight: 800; font-size: 26px; letter-spacing: -.015em; margin-bottom: 10px; }
+  .concept .why { color: var(--ash); font-size: 14.5px; line-height: 1.7; margin-bottom: 16px; }
+  .concept .why em { color: var(--chalk); font-style: normal; font-weight: 600; }
+  .concept .ive { color: var(--ash); font-size: 14px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+  .concept .ive b { color: var(--sand); font-weight: 600; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+  /* ── the phone ───────────────────────────────────────────── */
+  .phone {
+    width: 100%; max-width: 400px; margin: 0 auto;
+    background: linear-gradient(180deg, #101210, var(--ink) 60%);
+    border: 1px solid var(--line); border-radius: 34px;
+    padding: 24px 18px 28px; overflow: hidden; position: relative;
+    box-shadow: 0 24px 70px -30px rgba(0,0,0,.85);
+  }
+  .p-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .avatar { width: 42px; height: 42px; border-radius: 14px; position: relative; background: rgba(198,248,79,.13); border: 1px solid var(--lime); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: var(--lime); }
+  .avatar i { position: absolute; right: -3px; bottom: -3px; width: 10px; height: 10px; border-radius: 999px; background: var(--lime); border: 2px solid var(--ink); }
+  .wordmark { text-align: center; font-weight: 900; font-size: 18px; letter-spacing: -.03em; }
+  .wordmark span { color: var(--lime); }
+  .wordmark i { display: block; width: 26px; height: 3px; border-radius: 2px; background: var(--lime); margin: 5px auto 0; }
+  .bell { width: 42px; height: 42px; border-radius: 14px; background: var(--ink2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ash); }
+  .bell svg { width: 18px; height: 18px; }
+
+  /* ── THE FROZEN CARDS — identical markup + style in every mock ── */
+  .cc {
+    background:
+      radial-gradient(130% 90% at 92% -14%, var(--glow, rgba(198,248,79,.10)), transparent 52%),
+      var(--card);
+    border: 1px solid var(--line); border-radius: 22px; padding: 18px 18px 16px;
+  }
+  .cc .gl { font-size: 15px; color: var(--acc, var(--lime)); margin-bottom: 10px; display: block; }
+  .cc .t { font-weight: 800; font-size: 21px; letter-spacing: -.015em; }
+  .cc .s { color: var(--ash); font-size: 14px; line-height: 1.5; margin-top: 5px; }
+  .cc .cta { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--acc, var(--lime)); margin-top: 14px; display: block; }
+  .cc.teal { --acc: var(--teal); --glow: rgba(108,182,189,.10); }
+  .cc.sand { --acc: var(--sand); --glow: rgba(208,205,148,.10); }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+
+  .mono-meta { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── C1 · The Inversion ──────────────────────────────────── */
+  .c1-kick { margin-top: 22px; }
+  .c1-h { font-weight: 800; font-size: 27px; letter-spacing: -.02em; line-height: 1.16; margin: 8px 0 6px; max-width: 16ch; }
+  .c1-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+
+  /* ── C2 · Today ──────────────────────────────────────────── */
+  .c2-date { margin-top: 24px; display: flex; justify-content: space-between; align-items: baseline; }
+  .c2-h { font-weight: 900; font-size: 36px; letter-spacing: -.03em; margin: 2px 0 2px; }
+  .c2-sub { color: var(--ash); font-size: 15px; margin-bottom: 18px; }
+
+  /* ── C3 · Masthead ───────────────────────────────────────── */
+  .c3 { margin-top: 22px; display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+  .c3 .num { font-family: var(--font-serif); font-weight: 600; font-size: 58px; line-height: .95; letter-spacing: -.02em; }
+  .c3 .side { border-left: 1px solid var(--line); padding-left: 16px; }
+  .c3 .side .mo { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ash); }
+  .c3 .side .greet { font-weight: 800; font-size: 19px; letter-spacing: -.015em; margin-top: 4px; }
+  .c3-kick { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 12px; }
+
+  /* ── C4 · Engraved ───────────────────────────────────────── */
+  .c4-greet { margin-top: 24px; font-weight: 800; font-size: 26px; letter-spacing: -.02em; }
+  .c4-date { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 4px; }
+  .c4-eng { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 2px 12px; }
+  .c4-eng .q { font-family: var(--font-display); font-weight: 600; font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── C5 · The Rule ───────────────────────────────────────── */
+  .c5-greet { margin-top: 24px; font-weight: 800; font-size: 26px; letter-spacing: -.02em; }
+  .c5-date { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 4px; }
+  .c5-rule { display: flex; align-items: center; gap: 12px; margin: 20px 0 12px; }
+  .c5-rule .seg { width: 26px; height: 3px; border-radius: 2px; background: var(--lime); flex-shrink: 0; }
+  .c5-rule .q { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--chalk); white-space: nowrap; }
+  .c5-rule .ln { flex: 1; height: 1px; background: var(--line); }
+  .c5-rule .free { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── C6 · One Line ───────────────────────────────────────── */
+  .c6-row { margin-top: 24px; display: flex; justify-content: space-between; align-items: baseline; }
+  .c6-row .g { font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
+  .c6-free { text-align: right; margin: 14px 0 8px; }
+
+  /* ── C7 · The Spine ──────────────────────────────────────── */
+  .c7-greet { margin-top: 24px; font-weight: 800; font-size: 26px; letter-spacing: -.02em; }
+  .c7-date { font-family: var(--font-mono); font-size: 11px; color: var(--ash); margin-top: 4px; }
+  .c7-zone { display: flex; gap: 14px; margin-top: 20px; }
+  .c7-spine { width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--lime), rgba(198,248,79,.06)); flex-shrink: 0; }
+  .c7-body { flex: 1; min-width: 0; }
+  .c7-q { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .c7-q .t { font-weight: 700; font-size: 14px; letter-spacing: .01em; }
+
+  /* ── C8 · Settle (two moments) ───────────────────────────── */
+  .c8-pair { display: flex; gap: 14px; max-width: 400px; margin: 0 auto; }
+  .c8-pair .mini { flex: 1; min-width: 0; }
+  .c8-pair .phone { padding: 16px 12px 18px; border-radius: 26px; min-height: 430px; }
+  .c8-pair .lbl { text-align: center; margin-bottom: 10px; }
+  .c8-pair .p-head { transform: scale(.82); transform-origin: top center; margin-bottom: 0; }
+  .c8a-greet { margin-top: 64px; text-align: center; font-weight: 800; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
+  .c8a-date { text-align: center; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); margin-top: 6px; }
+  .c8a-cards { margin-top: 56px; opacity: .22; transform: translateY(14px); }
+  .c8b-row { margin-top: 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .c8b-row .g { font-weight: 800; font-size: 15.5px; letter-spacing: -.015em; }
+  .c8b-row .d { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .c8-pair .cc { border-radius: 16px; padding: 12px 13px 11px; }
+  .c8-pair .cc .gl { font-size: 12px; margin-bottom: 6px; }
+  .c8-pair .cc .t { font-size: 15px; }
+  .c8-pair .cc .s { font-size: 10.5px; margin-top: 3px; }
+  .c8-pair .cc .cta { font-size: 8.5px; margin-top: 9px; }
+  .c8-pair .stack { gap: 8px; margin-top: 10px; }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding-top: 26px; color: var(--ash); font-size: 14px; line-height: 1.7; max-width: 66ch; }
+  footer b { color: var(--chalk); }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="page-kicker">HYBRID — Today screen, first-run state — round two</div>
+  <h1>The greeting zone only: <em>8 fresh concepts</em></h1>
+  <p class="lede">New constraint: the three chooser cards are <strong>frozen</strong> — every mock below renders them pixel-identical to what ships today. All eight ideas work exclusively in the strip above them: the greeting, the date, the question, and “FREE”. The seam to heal is the same one — two near-equal headlines and a meta label with no home.</p>
+
+  <!-- ═══ C1 · THE INVERSION ═════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>01</b> — FLIP THE HIERARCHY</div>
+      <h2>The Inversion</h2>
+      <p class="why">Round one demoted the question; this does the opposite. The cards below <em>answer</em> “How do you want to start?” — so that question is the operative line and earns the headline size. The greeting becomes the warm mono kicker above it, and the date + FREE share one quiet meta line beneath. One headline, and it’s the one the screen is actually about.</p>
+      <p class="ive"><b>The Ive move</b>Rank by function, not sentiment. The line that drives the next tap gets the weight; the pleasantry gets the whisper.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c1-kick mono-meta" style="color: var(--sand);">Good afternoon, Rafal</div>
+      <div class="c1-h">How do you want to start?</div>
+      <div class="c1-meta">
+        <span class="mono-meta">Sunday, 19 July</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C2 · TODAY ═════════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>02</b> — THE APP STORE MOVE</div>
+      <h2>Today</h2>
+      <p class="why">Apple’s calmest screen — the App Store “Today” tab — solved this exact problem: caption date on top, one enormous noun, nothing else. Here the headline is simply <em>Today</em>, the date and FREE share the caption line above it, and the greeting survives as one small warm sentence beneath. The question is gone; three cards under the word “Today” need no introduction.</p>
+      <p class="ive"><b>The Ive move</b>Name the moment, not the mechanism. “Today” is what the screen is; “how do you want to start” is plumbing.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c2-date">
+        <span class="mono-meta">Sunday, 19 July</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="c2-h">Today</div>
+      <div class="c2-sub">Good afternoon, Rafal.</div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C3 · MASTHEAD ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>03</b> — A TRAINING JOURNAL COVER</div>
+      <h2>Masthead</h2>
+      <p class="why">The date stops being a mumbled mono caption and becomes the composition: a large serif <em>19</em> with the month stacked beside it behind a hairline, the greeting riding shotgun. It reads like the cover of today’s training journal — which is literally what the Today screen is. The question drops to a mono kicker above the cards, finally the same voice and size as “FREE” across from it.</p>
+      <p class="ive"><b>The Ive move</b>Find the one honest ornament. A date is real content that changes every day — promote what’s true instead of decorating what isn’t.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c3">
+        <div class="num">19</div>
+        <div class="side">
+          <div class="mo">Sunday – July</div>
+          <div class="greet">Good afternoon, Rafal</div>
+        </div>
+      </div>
+      <div class="c3-kick">
+        <span class="mono-meta" style="color: var(--chalk);">How do you want to start?</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C4 · ENGRAVED ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>04</b> — BRAUN ON THE FACEPLATE</div>
+      <h2>Engraved</h2>
+      <p class="why">Every line survives, but the question changes material: from a competing bold headline to a wide-tracked uppercase label — the way Braun engraves a function name on a faceplate. Engraving can’t compete with a headline; it can only label. The greeting (now 26) becomes the page’s undisputed voice, and the engraved question + FREE form one balanced label row above the cards.</p>
+      <p class="ive"><b>The Ive move</b>Change the material, not the message. Rams never let a label shout; a label’s job is to be found when looked for, and otherwise disappear.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c4-greet">Good afternoon, Rafal</div>
+      <div class="c4-date">Sunday, 19 July</div>
+      <div class="c4-eng">
+        <span class="q">How do you want to start</span>
+        <span class="mono-meta">Free</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C5 · THE RULE ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>05</b> — BORROW THE BRAND’S OWN MOTIF</div>
+      <h2>The Rule</h2>
+      <p class="why">The header already contains the answer: the little chartreuse rule under <em>HYBRID.</em> is the brand’s one graphic gesture. Reuse it as the zone divider — the question sits on a fence line that starts with that same lime segment and runs to “FREE” at the far end. The greeting owns the top; the rule row is unmistakably <em>structure</em>, not a second headline, because the page has already taught you what that lime dash means.</p>
+      <p class="ive"><b>The Ive move</b>A family of gestures. The best new element is one the design already owns — repetition of a single motif is what makes a product feel inevitable.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c5-greet">Good afternoon, Rafal</div>
+      <div class="c5-date">Sunday, 19 July</div>
+      <div class="c5-rule">
+        <span class="seg"></span>
+        <span class="q">How do you want to start?</span>
+        <span class="ln"></span>
+        <span class="free">Free</span>
+      </div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C6 · ONE LINE ══════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>06</b> — MAXIMUM COMPRESSION</div>
+      <h2>One Line</h2>
+      <p class="why">The entire zone collapses to a single baseline: greeting left, date right, sharing one line the way a letterhead does. The question is deleted, “FREE” right-aligns quietly above the stack, and the cards rise ~90px closer to the fold — on the real screen that pulls “How ready do you feel?” fully into view. The cheapest concept here in vertical pixels, and the one that most respects the cards as the content.</p>
+      <p class="ive"><b>The Ive move</b>Space is a feature. Every line you remove above the fold is given back to the athlete’s actual choices — deference measured in pixels.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c6-row">
+        <span class="g">Good afternoon, Rafal</span>
+        <span class="mono-meta">Sun 19 Jul</span>
+      </div>
+      <div class="c6-free mono-meta">Free to start</div>
+      <div class="stack">
+        <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+        <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+        <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C7 · THE SPINE ═════════════════════════════════════ -->
+  <section class="concept">
+    <div class="copy">
+      <div class="k"><b>07</b> — BIND, DON’T HEADLINE</div>
+      <h2>The Spine</h2>
+      <p class="why">The real oddness is that the question floats with no visible relationship to the three cards that answer it. So give it one: a thin chartreuse spine runs from the (now small, calm) question down the left of the whole stack, physically binding question to answers — the way a bracket groups options on paper. The cards themselves are untouched; the spine lives in the page margin. The greeting stays the sole headline above.</p>
+      <p class="ive"><b>The Ive move</b>Express relationships structurally. If two things belong together, connect them with geometry — don’t caption them and hope.</p>
+    </div>
+    <div class="phone">
+      <div class="p-head">
+        <div class="avatar">RA<i></i></div>
+        <div class="wordmark">HYBRID<span>.</span><i></i></div>
+        <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+      </div>
+      <div class="c7-greet">Good afternoon, Rafal</div>
+      <div class="c7-date">Sunday, 19 July</div>
+      <div class="c7-zone">
+        <div class="c7-spine"></div>
+        <div class="c7-body">
+          <div class="c7-q">
+            <span class="t">How do you want to start?</span>
+            <span class="mono-meta">Free</span>
+          </div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ C8 · SETTLE ════════════════════════════════════════ -->
+  <section class="concept" style="grid-template-columns: 1fr; max-width: 880px;">
+    <div class="copy" style="max-width: 66ch;">
+      <div class="k"><b>08</b> — THE GREETING AS AN EVENT</div>
+      <h2>Settle</h2>
+      <p class="why">Maybe the greeting shouldn’t be furniture at all. On open, it appears alone — centered, generous, the only thing on the glass — and after a breath (~600&nbsp;ms) it <em>settles</em>: shrinking up into a compact one-line row as the cards rise into place. You get the full warm hello every time you arrive, and a clean, single-headline layout every second after. The static layout that remains is Concept 06; the greeting becomes choreography instead of a permanent second headline.</p>
+      <p class="ive" style="margin-bottom: 26px;"><b>The Ive move</b>Design the transition, not just the state. A greeting is a moment — let it behave like one, then defer. (Reduced-motion users simply get the settled frame.)</p>
+    </div>
+    <div class="c8-pair">
+      <div class="mini">
+        <div class="lbl mono-meta">Moment 1 — on open</div>
+        <div class="phone">
+          <div class="p-head">
+            <div class="avatar">RA<i></i></div>
+            <div class="wordmark">HYBRID<span>.</span><i></i></div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+          </div>
+          <div class="c8a-greet">Good afternoon,<br/>Rafal</div>
+          <div class="c8a-date">Sunday, 19 July</div>
+          <div class="c8a-cards">
+            <div class="stack">
+              <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline.</div><span class="cta">Browse →</span></div>
+              <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program.</div><span class="cta">Compose →</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="lbl mono-meta">Moment 2 — settled (+0.6 s)</div>
+        <div class="phone">
+          <div class="p-head">
+            <div class="avatar">RA<i></i></div>
+            <div class="wordmark">HYBRID<span>.</span><i></i></div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></div>
+          </div>
+          <div class="c8b-row">
+            <span class="g">Good afternoon, Rafal</span>
+            <span class="d">Sun 19 Jul</span>
+          </div>
+          <div class="stack">
+            <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline.</div><span class="cta">Browse →</span></div>
+            <div class="cc teal"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program.</div><span class="cta">Compose →</span></div>
+            <div class="cc sand"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout.</div><span class="cta">Log →</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <b>If you want a steer:</b> Concept 05 (The Rule) is the most “HYBRID” — it heals the seam using the brand’s existing lime-dash motif, keeps every word you have today, and costs one small layout change. Concept 01 (The Inversion) is the boldest correct answer (the question is what the cards answer, so it deserves the size). Concept 06 (One Line) wins if above-the-fold space matters most. All eight leave the three cards byte-for-byte as they ship today, and whichever you choose lands on both clients per the parity rule.
+  </footer>
+
+</main>
+</body>
+</html>
