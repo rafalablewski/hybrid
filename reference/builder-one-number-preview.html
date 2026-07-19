@@ -1,8 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HYBRID — Builder “One Number” preview</title>
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
@@ -149,16 +148,159 @@
     <div class="screen" id="screen">
       <div class="h-title"><span class="back">←</span>Builder</div>
       <div class="intro">Assemble a reusable routine — save it, then start it from Train.</div>
-      <input class="name" value="New routine" aria-label="Routine name" />
+      <input class="name" value="New routine" aria-label="Routine name">
 
       <div class="hero">
-        <div class="num"><span id="minutes">0</span><small> min</small></div>
-        <div class="meta" style="margin-top: 8px" id="heroMeta"></div>
-        <div class="bar" id="bar"></div>
-        <div class="labels" id="barLabels"></div>
+        <div class="num"><span id="minutes">37</span><small> min</small></div>
+        <div class="meta" style="margin-top: 8px" id="heroMeta"><span>1.6 t</span><span class="sep"></span><span>4 moves</span></div>
+        <div class="bar" id="bar"><span style="width:41%;background:var(--lime)"></span><span style="width:32%;background:var(--violet)"></span><span style="width:27%;background:var(--blue)"></span></div>
+        <div class="labels" id="barLabels"><span style="color:var(--lime-text)">41% str</span><span style="color:var(--violet-text)">32% cond</span><span style="color:var(--blue-text)">27% end</span></div>
       </div>
 
-      <div id="cards"></div>
+      <div id="cards"><div class="xcard open">
+        <div class="xhead">
+          <span class="kind" style="color:var(--lime-text)">STRENGTH</span>
+          <span class="nm">Barbell Glute Bridge</span>
+          
+            <button class="ibtn" data-a="up" disabled="" title="Move up">↑</button>
+            <button class="ibtn" data-a="down" title="Move down">↓</button>
+          <button class="ibtn" data-a="dup" title="Duplicate">⧉</button>
+          <button class="ibtn plain" data-a="tog" title="Collapse"><span class="chev">▾</span></button>
+          <button class="ibtn plain" data-a="rm" title="Remove">✕</button>
+        </div>
+        <div class="metrics"><span class="m"><span class="l">set × reps</span><br><span class="v">3 × 8</span></span>
+              <span class="m"><span class="l">load (kg)</span><br><span class="v">100</span></span>
+              <span class="m"><span class="l">est. time</span><br><span class="v">10 min</span></span></div>
+        <div class="body">
+      
+      <div class="shead cols-load"><span class="l">set</span><span class="l">load (kg)</span><span class="l">reps</span>
+        <span style="display:flex;align-items:end">
+          <button class="l toggle" data-a="mode" title="Switch RPE/RIR">rpe ⇄</button>
+          <button class="info " data-a="help">ⓘ</button>
+        </span><span></span></div>
+      
+      
+        <div class="srow cols-load">
+          <button class="badge working" data-a="type" data-i="0" title="Tap to change set type (working / warm-up / cool-down / drop)">1</button>
+          <input inputmode="numeric" data-f="load" data-i="0" value="100" placeholder="100">
+          <input inputmode="numeric" data-f="reps" data-i="0" value="8" placeholder="8">
+          <input inputmode="numeric" data-f="rpe" data-i="0" value="8" placeholder="8">
+          <button class="del" data-a="delset" data-i="0" title="Remove set">−</button>
+        </div>
+        <div class="srow cols-load">
+          <button class="badge working" data-a="type" data-i="1" title="Tap to change set type (working / warm-up / cool-down / drop)">2</button>
+          <input inputmode="numeric" data-f="load" data-i="1" value="100" placeholder="100">
+          <input inputmode="numeric" data-f="reps" data-i="1" value="8" placeholder="8">
+          <input inputmode="numeric" data-f="rpe" data-i="1" value="8" placeholder="8">
+          <button class="del" data-a="delset" data-i="1" title="Remove set">−</button>
+        </div>
+        <div class="srow cols-load">
+          <button class="badge working" data-a="type" data-i="2" title="Tap to change set type (working / warm-up / cool-down / drop)">3</button>
+          <input inputmode="numeric" data-f="load" data-i="2" value="" placeholder="100">
+          <input inputmode="numeric" data-f="reps" data-i="2" value="" placeholder="8">
+          <input inputmode="numeric" data-f="rpe" data-i="2" value="" placeholder="8">
+          <button class="del" data-a="delset" data-i="2" title="Remove set">−</button>
+        </div>
+      <div class="addrow">
+        <button class="ghost-pill" data-a="addset">+ Add set</button>
+        <button class="ghost-pill" data-a="special">Special ▾</button>
+        
+      </div>
+      <div class="rest"><span class="l">Rest between sets (s)</span>
+        <button class="ibtn" data-a="rest-">−</button><span class="v">150 s</span><button class="ibtn" data-a="rest+">+</button></div></div></div><div class="xcard open">
+        <div class="xhead">
+          <span class="kind" style="color:var(--lime-text)">STRENGTH</span>
+          <span class="nm">Pull-Up</span>
+          
+            <button class="ibtn" data-a="up" title="Move up">↑</button>
+            <button class="ibtn" data-a="down" title="Move down">↓</button>
+          <button class="ibtn" data-a="dup" title="Duplicate">⧉</button>
+          <button class="ibtn plain" data-a="tog" title="Collapse"><span class="chev">▾</span></button>
+          <button class="ibtn plain" data-a="rm" title="Remove">✕</button>
+        </div>
+        <div class="metrics"><span class="m"><span class="l">set × reps</span><br><span class="v">2 × 10</span></span>
+              
+              <span class="m"><span class="l">est. time</span><br><span class="v">6 min</span></span></div>
+        <div class="body">
+      <div class="bwnote">Bodyweight lift — sets are BW × reps; tonnage uses your logged bodyweight.</div>
+      <div class="shead cols-noload"><span class="l">set</span><span class="l">reps</span>
+        <span style="display:flex;align-items:end">
+          <button class="l toggle" data-a="mode" title="Switch RPE/RIR">rpe ⇄</button>
+          <button class="info " data-a="help">ⓘ</button>
+        </span><span></span></div>
+      
+      
+        <div class="srow cols-noload">
+          <button class="badge working" data-a="type" data-i="0" title="Tap to change set type (working / warm-up / cool-down / drop)">1</button>
+          
+          <input inputmode="numeric" data-f="reps" data-i="0" value="10" placeholder="8">
+          <input inputmode="numeric" data-f="rpe" data-i="0" value="8" placeholder="8">
+          <button class="del" data-a="delset" data-i="0" title="Remove set">−</button>
+        </div>
+        <div class="srow cols-noload">
+          <button class="badge working" data-a="type" data-i="1" title="Tap to change set type (working / warm-up / cool-down / drop)">2</button>
+          
+          <input inputmode="numeric" data-f="reps" data-i="1" value="10" placeholder="8">
+          <input inputmode="numeric" data-f="rpe" data-i="1" value="9" placeholder="8">
+          <button class="del" data-a="delset" data-i="1" title="Remove set">−</button>
+        </div>
+      <div class="addrow">
+        <button class="ghost-pill" data-a="addset">+ Add set</button>
+        <button class="ghost-pill" data-a="special">Special ▾</button>
+        
+      </div>
+      <div class="rest"><span class="l">Rest between sets (s)</span>
+        <button class="ibtn" data-a="rest-">−</button><span class="v">120 s</span><button class="ibtn" data-a="rest+">+</button></div></div></div><div class="xcard closed">
+        <div class="xhead">
+          <span class="kind" style="color:var(--blue-text)">CARDIO</span>
+          <span class="nm">Row Intervals</span>
+          
+            <button class="ibtn" data-a="up" title="Move up">↑</button>
+            <button class="ibtn" data-a="down" title="Move down">↓</button>
+          <button class="ibtn" data-a="dup" title="Duplicate">⧉</button>
+          <button class="ibtn plain" data-a="tog" title="Expand"><span class="chev">▾</span></button>
+          <button class="ibtn plain" data-a="rm" title="Remove">✕</button>
+        </div>
+        <div class="metrics"><span class="m"><span class="l">dist (m)</span><br><span class="v">2000</span></span>
+              <span class="m"><span class="l">pace</span><br><span class="v" style="color:var(--blue-text)">5:00 /km</span></span>
+              <span class="m"><span class="l">minutes</span><br><span class="v">10</span></span></div>
+        <div class="body">
+      <div class="frow">
+    <div><span class="flabel">Dist (m)</span>
+    <input class="field" inputmode="numeric" data-f="distance" value="2000" placeholder="400"></div>
+    <div><span class="flabel">Minutes</span>
+    <input class="field" inputmode="numeric" data-f="minutes" value="10" placeholder="45"></div></div>
+      <div class="frow">
+    <div><span class="flabel">HR zone</span>
+    <input class="field" inputmode="numeric" data-f="zone" value="3" placeholder="2"></div></div>
+      <div class="pace">Pace 5:00 /km</div></div></div><div class="xcard closed">
+        <div class="xhead">
+          <span class="kind" style="color:var(--violet-text)">CONDITIONING</span>
+          <span class="nm">KB Swing AMRAP</span>
+          
+            <button class="ibtn" data-a="up" title="Move up">↑</button>
+            <button class="ibtn" data-a="down" disabled="" title="Move down">↓</button>
+          <button class="ibtn" data-a="dup" title="Duplicate">⧉</button>
+          <button class="ibtn plain" data-a="tog" title="Expand"><span class="chev">▾</span></button>
+          <button class="ibtn plain" data-a="rm" title="Remove">✕</button>
+        </div>
+        <div class="metrics"><span class="m"><span class="l">format</span><br><span class="v">AMRAP</span></span>
+            <span class="m"><span class="l">rounds</span><br><span class="v">8</span></span>
+            <span class="m"><span class="l">est. time</span><br><span class="v" style="color:var(--violet-text)">12 min</span></span></div>
+        <div class="body">
+      <div class="frow">
+        <div><span class="flabel">Format</span><input class="field" data-f="format" value="AMRAP" placeholder="AMRAP"></div>
+        
+    <div><span class="flabel">Rounds</span>
+    <input class="field" inputmode="numeric" data-f="rounds" value="8" placeholder="8"></div>
+      </div>
+      <div class="frow">
+    <div><span class="flabel">Work (s)</span>
+    <input class="field" inputmode="numeric" data-f="work" value="40" placeholder="40"></div>
+    <div><span class="flabel">Rest (s)</span>
+    <input class="field" inputmode="numeric" data-f="restS" value="20" placeholder="20"></div>
+    <div><span class="flabel">Minutes</span>
+    <input class="field" inputmode="numeric" data-f="minutes" value="12" placeholder="12"></div></div></div></div></div>
       <button class="ghost-add" id="openPicker">＋ Add exercise</button>
 
       <button class="cta">Save routine →</button>
@@ -173,7 +315,7 @@
     <div class="sheet-veil" id="veil"></div>
     <div class="sheet" id="sheet">
       <div class="shd"><b>Pick an exercise</b><button class="close" id="closePicker">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input id="q" placeholder="Search or type a custom name…" /></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input id="q" placeholder="Search or type a custom name…"></div>
       <div class="list" id="list"></div>
     </div>
 
@@ -478,5 +620,6 @@
 
   render();
 </script>
-</body>
-</html>
+
+
+</body></html>

@@ -1,8 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HYBRID — Exercise picker design concepts</title>
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
@@ -124,8 +123,146 @@
     </p>
     <div class="frame"><div class="sheet">
       <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c1" placeholder="Search or type a custom name…" /></div>
-      <div class="list" id="c1-list"></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c1" placeholder="Search or type a custom name…"></div>
+      <div class="list" id="c1-list"><div class="sechead"><span class="t">Squat</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Back Squat">
+      <span class="tile k-str">BS</span>
+      <span class="nm">Back Squat</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Front Squat">
+      <span class="tile k-str">FS</span>
+      <span class="nm">Front Squat</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Goblet Squat">
+      <span class="tile k-str">GS</span>
+      <span class="nm">Goblet Squat</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Hinge</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Romanian Deadlift">
+      <span class="tile k-str">RD</span>
+      <span class="nm">Romanian Deadlift</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Barbell Glute Bridge">
+      <span class="tile k-str">BG</span>
+      <span class="nm">Barbell Glute Bridge</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="KB Swing">
+      <span class="tile k-str">KS</span>
+      <span class="nm">KB Swing</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Push</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Bench Press">
+      <span class="tile k-str">BP</span>
+      <span class="nm">Bench Press</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Overhead Press">
+      <span class="tile k-str">OP</span>
+      <span class="nm">Overhead Press</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Dip">
+      <span class="tile k-str">D</span>
+      <span class="nm">Dip</span>
+      <span class="hint">bodyweight</span>
+      
+    </button></div><div class="sechead"><span class="t">Pull</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Pull-Up">
+      <span class="tile k-str">PU</span>
+      <span class="nm">Pull-Up</span>
+      <span class="hint">bodyweight</span>
+      
+    </button>
+    <button class="xrow" data-name="Weighted Pull-Up">
+      <span class="tile k-str">WP</span>
+      <span class="nm">Weighted Pull-Up</span>
+      <span class="hint">bw + load</span>
+      
+    </button>
+    <button class="xrow" data-name="Lat Pulldown">
+      <span class="tile k-str">LP</span>
+      <span class="nm">Lat Pulldown</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Core &amp; Carry</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Plank">
+      <span class="tile k-str">P</span>
+      <span class="nm">Plank</span>
+      <span class="hint">seconds</span>
+      
+    </button>
+    <button class="xrow" data-name="Farmer Carry">
+      <span class="tile k-str">FC</span>
+      <span class="nm">Farmer Carry</span>
+      <span class="hint">metres</span>
+      
+    </button>
+    <button class="xrow" data-name="Hanging Leg Raise">
+      <span class="tile k-str">HL</span>
+      <span class="nm">Hanging Leg Raise</span>
+      <span class="hint">bodyweight</span>
+      
+    </button></div><div class="sechead"><span class="t">Endurance</span><span class="n">5</span></div><div class="slab">
+    <button class="xrow" data-name="Run">
+      <span class="tile k-car">🏃</span>
+      <span class="nm">Run</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Trail Run">
+      <span class="tile k-car">⛰️</span>
+      <span class="nm">Trail Run</span>
+      <span class="hint">elevation</span>
+      
+    </button>
+    <button class="xrow" data-name="Row Intervals">
+      <span class="tile k-car">🚣</span>
+      <span class="nm">Row Intervals</span>
+      <span class="hint">metres</span>
+      
+    </button>
+    <button class="xrow" data-name="Bike Erg">
+      <span class="tile k-car">🚴</span>
+      <span class="nm">Bike Erg</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Swim">
+      <span class="tile k-car">🏊</span>
+      <span class="nm">Swim</span>
+      <span class="hint">stroke</span>
+      
+    </button></div><div class="sechead"><span class="t">Conditioning</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Mixed Metcon">
+      <span class="tile k-con">MM</span>
+      <span class="nm">Mixed Metcon</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Assault Bike">
+      <span class="tile k-con">AB</span>
+      <span class="nm">Assault Bike</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Sled Push">
+      <span class="tile k-con">SP</span>
+      <span class="nm">Sled Push</span>
+      
+      
+    </button></div></div>
     </div></div>
   </section>
 
@@ -135,14 +272,14 @@
     <h2>Choose the pattern first. Then the lift.</h2>
     <p class="why">
       Ive's answer to a 200-item scroll: <em>don't show 200 items.</em> The first screen is eight
-      calm pattern tiles — Squat, Hinge, Push, Pull, Core & Carry, Endurance, Conditioning — each a
+      calm pattern tiles — Squat, Hinge, Push, Pull, Core &amp; Carry, Endurance, Conditioning — each a
       quiet room. Tap one and only that room's handful of movements appears, in the unified row
       anatomy. Search still cuts across every room from the top. Two taps, never a scroll.
     </p>
     <div class="frame"><div class="sheet">
       <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c2" placeholder="Search every room…" /></div>
-      <div class="list" id="c2-list"></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c2" placeholder="Search every room…"></div>
+      <div class="list" id="c2-list"><div class="gate-grid"><button class="gate" data-room="Squat"><span class="g k-str">▼</span><span class="t">Squat</span><span class="n">3 movements</span></button><button class="gate" data-room="Hinge"><span class="g k-str">⌁</span><span class="t">Hinge</span><span class="n">3 movements</span></button><button class="gate" data-room="Push"><span class="g k-str">↥</span><span class="t">Push</span><span class="n">3 movements</span></button><button class="gate" data-room="Pull"><span class="g k-str">↧</span><span class="t">Pull</span><span class="n">3 movements</span></button><button class="gate" data-room="Core &amp; Carry"><span class="g k-str">▣</span><span class="t">Core &amp; Carry</span><span class="n">3 movements</span></button><button class="gate" data-room="Endurance"><span class="g k-car">∿</span><span class="t">Endurance</span><span class="n">5 movements</span></button><button class="gate" data-room="Conditioning"><span class="g k-con">◇</span><span class="t">Conditioning</span><span class="n">3 movements</span></button></div></div>
     </div></div>
   </section>
 
@@ -158,8 +295,146 @@
     </p>
     <div class="frame"><div class="sheet">
       <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c3" placeholder="Search or type a custom name…" /></div>
-      <div class="list" id="c3-list"></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c3" placeholder="Search or type a custom name…"></div>
+      <div class="list" id="c3-list"><div class="sechead"><span class="t">Your recent</span><span class="n">smart</span></div><div class="chips"><button class="chip" data-name="Back Squat"><span class="mini k-str">BS</span>Back Squat</button><button class="chip" data-name="Pull-Up"><span class="mini k-str">PU</span>Pull-Up</button><button class="chip" data-name="Row Intervals"><span class="mini k-car">🚣</span>Row Intervals</button><button class="chip" data-name="Bench Press"><span class="mini k-str">BP</span>Bench Press</button><button class="chip" data-name="KB Swing"><span class="mini k-str">KS</span>KB Swing</button><button class="chip" data-name="Run"><span class="mini k-car">🏃</span>Run</button></div><div class="sechead"><span class="t">Squat</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Back Squat">
+      <span class="tile k-str">BS</span>
+      <span class="nm">Back Squat</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Front Squat">
+      <span class="tile k-str">FS</span>
+      <span class="nm">Front Squat</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Goblet Squat">
+      <span class="tile k-str">GS</span>
+      <span class="nm">Goblet Squat</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Hinge</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Romanian Deadlift">
+      <span class="tile k-str">RD</span>
+      <span class="nm">Romanian Deadlift</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Barbell Glute Bridge">
+      <span class="tile k-str">BG</span>
+      <span class="nm">Barbell Glute Bridge</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="KB Swing">
+      <span class="tile k-str">KS</span>
+      <span class="nm">KB Swing</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Push</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Bench Press">
+      <span class="tile k-str">BP</span>
+      <span class="nm">Bench Press</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Overhead Press">
+      <span class="tile k-str">OP</span>
+      <span class="nm">Overhead Press</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Dip">
+      <span class="tile k-str">D</span>
+      <span class="nm">Dip</span>
+      <span class="hint">bodyweight</span>
+      
+    </button></div><div class="sechead"><span class="t">Pull</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Pull-Up">
+      <span class="tile k-str">PU</span>
+      <span class="nm">Pull-Up</span>
+      <span class="hint">bodyweight</span>
+      
+    </button>
+    <button class="xrow" data-name="Weighted Pull-Up">
+      <span class="tile k-str">WP</span>
+      <span class="nm">Weighted Pull-Up</span>
+      <span class="hint">bw + load</span>
+      
+    </button>
+    <button class="xrow" data-name="Lat Pulldown">
+      <span class="tile k-str">LP</span>
+      <span class="nm">Lat Pulldown</span>
+      
+      
+    </button></div><div class="sechead"><span class="t">Core &amp; Carry</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Plank">
+      <span class="tile k-str">P</span>
+      <span class="nm">Plank</span>
+      <span class="hint">seconds</span>
+      
+    </button>
+    <button class="xrow" data-name="Farmer Carry">
+      <span class="tile k-str">FC</span>
+      <span class="nm">Farmer Carry</span>
+      <span class="hint">metres</span>
+      
+    </button>
+    <button class="xrow" data-name="Hanging Leg Raise">
+      <span class="tile k-str">HL</span>
+      <span class="nm">Hanging Leg Raise</span>
+      <span class="hint">bodyweight</span>
+      
+    </button></div><div class="sechead"><span class="t">Endurance</span><span class="n">5</span></div><div class="slab">
+    <button class="xrow" data-name="Run">
+      <span class="tile k-car">🏃</span>
+      <span class="nm">Run</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Trail Run">
+      <span class="tile k-car">⛰️</span>
+      <span class="nm">Trail Run</span>
+      <span class="hint">elevation</span>
+      
+    </button>
+    <button class="xrow" data-name="Row Intervals">
+      <span class="tile k-car">🚣</span>
+      <span class="nm">Row Intervals</span>
+      <span class="hint">metres</span>
+      
+    </button>
+    <button class="xrow" data-name="Bike Erg">
+      <span class="tile k-car">🚴</span>
+      <span class="nm">Bike Erg</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Swim">
+      <span class="tile k-car">🏊</span>
+      <span class="nm">Swim</span>
+      <span class="hint">stroke</span>
+      
+    </button></div><div class="sechead"><span class="t">Conditioning</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow" data-name="Mixed Metcon">
+      <span class="tile k-con">MM</span>
+      <span class="nm">Mixed Metcon</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Assault Bike">
+      <span class="tile k-con">AB</span>
+      <span class="nm">Assault Bike</span>
+      
+      
+    </button>
+    <button class="xrow" data-name="Sled Push">
+      <span class="tile k-con">SP</span>
+      <span class="nm">Sled Push</span>
+      
+      
+    </button></div></div>
     </div></div>
   </section>
 
@@ -175,8 +450,8 @@
     </p>
     <div class="frame"><div class="sheet">
       <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c4" placeholder="Search or type a custom name…" /></div>
-      <div class="c4-wrap list" id="c4-list"></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c4" placeholder="Search or type a custom name…"></div>
+      <div class="c4-wrap list" id="c4-list"><div class="c4-letter">A</div><button class="c4-row" data-name="Assault Bike"><span class="nm">Assault Bike</span><span class="k k-con">conditioning</span></button><div class="c4-letter">B</div><button class="c4-row" data-name="Back Squat"><span class="nm">Back Squat</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Barbell Glute Bridge"><span class="nm">Barbell Glute Bridge</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Bench Press"><span class="nm">Bench Press</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Bike Erg"><span class="nm">Bike Erg</span><span class="k k-car">endurance</span></button><div class="c4-letter">D</div><button class="c4-row" data-name="Dip"><span class="nm">Dip</span><span class="k k-str">strength</span></button><div class="c4-letter">F</div><button class="c4-row" data-name="Farmer Carry"><span class="nm">Farmer Carry</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Front Squat"><span class="nm">Front Squat</span><span class="k k-str">strength</span></button><div class="c4-letter">G</div><button class="c4-row" data-name="Goblet Squat"><span class="nm">Goblet Squat</span><span class="k k-str">strength</span></button><div class="c4-letter">H</div><button class="c4-row" data-name="Hanging Leg Raise"><span class="nm">Hanging Leg Raise</span><span class="k k-str">strength</span></button><div class="c4-letter">K</div><button class="c4-row" data-name="KB Swing"><span class="nm">KB Swing</span><span class="k k-str">strength</span></button><div class="c4-letter">L</div><button class="c4-row" data-name="Lat Pulldown"><span class="nm">Lat Pulldown</span><span class="k k-str">strength</span></button><div class="c4-letter">M</div><button class="c4-row" data-name="Mixed Metcon"><span class="nm">Mixed Metcon</span><span class="k k-con">conditioning</span></button><div class="c4-letter">O</div><button class="c4-row" data-name="Overhead Press"><span class="nm">Overhead Press</span><span class="k k-str">strength</span></button><div class="c4-letter">P</div><button class="c4-row" data-name="Plank"><span class="nm">Plank</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Pull-Up"><span class="nm">Pull-Up</span><span class="k k-str">strength</span></button><div class="c4-letter">R</div><button class="c4-row" data-name="Romanian Deadlift"><span class="nm">Romanian Deadlift</span><span class="k k-str">strength</span></button><button class="c4-row" data-name="Row Intervals"><span class="nm">Row Intervals</span><span class="k k-car">endurance</span></button><button class="c4-row" data-name="Run"><span class="nm">Run</span><span class="k k-car">endurance</span></button><div class="c4-letter">S</div><button class="c4-row" data-name="Sled Push"><span class="nm">Sled Push</span><span class="k k-con">conditioning</span></button><button class="c4-row" data-name="Swim"><span class="nm">Swim</span><span class="k k-car">endurance</span></button><div class="c4-letter">T</div><button class="c4-row" data-name="Trail Run"><span class="nm">Trail Run</span><span class="k k-car">endurance</span></button><div class="c4-letter">W</div><button class="c4-row" data-name="Weighted Pull-Up"><span class="nm">Weighted Pull-Up</span><span class="k k-str">strength</span></button><div class="c4-rail">A<br>B<br>C<br>D<br>E<br>F<br>G<br>H<br>I<br>J<br>K<br>L<br>M<br>N<br>O<br>P<br>R<br>S<br>T<br>W</div></div>
     </div></div>
   </section>
 
@@ -192,17 +467,155 @@
     </p>
     <div class="frame"><div class="sheet">
       <div class="shd"><b>Compose the routine</b><button class="close">Close</button></div>
-      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c5" placeholder="Search or type a custom name…" /></div>
-      <div class="list" id="c5-list"></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c5" placeholder="Search or type a custom name…"></div>
+      <div class="list" id="c5-list"><div class="sechead"><span class="t">Squat</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Back Squat">
+      <span class="tile k-str">BS</span>
+      <span class="nm">Back Squat</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Front Squat">
+      <span class="tile k-str">FS</span>
+      <span class="nm">Front Squat</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Goblet Squat">
+      <span class="tile k-str">GS</span>
+      <span class="nm">Goblet Squat</span>
+      
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Hinge</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Romanian Deadlift">
+      <span class="tile k-str">RD</span>
+      <span class="nm">Romanian Deadlift</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Barbell Glute Bridge">
+      <span class="tile k-str">BG</span>
+      <span class="nm">Barbell Glute Bridge</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="KB Swing">
+      <span class="tile k-str">KS</span>
+      <span class="nm">KB Swing</span>
+      
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Push</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Bench Press">
+      <span class="tile k-str">BP</span>
+      <span class="nm">Bench Press</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Overhead Press">
+      <span class="tile k-str">OP</span>
+      <span class="nm">Overhead Press</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Dip">
+      <span class="tile k-str">D</span>
+      <span class="nm">Dip</span>
+      <span class="hint">bodyweight</span>
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Pull</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Pull-Up">
+      <span class="tile k-str">PU</span>
+      <span class="nm">Pull-Up</span>
+      <span class="hint">bodyweight</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Weighted Pull-Up">
+      <span class="tile k-str">WP</span>
+      <span class="nm">Weighted Pull-Up</span>
+      <span class="hint">bw + load</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Lat Pulldown">
+      <span class="tile k-str">LP</span>
+      <span class="nm">Lat Pulldown</span>
+      
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Core &amp; Carry</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Plank">
+      <span class="tile k-str">P</span>
+      <span class="nm">Plank</span>
+      <span class="hint">seconds</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Farmer Carry">
+      <span class="tile k-str">FC</span>
+      <span class="nm">Farmer Carry</span>
+      <span class="hint">metres</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Hanging Leg Raise">
+      <span class="tile k-str">HL</span>
+      <span class="nm">Hanging Leg Raise</span>
+      <span class="hint">bodyweight</span>
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Endurance</span><span class="n">5</span></div><div class="slab">
+    <button class="xrow " data-name="Run">
+      <span class="tile k-car">🏃</span>
+      <span class="nm">Run</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Trail Run">
+      <span class="tile k-car">⛰️</span>
+      <span class="nm">Trail Run</span>
+      <span class="hint">elevation</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Row Intervals">
+      <span class="tile k-car">🚣</span>
+      <span class="nm">Row Intervals</span>
+      <span class="hint">metres</span>
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Bike Erg">
+      <span class="tile k-car">🚴</span>
+      <span class="nm">Bike Erg</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Swim">
+      <span class="tile k-car">🏊</span>
+      <span class="nm">Swim</span>
+      <span class="hint">stroke</span>
+      <span class="add">＋</span>
+    </button></div><div class="sechead"><span class="t">Conditioning</span><span class="n">3</span></div><div class="slab">
+    <button class="xrow " data-name="Mixed Metcon">
+      <span class="tile k-con">MM</span>
+      <span class="nm">Mixed Metcon</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Assault Bike">
+      <span class="tile k-con">AB</span>
+      <span class="nm">Assault Bike</span>
+      
+      <span class="add">＋</span>
+    </button>
+    <button class="xrow " data-name="Sled Push">
+      <span class="tile k-con">SP</span>
+      <span class="nm">Sled Push</span>
+      
+      <span class="add">＋</span>
+    </button></div></div>
       <div class="c5-tray">
         <div class="c5-picked" id="c5-picked"><span class="c5-empty">Tap exercises to collect them…</span></div>
-        <button class="lime-cta" id="c5-cta" disabled style="opacity:.45">Add 0 exercises →</button>
+        <button class="lime-cta" id="c5-cta" disabled="" style="opacity:.45">Add 0 exercises →</button>
       </div>
     </div></div>
   </section>
 
   <footer>
-    HYBRID — reference/exercise-picker-design-concepts.html<br />
+    HYBRID — reference/exercise-picker-design-concepts.html<br>
     Rendered in the live Aurora tokens (tokens.ts) — Archivo, Fraunces, JetBrains Mono.
   </footer>
 </main>
@@ -325,5 +738,6 @@
     picked.splice(picked.indexOf(el.dataset.name), 1); paint("c5"); c5tray();
   });
 </script>
-</body>
-</html>
+
+
+</body></html>
