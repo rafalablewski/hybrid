@@ -361,6 +361,27 @@ export default function AuroraHome() {
               onSelectDay={setRailDay}
             />
           </View>
+        ) : !initialLoad && !plan && !(isAthlete && hasData) ? (
+          /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the
+             page: no wrapper ACard (a box around three cards reads as chrome)
+             and one stacked column. The question is the kicker, "Free" said
+             ONCE behind the hairline; each full-width card wears the Go-Full
+             anatomy with its corner glow, the hue confined to glyph + CTA,
+             and IS the start — no separate Start pill. Mirrors web today.tsx. */
+          <View style={{ marginTop: 18 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 12 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.lime }} />
+              <MetaLine
+                parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
+                textStyle={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}
+              />
+            </View>
+            <View style={{ gap: space.sm }}>
+              <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+              <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
+              <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+            </View>
+          </View>
         ) : (
         <ACard style={{ marginTop: 14 }}>
             {/* On a plan, Start becomes the full-width action BELOW the note; the
@@ -473,28 +494,9 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>
             ) : (
-              /* First-run chooser — "Three Materials": the question is the
-                 kicker, and the three free paths wear the Go-Full card anatomy
-                 (corner glow, title, body, CTA pinned at the bottom) so the
-                 athlete's FIRST decision feels as considered as the paid one.
-                 Spectrum-coded: enrol=lime, build=teal, log=sand — the hue
-                 confined to the small glyph + CTA. "Free" is said ONCE in the
-                 kicker (no per-card badges), and the top-right Start pill is
-                 gone: each card IS the start. Mirrors web today.tsx. */
-              <>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 8 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.lime }} />
-                  <MetaLine
-                    parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
-                    textStyle={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}
-                  />
-                </View>
-                <View style={{ marginTop: 14, gap: space.sm }}>
-                  <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
-                  <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
-                  <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-                </View>
-              </>
+              /* The first-run chooser renders OUTSIDE this card (directly on
+                 the page, above) — this branch is unreachable in that state. */
+              null
             )}
           </ACard>
         )}
@@ -641,15 +643,14 @@ export default function AuroraHome() {
 // One row of the first-session chooser (#3): a tappable option with a title, a
 // one-line sub, and a Free/Full badge.
 // One card of the first-run chooser — the Go-Full AccessCard anatomy (corner
-// glow, title, body, CTA pinned to the bottom in mono uppercase) turned toward
-// the beginner, tinted by the path's accent. The hue lives in the small glyph
-// + CTA only; title and body stay neutral. The narrow screen stacks the three
-// cards full-width (the web grid collapses the same way at phone widths).
-// Mirrored on web (aurora/today.tsx ChooserCard).
+// glow, title, body, CTA at the bottom in mono uppercase) turned toward the
+// beginner, tinted by the path's accent. Full-width in a stacked column at
+// natural height; the hue lives in the small glyph + CTA only — title and
+// body stay neutral. Mirrored on web (aurora/today.tsx ChooserCard).
 function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   const { scheme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 16, overflow: "hidden" }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
