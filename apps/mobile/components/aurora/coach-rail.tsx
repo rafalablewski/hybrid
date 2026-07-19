@@ -17,7 +17,17 @@ function initials(name: string) {
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
 // parent (Explore) can supply the shared, unified SectionHead instead. Today
 // keeps the default header.
-export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
+// AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
+// back out by exactly that so its scroll clip reaches the true screen edge.
+const SCREEN_PAD = 16;
+
+// `bleed` lets the slider run FULL-BLEED: negative margins the width of the
+// Screen padding pull the scroll clip out to the physical edge (with matching
+// internal padding so resting cards still align with the column), so cards
+// slide under the bezel instead of vanishing at the content column. Only for
+// rails sitting directly on a Screen (Explore) — inside a sheet the rail must
+// respect the sheet's own padding.
+export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
   const { palette: C, scheme } = useTheme();
   // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
   // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
@@ -48,7 +58,7 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
 
       {/* Vertical padding inside the scroller (pulled back by the margins) so
           card shadows render instead of clipping at the scroll bounds. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" style={{ marginVertical: -10 }} contentContainerStyle={{ gap: 12, paddingRight: 8, paddingVertical: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" style={{ marginVertical: -10, marginHorizontal: bleed ? -SCREEN_PAD : 0 }} contentContainerStyle={{ gap: 12, paddingLeft: bleed ? SCREEN_PAD : 0, paddingRight: bleed ? SCREEN_PAD : 8, paddingVertical: 10 }}>
         {items.map((c, i) => (
           <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, ...cardShadow }}>
             <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>

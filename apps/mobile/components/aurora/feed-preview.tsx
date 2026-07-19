@@ -12,7 +12,15 @@ import { MetaLine } from "./meta";
 // kudos/comments/share), the latest few of your circle's activity. `horizontal`
 // lays them in a left/right slider (fixed-width cards); otherwise full-width
 // stacked. Renders nothing when the feed is empty. Mirrors the web feed-preview.
-export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
+// AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
+// back out by exactly that so its scroll clip reaches the true screen edge.
+const SCREEN_PAD = 16;
+
+// `bleed` (horizontal only): run the slider FULL-BLEED — negative margins the
+// width of the Screen padding pull the scroll clip out to the physical edge
+// (matching internal padding keeps resting cards on the column), so cards
+// slide under the bezel instead of vanishing at the content column.
+export default function FeedPreview({ onOpen, horizontal = false, bleed = false }: { onOpen: () => void; horizontal?: boolean; bleed?: boolean }) {
   const { palette: C, scheme } = useTheme();
   // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
   // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
@@ -44,7 +52,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // Vertical stacks full-width; horizontal is a left/right scroll-snap slider.
   const Wrap = ({ children }: { children: ReactNode }) =>
     horizontal
-      ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: -10 }} contentContainerStyle={{ gap: 12, paddingHorizontal: 2, paddingVertical: 10 }}>{children}</ScrollView>
+      ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: -10, marginHorizontal: bleed ? -SCREEN_PAD : 0 }} contentContainerStyle={{ gap: 12, paddingHorizontal: bleed ? SCREEN_PAD : 2, paddingVertical: 10 }}>{children}</ScrollView>
       : <View style={{ gap: 16 }}>{children}</View>;
 
   // Loading → pulsing card skeletons that reserve the feed's space.

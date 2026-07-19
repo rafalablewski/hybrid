@@ -20,7 +20,11 @@ function initials(name?: string | null, handle?: string) {
 
 interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
 
-export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: () => void; horizontal?: boolean }) {
+// `bleed` (horizontal only): run the slider FULL-BLEED — negative margins the
+// width of the shell's --page-pad-x pull the scroll clip out to the true screen
+// edge (matching internal padding keeps resting cards on the column), so cards
+// slide under the bezel instead of vanishing at the content column.
+export default function FeedPreview({ onOpen, horizontal = false, bleed = false }: { onOpen: () => void; horizontal?: boolean; bleed?: boolean }) {
   const { t } = useLang();
   const [feed, setFeed] = useState<Item[] | null>(null);
   useEffect(() => {
@@ -34,7 +38,7 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // The slider gets internal breathing room (pulled back by negative margins)
   // so card shadows render inside the scroll clip instead of truncating.
   const wrap = horizontal
-    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollbarWidth: "none" as const, padding: "8px 4px 20px", margin: "-8px -4px -14px" }
+    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollbarWidth: "none" as const, padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }
     : { display: "flex", flexDirection: "column" as const, gap: 16 };
   const cardWidth = horizontal ? { flex: "0 0 82%", maxWidth: 320, scrollSnapAlign: "start" as const, boxSizing: "border-box" as const } : { width: "100%" };
 

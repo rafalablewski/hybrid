@@ -36,7 +36,13 @@ const Chevron = () => (
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
 // parent (Explore) can supply the shared, unified SectionHead instead. Today
 // keeps the default header.
-export default function CoachRail({ onOpen, headerless = false }: { onOpen: () => void; headerless?: boolean }) {
+// `bleed` lets the slider run FULL-BLEED: negative margins the width of the
+// shell's --page-pad-x pull the scroll clip out to the true screen edge (with
+// matching internal padding so resting cards still align with the column), so
+// cards slide under the bezel instead of vanishing at the content column. Only
+// for rails sitting directly on the page (Explore) — inside a Sheet the rail
+// must respect the sheet's own padding.
+export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
 
   useEffect(() => {
@@ -65,7 +71,7 @@ export default function CoachRail({ onOpen, headerless = false }: { onOpen: () =
       {/* The scroller gets internal breathing room (padding pulled back by the
           negative margins) so the card shadows render inside the scroll clip
           instead of being TRUNCATED at its edge — the "cut gradient" artifact. */}
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", padding: "8px 4px 20px", margin: "-8px -4px -14px" }}>
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => (
           <div
             key={c.userId ?? c.handle ?? i}

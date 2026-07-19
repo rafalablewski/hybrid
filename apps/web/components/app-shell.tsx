@@ -676,7 +676,11 @@ export default function AppShell() {
           band). overflowX:clip is the belt-and-suspenders guard — the shell
           never scrolls sideways; wide tables/carousels scroll in their own
           containers, mirroring the native app. */}
-      <main id="main" tabIndex={-1} style={{ flex: 1, minWidth: 0, overflowX: "clip", padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none" }}>
+      {/* --page-pad-x publishes main's horizontal padding so full-bleed rails
+          (coach/feed sliders) can pull themselves out to the true screen edge
+          with a matching negative margin — otherwise their scroll clip ends at
+          the content column and cards vanish 16px before the bezel. */}
+      <main id="main" tabIndex={-1} style={{ flex: 1, minWidth: 0, overflowX: "clip", padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none", ...({ "--page-pad-x": isMobile ? "16px" : "32px" } as Record<string, string>) }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen

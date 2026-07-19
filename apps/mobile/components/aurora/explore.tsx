@@ -43,7 +43,7 @@ export default function AuroraExplore() {
       {/* COACHES — headerless rail under the SHARED SectionHead, so all three
           sections share one title + one "See all" CTA (no bespoke "Browse all"). */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.coaches")} onAction={() => router.push("/coaches")} />
-      <CoachRail onOpen={() => router.push("/coaches")} headerless />
+      <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
 
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} onAction={() => router.push("/(tabs)/plans")} />
@@ -69,7 +69,7 @@ export default function AuroraExplore() {
       {/* COMMUNITY — a left/right slider (max 6) with a trailing "See all" card,
           Threads-style, instead of an ever-growing stacked wall. */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} onAction={() => router.push("/feed")} />
-      <FeedPreview onOpen={() => router.push("/feed")} horizontal />
+      <FeedPreview onOpen={() => router.push("/feed")} horizontal bleed />
     </AuroraScreen>
   );
 }
