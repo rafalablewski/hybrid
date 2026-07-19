@@ -57,14 +57,14 @@ export function withAlpha(hex: string, alpha: number): string {
 export function AuroraField() {
   const { palette, scheme } = useTheme();
   const fill = StyleSheet.absoluteFill;
-  // JAPANDI (light): the lime/violet/blue accent wash turns the warm paper
-  // green/cold, so the calm theme gets warm, low-chroma stone tones instead.
-  // Aurora (dark) keeps its accent glow. (Parity with web's [data-theme=light]
-  // .lg-field retint.)
+  // KYOTO HOUR (light): the lime/violet/blue accent wash turns the warm paper
+  // green/cold, so the calm theme gets warm, low-chroma washi tones with a
+  // whisper of pine instead. Aurora (dark) keeps its accent glow. (Parity with
+  // web's [data-theme=light] .lg-field retint.)
   const japandi = scheme === "light";
-  const c1 = japandi ? "#e0d2b6" : palette.lime;
-  const c2 = japandi ? "#ddc8b4" : palette.violet;
-  const c3 = japandi ? "#d8cdbb" : palette.blue;
+  const c1 = japandi ? "#e7e0cc" : palette.lime;
+  const c2 = japandi ? "#e3dcc8" : palette.violet;
+  const c3 = japandi ? "#d9ddd0" : palette.blue;
   return (
     <View pointerEvents="none" style={[fill, { overflow: "hidden" }]}>
       {/* warm sand / lime — bleeds from the top-left corner. */}
@@ -443,9 +443,9 @@ export function ASegment<T extends string>({
  * variants screens used to hand-roll.
  *
  * Theme-aware surface: AURORA (dark) keeps the transparent OUTLINED square (the
- * treatment the web app uses); JAPANDI (light) fills it as a SOFT SURFACE — an
+ * treatment the web app uses); KYOTO HOUR (light) fills it as a SOFT SURFACE — an
  * ink2 tile with a touch of depth — because a hollow outline reads as unfinished
- * on the warm paper ground, where every other control is a floating card.
+ * on the warm washi ground, where every other control is a floating card.
  *
  * Defaults to `router.back()`; pass `onPress` for in-screen back navigation
  * (e.g. a settings sub-page that pops its own state rather than the stack).

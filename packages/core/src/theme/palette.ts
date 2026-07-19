@@ -31,7 +31,7 @@ export interface ThemePalette {
   ash: string;
   /** the PRIMARY action fill for this theme (a filled button / FAB / progress).
    *  Per-theme so light stops borrowing the fixed dark-theme chartreuse fill —
-   *  dark keeps chartreuse; light (Japandi) uses clay. */
+   *  dark keeps chartreuse; light (Kyoto Hour) uses pine. */
   accent: string;
   /** text/icon colour that sits ON the `accent` fill (guarded ≥ AA vs `accent`). */
   onAccent: string;
@@ -45,16 +45,16 @@ export interface ThemePalette {
 export type ThemeName = "dark" | "light";
 
 /**
- * Two disciplined themes (see reference/today-cockpit-design-concepts):
+ * Two disciplined themes (see reference/today-cockpit-design-concepts and
+ * design/japandi-light-10-kyoto-hour.html):
  * - `dark`  = AURORA — a true neutral charcoal ramp; chartreuse is the single
  *             accent fill, red is kept strictly for risk.
- * - `light` = JAPANDI · CLAY & SAGE — a warm OAT-paper theme (soft warm
- *             hairlines, never pure white) with a muted CLAY primary action and a
- *             calm SAGE secondary. The old acid-chartreuse fill (a dark-theme
- *             stroke colour) is retired here: on paper it failed contrast (white
- *             text on lime measured 1.34:1) and glared. Clay carries a paper ink
- *             ON the fill; chartreuse survives only as the mossy `accentText`
- *             green for small text/links, never as a full fill.
+ * - `light` = KYOTO HOUR — the true-Japandi light theme. Warm washi-ivory
+ *             surfaces (lifted well above the old midtone oat ground so cards
+ *             actually float), sumi-ink text, and a deep PINE green primary
+ *             action carrying an ivory ink. The old brick-clay fill is retired:
+ *             on the midtone ground it read as mud. Vermilion (the hanko-seal
+ *             red) rides the `red` accent-text channel — a mark, never a fill.
  * Both `accent`/`onAccent` (the action fill + its ink) and `accentText` are
  * per-theme, so every action and every accent-as-text clears AA on the theme's
  * own surfaces (guarded by palette.test.ts).
@@ -76,26 +76,27 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     // steel/slate blue coach accent) is lifted to #8ba0cc for the same reason.
     accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#8ba0cc", amber: "#d0cd94", red: "#e58a5c" },
   },
-  // JAPANDI · CLAY & SAGE — the warm light theme. Surfaces run as an OAT ramp:
-  // ground #eae3d4 → raised #f2ecdf → near-white card #f9f5ec, each a clear step
-  // so cards float, with a soft warm hairline #e0d7c6. The PRIMARY action is a
-  // muted CLAY (#a4543a) carrying a warm paper ink (#faf6ef, 4.99:1). The SAGE
+  // KYOTO HOUR — the warm light theme. Surfaces run as a WASHI ramp:
+  // ground #f6f3ea → raised #efebdf → near-white card #fcfaf3, each a clear step
+  // so cards float, with a soft warm hairline #e6e1d2. The PRIMARY action is a
+  // deep PINE (#44584c) carrying an ivory ink (#f2f5ef, 6.95:1). The SAGE
   // secondary (#5f6d4b) lives on the `blue`/conditioning channel (see
   // globals.css --color-blue + mobile paletteFor). accent-text: `lime` is the
-  // clay-as-text tone, `blue` is the sage-as-text tone; violet/amber/red keep
-  // their darkened hues. Every value clears WCAG AA on the Oat card
-  // (guarded by palette.test.ts). MIRROR any change in apps/web/app/globals.css
-  // ([data-theme="light"]) and apps/mobile/lib/theme.tsx.
+  // pine-as-text tone, `blue` is the sage-as-text tone, `red` is the hanko
+  // VERMILION (#a3442f) — violet/amber keep their darkened hues. Every value
+  // clears WCAG AA on the washi card (guarded by palette.test.ts). MIRROR any
+  // change in apps/web/app/globals.css ([data-theme="light"]) and
+  // apps/mobile/lib/theme.tsx.
   light: {
-    ink: "#eae3d4",
-    ink2: "#f2ecdf",
-    card: "#f9f5ec",
-    line: "#e0d7c6",
-    chalk: "#33302a",
-    ash: "#6b6456",
-    accent: "#a4543a", // clay — the primary action fill
-    onAccent: "#faf6ef", // warm paper ink on the clay fill
-    gold: "#b58a24", // deep antique gold — reads as gold on the oat card
-    accentText: { lime: "#8f4a30", blue: "#4f5c3a", violet: "#4c5a78", amber: "#875427", red: "#973a30" },
+    ink: "#f6f3ea",
+    ink2: "#efebdf",
+    card: "#fcfaf3",
+    line: "#e6e1d2",
+    chalk: "#2b2a26",
+    ash: "#6f6b5e",
+    accent: "#44584c", // pine — the primary action fill
+    onAccent: "#f2f5ef", // ivory ink on the pine fill
+    gold: "#b58a24", // deep antique gold — reads as gold on the washi card
+    accentText: { lime: "#3c4f43", blue: "#4f5c3a", violet: "#4c5a78", amber: "#875427", red: "#a3442f" },
   },
 };

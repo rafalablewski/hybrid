@@ -42,10 +42,10 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
 ];
 // Theme picker swatches — a mini colour preview per template, shared shape with
 // mobile so the two Preferences screens read the same. Aurora = dark/lime,
-// Japandi = warm-light/clay.
+// Kyoto Hour = washi-light/pine.
 const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, string, string] }[] = [
   { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
-  { id: "light", label: "Japandi", colors: ["#eae3d4", "#a4543a", "#5f6d4b"] },
+  { id: "light", label: "Kyoto Hour", colors: ["#f6f3ea", "#44584c", "#a3442f"] },
 ];
 
 export default function AccountSettings() {
@@ -656,7 +656,7 @@ export default function AccountSettings() {
   const summary = (id: SettingsCategoryId): string => {
     switch (id) {
       case "account": return session?.name ?? "";
-      case "preferences": return `${theme === "light" ? "Japandi" : "Aurora"} – ${lang.toUpperCase()} – ${prefs.units}`;
+      case "preferences": return `${theme === "light" ? "Kyoto Hour" : "Aurora"} – ${lang.toUpperCase()} – ${prefs.units}`;
       case "logger": return prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple");
       case "notifications": return `${Object.values(notif).filter(Boolean).length}/${Object.keys(notif).length}`;
       case "privacy": return `${Object.values(priv).filter(Boolean).length}/${Object.keys(priv).length}`;

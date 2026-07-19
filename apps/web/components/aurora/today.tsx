@@ -324,7 +324,13 @@ export default function AuroraToday({
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
           ) : null}
         </div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>{mastTitle}</div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>
+          {mastTitle}
+          {/* Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
+              "Today" only (never the scrubbed days). Hidden in Aurora via CSS
+              (.hanko-seal). Mirrors mobile home.tsx. */}
+          {dayIsToday && <span className="hanko-seal" aria-hidden>力</span>}
+        </div>
         {dayIsToday ? (
           <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 2 }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}.` : ` `}</div>
         ) : (

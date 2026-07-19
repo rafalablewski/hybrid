@@ -53,7 +53,7 @@ export const glassShadow: ViewStyle = {
 // in apps/web/app/globals.css). RN has no hover, so the pill carries a soft
 // resting glow and blooms brighter on press — the same "alive, tappable" cue.
 // iOS renders the coloured shadow; Android falls back to elevation. Pass the
-// live accent (C.lime — clay under Japandi) so it tracks the theme.
+// live accent (C.lime — pine under Kyoto Hour) so it tracks the theme.
 export function startGlow(accent: string, pressed = false): ViewStyle {
   return {
     shadowColor: accent,
@@ -176,16 +176,27 @@ export const F = {
   black: "Archivo_900Black",
   mono: "JetBrainsMono_400Regular",
   monoBold: "JetBrainsMono_700Bold",
-  // Japandi (light) serif display — Fraunces. Used for hero headings via serifIf.
-  serifMed: "Fraunces_500Medium",
-  serifSemi: "Fraunces_600SemiBold",
-  serifBold: "Fraunces_700Bold",
+  // Kyoto Hour (light) serif display — Shippori Mincho, a Japanese book face.
+  // Used for hero headings via serifIf.
+  serifMed: "ShipporiMincho_500Medium",
+  serifSemi: "ShipporiMincho_600SemiBold",
+  serifBold: "ShipporiMincho_700Bold",
+  serifBlack: "ShipporiMincho_800ExtraBold",
 } as const;
 
-/** Heading face — the mobile twin of web's --font-heading. Both themes now use the
- *  Archivo sans (the cool Mist light theme dropped the old Japandi serif display);
- *  kept as a helper so every hero heading has one switch point. */
-export const serifIf = (_scheme: "dark" | "light", archivo: string = F.black): string => archivo;
+/** Heading face — the mobile twin of web's --font-heading. AURORA (dark) keeps
+ *  the Archivo sans; KYOTO HOUR (light) swaps hero headings to the Shippori
+ *  Mincho serif (mirroring globals.css's [data-theme="light"] --font-heading),
+ *  mapping each Archivo weight to its nearest Mincho cut. */
+export const serifIf = (scheme: "dark" | "light", archivo: string = F.black): string => {
+  if (scheme !== "light") return archivo;
+  switch (archivo) {
+    case F.black: return F.serifBlack;
+    case F.bold: return F.serifBold;
+    case F.semi: return F.serifSemi;
+    default: return F.serifMed;
+  }
+};
 
 // Concentric rings fake a radial falloff — RN has no CSS blur or radial
 // gradient (and we add no native gradient dep), so we stack a few low-opacity

@@ -383,7 +383,22 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{mastTag}</Text>
             ) : null}
           </View>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 34, letterSpacing: -1, color: C.chalk, marginTop: 2 }}>{mastTitle}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2 }}>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 34, letterSpacing: -1, color: C.chalk }}>{mastTitle}</Text>
+            {/* Kyoto Hour hanko — the vermilion seal beside the true "Today" only
+                (never the scrubbed days); Aurora (dark) hides it. Decorative,
+                hence no a11y label. Mirrors web today.tsx + globals.css
+                .hanko-seal. */}
+            {scheme === "light" && dayIsToday && (
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: C.accentText.red, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-3deg" }] }}
+              >
+                <Text style={{ fontFamily: serifIf(scheme, F.semi), fontSize: 13, color: C.ink }}>力</Text>
+              </View>
+            )}
+          </View>
           {dayIsToday ? (
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2 }}>{greeting ? `${greeting}, ${firstName}.` : " "}</Text>
           ) : (

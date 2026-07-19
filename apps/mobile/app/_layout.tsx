@@ -11,9 +11,10 @@ import {
   Archivo_900Black,
 } from "@expo-google-fonts/archivo";
 import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
-// Japandi (light) hero headings use a Fraunces serif (parity with web's
-// --font-heading); Aurora keeps Archivo. Loaded here, applied via serifIf().
-import { Fraunces_500Medium, Fraunces_600SemiBold, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
+// Kyoto Hour (light) hero headings use the Shippori Mincho Japanese book serif
+// (parity with web's --font-heading); Aurora keeps Archivo. Loaded here,
+// applied via serifIf().
+import { ShipporiMincho_500Medium, ShipporiMincho_600SemiBold, ShipporiMincho_700Bold, ShipporiMincho_800ExtraBold } from "@expo-google-fonts/shippori-mincho";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
@@ -71,9 +72,10 @@ export default function RootLayout() {
     Archivo_900Black,
     JetBrainsMono_400Regular,
     JetBrainsMono_700Bold,
-    Fraunces_500Medium,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
+    ShipporiMincho_500Medium,
+    ShipporiMincho_600SemiBold,
+    ShipporiMincho_700Bold,
+    ShipporiMincho_800ExtraBold,
   });
 
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;

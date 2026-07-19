@@ -21,17 +21,17 @@ export interface Palette extends ThemePalette {
   onAccent: string;
 }
 
-// JAPANDI · CLAY & SAGE: the primary + secondary accent FILLS now flip per theme
-// (dark = chartreuse/teal; light = clay/sage), mirroring globals.css's
+// KYOTO HOUR: the primary + secondary accent FILLS now flip per theme
+// (dark = chartreuse/teal; light = pine/sage), mirroring globals.css's
 // --color-lime / --color-blue overrides. violet/amber/red stay on the fixed brand
 // hues. `lime` maps to the theme's primary `accent`; `blue` to the sage secondary
-// on light. `onAccent` comes from the theme (paper on clay in light, ink on lime
+// on light. `onAccent` comes from the theme (ivory on pine in light, ink on lime
 // in dark). Any raw `colors.lime` fill (not routed through the palette) stays
 // chartreuse — see capabilities.ts → design-system-unification-sweep.
 const SAGE = "#5f6d4b"; // sage secondary — mirror of globals.css --color-blue (light)
 
 const fillsFor = (scheme: ThemeName, t: ThemePalette) => ({
-  lime: t.accent, // primary action fill (clay on light, chartreuse on dark)
+  lime: t.accent, // primary action fill (pine on light, chartreuse on dark)
   blue: scheme === "light" ? SAGE : colors.blue,
   violet: colors.violet,
   amber: colors.amber,

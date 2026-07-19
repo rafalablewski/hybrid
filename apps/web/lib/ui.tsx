@@ -12,7 +12,7 @@ export { fs, space };
 // tokens resolve through CSS variables (globals.css @theme + [data-theme])
 // so the app re-themes (dark ⇄ light) without touching inline styles. LINE is
 // the THEMED CSS var so hairline borders soften with the theme (the raw dark hex
-// used to paint near-black borders on the light Japandi paper — a hard contrast
+// used to paint near-black borders on the light Kyoto washi — a hard contrast
 // break). LINE_HEX keeps the raw hex for recharts SVG presentation attrs, where
 // CSS var() does not resolve. ASH + accents stay raw hex for the same reason.
 export const INK = "var(--color-ink)",
@@ -20,8 +20,8 @@ export const INK = "var(--color-ink)",
   CARD = "var(--color-card)",
   LINE = "var(--color-line)",
   LINE_HEX = colors.line;
-// LIME is the brand accent as a THEMED CSS var (bright lime in Aurora, clay in
-// Japandi) so every fill/border/text follows the theme. Use LIME_HEX (raw) only
+// LIME is the brand accent as a THEMED CSS var (bright lime in Aurora, pine in
+// Kyoto Hour) so every fill/border/text follows the theme. Use LIME_HEX (raw) only
 // where a CSS var can't resolve — recharts/SVG stroke/fill presentation attrs.
 export const LIME = "var(--color-lime)",
   LIME_HEX = colors.lime,
@@ -41,8 +41,8 @@ export const roleVar = (role: SemanticRole): string => `var(--color-${ROLE_COLOR
 
 // Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
 // Text/icons ON a bright accent fill. Theme-aware: dark on Aurora's bright lime,
-// light on Japandi's deep moss-olive lime (so it always clears contrast on the
-// fill). Mirrors --on-accent in globals.css. Replaces scattered "#0c0d0c".
+// light on Kyoto Hour's deep pine (so it always clears contrast on the fill).
+// Mirrors --on-accent in globals.css. Replaces scattered "#0c0d0c".
 export const ON_ACCENT = "var(--on-accent)";
 
 // Theme-aware FOREGROUND accent colours (for text). The bright accents above

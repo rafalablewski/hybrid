@@ -23,11 +23,11 @@ import { LegalLinks } from "../legal-links";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Theme picker swatches — a mini colour preview per template (shared shape with
-// web's Preferences). system = mixed, Aurora = dark/lime, Japandi = warm/clay.
+// web's Preferences). system = mixed, Aurora = dark/lime, Kyoto Hour = washi/pine.
 const THEME_SWATCHES: { id: ThemePref; label: string; colors: [string, string, string] }[] = [
-  { id: "system", label: "System", colors: ["#0c0d0c", "#eae3d4", "#8b8f86"] },
+  { id: "system", label: "System", colors: ["#0c0d0c", "#f6f3ea", "#8b8f86"] },
   { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
-  { id: "light", label: "Japandi", colors: ["#eae3d4", "#a4543a", "#5f6d4b"] },
+  { id: "light", label: "Kyoto Hour", colors: ["#f6f3ea", "#44584c", "#a3442f"] },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
@@ -345,7 +345,7 @@ export default function AuroraSettings() {
   const summary = (id: SettingsCategoryId): string => {
     switch (id) {
       case "account": return name ?? "";
-      case "preferences": return `${pref === "system" ? "System" : pref === "light" ? "Japandi" : "Aurora"} · ${lang.toUpperCase()}`;
+      case "preferences": return `${pref === "system" ? "System" : pref === "light" ? "Kyoto Hour" : "Aurora"} – ${lang.toUpperCase()}`;
       case "notifications": return `${Object.values(acct.notif).filter(Boolean).length}/${Object.keys(acct.notif).length}`;
       case "privacy": return `${Object.values(acct.priv).filter(Boolean).length}/${Object.keys(acct.priv).length}`;
       case "subscription": return entitlement === "paid" ? "Full" : "Free";

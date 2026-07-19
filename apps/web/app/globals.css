@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=Shippori+Mincho:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* HYBRID design tokens — mirror packages/core/src/brand.ts.
@@ -21,15 +21,16 @@
 
   --font-display: "Archivo", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  /* Heading face — Archivo by default (Aurora); Japandi swaps it to the Fraunces
-     serif for editorial warmth while body/prose stays on the sans --font-display. */
+  /* Heading face — Archivo by default (Aurora); Kyoto Hour (light) swaps it to
+     the Shippori Mincho serif for its brushed mincho grace while body/prose
+     stays on the sans --font-display. */
   --font-heading: "Archivo", system-ui, sans-serif;
 }
 
 /* Screen-header BACK button surface — AURORA (dark) is a transparent outlined
-   square; JAPANDI (light) fills it as a soft surface (an ink2 tile with a touch
-   of depth), because a hollow outline reads as unfinished on the warm paper
-   ground. Parity with the mobile ABack primitive. */
+   square; KYOTO HOUR (light) fills it as a soft surface (an ink2 tile with a
+   touch of depth), because a hollow outline reads as unfinished on the warm
+   washi ground. Parity with the mobile ABack primitive. */
 :root {
   --back-surface: transparent;
   --back-shadow: none;
@@ -93,8 +94,8 @@ html {
 /* FOCUS GLOW — the primary Start CTA (week rail + Today plan card). The pill
    rests flat and blooms a soft lime halo on hover / keyboard focus, so the main
    action reads as alive and tappable instead of a static slab. Theme-aware: the
-   halo is the live --color-lime token (clay in Japandi). Mobile parity lives in
-   apps/mobile/lib/ui.tsx → startGlow(). */
+   halo is the live --color-lime token (pine in Kyoto Hour). Mobile parity lives
+   in apps/mobile/lib/ui.tsx → startGlow(). */
 .start-glow {
   transition: box-shadow 0.25s ease, transform 0.18s ease;
 }
@@ -199,30 +200,32 @@ html {
 }
 
 [data-theme="light"] {
-  /* JAPANDI · CLAY & SAGE — the warm light theme. An OAT ramp (ground → raised →
-     near-white card, each a clear step so cards float) with a soft warm hairline
-     (#e0d7c6). The primary action is a muted CLAY (#a4543a) carrying a warm paper
-     ink; the acid-chartreuse fill is retired (it failed contrast + glared on
-     paper). The SAGE secondary (#5f6d4b) rides the `blue`/conditioning channel.
-     These values MIRROR packages/core/src/theme/palette.ts (THEMES.light) and
+  /* KYOTO HOUR — the warm light theme (see design/japandi-light-10-kyoto-hour.html).
+     A WASHI ramp (ground → raised → near-white card, each a clear step so cards
+     float — the old oat ground was a midtone and everything sat in shadow) with
+     a soft warm hairline (#e6e1d2). The primary action is a deep PINE (#44584c)
+     carrying an ivory ink; the brick-clay fill is retired. The SAGE secondary
+     (#5f6d4b) rides the `blue`/conditioning channel; VERMILION (the hanko seal
+     red) rides the `red` accent-text channel. These values MIRROR
+     packages/core/src/theme/palette.ts (THEMES.light) and
      apps/mobile/lib/theme.tsx — keep all three in lockstep; the WCAG contrast
      test guards the ratios. Only surfaces/text/accents change; the glass material
      math is unchanged. */
-  --color-ink: #eae3d4;
-  --color-ink2: #f2ecdf;
-  --color-card: #f9f5ec;
-  --color-line: #e0d7c6;
-  --color-chalk: #33302a;
-  --color-ash: #6b6456;
-  /* Japandi back button = soft surface (see :root --back-surface). */
+  --color-ink: #f6f3ea;
+  --color-ink2: #efebdf;
+  --color-card: #fcfaf3;
+  --color-line: #e6e1d2;
+  --color-chalk: #2b2a26;
+  --color-ash: #6f6b5e;
+  /* Kyoto back button = soft surface (see :root --back-surface). */
   --back-surface: var(--color-ink2);
   --back-shadow: 0 6px 16px -10px rgba(70, 55, 30, 0.35);
-  /* CLAY replaces chartreuse as the primary action FILL in light (bg-lime → clay
+  /* PINE replaces chartreuse as the primary action FILL in light (bg-lime → pine
      app-wide). SAGE replaces the teal `blue` fill so the conditioning/secondary
      accent reads as a calm green, not acid lime. Dark keeps the brand hues. */
-  --color-lime: #a4543a; /* clay — primary action fill */
+  --color-lime: #44584c; /* pine — primary action fill */
   --color-blue: #5f6d4b; /* sage — secondary / conditioning fill */
-  --color-gold: #b58a24; /* rating gold — deepened so it reads gold on oat */
+  --color-gold: #b58a24; /* rating gold — deepened so it reads gold on washi */
 
   --glass-base: 255, 255, 255;
   --glass-rgb: 255, 255, 255;
@@ -235,17 +238,20 @@ html {
   --lg-bright: 0.99;
   --grain-blend: multiply;
   --grain-opacity: 0.03;
-  --accent-text: #8f4a30; /* clay-as-text — AA on the Oat card */
-  --on-accent: #faf6ef; /* warm paper ink on the clay fill (4.99:1) */
-  --font-heading: "Archivo", system-ui, sans-serif; /* cool minimal — no serif */
-  /* accent-text tones that clear AA on the Oat card. `lime` = clay (primary),
-     `blue` = sage (secondary); violet/amber/red keep their darkened hues. */
-  --lime-text: #8f4a30;
+  --accent-text: #3c4f43; /* pine-as-text — AA on the washi card */
+  --on-accent: #f2f5ef; /* ivory ink on the pine fill (6.95:1) */
+  /* Kyoto Hour heading face — Shippori Mincho, a Japanese book serif. Weight
+     800 is its heaviest cut; the fontWeight:900 headings fall back to it. */
+  --font-heading: "Shippori Mincho", Georgia, serif;
+  /* accent-text tones that clear AA on the washi card. `lime` = pine (primary),
+     `blue` = sage (secondary), `red` = hanko vermilion; violet/amber keep their
+     darkened hues. */
+  --lime-text: #3c4f43;
   --blue-text: #4f5c3a;
   --violet-text: #4c5a78;
   --amber-text: #875427;
-  --red-text: #973a30;
-  --glass-glow-rgb: 164, 84, 58; /* clay — matches the primary accent fill */
+  --red-text: #a3442f;
+  --glass-glow-rgb: 68, 88, 76; /* pine — matches the primary accent fill */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -641,13 +647,35 @@ html {
 .lg-field .lg-b { background: var(--color-blue);   top: 8vmax;   right: -10vmax; animation: lgDrift2 23s ease-in-out infinite; }
 .lg-field .lg-c { background: var(--color-violet); bottom: -14vmax; left: 34%;   animation: lgDrift3 27s ease-in-out infinite; }
 
-/* JAPANDI (light): retint the ambient field to warm, low-chroma stone tones —
-   the lime/blue/violet rainbow multiplied over warm paper turned the page green.
-   Warm neutrals keep the calm oat-paper feel; Aurora (dark) keeps its accents. */
+/* KYOTO HOUR hanko — the small vermilion seal stamped beside the Today masthead
+   (see design/japandi-light-10-kyoto-hour.html). A mark, never a message: it is
+   decorative (aria-hidden), light-theme only, and slightly askew like a real
+   chop. Mobile parity: home.tsx renders the same seal when scheme === light. */
+.hanko-seal { display: none; }
+[data-theme="light"] .hanko-seal {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 12px;
+  border-radius: 6px;
+  background: var(--red-text); /* hanko vermilion */
+  color: var(--color-ink); /* washi */
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  vertical-align: 4px;
+  transform: rotate(-3deg);
+}
+
+/* KYOTO HOUR (light): retint the ambient field to warm, low-chroma washi tones
+   with a whisper of pine — the lime/blue/violet rainbow multiplied over warm
+   paper turned the page green. Aurora (dark) keeps its accents. */
 [data-theme="light"] .lg-field .lg-blob { mix-blend-mode: multiply; opacity: 0.16; filter: blur(80px); }
-[data-theme="light"] .lg-field .lg-a { background: #e0d2b6; }
-[data-theme="light"] .lg-field .lg-b { background: #d8cdbb; }
-[data-theme="light"] .lg-field .lg-c { background: #ddc8b4; }
+[data-theme="light"] .lg-field .lg-a { background: #e7e0cc; }
+[data-theme="light"] .lg-field .lg-b { background: #d9ddd0; }
+[data-theme="light"] .lg-field .lg-c { background: #e3dcc8; }
 @keyframes lgDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vmax,5vmax,0) scale(1.15); } }
 @keyframes lgDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-6vmax,6vmax,0) scale(1.1); } }
 @keyframes lgDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-5vmax,-5vmax,0) scale(1.2); } }

@@ -20,10 +20,10 @@ importers:
       '@expo-google-fonts/archivo':
         specifier: ^0.4.2
         version: 0.4.2
-      '@expo-google-fonts/fraunces':
+      '@expo-google-fonts/jetbrains-mono':
         specifier: ^0.4.1
         version: 0.4.1
-      '@expo-google-fonts/jetbrains-mono':
+      '@expo-google-fonts/shippori-mincho':
         specifier: ^0.4.1
         version: 0.4.1
       '@expo/ui':
@@ -795,14 +795,14 @@ packages:
   '@expo-google-fonts/archivo@0.4.2':
     resolution: {integrity: sha512-FLhI4/ZVIFSHHxx15Z7Rr4QX/4ZrJozEebBEFSdHSRRwULGCuSIpbb3dz56Hslux6LZEnJ1mVpZ6CyVpUzLwIg==}
 
-  '@expo-google-fonts/fraunces@0.4.1':
-    resolution: {integrity: sha512-gYc9P92ObyWvz1rWPOeWSvVKyBFIuA8hgOdhvo4DSiPBaWLbFA6v8uLIEIBwW+0oWTlXbBzjeBReHQI2H7UNjQ==}
-
   '@expo-google-fonts/jetbrains-mono@0.4.1':
     resolution: {integrity: sha512-CslACrtMOcRwoWXCO7OMEI+9w3fukWSoBtvNz46OqPoogEuuoY0tkDY1O8sFumk8t0pC6Cx0Xr95O0TOQhpkug==}
 
   '@expo-google-fonts/material-symbols@0.4.38':
     resolution: {integrity: sha512-IJkBtN1o8u9BW5fvSii1MyHPQ7Q0HxbWcVBvOrOzgMLpVtZw7R2w94wBTVR7kZwv3w1JNTESMmLA5Sqn1+Z36A==}
+
+  '@expo-google-fonts/shippori-mincho@0.4.1':
+    resolution: {integrity: sha512-+nyw31jQWKm8GJLU1kcDYBRJ9jIp/8H6R1RSipkXQMf3+GIKSR3l8zJxuyoeal2+EzFDgo/xFQceM24MItobyA==}
 
   '@expo/cli@56.1.13':
     resolution: {integrity: sha512-7n5VzlBr7TKW0BgWgpEopWy+v8buPhMvbSEsuXD+bI1YIJBopkfWAub0qTvlc357E8wWOvV5MJXYyoeRvoOjoQ==}
@@ -5255,11 +5255,11 @@ snapshots:
 
   '@expo-google-fonts/archivo@0.4.2': {}
 
-  '@expo-google-fonts/fraunces@0.4.1': {}
-
   '@expo-google-fonts/jetbrains-mono@0.4.1': {}
 
   '@expo-google-fonts/material-symbols@0.4.38': {}
+
+  '@expo-google-fonts/shippori-mincho@0.4.1': {}
 
   '@expo/cli@56.1.13(@expo/dom-webview@56.0.5)(@expo/metro-runtime@56.0.13)(expo-constants@56.0.16)(expo-font@56.0.5)(expo-router@56.2.8)(expo@56.0.8)(react-dom@19.2.3(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.16)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)':
     dependencies:
@@ -6196,7 +6196,9 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 
