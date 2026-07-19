@@ -102,8 +102,8 @@ export default function AuroraHome() {
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
   // True until the FIRST home load (sessions + enrollment) settles. Gates the
-  // plan hero so an already-enrolled athlete sees a skeleton — never the "How
-  // do you want to start?" chooser — while planId is still null on cold start.
+  // plan hero so an already-enrolled athlete sees a skeleton — never the
+  // first-run chooser — while planId is still null on cold start.
   const [initialLoad, setInitialLoad] = useState(true);
   // TIER-2 glance strip modals: Quick Log (sport carousel) + Done today (a
   // pop-up list of everything logged today, with a link to the full calendar).
@@ -515,7 +515,7 @@ export default function AuroraHome() {
               /* Cold start — sessions AND enrollment are still loading, so we
                  can't yet tell an enrolled athlete from a first-run one. Show a
                  skeleton (not the chooser) so the plan simply appears once it
-                 resolves, with no "How do you want to start?" flash between. */
+                 resolves, with no first-run-chooser flash between. */
               <>
                 <View style={{ height: 24, width: "60%", borderRadius: 8, backgroundColor: C.line, opacity: 0.5, marginTop: 8, marginBottom: 10 }} />
                 <View style={{ height: 12, width: "90%", borderRadius: 6, backgroundColor: C.line, opacity: 0.35 }} />
@@ -570,7 +570,7 @@ export default function AuroraHome() {
             the feeling card). Follows the week rail's selected day (dayTs) —
             on another day the label carries the date and the log row hides
             (quick logs save at "now"). Hidden only for a true first run (no
-            plan, nothing ever logged): the "How do you want to start?" chooser
+            plan, nothing ever logged): the first-run chooser
             above already owns that state, and a 0-count card under it would be
             a second competing log CTA. */}
         {(!!sched || sessions.length > 0) && (

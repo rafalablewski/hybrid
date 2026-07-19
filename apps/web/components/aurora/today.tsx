@@ -106,7 +106,7 @@ export default function AuroraToday({
   onSaved?: () => void;
   /** True while the first sessions OR enrollment fetch is in flight —
    *  suppresses the cold-start chooser so an already-enrolled athlete never
-   *  sees the "How do you want to start?" flash before their plan resolves. */
+   *  sees the first-run-chooser flash before their plan resolves. */
   loading?: boolean;
 }) {
   const router = useRouter();
@@ -533,7 +533,7 @@ export default function AuroraToday({
           Follows the week rail's selected day (dayTs) — on another day the label
           carries the date and the log row hides (quick logs save at "now").
           Hidden only for a true first run (no plan, nothing ever logged): the
-          "How do you want to start?" chooser above already owns that state, and
+          first-run chooser above already owns that state, and
           a 0-count card under it would be a second competing log CTA. */}
       {(!!sched || sessions.length > 0) && (
         <AlsoTodayCard
