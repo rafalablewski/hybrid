@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Exercise picker design concepts</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --card: #161816; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --lime-text: #c6f84f; --violet: #8296c4; --blue: #3c787e;
+    --blue-text: #6cb6bd; --amber-text: #d0cd94; --violet-text: #8ba0cc;
+    --on-accent: #101401;
+    --font-display: "Archivo", system-ui, sans-serif;
+    --font-serif: "Fraunces", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { background: var(--ink); color: var(--chalk); font-family: var(--font-display); -webkit-font-smoothing: antialiased; padding: 48px 20px 120px; }
+  main { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-weight: 800; font-size: clamp(28px, 5vw, 40px); letter-spacing: -.02em; margin: 0 0 10px; }
+  .lede { color: var(--ash); font-size: 16px; line-height: 1.65; max-width: 64ch; }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+
+  .concept { margin-top: 84px; }
+  .concept-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .concept-kicker b { color: var(--lime); font-weight: 600; }
+  .concept h2 { font-weight: 800; font-size: 24px; letter-spacing: -.015em; margin-bottom: 8px; }
+  .concept .why { color: var(--ash); font-size: 14.5px; line-height: 1.65; max-width: 68ch; margin-bottom: 22px; }
+  .concept .why em { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  /* phone frame simulating the bottom sheet */
+  .frame { width: min(420px, 100%); margin: 0 auto; background: #060706; border: 1px solid var(--line); border-radius: 34px; box-shadow: 0 24px 60px -32px rgba(0,0,0,.9); overflow: hidden; position: relative; }
+  .sheet { margin-top: 46px; background: var(--ink); border-top: 1px solid var(--line); border-radius: 24px 24px 0 0; height: 620px; display: flex; flex-direction: column; padding: 20px 18px 0; }
+  .shd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex: none; }
+  .shd b { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .shd .close { background: none; border: none; color: var(--ash); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
+  .search { display: flex; align-items: center; gap: 9px; background: var(--ink2); border: 1px solid var(--line); border-radius: 12px; padding: 0 13px; flex: none; }
+  .search input { flex: 1; background: none; border: none; outline: none; color: var(--chalk); font-size: 14.5px; padding: 12px 0; font-family: var(--font-display); }
+  .search input::placeholder { color: var(--ash); }
+  .list { flex: 1; overflow-y: auto; padding: 4px 0 24px; }
+
+  /* shared vocabulary */
+  .mono { font-family: var(--font-mono); }
+  .sechead { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 2px 10px; }
+  .sechead .t { font-weight: 800; font-size: 17px; letter-spacing: -.01em; color: var(--chalk); }
+  .sechead .n { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ash); }
+  .slab { background: var(--ink2); border: 1px solid var(--line); border-radius: 18px; padding: 2px 14px; }
+  .xrow { display: flex; align-items: center; gap: 13px; width: 100%; padding: 10px 0; border-bottom: 1px solid var(--line); background: none; border-left: none; border-right: none; border-top: none; color: var(--chalk); cursor: pointer; text-align: left; }
+  .xrow:last-child { border-bottom: none; }
+  .tile { width: 40px; height: 40px; border-radius: 12px; flex: none; display: grid; place-items: center; background: var(--ink); border: 1px solid var(--line); font-family: var(--font-mono); font-weight: 700; font-size: 12.5px; letter-spacing: -.02em; }
+  .xrow .nm { flex: 1; font-weight: 600; font-size: 15px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xrow .hint { font-family: var(--font-mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; color: var(--ash); flex: none; }
+  .k-str { color: var(--lime-text); } .k-car { color: var(--blue-text); } .k-con { color: var(--violet-text); }
+
+  .ghost-cta { display: block; width: calc(100% - 4px); margin: 14px 2px 0; text-align: center; border: 1px dashed color-mix(in srgb, var(--ash) 47%, transparent); border-radius: 999px; background: none; color: var(--ash); font-weight: 600; font-size: 13.5px; padding: 11px; cursor: pointer; }
+  .lime-cta { display: block; width: 100%; text-align: center; background: var(--lime); color: var(--on-accent); font-weight: 700; font-size: 15px; border: none; border-radius: 999px; padding: 13px; cursor: pointer; box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--lime) 45%, transparent); }
+
+  /* C2 drill-down */
+  .gate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .gate { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; background: var(--ink2); border: 1px solid var(--line); border-radius: 18px; padding: 15px 14px; cursor: pointer; color: var(--chalk); text-align: left; }
+  .gate .g { font-size: 19px; line-height: 1; }
+  .gate .t { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+  .gate .n { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .crumb { display: flex; align-items: center; gap: 10px; margin: 4px 2px 10px; }
+  .crumb button { background: none; border: none; color: var(--ash); font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+  .crumb .here { font-weight: 800; font-size: 17px; }
+
+  /* C3 smart-first */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; display: flex; align-items: center; gap: 8px; background: var(--ink2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px 7px 7px; color: var(--chalk); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .chip .mini { width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center; background: var(--ink); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; }
+
+  /* C4 index */
+  .c4-wrap { position: relative; }
+  .c4-letter { font-family: var(--font-serif); font-weight: 500; font-size: 30px; color: var(--ash); margin: 18px 2px 4px; }
+  .c4-row { display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 11px 2px; border-bottom: 1px solid var(--line); background: none; border-left: none; border-right: none; border-top: none; color: var(--chalk); cursor: pointer; text-align: left; }
+  .c4-row .nm { flex: 1; font-weight: 600; font-size: 15.5px; }
+  .c4-row .k { font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .c4-rail { position: absolute; right: -6px; top: 10px; bottom: 10px; display: flex; flex-direction: column; justify-content: center; gap: 3px; font-family: var(--font-mono); font-size: 8.5px; color: var(--ash); text-align: center; user-select: none; }
+
+  /* C5 composer */
+  .c5-tray { flex: none; border-top: 1px solid var(--line); margin: 0 -18px; padding: 12px 18px 16px; background: color-mix(in srgb, var(--ink2) 92%, transparent); backdrop-filter: blur(8px); }
+  .c5-picked { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; min-height: 30px; }
+  .pk { display: inline-flex; align-items: center; gap: 7px; border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line)); background: color-mix(in srgb, var(--lime) 10%, transparent); color: var(--chalk); border-radius: 999px; padding: 5px 11px; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+  .pk i { font-style: normal; color: var(--lime-text); font-family: var(--font-mono); font-size: 11px; }
+  .c5-empty { font-family: var(--font-mono); font-size: 10.5px; color: var(--ash); align-self: center; }
+  .xrow .add { flex: none; width: 26px; height: 26px; border-radius: 999px; border: 1px dashed color-mix(in srgb, var(--ash) 50%, transparent); display: grid; place-items: center; color: var(--ash); font-family: var(--font-mono); font-size: 13px; }
+  .xrow.on .add { border: 1px solid var(--lime); color: var(--lime-text); }
+  .xrow.on .tile { border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); }
+
+  footer { margin-top: 96px; color: var(--ash); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; line-height: 1.8; }
+</style>
+</head>
+<body>
+<main>
+  <div class="concept-kicker"><b>Hybrid</b> — design exploration</div>
+  <h1>Exercise picker — five concepts</h1>
+  <p class="lede">
+    The "Pick an exercise" sheet (Builder, logger, everywhere) re-drawn to close the drift with the
+    More → Exercises page. Shared moves: <strong>the 8px dot-before-name list is retired</strong> —
+    rows adopt the Exercises-page anatomy (crafted initials tile, tinted by modality, shape hints on
+    the right), <strong>category headers become Explore-standard section heads</strong> (bold title +
+    mono count, no mono-uppercase kickers), and search always accepts an unknown name as a
+    <strong>custom add</strong>. All five are live — search, tap, drill.
+  </p>
+
+  <!-- ══════════════ CONCEPT 1 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 01</b> — One Library</div>
+    <h2>The Exercises page, turned into a picker.</h2>
+    <p class="why">
+      The straightest unification: the picker IS the library. Same initials tiles (tinted by
+      modality — lime strength, teal endurance, violet conditioning; sports keep their glyph in the
+      tile), same card slabs with hairline dividers, same Explore section heads with the count at
+      the baseline. An athlete who has seen More → Exercises already knows this screen. Tap a row —
+      it adds.
+    </p>
+    <div class="frame"><div class="sheet">
+      <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c1" placeholder="Search or type a custom name…" /></div>
+      <div class="list" id="c1-list"></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 2 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 02</b> — Rooms, then Things</div>
+    <h2>Choose the pattern first. Then the lift.</h2>
+    <p class="why">
+      Ive's answer to a 200-item scroll: <em>don't show 200 items.</em> The first screen is eight
+      calm pattern tiles — Squat, Hinge, Push, Pull, Core & Carry, Endurance, Conditioning — each a
+      quiet room. Tap one and only that room's handful of movements appears, in the unified row
+      anatomy. Search still cuts across every room from the top. Two taps, never a scroll.
+    </p>
+    <div class="frame"><div class="sheet">
+      <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c2" placeholder="Search every room…" /></div>
+      <div class="list" id="c2-list"></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 3 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 03</b> — Your Bar First</div>
+    <h2>What you actually train, one tap away.</h2>
+    <p class="why">
+      The library is infinite but <em>your training isn't</em>. The sheet opens with a "Your
+      recent" chip rail — the Smart decay-scored staples from the Exercises page, one tap each —
+      then the full library below. For a returning athlete, 90% of picks end at the top row without
+      a single keystroke; the catalog is the fallback, not the front door.
+    </p>
+    <div class="frame"><div class="sheet">
+      <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c3" placeholder="Search or type a custom name…" /></div>
+      <div class="list" id="c3-list"></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 4 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 04</b> — The Index</div>
+    <h2>No chrome. A typeset index with a finger rail.</h2>
+    <p class="why">
+      The typographic cut: no tiles, no slabs — movement names as pure type on hairlines, grouped
+      under serif display letters, with an iOS-style alphabet rail for one-thumb jumps. Modality
+      survives as a small coloured word on the right (information, not ornament). The fastest
+      surface for an athlete who knows exactly what they're looking for.
+    </p>
+    <div class="frame"><div class="sheet">
+      <div class="shd"><b>Pick an exercise</b><button class="close">Close</button></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c4" placeholder="Search or type a custom name…" /></div>
+      <div class="c4-wrap list" id="c4-list"></div>
+    </div></div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 5 ══════════════ -->
+  <section class="concept">
+    <div class="concept-kicker"><b>Concept 05</b> — The Composer</div>
+    <h2>Pick five. Close once.</h2>
+    <p class="why">
+      A routine is never one exercise, yet today's picker closes after every pick — open, tap,
+      reopen, five times. Here the sheet <em>stays open</em>: each tap collects the movement into a
+      tray (tap a collected chip to remove it), and one lime action adds them all in order. The
+      unified rows gain a small ＋ ring that flips to lime when selected. Try picking a few.
+    </p>
+    <div class="frame"><div class="sheet">
+      <div class="shd"><b>Compose the routine</b><button class="close">Close</button></div>
+      <div class="search"><span style="color:var(--ash)">⌕</span><input data-c="c5" placeholder="Search or type a custom name…" /></div>
+      <div class="list" id="c5-list"></div>
+      <div class="c5-tray">
+        <div class="c5-picked" id="c5-picked"><span class="c5-empty">Tap exercises to collect them…</span></div>
+        <button class="lime-cta" id="c5-cta" disabled style="opacity:.45">Add 0 exercises →</button>
+      </div>
+    </div></div>
+  </section>
+
+  <footer>
+    HYBRID — reference/exercise-picker-design-concepts.html<br />
+    Rendered in the live Aurora tokens (tokens.ts) — Archivo, Fraunces, JetBrains Mono.
+  </footer>
+</main>
+
+<script>
+  // ── data: name, kind (str/car/con), group, hint, initials/emoji ────
+  const EX = [
+    ["Back Squat","str","Squat"],["Front Squat","str","Squat"],["Goblet Squat","str","Squat"],
+    ["Romanian Deadlift","str","Hinge"],["Barbell Glute Bridge","str","Hinge"],["KB Swing","str","Hinge"],
+    ["Bench Press","str","Push"],["Overhead Press","str","Push"],["Dip","str","Push","bodyweight"],
+    ["Pull-Up","str","Pull","bodyweight"],["Weighted Pull-Up","str","Pull","bw + load"],["Lat Pulldown","str","Pull"],
+    ["Plank","str","Core & Carry","seconds"],["Farmer Carry","str","Core & Carry","metres"],["Hanging Leg Raise","str","Core & Carry","bodyweight"],
+    ["Run","car","Endurance","", "🏃"],["Trail Run","car","Endurance","elevation","⛰️"],["Row Intervals","car","Endurance","metres","🚣"],
+    ["Bike Erg","car","Endurance","", "🚴"],["Swim","car","Endurance","stroke","🏊"],
+    ["Mixed Metcon","con","Conditioning"],["Assault Bike","con","Conditioning"],["Sled Push","con","Conditioning"],
+  ].map(([name, kind, group, hint, emoji]) => ({ name, kind, group, hint: hint || "", emoji: emoji || null,
+    initials: name.split(/[\s-]+/).map(w => w[0]).join("").slice(0, 2).toUpperCase() }));
+  const GROUPS = ["Squat","Hinge","Push","Pull","Core & Carry","Endurance","Conditioning"];
+  const GLYPH = { "Squat":"▼","Hinge":"⌁","Push":"↥","Pull":"↧","Core & Carry":"▣","Endurance":"∿","Conditioning":"◇" };
+  const KCLS = { str: "k-str", car: "k-car", con: "k-con" };
+  const KWORD = { str: "strength", car: "endurance", con: "conditioning" };
+
+  const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  const row = (e, extra = "") => `
+    <button class="xrow" data-name="${esc(e.name)}">
+      <span class="tile ${KCLS[e.kind]}">${e.emoji ?? e.initials}</span>
+      <span class="nm">${esc(e.name)}</span>
+      ${e.hint ? `<span class="hint">${e.hint}</span>` : ""}
+      ${extra}
+    </button>`;
+  const sechead = (t, n) => `<div class="sechead"><span class="t">${t}</span><span class="n">${n}</span></div>`;
+  const custom = (q) => q ? `<button class="ghost-cta" data-name="${esc(q)}">+ Add “${esc(q)}” as custom</button>` : "";
+  const filt = (q) => EX.filter((e) => !q || e.name.toLowerCase().includes(q));
+
+  // C1 — One Library
+  function c1(q) {
+    const list = filt(q);
+    return GROUPS.map((g) => {
+      const es = list.filter((e) => e.group === g);
+      return es.length ? sechead(g, es.length) + `<div class="slab">${es.map((e) => row(e)).join("")}</div>` : "";
+    }).join("") + custom(q && !list.length ? q : q && !list.some(e => e.name.toLowerCase() === q) ? q : "");
+  }
+
+  // C2 — Rooms, then Things
+  let c2room = null;
+  function c2(q) {
+    if (q) return c1(q);
+    if (!c2room) return `<div class="gate-grid">` + GROUPS.map((g) => {
+      const n = EX.filter((e) => e.group === g).length;
+      const kind = EX.find((e) => e.group === g).kind;
+      return `<button class="gate" data-room="${g}"><span class="g ${KCLS[kind]}">${GLYPH[g]}</span><span class="t">${g}</span><span class="n">${n} movements</span></button>`;
+    }).join("") + `</div>`;
+    const es = EX.filter((e) => e.group === c2room);
+    return `<div class="crumb"><button data-room="">← All</button><span class="here">${c2room}</span></div>
+      <div class="slab">${es.map((e) => row(e)).join("")}</div>`;
+  }
+
+  // C3 — Your Bar First
+  const RECENT = ["Back Squat","Pull-Up","Row Intervals","Bench Press","KB Swing","Run"];
+  function c3(q) {
+    const chips = q ? "" : sechead("Your recent", "smart") + `<div class="chips">` +
+      RECENT.map((n) => { const e = EX.find((x) => x.name === n);
+        return `<button class="chip" data-name="${esc(n)}"><span class="mini ${KCLS[e.kind]}">${e.emoji ?? e.initials}</span>${esc(n)}</button>`; }).join("") + `</div>`;
+    return chips + c1(q);
+  }
+
+  // C4 — The Index
+  function c4(q) {
+    const list = filt(q).slice().sort((a, b) => a.name.localeCompare(b.name));
+    const letters = [...new Set(list.map((e) => e.name[0]))];
+    return letters.map((L) =>
+      `<div class="c4-letter">${L}</div>` +
+      list.filter((e) => e.name[0] === L).map((e) =>
+        `<button class="c4-row" data-name="${esc(e.name)}"><span class="nm">${esc(e.name)}</span><span class="k ${KCLS[e.kind]}">${KWORD[e.kind]}</span></button>`).join("")
+    ).join("") + `<div class="c4-rail">${"ABCDEFGHIJKLMNOPRSTW".split("").join("<br/>")}</div>` + custom(q && !list.some(e => e.name.toLowerCase() === q) ? q : "");
+  }
+
+  // C5 — The Composer
+  const picked = [];
+  function c5(q) {
+    const list = filt(q);
+    return GROUPS.map((g) => {
+      const es = list.filter((e) => e.group === g);
+      return es.length ? sechead(g, es.length) + `<div class="slab">${es.map((e) =>
+        row(e, `<span class="add">${picked.includes(e.name) ? "✓" : "＋"}</span>`).replace('class="xrow"', `class="xrow ${picked.includes(e.name) ? "on" : ""}"`)).join("")}</div>` : "";
+    }).join("") + custom(q && !list.some(e => e.name.toLowerCase() === q) ? q : "");
+  }
+  function c5tray() {
+    document.getElementById("c5-picked").innerHTML = picked.length
+      ? picked.map((n) => `<button class="pk" data-name="${esc(n)}">${esc(n)} <i>✕</i></button>`).join("")
+      : `<span class="c5-empty">Tap exercises to collect them…</span>`;
+    const cta = document.getElementById("c5-cta");
+    cta.textContent = `Add ${picked.length} exercise${picked.length === 1 ? "" : "s"} →`;
+    cta.disabled = !picked.length; cta.style.opacity = picked.length ? 1 : .45;
+  }
+
+  // ── wire-up ────────────────────────────────────────────────────────
+  const R = { c1, c2, c3, c4, c5 };
+  const paint = (c) => { document.getElementById(`${c}-list`).innerHTML = R[c](document.querySelector(`input[data-c="${c}"]`).value.trim().toLowerCase()); };
+  for (const c of Object.keys(R)) {
+    paint(c);
+    document.querySelector(`input[data-c="${c}"]`).addEventListener("input", () => paint(c));
+    document.getElementById(`${c}-list`).addEventListener("click", (e) => {
+      const room = e.target.closest("[data-room]");
+      if (room && c === "c2") { c2room = room.dataset.room || null; paint(c); return; }
+      const el = e.target.closest("[data-name]");
+      if (!el) return;
+      if (c === "c5") {
+        const n = el.dataset.name, i = picked.indexOf(n);
+        i >= 0 ? picked.splice(i, 1) : picked.push(n);
+        paint(c); c5tray();
+      } else {
+        el.style.transition = "opacity .18s"; el.style.opacity = .35;
+        setTimeout(() => { el.style.opacity = 1; }, 260);
+      }
+    });
+  }
+  document.getElementById("c5-picked").addEventListener("click", (e) => {
+    const el = e.target.closest("[data-name]"); if (!el) return;
+    picked.splice(picked.indexOf(el.dataset.name), 1); paint("c5"); c5tray();
+  });
+</script>
+</body>
+</html>
