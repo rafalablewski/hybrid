@@ -1,0 +1,96 @@
+import { describe, it, expect } from "vitest";
+import { logbookWeek, mergeDoneReceipts, LOGBOOK_WINDOW } from "./logbook-week";
+import type { LoggedSession } from "./engines/session";
+import type { DoneReceipt } from "./done-receipt";
+
+// A fixed local "now": Sunday 19 Jul 2026, 16:00 local.
+const NOW = new Date(2026, 6, 19, 16, 0, 0).getTime();
+
+const at = (y: number, m: number, d: number, h = 12): string => new Date(y, m, d, h).toISOString();
+
+const sess = (id: string, startedAt: string): LoggedSession => ({
+  id,
+  title: `Workout ${id}`,
+  startedAt,
+  blocks: [{ kind: "strength", name: "Back Squat", sets: [{ weightKg: 100, reps: 5 }] }],
+} as unknown as LoggedSession);
+
+describe("logbookWeek", () => {
+  it("returns a trailing 7-day window ending today, oldest first", () => {
+    const wk = logbookWeek([], { now: NOW });
+    expect(wk.days).toHaveLength(LOGBOOK_WINDOW);
+    expect(wk.todayIndex).toBe(6);
+    expect(wk.days[6]!.isToday).toBe(true);
+    expect(wk.days[6]!.dateKey).toBe("2026-07-19");
+    expect(wk.days[0]!.dateKey).toBe("2026-07-13");
+    expect(wk.days.map((d) => d.dayOfMonth)).toEqual([13, 14, 15, 16, 17, 18, 19]);
+    expect(wk.days[0]!.weekdayShort).toBe("Mon");
+    expect(wk.days[6]!.weekdayShort).toBe("Sun");
+    expect(wk.loggedDayCount).toBe(0);
+  });
+
+  it("reconciles sessions onto their LOCAL day and counts logged days", () => {
+    const sessions = [
+      sess("a", at(2026, 6, 13)), // Mon
+      sess("b", at(2026, 6, 13, 18)), // Mon again — same day, second session
+      sess("c", at(2026, 6, 17)), // Fri
+      sess("d", at(2026, 6, 19, 15)), // today
+      sess("e", at(2026, 6, 1)), // outside the window — ignored
+    ];
+    const wk = logbookWeek(sessions, { now: NOW });
+    expect(wk.days[0]!.logged).toBe(true);
+    expect(wk.days[0]!.sessionIds).toEqual(["a", "b"]);
+    expect(wk.days[1]!.logged).toBe(false);
+    expect(wk.days[4]!.sessionIds).toEqual(["c"]);
+    expect(wk.days[6]!.sessionIds).toEqual(["d"]);
+    expect(wk.loggedDayCount).toBe(3);
+  });
+
+  it("keys a late-evening session to its local day, not the UTC one", () => {
+    const wk = logbookWeek([sess("late", new Date(2026, 6, 18, 23, 30).toISOString())], { now: NOW });
+    expect(wk.days[5]!.dateKey).toBe("2026-07-18");
+    expect(wk.days[5]!.sessionIds).toEqual(["late"]);
+  });
+
+  it("ignores sessions with an unparsable start", () => {
+    const wk = logbookWeek([sess("bad", "not-a-date")], { now: NOW });
+    expect(wk.loggedDayCount).toBe(0);
+  });
+});
+
+describe("mergeDoneReceipts", () => {
+  const r = (over: Partial<DoneReceipt>): DoneReceipt => ({
+    finishedClock: null,
+    durationMin: null,
+    tonnageKg: 0,
+    sets: 0,
+    distanceKm: 0,
+    ...over,
+  });
+
+  it("returns null for an empty day", () => {
+    expect(mergeDoneReceipts([])).toBeNull();
+  });
+
+  it("sums figures and keeps the LAST finish clock", () => {
+    const merged = mergeDoneReceipts([
+      r({ finishedClock: "09:10", durationMin: 40, tonnageKg: 1200, sets: 10, distanceKm: 0 }),
+      r({ finishedClock: "18:45", durationMin: 30, tonnageKg: 300, sets: 4, distanceKm: 5.2 }),
+    ])!;
+    expect(merged.finishedClock).toBe("18:45");
+    expect(merged.durationMin).toBe(70);
+    expect(merged.tonnageKg).toBe(1500);
+    expect(merged.sets).toBe(14);
+    expect(merged.distanceKm).toBe(5.2);
+  });
+
+  it("keeps duration null when NO session carried a trusted one", () => {
+    const merged = mergeDoneReceipts([r({ sets: 5 }), r({ sets: 3 })])!;
+    expect(merged.durationMin).toBeNull();
+  });
+
+  it("keeps a partial trusted duration (one session tracked, one typed in)", () => {
+    const merged = mergeDoneReceipts([r({ durationMin: 45 }), r({})])!;
+    expect(merged.durationMin).toBe(45);
+  });
+});
