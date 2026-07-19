@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — first log → calendar — C2 The Invitation</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#6cb6bd; --amber:#d0cd94; --red:#e58a5c;
+    --disp:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;padding:48px 20px 120px}
+  main{max-width:1760px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  h1{font-weight:900;font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin:10px 0}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lede{color:var(--ash);font-size:15.5px;line-height:1.7;max-width:76ch}
+  .lede strong{color:var(--chalk);font-weight:600}
+  .ive{margin-top:20px;border-left:2px solid var(--lime);padding:2px 0 2px 16px;max-width:72ch}
+  .ive .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .ive p{color:var(--ash);font-size:14.5px;line-height:1.75}
+  .ive p em{color:var(--chalk);font-style:normal;font-weight:600}
+  .states{margin-top:48px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center;align-items:flex-start}
+  .state{width:400px;max-width:100%}
+  .state-k{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 10px}
+  .state-k .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:600}
+  .state-k .d{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .note{margin:12px 6px 0;color:var(--ash);font-size:13px;line-height:1.65}
+  .note em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  .phone{background:linear-gradient(180deg,#101210,var(--ink) 62%);border:1px solid var(--line);border-radius:36px;padding:22px 16px 18px;box-shadow:0 24px 70px -30px rgba(0,0,0,.85);overflow:hidden;position:relative}
+  .ph-head{display:flex;align-items:center;justify-content:space-between}
+  .avatar{width:42px;height:42px;border-radius:15px;background:rgba(198,248,79,.13);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:var(--lime);position:relative}
+  .avatar i{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:999px;background:var(--lime);border:2px solid var(--ink)}
+  .wordmark{font-weight:900;font-size:18px;letter-spacing:-.03em;text-align:center}
+  .wordmark b{color:var(--lime)}
+  .wordmark i{display:block;width:26px;height:3px;border-radius:2px;background:var(--lime);margin:4px auto 0}
+  .h-right{display:flex;gap:8px;align-items:center}
+  .streak{height:40px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;background:rgba(229,138,92,.13);border:1px solid rgba(229,138,92,.38);font-family:var(--mono);font-size:11px;color:var(--red);white-space:nowrap}
+  .bell{width:40px;height:40px;border-radius:14px;background:#151715;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:14px;position:relative}
+  .bell b{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:999px;background:var(--red);color:#16130f;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .mast{margin-top:20px}
+  .mast .row{display:flex;justify-content:space-between;align-items:baseline}
+  .mast .date{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash)}
+  .mast h2{font-weight:900;font-size:38px;letter-spacing:-.03em;margin-top:2px}
+  .mast .greet{color:var(--ash);font-size:15px;margin-top:2px}
+
+  .cc{background:radial-gradient(130% 90% at 92% -14%,var(--glow,rgba(198,248,79,.10)),transparent 52%),var(--card);border:1px solid var(--line);border-radius:24px;padding:17px 17px 15px}
+  .cc .gl{font-size:14px;color:var(--acc,var(--lime));display:block;margin-bottom:9px}
+  .cc .t{font-weight:800;font-size:21px;letter-spacing:-.015em}
+  .cc .s{color:var(--ash);font-size:13.5px;line-height:1.5;margin-top:4px}
+  .cc .cta{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc,var(--lime));margin-top:12px;display:block}
+  .cc.blue{--acc:var(--blue);--glow:rgba(108,182,189,.10)}
+  .cc.amber{--acc:var(--amber);--glow:rgba(208,205,148,.10)}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+
+  .rail{margin-top:16px;background:#101210;border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .rail-in{padding:20px 18px 2px}
+  .rail-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .rail-h .t{font-weight:800;font-size:22px;letter-spacing:-.02em}
+  .rail-h .m{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);white-space:nowrap}
+  .chips{display:flex;justify-content:space-between;margin-top:18px;padding-bottom:12px}
+  .chip{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px}
+  .chip .wd{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .chip .num{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:var(--ash)}
+  .chip.today .num{background:var(--lime);color:var(--on-accent);font-weight:800}
+  .chip.done .num{color:var(--chalk)}
+  .chip.slot .num{border:1px dashed #3c403b;color:#565b54;font-weight:500}
+  .chip.slot.sel .num{border-color:var(--amber);color:var(--amber)}
+  .chip .g{height:13px;font-size:11px;line-height:13px;font-family:var(--mono);color:transparent}
+  .chip.done .g{color:var(--chalk)}
+  .chip.rest{opacity:.45} .chip.rest .g{color:var(--ash)}
+  .hair{height:1px;background:var(--line)}
+  .detail{padding:18px 18px 20px}
+  .d-h{display:flex;justify-content:space-between;align-items:baseline}
+  .d-h .t{font-weight:900;font-size:23px;letter-spacing:-.02em}
+  .d-h .m{font-family:var(--mono);font-size:11.5px;color:var(--ash)}
+  .tabs{display:flex;gap:20px;margin-top:12px}
+  .tab{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--ash);padding-bottom:7px}
+  .tab.on{color:var(--lime);box-shadow:inset 0 -2px 0 var(--lime)}
+  .lift{padding:15px 0;border-bottom:1px solid var(--line)}
+  .lift.last{border-bottom:none;padding-bottom:6px}
+  .lift .nm{font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .loads{display:flex;gap:24px;margin-top:9px;flex-wrap:wrap}
+  .load b{font-weight:800;font-size:16.5px;color:var(--chalk)}
+  .load span{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-left:5px}
+  .more{font-family:var(--mono);font-size:12px;color:var(--ash);text-align:center;margin:6px 0 14px}
+  .actions{display:flex;gap:10px;align-items:center}
+  .start{flex:1;background:var(--lime);color:var(--on-accent);border-radius:999px;padding:16px;text-align:center;font-weight:800;font-size:16.5px;box-shadow:0 0 46px -6px rgba(198,248,79,.55)}
+  .icob{width:52px;height:52px;border-radius:999px;border:1px solid #343833;display:flex;align-items:center;justify-content:center;color:var(--ash);font-family:var(--mono);font-size:16px;flex-shrink:0}
+
+  .dd-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .rt{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .rt .tick{color:var(--lime);font-size:18px}
+  .rt .t{font-weight:900;font-size:20px;letter-spacing:-.015em}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-top:8px}
+  .stats{display:flex;gap:26px;margin:16px 0 4px}
+  .stat .v{font-weight:900;font-size:17px}
+  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:2px}
+  .caption{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--ash);text-align:center;letter-spacing:.06em}
+  .caption b{color:var(--amber);font-weight:600}
+  .open-s{color:var(--ash);font-size:13.5px;line-height:1.6;margin-top:10px}
+  .open-s em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  .sect{display:flex;justify-content:space-between;align-items:baseline;margin:22px 4px 12px}
+  .sect span:first-child{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .sect .all{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime)}
+  .favrow{display:flex;gap:10px}
+  .fav{flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:22px;padding:16px}
+  .fav .fn{font-weight:700;font-size:15px}
+  .fav .fv{font-weight:900;font-size:36px;letter-spacing:-1.5px;margin-top:6px}
+  .fav .fv span{font-family:var(--mono);font-size:12px;color:var(--ash);letter-spacing:0;font-weight:400}
+  .fav .fm{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:10px}
+  .fav.more-slot{flex:0 0 46px;background:transparent;border:1px dashed #3c403b;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--ash);text-transform:uppercase;letter-spacing:.1em;writing-mode:vertical-rl}
+
+  .dock{position:relative;margin-top:22px;height:64px}
+  .dock-bar{position:absolute;inset:8px 6px 0;background:rgba(18,20,18,.92);border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+  .di{width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--ash)}
+  .di.on{background:#232623;color:var(--chalk)}
+  .di svg{width:19px;height:19px}
+  .dgap{width:54px}
+  .fab{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:58px;height:58px;border-radius:999px;background:var(--lime);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px -4px rgba(198,248,79,.6),0 0 0 6px rgba(12,13,12,.9)}
+  .fab svg{width:26px;height:26px}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">HYBRID — Today dashboard — after the first logged workout — concept 2 of 5</p>
+  <h1>The Invitation — <em>empty days are the pitch</em></h1>
+  <p class="lede">
+    Marketing never says a word. After the first log the shipped plan-card geometry appears, and its <strong>future days
+    render as dashed, open slots</strong>. Tapping tomorrow doesn't show an error or an empty screen — it shows an honest
+    state: <strong>"Monday is open."</strong> One primary Start-style pill fills the week with a plan; the two circular
+    side buttons — the same action grammar as the plan state's skip/postpone circles — hold "Build" and "Just train".
+    The three onboarding cards disappear entirely after the first log. State C is the <strong>shipped plan screen,
+    verbatim</strong>: the dashed circle the user tapped becomes a solid prescribed day.
+  </p>
+  <div class="ive">
+    <div class="who">The design argument</div>
+    <p>The most persuasive advertisement for a plan is <em>the absence it fills</em>. A dashed circle around
+    Monday says more than a card ever could: here is a day, it belongs to you, it is currently silent.
+    We let the void do the selling — quietly, in sand, never in guilt.</p>
+  </div>
+
+  <div class="states">
+
+    <!-- STATE A -->
+    <div class="state">
+      <div class="state-k"><span class="n">A — Day zero</span><span class="d">no plan, no sessions — unchanged</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="stack">
+          <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+          <div class="cc blue"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+          <div class="cc amber"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+        </div>
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">Unchanged. The cards do their one job — the first decision — then retire permanently.</p>
+    </div>
+
+    <!-- STATE B — today selected -->
+    <div class="state">
+      <div class="state-k"><span class="n">B — Logger, today selected</span><span class="d">no plan, 5 sessions — the proposal</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-in">
+            <div class="rail-h"><span class="t">Your week</span><span class="m">5 logged</span></div>
+            <div class="chips">
+              <div class="chip done"><span class="wd">Wed</span><span class="num">15</span><span class="g">✓</span></div>
+              <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+              <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+              <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+              <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+              <div class="chip slot"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+              <div class="chip slot"><span class="wd">Tue</span><span class="num">21</span><span class="g">·</span></div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="detail">
+            <div class="d-h"><span class="t">Today</span><span class="m">Sun 19 Jul</span></div>
+            <div class="rt"><span class="tick">✓</span><span class="t">All done for today</span></div>
+            <div class="meta">Afternoon workout – finished 15:57</div>
+            <div class="stats">
+              <div class="stat"><div class="v">42 min</div><div class="l">Duration</div></div>
+              <div class="stat"><div class="v">0.5 t</div><div class="l">Volume</div></div>
+              <div class="stat"><div class="v">12</div><div class="l">Sets</div></div>
+            </div>
+            <div class="caption">Tomorrow is <b>open</b> — tap it</div>
+          </div>
+        </div>
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">The 7-day window slides past today: last week's proof on the left, <em>dashed open slots</em> on the right. The onboarding cards are gone — one whispered caption points at the void.</p>
+    </div>
+
+    <!-- STATE B′ — tomorrow selected -->
+    <div class="state">
+      <div class="state-k"><span class="n">B′ — Logger, tomorrow tapped</span><span class="d">the open day — where choice lives now</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-in">
+            <div class="rail-h"><span class="t">Your week</span><span class="m">5 logged</span></div>
+            <div class="chips">
+              <div class="chip done"><span class="wd">Wed</span><span class="num">15</span><span class="g">✓</span></div>
+              <div class="chip done"><span class="wd">Thu</span><span class="num">16</span><span class="g">✓</span></div>
+              <div class="chip done"><span class="wd">Fri</span><span class="num">17</span><span class="g">✓</span></div>
+              <div class="chip"><span class="wd">Sat</span><span class="num">18</span><span class="g">·</span></div>
+              <div class="chip today done"><span class="wd">Sun</span><span class="num">19</span><span class="g">✓</span></div>
+              <div class="chip slot sel"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+              <div class="chip slot"><span class="wd">Tue</span><span class="num">21</span><span class="g">·</span></div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="detail">
+            <div class="d-h"><span class="t">This day is open</span><span class="m">Mon 20 Jul</span></div>
+            <div class="open-s">Nothing is planned yet. Give the week a program and Monday fills itself — or just show up and log, like you did <em>five times</em> this week.</div>
+            <div class="actions" style="margin-top:16px"><div class="start">Plan this week →</div><div class="icob">⌗</div><div class="icob">↯</div></div>
+            <div class="caption" style="margin-top:12px">⌗ build your own – ↯ just train</div>
+          </div>
+        </div>
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">All three original choices survive — relocated into the open day, in the plan state's own action grammar: one lime pill, two hairline circles. "Plan this week" earns the lime; the others stand quietly beside it.</p>
+    </div>
+
+    <!-- STATE C -->
+    <div class="state">
+      <div class="state-k"><span class="n">C — Plan enrolled</span><span class="d">shipped today — kept verbatim</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 1-day streak</div><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="rail">
+          <div class="rail-in">
+            <div class="rail-h"><span class="t">Soviet 8-Week Peaking</span><span class="m">Day 1 / 37</span></div>
+            <div class="chips">
+              <div class="chip today"><span class="wd">Sun</span><span class="num">19</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+              <div class="chip rest"><span class="wd">Tue</span><span class="num">21</span><span class="g">☾</span></div>
+              <div class="chip"><span class="wd">Wed</span><span class="num">22</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Thu</span><span class="num">23</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Fri</span><span class="num">24</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Sat</span><span class="num">25</span><span class="g">·</span></div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="detail">
+            <div class="d-h"><span class="t">Day 1</span><span class="m">Sun 19 Jul</span></div>
+            <div class="tabs"><span class="tab on">AM</span><span class="tab">PM</span></div>
+            <div class="lift"><div class="nm">Press</div><div class="loads"><span class="load"><b>60%</b><span>4×3</span></span><span class="load"><b>70%</b><span>4×2</span></span></div></div>
+            <div class="lift last"><div class="nm">Snatch</div><div class="loads"><span class="load"><b>60%</b><span>3×2</span></span><span class="load"><b>70%</b><span>3×3</span></span><span class="load"><b>75%</b><span>2×3</span></span></div></div>
+            <div class="more">Show 1 more ⌄</div>
+            <div class="actions"><div class="start">Start →</div><div class="icob">»</div><div class="icob">↦</div></div>
+          </div>
+        </div>
+        <div class="sect"><span>Exercises – Your favourites</span><span class="all">All ›</span></div>
+        <div class="favrow">
+          <div class="fav"><div class="fn">Barbell Deadlift</div><div class="fv">117<span> kg</span></div><div class="fm">Strength – best e1RM – 8 weeks</div></div>
+          <div class="fav more-slot">All</div>
+        </div>
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">The current shipped plan screen, untouched. The transition from B′ is literal: the dashed circle the user tapped is now a solid prescribed day. Cause and effect, drawn on the same pixels.</p>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>

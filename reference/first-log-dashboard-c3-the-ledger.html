@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — first log → calendar — C3 The Ledger</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#6cb6bd; --amber:#d0cd94; --red:#e58a5c;
+    --disp:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{color-scheme:dark}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;padding:48px 20px 120px}
+  main{max-width:1360px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  h1{font-weight:900;font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin:10px 0}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lede{color:var(--ash);font-size:15.5px;line-height:1.7;max-width:76ch}
+  .lede strong{color:var(--chalk);font-weight:600}
+  .ive{margin-top:20px;border-left:2px solid var(--lime);padding:2px 0 2px 16px;max-width:72ch}
+  .ive .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  .ive p{color:var(--ash);font-size:14.5px;line-height:1.75}
+  .ive p em{color:var(--chalk);font-style:normal;font-weight:600}
+  .states{margin-top:48px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center;align-items:flex-start}
+  .state{width:400px;max-width:100%}
+  .state-k{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 10px}
+  .state-k .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:600}
+  .state-k .d{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .note{margin:12px 6px 0;color:var(--ash);font-size:13px;line-height:1.65}
+  .note em{color:var(--chalk);font-style:normal;font-weight:600}
+
+  .phone{background:linear-gradient(180deg,#101210,var(--ink) 62%);border:1px solid var(--line);border-radius:36px;padding:22px 16px 18px;box-shadow:0 24px 70px -30px rgba(0,0,0,.85);overflow:hidden;position:relative}
+  .ph-head{display:flex;align-items:center;justify-content:space-between}
+  .avatar{width:42px;height:42px;border-radius:15px;background:rgba(198,248,79,.13);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:var(--lime);position:relative}
+  .avatar i{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:999px;background:var(--lime);border:2px solid var(--ink)}
+  .wordmark{font-weight:900;font-size:18px;letter-spacing:-.03em;text-align:center}
+  .wordmark b{color:var(--lime)}
+  .wordmark i{display:block;width:26px;height:3px;border-radius:2px;background:var(--lime);margin:4px auto 0}
+  .h-right{display:flex;gap:8px;align-items:center}
+  .streak{height:40px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;background:rgba(229,138,92,.13);border:1px solid rgba(229,138,92,.38);font-family:var(--mono);font-size:11px;color:var(--red);white-space:nowrap}
+  .bell{width:40px;height:40px;border-radius:14px;background:#151715;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:14px;position:relative}
+  .bell b{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:999px;background:var(--red);color:#16130f;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .mast{margin-top:20px}
+  .mast .row{display:flex;justify-content:space-between;align-items:baseline}
+  .mast .date{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash)}
+  .mast h2{font-weight:900;font-size:38px;letter-spacing:-.03em;margin-top:2px}
+  .mast .greet{color:var(--ash);font-size:15px;margin-top:2px}
+
+  .cc{background:radial-gradient(130% 90% at 92% -14%,var(--glow,rgba(198,248,79,.10)),transparent 52%),var(--card);border:1px solid var(--line);border-radius:24px;padding:17px 17px 15px}
+  .cc .gl{font-size:14px;color:var(--acc,var(--lime));display:block;margin-bottom:9px}
+  .cc .t{font-weight:800;font-size:21px;letter-spacing:-.015em}
+  .cc .s{color:var(--ash);font-size:13.5px;line-height:1.5;margin-top:4px}
+  .cc .cta{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc,var(--lime));margin-top:12px;display:block}
+  .cc.blue{--acc:var(--blue);--glow:rgba(108,182,189,.10)}
+  .cc.amber{--acc:var(--amber);--glow:rgba(208,205,148,.10)}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+
+  /* ── the ledger card ── */
+  .ledger{margin-top:16px;background:#101210;border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .led-in{padding:20px 18px 18px}
+  .led-top{display:flex;align-items:flex-end;justify-content:space-between}
+  .led-num{font-weight:900;font-size:56px;letter-spacing:-2.5px;line-height:.92}
+  .led-num small{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--ash);display:block;margin-top:8px}
+  .led-meta{text-align:right;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);line-height:2}
+  .led-meta b{color:var(--red);font-weight:600}
+  .cols{display:flex;align-items:flex-end;gap:5px;height:68px;margin-top:18px}
+  .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
+  .col i{width:100%;border-radius:4px;background:#272b26;display:block}
+  .col.on i{background:#5a6152}
+  .col.today i{background:var(--lime)}
+  .col b{font-family:var(--mono);font-size:7.5px;letter-spacing:.06em;color:var(--ash);font-weight:400;text-transform:uppercase}
+  .hair{height:1px;background:var(--line)}
+  .led-lo{padding:16px 18px 18px}
+  .dd-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .sess{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .sess .ico{width:42px;height:42px;border-radius:14px;background:rgba(108,182,189,.16);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .sess .ico.lift{background:rgba(198,248,79,.14)}
+  .sess .tt{flex:1;min-width:0}
+  .sess .tt .a{font-weight:700;font-size:15px}
+  .sess .tt .b{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:2px}
+  .sess .go{font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .logrow{display:flex;align-items:center;gap:12px;margin-top:14px}
+  .logrow .plus{width:42px;height:42px;border-radius:14px;border:1px dashed #3c403b;display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:16px}
+  .logrow .t{font-family:var(--mono);font-size:12px;color:var(--lime)}
+
+  .shead{display:flex;align-items:baseline;justify-content:space-between;margin:22px 4px 10px}
+  .shead .t{font-weight:800;font-size:18px;letter-spacing:-.01em}
+  .shead .a{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
+
+  /* ── the shipped plan card ── */
+  .rail{margin-top:16px;background:#101210;border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .rail-in{padding:20px 18px 2px}
+  .rail-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .rail-h .t{font-weight:800;font-size:22px;letter-spacing:-.02em}
+  .rail-h .m{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);white-space:nowrap}
+  .chips{display:flex;justify-content:space-between;margin-top:18px;padding-bottom:12px}
+  .chip{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px}
+  .chip .wd{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .chip .num{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:var(--ash)}
+  .chip.today .num{background:var(--lime);color:var(--on-accent);font-weight:800}
+  .chip .g{height:13px;font-size:11px;line-height:13px;font-family:var(--mono);color:transparent}
+  .chip.rest{opacity:.45} .chip.rest .g{color:var(--ash)}
+  .detail{padding:18px 18px 20px}
+  .d-h{display:flex;justify-content:space-between;align-items:baseline}
+  .d-h .t{font-weight:900;font-size:23px;letter-spacing:-.02em}
+  .d-h .m{font-family:var(--mono);font-size:11.5px;color:var(--ash)}
+  .tabs{display:flex;gap:20px;margin-top:12px}
+  .tab{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--ash);padding-bottom:7px}
+  .tab.on{color:var(--lime);box-shadow:inset 0 -2px 0 var(--lime)}
+  .lift{padding:15px 0;border-bottom:1px solid var(--line)}
+  .lift.last{border-bottom:none;padding-bottom:6px}
+  .lift .nm{font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .loads{display:flex;gap:24px;margin-top:9px;flex-wrap:wrap}
+  .load b{font-weight:800;font-size:16.5px;color:var(--chalk)}
+  .load span{font-family:var(--mono);font-size:11.5px;color:var(--ash);margin-left:5px}
+  .more{font-family:var(--mono);font-size:12px;color:var(--ash);text-align:center;margin:6px 0 14px}
+  .actions{display:flex;gap:10px;align-items:center}
+  .start{flex:1;background:var(--lime);color:var(--on-accent);border-radius:999px;padding:16px;text-align:center;font-weight:800;font-size:16.5px;box-shadow:0 0 46px -6px rgba(198,248,79,.55)}
+  .icob{width:52px;height:52px;border-radius:999px;border:1px solid #343833;display:flex;align-items:center;justify-content:center;color:var(--ash);font-family:var(--mono);font-size:16px;flex-shrink:0}
+
+  .dock{position:relative;margin-top:22px;height:64px}
+  .dock-bar{position:absolute;inset:8px 6px 0;background:rgba(18,20,18,.92);border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+  .di{width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--ash)}
+  .di.on{background:#232623;color:var(--chalk)}
+  .di svg{width:19px;height:19px}
+  .dgap{width:54px}
+  .fab{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:58px;height:58px;border-radius:999px;background:var(--lime);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px -4px rgba(198,248,79,.6),0 0 0 6px rgba(12,13,12,.9)}
+  .fab svg{width:26px;height:26px}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">HYBRID — Today dashboard — after the first logged workout — concept 3 of 5</p>
+  <h1>The Ledger — <em>the record is the hero, the plan is a whisper</em></h1>
+  <p class="lede">
+    This user is already training — five sessions by Friday, no plan, no problem. So the dashboard stops trying to
+    convert and starts <strong>keeping score</strong>. After the first log, the hero slot becomes the Ledger: the week's
+    count set huge (the "number is the card" treatment the Done-today card already uses), a 14-day rhythm strip beneath
+    it, then today's sessions as rows — all inside the same card geometry as the shipped plan card. Structure is offered
+    exactly once, as a sand-colored section-head action — <strong>"✦ Want structure? Browse →"</strong> — the same quiet
+    right-side idiom as the Explore tab. State C is the <strong>shipped plan screen, verbatim</strong>; the Ledger simply
+    yields the top slot and slides below it.
+  </p>
+  <div class="ive">
+    <div class="who">The design argument</div>
+    <p>Respect what the person <em>actually does</em> rather than what we wish they'd do. Someone logging five workouts
+    a week is not "unonboarded" — they are a regular, and the product should look like their gym notebook, not like a
+    brochure they keep declining. The offer of a plan belongs in the margin, where good manners live.</p>
+  </div>
+
+  <div class="states">
+
+    <!-- STATE A -->
+    <div class="state">
+      <div class="state-k"><span class="n">A — Day zero</span><span class="d">no plan, no sessions — unchanged</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+        <div class="stack">
+          <div class="cc"><span class="gl">▤</span><div class="t">Follow a plan</div><div class="s">Proven programs for every discipline. Enrol and tomorrow is already planned.</div><span class="cta">Browse →</span></div>
+          <div class="cc blue"><span class="gl">⌗</span><div class="t">Build your own</div><div class="s">Compose a custom program from any discipline.</div><span class="cta">Compose →</span></div>
+          <div class="cc amber"><span class="gl">↯</span><div class="t">Just train</div><div class="s">Log a one-time workout. No plan needed.</div><span class="cta">Log →</span></div>
+        </div>
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">An empty ledger has nothing to say, so day zero keeps the chooser. The first logged set is the moment the notebook opens.</p>
+    </div>
+
+    <!-- STATE B -->
+    <div class="state">
+      <div class="state-k"><span class="n">B — Logger → the Ledger</span><span class="d">no plan, 5 sessions — the proposal</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 5-day streak</div><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span><span class="date">Free</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+
+        <div class="ledger">
+          <div class="led-in">
+            <div class="led-top">
+              <div class="led-num">5<small>sessions this week</small></div>
+              <div class="led-meta">2.4 t lifted<br /><b>🔥 5-day streak</b></div>
+            </div>
+            <div class="cols">
+              <div class="col"><i style="height:8%"></i><b>6</b></div>
+              <div class="col on"><i style="height:38%"></i><b>7</b></div>
+              <div class="col"><i style="height:8%"></i><b>8</b></div>
+              <div class="col on"><i style="height:52%"></i><b>9</b></div>
+              <div class="col on"><i style="height:30%"></i><b>10</b></div>
+              <div class="col"><i style="height:8%"></i><b>11</b></div>
+              <div class="col"><i style="height:8%"></i><b>12</b></div>
+              <div class="col"><i style="height:8%"></i><b>13</b></div>
+              <div class="col on"><i style="height:46%"></i><b>14</b></div>
+              <div class="col on"><i style="height:64%"></i><b>15</b></div>
+              <div class="col on"><i style="height:40%"></i><b>16</b></div>
+              <div class="col on"><i style="height:74%"></i><b>17</b></div>
+              <div class="col"><i style="height:8%"></i><b>18</b></div>
+              <div class="col today"><i style="height:34%"></i><b>19</b></div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="led-lo">
+            <span class="dd-k">Done today</span>
+            <div class="sess">
+              <div class="ico lift">🏋️</div>
+              <div class="tt"><div class="a">Afternoon workout</div><div class="b">0.5 t – Barbell Deadlift – 15:57</div></div>
+              <div class="go">→</div>
+            </div>
+            <div class="logrow"><div class="plus">＋</div><div class="t">Log another workout</div></div>
+          </div>
+        </div>
+
+        <div class="shead"><span class="t">Your log</span><span class="a">✦ Want structure? Browse →</span></div>
+        <div class="sess">
+          <div class="ico lift">🏋️</div>
+          <div class="tt"><div class="a">Friday – Pull day</div><div class="b">0.7 t – Row, Chin-Up – 17:12</div></div>
+          <div class="go">→</div>
+        </div>
+        <div class="sess">
+          <div class="ico">🏃</div>
+          <div class="tt"><div class="a">Thursday – Easy run</div><div class="b">6.2 km – 34 min</div></div>
+          <div class="go">→</div>
+        </div>
+
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note"><em>The star of this concept.</em> Fourteen days of rhythm replace fourteen days of identical onboarding cards. The columns are tonnage; lime is only today. The plan offer costs one line, in sand — the premium hue — at the exact spot the eye expects an action.</p>
+    </div>
+
+    <!-- STATE C -->
+    <div class="state">
+      <div class="state-k"><span class="n">C — Plan enrolled</span><span class="d">shipped today — kept verbatim, ledger below</span></div>
+      <div class="phone">
+        <div class="ph-head">
+          <div class="avatar">RA<i></i></div>
+          <div class="wordmark">HYBRID<b>.</b><i></i></div>
+          <div class="h-right"><div class="streak">🔥 1-day streak</div><div class="bell">◔<b>1</b></div></div>
+        </div>
+        <div class="mast">
+          <div class="row"><span class="date">Sunday, 19 July</span></div>
+          <h2>Today</h2>
+          <div class="greet">Good afternoon, Rafal.</div>
+        </div>
+
+        <div class="rail">
+          <div class="rail-in">
+            <div class="rail-h"><span class="t">Soviet 8-Week Peaking</span><span class="m">Day 1 / 37</span></div>
+            <div class="chips">
+              <div class="chip today"><span class="wd">Sun</span><span class="num">19</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Mon</span><span class="num">20</span><span class="g">·</span></div>
+              <div class="chip rest"><span class="wd">Tue</span><span class="num">21</span><span class="g">☾</span></div>
+              <div class="chip"><span class="wd">Wed</span><span class="num">22</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Thu</span><span class="num">23</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Fri</span><span class="num">24</span><span class="g">·</span></div>
+              <div class="chip"><span class="wd">Sat</span><span class="num">25</span><span class="g">·</span></div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="detail">
+            <div class="d-h"><span class="t">Day 1</span><span class="m">Sun 19 Jul</span></div>
+            <div class="tabs"><span class="tab on">AM</span><span class="tab">PM</span></div>
+            <div class="lift"><div class="nm">Press</div><div class="loads"><span class="load"><b>60%</b><span>4×3</span></span><span class="load"><b>70%</b><span>4×2</span></span></div></div>
+            <div class="lift last"><div class="nm">Snatch</div><div class="loads"><span class="load"><b>60%</b><span>3×2</span></span><span class="load"><b>70%</b><span>3×3</span></span><span class="load"><b>75%</b><span>2×3</span></span></div></div>
+            <div class="more">Show 1 more ⌄</div>
+            <div class="actions"><div class="start">Start →</div><div class="icob">»</div><div class="icob">↦</div></div>
+          </div>
+        </div>
+
+        <div class="ledger">
+          <div class="led-in" style="padding-bottom:16px">
+            <div class="led-top">
+              <div class="led-num" style="font-size:42px">5<small>sessions this week</small></div>
+              <div class="led-meta">2.4 t lifted<br /><b>🔥 1-day streak</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dock">
+          <div class="dock-bar">
+            <span class="di on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4z"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.6 2.5 2.6 14.3 0 16.8M12 3.6c-2.6 2.5-2.6 14.3 0 16.8"/></svg></span>
+            <span class="dgap"></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.6"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.6"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.6"/></svg></span>
+            <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.2" r="3.4"/><path d="M5.2 19.6c1.4-3.3 3.9-4.9 6.8-4.9s5.4 1.6 6.8 4.9"/></svg></span>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="#0c0d0c" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 8.5v7M3.8 10v4M17.5 8.5v7M20.2 10v4M6.5 12h11"/></svg></div>
+        </div>
+      </div>
+      <p class="note">The shipped plan card takes the hero slot exactly as it is today; the Ledger keeps its numbers and moves one slot down. The user's history remains one continuous record across the plan boundary — nothing is thrown away on enrolment.</p>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>

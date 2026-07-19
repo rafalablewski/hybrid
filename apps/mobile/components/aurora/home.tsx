@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -38,6 +38,7 @@ import {
   type Equipment,
   type AuroraIconName,
   type ScheduledDay,
+  type LogbookDay,
 } from "@hybrid/core";
 import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, type Assignment, type Checkin } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -65,6 +66,7 @@ import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import AuroraWeekRail from "./week-rail";
+import AuroraLogbookRail from "./logbook-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -88,6 +90,10 @@ export default function AuroraHome() {
   const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
   const insets = useSafeAreaInsets();
+  // Logbook mode's "Train your way" slider — one chooser card ≈ 72% of the
+  // screen so the next card peeks in (the exercise-widget rail's idiom).
+  const { width: winW } = useWindowDimensions();
+  const structW = Math.min(300, Math.round(winW * 0.72));
   const navScroll = useNavScrollProps();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
@@ -173,15 +179,21 @@ export default function AuroraHome() {
   // engine (planSchedule) reconciles each calendar date against logged sessions
   // and skips; the classic "Your plan today" card stays the fallback otherwise.
   const useRail = !!(plan && planId && planStartedAt);
+  // LOGBOOK MODE ("The Constant", concept C1) — no plan but real logged
+  // history: the SAME week-rail object mounts in logbook mode, so the calendar
+  // exists from the first logged session instead of the chooser repeating
+  // forever; the chooser demotes to slim "Add structure" rows below the rail.
+  // Premium athletes with history keep their AI-prescription hero instead.
+  const logbookMode = !initialLoad && !plan && !(isAthlete && hasData) && hasData;
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
   // so the Also-today and feeling cards follow the viewed day instead of
   // staying pinned to the real today; null (or tapping today's chip) = today.
   // Re-anchors to today whenever the enrolled plan changes (the rail resets its
   // own selection the same way), and is ignored entirely once the rail is gone
   // (un-enrolled) — a stale day must never scope the cards with no rail visible.
-  const [railDay, setRailDay] = useState<ScheduledDay | null>(null);
+  const [railDay, setRailDay] = useState<ScheduledDay | LogbookDay | null>(null);
   useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
-  const dayIsToday = !useRail || !railDay || railDay.isToday;
+  const dayIsToday = !(useRail || logbookMode) || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
@@ -246,8 +258,9 @@ export default function AuroraHome() {
   }, [t]);
   const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
   // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
-  // the masthead's caption line says "Free" ONLY when the chooser renders.
-  const firstRun = !initialLoad && !plan && !(isAthlete && hasData);
+  // the masthead's caption line says "Free" when the chooser (or its demoted
+  // logbook-mode form) renders. With history the logbook rail takes over.
+  const firstRun = !initialLoad && !plan && !hasData;
   // Masthead strings for the viewed day: headline, caption date, and (beyond
   // ±1 day, where the headline stops saying it) the scrub-distance tag.
   const mastTitle =
@@ -377,7 +390,7 @@ export default function AuroraHome() {
         <View style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{mastCaption || " "}</Text>
-            {firstRun ? (
+            {firstRun || (logbookMode && !mastTag) ? (
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
             ) : mastTag ? (
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{mastTag}</Text>
@@ -425,6 +438,38 @@ export default function AuroraHome() {
               onSelectDay={setRailDay}
               resetToken={railResetToken}
             />
+          </View>
+        ) : logbookMode ? (
+          /* LOGBOOK MODE ("The Constant") — the same week-rail object, in
+             logbook mode: the last seven days with the athlete's real logged
+             training, so a plan-less regular gets the calendar from their
+             first session instead of the chooser forever. The chooser demotes
+             to slim rows under an Explore-standard "Add structure" head. */
+          <View style={{ marginTop: 14 }}>
+            <AuroraLogbookRail
+              sessions={sessions}
+              onLog={() => router.push("/workout?source=empty")}
+              onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+              onSelectDay={setRailDay}
+              resetToken={railResetToken}
+            />
+            <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
+            </View>
+            {/* the chooser as a snap slider — the exercise-widget rail's idiom:
+                one card ≈ 72% wide so the next path peeks in from the right */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={structW + 12}
+              decelerationRate="fast"
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 2 }}
+            >
+              <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+              <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
+              <StructureCard C={C} width={structW} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+            </ScrollView>
           </View>
         ) : firstRun ? (
           /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the
@@ -720,6 +765,27 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: 18 }}>{sub}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: txt(C, accent), marginTop: 14 }}>{cta} →</Text>
+    </Pressable>
+  );
+}
+
+// The chooser, demoted — once real history exists the three full onboarding
+// cards become a horizontal snap slider under a quiet "Train your way" head
+// (logbook mode): each card keeps the ChooserCard's Go-Full anatomy (corner
+// glow, glyph, title, sub, mono CTA) at rail width, so the options stay
+// reachable without re-onboarding a regular every day.
+// Mirrored on web (aurora/today.tsx StructureCard).
+function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
+  const { scheme } = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 18, overflow: "hidden" }}>
+      {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
+      <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+      <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{cta} →</Text>
     </Pressable>
   );
 }

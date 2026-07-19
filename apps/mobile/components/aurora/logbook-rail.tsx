@@ -1,0 +1,244 @@
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import {
+  logbookWeek,
+  mergeDoneReceipts,
+  doneReceipt,
+  doneReceiptStats,
+  type LogbookDay,
+  type LoggedSession,
+  type WeightUnit,
+} from "@hybrid/core";
+import { useTheme, txt } from "../../lib/theme";
+import { useLang } from "../../lib/i18n";
+import { fs, F, serifIf, startGlow } from "../../lib/ui";
+import { RADIUS } from "./kit";
+import { CtaLabel } from "./cta-label";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useBodyweightLookup } from "../../lib/use-bodyweight";
+
+// ── AURORA Logbook rail (mobile) ────────────────────────────────────────────
+// "The Constant": the SAME week-rail object the plan state ships, mounted in
+// LOGBOOK MODE for the plan-less athlete with logged history — so the calendar
+// exists for the whole life of the account, and enrolling changes the card's
+// fill, never its shape. Same anatomy as week-rail.tsx (one ink2 surface:
+// header row, seven day chips, full-bleed hairline, a state-aware day detail),
+// with the plan's vocabulary swapped for the log's: a day either holds
+// training (✓, chalk) or stays quiet greyscale — a logbook makes no promises,
+// so there is no "missed", no terracotta. Data from @hybrid/core logbookWeek.
+// Mirrors the web component (aurora/logbook-rail.tsx) exactly.
+
+type Pal = ReturnType<typeof useTheme>["palette"];
+
+export default function AuroraLogbookRail({
+  sessions,
+  onLog,
+  onNavigate,
+  onSelectDay,
+  resetToken,
+}: {
+  sessions: LoggedSession[];
+  /** Start an empty workout (today's primary action when nothing is logged). */
+  onLog: () => void;
+  onNavigate?: (screen: string) => void;
+  /** Fires when the athlete taps a day chip, so the caller can scope the rest
+   *  of the screen (Also-today / feeling cards) to the viewed day. Mirrors the
+   *  plan week rail's prop. */
+  onSelectDay?: (day: LogbookDay) => void;
+  /** Bump to snap the rail's internal selection back to today (the masthead's
+   *  "Back to today" affordance). */
+  resetToken?: number;
+}) {
+  const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
+  const units = useLoggerPrefs().units;
+  const bw = useBodyweightLookup();
+
+  const week = useMemo(() => logbookWeek(sessions), [sessions]);
+
+  // Selected day: follows today until the athlete taps another chip.
+  const [picked, setPicked] = useState<number | null>(null);
+  useEffect(() => { setPicked(null); }, [resetToken]);
+  const selectedIndex = picked ?? week.todayIndex;
+  const sel = week.days[selectedIndex] ?? week.days[week.todayIndex]!;
+
+  // The selected day's receipt — every session logged that day, merged into one
+  // honest summary (untrustworthy figures were already dropped per session).
+  const daySessions = useMemo(
+    () => sel.sessionIds.map((id) => sessions.find((s) => s.id === id)).filter((s): s is LoggedSession => !!s),
+    [sel.sessionIds, sessions],
+  );
+  const receipt = useMemo(
+    () => mergeDoneReceipts(daySessions.map((s) => doneReceipt(s, { bodyweightKg: bw(s.startedAt) }))),
+    [daySessions, bw],
+  );
+
+  return (
+    <View
+      style={{
+        backgroundColor: C.ink2,
+        borderWidth: 1,
+        borderColor: C.line,
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: "#000",
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 3,
+      }}
+    >
+      {/* header: the log's name + the window on one baseline row */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.4, color: C.chalk }}>
+          {t("w.home.logbook.title")}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11.5, letterSpacing: 0.4, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.window")}</Text>
+      </View>
+
+      {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
+        {week.days.map((d) => (
+          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
+        ))}
+      </View>
+
+      {/* full-bleed hairline — the only separator between week and day */}
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 18, marginBottom: 16 }} />
+
+      <DayDetail
+        key={sel.dateKey}
+        C={C}
+        scheme={scheme}
+        day={sel}
+        daySessions={daySessions}
+        receipt={receipt}
+        units={units}
+        onLog={onLog}
+        onHistory={() => onNavigate?.("history")}
+        t={t}
+      />
+    </View>
+  );
+}
+
+function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; selected: boolean; onSelect: () => void; t: (k: string) => string }) {
+  return (
+    <Pressable
+      onPress={onSelect}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(day.logged ? "w.home.logbook.loggedDay" : "w.home.logbook.emptyPast")}`}
+      style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
+    >
+      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
+          hairline disc (preview cue); otherwise a bare tonal number (chalk when
+          the day holds training, ash when it doesn't). */}
+      <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
+        {day.isToday ? (
+          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.onAccent }}>{day.dayOfMonth}</Text>
+          </View>
+        ) : selected ? (
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{day.dayOfMonth}</Text>
+          </View>
+        ) : (
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
+        )}
+      </View>
+      {/* glyph slot — ✓ for a logged day; an un-logged day carries no mark
+          (silence, never terracotta: a logbook makes no promises). */}
+      <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
+        {day.logged ? <Text style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 12, color: C.chalk, opacity: 0.7 }}>✓</Text> : null}
+      </View>
+    </Pressable>
+  );
+}
+
+function DayDetail({ C, scheme, day, daySessions, receipt, units, onLog, onHistory, t }: {
+  C: Pal;
+  scheme: "dark" | "light";
+  day: LogbookDay;
+  daySessions: LoggedSession[];
+  receipt: ReturnType<typeof mergeDoneReceipts>;
+  units: WeightUnit;
+  onLog: () => void;
+  onHistory: () => void;
+  t: (k: string) => string;
+}) {
+  const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+
+  // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
+  // state: one headline, the day's work as an en-dash meta line, only
+  // trustworthy figures, and a quiet text link into History.
+  if (day.logged) {
+    const stats = receipt ? doneReceiptStats(receipt, units) : [];
+    const finished = receipt?.finishedClock
+      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      : "";
+    return (
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, flex: 1 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 19, lineHeight: 22, color: txt(C, C.lime) }}>✓</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk }}>
+              {t(day.isToday ? "w.home.rail.allDone" : "w.home.logbook.loggedDay")}
+            </Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
+          {daySessions.map((s) => s.title).join(" – ")}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
+        </Text>
+        {stats.length > 0 && (
+          <View style={{ flexDirection: "row", gap: 26, marginTop: 16, marginLeft: 31 }}>
+            {stats.map((s) => (
+              <View key={s.labelKey}>
+                <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <Pressable
+          onPress={onHistory}
+          accessibilityRole="button"
+          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 18, paddingTop: 14, paddingLeft: 31 }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.rail.viewHistory")} →</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  // TODAY, nothing logged yet — the open day: one honest headline and the one
+  // lime action. The chooser's structure options live OUTSIDE the rail.
+  if (day.isToday) {
+    return (
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.logbook.emptyTodaySub")}</Text>
+        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
+          <CtaLabel label={t("w.home.today.alsoTodayLogFirst")} color={C.onAccent} fontSize={fs.bodyLg} />
+        </Pressable>
+      </View>
+    );
+  }
+
+  // A PAST day with nothing logged — quiet, factual, no guilt (the rest-day
+  // register of the plan rail, without the moon: nothing was promised).
+  return (
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.ash, flex: 1 }}>{t("w.home.logbook.emptyPast")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.today.doneModalEmptyDay")}</Text>
+    </View>
+  );
+}

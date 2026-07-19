@@ -35,6 +35,7 @@ import { fs, space,
   type Macrocycle,
   type SessionBlock,
   type ScheduledDay,
+  type LogbookDay,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -47,6 +48,7 @@ import { readIntake, type Intake } from "@/lib/intake";
 import QuickSportLog from "../quick-sport";
 import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
+import AuroraLogbookRail from "./logbook-rail";
 import Sheet from "./sheet";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
@@ -155,6 +157,12 @@ export default function AuroraToday({
   // date-based week rail supersedes the count-based plan card entirely.
   const useRail = !!(plan && planId && planStartedAt);
   const hasData = sessions.length > 0;
+  // LOGBOOK MODE ("The Constant", concept C1) — no plan but real logged
+  // history: the SAME week-rail object mounts in logbook mode, so the calendar
+  // exists from the first logged session instead of the chooser repeating
+  // forever; the chooser demotes to slim "Add structure" rows below the rail.
+  // Premium athletes with history keep their AI-prescription hero instead.
+  const logbookMode = !plan && !loading && !(isAthlete && hasData) && hasData;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
@@ -163,9 +171,9 @@ export default function AuroraToday({
   // Re-anchors to today whenever the enrolled plan changes (the rail resets its
   // own selection the same way), and is ignored entirely once the rail is gone
   // (un-enrolled) — a stale day must never scope the cards with no rail visible.
-  const [railDay, setRailDay] = useState<ScheduledDay | null>(null);
+  const [railDay, setRailDay] = useState<ScheduledDay | LogbookDay | null>(null);
   useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
-  const dayIsToday = !useRail || !railDay || railDay.isToday;
+  const dayIsToday = !(useRail || logbookMode) || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
   const dayLabel = dayIsToday ? null : `${railDay!.weekdayShort} ${railDay!.dayOfMonth} ${railDay!.monthShort}`;
@@ -245,8 +253,9 @@ export default function AuroraToday({
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, [t]);
   // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
-  // the masthead's caption line says "Free" ONLY when the chooser renders.
-  const firstRun = !plan && !loading && !(isAthlete && hasData);
+  // the masthead's caption line says "Free" when the chooser (or its demoted
+  // logbook-mode form) renders. With history the logbook rail takes over.
+  const firstRun = !plan && !loading && !hasData;
   // Masthead strings for the viewed day: headline, caption date, and (beyond
   // ±1 day, where the headline stops saying it) the scrub-distance tag. The
   // non-today branches only exist after a rail tap, so they never render on
@@ -318,7 +327,7 @@ export default function AuroraToday({
       <div style={{ margin: "16px 2px 2px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
-          {firstRun ? (
+          {firstRun || (logbookMode && !mastTag) ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
           ) : mastTag ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
@@ -359,6 +368,32 @@ export default function AuroraToday({
           onSelectDay={setRailDay}
           resetToken={railResetToken}
         />
+      ) : logbookMode ? (
+        /* LOGBOOK MODE ("The Constant") — the same week-rail object, in
+           logbook mode: the last seven days with the athlete's real logged
+           training, so a plan-less regular gets the calendar from their first
+           session instead of the chooser forever. The chooser demotes to slim
+           rows under an Explore-standard "Add structure" head. */
+        <div style={{ marginTop: 14 }}>
+          <AuroraLogbookRail
+            sessions={sessions}
+            onLog={() => onStart()}
+            onNavigate={onNavigate}
+            onSelectDay={setRailDay}
+            resetToken={railResetToken}
+          />
+          <div style={{ margin: "24px 2px 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.trainYourWay")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
+          </div>
+          {/* the chooser as a snap slider — the exercise-widget rail's idiom:
+              one card ≈ 72% wide so the next path peeks in from the right */}
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -4px", padding: "4px 4px 6px" }}>
+            <StructureCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
+            <StructureCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
+            <StructureCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+          </div>
+        </div>
       ) : firstRun ? (
         /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the page:
            no wrapper card (a box around three cards reads as chrome) and one
@@ -666,6 +701,29 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", marginTop: 12 }}>{title}</span>
       <span style={{ fontSize: fs.note, lineHeight: 1.5, color: C("ash"), marginTop: 7 }}>{sub}</span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 14 }}>{cta} →</span>
+    </button>
+  );
+}
+
+/** The chooser, demoted — once real history exists the three full onboarding
+ *  cards become a horizontal snap slider under a quiet "Train your way" head
+ *  (logbook mode): each card keeps the ChooserCard's Go-Full anatomy (corner
+ *  glow, glyph, title, sub, mono CTA) at rail width, so the options stay
+ *  reachable without re-onboarding a regular every day.
+ *  Mirrored on mobile (aurora/home.tsx StructureCard). */
+function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+  const fill = C(accent);
+  const text = `var(--${accent}-text)`;
+  return (
+    <button
+      onClick={onClick}
+      aria-label={title}
+      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 18, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+    >
+      <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: text }}>{glyph}</span>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{title}</span>
+      <span style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}>{cta} →</span>
     </button>
   );
 }
