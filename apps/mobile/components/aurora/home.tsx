@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -90,6 +90,10 @@ export default function AuroraHome() {
   const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
   const insets = useSafeAreaInsets();
+  // Logbook mode's "Train your way" slider — one chooser card ≈ 72% of the
+  // screen so the next card peeks in (the exercise-widget rail's idiom).
+  const { width: winW } = useWindowDimensions();
+  const structW = Math.min(300, Math.round(winW * 0.72));
   const navScroll = useNavScrollProps();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
@@ -435,14 +439,22 @@ export default function AuroraHome() {
               resetToken={railResetToken}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.logbook.addStructure")}</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
-            <View style={{ gap: space.sm }}>
-              <StructureRow C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
-              <StructureRow C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
-              <StructureRow C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-            </View>
+            {/* the chooser as a snap slider — the exercise-widget rail's idiom:
+                one card ≈ 72% wide so the next path peeks in from the right */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={structW + 12}
+              decelerationRate="fast"
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 2 }}
+            >
+              <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+              <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
+              <StructureCard C={C} width={structW} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+            </ScrollView>
           </View>
         ) : firstRun ? (
           /* FIRST-RUN CHOOSER — "Three Materials", sitting DIRECTLY on the
@@ -743,19 +755,22 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 }
 
 // The chooser, demoted — once real history exists the three full onboarding
-// cards collapse to slim rows under a quiet "Add structure" head (logbook
-// mode): the DeferRow's airy-band anatomy with the chooser's glyph + accent,
-// so the options stay reachable without re-onboarding a regular every day.
-// Mirrored on web (aurora/today.tsx StructureRow).
-function StructureRow({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
+// cards become a horizontal snap slider under a quiet "Train your way" head
+// (logbook mode): each card keeps the ChooserCard's Go-Full anatomy (corner
+// glow, glyph, title, sub, mono CTA) at rail width, so the options stay
+// reachable without re-onboarding a regular every day.
+// Mirrored on web (aurora/today.tsx StructureCard).
+function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
+  const { scheme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18 }}>
-      <Text style={{ fontSize: 14, lineHeight: 18, width: 18, textAlign: "center", color: txt(C, accent) }}>{glyph}</Text>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{title}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sub}</Text>
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent) }}>{cta} →</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 18, overflow: "hidden" }}>
+      {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
+      <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+      <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{cta} →</Text>
     </Pressable>
   );
 }

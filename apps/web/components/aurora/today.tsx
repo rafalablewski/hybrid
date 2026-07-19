@@ -377,13 +377,15 @@ export default function AuroraToday({
             resetToken={railResetToken}
           />
           <div style={{ margin: "24px 2px 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.addStructure")}</span>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.trainYourWay")}</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
           </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            <StructureRow glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
-            <StructureRow glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
-            <StructureRow glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+          {/* the chooser as a snap slider — the exercise-widget rail's idiom:
+              one card ≈ 72% wide so the next path peeks in from the right */}
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -4px", padding: "4px 4px 6px" }}>
+            <StructureCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
+            <StructureCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
+            <StructureCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
           </div>
         </div>
       ) : firstRun ? (
@@ -698,20 +700,24 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
 }
 
 /** The chooser, demoted — once real history exists the three full onboarding
- *  cards collapse to slim rows under a quiet "Add structure" head (logbook
- *  mode): the DeferRow's airy-band anatomy with the chooser's glyph + accent,
- *  so the options stay reachable without re-onboarding a regular every day.
- *  Mirrored on mobile (aurora/home.tsx StructureRow). */
-function StructureRow({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+ *  cards become a horizontal snap slider under a quiet "Train your way" head
+ *  (logbook mode): each card keeps the ChooserCard's Go-Full anatomy (corner
+ *  glow, glyph, title, sub, mono CTA) at rail width, so the options stay
+ *  reachable without re-onboarding a regular every day.
+ *  Mirrored on mobile (aurora/home.tsx StructureCard). */
+function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+  const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (
-    <button onClick={onClick} aria-label={title} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", cursor: "pointer", color: C("chalk") }}>
-      <span aria-hidden style={{ fontSize: 14, lineHeight: 1, width: 18, textAlign: "center", flexShrink: 0, color: text }}>{glyph}</span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
-        <span style={{ display: "block", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
-      </span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, flexShrink: 0 }}>{cta} →</span>
+    <button
+      onClick={onClick}
+      aria-label={title}
+      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 18, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+    >
+      <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: text }}>{glyph}</span>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{title}</span>
+      <span style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}>{cta} →</span>
     </button>
   );
 }
