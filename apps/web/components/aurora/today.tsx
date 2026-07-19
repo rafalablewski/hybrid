@@ -312,7 +312,10 @@ export default function AuroraToday({
             // While the first sessions/enrollment fetch is in flight we don't
             // yet know if they're on a plan — hold the top Start back so it
             // doesn't flash in and vanish once the plan (or rail) resolves.
-            const showTopStart = !plan && !loading;
+            // The chooser state gets NO top Start: its three cards ARE the
+            // start (a floating pill above them would be a competing CTA), so
+            // the pill only serves the athlete AI-prescription state.
+            const showTopStart = !plan && !loading && isAthlete && hasData;
             if (!showRing && !showTopStart) return null;
             return (
               <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
@@ -435,15 +438,26 @@ export default function AuroraToday({
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
             </>
           ) : (
+            /* First-run chooser — "Three Materials": the question is the
+               kicker, and the three free paths wear the Go-Full card anatomy
+               (corner glow, title, growing body, CTA pinned at the bottom) so
+               the athlete's FIRST decision feels as considered as the paid
+               one. Spectrum-coded: enrol=lime, build=teal, log=sand — the hue
+               confined to the small glyph + CTA. "Free" is said ONCE in the
+               kicker (no per-card badges), and there is no separate Start
+               pill: each card IS the start. Mirrored on mobile (home.tsx). */
             <>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.howStart")}</div>
-              <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 12 }}>
-                {t("w.home.today.howStartSub")}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 2px 14px" }}>
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: C("lime"), flexShrink: 0 }} />
+                <MetaLine
+                  parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
+                  style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}
+                />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
-                <ChooserRow title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
-                <ChooserRow title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
-                <ChooserRow title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => onStart()} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+                <ChooserCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
+                <ChooserCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
+                <ChooserCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
               </div>
             </>
           )}
@@ -575,20 +589,24 @@ export default function AuroraToday({
 }
 
 // One row of the first-session chooser: a tappable option with title, sub, badge.
-function ChooserRow({ title, sub, badge, color, onClick }: { title: string; sub: string; badge: string; color: string; onClick: () => void }) {
+/** One card of the first-run chooser — the Go-Full AccessCard anatomy (corner
+ *  glow, title, growing body, CTA pinned to the bottom in mono uppercase)
+ *  turned toward the beginner, tinted by the path's accent. The hue lives in
+ *  the small glyph + CTA only; title and body stay neutral. Mirrored on
+ *  mobile (aurora/home.tsx ChooserCard). */
+function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+  const fill = C(accent);
+  const text = `var(--${accent}-text)`;
   return (
     <button
       onClick={onClick}
-      style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "12px 14px", borderRadius: 14, cursor: "pointer", textAlign: "left", border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${color} 8%, transparent)`, color: C("chalk") }}
+      aria-label={title}
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minHeight: 185, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("card")}), ${C("card")})`, border: `1px solid ${C("line")}`, borderRadius: 22, padding: "16px 15px 14px", cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
-      <span>
-        <span style={{ fontWeight: 800, fontSize: fs.note, display: "block" }}>{title}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{sub}</span>
-      </span>
-      <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color, background: `color-mix(in srgb, ${color} 16%, transparent)`, borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap" }}>{badge}</span>
-        <span style={{ fontWeight: 800, fontSize: fs.title, color }}>→</span>
-      </span>
+      <span aria-hidden style={{ fontSize: 19, lineHeight: 1, color: text }}>{glyph}</span>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em", marginTop: 12 }}>{title}</span>
+      <span style={{ fontSize: fs.note, lineHeight: 1.5, color: C("ash"), flexGrow: 1, marginTop: 7 }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 14 }}>{cta} →</span>
     </button>
   );
 }

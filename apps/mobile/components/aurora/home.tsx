@@ -364,9 +364,11 @@ export default function AuroraHome() {
         ) : (
         <ACard style={{ marginTop: 14 }}>
             {/* On a plan, Start becomes the full-width action BELOW the note; the
-                top row then carries only the readiness dial (athlete). Other
-                states keep the compact top-right Start. */}
-            {!initialLoad && ((isAthlete && planReadiness) || !plan) ? (
+                top row then carries only the readiness dial (athlete). The AI-
+                prescription state keeps the compact top-right Start; the first-
+                run chooser gets NONE — its three cards ARE the start (a floating
+                pill above them would be a competing CTA). */}
+            {!initialLoad && ((isAthlete && planReadiness) || (!plan && isAthlete && hasData)) ? (
               <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
                 {isAthlete && planReadiness ? (
                   <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
@@ -471,17 +473,26 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
               </>
             ) : (
-              /* Not following a plan (or not premium) — an encouraging chooser:
-                 enroll in a plan (free), build your own, or log a one-off. */
+              /* First-run chooser — "Three Materials": the question is the
+                 kicker, and the three free paths wear the Go-Full card anatomy
+                 (corner glow, title, body, CTA pinned at the bottom) so the
+                 athlete's FIRST decision feels as considered as the paid one.
+                 Spectrum-coded: enrol=lime, build=teal, log=sand — the hue
+                 confined to the small glyph + CTA. "Free" is said ONCE in the
+                 kicker (no per-card badges), and the top-right Start pill is
+                 gone: each card IS the start. Mirrors web today.tsx. */
               <>
-                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-                  {t("w.home.today.howStartSub")}
-                </Text>
-                <View style={{ marginTop: 12, gap: space.sm }}>
-                  <ChooserRow C={C} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
-                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/builder")} />
-                  <ChooserRow C={C} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/workout?source=empty")} />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 8 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: C.lime }} />
+                  <MetaLine
+                    parts={[t("w.home.today.howStart"), t("w.home.today.badgeFree")]}
+                    textStyle={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}
+                  />
+                </View>
+                <View style={{ marginTop: 14, gap: space.sm }}>
+                  <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+                  <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
+                  <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
                 </View>
               </>
             )}
@@ -629,16 +640,23 @@ export default function AuroraHome() {
 
 // One row of the first-session chooser (#3): a tappable option with a title, a
 // one-line sub, and a Free/Full badge.
-function ChooserRow({ C, title, sub, badge, color, onPress }: { C: P; title: string; sub: string; badge: string; color: string; onPress: () => void }) {
+// One card of the first-run chooser — the Go-Full AccessCard anatomy (corner
+// glow, title, body, CTA pinned to the bottom in mono uppercase) turned toward
+// the beginner, tinted by the path's accent. The hue lives in the small glyph
+// + CTA only; title and body stay neutral. The narrow screen stacks the three
+// cards full-width (the web grid collapses the same way at phone widths).
+// Mirrored on web (aurora/today.tsx ChooserCard).
+function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
+  const { scheme } = useTheme();
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: `${color}14` }}>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{sub}</Text>
-      </View>
-      <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{badge}</Text>
-      </View>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 16, overflow: "hidden" }}>
+      {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
+      <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+      <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: 18 }}>{sub}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: txt(C, accent), marginTop: 14 }}>{cta} →</Text>
     </Pressable>
   );
 }
