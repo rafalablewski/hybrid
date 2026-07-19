@@ -1,11 +1,7 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
+import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  MOVEMENTS,
-  inferBlockKind,
-  olympicSportsByCategory,
-  exercisesByCategory,
   sportDistanceUnit,
   displaySportDistance,
   parseSportDistance,
@@ -31,7 +27,6 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
-import { useExercises } from "../../lib/queries";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
@@ -43,6 +38,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import ExercisePickerSheet from "./exercise-picker";
 import { setLoggerPref } from "../../lib/logger-prefs";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -72,17 +68,11 @@ export default function AuroraBuilder() {
   const isFree = !isFullAccess(persona);
   const b = useRoutineBuilder();
   const allowedSave = canSaveRoutine(persona, b.routines.length);
-  const { catalog, aliases, categoryByName } = useExercises();
   const [picker, setPicker] = useState(false);
-  const [query, setQuery] = useState("");
-
-  const q = query.trim().toLowerCase();
-  const exact = Object.keys(MOVEMENTS).some((n) => n.toLowerCase() === q);
 
   const add = (name: string, kind?: BlockKind) => {
     b.addExercise(name, kind);
     setPicker(false);
-    setQuery("");
   };
 
   return (
@@ -126,69 +116,13 @@ export default function AuroraBuilder() {
         <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>{t("w.train.builder.addExercise")}</Text>
       </Pressable>
 
-      {/* Searchable exercise picker — grouped by muscle/pattern, like the sport picker. */}
-      <Modal visible={picker} transparent animationType="slide" onRequestClose={() => { setPicker(false); setQuery(""); }}>
-        <Pressable onPress={() => { setPicker(false); setQuery(""); }} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-          <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.builder.pickExercise")}</Text>
-              <Pressable onPress={() => { setPicker(false); setQuery(""); }} hitSlop={10}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
-              </Pressable>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
-              <AuroraIcon name="search" size={18} color={C.ash} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t("w.train.builder.searchCustomPh")}
-                placeholderTextColor={C.ash}
-                autoFocus
-                onSubmitEditing={() => query.trim() && add(query)}
-                style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
-              />
-            </View>
-            <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
-              {exercisesByCategory(MOVEMENTS, catalog, categoryByName)
-                .map((g) => ({ ...g, names: g.names.filter((n) => (!q || n.toLowerCase().includes(q)) && !aliases.has(n)) }))
-                .filter((g) => g.names.length > 0)
-                .map((g) => (
-                  <View key={g.category}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{g.labelKey ? t(g.labelKey) : g.label ?? g.category}</Text>
-                    {g.names.map((n) => {
-                      const c = kindColor(inferBlockKind(n), C);
-                      return (
-                        <Pressable key={n} onPress={() => add(n, inferBlockKind(n))} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-                          <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} /></View>
-                          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{n}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ))}
-              {olympicSportsByCategory()
-                .map((g) => ({ category: g.category, sports: g.sports.filter((s) => !q || s.name.toLowerCase().includes(q)) }))
-                .filter((g) => g.sports.length > 0)
-                .map((g) => (
-                  <View key={g.category}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{g.category}</Text>
-                    {g.sports.map((s) => (
-                      <Pressable key={s.name} onPress={() => add(s.name, "cardio")} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-                        <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{s.icon}</Text>
-                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                ))}
-              {q.length > 0 && !exact && (
-                <Pressable onPress={() => add(query)} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{query.trim()}”</Text>
-                </Pressable>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Searchable exercise picker — the shared Rooms/A–Z sheet. */}
+      <ExercisePickerSheet
+        visible={picker}
+        onClose={() => setPicker(false)}
+        onPick={(name, kind) => add(name, kind)}
+        title={t("w.train.builder.pickExercise")}
+      />
 
       {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 14 }}>{b.msg.text}</Text>}
 

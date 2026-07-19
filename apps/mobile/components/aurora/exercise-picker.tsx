@@ -1,0 +1,265 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
+import {
+  MOVEMENTS,
+  exercisesByCategory,
+  olympicSportsByCategory,
+  inferBlockKind,
+  exerciseProfile,
+  type BlockKind,
+} from "@hybrid/core";
+import { useExercises } from "../../lib/queries";
+import { useLang } from "../../lib/i18n";
+import { useTheme, txt } from "../../lib/theme";
+import { fs, space, F } from "../../lib/ui";
+import { RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
+
+type Palette = ReturnType<typeof useTheme>["palette"];
+type Entry = { name: string; kind: BlockKind; icon?: string };
+
+const kindColor = (k: BlockKind, C: Palette) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
+const initials = (name: string) =>
+  name.split(/[\s-]+/).filter(Boolean).map((w) => w[0]!).join("").slice(0, 2).toUpperCase();
+
+/** The lift's SHAPE, read from the exercise DB — shown as the row's right-side
+ *  mono hint so an athlete knows what the set grid will ask for before adding. */
+function shapeHint(e: Entry): string {
+  if (e.kind !== "strength") return "";
+  const sp = exerciseProfile(e.name).strength;
+  if (!sp) return "";
+  if (sp.measure === "time") return "secs";
+  if (sp.measure === "distance") return "m";
+  if (sp.loadMode === "bodyweight") return "BW";
+  if (sp.loadMode === "bodyweight-plus") return "BW+";
+  if (sp.loadMode === "assisted") return "assist";
+  return "";
+}
+
+/**
+ * The ONE exercise picker sheet (Builder + live logger) — "Rooms, then Things"
+ * with an A–Z index, a view the athlete can switch:
+ *  - GROUPS (default): a grid of pattern/muscle "rooms" (each a tile with the
+ *    room's initials, name and movement count); tapping a room shows just its
+ *    movements. Two taps, never a 200-item scroll.
+ *  - A–Z: the typeset index — every movement under display-face letter heads,
+ *    with a right-edge letter rail for one-thumb jumps.
+ * Rows share the More → Exercises anatomy (40px initials tile tinted by
+ * modality, sports keep their glyph; shape hints on the right) — the old
+ * 8px-dot list and mono-uppercase category kickers are retired. Search cuts
+ * across every room; an unknown name is always offered as a custom add.
+ * Twin of the web workout-blocks ExercisePicker.
+ */
+export default function ExercisePickerSheet({ visible, onClose, onPick, title, recent }: {
+  visible: boolean;
+  onClose: () => void;
+  onPick: (name: string, kind: BlockKind) => void;
+  title: string;
+  /** Optional "Your lifts" shortcuts (the live logger's recent movements). */
+  recent?: Entry[];
+}) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const { catalog, aliases, categoryByName } = useExercises();
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<"groups" | "az">("groups");
+  const [room, setRoom] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const letterY = useRef<Record<string, number>>({});
+
+  // A fresh open always lands on the rooms grid with a clean query.
+  useEffect(() => {
+    if (visible) { setQuery(""); setRoom(null); }
+  }, [visible]);
+
+  const rooms = useMemo(() => {
+    const ex = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
+      .map((g) => ({ ...g, names: g.names.filter((n) => !aliases.has(n)) }))
+      .filter((g) => g.names.length > 0)
+      .map((g) => ({
+        key: g.category,
+        label: g.labelKey ? t(g.labelKey) : g.label ?? g.category,
+        entries: g.names.map((n): Entry => ({ name: n, kind: inferBlockKind(n) })),
+        icon: undefined as string | undefined,
+      }));
+    const sports = olympicSportsByCategory().map((g) => ({
+      key: `sport:${g.category}`,
+      label: g.category,
+      entries: g.sports.map((s): Entry => ({ name: s.name, kind: "cardio", icon: s.icon })),
+      icon: g.sports[0]?.icon,
+    }));
+    return [...ex, ...sports];
+  }, [catalog, categoryByName, aliases, t]);
+
+  const all = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Entry[] = [];
+    for (const r of rooms) for (const e of r.entries) if (!seen.has(e.name)) { seen.add(e.name); out.push(e); }
+    return out;
+  }, [rooms]);
+
+  const q = query.trim().toLowerCase();
+  const exact = all.some((e) => e.name.toLowerCase() === q) || (recent ?? []).some((e) => e.name.toLowerCase() === q);
+  const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : [];
+  const az = useMemo(() => {
+    const sorted = [...all].sort((a, b) => a.name.localeCompare(b.name));
+    const letters: { letter: string; entries: Entry[] }[] = [];
+    for (const e of sorted) {
+      const L = e.name[0]!.toUpperCase();
+      if (letters[letters.length - 1]?.letter !== L) letters.push({ letter: L, entries: [] });
+      letters[letters.length - 1]!.entries.push(e);
+    }
+    return letters;
+  }, [all]);
+
+  const pick = (e: Entry) => onPick(e.name, e.kind);
+  const close = () => { setQuery(""); setRoom(null); onClose(); };
+
+  const Row = ({ e, last }: { e: Entry; last: boolean }) => {
+    const c = kindColor(e.kind, C);
+    const hint = shapeHint(e);
+    return (
+      <Pressable onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          {e.icon
+            ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
+            : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+        </View>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+      </Pressable>
+    );
+  };
+  const Slab = ({ entries }: { entries: Entry[] }) => (
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 3 }}>
+      {entries.map((e, i) => <Row key={e.name} e={e} last={i === entries.length - 1} />)}
+    </View>
+  );
+  const Head = ({ label, count }: { label: string; count: number }) => (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 18, marginBottom: 10, marginHorizontal: 2 }}>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>{count}</Text>
+    </View>
+  );
+  const customAdd = q.length > 0 && !exact && (
+    <Pressable onPress={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{query.trim()}”</Text>
+    </Pressable>
+  );
+  const roomData = room ? rooms.find((r) => r.key === room) : null;
+  const letters = az.map((s) => s.letter);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+      <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
+        <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
+            <Pressable onPress={close} hitSlop={10}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
+            <AuroraIcon name="search" size={18} color={C.ash} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t("w.train.builder.searchCustomPh")}
+              placeholderTextColor={C.ash}
+              onSubmitEditing={() => query.trim() && onPick(query.trim(), inferBlockKind(query.trim()))}
+              style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
+            />
+          </View>
+
+          {/* VIEW TOGGLE — Groups (rooms drill-down) ⇄ A–Z (the typeset index).
+              Hidden while searching: results are one flat list either way. */}
+          {!q && (
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+              {([
+                { id: "groups" as const, label: t("w.analyze.ex.sortGroups") },
+                { id: "az" as const, label: t("w.analyze.ex.sortAz") },
+              ]).map((p) => {
+                const on = view === p.id;
+                return (
+                  <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
+                    style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={{ flex: 1, marginTop: 4 }}>
+            <ScrollView ref={scrollRef} style={{ flex: 1 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 4, paddingBottom: 28, paddingRight: view === "az" && !q ? 18 : 0 }}>
+              {q ? (
+                /* SEARCH — one flat list across every room, then custom add. */
+                <>
+                  {results.length > 0 && <View style={{ marginTop: 10 }}><Slab entries={results} /></View>}
+                  {customAdd}
+                </>
+              ) : view === "az" ? (
+                /* A–Z — display-face letter heads; offsets feed the rail. */
+                az.map((sec) => (
+                  <View key={sec.letter} onLayout={(ev) => { letterY.current[sec.letter] = ev.nativeEvent.layout.y; }}>
+                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
+                    <Slab entries={sec.entries} />
+                  </View>
+                ))
+              ) : roomData ? (
+                /* ONE ROOM — crumb back + the room's movements only. */
+                <>
+                  <Pressable onPress={() => setRoom(null)} hitSlop={8} style={{ marginTop: 10, marginBottom: 2 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("w.train.picker.all")}</Text>
+                  </Pressable>
+                  <Head label={roomData.label} count={roomData.entries.length} />
+                  <Slab entries={roomData.entries} />
+                </>
+              ) : (
+                /* ROOMS — your lifts first (logger), then the pattern grid. */
+                <>
+                  {(recent?.length ?? 0) > 0 && (
+                    <>
+                      <Head label={t("workout.yourLifts")} count={Math.min(recent!.length, 8)} />
+                      <Slab entries={recent!.slice(0, 8)} />
+                    </>
+                  )}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+                    {rooms.map((r) => {
+                      const c = kindColor(r.entries[0]!.kind, C);
+                      return (
+                        <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
+                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 }}>
+                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                            {r.icon
+                              ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
+                              : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                          </View>
+                          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.8, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            {/* A–Z letter rail — one-thumb jumps via the captured offsets. */}
+            {view === "az" && !q && (
+              <View pointerEvents="box-none" style={{ position: "absolute", right: -6, top: 0, bottom: 0, justifyContent: "center" }}>
+                <View style={{ gap: 1 }}>
+                  {letters.map((L) => (
+                    <Pressable key={L} onPress={() => scrollRef.current?.scrollTo({ y: letterY.current[L] ?? 0, animated: true })} hitSlop={{ left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={L}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}

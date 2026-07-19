@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, FlatList, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -21,7 +21,6 @@ import {
   exerciseHistory,
   inferBlockKind,
   migrateBlocks,
-  olympicSportsByCategory,
   exerciseProfile,
   timedSportOnly,
   sportDistanceUnit,
@@ -53,14 +52,12 @@ import {
   type SetRole,
   RPE_SCALE,
   RPE_INTRO,
-  MOVEMENTS,
   volumeByMuscle,
   sessionFunFact,
   funFactText,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   type StoryStyleId,
-  exercisesByCategory,
   FUNNEL,
   canSaveRoutine,
   isFullAccess,
@@ -76,7 +73,8 @@ import {
   type ExerciseUse,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
-import { useRevalidate, useExercises } from "../lib/queries";
+import { useRevalidate } from "../lib/queries";
+import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
@@ -210,7 +208,6 @@ export default function Workout() {
   const { t } = useLang();
   const { session, ready } = useSession();
   const revalidate = useRevalidate();
-  const { catalog, aliases, categoryByName } = useExercises();
   const guest = !session;
   // AI-prescribed sessions are a premium (paid) feature. A casual/free user or a
   // guest can't generate one — they're funnelled instead: guests to register,
@@ -236,7 +233,6 @@ export default function Workout() {
   const [specialUid, setSpecialUid] = useState<string | null>(null);
   const [exercises, setExercises] = useState<WExercise[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [custom, setCustom] = useState("");
   const [phase, setPhase] = useState<"active" | "done">("active");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -250,44 +246,8 @@ export default function Workout() {
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
 
-  // Exercise-picker rows, flattened + memoized so the whole movement catalog
-  // isn't rebuilt and re-rendered on every keystroke. Rendered by a FlatList
-  // (below) so only the visible rows mount. Header/subheader labels carry their
-  // raw key and are translated at render time, keeping this memo independent of
-  // `t` (which changes identity per render).
-  type PickItem =
-    | { t: "header"; key: string; tKey?: string; raw?: string }
-    | { t: "subheader"; key: string; raw: string }
-    | { t: "row"; key: string; name: string; kind: WKind; icon?: string };
-  const picker = useMemo(() => {
-    const q = custom.trim().toLowerCase();
-    const match = (n: string) => !q || n.toLowerCase().includes(q);
-    const recentNames = new Set(recent.map((r) => r.name));
-    const recentShown = recent.filter((r) => match(r.name)).slice(0, 12);
-    const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
-      .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n) && !aliases.has(n)) }))
-      .filter((g) => g.names.length > 0);
-    const sportGroups = olympicSportsByCategory()
-      .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
-      .filter((g) => g.sports.length > 0);
-    const exact = [...recentNames, ...catalog].some((n) => n.toLowerCase() === q);
-
-    const items: PickItem[] = [];
-    if (recentShown.length > 0) {
-      items.push({ t: "header", key: "h-recent", tKey: "workout.yourLifts" });
-      for (const r of recentShown) items.push({ t: "row", key: `r-${r.name}`, name: r.name, kind: r.kind });
-    }
-    for (const g of exGroups) {
-      items.push({ t: "header", key: `h-${g.category}`, tKey: g.labelKey, raw: g.label ?? g.category });
-      for (const n of g.names) items.push({ t: "row", key: `e-${n}`, name: n, kind: inferBlockKind(n) });
-    }
-    if (sportGroups.length > 0) items.push({ t: "header", key: "h-sports", tKey: "workout.sports" });
-    for (const g of sportGroups) {
-      items.push({ t: "subheader", key: `sh-${g.category}`, raw: g.category });
-      for (const s of g.sports) items.push({ t: "row", key: `s-${s.name}`, name: s.name, kind: "cardio", icon: s.icon });
-    }
-    return { items, q, exact };
-  }, [custom, recent, catalog, categoryByName, aliases]);
+  // Exercise picking is the shared ExercisePickerSheet (aurora/exercise-picker)
+  // — Rooms/A–Z views, unified rows; the logger only feeds it `recent`.
   // Saved routines for the empty-state quick-load (parity with the web logger,
   // which offers AI-prescribe + your routines right on the logging screen).
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -562,7 +522,6 @@ export default function Workout() {
     if (!clean) return;
     setExercises((xs) => [...xs, newExercise(clean, kind)]);
     setPickerOpen(false);
-    setCustom("");
   };
   const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
   const moveExercise = (u: string, dir: -1 | 1) =>
@@ -1300,68 +1259,15 @@ export default function Workout() {
           </View>
         )}
 
-        {/* Searchable exercise picker — grouped by muscle/pattern, mirroring the
-            sport picker. Recent lifts first, then categories, then sports, then a
-            "+ custom" row for a free-typed name. */}
-        <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => { setPickerOpen(false); setCustom(""); }}>
-          <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-            <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("workout.pickExercise")}</Text>
-                <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} hitSlop={10}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.close")}</Text>
-                </Pressable>
-              </View>
-              {/* Search row — the canonical icon + TextInput pill (matches the sport picker). */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
-                <AuroraIcon name="search" size={18} color={C.ash} />
-                <TextInput
-                  value={custom}
-                  onChangeText={setCustom}
-                  placeholder={t("workout.search")}
-                  placeholderTextColor={C.ash}
-                  autoFocus
-                  onSubmitEditing={() => addExercise(custom)}
-                  style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
-                />
-              </View>
-              <FlatList
-                style={{ flex: 1, marginTop: 6 }}
-                data={picker.items}
-                keyExtractor={(it) => it.key}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}
-                initialNumToRender={16}
-                windowSize={11}
-                removeClippedSubviews
-                renderItem={({ item }) => {
-                  if (item.t === "header")
-                    return <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{item.tKey ? t(item.tKey) : item.raw ?? ""}</Text>;
-                  if (item.t === "subheader")
-                    return <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8, marginBottom: 2 }}>{item.raw}</Text>;
-                  const dot = item.kind === "strength" ? C.lime : item.kind === "cardio" ? C.blue : C.violet;
-                  return (
-                    <Pressable onPress={() => addExercise(item.name, item.kind)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-                      {item.icon
-                        ? <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{item.icon}</Text>
-                        : <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} /></View>}
-                      <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{item.name}</Text>
-                    </Pressable>
-                  );
-                }}
-                ListFooterComponent={
-                  picker.q.length > 0 && !picker.exact ? (
-                    <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 16, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{custom.trim()}”</Text>
-                    </Pressable>
-                  ) : null
-                }
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
+        {/* Searchable exercise picker — the shared Rooms/A–Z sheet, with the
+            logger's recent lifts surfaced as "Your lifts" shortcuts. */}
+        <ExercisePickerSheet
+          visible={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onPick={(name, kind) => addExercise(name, kind)}
+          title={t("workout.pickExercise")}
+          recent={recent.map((r) => ({ name: r.name, kind: r.kind }))}
+        />
 
         {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono></View>}
 

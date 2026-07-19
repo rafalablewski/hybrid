@@ -761,44 +761,96 @@ export default function WorkoutBlocks({
   );
 }
 
+/** The lift's SHAPE, read from the exercise DB — the row's right-side mono hint
+ *  so an athlete knows what the set grid will ask for before adding. */
+function shapeHint(name: string, kind: SessionBlock["kind"]): string {
+  if (kind !== "strength") return "";
+  const sp = exerciseProfile(name).strength;
+  if (!sp) return "";
+  if (sp.measure === "time") return "secs";
+  if (sp.measure === "distance") return "m";
+  if (sp.loadMode === "bodyweight") return "BW";
+  if (sp.loadMode === "bodyweight-plus") return "BW+";
+  if (sp.loadMode === "assisted") return "assist";
+  return "";
+}
+
 /**
- * Searchable exercise picker — the dimmed, centered modal twin of the sport
- * picker in "Log a sport session". Exercises grouped by muscle/pattern (sticky
- * headers), then sports, then a free-typed custom entry. Replaces the old wall
- * of chips so adding a movement reads the same as picking a sport.
+ * The exercise picker — "Rooms, then Things" with an A–Z index, a view the
+ * athlete can switch: GROUPS (default) shows a grid of pattern/muscle "rooms"
+ * (tile + name + movement count; tap a room for just its movements — two taps,
+ * never a 200-item scroll), A–Z is the typeset index (display-face letter
+ * heads + a right-edge letter rail). Rows share the Exercises-page anatomy —
+ * an initials tile tinted by modality (sports keep their glyph) with shape
+ * hints on the right; the old 8px-dot list and mono-uppercase category
+ * kickers are retired. Search cuts across every room; an unknown name is
+ * always offered as a custom add. Twin of the mobile ExercisePickerSheet.
  */
 function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: { catalog: string[]; aliases: Set<string>; categoryByName: Record<string, string>; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
   const { t } = useLang();
   const dialogRef = useDialog<HTMLDivElement>(onClose);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"groups" | "az">("groups");
+  const [room, setRoom] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
-  const match = (n: string) => !q || n.toLowerCase().includes(q);
   const kindColor = (k: SessionBlock["kind"]) => (k === "strength" ? LIME : k === "cardio" ? BLUE : VIOLET);
+  const initials = (name: string) => name.split(/[\s-]+/).filter(Boolean).map((w) => w[0]!).join("").slice(0, 2).toUpperCase();
 
   // Library exercises group under their muscle-group heading (categoryByName);
-  // built-ins fall into their pattern bucket. Aliased names are dropped so a
-  // built-in the library supersedes (e.g. "Bench Press" behind "Barbell Bench
-  // Press") never shows twice.
-  const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
-    .map((g) => ({ ...g, names: g.names.filter((n) => match(n) && !aliases.has(n)) }))
-    .filter((g) => g.names.length > 0);
-  const sportGroups = olympicSportsByCategory()
-    .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
-    .filter((g) => g.sports.length > 0);
-  const exact = [...Object.keys(MOVEMENTS), ...catalog].some((n) => n.toLowerCase() === q);
+  // aliased names are dropped so a superseded built-in never shows twice.
+  type Entry = { name: string; kind: SessionBlock["kind"]; icon?: string };
+  const rooms: { key: string; label: string; icon?: string; entries: Entry[] }[] = [
+    ...exercisesByCategory(MOVEMENTS, catalog, categoryByName)
+      .map((g) => ({ ...g, names: g.names.filter((n) => !aliases.has(n)) }))
+      .filter((g) => g.names.length > 0)
+      .map((g) => ({ key: g.category, label: g.labelKey ? t(g.labelKey) : g.label ?? g.category, entries: g.names.map((n): Entry => ({ name: n, kind: inferBlockKind(n) })) })),
+    ...olympicSportsByCategory().map((g) => ({ key: `sport:${g.category}`, label: g.category, icon: g.sports[0]?.icon, entries: g.sports.map((s): Entry => ({ name: s.name, kind: "cardio" as const, icon: s.icon })) })),
+  ];
+  const seen = new Set<string>();
+  const all: Entry[] = [];
+  for (const r of rooms) for (const e of r.entries) if (!seen.has(e.name)) { seen.add(e.name); all.push(e); }
+  const exact = all.some((e) => e.name.toLowerCase() === q);
+  const results = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : [];
+  const az: { letter: string; entries: Entry[] }[] = [];
+  for (const e of [...all].sort((a, b) => a.name.localeCompare(b.name))) {
+    const L = e.name[0]!.toUpperCase();
+    if (az[az.length - 1]?.letter !== L) az.push({ letter: L, entries: [] });
+    az[az.length - 1]!.entries.push(e);
+  }
+  const roomData = room ? rooms.find((r) => r.key === room) : null;
 
-  const head = (label: string) => (
-    <div style={{ position: "sticky", top: 0, background: INK2, padding: "9px 15px 4px", ...mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase", color: ASH }}>{label}</div>
+  const tile = (e: { icon?: string; name: string; kind: SessionBlock["kind"] }, label?: string) => (
+    <span style={{ width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
+      {e.icon
+        ? <span style={{ fontSize: 16 }}>{e.icon}</span>
+        : <span style={{ ...mono, fontWeight: 700, fontSize: 11.5, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
+    </span>
   );
-  const row = (name: string, kind: SessionBlock["kind"], key: string, icon?: string) => (
-    <button
-      key={key}
-      type="button"
-      onClick={() => onPick(name, kind)}
-      style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: "transparent", color: CHALK }}
-    >
-      {icon ? <span style={{ width: 20, textAlign: "center", fontSize: fs.bodyLg }}>{icon}</span> : <span style={{ width: 20, display: "grid", placeItems: "center" }}><span style={{ width: 8, height: 8, borderRadius: 4, background: kindColor(kind) }} /></span>}
-      <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body }}>{name}</span>
+  const row = (e: Entry, last: boolean) => {
+    const hint = shapeHint(e.name, e.kind);
+    return (
+      <button key={e.name} type="button" onClick={() => onPick(e.name, e.kind)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "8px 0", cursor: "pointer", textAlign: "left", border: 0, borderBottom: last ? "none" : `1px solid ${LINE}`, background: "transparent", color: CHALK }}>
+        {tile(e)}
+        <span style={{ ...disp, flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
+        {!!hint && <span style={{ ...mono, fontSize: 9, letterSpacing: ".07em", textTransform: "uppercase", color: ASH, flex: "none" }}>{hint}</span>}
+      </button>
+    );
+  };
+  const slab = (entries: Entry[]) => (
+    <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "2px 13px" }}>
+      {entries.map((e, i) => row(e, i === entries.length - 1))}
+    </div>
+  );
+  // Explore-standard section head — bold display title, mono count at the baseline.
+  const head = (label: string, count: number) => (
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "16px 2px 9px" }}>
+      <span style={{ ...disp, fontWeight: 800, fontSize: 16, color: CHALK }}>{label}</span>
+      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".1em", color: ASH }}>{count}</span>
+    </div>
+  );
+  const customAdd = q.length > 0 && !exact && (
+    <button type="button" onClick={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ ...disp, display: "block", width: "100%", marginTop: 14, textAlign: "center", fontWeight: 800, fontSize: fs.body, background: LIME, color: "var(--on-accent)", border: 0, borderRadius: 999, padding: "12px", cursor: "pointer" }}>
+      + “{query.trim()}”
     </button>
   );
 
@@ -811,32 +863,79 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
         tabIndex={-1}
         aria-label={t("w.home.quickSport.choose")}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", overflow: "hidden" }}
+        style={{ width: "100%", maxWidth: 460, height: "78vh", display: "flex", flexDirection: "column", background: "var(--color-ink)", border: `1px solid ${LINE}`, borderRadius: 20, boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", overflow: "hidden" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", borderBottom: `1px solid ${LINE}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", borderBottom: `1px solid ${LINE}`, flex: "none" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ASH} strokeWidth="2" strokeLinecap="round" aria-hidden>
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
           </svg>
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.train.blocks.searchExercise")} style={{ ...disp, flex: 1, minWidth: 0, background: "none", border: 0, outline: "none", color: CHALK, fontSize: fs.body }} />
           <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
         </div>
-        <div style={{ overflowY: "auto", flex: 1 }}>
-          {exGroups.map((g) => (
-            <div key={g.category}>
-              {head(g.labelKey ? t(g.labelKey) : g.label ?? g.category)}
-              {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
+
+        {/* VIEW TOGGLE — Groups (rooms drill-down) ⇄ A–Z (the typeset index).
+            Hidden while searching: results are one flat list either way. */}
+        {!q && (
+          <div style={{ display: "flex", gap: 8, padding: "12px 15px 0", flex: "none" }}>
+            {([{ id: "groups" as const, label: t("w.analyze.ex.sortGroups") }, { id: "az" as const, label: t("w.analyze.ex.sortAz") }]).map((p) => {
+              const on = view === p.id;
+              return (
+                <button key={p.id} type="button" onClick={() => { setView(p.id); setRoom(null); }} aria-pressed={on}
+                  style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 400, color: on ? "var(--on-accent)" : ASH, background: on ? LIME : "transparent", border: `1px solid ${on ? LIME : LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+          <div style={{ overflowY: "auto", height: "100%", padding: `4px ${view === "az" && !q ? 30 : 15}px 20px 15px` }}>
+            {q ? (
+              /* SEARCH — one flat list across every room, then custom add. */
+              <>
+                {results.length > 0 && <div style={{ marginTop: 10 }}>{slab(results)}</div>}
+                {customAdd}
+              </>
+            ) : view === "az" ? (
+              /* A–Z — display-face letter heads; ids feed the rail. */
+              az.map((sec) => (
+                <div key={sec.letter} id={`xpk-${sec.letter}`}>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: ASH, margin: "14px 2px 6px" }}>{sec.letter}</div>
+                  {slab(sec.entries)}
+                </div>
+              ))
+            ) : roomData ? (
+              /* ONE ROOM — crumb back + the room's movements only. */
+              <>
+                <button type="button" onClick={() => setRoom(null)} style={{ ...mono, fontSize: fs.caption, color: ASH, background: "none", border: 0, cursor: "pointer", padding: 0, margin: "10px 2px 0" }}>← {t("w.train.picker.all")}</button>
+                {head(roomData.label, roomData.entries.length)}
+                {slab(roomData.entries)}
+              </>
+            ) : (
+              /* ROOMS — the pattern grid; two taps, never a giant scroll. */
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+                {rooms.map((r) => (
+                  <button key={r.key} type="button" onClick={() => setRoom(r.key)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 9, background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "13px 13px", cursor: "pointer", color: CHALK, textAlign: "left" }}>
+                    {tile({ icon: r.icon, name: r.label, kind: r.entries[0]!.kind }, r.label)}
+                    <span style={{ ...disp, fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{r.label}</span>
+                    <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: ASH }}>{r.entries.length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* A–Z letter rail — one-thumb jumps via anchor ids. */}
+          {view === "az" && !q && (
+            <div style={{ position: "absolute", right: 4, top: 0, bottom: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 1 }}>
+              {az.map((sec) => (
+                <button key={sec.letter} type="button" aria-label={sec.letter} onClick={() => document.getElementById(`xpk-${sec.letter}`)?.scrollIntoView({ block: "start", behavior: "smooth" })}
+                  style={{ ...mono, fontSize: 9, color: ASH, background: "none", border: 0, cursor: "pointer", padding: "0 4px", textAlign: "center" }}>
+                  {sec.letter}
+                </button>
+              ))}
             </div>
-          ))}
-          {sportGroups.map((g) => (
-            <div key={g.category}>
-              {head(g.category)}
-              {g.sports.map((s) => row(s.name, "cardio", `s-${s.name}`, s.icon))}
-            </div>
-          ))}
-          {q.length > 0 && !exact && (
-            <button type="button" onClick={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ width: "100%", textAlign: "left", border: 0, background: "transparent", cursor: "pointer", padding: "12px 15px", ...disp, fontWeight: 700, fontSize: fs.body, color: txt(LIME) }}>
-              + “{query.trim()}”
-            </button>
           )}
         </div>
       </div>
