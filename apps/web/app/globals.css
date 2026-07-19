@@ -74,6 +74,14 @@ html {
   opacity: 1;
 }
 
+/* Set-editor ghosts (workout-blocks): a SUGGESTED value ("100", "8") must never
+   read as entered data — dimmer + italic, unlike the AA instructional
+   placeholders above. Real entered values render upright at full chalk. */
+.ghost-ph::placeholder {
+  color: color-mix(in srgb, var(--color-ash) 55%, transparent);
+  font-style: italic;
+}
+
 /* Visible keyboard-focus ring. ~40 inputs/buttons set `outline:none` inline, so
    this needs `!important` to win over the inline style — :focus-visible keeps it
    keyboard-only (mouse/touch clicks don't get the ring). */

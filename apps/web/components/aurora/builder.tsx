@@ -5,6 +5,7 @@ import { fs, space, canSaveRoutine, isFullAccess, FREE_TEMPLATE_LIMIT, FUNNEL, s
 
 import type { SessionBlock, WeightUnit } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
+import { MetaLine } from "./meta";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 import { useBodyweight } from "@/lib/use-bodyweight";
@@ -141,39 +142,39 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
 }
 
 /**
- * The session pulse — the signal board's live summary strip. Every value is
- * derived (core sessionSignal) from the blocks being edited: estimated
- * duration, working tonnage, block count, and the strength ⇄ conditioning ⇄
- * endurance time balance. Modality is encoded in the bar segments' colours
- * (lime / violet / teal) — information, not decoration; no accent rails.
+ * The session pulse — "One Number": the routine's estimated duration IS the
+ * interface, a single display-weight live readout that visibly grows with
+ * every exercise added (composing feels like loading a bar, not filling a
+ * form). Tonnage + moves ride along as one hairline meta; the strength ⇄
+ * conditioning ⇄ endurance balance is a thin bar whose segment colours encode
+ * modality (lime / violet / teal — information, not decoration), labelled
+ * only for the modalities actually present. Replaces the old three stat
+ * tiles + balance card (four boxes saying what one number can).
  */
 function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]; units: WeightUnit; bodyweightKg?: number | null }) {
   const { t: tr } = useLang();
   const sig = sessionSignal(blocks, { bodyweightKg });
-  const tonnage = sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : "—";
-  const cellStyle = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "9px 12px" } as const;
-  const label = { fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), display: "block", marginBottom: 3 } as const;
-  const value = { fontFamily: "var(--font-mono)", fontSize: fs.subtitle, fontWeight: 700, color: C("chalk"), fontVariantNumeric: "tabular-nums" } as const;
   const segs = [
-    { pct: sig.split.strength, color: C("lime"), text: `${sig.split.strength}% ${tr("w.train.signal.str")}`, textColor: "var(--lime-text)" },
-    { pct: sig.split.conditioning, color: C("violet"), text: `${sig.split.conditioning}% ${tr("w.train.signal.cond")}`, textColor: "var(--violet-text)" },
-    { pct: sig.split.endurance, color: C("blue"), text: `${sig.split.endurance}% ${tr("w.train.signal.end")}`, textColor: "var(--blue-text)" },
+    { pct: sig.split.strength, color: C("lime"), label: tr("w.train.signal.str"), textColor: "var(--lime-text)" },
+    { pct: sig.split.conditioning, color: C("violet"), label: tr("w.train.signal.cond"), textColor: "var(--violet-text)" },
+    { pct: sig.split.endurance, color: C("blue"), label: tr("w.train.signal.end"), textColor: "var(--blue-text)" },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-      <div style={cellStyle}><span style={label}>{tr("w.train.signal.estTime")}</span><span style={value}>{sig.minutes} min</span></div>
-      <div style={cellStyle}><span style={label}>{tr("w.train.signal.tonnage")}</span><span style={value}>{tonnage}</span></div>
-      <div style={cellStyle}><span style={label}>{tr("w.train.signal.moves")}</span><span style={value}>{sig.moves}</span></div>
-      <div style={{ ...cellStyle, gridColumn: "1 / -1" }}>
-        <span style={label}>{tr("w.train.signal.balance")}</span>
-        <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: C("ink"), margin: "6px 0 5px" }}>
-          {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.color }} />)}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          {segs.map((s, i) => (
-            <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: s.textColor }}>{s.text}</span>
-          ))}
-        </div>
+    <div style={{ margin: "10px 2px 20px" }}>
+      <div aria-label={`${sig.minutes} ${tr("w.train.signal.estTime")}`} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 56, letterSpacing: "-.04em", lineHeight: 1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+        {sig.minutes}<span style={{ fontSize: 22, fontWeight: 500, color: C("ash"), letterSpacing: 0 }}> min</span>
+      </div>
+      <MetaLine
+        parts={[sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : null, `${sig.moves} ${tr("w.train.signal.moves")}`]}
+        style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10 }}
+      />
+      <div style={{ display: "flex", height: 4, borderRadius: 999, overflow: "hidden", background: C("ink2"), marginTop: 12 }}>
+        {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.color }} />)}
+      </div>
+      <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+        {segs.filter((s) => s.pct > 0).map((s, i) => (
+          <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: s.textColor }}>{s.pct}% {s.label}</span>
+        ))}
       </div>
     </div>
   );

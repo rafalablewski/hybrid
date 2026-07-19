@@ -17,7 +17,6 @@ import {
   FUNNEL,
   sessionSignal,
   strengthBlockStats,
-  blockSignalSummary,
   estimateBlockMinutes,
   exerciseProfile,
   setType,
@@ -43,6 +42,8 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { MetaLine } from "./meta";
+import { setLoggerPref } from "../../lib/logger-prefs";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 
@@ -118,10 +119,11 @@ export default function AuroraBuilder() {
         />
       ))}
 
-      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 13 }}>
-        <AuroraIcon name="add" size={18} color={txt(C, C.lime)} />
-        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.train.builder.addExercise")}</Text>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>▾</Text>
+      {/* Ghost/dashed add affordance (the one-accent rule: lime stays reserved
+          for Save) — same vocabulary as the Also-Today ghost ＋ tile. */}
+      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: 16, paddingHorizontal: 13, paddingVertical: 13 }}>
+        <AuroraIcon name="add" size={18} color={C.ash} />
+        <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>{t("w.train.builder.addExercise")}</Text>
       </Pressable>
 
       {/* Searchable exercise picker — grouped by muscle/pattern, like the sport picker. */}
@@ -235,48 +237,50 @@ export default function AuroraBuilder() {
           ))}
         </ACard>
       )}
-      <View style={{ height: 24 }} />
+      {/* Clearance for the floating tab bar — without it the free-slots note
+          scrolls under the centre FAB (the occlusion the redesign fixes). */}
+      <View style={{ height: 110 }} />
     </AuroraScreen>
   );
 }
 
 /**
- * The session pulse — the signal board's live summary. Every value derives
- * from the blocks (core sessionSignal): est. duration, working tonnage, and
- * the strength ⇄ conditioning ⇄ endurance time balance. Modality is encoded
- * in the bar segments' colours — no accent rails.
+ * The session pulse — "One Number": the routine's estimated duration IS the
+ * interface, a single display-weight live readout that visibly grows with
+ * every exercise added (composing feels like loading a bar, not filling a
+ * form). Tonnage + moves ride along as one hairline meta; the strength ⇄
+ * conditioning ⇄ endurance balance is a thin bar whose segment colours encode
+ * modality (lime / violet / teal — information, not decoration), labelled
+ * only for the modalities actually present. Replaces the old three stat
+ * tiles + balance card (four boxes saying what one number can). Twin of the
+ * web Builder hero.
  */
 function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[]; units: WeightUnit; C: Palette; bodyweightKg?: number | null }) {
   const { t } = useLang();
   const sig = sessionSignal(items, { bodyweightKg });
-  const cell = (label: string, value: string) => (
-    <View key={label} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 11, paddingVertical: 9 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 3 }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: C.chalk, fontVariant: ["tabular-nums"] }}>{value}</Text>
-    </View>
-  );
   const segs = [
     { pct: sig.split.strength, color: C.lime, label: t("w.train.signal.str") },
     { pct: sig.split.conditioning, color: C.violet, label: t("w.train.signal.cond") },
     { pct: sig.split.endurance, color: C.blue, label: t("w.train.signal.end") },
   ];
   return (
-    <View style={{ marginBottom: 12 }}>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        {cell(t("w.train.signal.estTime"), `${sig.minutes} min`)}
-        {cell(t("w.train.signal.tonnage"), sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : "—")}
-        {cell(t("w.train.signal.moves"), String(sig.moves))}
+    <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }} accessible accessibilityLabel={`${sig.minutes} min`}>
+      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+        {sig.minutes}<Text style={{ fontSize: 20, fontWeight: "500", color: C.ash, letterSpacing: 0 }}> min</Text>
+      </Text>
+      <View style={{ marginTop: 6 }}>
+        <MetaLine
+          parts={[sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : null, `${sig.moves} ${t("w.train.signal.moves")}`]}
+          textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}
+        />
       </View>
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 11, paddingVertical: 9, marginTop: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.train.signal.balance")}</Text>
-        <View style={{ flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", backgroundColor: C.ink, marginTop: 7, marginBottom: 5 }}>
-          {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          {segs.map((s, i) => (
-            <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, s.color) }}>{s.pct}% {s.label}</Text>
-          ))}
-        </View>
+      <View style={{ flexDirection: "row", height: 4, borderRadius: 99, overflow: "hidden", backgroundColor: C.ink2, marginTop: 12 }}>
+        {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
+      </View>
+      <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
+        {segs.filter((s) => s.pct > 0).map((s, i) => (
+          <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, s.color) }}>{s.pct}% {s.label}</Text>
+        ))}
       </View>
     </View>
   );
@@ -334,10 +338,9 @@ function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }
           onChangeText={(v) => builder.setField(b.uid, "name", v)}
           style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, padding: 0 }}
         />
-        {!open && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} numberOfLines={1}>{blockSignalSummary(b)}</Text>
-        )}
-        {open && (
+        {/* Reorder is always available (open OR collapsed) — hidden only when
+            there's nothing to reorder. */}
+        {count > 1 && (
           <>
             {iconBtn(() => builder.moveBlock(b.uid, -1), "↑", t("common.moveUp"), index === 0)}
             {iconBtn(() => builder.moveBlock(b.uid, 1), "↓", t("common.moveDown"), index === count - 1)}
@@ -349,7 +352,11 @@ function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }
         <Pressable onPress={() => builder.removeItem(b.uid)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>✕</Text></Pressable>
       </View>
 
-      {/* signal metric row — live projections of the fields below */}
+      {/* signal metric row — the COLLAPSED summary only: expanded, the editor
+          fields are the data and the One-Number hero above live-updates, so a
+          summary strip on top of both would say the same numbers a third time
+          (mirrors the web workout-blocks signal mode). */}
+      {!open && (
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
         {b.kind === "strength" ? (
           (() => {
@@ -386,6 +393,7 @@ function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }
           </>
         )}
       </View>
+      )}
 
       {/* editor body */}
       {open && b.kind === "strength" && (
@@ -434,7 +442,11 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
         <View style={{ width: 34 }}>{label(t("w.train.blocks.setCol"))}</View>
         {showLoad && <View style={{ flex: 1 }}>{label(`${t("w.train.blocks.load")} (${units})`)}</View>}
         <View style={{ flex: 1 }}>{label(repsLabel)}</View>
-        <View style={{ flex: 1 }}>{label(rirMode ? "RIR" : "RPE")}</View>
+        {/* The column header is the RPE ⇄ RIR mode switch — persists as the
+            device-wide logger pref (parity with the web workout-blocks). */}
+        <Pressable style={{ flex: 1 }} onPress={() => setLoggerPref("rpeAsRir", !rirMode)} accessibilityRole="button" accessibilityLabel={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
+          {label(`${rirMode ? "RIR" : "RPE"} ⇄`)}
+        </Pressable>
         <View style={{ width: 28 }} />
       </View>
       {b.sets.map((s, i) => {
@@ -451,19 +463,21 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
             </Pressable>
             {showLoad && (
-              <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
+              <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
             )}
-            <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
-            <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={C.ash} style={[field, { flex: 1 }]} />
+            <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+            <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
             <Pressable onPress={() => builder.removeSet(b.uid, i)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t("common.delete")} style={{ width: 28, height: 38, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>−</Text>
             </Pressable>
           </View>
         );
       })}
+      {/* Ghost/dashed add affordance — the screen's single lime fill belongs
+          to the primary Save action, not a repeated per-card control. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 6 }}>
-        <Pressable onPress={() => builder.addSet(b.uid)} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 9 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>{t("w.train.blocks.addSet")}</Text>
+        <Pressable onPress={() => builder.addSet(b.uid)} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
       </View>
       {/* planned rest between working sets — prescription, 15 s steps */}
@@ -517,7 +531,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={distDraft ?? displaySportDistance(b.distance, b.name)}
               onChangeText={(v) => { setDistDraft(v); builder.setField(b.uid, "distance", parseSportDistance(v, b.name)); }}
-              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} style={field}
+              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={`${C.ash}88`} style={field}
             />
           </View>
         )}
@@ -526,7 +540,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={minDraft ?? (b.minutes == null ? "" : String(b.minutes))}
             onChangeText={(v) => { setMinDraft(v); builder.setField(b.uid, "minutes", num(v)); }}
-            keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} style={field}
+            keyboardType="numeric" placeholder="45" placeholderTextColor={`${C.ash}88`} style={field}
           />
         </View>
       </View>
@@ -538,7 +552,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={inclineDraft ?? (b.incline == null ? "" : String(b.incline))}
               onChangeText={(v) => { setInclineDraft(v); builder.setField(b.uid, "incline", num(v)); }}
-              keyboardType="numeric" placeholder="1.5" placeholderTextColor={C.ash} style={field}
+              keyboardType="numeric" placeholder="1.5" placeholderTextColor={`${C.ash}88`} style={field}
             />
           </View>
         )}
@@ -548,7 +562,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={b.stroke ?? ""}
               onChangeText={(v) => builder.setField(b.uid, "stroke", v || undefined)}
-              placeholder="Free" placeholderTextColor={C.ash} style={field}
+              placeholder="Free" placeholderTextColor={`${C.ash}88`} style={field}
             />
           </View>
         )}
@@ -558,7 +572,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={elevDraft ?? (b.elevation == null ? "" : String(b.elevation))}
               onChangeText={(v) => { setElevDraft(v); builder.setField(b.uid, "elevation", num(v)); }}
-              keyboardType="numeric" placeholder="120" placeholderTextColor={C.ash} style={field}
+              keyboardType="numeric" placeholder="120" placeholderTextColor={`${C.ash}88`} style={field}
             />
           </View>
         )}
@@ -567,7 +581,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={zoneDraft ?? (b.zone == null ? "" : String(b.zone))}
             onChangeText={(v) => { setZoneDraft(v); builder.setField(b.uid, "zone", num(v)); }}
-            keyboardType="numeric" placeholder="2" placeholderTextColor={C.ash} style={field}
+            keyboardType="numeric" placeholder="2" placeholderTextColor={`${C.ash}88`} style={field}
           />
         </View>
       </View>
@@ -600,7 +614,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
           const n = parseFloat(v);
           builder.setField(b.uid, key, v.trim() === "" || !Number.isFinite(n) ? undefined : n);
         }}
-        keyboardType="numeric" placeholder={ph} placeholderTextColor={C.ash} style={field}
+        keyboardType="numeric" placeholder={ph} placeholderTextColor={`${C.ash}88`} style={field}
       />
     </View>
   );
@@ -609,7 +623,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
       <View style={{ flexDirection: "row", gap: space.ms }}>
         <View style={{ flex: 1 }}>
           {label(t("w.train.blocks.format"))}
-          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={C.ash} style={field} />
+          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={`${C.ash}88`} style={field} />
         </View>
         {numField("rounds", t("w.train.blocks.roundsCol"), "8")}
       </View>

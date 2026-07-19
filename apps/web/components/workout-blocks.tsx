@@ -5,6 +5,7 @@ import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
+import { setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "../lib/use-dialog";
 
@@ -413,11 +414,12 @@ export default function WorkoutBlocks({
             </button>
           </div>
 
-          {/* SIGNAL metric row — live projections of the editable data below
-              (scheme, top load, tonnage / distance, pace / format, rounds, and
-              the block's estimated minutes). Visible collapsed or expanded, so
-              editing a set is immediately reflected above. */}
-          {signal && <SignalMetrics b={b} units={units} bodyweightKg={bodyweightKg} />}
+          {/* SIGNAL metric row — the COLLAPSED summary (scheme, top load,
+              tonnage / distance, pace / format, rounds, est. minutes). Only
+              rendered while the card is folded: expanded, the set table itself
+              is the data and the session hero above live-updates — a summary
+              strip on top of both would narrate the same numbers a third time. */}
+          {signal && isCollapsed(b.uid) && <SignalMetrics b={b} units={units} bodyweightKg={bodyweightKg} />}
 
           {!isCollapsed(b.uid) && (b.kind === "strength" ? (
             <>
@@ -446,13 +448,24 @@ export default function WorkoutBlocks({
                 </Mono>
                 {detailed && (
                   <>
-                    <button
-                      onClick={() => setRpeHelp((v) => !v)}
-                      title={t("w.train.blocks.whatIsRpe")}
-                      style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-                    >
-                      {rirMode ? "rir" : "rpe"} ⓘ
-                    </button>
+                    {/* The column header is the RPE ⇄ RIR mode switch (persists
+                        as the device-wide logger pref); the ⓘ opens the help. */}
+                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <button
+                        onClick={() => setLoggerPref("rpeAsRir", !rirMode)}
+                        aria-label={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}
+                        style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                      >
+                        {rirMode ? "rir" : "rpe"} ⇄
+                      </button>
+                      <button
+                        onClick={() => setRpeHelp((v) => !v)}
+                        title={t("w.train.blocks.whatIsRpe")}
+                        style={{ ...mono, fontSize: fs.nano, color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                      >
+                        ⓘ
+                      </button>
+                    </span>
                     <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>m/s</Mono>
                   </>
                 )}
@@ -498,16 +511,16 @@ export default function WorkoutBlocks({
                     return (
                       <>
                         {sp?.loadMode !== "bodyweight" && (
-                          <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
+                          <input className="ghost-ph" value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={loadPh} style={input} />
                         )}
-                        <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder={repsPh} style={input} />
+                        <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder={repsPh} style={input} />
                       </>
                     );
                   })()}
                   {detailed && (
                     <>
-                      <input value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
-                      <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
+                      <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
+                      <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
                     </>
                   )}
                   <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -560,14 +573,16 @@ export default function WorkoutBlocks({
               ))}
               </div>
               </div>
-              {/* Add-set control: one primary "+ Add set", with warm-up / ramp /
-                  cool-down / drop tucked into a compact "Special ▾" menu (instead
-                  of a cluttered row of five equal buttons). The set badge still
+              {/* Add-set control: "+ Add set" wears the ghost/dashed add
+                  affordance (one-accent rule — the screen's single lime fill
+                  belongs to the primary Save/Finish action, not a repeated
+                  per-card control), with warm-up / ramp / cool-down / drop
+                  tucked into a compact "Special ▾" menu. The set badge still
                   re-types a set with a tap, so the menu is just for ADDING. */}
               <div style={{ display: "flex", gap: space.xs, alignItems: "center", position: "relative" }}>
                 <button
                   onClick={() => addSet(b.uid)}
-                  style={{ ...disp, fontWeight: 800, fontSize: fs.caption, color: txt(LIME), background: LIME, border: "none", borderRadius: 999, padding: "9px 18px", cursor: "pointer" }}
+                  style={{ ...disp, fontWeight: 600, fontSize: fs.caption, color: ASH, background: "none", border: `1px dashed color-mix(in srgb, ${ASH} 50%, transparent)`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }}
                 >
                   {t("w.train.blocks.addSet")}
                 </button>
