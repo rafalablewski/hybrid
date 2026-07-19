@@ -28,7 +28,7 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import PrivateTab from "./private-tab";
@@ -719,9 +719,11 @@ function HighlightGrid({
 }
 
 function SectionHeader({ C, title, action }: { C: P; title: string; action: string }) {
+  // Display face per the SectionHead standard — Mincho under Kyoto Hour.
+  const { scheme } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 13, marginHorizontal: 2 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
       {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
     </View>
   );

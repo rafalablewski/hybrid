@@ -234,7 +234,8 @@ export default function AuroraProfile({
 
   const sectionHead = (title: string, action?: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 13px" }}>
-      <div style={{ fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
+      {/* Display face per the SectionHead standard — Mincho under Kyoto Hour. */}
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
       {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{action}</div>}
     </div>
   );
@@ -431,7 +432,10 @@ export default function AuroraProfile({
 
           {/* Achievements — earned/locked badges with progress. */}
           {sectionHead(t("w.account.profile.achievements"), `${earnedCount} ${t("w.account.profile.earned")}`)}
-          <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none" }}>
+          {/* Full-bleed rail: negative margins the width of the shell gutter
+              (--page-pad-x) pull the scroll clip to the true screen edge, with
+              matching internal padding so resting tiles stay on the column. */}
+          <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none", padding: "4px var(--page-pad-x, 16px)", margin: "-4px calc(-1 * var(--page-pad-x, 16px)) 0" }}>
             {achievements.map((a) => {
               const pct = Math.round(a.progress * 100);
               return (

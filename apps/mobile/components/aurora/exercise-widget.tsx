@@ -114,12 +114,16 @@ export default function ExerciseWidgetRail({
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.exw.all")} ›</Text>
         </Pressable>
       </View>
+      {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
+          gutter pull the scroll clip to the true screen edge, with matching
+          internal padding so resting cards stay on the column. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={cardW + 12}
         decelerationRate="fast"
-        contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 2 }}
+        style={{ marginHorizontal: -16 }}
+        contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}
       >
         {cards.map((card) => {
           const h = headline(card, units, t);

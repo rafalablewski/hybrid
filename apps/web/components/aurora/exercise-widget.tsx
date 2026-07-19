@@ -105,7 +105,10 @@ export default function ExerciseWidgetRail({
           {t("w.home.exw.all")} ›
         </button>
       </div>
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -4px", padding: "4px 4px 6px" }}>
+      {/* Full-bleed rail: negative margins the width of the shell gutter
+          (--page-pad-x) pull the scroll clip to the true screen edge; the
+          centre-snap then centres cards on the physical screen. */}
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "4px var(--page-pad-x, 16px) 6px" }}>
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = KIND_STROKE[card.kind];

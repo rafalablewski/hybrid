@@ -137,7 +137,8 @@ function RestGapRow({ days }: { days: number }) {
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
   const { t } = useLang();
   return (
-    <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
+    // Full-bleed chip rail — clips at the screen edge, rests on the column.
+    <div style={{ display: "flex", gap: 7, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 16px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 16px))" }}>
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (

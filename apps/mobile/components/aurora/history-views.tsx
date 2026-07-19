@@ -139,7 +139,8 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 7, paddingBottom: 4 }}>
+    // Full-bleed chip rail — clips at the screen edge, rests on the column.
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 7, paddingBottom: 4, paddingHorizontal: 16 }}>
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
