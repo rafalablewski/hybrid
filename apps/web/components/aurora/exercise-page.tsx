@@ -19,7 +19,8 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { tip, mono, ASH, VIOLET } from "@/lib/ui";
-import { KIND_STROKE, TickerDelta, UP_HEX, DOWN_HEX } from "./exercise-widget";
+import { kindStroke, TickerDelta, upHex, downHex } from "./exercise-widget";
+import { useTheme } from "@/lib/use-theme";
 
 const C = (v: string) => `var(--color-${v})`;
 const LINE_HEX = "#2a2d2a", INK_HEX = "#0c0d0c";
@@ -181,6 +182,7 @@ function MinutesChart({ weeks, stroke, t }: { weeks: { minutes: number }[]; stro
 }
 
 function DeltasChart({ runs }: { runs: { date: string; deltaSec: number }[] }) {
+  const { theme } = useTheme();
   const data = runs.map((r) => ({ x: fmtDate(r.date), y: r.deltaSec }));
   return (
     <ResponsiveContainer width="100%" height={230}>
@@ -190,7 +192,7 @@ function DeltasChart({ runs }: { runs: { date: string; deltaSec: number }[] }) {
         <ReferenceLine y={0} stroke={LINE_HEX} />
         <Tooltip contentStyle={tip} formatter={(v) => `${Number(v) > 0 ? "+" : ""}${v} s/km`} />
         <Bar dataKey="y" isAnimationActive={false} radius={[3, 3, 3, 3]}>
-          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? UP_HEX : DOWN_HEX} />)}
+          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? upHex(theme) : downHex(theme)} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -493,6 +495,7 @@ export default function AuroraExercisePage({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units, countWarmupsInVolume } = useLoggerPrefs();
+  const { theme } = useTheme();
   const [period, setPeriod] = useState<ExercisePeriod>("8w");
   const [page, setPage] = useState(0);
   const [showAll, setShowAll] = useState(false);
@@ -504,7 +507,7 @@ export default function AuroraExercisePage({
     [sessions, name, period, bw, countWarmupsInVolume],
   );
   const slides = model.slides;
-  const stroke = KIND_STROKE[model.kind];
+  const stroke = kindStroke(theme, model.kind);
   const active = Math.min(page, slides.length - 1);
   const hero = slideHero(slides[showAll ? 0 : active]!, units, t);
 

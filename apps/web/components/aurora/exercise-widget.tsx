@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { AreaChart, Area, ResponsiveContainer, YAxis } from "recharts";
 import {
   exerciseWidgetCards,
   fmtWeight,
@@ -15,18 +14,23 @@ import {
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
+import { useTheme, type Theme } from "@/lib/use-theme";
 
 const C = (v: string) => `var(--color-${v})`;
 
 /* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — raw
- * hexes mirror globals.css: lime, --blue-text, --amber-text, --red-text. */
-export const KIND_STROKE: Record<ExerciseWidgetCard["kind"], string> = {
-  strength: "#c6f84f",
-  cardio: "#6cb6bd",
-  conditioning: "#d0cd94",
-};
-export const UP_HEX = "#c6f84f";
-export const DOWN_HEX = "#e58a5c";
+ * hexes mirror globals.css per THEME: Aurora keeps the dark accents
+ * (chartreuse / lifted teal / sand), Kyoto Hour uses pine / sage-text /
+ * amber-text so the chart material matches the washi palette instead of
+ * dragging dark-theme teal onto light paper. Parity: the mobile
+ * kindStroke(C, kind), which resolves the same channels via the palette. */
+export const kindStroke = (theme: Theme, kind: ExerciseWidgetCard["kind"]): string =>
+  theme === "light"
+    ? kind === "strength" ? "#44584c" : kind === "cardio" ? "#4f5c3a" : "#875427"
+    : kind === "strength" ? "#c6f84f" : kind === "cardio" ? "#6cb6bd" : "#d0cd94";
+/** improvement / regression bar fills (exercise-page deltas chart). */
+export const upHex = (theme: Theme): string => (theme === "light" ? "#44584c" : "#c6f84f");
+export const downHex = (theme: Theme): string => (theme === "light" ? "#a3442f" : "#e58a5c");
 
 /** "213 kg" → { v: "213", u: "kg" } so the number can lead and the unit recede. */
 const splitVal = (s: string): { v: string; u: string } => {
@@ -44,23 +48,37 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
-/** Full-bleed sparkline — the card's material, not an illustration in it. */
+/** Full-bleed sparkline — the card's material, not an illustration in it.
+ *  Hand-rolled SVG mirroring the mobile Spark EXACTLY (same 340×92 path math,
+ *  the domain padded 18% so a flat/zero baseline floats INSIDE the card, round
+ *  joins + caps, an end dot). The previous recharts version pinned the series
+ *  minimum to the card's bottom border — the half-clipped stroke read as a
+ *  broken card edge and the area wash as a torn gradient on the washi theme. */
 function Spark({ values, stroke, reversed, id }: { values: number[]; stroke: string; reversed?: boolean; id: string }) {
-  const data = values.map((y) => ({ y }));
-  if (data.length < 2) return null;
+  const W = 340, H = 92, T = 10;
+  const n = values.length;
+  if (n < 2) return null;
+  let lo = Math.min(...values), hi = Math.max(...values);
+  const pad = (hi - lo) * 0.18 || 1;
+  lo -= pad; hi += pad;
+  const X = (i: number) => (i / (n - 1)) * W;
+  const Y = (v: number) => {
+    const f = (v - lo) / (hi - lo);
+    return reversed ? T + f * (H - T) : H - f * (H - T);
+  };
+  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${X(i)},${Y(v)}`).join(" ");
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
-            <stop offset="100%" stopColor={stroke} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <YAxis hide domain={["auto", "auto"]} reversed={reversed} />
-        <Area type="monotone" dataKey="y" stroke={stroke} strokeWidth={2.2} fill={`url(#${id})`} isAnimationActive={false} dot={false} />
-      </AreaChart>
-    </ResponsiveContainer>
+    <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "block" }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
+          <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={X(n - 1) - 4} cy={Y(values[n - 1]!)} r={3.5} fill={stroke} />
+    </svg>
   );
 }
 
@@ -94,6 +112,7 @@ export default function ExerciseWidgetRail({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
+  const { theme } = useTheme();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
   if (cards.length === 0) return null;
 
@@ -111,7 +130,7 @@ export default function ExerciseWidgetRail({
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "4px var(--page-pad-x, 16px) 6px" }}>
         {cards.map((card) => {
           const h = headline(card, units, t);
-          const stroke = KIND_STROKE[card.kind];
+          const stroke = kindStroke(theme, card.kind);
           return (
             <button
               key={card.name}
