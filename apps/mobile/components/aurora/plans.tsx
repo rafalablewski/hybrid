@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { enrollPlan } from "../../lib/api";
+import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
+import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
@@ -20,15 +22,30 @@ export default function AuroraPlans() {
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
+  // The enrolled season, fetched here once and shared: the info-only card on
+  // the browse root, and the leave section on the enrolled plan's detail page.
+  const [enrolled, setEnrolled] = useState<EnrolledSeason | null>(null);
+  const loadEnrolled = useCallback(() => {
+    fetchMacrocycle().then((m) => setEnrolled(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null));
+  }, []);
+  // Re-fetched on tab focus AND on detail open/close, so enrolling on a detail
+  // page (this screen stays mounted in the tab stack) is reflected right away.
+  useFocusEffect(useCallback(() => { loadEnrolled(); }, [loadEnrolled]));
+  useEffect(() => { loadEnrolled(); }, [planId, loadEnrolled]);
+
   if (goal && plan) {
+    const leaveSection = enrolled && enrolled.planId === plan.id
+      ? <LeavePlanSection enrolled={enrolled} onLeft={() => setEnrolled(null)} />
+      : null;
     const program = programFor(plan.id);
     if (program)
       return (
         <AuroraScreen>
           <PercentProgram goal={goal} plan={plan} program={program} back={() => setPlanId(null)} />
+          {leaveSection}
         </AuroraScreen>
       );
-    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} />;
+    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={loadEnrolled} leaveSection={leaveSection} />;
   }
   if (goal) return <PlanList goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
@@ -39,6 +56,7 @@ export default function AuroraPlans() {
         <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
       </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
+      <EnrolledCard enrolled={enrolled} />
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
@@ -57,6 +75,25 @@ export default function AuroraPlans() {
         </View>
       ))}
     </AuroraScreen>
+  );
+}
+
+/** The season you're currently enrolled in, shown above the goal grid.
+ *  INFO-ONLY by design: no leave affordance here — a permanent exit button on
+ *  the browse surface reads as an invitation to quit. Leaving lives at the
+ *  bottom of the enrolled plan's own detail page (LeavePlanSection). */
+function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  if (!enrolled) return null;
+  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === enrolled.planId)?.name ?? enrolled.goal;
+  const started = enrolled.startedAt ? new Date(enrolled.startedAt) : null;
+  return (
+    <ACard style={{ marginBottom: 16 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 4 }}>{planName}</Text>
+      {started && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</Text>}
+    </ACard>
   );
 }
 
@@ -86,12 +123,17 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   );
 }
 
-function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
+function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode; plan: GoalPlan; back: () => void; onEnrolled?: () => void; leaveSection?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
-  const enroll = async () => { setEnrolled("busy"); setEnrolled((await enrollPlan(goal.name, plan.id)) ? "done" : "error"); };
+  const enroll = async () => {
+    setEnrolled("busy");
+    const ok = await enrollPlan(goal.name, plan.id);
+    setEnrolled(ok ? "done" : "error");
+    if (ok) onEnrolled?.();
+  };
   return (
     <AuroraScreen>
       <Back onPress={back} label={goal.name} />
@@ -133,6 +175,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
         onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
       />
       {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
+      {leaveSection}
     </AuroraScreen>
   );
 }

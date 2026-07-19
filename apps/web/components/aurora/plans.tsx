@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
+import LeavePlanSection from "./leave-plan";
 import ProgramDays from "../program-days";
 import { MetaLine } from "./meta";
 
@@ -32,6 +34,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>{t("w.train.plans.title")}</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{t("w.train.plans.chooseGoal")}</p>
+      <EnrolledCard />
       {GOAL_GROUPS.map((group) => (
         <div key={group.category} style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10, color: C("ash") }}>{group.category}</div>
@@ -46,6 +49,26 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** The season you're currently enrolled in, shown above the goal grid.
+ *  INFO-ONLY by design: no leave affordance here — a permanent exit button on
+ *  the browse surface reads as an invitation to quit. Leaving lives at the
+ *  bottom of the enrolled plan's own detail page (LeavePlanSection). */
+function EnrolledCard() {
+  const { t } = useLang();
+  const { macro, planId, planStartedAt } = useMacrocycle();
+  if (!macro) return null;
+
+  const planName = GOAL_TREE.flatMap((g) => g.plans).find((p) => p.id === planId)?.name ?? macro.goalOrSport;
+  const started = planStartedAt ? new Date(planStartedAt) : null;
+  return (
+    <div style={{ ...card, marginBottom: 24 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.currentPlan")}</div>
+      <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 4 }}>{planName}</div>
+      {started && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</div>}
     </div>
   );
 }
@@ -121,6 +144,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
         {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
       </button>
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      <LeavePlanSection forPlanId={plan.id} />
     </div>
   );
 }
@@ -188,6 +212,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
       </button>
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      <LeavePlanSection forPlanId={plan.id} />
     </div>
   );
 }

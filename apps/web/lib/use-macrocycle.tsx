@@ -29,6 +29,8 @@ export function useMacrocycle() {
   let currentWeek = 1;
   let planId: string | null = null;
   let planStartedAt: string | null = null;
+  // The DB row id — what DELETE /api/macrocycles/[id] (leave plan) targets.
+  let macroId: string | null = null;
 
   if (row) {
     const blocks = row.blocks;
@@ -39,6 +41,7 @@ export function useMacrocycle() {
       : 1;
     currentWeek = Math.max(1, Math.min(totalWeeks, elapsed));
     planId = row.planId ?? null;
+    macroId = row.id ?? null;
     // The anchor date the week rail pins the plan's day 1 onto (Macrocycle.startedAt).
     planStartedAt = row.startedAt ?? null;
     macro = { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks };
@@ -48,5 +51,5 @@ export function useMacrocycle() {
   // window that used to flash the "How do you want to start?" chooser at an
   // already-enrolled athlete before their plan resolved), isFetching keeps the
   // refresh semantics. Consumers gate the cold-start chooser on it.
-  return { macro, currentWeek, planId, planStartedAt, loading: q.isPending || q.isFetching, refresh: () => q.refetch() };
+  return { macro, currentWeek, planId, planStartedAt, macroId, loading: q.isPending || q.isFetching, refresh: () => q.refetch() };
 }

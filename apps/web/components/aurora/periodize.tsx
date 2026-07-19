@@ -2,6 +2,7 @@
 
 import { fs, space, currentPhase, type Macrocycle, type LoggedSession, type Biometrics } from "@hybrid/core";
 import ReconciledWeek from "../reconciled-week";
+import LeavePlanSection from "./leave-plan";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -92,6 +93,11 @@ export default function AuroraPeriodize({
           </div>
         ))}
       </div>
+
+      {/* Goal-only seasons (no named plan → no plan detail page to host the
+          quiet leave link) get their leave surface here instead; named-plan
+          seasons keep their single exit on the plan's own page. */}
+      <LeavePlanSection forPlanId={null} />
     </div>
   );
 }
