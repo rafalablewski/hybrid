@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Builder “One Number” preview</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+  :root {
+    /* Aurora tokens — verbatim from packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --card: #161816; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --lime-text: #c6f84f; --violet: #8296c4; --blue: #3c787e;
+    --blue-text: #6cb6bd; --amber-text: #d0cd94; --violet-text: #8ba0cc;
+    --on-accent: #101401;
+    --font-display: "Archivo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { background: #060706; color: var(--chalk); font-family: var(--font-display); -webkit-font-smoothing: antialiased; padding: 40px 16px 80px; display: grid; place-items: start center; }
+
+  .note { max-width: 400px; margin: 0 auto 18px; color: var(--ash); font-size: 13.5px; line-height: 1.6; }
+  .note b { color: var(--chalk); font-weight: 600; }
+
+  .frame { width: min(420px, 100%); background: var(--ink); border: 1px solid var(--line); border-radius: 36px; box-shadow: 0 30px 70px -35px rgba(0,0,0,.95); overflow: hidden; position: relative; }
+  .screen { height: 780px; overflow-y: auto; padding: 24px 18px 130px; }
+
+  .mono { font-family: var(--font-mono); }
+  .micro { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .h-title { font-weight: 800; font-size: 27px; letter-spacing: -.02em; display: flex; align-items: center; gap: 12px; }
+  .h-title .back { color: var(--chalk); font-size: 20px; }
+  .intro { color: var(--ash); font-size: 14px; line-height: 1.55; margin: 10px 0 14px; }
+
+  input.name { width: 100%; font-family: var(--font-display); font-weight: 800; font-size: 19px; color: var(--chalk); background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; outline: none; }
+
+  /* ── the One Number hero ── */
+  .hero { margin: 16px 2px 18px; }
+  .hero .num { font-family: var(--font-mono); font-weight: 700; font-size: 52px; letter-spacing: -.04em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .hero .num small { font-size: 20px; font-weight: 500; color: var(--ash); letter-spacing: 0; }
+  .meta { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--ash); }
+  .meta .sep { width: 1px; height: .85em; background: currentColor; opacity: .32; }
+  .hero .bar { display: flex; height: 4px; border-radius: 999px; overflow: hidden; background: var(--ink2); margin-top: 12px; }
+  .hero .labels { display: flex; gap: 14px; margin-top: 6px; font-family: var(--font-mono); font-size: 10px; }
+
+  /* ── exercise card ── */
+  .xcard { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 14px 15px; margin-bottom: 12px; }
+  .xhead { display: flex; align-items: center; gap: 8px; }
+  .xhead .kind { font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; }
+  .xhead .nm { flex: 1; font-weight: 700; font-size: 16px; letter-spacing: -.01em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ibtn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--ash); background: none; cursor: pointer; flex: none; }
+  .ibtn:disabled { opacity: .35; cursor: default; }
+  .ibtn.plain { border: none; width: 22px; }
+  .chev { transition: transform .15s; }
+  .open .chev { transform: rotate(180deg); }
+
+  /* collapsed metric row */
+  .metrics { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 10px; }
+  .metrics .m .l { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); }
+  .metrics .m .v { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .open .metrics { display: none; }
+  .closed .body { display: none; }
+
+  /* set grid */
+  .body { margin-top: 12px; }
+  .shead { display: grid; grid-template-columns: 36px 1fr 1fr 1fr 26px; gap: 7px; margin-bottom: 5px; align-items: end; }
+  .shead .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .shead .l.toggle { cursor: pointer; user-select: none; }
+  .srow { display: grid; grid-template-columns: 36px 1fr 1fr 1fr 26px; gap: 7px; margin-bottom: 6px; align-items: center; }
+  .badge { height: 38px; border-radius: 8px; border: 1px solid var(--line); background: none; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--ash); cursor: pointer; }
+  .badge.warmup { color: var(--amber-text); border-color: color-mix(in srgb, var(--amber-text) 55%, var(--line)); background: color-mix(in srgb, var(--amber-text) 12%, transparent); }
+  .badge.cooldown { color: var(--blue-text); border-color: color-mix(in srgb, var(--blue-text) 55%, var(--line)); background: color-mix(in srgb, var(--blue-text) 12%, transparent); }
+  .badge.drop { color: var(--lime-text); border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); background: color-mix(in srgb, var(--lime) 12%, transparent); }
+  .srow input { width: 100%; height: 38px; font-family: var(--font-mono); font-size: 14px; text-align: center; color: var(--chalk); background: var(--ink); border: 1px solid var(--line); border-radius: 10px; outline: none; }
+  .srow input::placeholder { color: color-mix(in srgb, var(--ash) 53%, transparent); font-style: italic; }
+  .srow .del { border: none; background: none; color: var(--ash); font-family: var(--font-mono); font-size: 14px; cursor: pointer; }
+
+  .ghost-pill { border: 1px dashed color-mix(in srgb, var(--ash) 47%, transparent); background: none; color: var(--ash); font-weight: 600; font-size: 12.5px; border-radius: 999px; padding: 8px 16px; cursor: pointer; margin-top: 4px; }
+  .rest { display: flex; align-items: center; gap: 10px; margin-top: 13px; }
+  .rest .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); flex: 1; }
+  .rest .v { font-family: var(--font-mono); font-size: 13px; font-weight: 700; min-width: 44px; text-align: center; }
+
+  .ghost-add { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1px dashed color-mix(in srgb, var(--ash) 47%, transparent); border-radius: 16px; background: none; color: var(--ash); font-weight: 600; font-size: 14.5px; padding: 13px; cursor: pointer; margin-top: 2px; }
+
+  .cta { display: block; width: 100%; text-align: center; background: var(--lime); color: var(--on-accent); font-weight: 700; font-size: 15.5px; border: none; border-radius: 999px; padding: 14px; cursor: pointer; margin-top: 18px; box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--lime) 45%, transparent); }
+  .slots { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--ash); text-align: center; margin-top: 10px; }
+
+  /* floating tab bar — content above always clears it (130px screen padding) */
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 28px 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: color-mix(in srgb, var(--ink) 90%, transparent); backdrop-filter: blur(10px); }
+  .tabbar span { color: var(--ash); font-size: 17px; opacity: .75; }
+  .tabbar .fab { width: 54px; height: 54px; border-radius: 999px; background: var(--lime); color: var(--on-accent); display: grid; place-items: center; font-weight: 800; font-size: 18px; margin-top: -38px; box-shadow: 0 0 36px color-mix(in srgb, var(--lime) 55%, transparent); }
+</style>
+</head>
+<body>
+<div>
+  <p class="note">
+    <b>Builder — “One Number”, as implemented.</b> Everything here is live: type in the set fields
+    and watch the number grow; tap a <b>set badge</b> to cycle working → warm-up → cool-down → drop
+    (warm-ups/cool-downs leave the tonnage); tap <b>RPE ⇄</b> to flip the column to RIR; use
+    <b>↑ ↓</b> to reorder; collapse a card (▾) to see its metric summary appear — expanded, the
+    table speaks for itself. One lime action on screen: Save.
+  </p>
+
+  <div class="frame"><div class="screen" id="screen">
+    <div class="h-title"><span class="back">←</span>Builder</div>
+    <div class="intro">Assemble a reusable routine — save it, then start it from Train.</div>
+    <input class="name" value="New routine" aria-label="Routine name" />
+
+    <!-- ONE NUMBER hero -->
+    <div class="hero">
+      <div class="num"><span id="minutes">0</span><small> min</small></div>
+      <div class="meta" style="margin-top: 8px" id="heroMeta"></div>
+      <div class="bar" id="bar"></div>
+      <div class="labels" id="barLabels"></div>
+    </div>
+
+    <div id="cards"></div>
+
+    <button class="ghost-add">＋ Add exercise</button>
+
+    <button class="cta">Save routine →</button>
+    <div class="slots">0 of 2 free template slots used</div>
+  </div>
+  <div class="tabbar"><span>⌂</span><span>◎</span><span class="fab">H</span><span>▦</span><span>◉</span></div>
+  </div>
+</div>
+
+<script>
+  // ── state ──────────────────────────────────────────────────────────
+  const TYPES = ["working", "warmup", "cooldown", "drop"];
+  const state = {
+    rir: false,
+    blocks: [
+      { name: "Barbell Glute Bridge", kind: "strength", rest: 150, open: true,
+        sets: [ { load: "100", reps: "8", rpe: "8", type: "working" },
+                { load: "100", reps: "8", rpe: "8", type: "working" },
+                { load: "", reps: "", rpe: "", type: "working" } ] },
+      { name: "Row Intervals", kind: "cardio", minutes: 8, open: false, sets: [] },
+    ],
+  };
+
+  // ── derived: the One Number ────────────────────────────────────────
+  function signal() {
+    let tonnage = 0, strengthMin = 0, cardioMin = 0;
+    for (const b of state.blocks) {
+      if (b.kind === "strength") {
+        const n = b.sets.length;
+        strengthMin += (n * (45 + b.rest)) / 60;
+        for (const s of b.sets) {
+          const L = parseFloat(s.load), R = parseFloat(s.reps);
+          if (s.type !== "warmup" && s.type !== "cooldown" && L > 0 && R > 0) tonnage += L * R;
+        }
+      } else cardioMin += b.minutes || 0;
+    }
+    const total = strengthMin + cardioMin;
+    const pct = total > 0 ? Math.round((strengthMin / total) * 100) : 0;
+    return { minutes: Math.round(total), tonnage, moves: state.blocks.length,
+             split: [ { k: "str", pct, c: "var(--lime)", tc: "var(--lime-text)" },
+                      { k: "end", pct: total > 0 ? 100 - pct : 0, c: "var(--blue)", tc: "var(--blue-text)" } ] };
+  }
+
+  const fmtT = (kg) => kg >= 1000 ? (kg / 1000).toFixed(1) + " t" : Math.round(kg) + " kg";
+  const badgeLabel = (s, i) => s.type === "warmup" ? "W" : s.type === "cooldown" ? "C" : s.type === "drop" ? "↓" : String(i + 1);
+  const rpeShow = (v) => { if (v === "") return ""; const n = parseFloat(v); return state.rir ? String(Math.max(0, 10 - n)) : String(n); };
+
+  // ── render ─────────────────────────────────────────────────────────
+  function renderHero() {
+    const sig = signal();
+    document.getElementById("minutes").textContent = sig.minutes;
+    document.getElementById("heroMeta").innerHTML =
+      [ sig.tonnage > 0 ? fmtT(sig.tonnage) : null, sig.moves + " moves" ].filter(Boolean)
+        .map((p) => `<span>${p}</span>`).join(`<span class="sep"></span>`);
+    document.getElementById("bar").innerHTML =
+      sig.split.filter((s) => s.pct > 0).map((s) => `<span style="width:${s.pct}%;background:${s.c}"></span>`).join("");
+    document.getElementById("barLabels").innerHTML =
+      sig.split.filter((s) => s.pct > 0).map((s) => `<span style="color:${s.tc}">${s.pct}% ${s.k}</span>`).join("");
+  }
+
+  function render() {
+    renderHero();
+    const wrap = document.getElementById("cards");
+    wrap.innerHTML = "";
+    state.blocks.forEach((b, bi) => {
+      const card = document.createElement("div");
+      card.className = "xcard " + (b.open ? "open" : "closed");
+      const kindColor = b.kind === "strength" ? "var(--lime-text)" : "var(--blue-text)";
+      const scheme = b.kind === "strength"
+        ? `${b.sets.length} × ${b.sets[0]?.reps || "—"}`
+        : `${b.minutes} min`;
+      const top = b.kind === "strength" ? Math.max(0, ...b.sets.map((s) => parseFloat(s.load) || 0)) : 0;
+      card.innerHTML = `
+        <div class="xhead">
+          <span class="kind" style="color:${kindColor}">${b.kind.toUpperCase()}</span>
+          <span class="nm">${b.name}</span>
+          <button class="ibtn" data-a="up" ${bi === 0 ? "disabled" : ""} aria-label="Move up">↑</button>
+          <button class="ibtn" data-a="down" ${bi === state.blocks.length - 1 ? "disabled" : ""} aria-label="Move down">↓</button>
+          <button class="ibtn plain" data-a="tog" aria-label="Collapse"><span class="chev">▾</span></button>
+          <button class="ibtn plain" data-a="rm" aria-label="Remove">✕</button>
+        </div>
+        <div class="metrics">
+          <span class="m"><span class="l">${b.kind === "strength" ? "set × reps" : "minutes"}</span><br/><span class="v">${scheme}</span></span>
+          ${top > 0 ? `<span class="m"><span class="l">load (kg)</span><br/><span class="v">${top}</span></span>` : ""}
+        </div>
+        <div class="body">${b.kind !== "strength" ? "" : `
+          <div class="shead"><span class="l">set</span><span class="l">load (kg)</span><span class="l">reps</span>
+            <span class="l toggle" data-a="mode">${state.rir ? "rir" : "rpe"} ⇄</span><span></span></div>
+          ${b.sets.map((s, i) => `
+            <div class="srow">
+              <button class="badge ${s.type}" data-a="type" data-i="${i}" title="Tap to change set type">${badgeLabel(s, i)}</button>
+              <input inputmode="numeric" data-f="load" data-i="${i}" value="${s.load}" placeholder="100" />
+              <input inputmode="numeric" data-f="reps" data-i="${i}" value="${s.reps}" placeholder="8" />
+              <input inputmode="numeric" data-f="rpe" data-i="${i}" value="${rpeShow(s.rpe)}" placeholder="${state.rir ? "2" : "8"}" />
+              <button class="del" data-a="delset" data-i="${i}">−</button>
+            </div>`).join("")}
+          <button class="ghost-pill" data-a="addset">+ Add set</button>
+          <div class="rest"><span class="l">Rest between sets (s)</span>
+            <button class="ibtn" data-a="rest-">−</button><span class="v">${b.rest} s</span><button class="ibtn" data-a="rest+">+</button></div>`}
+        </div>`;
+
+      card.addEventListener("click", (e) => {
+        const el = e.target.closest("[data-a]"); if (!el) return;
+        const a = el.dataset.a, i = +el.dataset.i;
+        if (a === "up" || a === "down") { const j = bi + (a === "up" ? -1 : 1); [state.blocks[bi], state.blocks[j]] = [state.blocks[j], state.blocks[bi]]; render(); }
+        else if (a === "tog") { b.open = !b.open; render(); }
+        else if (a === "rm") { state.blocks.splice(bi, 1); render(); }
+        else if (a === "type") { b.sets[i].type = TYPES[(TYPES.indexOf(b.sets[i].type) + 1) % TYPES.length]; render(); }
+        else if (a === "delset") { b.sets.splice(i, 1); render(); }
+        else if (a === "addset") { b.sets.push({ load: "", reps: "", rpe: "", type: "working" }); render(); }
+        else if (a === "rest-") { b.rest = Math.max(0, b.rest - 15); render(); }
+        else if (a === "rest+") { b.rest += 15; render(); }
+        else if (a === "mode") { state.rir = !state.rir; render(); }
+      });
+      card.addEventListener("input", (e) => {
+        const el = e.target.closest("[data-f]"); if (!el) return;
+        const s = b.sets[+el.dataset.i];
+        if (el.dataset.f === "rpe") { const n = parseFloat(el.value); s.rpe = el.value === "" ? "" : String(state.rir ? Math.max(0, 10 - n) : n); }
+        else s[el.dataset.f] = el.value;
+        renderHero();
+      });
+      wrap.appendChild(card);
+    });
+  }
+  render();
+</script>
+</body>
+</html>
