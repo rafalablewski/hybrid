@@ -121,7 +121,7 @@
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "HYBRID reads your heart-rate variability, resting heart rate and sleep from Apple Health to compute your daily readiness.",
-          "NSHealthUpdateUsageDescription": false,
+          "NSHealthUpdateUsageDescription": "HYBRID can save completed workouts to Apple Health — only ever with your permission.",
           "background": false
         }
       ],
