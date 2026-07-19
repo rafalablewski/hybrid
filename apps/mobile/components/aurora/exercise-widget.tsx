@@ -18,7 +18,8 @@ import { fs, F } from "../../lib/ui";
 import { RADIUS } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
- *  conditioning sand + ticker red ride accentText (parity with web KIND_STROKE). */
+ *  conditioning sand + ticker red ride accentText (parity with the web
+ *  kindStroke(theme, kind), which resolves the same channels per theme). */
 export const kindStroke = (C: Palette, kind: ExerciseWidgetCard["kind"]): string =>
   kind === "strength" ? C.lime : kind === "cardio" ? txt(C, C.blue) : txt(C, C.amber);
 
