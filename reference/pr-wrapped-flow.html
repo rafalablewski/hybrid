@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — PR → Wrapped → Share flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f; --blue:#6cb6bd;
+    --amber:#d0cd94; --red:#e58a5c; --violet:#8ba0cc; --onAccent:#0c0d0c; --gold:#e6c34e;
+    --disp:"Archivo",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:#060606;color:var(--chalk);font-family:var(--disp)}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:18px;padding:28px 14px 60px}
+
+  .head{text-align:center;max-width:420px}
+  .head h1{font-size:22px;font-weight:900;letter-spacing:-.02em}
+  .head h1 span{color:var(--lime)}
+  .head p{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px;line-height:1.7}
+
+  /* phone */
+  .phone{width:390px;max-width:100%;height:812px;background:#000;border-radius:46px;
+    border:1px solid #1c1e1c;box-shadow:0 40px 120px rgba(0,0,0,.7),0 0 0 10px #050505;
+    overflow:hidden;position:relative}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:60}
+  .sb{position:absolute;top:14px;left:0;right:0;z-index:55;display:flex;justify-content:space-between;padding:0 28px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--chalk)}
+
+  .stage{position:absolute;inset:0}
+  .layer{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .5s ease, transform .5s ease}
+  .layer.on{opacity:1;pointer-events:auto}
+
+  .mono{font-family:var(--mono)} .ash{color:var(--ash)} .lime{color:var(--lime)} .gold{color:var(--gold)}
+  .kick{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+
+  /* ===================== A · TROPHY REVEAL ===================== */
+  #reveal{background:radial-gradient(120% 90% at 50% 30%,rgba(230,195,78,.16),transparent 55%),#0a0b09;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+  #reveal.on{transform:scale(1)}
+  #reveal.leaving{transform:scale(1.12);opacity:0}
+  .rays{position:absolute;top:50%;left:50%;width:460px;height:460px;transform:translate(-50%,-58%);
+    background:conic-gradient(from 0deg,rgba(230,195,78,.14),transparent 22%,rgba(198,248,79,.10) 40%,transparent 55%,rgba(230,195,78,.14) 72%,transparent 90%);
+    border-radius:50%;animation:spin 14s linear infinite;opacity:0}
+  #reveal.on .rays{opacity:1;transition:opacity 1s}
+  @keyframes spin{to{transform:translate(-50%,-58%) rotate(360deg)}}
+  .trophy{font-size:96px;line-height:1;filter:drop-shadow(0 10px 30px rgba(230,195,78,.5));transform:scale(0)}
+  #reveal.on .trophy{animation:pop .8s cubic-bezier(.2,1.5,.3,1) .15s both}
+  @keyframes pop{0%{transform:scale(0) rotate(-25deg)}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+  .r-won{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:22px;opacity:0}
+  #reveal.on .r-won{animation:fadeUp .5s ease .6s both}
+  .r-num{font-size:104px;font-weight:900;letter-spacing:-.05em;line-height:.85;margin-top:14px}
+  .r-num small{font-size:30px;color:var(--ash);font-weight:700}
+  .r-lift{font-size:19px;font-weight:800;margin-top:10px;opacity:0}
+  #reveal.on .r-lift{animation:fadeUp .5s ease .9s both}
+  .r-tap{position:absolute;bottom:60px;left:0;right:0;font-family:var(--mono);font-size:11px;color:var(--ash);opacity:0}
+  #reveal.on .r-tap{animation:pulse 1.6s ease 2.4s infinite}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+  .confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .confetti i{position:absolute;top:44%;left:50%;width:8px;height:8px;border-radius:2px;opacity:0}
+  #reveal.on .confetti i{animation:burst .9s ease-out .35s forwards}
+  @keyframes burst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.4) rotate(220deg)}}
+
+  /* ===================== B · PREMIUM WRAPPED ===================== */
+  #wrapped{overflow-y:auto;scroll-snap-type:y mandatory;background:#0a0b09}
+  #wrapped::-webkit-scrollbar{width:0}
+  .panel{height:812px;scroll-snap-align:start;position:relative;padding:70px 28px 120px;display:flex;flex-direction:column}
+  .p-close{position:absolute;top:52px;right:24px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(0,0,0,.4);color:var(--ash);display:flex;align-items:center;justify-content:center;font-size:15px;z-index:5}
+  .prem{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+  .p1{background:radial-gradient(120% 70% at 80% 8%,rgba(139,160,204,.20),transparent 55%),radial-gradient(90% 60% at 0% 100%,rgba(198,248,79,.12),transparent 60%)}
+  .p1 .big-title{font-size:44px;font-weight:900;letter-spacing:-.03em;line-height:.98;margin-top:12px}
+  .p1 .big-title span{color:var(--lime)}
+  .p1 .num{font-size:120px;font-weight:900;letter-spacing:-.06em;line-height:.8;margin-top:auto}
+  .p1 .num small{font-size:34px;color:var(--ash)}
+  .p1 .cap{font-size:17px;font-weight:700;margin-top:14px;color:var(--chalk)}
+  .p1 .basics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:22px;
+    background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .p1 .basics .cell{background:#0e0f0d;padding:14px 8px;text-align:center}
+  .p1 .basics .v{font-size:22px;font-weight:900;letter-spacing:-.02em}
+  .p1 .basics .v small{font-size:13px;color:var(--ash);font-weight:700}
+  .p1 .basics .l{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-top:4px}
+  .p1 .scroll-hint{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:18px;text-align:center;animation:pulse 1.8s infinite}
+
+  .p2{background:#0c0e0b;justify-content:center}
+  .p2 .lead{font-size:20px;font-weight:800;margin-bottom:24px}
+  .p2 .fact{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:16px 0}
+  .p2 .fact .l{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash)}
+  .p2 .fact .v{font-size:26px;font-weight:900}
+  .p2 .fact .v.v2{color:var(--violet)}
+  .p2 .fact .v.g{color:var(--lime)}
+
+  .p3{background:radial-gradient(100% 70% at 50% 10%,rgba(230,195,78,.12),transparent 55%),#0a0b09;justify-content:center;text-align:center}
+  .p3 .rank{font-size:64px;font-weight:900;letter-spacing:-.04em;line-height:.9}
+  .p3 .rank .lime{display:block}
+  .p3 .ranksub{font-size:16px;font-weight:700;margin-top:12px}
+  .p3 .ribbon{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:70px;margin-top:34px}
+  .p3 .ribbon i{width:6px;border-radius:3px;background:linear-gradient(180deg,var(--lime),rgba(198,248,79,.15))}
+  .p3 .ribcap{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:12px}
+
+  .share-dock{position:absolute;left:24px;right:24px;bottom:34px;z-index:8}
+  .btn-share{width:100%;background:var(--lime);color:var(--onAccent);border:none;border-radius:16px;padding:18px;
+    font-family:var(--disp);font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:10px}
+  .dockdots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
+  .dockdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+  .dockdots i.on{background:var(--lime);width:18px;border-radius:3px}
+
+  /* ===================== C · SHARE — STORY PICKER ===================== */
+  #share{background:rgba(4,4,4,.72);backdrop-filter:blur(8px);display:flex;flex-direction:column;justify-content:flex-end}
+  #share.on{transform:translateY(0)}
+  .sheet{background:#0e100d;border-radius:28px 28px 0 0;border-top:1px solid var(--line);padding:16px 16px 26px;transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+  #share.on .sheet{transform:translateY(0)}
+  .sheet .grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 14px}
+  .sheet .sh-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .sheet .sh-head h3{font-size:17px;font-weight:800}
+  .sheet .sh-head .x{font-family:var(--mono);font-size:12px;color:var(--ash)}
+
+  .pager{position:relative;overflow:hidden;border-radius:20px}
+  .track{display:flex;transition:transform .4s cubic-bezier(.2,.9,.2,1)}
+  .story{flex:0 0 100%;aspect-ratio:9/16;position:relative;overflow:hidden;border-radius:20px}
+  /* story 1 — trophy */
+  .s-trophy{background:radial-gradient(120% 80% at 50% 20%,rgba(230,195,78,.22),transparent 55%),linear-gradient(180deg,#15140f,#0a0b09);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+  .s-trophy .em{font-size:52px}
+  .s-trophy .n{font-size:76px;font-weight:900;letter-spacing:-.05em;line-height:.85;margin-top:10px}
+  .s-trophy .n small{font-size:24px;color:var(--ash)}
+  .s-trophy .l{font-size:16px;font-weight:800;margin-top:8px}
+  .s-trophy .tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-top:14px}
+  /* story 2 — signature */
+  .s-sig{background:radial-gradient(90% 60% at 100% 0%,rgba(108,182,189,.22),transparent 60%),linear-gradient(180deg,#0d1512,#0a0b09);
+    display:flex;flex-direction:column;justify-content:space-between;padding:28px}
+  .s-sig .rib{display:flex;align-items:flex-end;gap:3px;height:120px}
+  .s-sig .rib i{flex:1;border-radius:3px;background:linear-gradient(180deg,var(--lime),rgba(198,248,79,.12))}
+  .s-sig .big{font-size:60px;font-weight:900;letter-spacing:-.04em;line-height:.85}
+  .s-sig .big small{font-size:20px;color:var(--ash)}
+  /* story 3 — wrapped stat */
+  .s-stat{background:radial-gradient(110% 70% at 20% 0%,rgba(139,160,204,.22),transparent 55%),linear-gradient(180deg,#101018,#0a0b09);padding:28px;display:flex;flex-direction:column;justify-content:center}
+  .s-stat .prem{margin-bottom:auto}
+  .s-stat .rank{font-size:46px;font-weight:900;letter-spacing:-.03em;line-height:.95}
+  .s-stat .rank span{color:var(--lime)}
+  .s-stat .facts{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .s-stat .facts .f{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ash);border-bottom:1px solid var(--line);padding-bottom:7px}
+  .s-stat .facts .f b{color:var(--chalk);font-family:var(--disp);font-size:15px;font-weight:900}
+  /* story 4 — minimal */
+  .s-min{background:var(--lime);color:var(--onAccent);display:flex;flex-direction:column;justify-content:center;padding:30px}
+  .s-min .n{font-size:100px;font-weight:900;letter-spacing:-.06em;line-height:.8}
+  .s-min .n small{font-size:28px;opacity:.6}
+  .s-min .l{font-size:20px;font-weight:800;margin-top:10px}
+  .s-min .brand{margin-top:auto;font-weight:900;font-size:20px}
+
+  /* shared story chrome */
+  .story .wm{position:absolute;bottom:18px;left:22px;font-weight:900;font-size:16px;opacity:.9}
+  .story .wm span{color:var(--lime)}
+  .s-min .wm span{color:var(--onAccent)}
+
+  .dots{display:flex;justify-content:center;gap:7px;margin:14px 0}
+  .dots i{width:7px;height:7px;border-radius:50%;background:var(--line);transition:.2s}
+  .dots i.on{background:var(--lime);width:20px;border-radius:4px}
+
+  .dests{display:flex;justify-content:space-between;gap:8px;margin-top:6px}
+  .dest{flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;
+    font-family:var(--mono);font-size:10px;color:var(--ash)}
+  .dest .ic{font-size:20px;display:block;margin-bottom:5px}
+  .dest.primary{background:rgba(198,248,79,.1);border-color:var(--lime);color:var(--lime)}
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:390px}
+  .controls button{font-family:var(--mono);font-size:11px;color:var(--chalk);background:#141614;border:1px solid var(--line);
+    border-radius:999px;padding:9px 15px;cursor:pointer}
+  .controls button:hover{border-color:var(--lime);color:var(--lime)}
+  .legend{font-family:var(--mono);font-size:10px;color:var(--ash);text-align:center;max-width:390px;line-height:1.7}
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <h1>PR hit → <span>Wrapped</span> → Share</h1>
+    <p>One flow. Log a personal best, watch it land, roll into the premium Wrapped, then pick a story to share.</p>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="sb"><span>16:16</span><span>✦ 5G ▮▮▮▯</span></div>
+
+    <div class="stage">
+
+      <!-- A · TROPHY REVEAL -->
+      <div class="layer on" id="reveal">
+        <div class="rays"></div>
+        <div class="confetti" id="confetti"></div>
+        <div class="trophy">🏆</div>
+        <div class="r-won">New personal record</div>
+        <div class="r-num"><span id="rcount">0</span><small> kg</small></div>
+        <div class="r-lift">Barbell Bench Press — first ever</div>
+        <div class="r-tap">tap to continue ↑</div>
+      </div>
+
+      <!-- B · PREMIUM WRAPPED -->
+      <div class="layer" id="wrapped">
+        <section class="panel p1">
+          <div class="p-close" data-act="skip">✕</div>
+          <div class="prem">✦ Hybrid Full — your workout, wrapped</div>
+          <div class="big-title">The <span>bench</span><br>breakthrough.</div>
+          <div class="num">75<small> kg</small></div>
+          <div class="cap">A lift you now own — logged 20 Jul.</div>
+          <div class="basics">
+            <div class="cell"><div class="v">1</div><div class="l">Sets</div></div>
+            <div class="cell"><div class="v">15</div><div class="l">Reps</div></div>
+            <div class="cell"><div class="v">0.8<small>t</small></div><div class="l">Volume</div></div>
+            <div class="cell"><div class="v">14<small>′</small></div><div class="l">Time</div></div>
+          </div>
+          <div class="scroll-hint">scroll ↑</div>
+        </section>
+
+        <section class="panel p2">
+          <div class="prem" style="margin-bottom:8px">✦ Only on Hybrid Full</div>
+          <div class="lead">What this set really did</div>
+          <div class="fact"><span class="l">Estimated 1RM</span><span class="v g">75 kg</span></div>
+          <div class="fact"><span class="l">Peak power</span><span class="v v2">312 W</span></div>
+          <div class="fact"><span class="l">Energy</span><span class="v v2">128 kcal</span></div>
+          <div class="fact"><span class="l">Fatigue cost</span><span class="v v2">Low</span></div>
+          <div class="fact"><span class="l">Week balance</span><span class="v v2">Push-heavy</span></div>
+        </section>
+
+        <section class="panel p3">
+          <div class="prem">✦ Where you stand</div>
+          <div class="rank" style="margin-top:20px">Top<span class="lime">12%</span></div>
+          <div class="ranksub">of first-time benchers at your bodyweight.</div>
+          <div class="ribbon" id="wrapRib"></div>
+          <div class="ribcap">your session signature</div>
+        </section>
+
+        <div class="share-dock">
+          <div class="dockdots"><i class="on"></i><i></i><i></i></div>
+          <button class="btn-share" data-act="share">↗ Share this win</button>
+        </div>
+      </div>
+
+      <!-- C · SHARE — STORY PICKER -->
+      <div class="layer" id="share">
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="sh-head"><h3>Choose your story</h3><span class="x" data-act="closeShare">Close</span></div>
+          <div class="pager">
+            <div class="track" id="track">
+              <!-- story 1 -->
+              <div class="story s-trophy">
+                <div class="em">🏆</div>
+                <div class="n">75<small> kg</small></div>
+                <div class="l">Bench Press</div>
+                <div class="tag">New personal record</div>
+                <div class="wm">HYBRID<span>.</span></div>
+              </div>
+              <!-- story 2 -->
+              <div class="story s-sig">
+                <div>
+                  <div class="prem" style="color:var(--lime)">Session signature</div>
+                  <div class="big" style="margin-top:10px">75<small> kg PR</small></div>
+                </div>
+                <div class="rib" id="storyRib"></div>
+                <div class="wm">HYBRID<span>.</span></div>
+              </div>
+              <!-- story 3 -->
+              <div class="story s-stat">
+                <div class="prem">✦ Wrapped</div>
+                <div class="rank">Top <span>12%</span><br>first-time bench.</div>
+                <div class="facts">
+                  <div class="f">Peak power <b>312 W</b></div>
+                  <div class="f">Energy <b>128 kcal</b></div>
+                  <div class="f">Est. 1RM <b>75 kg</b></div>
+                </div>
+                <div class="wm">HYBRID<span>.</span></div>
+              </div>
+              <!-- story 4 -->
+              <div class="story s-min">
+                <div class="n">75<small> kg</small></div>
+                <div class="l">First-ever bench press.</div>
+                <div class="wm">HYBRID<span>.</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="dots" id="dots"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="dests">
+            <div class="dest primary"><span class="ic">📸</span>Story</div>
+            <div class="dest"><span class="ic">▷</span>Instagram</div>
+            <div class="dest"><span class="ic">✉</span>Messages</div>
+            <div class="dest"><span class="ic">🔗</span>Copy link</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="controls">
+    <button data-act="replay">↻ Replay from PR</button>
+    <button data-act="goWrapped">Skip to Wrapped</button>
+    <button data-act="share">Open share sheet</button>
+  </div>
+  <div class="legend">Interactive — tap the reveal to advance, scroll the Wrapped panels, swipe / drag the story cards. Free tier gets the trophy screen; the ✦ Wrapped facts &amp; expressive stories are the premium hook.</div>
+
+<script>
+  var reveal=document.getElementById('reveal'),wrapped=document.getElementById('wrapped'),share=document.getElementById('share');
+  function show(el){[reveal,wrapped,share].forEach(function(x){x.classList.remove('on')});el.classList.add('on');}
+
+  // confetti
+  (function(){var c=document.getElementById('confetti'),cols=['var(--lime)','var(--gold)','var(--blue)','var(--violet)'];
+    for(var k=0;k<26;k++){var i=document.createElement('i');var a=(k/26)*Math.PI*2,d=90+Math.random()*150;
+      i.style.setProperty('--tx',Math.cos(a)*d+'px');i.style.setProperty('--ty',(Math.sin(a)*d-40)+'px');
+      i.style.background=cols[k%4];i.style.animationDelay=(0.35+Math.random()*0.15)+'s';c.appendChild(i);}})();
+
+  // count up
+  function countUp(){var el=document.getElementById('rcount'),t0=null;
+    function step(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/900);el.textContent=Math.round((1-Math.pow(1-p,3))*75);if(p<1)requestAnimationFrame(step);}
+    setTimeout(function(){requestAnimationFrame(step);},650);}
+
+  // ribbons
+  function fillRib(el,n){if(!el||el.children.length)return;var s=[3,4,5,6,7,8,9,8,7,6,5,7,8,9,7,5,4,3,5,6,7,8,9,7,6,5,4,3];
+    for(var i=0;i<n;i++){var b=document.createElement('i');b.style.height=(20+s[i%s.length]*8)+'%';el.appendChild(b);}}
+  fillRib(document.getElementById('wrapRib'),28);
+  fillRib(document.getElementById('storyRib'),26);
+
+  function startReveal(){show(reveal);reveal.classList.remove('leaving');
+    // re-trigger CSS animations
+    reveal.classList.remove('on');void reveal.offsetWidth;reveal.classList.add('on');countUp();}
+
+  function toWrapped(){reveal.classList.add('leaving');setTimeout(function(){show(wrapped);wrapped.scrollTop=0;},420);}
+
+  // reveal tap → wrapped (auto after 3.4s too)
+  reveal.addEventListener('click',toWrapped);
+  var autoT=setTimeout(toWrapped,3600);
+  reveal.addEventListener('click',function(){clearTimeout(autoT);});
+
+  // wrapped dock dots follow scroll
+  wrapped.addEventListener('scroll',function(){
+    var i=Math.round(wrapped.scrollTop/812);
+    document.querySelectorAll('.dockdots i').forEach(function(d,j){d.classList.toggle('on',j===i);});
+  });
+
+  // story pager
+  var track=document.getElementById('track'),dots=document.getElementById('dots').children,idx=0,N=4;
+  function goto(n){idx=Math.max(0,Math.min(N-1,n));track.style.transform='translateX('+(-idx*100)+'%)';
+    for(var i=0;i<dots.length;i++)dots[i].classList.toggle('on',i===idx);}
+  // drag / swipe
+  var x0=null;
+  function down(e){x0=(e.touches?e.touches[0].clientX:e.clientX);}
+  function up(e){if(x0===null)return;var x=(e.changedTouches?e.changedTouches[0].clientX:e.clientX);
+    var dx=x-x0;if(dx<-40)goto(idx+1);else if(dx>40)goto(idx-1);x0=null;}
+  track.addEventListener('mousedown',down);window.addEventListener('mouseup',up);
+  track.addEventListener('touchstart',down,{passive:true});track.addEventListener('touchend',up);
+
+  // controls / actions
+  document.body.addEventListener('click',function(e){
+    var a=e.target.closest('[data-act]');if(!a)return;var act=a.dataset.act;
+    if(act==='replay')startReveal();
+    if(act==='goWrapped'){clearTimeout(autoT);show(wrapped);wrapped.scrollTop=0;}
+    if(act==='skip'){clearTimeout(autoT);show(wrapped);wrapped.scrollTop=0;}
+    if(act==='share'){show(share);goto(0);}
+    if(act==='closeShare')show(wrapped);
+  });
+
+  // kick off
+  countUp();
+</script>
+</body>
+</html>

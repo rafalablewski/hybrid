@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { View, Text, Pressable, Animated, type TextStyle } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   sessionClockTime,
@@ -27,6 +27,8 @@ import {
   formatSportDistance,
   headlineRunMove,
   mmss,
+  sessionCelebration,
+  statCountUp,
   type LoggedSession,
   type PrHit,
   type CardioPrHit,
@@ -168,20 +170,25 @@ export default function SessionDetail() {
         )}
       </View>
 
-      {prs.length > 0 && (
-        <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
-          {prs.slice(0, 6).map((p) => (
-            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
-          ))}
-        </View>
-      )}
+      {/* PR reveal — the headline record lands (spring + count-up) with "Share
+          your win" as the payoff; the full PR list stays below when there's more
+          than one. Renders nothing on a no-PR session. */}
+      <PrReveal
+        prs={prs}
+        cardioPrs={cardioPrs}
+        units={units}
+        t={t}
+        aurora={aurora}
+        onShare={() => shareWorkout(cardRef, shareText, t("summary.share"))}
+      />
 
-      {cardioPrs.length > 0 && (
-        <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
-          {cardioPrs.slice(0, 6).map((p) => (
-            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
+      {prs.length + cardioPrs.length > 1 && (
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 12 }}>
+          {prs.map((p) => (
+            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏆 {prLine(p, t, units)}</Text>
+          ))}
+          {cardioPrs.map((p) => (
+            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏃 {cardioPrLineDetail(p, t)}</Text>
           ))}
         </View>
       )}
@@ -279,6 +286,114 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
 // otherwise) — one shared core formatter, see formatCardioPr.
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
   formatCardioPr(p, t("summary.firstTime"));
+
+// A number that ticks up from 0 → final on mount, then rests on the EXACT
+// original string (so the resting value is never a rounded frame). Mirrors the
+// web SessionCountUp + the summary CountUpText — same statCountUp core.
+function RevealCount({ value, style }: { value: string; style: TextStyle }) {
+  const [disp, setDisp] = useState(value);
+  useEffect(() => {
+    const { target, format } = statCountUp(value);
+    if (!target) {
+      setDisp(value);
+      return;
+    }
+    const dur = 900;
+    const t0 = Date.now();
+    let raf: ReturnType<typeof requestAnimationFrame>;
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      if (p < 1) {
+        setDisp(format(target * eased));
+        raf = requestAnimationFrame(tick);
+      } else {
+        setDisp(value);
+      }
+    };
+    setDisp(format(0));
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <Text style={style}>{disp}</Text>;
+}
+
+/**
+ * PR REVEAL — the personal-best hero on the individual-workout page. When a
+ * session set a record, ONE headline record lands (the trophy springs in, the
+ * number counts up), chosen by the shared `sessionCelebration` so web + mobile
+ * headline the SAME record, with "Share your win" as the payoff. Renders nothing
+ * when the session set no records.
+ */
+function PrReveal({
+  prs,
+  cardioPrs,
+  units,
+  t,
+  onShare,
+  aurora,
+}: {
+  prs: PrHit[];
+  cardioPrs: CardioPrHit[];
+  units: WeightUnit;
+  t: (k: string) => string;
+  onShare: () => void;
+  aurora: boolean;
+}) {
+  const C = useTheme().palette;
+  const cel = sessionCelebration(prs, cardioPrs);
+  const scale = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!cel) return;
+    scale.setValue(0);
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 120, delay: 120 }).start();
+  }, [cel, scale]);
+  if (!cel) return null;
+
+  const big =
+    cel.kind === "strength"
+      ? fmtWeight(cel.e1rm, units)
+      : cel.prKind === "distance"
+        ? formatSportDistance(cel.value, cel.move)
+        : `${paceClock(cel.value)} /km`;
+  const name = cel.kind === "strength" ? cel.lift : cel.move;
+  const sub = cel.firstEver
+    ? t("summary.firstEver")
+    : cel.kind === "strength"
+      ? `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`
+      : cel.prKind === "distance"
+        ? t("summary.furthestYet")
+        : t("summary.fastestYet");
+  const kicker = cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne");
+
+  return (
+    <View
+      style={{
+        marginTop: 16,
+        borderWidth: 1,
+        borderColor: C.lime,
+        backgroundColor: `${C.lime}14`,
+        borderRadius: aurora ? 22 : 16,
+        padding: 18,
+        overflow: "hidden",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+        <Animated.Text style={{ fontSize: 24, transform: [{ scale }] }}>🏆</Animated.Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.5, color: txt(C, C.lime), textTransform: "uppercase" }}>
+          {kicker}
+        </Text>
+      </View>
+      <RevealCount value={big} style={{ fontFamily: F.black, fontSize: 52, color: C.chalk, marginTop: 8, letterSpacing: -1 }} />
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 4 }}>
+        {name} <Text style={{ color: txt(C, C.lime) }}>— {sub}</Text>
+      </Text>
+      <Pressable onPress={onShare} style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>↗ {t("summary.share")}</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",

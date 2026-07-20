@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -30,11 +30,12 @@ import { fs, space,
   Stat,
   ChartFrame,
   txt,
+  ON_ACCENT,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
-import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
+import { fmtWeight, fmtTonnage, displayLoad, kgToUnit, sessionCelebration, statCountUp, type WeightUnit, type PrHit } from "@hybrid/core";
 import {
   sessionVolume,
   blockBestE1rm,
@@ -69,6 +70,155 @@ const MUSCLE_LABEL: Record<string, string> = {
   shoulders: "Shoulders",
   triceps: "Triceps",
 };
+
+// A number that ticks up from 0 → its final value on mount, then rests on the
+// EXACT original string (so a count-up never leaves a rounded number behind).
+// Honours reduced-motion by skipping straight to the value. Mirrors the mobile
+// CountUpText in lib/share.tsx and the summary CountUp — same statCountUp core.
+function SessionCountUp({ value }: { value: string }) {
+  const [disp, setDisp] = useState(value);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setDisp(value);
+      return;
+    }
+    const { target, format } = statCountUp(value);
+    if (!target) {
+      setDisp(value);
+      return;
+    }
+    let raf = 0;
+    let t0 = 0;
+    const dur = 900;
+    const tick = (now: number) => {
+      if (!t0) t0 = now;
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      if (p < 1) {
+        setDisp(format(target * eased));
+        raf = requestAnimationFrame(tick);
+      } else {
+        setDisp(value);
+      }
+    };
+    setDisp(format(0));
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{disp}</>;
+}
+
+/**
+ * PR REVEAL — the personal-best hero on the individual-workout page. When a
+ * session set a record, ONE headline record lands with a spring + a lime sweep
+ * and a count-up (chosen by the shared `sessionCelebration` so web and mobile
+ * agree), with "Share your win" as the payoff. Renders nothing when the session
+ * set no records — the page falls back to its normal stats.
+ */
+function PrReveal({
+  prs,
+  cardioPrs,
+  units,
+  t,
+  onShare,
+  sharing,
+  shareMsg,
+}: {
+  prs: PrHit[];
+  cardioPrs: CardioPrHit[];
+  units: WeightUnit;
+  t: (k: string) => string;
+  onShare: () => void;
+  sharing: boolean;
+  shareMsg: string;
+}) {
+  const cel = sessionCelebration(prs, cardioPrs);
+  if (!cel) return null;
+
+  const big =
+    cel.kind === "strength"
+      ? fmtWeight(cel.e1rm, units)
+      : cel.prKind === "distance"
+        ? formatSportDistance(cel.value, cel.move)
+        : `${paceClock(cel.value)} /km`;
+  const name = cel.kind === "strength" ? cel.lift : cel.move;
+  const sub = cel.firstEver
+    ? t("summary.firstEver")
+    : cel.kind === "strength"
+      ? `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`
+      : cel.prKind === "distance"
+        ? t("summary.furthestYet")
+        : t("summary.fastestYet");
+  const kicker = cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne");
+
+  return (
+    <div
+      className="win-pop"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 24,
+        padding: space.lg,
+        border: `1px solid color-mix(in srgb, ${LIME} 45%, ${LINE})`,
+        background: `radial-gradient(130% 130% at 12% 0%, color-mix(in srgb, ${LIME} 15%, transparent), transparent 55%), ${INK2}`,
+      }}
+    >
+      <div
+        aria-hidden
+        className="pr-sweep"
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: "42%",
+          pointerEvents: "none",
+          background: `linear-gradient(105deg, transparent, color-mix(in srgb, ${LIME} 32%, transparent), transparent)`,
+          filter: "blur(3px)",
+        }}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+        <span className="pr-trophy" style={{ fontSize: 26, lineHeight: 1 }}>
+          🏆
+        </span>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em" }} c={LIME}>
+          {kicker}
+        </Mono>
+      </div>
+      <div
+        className="pr-rise"
+        style={{ ...disp, fontWeight: 800, fontSize: 60, letterSpacing: "-.03em", lineHeight: 1, marginTop: space.sm }}
+      >
+        <SessionCountUp value={big} />
+      </div>
+      <div
+        className="pr-rise"
+        style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 6, animationDelay: ".08s" }}
+      >
+        {name} <span style={{ color: txt(LIME) }}>— {sub}</span>
+      </div>
+      <button
+        onClick={onShare}
+        disabled={sharing}
+        style={{
+          ...disp,
+          marginTop: space.lg,
+          width: "100%",
+          background: LIME,
+          color: ON_ACCENT,
+          border: "none",
+          borderRadius: 14,
+          padding: "15px 18px",
+          fontWeight: 800,
+          fontSize: fs.body,
+          cursor: sharing ? "default" : "pointer",
+          opacity: sharing ? 0.6 : 1,
+        }}
+      >
+        {shareMsg || (sharing ? "…" : `↗ ${t("summary.share")}`)}
+      </button>
+    </div>
+  );
+}
 
 // ---------- SESSION DETAIL (web parity: PRs, e1RM trend, muscle focus) ----------
 export function SessionDetail({
@@ -201,30 +351,22 @@ export function SessionDetail({
         </div>
       )}
 
-      {prs.length > 0 && (
-        <Card style={{ borderColor: LIME }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-            🏆 {prs.length} new personal record{prs.length > 1 ? "s" : ""}
-          </Mono>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
+      {/* PR reveal — the headline record lands as a hero (spring + sweep +
+          count-up), with "Share your win" as the payoff. Below it, the full PR
+          list stays for the detail-minded. Renders nothing on a no-PR session. */}
+      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={share} sharing={sharing} shareMsg={shareMsg} />
+
+      {prs.length + cardioPrs.length > 1 && (
+        <Card style={{ borderColor: LINE }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
             {prs.map((p) => (
               <Mono key={p.lift} s={{ fontSize: fs.body }} c={CHALK}>
-                {prLine(p)}
+                🏆 {prLine(p)}
               </Mono>
             ))}
-          </div>
-        </Card>
-      )}
-
-      {cardioPrs.length > 0 && (
-        <Card style={{ borderColor: BLUE }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-            🏃 {cardioPrs.length} new cardio record{cardioPrs.length > 1 ? "s" : ""}
-          </Mono>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
             {cardioPrs.map((p) => (
               <Mono key={`${p.move}-${p.kind}`} s={{ fontSize: fs.body }} c={CHALK}>
-                {cardioPrLine(p)}
+                🏃 {cardioPrLine(p)}
               </Mono>
             ))}
           </div>
