@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { Animated, View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   sportDistanceUnit,
@@ -39,6 +39,9 @@ import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
+import SwipeRow from "../swipe-row";
+import DragHandle from "../drag-handle";
+import { useDragReorder } from "../../lib/use-drag-reorder";
 import { setLoggerPref } from "../../lib/logger-prefs";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -69,6 +72,8 @@ export default function AuroraBuilder() {
   const b = useRoutineBuilder();
   const allowedSave = canSaveRoutine(persona, b.routines.length);
   const [picker, setPicker] = useState(false);
+  // Hold-and-drag reorder of the block cards (grip in each card header).
+  const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to), prefs.haptics);
 
   const add = (name: string, kind?: BlockKind) => {
     b.addExercise(name, kind);
@@ -95,19 +100,37 @@ export default function AuroraBuilder() {
 
       <SessionPulse items={b.items} units={prefs.units} C={C} bodyweightKg={bodyweightKg} />
 
-      {b.items.map((x, i) => (
-        <BlockCard
-          key={x.uid}
-          b={x}
-          index={i}
-          count={b.items.length}
-          C={C}
-          units={prefs.units}
-          rirMode={prefs.rpeAsRir}
-          bodyweightKg={bodyweightKg}
-          builder={b}
-        />
-      ))}
+      {b.items.map((x, i) => {
+        const lifted = blockDrag.dragKey === blockDrag.key("", i);
+        return (
+          <Animated.View
+            key={x.uid}
+            onLayout={blockDrag.onRowLayout("", i)}
+            style={lifted ? { transform: [{ translateY: blockDrag.dragY }], zIndex: 20, elevation: 8, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } } : undefined}
+          >
+            <BlockCard
+              b={x}
+              C={C}
+              units={prefs.units}
+              rirMode={prefs.rpeAsRir}
+              velocity={prefs.velocity}
+              haptics={prefs.haptics}
+              bodyweightKg={bodyweightKg}
+              builder={b}
+              grip={
+                b.items.length > 1 ? (
+                  <DragHandle
+                    onStart={() => blockDrag.begin("", i, b.items.length)}
+                    onMove={blockDrag.move}
+                    onEnd={blockDrag.end}
+                    color={lifted ? txt(C, C.lime) : C.ash}
+                  />
+                ) : null
+              }
+            />
+          </Animated.View>
+        );
+      })}
 
       {/* Ghost/dashed add affordance (the one-accent rule: lime stays reserved
           for Save) — same vocabulary as the Also-Today ghost ＋ tile. */}
@@ -237,15 +260,17 @@ type Builder = ReturnType<typeof useRoutineBuilder>;
  * reorder, collapse chevron, remove) + an always-visible metric row derived
  * from the editable fields + the per-modality editor body when expanded.
  */
-function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }: {
+function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, builder, grip }: {
   b: EditableBlock;
-  index: number;
-  count: number;
   C: Palette;
   units: WeightUnit;
   rirMode: boolean;
+  velocity: boolean;
+  haptics: boolean;
   bodyweightKg?: number | null;
   builder: Builder;
+  /** The hold-and-drag reorder handle (owned by the parent's drag state). */
+  grip?: React.ReactNode;
 }) {
   const { t } = useLang();
   const [open, setOpen] = useState(true);
@@ -256,30 +281,17 @@ function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }
   const label = (s: string) => (
     <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
   );
-  const iconBtn = (onPress: () => void, glyph: string, a11y: string, disabled = false) => (
-    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={6} style={{ width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", opacity: disabled ? 0.4 : 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{glyph}</Text>
-    </Pressable>
-  );
-
   return (
     <ACard style={{ marginBottom: 12 }}>
       {/* header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+        {grip}
         <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, c) }}>{b.kind.toUpperCase()}</Text>
         <TextInput
           value={b.name}
           onChangeText={(v) => builder.setField(b.uid, "name", v)}
           style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, padding: 0 }}
         />
-        {/* Reorder is always available (open OR collapsed) — hidden only when
-            there's nothing to reorder. */}
-        {count > 1 && (
-          <>
-            {iconBtn(() => builder.moveBlock(b.uid, -1), "↑", t("common.moveUp"), index === 0)}
-            {iconBtn(() => builder.moveBlock(b.uid, 1), "↓", t("common.moveDown"), index === count - 1)}
-          </>
-        )}
         <Pressable onPress={() => setOpen((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={open ? t("w.train.blocks.collapse") : t("w.train.blocks.expand")}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>▾</Text>
         </Pressable>
@@ -331,7 +343,7 @@ function BlockCard({ b, index, count, C, units, rirMode, bodyweightKg, builder }
 
       {/* editor body */}
       {open && b.kind === "strength" && (
-        <StrengthEditor b={b} C={C} units={units} rirMode={rirMode} builder={builder} field={field} label={label} />
+        <StrengthEditor b={b} C={C} units={units} rirMode={rirMode} velocity={velocity} haptics={haptics} builder={builder} field={field} label={label} />
       )}
       {open && b.kind === "cardio" && (
         <CardioEditor b={b} C={C} builder={builder} field={field} label={label} />
@@ -347,17 +359,26 @@ type FieldStyle = object;
 type LabelFn = (s: string) => React.ReactNode;
 
 /** Per-set strength editor: role badge (tap to cycle), load, reps, RPE/RIR per
- *  set, add/remove sets, and the planned-rest stepper. */
-function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
+ *  set (+ M/S when the velocity pref is on), drag-to-reorder rows, add sets
+ *  (with the warm-up / ramp / cool-down / drop Special menu), and the
+ *  planned-rest stepper. */
+function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, field, label }: {
   b: EditableBlock & { kind: "strength" };
   C: Palette;
   units: WeightUnit;
   rirMode: boolean;
+  velocity: boolean;
+  haptics: boolean;
   builder: Builder;
   field: FieldStyle;
   label: LabelFn;
 }) {
   const { t } = useLang();
+  // Warm-up / ramp / cool-down / drop tucked into a "Special ▾" menu — the
+  // common path stays one "+ Add set" tap (same layout as the live logger).
+  const [special, setSpecial] = useState(false);
+  // Hold-and-drag reorder of the set rows (grip on each row).
+  const setDrag = useDragReorder((_g, from, to) => builder.moveSet(b.uid, from, to), haptics);
   // The exercise DB drives how THIS lift's sets read: a plank counts seconds,
   // a carry counts metres, a pull-up's load is BW + added weight.
   const sp = exerciseProfile(b.name).strength;
@@ -381,39 +402,89 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
         <Pressable style={{ flex: 1 }} onPress={() => setLoggerPref("rpeAsRir", !rirMode)} accessibilityRole="button" accessibilityLabel={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
           {label(`${rirMode ? "RIR" : "RPE"} ⇄`)}
         </Pressable>
-        <View style={{ width: 28 }} />
+        {velocity && <View style={{ flex: 1 }}>{label("M/S")}</View>}
+        <View style={{ width: 22 }} />
       </View>
+      {/* Swipe a row left to delete it, hold the ⠿ grip to drag-reorder — the
+          same gestures as the live logger; no per-row buttons cluttering the
+          ledger. */}
       {b.sets.map((s, i) => {
         const st = setType(s);
         const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
+        const lifted = setDrag.dragKey === setDrag.key("", i);
         return (
-          <View key={i} style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginBottom: 6 }}>
-            <Pressable
-              onPress={() => builder.cycleType(b.uid, i)}
-              accessibilityRole="button"
-              accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-              style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
-            </Pressable>
-            {showLoad && (
-              <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            )}
-            <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            <Pressable onPress={() => builder.removeSet(b.uid, i)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t("common.delete")} style={{ width: 28, height: 38, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>−</Text>
-            </Pressable>
-          </View>
+          <Animated.View
+            key={i}
+            onLayout={setDrag.onRowLayout("", i)}
+            style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
+          >
+          <SwipeRow label={t("workout.deleteSet")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
+            <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
+              <Pressable
+                onPress={() => builder.cycleType(b.uid, i)}
+                accessibilityRole="button"
+                accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
+                style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+              </Pressable>
+              {showLoad && (
+                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              )}
+              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              {velocity && (
+                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              )}
+              <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
+                <DragHandle
+                  onStart={() => setDrag.begin("", i, b.sets.length)}
+                  onMove={setDrag.move}
+                  onEnd={setDrag.end}
+                  color={lifted ? txt(C, C.lime) : C.ash}
+                  size={fs.note}
+                />
+              </View>
+            </View>
+          </SwipeRow>
+          </Animated.View>
         );
       })}
       {/* Ghost/dashed add affordance — the screen's single lime fill belongs
-          to the primary Save action, not a repeated per-card control. */}
+          to the primary Save action, not a repeated per-card control. The rarer
+          set types tuck into "Special ▾" (parity with the live logger). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 6 }}>
         <Pressable onPress={() => builder.addSet(b.uid)} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
+        <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("workout.special")} {special ? "▴" : "▾"}</Text>
+        </Pressable>
       </View>
+      {special && (
+        <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink, overflow: "hidden" }}>
+          {[
+            { run: builder.addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSetTitle"), desc: t("workout.warmupSetDesc") },
+            { run: builder.addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRampTitle"), desc: t("workout.warmupRampDesc") },
+            { run: builder.addCooldownSet, c: C.blue, badge: "C", label: t("workout.cooldownSetTitle"), desc: t("workout.cooldownSetDesc") },
+            { run: builder.addDropSet, c: C.ash, badge: "↓", label: t("workout.dropSetTitle"), desc: t("workout.dropSetDesc") },
+          ].map((it, ii) => (
+            <Pressable
+              key={it.badge}
+              onPress={() => { it.run(b.uid); setSpecial(false); }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+            >
+              <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{it.desc}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
       {/* planned rest between working sets — prescription, 15 s steps */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>

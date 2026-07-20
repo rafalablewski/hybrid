@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import {
   inferBlockKind,
   cycleSetType,
-  moveItem,
+  moveItemTo,
+  warmupRamp,
   DEFAULT_REST_SEC,
   type SessionBlock,
   type StrengthSet,
@@ -53,8 +54,8 @@ export function useRoutineBuilder() {
     setItems((xs) => [...xs, newBlock(clean, kind)]);
   };
   const removeItem = (u: string) => setItems((xs) => xs.filter((x) => x.uid !== u));
-  const moveBlock = (u: string, dir: -1 | 1) =>
-    setItems((xs) => moveItem(xs, xs.findIndex((x) => x.uid === u), dir));
+  // Drop reorder (hold the grip handle and drag): move a block to any index.
+  const moveBlockTo = (from: number, to: number) => setItems((xs) => moveItemTo(xs, from, to));
 
   // ----- strength: per-set control -----
   const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
@@ -73,6 +74,31 @@ export function useRoutineBuilder() {
     });
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
+  // Drag a set row to any position within its block (grip handle).
+  const moveSet = (u: string, from: number, to: number) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItemTo(b.sets, from, to) } : b));
+  // Special set adds — same semantics as the live logger / web editor: warm-up
+  // and cool-down sets are excluded from working volume/PRs, drop sets are a
+  // lighter no-rest continuation, and the ramp prepends ~40/60/80% steps up to
+  // the block's heaviest working load.
+  const addWarmupSet = (u: string) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", role: "warmup" }] } : b));
+  const addCooldownSet = (u: string) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", role: "cooldown" }] } : b));
+  const addDropSet = (u: string) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", drop: true }] } : b));
+  const addWarmupRamp = (u: string) =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const workingMax = Math.max(
+        0,
+        ...b.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
+      );
+      const ramp = warmupRamp(workingMax);
+      if (!ramp.length) return b;
+      const rampSets: StrengthSet[] = ramp.map((step) => ({ load: String(step.load), reps: String(step.reps), role: "warmup" }));
+      return { ...b, sets: [...rampSets, ...b.sets] };
+    });
   // Tap the set badge to cycle its role: working → warm-up → cool-down → drop.
   const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
@@ -134,8 +160,9 @@ export function useRoutineBuilder() {
 
   return {
     name, setName, items, routines, saving, msg,
-    addExercise, removeItem, moveBlock,
-    updateSet, addSet, removeSet, cycleType, bumpRest, setField,
+    addExercise, removeItem, moveBlockTo,
+    updateSet, addSet, removeSet, moveSet, cycleType, bumpRest, setField,
+    addWarmupSet, addCooldownSet, addDropSet, addWarmupRamp,
     loadRoutine, save, remove,
   };
 }

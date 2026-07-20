@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -35,7 +35,6 @@ import {
   setType,
   cycleSetType,
   setTypeBadge,
-  moveItem,
   moveItemTo,
   warmupRamp,
   defaultSessionTitle,
@@ -75,6 +74,9 @@ import {
 import { fetchSessions, createSession, renameSession, patchSessionNote, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
+import SwipeRow from "../components/swipe-row";
+import DragHandle from "../components/drag-handle";
+import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
@@ -82,7 +84,7 @@ import { useSession } from "../lib/session";
 import { usePersona } from "../lib/persona";
 import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
-import { useLoggerPrefs } from "../lib/logger-prefs";
+import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
@@ -527,8 +529,6 @@ export default function Workout() {
     setPickerOpen(false);
   };
   const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
-  const moveExercise = (u: string, dir: -1 | 1) =>
-    setExercises((xs) => moveItem(xs, xs.findIndex((x) => x.uid === u), dir));
   // Drop reorder (hold the grip handle and drag): move from one index to another.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
@@ -587,9 +587,6 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "cooldown" as SetRole }] } : x)),
     );
-  // Reorder a set within an exercise (the ↑/↓ controls on each row).
-  const moveSet = (u: string, i: number, dir: -1 | 1) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: moveItem(x.sets, i, dir) } : x)));
   // Auto warm-up ramp: prepend ~40/60/80% sets up to the heaviest working load.
   const addWarmupRamp = (u: string) =>
     setExercises((xs) =>
@@ -699,6 +696,12 @@ export default function Workout() {
     dragY.setValue(0);
     setDragUid(null);
   };
+  // Drag-to-reorder SET ROWS (grip on each row), grouped per exercise — a drag
+  // never crosses into another exercise's ledger.
+  const setDrag = useDragReorder(
+    (group, from, to) => setExercises((xs) => xs.map((x) => (x.uid === group ? { ...x, sets: moveItemTo(x.sets, from, to) } : x))),
+    prefs.haptics,
+  );
 
   const pickRest = (sec: number) => {
     setRestTarget((cur) => (cur === sec ? null : sec));
@@ -888,12 +891,28 @@ export default function Workout() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename). */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 14 }}>
           <Mono style={{ flex: 1 }}>
             {exercises.length
               ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
               : t("workout.firstExercise")}
           </Mono>
+          {/* On-demand rest-timer switch — same persisted pref as Logger settings,
+              so flipping it mid-workout sticks for next time too. */}
+          <Pressable
+            onPress={() => {
+              const next = !prefs.restTimer;
+              setLoggerPref("restTimer", next);
+              if (!next) setRestSince(null);
+            }}
+            hitSlop={8}
+            accessibilityLabel={t("loggerPrefs.restTimer")}
+            style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
+              ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
+            </Text>
+          </Pressable>
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
           </Pressable>
@@ -1011,12 +1030,6 @@ export default function Workout() {
                   </Pressable>
                 );
               })()}
-              <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={14}>
-                <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: fs.note }}>↑</Text>
-              </Pressable>
-              <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={14}>
-                <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: fs.note }}>↓</Text>
-              </Pressable>
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={14}>
                 <Text style={{ color: C.ash, fontSize: fs.note }}>✕</Text>
               </Pressable>
@@ -1046,13 +1059,31 @@ export default function Workout() {
                     const m = exerciseProfile(x.name).strength?.measure;
                     return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
                   })()}</ColHead>
-                  {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
-                  {prefs.detailed && <ColHead>M/S</ColHead>}
+                  {/* The column header is the RPE ⇄ RIR mode switch — persists as
+                      the device-wide logger pref (parity with the Builder + web). */}
+                  {prefs.detailed && (
+                    <Pressable
+                      style={{ flex: 1 }}
+                      onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}
+                    >
+                      <ColHead>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</ColHead>
+                    </Pressable>
+                  )}
+                  {prefs.velocity && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />
                   <View style={{ width: 40 }} />
                 </View>
-                {x.sets.map((s, i) => (
-                  <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
+                {x.sets.map((s, i) => {
+                  const lifted = setDrag.dragKey === setDrag.key(x.uid, i);
+                  return (
+                  <Animated.View
+                    key={s.uid ?? i}
+                    onLayout={setDrag.onRowLayout(x.uid, i)}
+                    style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
+                  >
+                  <SwipeRow label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
                     <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                     {(() => {
                       const st = setType(s);
@@ -1073,14 +1104,15 @@ export default function Workout() {
                     )}
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
-                    {prefs.detailed && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
-                    <View style={{ width: 22, justifyContent: "center" }}>
-                      <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={12} style={{ alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === 0 ? C.line : C.ash }}>↑</Text>
-                      </Pressable>
-                      <Pressable onPress={() => moveSet(x.uid, i, 1)} disabled={i === x.sets.length - 1} hitSlop={12} style={{ alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === x.sets.length - 1 ? C.line : C.ash }}>↓</Text>
-                      </Pressable>
+                    {prefs.velocity && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
+                    <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
+                      <DragHandle
+                        onStart={() => setDrag.begin(x.uid, i, x.sets.length)}
+                        onMove={setDrag.move}
+                        onEnd={setDrag.end}
+                        color={lifted ? txt(C, C.lime) : C.ash}
+                        size={fs.note}
+                      />
                     </View>
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
@@ -1090,7 +1122,9 @@ export default function Workout() {
                     </Pressable>
                     </View>
                   </SwipeRow>
-                ))}
+                  </Animated.View>
+                  );
+                })}
                 {/* Add-set control: one primary "+ Add set", with warm-up / ramp
                     / cool-down / drop in a "Special ▾" menu (instead of a row of
                     five). The set badge still re-types a set with a tap. */}
@@ -1986,67 +2020,6 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           elevation: b.kind === "cardio" && b.elevation != null ? String(b.elevation) : "",
           zone: b.kind === "cardio" && b.zone != null ? String(b.zone) : "",
         },
-  );
-}
-
-// Swipe a set row left to reveal a Delete action — for sets added by accident.
-// Built on Animated + PanResponder (no native gesture-handler dependency, so it
-// works in the existing dev build). Only claims clearly-horizontal drags, so the
-// numeric inputs still focus on tap and the list still scrolls vertically.
-function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete: () => void; label: string }) {
-  const C = useTheme().palette;
-  const tx = useRef(new Animated.Value(0)).current;
-  const openRef = useRef(false);
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
-      onPanResponderMove: (_, g) => {
-        const base = openRef.current ? -76 : 0;
-        tx.setValue(Math.max(-110, Math.min(0, base + g.dx)));
-      },
-      onPanResponderRelease: (_, g) => {
-        const open = openRef.current ? g.dx < 40 : g.dx < -40;
-        openRef.current = open;
-        Animated.spring(tx, { toValue: open ? -76 : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
-      },
-    }),
-  ).current;
-  return (
-    <View style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}>
-      <Pressable
-        onPress={onDelete}
-        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
-      >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-      </Pressable>
-      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: C.card }} {...pan.panHandlers}>
-        {children}
-      </Animated.View>
-    </View>
-  );
-}
-
-// Grip handle on each exercise card — press and drag to reorder (the arrows
-// still work for single steps). Built on PanResponder (no gesture-handler dep,
-// matching SwipeRow). Its own responder is created once; live callbacks are read
-// through a ref so a parent re-render mid-drag can't strand a stale closure.
-function DragHandle({ onStart, onMove, onEnd, color }: { onStart: () => void; onMove: (dy: number) => void; onEnd: () => void; color: string }) {
-  const cbs = useRef({ onStart, onMove, onEnd });
-  cbs.current = { onStart, onMove, onEnd };
-  const pan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => cbs.current.onStart(),
-      onPanResponderMove: (_, g) => cbs.current.onMove(g.dy),
-      onPanResponderRelease: () => cbs.current.onEnd(),
-      onPanResponderTerminate: () => cbs.current.onEnd(),
-    }),
-  ).current;
-  return (
-    <View {...pan.panHandlers} hitSlop={8} style={{ paddingRight: 2, paddingVertical: 4 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color }}>⠿</Text>
-    </View>
   );
 }
 

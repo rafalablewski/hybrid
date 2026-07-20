@@ -16,6 +16,7 @@ const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "autoAdvance", titleKey: "loggerPrefs.autoAdvance", descKey: "loggerPrefs.autoAdvanceDesc" },
   { key: "rpeAsRir", titleKey: "loggerPrefs.rpeAsRir", descKey: "loggerPrefs.rpeAsRirDesc" },
   { key: "detailed", titleKey: "loggerPrefs.detailed", descKey: "loggerPrefs.detailedDesc" },
+  { key: "velocity", titleKey: "loggerPrefs.velocity", descKey: "loggerPrefs.velocityDesc" },
   { key: "countIn", titleKey: "loggerPrefs.countIn", descKey: "loggerPrefs.countInDesc" },
   { key: "restTimer", titleKey: "loggerPrefs.restTimer", descKey: "loggerPrefs.restTimerDesc" },
   { key: "restNotify", titleKey: "loggerPrefs.restNotify", descKey: "loggerPrefs.restNotifyDesc" },

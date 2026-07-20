@@ -90,6 +90,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
           emptyHint={tr("w.train.builder.emptyHint")}
           reorder
           signal
+          velocity={prefs.velocity}
           rirMode={prefs.rpeAsRir}
           units={prefs.units}
           plateCalc={prefs.plateCalc}

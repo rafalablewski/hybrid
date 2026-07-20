@@ -8,8 +8,11 @@ import { sanitizeLandmarkOverrides, type LandmarkOverrides } from "./engines/lan
 import type { WeightUnit } from "./units";
 
 export interface LoggerPrefs {
-  /** Detailed shows the RPE (and on web, velocity) column; Simple is load × reps. */
+  /** Detailed shows the RPE column; Simple is load × reps. */
   detailed: boolean;
+  /** Show the M/S bar-velocity column (VBT logging). Off by default — only
+   *  athletes who train with a velocity device want it on. */
+  velocity: boolean;
   /** Show the 5→1→GO get-ready count-in before a fresh workout (mobile). */
   countIn: boolean;
   /** Keep the screen awake while logging (mobile). */
@@ -50,6 +53,7 @@ export interface LoggerPrefs {
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   detailed: true,
+  velocity: false,
   countIn: true,
   keepAwake: true,
   haptics: true,
@@ -98,6 +102,7 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
       : DEFAULT_LOGGER_PREFS.restSeconds;
   return {
     detailed: bool(r.detailed, DEFAULT_LOGGER_PREFS.detailed),
+    velocity: bool(r.velocity, DEFAULT_LOGGER_PREFS.velocity),
     countIn: bool(r.countIn, DEFAULT_LOGGER_PREFS.countIn),
     keepAwake: bool(r.keepAwake, DEFAULT_LOGGER_PREFS.keepAwake),
     haptics: bool(r.haptics, DEFAULT_LOGGER_PREFS.haptics),

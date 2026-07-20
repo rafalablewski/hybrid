@@ -362,6 +362,7 @@ export default function AccountSettings() {
           <>
             <Section label={t("w.account.settings.workout-logger")}>
               <PrefRow first title={t("w.account.settings.logger-detailed-t")} desc={t("w.account.settings.logger-detailed-help")} on={prefs.detailed} onToggle={() => setLoggerPref("detailed", !prefs.detailed)} />
+              <PrefRow title={t("loggerPrefs.velocity")} desc={t("loggerPrefs.velocityDesc")} on={prefs.velocity} onToggle={() => setLoggerPref("velocity", !prefs.velocity)} />
               <PrefRow title={t("w.account.settings.logger-warmups-t")} desc={t("w.account.settings.volume-counting-help")} on={prefs.countWarmupsInVolume} onToggle={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} />
               <PrefRow title={t("w.account.settings.logger-fractional-t")} desc={t("w.account.settings.fractional-help")} on={prefs.fractionalVolume} onToggle={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} />
               <PrefRow title={t("loggerPrefs.plateCalc")} desc={t("loggerPrefs.plateCalcDesc")} on={prefs.plateCalc} onToggle={() => setLoggerPref("plateCalc", !prefs.plateCalc)} />
