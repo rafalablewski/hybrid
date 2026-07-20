@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, View, Text, Pressable, ScrollView, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -11,6 +11,7 @@ import {
   sessionVolume,
   sessionSignature,
   SIGNATURE_MIN_BARS,
+  liftStanding,
   blockBestE1rm,
   fmtWeight,
   fmtTonnage,
@@ -26,6 +27,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
+import { fetchTalent } from "../lib/api";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
@@ -60,8 +62,23 @@ export function WorkoutWrapped({
   const [step, setStep] = useState<"wrapped" | "share">("wrapped");
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   const [active, setActive] = useState(0);
+  // "Where you stand" needs the athlete's talent cohort (sport/sex/age).
+  const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
   const pagerRef = useRef<ScrollView>(null);
   const storyRefs = useRef<Record<number, View | null>>({});
+
+  useEffect(() => {
+    let alive = true;
+    fetchTalent()
+      .then((d) => {
+        const p = d.profile;
+        if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const winW = Dimensions.get("window").width;
   const slideW = winW;
@@ -89,6 +106,7 @@ export function WorkoutWrapped({
   const bests: ShareBest[] = [...bestMap.entries()]
     .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
     .sort((a, b) => b.e1rm - a.e1rm);
+  const standing = cohort && bests[0] && bwHere ? liftStanding(bests[0].e1rm, bwHere, cohort) : null;
 
   const muscleVol = volumeByMuscle(session.blocks);
   const muscleMax = muscleVol[0]?.volume ?? 0;
@@ -180,6 +198,13 @@ export function WorkoutWrapped({
               <View style={{ borderRadius: 18, padding: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, overflow: "hidden" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.5, color: premium.text, textTransform: "uppercase" }}>✦ {t("session.wrapped.premium")}</Text>
                 <View style={{ marginTop: 14, opacity: full ? 1 : 0.18 }}>
+                  {standing && (
+                    <View style={{ marginBottom: 14, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.wrapped.standing")}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, C.lime), marginTop: 4 }}>{t("session.wrapped.top")} {standing.topPct}%</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{cohort!.sport} — {t("session.wrapped.estimate")}</Text>
+                    </View>
+                  )}
                   {wrapped.facts.map((f) => (
                     <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
