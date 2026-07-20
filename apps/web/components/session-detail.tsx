@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useLang } from "@/lib/i18n";
-import { shareWorkoutStory, type ShareStats } from "@/lib/workout-share";
 import { fs, space,
   INK2,
   LINE, LINE_HEX,
@@ -299,35 +298,9 @@ export function SessionDetail({
   const cardio = sessionCardioTotals(session.blocks);
   const cardioMin = cardio.minutes || minutes || 0;
 
-  // The "Wrapped" recap + story-share overlay (premium panels + story picker).
+  // The "Wrapped" recap + story-share overlay (premium panels + story picker) —
+  // the one share entry for the page (header pill + the reveal both open it).
   const [wrappedOpen, setWrappedOpen] = useState(false);
-  // Share this session like a finished workout (P5) — same branded story card.
-  const [sharing, setSharing] = useState(false);
-  const [shareMsg, setShareMsg] = useState("");
-  const share = async () => {
-    setSharing(true);
-    setShareMsg("");
-    const bests = session.blocks
-      .flatMap((b) => (b.kind === "strength" ? [{ name: b.name, e1rm: blockBestE1rm(b, bwHere), pr: prSet.has(b.name) }] : []))
-      .filter((b) => b.e1rm > 0)
-      .sort((a, b) => b.e1rm - a.e1rm)
-      .slice(0, 3);
-    const stats: ShareStats = {
-      title: session.title,
-      minutes: minutes ?? cardio.minutes ?? 0,
-      sets,
-      volume: sessionVolume(session.blocks, false, bwHere),
-      bests,
-      firstEver: false,
-    };
-    try {
-      const how = await shareWorkoutStory(stats, units, t);
-      setShareMsg(how && how !== "cancelled" ? t("w.train.logger.shared") : "");
-    } catch {
-      setShareMsg("");
-    }
-    setSharing(false);
-  };
 
   // The session's heaviest lift → its e1RM trend across all history.
   const topLift = session.blocks
@@ -363,13 +336,12 @@ export function SessionDetail({
             {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
           </Mono>
         </div>
-        {/* Share this session — same branded story card as the finished workout. */}
+        {/* Open the full Wrapped recap → story share (the one share entry). */}
         <button
-          onClick={share}
-          disabled={sharing}
-          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 45%, transparent)`, borderRadius: 999, padding: "9px 18px", cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1, whiteSpace: "nowrap" }}
+          onClick={() => setWrappedOpen(true)}
+          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 45%, transparent)`, borderRadius: 999, padding: "9px 18px", cursor: "pointer", whiteSpace: "nowrap" }}
         >
-          {shareMsg || (sharing ? "…" : `↗ ${t("w.train.logger.share")}`)}
+          ✦ {t("session.wrapped.see")}
         </button>
       </div>
 

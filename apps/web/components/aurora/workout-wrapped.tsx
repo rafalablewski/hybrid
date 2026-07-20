@@ -242,8 +242,9 @@ export function WorkoutWrapped({
           <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
             {/* Hero */}
             <div style={{ position: "relative", overflow: "hidden", borderRadius: 22, padding: space.lg, border: `1px solid color-mix(in srgb, ${LIME} 30%, ${LINE})`, background: `radial-gradient(130% 120% at 85% 0%, color-mix(in srgb, ${VIOLET} 22%, transparent), transparent 55%), radial-gradient(120% 100% at 0% 100%, color-mix(in srgb, ${LIME} 12%, transparent), transparent 60%), ${INK2}` }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{session.title}</div>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 56, letterSpacing: "-.03em", lineHeight: 1, marginTop: 8 }}>{heroBig}</div>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em" }} c={VIOLET}>✦ {t("session.wrapped.title")}</Mono>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 6 }}>{session.title}</div>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 64, letterSpacing: "-.03em", lineHeight: 1, marginTop: 6 }}>{heroBig}</div>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 6, color: txt(cel ? LIME : ASH) }}>{heroSub}</div>
               {/* Session signature — the effort fingerprint (one bar per set). */}
               {signature.length >= SIGNATURE_MIN_BARS && (
