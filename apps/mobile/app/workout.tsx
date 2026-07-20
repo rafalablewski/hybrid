@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -75,6 +75,7 @@ import {
 import { fetchSessions, createSession, renameSession, patchSessionNote, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
+import SwipeRow from "../components/swipe-row";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
@@ -1059,7 +1060,18 @@ export default function Workout() {
                     const m = exerciseProfile(x.name).strength?.measure;
                     return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
                   })()}</ColHead>
-                  {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
+                  {/* The column header is the RPE ⇄ RIR mode switch — persists as
+                      the device-wide logger pref (parity with the Builder + web). */}
+                  {prefs.detailed && (
+                    <Pressable
+                      style={{ flex: 1 }}
+                      onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}
+                    >
+                      <ColHead>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</ColHead>
+                    </Pressable>
+                  )}
                   {prefs.velocity && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />
                   <View style={{ width: 40 }} />
@@ -1854,43 +1866,6 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           elevation: b.kind === "cardio" && b.elevation != null ? String(b.elevation) : "",
           zone: b.kind === "cardio" && b.zone != null ? String(b.zone) : "",
         },
-  );
-}
-
-// Swipe a set row left to reveal a Delete action — for sets added by accident.
-// Built on Animated + PanResponder (no native gesture-handler dependency, so it
-// works in the existing dev build). Only claims clearly-horizontal drags, so the
-// numeric inputs still focus on tap and the list still scrolls vertically.
-function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete: () => void; label: string }) {
-  const C = useTheme().palette;
-  const tx = useRef(new Animated.Value(0)).current;
-  const openRef = useRef(false);
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
-      onPanResponderMove: (_, g) => {
-        const base = openRef.current ? -76 : 0;
-        tx.setValue(Math.max(-110, Math.min(0, base + g.dx)));
-      },
-      onPanResponderRelease: (_, g) => {
-        const open = openRef.current ? g.dx < 40 : g.dx < -40;
-        openRef.current = open;
-        Animated.spring(tx, { toValue: open ? -76 : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
-      },
-    }),
-  ).current;
-  return (
-    <View style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}>
-      <Pressable
-        onPress={onDelete}
-        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
-      >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-      </Pressable>
-      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: C.card }} {...pan.panHandlers}>
-        {children}
-      </Animated.View>
-    </View>
   );
 }
 

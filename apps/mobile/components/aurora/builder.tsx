@@ -39,6 +39,7 @@ import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
+import SwipeRow from "../swipe-row";
 import { setLoggerPref } from "../../lib/logger-prefs";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -381,30 +382,30 @@ function StrengthEditor({ b, C, units, rirMode, builder, field, label }: {
         <Pressable style={{ flex: 1 }} onPress={() => setLoggerPref("rpeAsRir", !rirMode)} accessibilityRole="button" accessibilityLabel={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
           {label(`${rirMode ? "RIR" : "RPE"} ⇄`)}
         </Pressable>
-        <View style={{ width: 28 }} />
       </View>
+      {/* Swipe a row left to delete it (same gesture as the live logger) — no
+          per-row remove button cluttering the ledger. */}
       {b.sets.map((s, i) => {
         const st = setType(s);
         const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
         return (
-          <View key={i} style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginBottom: 6 }}>
-            <Pressable
-              onPress={() => builder.cycleType(b.uid, i)}
-              accessibilityRole="button"
-              accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-              style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
-            </Pressable>
-            {showLoad && (
-              <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            )}
-            <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-            <Pressable onPress={() => builder.removeSet(b.uid, i)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t("common.delete")} style={{ width: 28, height: 38, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>−</Text>
-            </Pressable>
-          </View>
+          <SwipeRow key={i} label={t("workout.deleteSet")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
+            <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
+              <Pressable
+                onPress={() => builder.cycleType(b.uid, i)}
+                accessibilityRole="button"
+                accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
+                style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+              </Pressable>
+              {showLoad && (
+                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              )}
+              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+            </View>
+          </SwipeRow>
         );
       })}
       {/* Ghost/dashed add affordance — the screen's single lime fill belongs
