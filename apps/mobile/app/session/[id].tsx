@@ -43,6 +43,7 @@ import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F } from "../..
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";
+import { WorkoutWrapped } from "../../components/workout-wrapped";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -62,6 +63,8 @@ export default function SessionDetail() {
   const all = q.data ?? null;
   const manage = useSessionActions();
   const busy = manage.busyId !== null;
+  // The "Wrapped" recap + story-share overlay (premium panels + story picker).
+  const [wrappedOpen, setWrappedOpen] = useState(false);
   // A session logged seconds ago may not be in a still-fresh cache yet —
   // refetch ONCE when the id is missing before declaring it not found.
   const retriedRef = useRef(false);
@@ -170,17 +173,27 @@ export default function SessionDetail() {
         )}
       </View>
 
-      {/* PR reveal — the headline record lands (spring + count-up) with "Share
-          your win" as the payoff; the full PR list stays below when there's more
-          than one. Renders nothing on a no-PR session. */}
+      {/* PR reveal — the headline record lands (spring + count-up); "Share your
+          win" opens the Wrapped recap → story share; the full PR list stays
+          below when there's more than one. Renders nothing on a no-PR session. */}
       <PrReveal
         prs={prs}
         cardioPrs={cardioPrs}
         units={units}
         t={t}
         aurora={aurora}
-        onShare={() => shareWorkout(cardRef, shareText, t("summary.share"))}
+        onShare={() => setWrappedOpen(true)}
       />
+
+      {/* No PR to celebrate? Every workout can still open its Wrapped recap. */}
+      {prs.length + cardioPrs.length === 0 && (
+        <Pressable
+          onPress={() => setWrappedOpen(true)}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}0f`, borderRadius: aurora ? 999 : 14, paddingVertical: 14, alignItems: "center" }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>✦ {t("session.wrapped.see")}</Text>
+        </Pressable>
+      )}
 
       {prs.length + cardioPrs.length > 1 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 12 }}>
@@ -273,6 +286,10 @@ export default function SessionDetail() {
         <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
         <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
+
+      {wrappedOpen && (
+        <WorkoutWrapped session={session} all={all} units={units} bw={bw} onClose={() => setWrappedOpen(false)} />
+      )}
     </>,
   );
 }
