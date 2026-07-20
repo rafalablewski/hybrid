@@ -27,16 +27,20 @@ export default function SaveRoutineCard({
   blocks,
   defaultName,
   onUpgrade,
+  startOpen,
 }: {
   blocks: SessionBlock[];
   defaultName: string;
   /** In-shell navigation to the upgrade screen (falls back to /upgrade). */
   onUpgrade?: () => void;
+  /** Open the composer immediately (the Liquid-Field finish screen expands it
+   *  straight from the ★ satellite; elsewhere it starts as the collapsed pill). */
+  startOpen?: boolean;
 }) {
   const { t } = useLang();
   const persona = usePersona();
   const [savedCount, setSavedCount] = useState(0);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!startOpen);
   const [name, setName] = useState(defaultName);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
   const [err, setErr] = useState("");

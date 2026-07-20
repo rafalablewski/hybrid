@@ -458,13 +458,18 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
-                one card ≈ 72% wide so the next path peeks in from the right */}
+                one card ≈ 72% wide so the next path peeks in from the right,
+                FULL-BLEED like every screen-level rail: negative margins the
+                width of AuroraScreen's 16dp gutter pull the scroll clip to the
+                true screen edge, matching internal padding keeps resting cards
+                on the column. */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               snapToInterval={structW + 12}
               decelerationRate="fast"
-              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 2 }}
+              style={{ marginHorizontal: -16 }}
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}
             >
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
@@ -873,7 +878,7 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
             <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
               <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: 12, color: txt(C, C.lime) }}>{logLabel}</Text>
           </Pressable>
         ) : null}
       </View>

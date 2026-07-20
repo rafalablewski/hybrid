@@ -761,13 +761,26 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(data.title);
-  const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
+  const hasWin = prs.length > 0 || cardioPrs.length > 0;
+  const milestone = firstEver || hasWin;
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
   const [active, setActive] = useState(0);
-  // The chosen "wrapped" look — one of the 4 shared styles.
+  // The chosen "wrapped" look. No toggle any more — TAPPING the card cycles
+  // through the shared looks (the control folded into the object itself;
+  // mobile parity: workout.tsx cycleStyle).
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   const st = storyStyle(styleId);
+  const cycleStyle = () => {
+    setStyleId((cur) => {
+      const i = STORY_STYLES.findIndex((s) => s.id === cur);
+      return STORY_STYLES[(i + 1) % STORY_STYLES.length]!.id;
+    });
+  };
+  // The ★ satellite expands the save-as-routine composer beneath the cluster.
+  const [routineOpen, setRoutineOpen] = useState(false);
+  // The win is the headline: a first or a PR retitles the one Share action.
+  const shareLabel = firstEver ? t("summary.shareFirst") : hasWin ? t("summary.sharePr") : t("summary.share");
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -827,122 +840,166 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
 
   const previewW = 300; // on-screen story width (9:16 → 533 tall)
 
+  // LIQUID FIELD — the card floats in an intensified pocket of the ambient
+  // field; every control is the same glass material. Share is the one filled
+  // (lime) action; routine + analysis are glass satellites at its sides; exit
+  // is a glass ✕ up top. Mobile parity: workout.tsx Summary.
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Hero + heading + workout name on top. */}
-      <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
-        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
-        <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
-        <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 6 }}>{title || "Workout"}</div>
-        <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
-        <SessionNote sessionId={sessionId} />
+    <div style={{ position: "relative", maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* Local glow intensifiers over the ambient .lg-field (see globals.css). */}
+      <div aria-hidden style={{ position: "absolute", inset: -20, overflow: "hidden", borderRadius: 36, pointerEvents: "none" }}>
+        <div className="ff-disc ff-a" style={{ width: 400, height: 400, top: -70, left: -90 }} />
+        <div className="ff-disc ff-b" style={{ width: 420, height: 420, bottom: -90, right: -100 }} />
       </div>
 
-      {/* Swipeable summary slides — each is the real 9:16 story card (what you
-          see is what gets shared, in the chosen style). */}
-      <div
-        ref={pagerRef}
-        onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
-      >
-        {slides.map((s, i) => (
-          <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
-            <StoryCard slide={s} st={st} w={previewW} t={t} units={units} active={i === activeIdx} />
-          </div>
-        ))}
-      </div>
+      <div style={{ position: "relative" }}>
+        {/* The one exit — where dismissal muscle memory expects it. */}
+        <FinishOrb glyph="✕" size={40} a11y={t("summary.doneToday")} onClick={onHome ?? onDone} />
 
-      {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => goTo(i)}
-            aria-label={slides[i]!.eyebrow}
-            aria-current={i === activeIdx}
-            style={{ width: i === activeIdx ? 18 : 6, height: 6, padding: 0, border: "none", borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s", cursor: "pointer" }}
-          />
-        ))}
-      </div>
-
-      {/* Theme toggle — switch the wrapped look; the card + share image follow. */}
-      <div style={{ marginTop: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</div>
-        <div role="tablist" style={{ display: "flex", gap: 4, padding: 4, borderRadius: 999, background: C("ink2"), border: `1px solid ${C("line")}`, maxWidth: 360, margin: "0 auto" }}>
-          {STORY_STYLES.map((s) => {
-            const selected = s.id === styleId;
-            return (
-              <button
-                key={s.id}
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setStyleId(s.id)}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  cursor: "pointer",
-                  borderRadius: 999,
-                  border: "none",
-                  padding: "9px 6px",
-                  background: selected ? C("lime") : "transparent",
-                  color: selected ? C("ink") : C("ash"),
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 700,
-                  fontSize: fs.micro,
-                  whiteSpace: "nowrap",
-                  transition: "background .15s, color .15s",
-                }}
+        {/* The floating card IS the screen — the real 9:16 story (what you see
+            is what gets shared). Swipe for slides; TAP to cycle the wrapped
+            look (the old style toggle folded into the object itself). */}
+        <div
+          ref={pagerRef}
+          className="win-pop"
+          onScroll={onPagerScroll}
+          style={{ display: "flex", gap: 0, marginTop: 6, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
+        >
+          {slides.map((s, i) => (
+            <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
+              {/* Wrapper radius matches the story card (54/1080 of its width)
+                  so the float shadow hugs the same corners. */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={cycleStyle}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleStyle(); } }}
+                aria-label={`${t(st.nameKey)} — ${t("summary.cardHint")}`}
+                style={{ cursor: "pointer", borderRadius: previewW * 0.05, boxShadow: "0 24px 60px rgba(0,0,0,.45)" }}
               >
-                <span style={{ width: 12, height: 12, borderRadius: "50%", background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `1px solid ${selected ? "rgba(0,0,0,0.25)" : C("line")}`, display: "inline-grid", placeItems: "center", flex: "0 0 auto" }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.swatch }} />
-                </span>
-                {t(s.nameKey)}
-              </button>
-            );
-          })}
+                <StoryCard slide={s} st={st} w={previewW} t={t} units={units} active={i === activeIdx} />
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
 
-      {/* One Share button — shares the slide on screen as a 9:16 story. */}
+        {/* Dots */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={slides[i]!.eyebrow}
+              aria-current={i === activeIdx}
+              style={{ width: i === activeIdx ? 18 : 6, height: 6, padding: 0, border: "none", borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s", cursor: "pointer" }}
+            />
+          ))}
+        </div>
+
+        {/* One whisper of a hint — the current look + how to change it. */}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".15em", color: C("ash"), textAlign: "center", marginTop: 10, textTransform: "uppercase" }}>
+          {t(st.nameKey)} — {t("summary.cardHint")}
+        </div>
+
+        {/* Optional rename + private note, as quiet as they were. */}
+        <div style={{ textAlign: "center" }}>
+          <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
+          <SessionNote sessionId={sessionId} />
+        </div>
+
+        {/* The floating pill cluster — hierarchy by material: lime fill for
+            Share, glass for the two satellites, nothing else competing. */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20 }}>
+          <FinishOrb
+            glyph="★"
+            label={t("summary.orbRoutine")}
+            a11y={t("summary.saveRoutine")}
+            on={routineOpen}
+            onClick={() => setRoutineOpen((v) => !v)}
+          />
+          <button
+            onClick={share}
+            disabled={sharing}
+            style={{
+              flex: 1,
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: fs.note,
+              background: C("lime"),
+              color: "var(--on-accent)",
+              border: "none",
+              borderRadius: 999,
+              padding: "16px 20px",
+              cursor: sharing ? "default" : "pointer",
+              boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
+            }}
+          >
+            {sharing ? "…" : `↗ ${shareLabel}`}
+          </button>
+          <FinishOrb glyph="→" label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
+        </div>
+        {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
+
+        {/* Save as routine — expands from the ★ satellite. */}
+        {routineOpen && (
+          <SaveRoutineCard startOpen blocks={blocks} defaultName={title} onUpgrade={onUpgrade ?? (() => router.push("/upgrade"))} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A floating glass satellite — the Liquid-Field secondary action. A translucent
+ *  chalk-tinted circle (backdrop-blur glass) holding one glyph, with an optional
+ *  micro label beneath. Secondary by material: the lime Share pill stays the
+ *  only filled action on the finish screen. Mobile parity: SummaryOrb. */
+function FinishOrb({
+  glyph,
+  a11y,
+  onClick,
+  size = 54,
+  label,
+  on,
+}: {
+  glyph: string;
+  a11y: string;
+  onClick: () => void;
+  size?: number;
+  label?: string;
+  on?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: label ? Math.max(size, 62) : size, flex: "0 0 auto" }}>
       <button
-        onClick={share}
-        disabled={sharing}
+        type="button"
+        onClick={onClick}
+        aria-label={a11y}
+        aria-pressed={on}
         style={{
-          width: "100%",
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          padding: 0,
+          display: "grid",
+          placeItems: "center",
+          background: `color-mix(in srgb, ${C("chalk")} ${on ? 16 : 8}%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${C("chalk")} ${on ? 30 : 14}%, transparent)`,
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          color: C("chalk"),
           fontFamily: "var(--font-display)",
-          fontWeight: 800,
-          fontSize: fs.note,
-          background: C("lime"),
-          color: "var(--on-accent)",
-          border: "none",
-          borderRadius: 999,
-          padding: "13px 28px",
-          cursor: sharing ? "default" : "pointer",
-          marginTop: 16,
-          boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
+          fontWeight: 700,
+          fontSize: Math.round(size * 0.34),
+          cursor: "pointer",
         }}
       >
-        {sharing ? "…" : `↗ ${t("w.train.logger.shareStory")}`}
+        {glyph}
       </button>
-      {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
-
-      {/* Save as routine. */}
-      <div style={{ marginTop: 14 }}>
-        <SaveRoutineCard blocks={blocks} defaultName={title} onUpgrade={onUpgrade ?? (() => router.push("/upgrade"))} />
-      </div>
-
-      {/* See analysis — at the very bottom (onDone → history). */}
-      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>
-        {t("summary.seeAnalysis")}
-      </button>
-      {onHome && (
-        <button onClick={onHome} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, background: "transparent", color: C("ash"), border: "none", padding: "16px 0", cursor: "pointer" }}>
-          {t("summary.doneToday")}
-        </button>
+      {label != null && (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("ash"), marginTop: 6, textTransform: "uppercase", whiteSpace: "nowrap" }}>
+          {label}
+        </div>
       )}
     </div>
   );

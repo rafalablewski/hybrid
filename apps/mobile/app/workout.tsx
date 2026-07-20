@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -56,6 +55,7 @@ import {
   funFactText,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
+  storyStyle,
   type StoryStyleId,
   FUNNEL,
   canSaveRoutine,
@@ -91,7 +91,10 @@ import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
-import { AuroraField } from "../components/aurora/kit";
+import { AuroraField, withAlpha } from "../components/aurora/kit";
+import { GlassSurface } from "../components/aurora/swiftui";
+import { useLiquidGlass } from "../lib/liquid-glass";
+import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
 // helpers let the live logger pick up the new look without duplicating its
@@ -1407,8 +1410,19 @@ function Summary({
   // with web; native swipe paging still works too).
   const pagerRef = useRef<ScrollView>(null);
   const [active, setActive] = useState(0);
-  // The chosen "wrapped" style — one of the 4 shared looks.
+  // The chosen "wrapped" style. No toggle any more — TAPPING the card cycles
+  // through the shared looks (the control folded into the object itself).
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
+  const st = storyStyle(styleId);
+  const cycleStyle = () => {
+    setStyleId((cur) => {
+      const i = STORY_STYLES.findIndex((s) => s.id === cur);
+      return STORY_STYLES[(i + 1) % STORY_STYLES.length]!.id;
+    });
+    if (haptics) Haptics.selectionAsync().catch(() => {});
+  };
+  // The ★ satellite expands the save-as-routine composer beneath the cluster.
+  const [routineOpen, setRoutineOpen] = useState(false);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1418,8 +1432,8 @@ function Summary({
   const milestone = firstEver || hasWin;
 
   // Finishing is the payoff — make it FELT. A success haptic (a heavier knock
-  // layered on for a PR/first), and a spring entrance on the hero badge so the
-  // win lands instead of just appearing.
+  // layered on for a PR/first), and a spring entrance on the floating card so
+  // the win lands instead of just appearing.
   const pop = useRef(new Animated.Value(milestone ? 0.6 : 0.85)).current;
   const fade = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -1488,29 +1502,28 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
+  // LIQUID FIELD — the card floats in an intensified Aurora field; every control
+  // is the same glass material. Share is the one filled (lime) action; routine +
+  // analysis are glass satellites at its sides; exit is a glass ✕ up top.
+  const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
-        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
-          <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>
-            <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
-          </Animated.View>
-          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
-            {firstEver ? t("summary.firstTitle") : t("summary.complete")}
-          </Text>
-          {/* Workout name, directly under the heading. */}
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8, textAlign: "center" }}>{title || "Workout"}</Text>
-          {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
-          {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
-          {firstEver && (
-            <Mono color={C.ash} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
-          )}
-        </View>
+      <FinishField />
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28, flexGrow: 1 }}>
+        {/* The one exit — where dismissal muscle memory expects it. Guests leave
+            to the welcome screen (there's no Today tab behind them). */}
+        <SummaryOrb
+          glyph="✕"
+          size={40}
+          a11y={t("summary.doneToday")}
+          onPress={() => router.replace(summary.guest ? "/welcome" : "/(tabs)")}
+        />
 
-        {/* Swipeable summary slides — each rendered as the real 9:16 story card
-            (what-you-see-is-what-you-share) and captured by active index. */}
-        <Animated.View style={{ opacity: fade }}>
+        {/* The floating card IS the screen — the real 9:16 story (what you see
+            is what you share). Swipe for slides; TAP to cycle the wrapped look
+            (the old style toggle folded into the object itself). */}
+        <Animated.View style={{ opacity: fade, transform: [{ scale: pop }], marginTop: 6 }}>
           <ScrollView
             ref={pagerRef}
             horizontal
@@ -1520,7 +1533,17 @@ function Summary({
           >
             {slides.map((s, i) => (
               <View key={i} style={{ width: slideW, alignItems: "center" }}>
-                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} animate={i === activeIdx} />
+                {/* Wrapper radius + bg match the story card (width * 0.05) so iOS
+                    gets an efficient opaque shadow path and the float reads as
+                    one object. */}
+                <Pressable
+                  onPress={cycleStyle}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t(st.nameKey)} — ${t("summary.cardHint")}`}
+                  style={{ borderRadius: previewW * 0.05, backgroundColor: st.bg, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 14 }, elevation: 8 }}
+                >
+                  <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} animate={i === activeIdx} />
+                </Pressable>
               </View>
             ))}
           </ScrollView>
@@ -1540,54 +1563,13 @@ function Summary({
           ))}
         </View>
 
-        {/* Theme toggle — switch the "wrapped" look; the card + the shared
-            image update live. */}
-        <View style={{ marginTop: 16 }}>
-          <Mono color={C.ash} style={{ textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</Mono>
-          <View style={{ flexDirection: "row", gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignSelf: "stretch" }}>
-            {STORY_STYLES.map((s) => {
-              const selected = s.id === styleId;
-              return (
-                <Pressable
-                  key={s.id}
-                  onPress={() => setStyleId(s.id)}
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 6, backgroundColor: selected ? C.lime : "transparent" }}
-                >
-                  <View style={{ width: 12, height: 12, borderRadius: 6, overflow: "hidden", backgroundColor: s.bg, borderWidth: 1, borderColor: selected ? "rgba(0,0,0,0.25)" : C.line, alignItems: "center", justifyContent: "center" }}>
-                    {s.gradient && (
-                      <LinearGradient colors={[s.gradient.from, s.gradient.to]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
-                    )}
-                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: s.swatch }} />
-                  </View>
-                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.micro, color: selected ? C.onAccent : C.ash }}>{t(s.nameKey)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        {/* One whisper of a hint — the current look + how to change it. */}
+        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: 1.5 }}>
+          {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
+        </Mono>
 
-        {milestone && (
-          <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
-        )}
-
-        {/* One Share button — shares whichever slide is on screen as a story. */}
-        <Pressable
-          onPress={() => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"))}
-          style={{
-            backgroundColor: C.lime,
-            borderRadius: R.cta,
-            paddingVertical: 16,
-            alignItems: "center",
-            marginTop: milestone ? 6 : 16,
-            ...(milestone
-              ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
-              : null),
-          }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
-        </Pressable>
-
-        <View style={{ flex: 1, minHeight: 24 }} />
+        {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
+        {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
 
         {summary.pending && (
           <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
@@ -1595,8 +1577,25 @@ function Summary({
           </View>
         )}
 
+        <View style={{ flex: 1, minHeight: 20 }} />
+
         {summary.guest ? (
           <>
+            <Pressable
+              onPress={shareNow}
+              style={{
+                backgroundColor: C.lime,
+                borderRadius: R.cta,
+                paddingVertical: 16,
+                alignItems: "center",
+                marginTop: 16,
+                ...(milestone
+                  ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
+                  : null),
+              }}
+            >
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
+            </Pressable>
             <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
@@ -1613,21 +1612,168 @@ function Summary({
           </>
         ) : (
           <>
-            <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} />
-            <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
-            <Pressable
-              onPress={() => router.replace("/(tabs)/history")}
-              style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 15, alignItems: "center" }}
-            >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
-            </Pressable>
-            <Pressable onPress={() => router.replace("/(tabs)")} style={{ paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.doneToday")}</Text>
-            </Pressable>
+            {/* The floating pill cluster — hierarchy by material: lime fill for
+                Share, glass for the two satellites, nothing else competing. */}
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 16 }}>
+              <SummaryOrb
+                glyph="★"
+                label={t("summary.orbRoutine")}
+                a11y={t("summary.saveRoutine")}
+                on={routineOpen}
+                onPress={() => setRoutineOpen((v) => !v)}
+              />
+              <Pressable
+                onPress={shareNow}
+                style={{
+                  flex: 1,
+                  backgroundColor: C.lime,
+                  borderRadius: R.cta,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                  ...(milestone
+                    ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
+                    : null),
+                }}
+              >
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
+              </Pressable>
+              <SummaryOrb
+                glyph="→"
+                label={t("summary.orbAnalysis")}
+                a11y={t("summary.seeAnalysis")}
+                onPress={() => router.replace("/(tabs)/history")}
+              />
+            </View>
+            {routineOpen && <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} startOpen />}
           </>
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** A floating glass satellite — the Liquid-Field secondary action. A translucent
+ *  chalk-tinted circle (a native SwiftUI glass surface when Liquid Glass is
+ *  active) holding one glyph, with an optional micro label beneath. Secondary by
+ *  material: the lime Share pill stays the only filled action on this screen. */
+function SummaryOrb({
+  glyph,
+  a11y,
+  onPress,
+  size = 54,
+  label,
+  on,
+}: {
+  glyph: string;
+  a11y: string;
+  onPress: () => void;
+  size?: number;
+  label?: string;
+  on?: boolean;
+}) {
+  const C = useTheme().palette;
+  const { active: glass } = useLiquidGlass();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      hitSlop={6}
+      style={{ alignItems: "center", width: label ? Math.max(size, 60) : size }}
+    >
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          overflow: "hidden",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: glass ? "transparent" : withAlpha(C.chalk, on ? 0.16 : 0.08),
+          borderWidth: 1,
+          borderColor: withAlpha(C.chalk, on ? 0.3 : 0.14),
+        }}
+      >
+        {glass && <GlassSurface radius={size / 2} />}
+        <Text style={{ fontFamily: F.bold, fontSize: Math.round(size * 0.36), color: C.chalk }}>{glyph}</Text>
+      </View>
+      {label != null && (
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.ash, marginTop: 6 }}>
+          {label.toUpperCase()}
+        </Text>
+      )}
+    </Pressable>
+  );
+}
+
+/** The LIQUID FIELD environment — two oversized soft glow orbs (lime + teal)
+ *  drifting slowly behind the finish screen: an intensified take on the ambient
+ *  AuroraField, and the web Finish's .ff-a/.ff-b discs at parity. RN has no
+ *  cheap blur/radial primitive, so each glow is three concentric translucent
+ *  circles faking the falloff — the same technique as the story-card discs.
+ *  Reduce Motion parks the drift at its midpoint; KYOTO HOUR swaps the accent
+ *  glow for the warm washi tones the AuroraField light retint uses. */
+function FinishField() {
+  const { palette, scheme } = useTheme();
+  const reduced = useReducedMotion();
+  const w = Dimensions.get("window").width;
+  const drift = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduced) {
+      drift.setValue(0.5);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, { toValue: 1, duration: 11000, useNativeDriver: true }),
+        Animated.timing(drift, { toValue: 0, duration: 11000, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduced, drift]);
+  const japandi = scheme === "light";
+  const glowA = japandi ? "#e7e0cc" : palette.lime;
+  const glowB = japandi ? "#d9ddd0" : palette.blue;
+  // Outer→inner layer alphas (they stack, so the centre reads brightest).
+  const alphas = japandi ? [0.2, 0.16, 0.13] : [0.045, 0.055, 0.07];
+  const layers = (color: string) =>
+    [1, 0.68, 0.42].map((f, i) => {
+      const d = w * f;
+      return (
+        <View
+          key={i}
+          style={{ position: "absolute", left: (w - d) / 2, top: (w - d) / 2, width: d, height: d, borderRadius: d / 2, backgroundColor: withAlpha(color, alphas[i]!) }}
+        />
+      );
+    });
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden" }}>
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: -w * 0.18,
+          left: -w * 0.3,
+          width: w,
+          height: w,
+          transform: [{ translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [0, 26] }) }],
+        }}
+      >
+        {layers(glowA)}
+      </Animated.View>
+      <Animated.View
+        style={{
+          position: "absolute",
+          bottom: -w * 0.22,
+          right: -w * 0.32,
+          width: w,
+          height: w,
+          transform: [{ translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [0, -24] }) }],
+        }}
+      >
+        {layers(glowB)}
+      </Animated.View>
+    </View>
   );
 }
 
@@ -1636,12 +1782,14 @@ function Summary({
 // Free users can keep up to FREE_TEMPLATE_LIMIT saved routines (canSaveRoutine)
 // — at the limit they get an upsell here instead of a "sign in and try again"
 // error; logging/building one-offs stays free.
-function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
+function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: SessionBlock[]; t: (k: string) => string; startOpen?: boolean }) {
   const C = useTheme().palette;
   const R = auroraRadii(useTemplate().template === "aurora");
   const router = useRouter();
   const persona = usePersona();
-  const [open, setOpen] = useState(false);
+  // The Liquid-Field summary opens the composer straight from the ★ satellite
+  // (startOpen); elsewhere the card still starts as its collapsed pill.
+  const [open, setOpen] = useState(!!startOpen);
   const [name, setName] = useState(title || "Routine");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
   // Free users are capped — fetch the saved count so the card upsells up-front

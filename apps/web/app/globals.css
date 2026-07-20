@@ -686,3 +686,23 @@ html {
 @keyframes lgDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vmax,5vmax,0) scale(1.15); } }
 @keyframes lgDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-6vmax,6vmax,0) scale(1.1); } }
 @keyframes lgDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-5vmax,-5vmax,0) scale(1.2); } }
+
+/* ---- LIQUID FIELD (finish celebration): local glow intensifiers layered over
+   the ambient .lg-field, scoped to the finish screen so the floating story card
+   sits in a visibly charged pocket of the field. Radial-gradient falloff, no
+   blur — cheap and edge-safe inside the screen's overflow-clipped wrapper;
+   sizes/positions come inline. KYOTO HOUR swaps the accent glow for the same
+   warm washi tones as the ambient-field retint (mobile FinishField parity). */
+.ff-disc { position: absolute; border-radius: 50%; pointer-events: none; will-change: transform; }
+.ff-a {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-lime) 26%, transparent) 0%, transparent 68%);
+  animation: lgDrift1 21s ease-in-out infinite;
+}
+.ff-b {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-blue) 32%, transparent) 0%, transparent 68%);
+  animation: lgDrift2 25s ease-in-out infinite;
+}
+[data-theme="light"] .ff-disc { mix-blend-mode: multiply; }
+[data-theme="light"] .ff-a { background: radial-gradient(circle, rgba(231, 224, 204, 0.6) 0%, transparent 68%); }
+[data-theme="light"] .ff-b { background: radial-gradient(circle, rgba(217, 221, 208, 0.55) 0%, transparent 68%); }
+@media (prefers-reduced-motion: reduce) { .ff-a, .ff-b { animation: none; } }
