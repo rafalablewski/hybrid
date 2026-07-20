@@ -33,6 +33,7 @@ import { fs, space,
   ON_ACCENT,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { WorkoutWrapped } from "@/components/aurora/workout-wrapped";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit, sessionCelebration, statCountUp, type WeightUnit, type PrHit } from "@hybrid/core";
@@ -264,6 +265,8 @@ export function SessionDetail({
   const cardio = sessionCardioTotals(session.blocks);
   const cardioMin = cardio.minutes || minutes || 0;
 
+  // The "Wrapped" recap + story-share overlay (premium panels + story picker).
+  const [wrappedOpen, setWrappedOpen] = useState(false);
   // Share this session like a finished workout (P5) — same branded story card.
   const [sharing, setSharing] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
@@ -352,9 +355,20 @@ export function SessionDetail({
       )}
 
       {/* PR reveal — the headline record lands as a hero (spring + sweep +
-          count-up), with "Share your win" as the payoff. Below it, the full PR
-          list stays for the detail-minded. Renders nothing on a no-PR session. */}
-      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={share} sharing={sharing} shareMsg={shareMsg} />
+          count-up); "Share your win" opens the Wrapped recap → story share.
+          Below it, the full PR list stays for the detail-minded. Renders nothing
+          on a no-PR session. */}
+      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={() => setWrappedOpen(true)} sharing={false} shareMsg="" />
+
+      {/* No PR to celebrate? Every workout can still open its Wrapped recap. */}
+      {prs.length + cardioPrs.length === 0 && (
+        <button
+          onClick={() => setWrappedOpen(true)}
+          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 35%, transparent)`, borderRadius: 14, padding: "13px 18px", cursor: "pointer", textAlign: "center" }}
+        >
+          ✦ {t("session.wrapped.see")}
+        </button>
+      )}
 
       {prs.length + cardioPrs.length > 1 && (
         <Card style={{ borderColor: LINE }}>
@@ -482,6 +496,10 @@ export function SessionDetail({
           {onArchive && <Button label={t("w.analyze.hist.archive")} variant="outline" onClick={onArchive} disabled={manageBusy} />}
           {onDelete && <Button label={t("w.analyze.hist.delete")} variant="outline" color={RED} onClick={onDelete} disabled={manageBusy} />}
         </div>
+      )}
+
+      {wrappedOpen && (
+        <WorkoutWrapped session={session} all={all} units={units} bw={bw} onClose={() => setWrappedOpen(false)} />
       )}
     </div>
   );
