@@ -926,16 +926,15 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
               fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: fs.note,
-              background: C("lime"),
-              color: "var(--on-accent)",
-              border: "none",
+              background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`,
+              color: C("lime"),
+              border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`,
               borderRadius: 999,
               padding: "16px 20px",
               cursor: sharing ? "default" : "pointer",
-              boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
             }}
           >
-            {sharing ? "…" : `↗ ${shareLabel}`}
+            {sharing ? "…" : `↗︎ ${shareLabel}`}
           </button>
           <FinishOrb glyph="→" label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
         </div>

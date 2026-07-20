@@ -1584,17 +1584,16 @@ function Summary({
             <Pressable
               onPress={shareNow}
               style={{
-                backgroundColor: C.lime,
+                backgroundColor: `${C.lime}28`,
+                borderWidth: 1,
+                borderColor: `${C.lime}66`,
                 borderRadius: R.cta,
                 paddingVertical: 16,
                 alignItems: "center",
                 marginTop: 16,
-                ...(milestone
-                  ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
-                  : null),
               }}
             >
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
             </Pressable>
             <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
@@ -1626,16 +1625,15 @@ function Summary({
                 onPress={shareNow}
                 style={{
                   flex: 1,
-                  backgroundColor: C.lime,
+                  backgroundColor: `${C.lime}28`,
+                  borderWidth: 1,
+                  borderColor: `${C.lime}66`,
                   borderRadius: R.cta,
                   paddingVertical: 16,
                   alignItems: "center",
-                  ...(milestone
-                    ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
-                    : null),
                 }}
               >
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>↗ {shareLabel}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
               </Pressable>
               <SummaryOrb
                 glyph="→"
