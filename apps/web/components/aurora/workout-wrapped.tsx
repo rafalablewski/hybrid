@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   sessionWrapped,
+  liftStanding,
   sessionCelebration,
   isFullAccess,
   volumeByMuscle,
@@ -75,7 +76,24 @@ export function WorkoutWrapped({
   const [active, setActive] = useState(0);
   const [sharing, setSharing] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
+  // "Where you stand" needs the athlete's talent cohort (sport/sex/age) — fetched
+  // on open; the percentile only renders when it (and a bodyweight) exist.
+  const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
   const pagerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/talent")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const p = d?.profile;
+        if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Esc closes; lock body scroll while the takeover is open.
   useEffect(() => {
@@ -114,6 +132,9 @@ export function WorkoutWrapped({
   const bests: ShareBest[] = [...bestMap.entries()]
     .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
     .sort((a, b) => b.e1rm - a.e1rm);
+  // "Where you stand" — the heaviest lift's relative-strength standing vs the
+  // athlete's cohort (estimate from the documented synthetic norms).
+  const standing = cohort && bests[0] && bwHere ? liftStanding(bests[0].e1rm, bwHere, cohort) : null;
 
   // ── Shareable slides (same shape/order as the finish carousel) ──
   const muscleVol = volumeByMuscle(session.blocks);
@@ -242,6 +263,15 @@ export function WorkoutWrapped({
             <div style={{ position: "relative", borderRadius: 18, padding: space.lg, border: `1px solid ${LINE}`, background: INK2, overflow: "hidden" }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em" }} c={VIOLET}>✦ {t("session.wrapped.premium")}</Mono>
               <div style={{ marginTop: space.md, display: "flex", flexDirection: "column", filter: full ? "none" : "blur(7px)", userSelect: full ? "auto" : "none", pointerEvents: full ? "auto" : "none" }} aria-hidden={!full}>
+                {standing && (
+                  <div style={{ marginBottom: space.md, paddingBottom: space.md, borderBottom: `1px solid ${LINE}` }}>
+                    <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("session.wrapped.standing")}</Mono>
+                    <div style={{ ...disp, fontWeight: 800, fontSize: 40, letterSpacing: "-.02em", marginTop: 4, color: txt(LIME) }}>
+                      {t("session.wrapped.top")} {standing.topPct}%
+                    </div>
+                    <Mono s={{ fontSize: fs.caption }}>{cohort!.sport} — {t("session.wrapped.estimate")}</Mono>
+                  </div>
+                )}
                 {wrapped.facts.map((f) => (
                   <div key={f.labelKey + f.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }}>{t(f.labelKey)}</Mono>

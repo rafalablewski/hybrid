@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sessionWrapped } from "./session-wrapped";
+import { sessionWrapped, liftStanding } from "./session-wrapped";
 import type { LoggedSession } from "./engines/session";
 
 const strengthSession = (id: string, startedAt: string, load: number): LoggedSession => ({
@@ -57,5 +57,28 @@ describe("sessionWrapped", () => {
     const s = { ...strengthSession("s1", "2026-01-10T10:00:00.000Z", 60), readiness: 82 };
     const w = sessionWrapped(s, [s], { units: "kg" });
     expect(w.facts.find((f) => f.labelKey === "home.readiness")?.value).toBe("82");
+  });
+});
+
+describe("liftStanding", () => {
+  const cohort = { sport: "Hybrid", sex: "M" as const, age: 26 };
+
+  it("returns null on invalid inputs", () => {
+    expect(liftStanding(0, 80, cohort)).toBeNull();
+    expect(liftStanding(140, 0, cohort)).toBeNull();
+  });
+
+  it("gives a 1..99 percentile and a top-N%% that sum to ~100", () => {
+    const s = liftStanding(140, 80, cohort)!; // 1.75x bodyweight
+    expect(s.percentile).toBeGreaterThanOrEqual(1);
+    expect(s.percentile).toBeLessThanOrEqual(99);
+    expect(s.topPct).toBe(Math.max(1, 100 - s.percentile));
+  });
+
+  it("ranks a stronger relative lift higher", () => {
+    const weak = liftStanding(80, 80, cohort)!; // 1.0x
+    const strong = liftStanding(160, 80, cohort)!; // 2.0x
+    expect(strong.percentile).toBeGreaterThan(weak.percentile);
+    expect(strong.topPct).toBeLessThan(weak.topPct);
   });
 });

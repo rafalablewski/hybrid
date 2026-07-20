@@ -15,6 +15,7 @@ import { volumeByMuscle } from "./engines/records";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { doneReceipt } from "./done-receipt";
 import { fmtWeight, fmtTonnage, type WeightUnit } from "./units";
+import { benchmarkMetric, type Cohort } from "./benchmarks";
 
 /** A free basic stat — unit lives in the value, label is an i18n key. */
 export interface WrappedStat {
@@ -34,6 +35,28 @@ export interface SessionWrapped {
   basics: WrappedStat[];
   /** premium (Full) — real derived analytics, each present only when computable */
   facts: WrappedFact[];
+}
+
+/**
+ * "Where you stand" — the headline lift's RELATIVE-STRENGTH percentile vs a
+ * cohort (sport / sex / age), from the documented synthetic norms in
+ * benchmarks.ts. An ESTIMATE (norms-prior-v0), surfaced only when the athlete
+ * has a talent profile (sex + age) AND a known bodyweight — never fabricated.
+ * `topPct` = "you're in the top N%".
+ */
+export interface LiftStanding {
+  /** 1..99 percentile vs the cohort */
+  percentile: number;
+  /** "top N%" — the athlete's standing, N = 100 − percentile (≥ 1) */
+  topPct: number;
+}
+
+export function liftStanding(e1rmKg: number, bodyweightKg: number, cohort: Cohort): LiftStanding | null {
+  if (!(e1rmKg > 0) || !(bodyweightKg > 0)) return null;
+  const relStrength = e1rmKg / bodyweightKg;
+  const b = benchmarkMetric("relStrength", relStrength, cohort);
+  const percentile = Math.round(b.percentile);
+  return { percentile, topPct: Math.max(1, 100 - percentile) };
 }
 
 /** Total working reps across a session's strength sets (warm-ups included — a
