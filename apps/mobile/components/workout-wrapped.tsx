@@ -9,6 +9,8 @@ import {
   sessionFunFact,
   funFactText,
   sessionVolume,
+  sessionSignature,
+  SIGNATURE_MIN_BARS,
   blockBestE1rm,
   fmtWeight,
   fmtTonnage,
@@ -129,6 +131,7 @@ export function WorkoutWrapped({
         : `${paceClock(cel.value)} /km`
     : fmtTonnage(volume, units);
   const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
+  const signature = sessionSignature(session);
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -149,6 +152,14 @@ export function WorkoutWrapped({
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{session.title}</Text>
                 <Text style={{ fontFamily: F.black, fontSize: 50, color: C.chalk, letterSpacing: -1, marginTop: 8 }}>{heroBig}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: cel ? txt(C, C.lime) : C.ash, marginTop: 4 }}>{heroSub}</Text>
+                {/* Session signature — the effort fingerprint (one bar per set). */}
+                {signature.length >= SIGNATURE_MIN_BARS && (
+                  <View style={{ flexDirection: "row", alignItems: "flex-end", height: 40, marginTop: 14, gap: 3 }}>
+                    {signature.map((v, i) => (
+                      <View key={i} style={{ flex: 1, height: `${Math.round(v * 100)}%`, borderRadius: 3, backgroundColor: C.lime, opacity: 0.45 + v * 0.55 }} />
+                    ))}
+                  </View>
+                )}
                 {/* Basics grid (free) */}
                 <View style={{ flexDirection: "row", marginTop: 16, borderRadius: 14, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
                   {wrapped.basics.map((b, i) => (

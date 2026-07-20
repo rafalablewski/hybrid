@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   LineChart,
   Line,
@@ -71,6 +71,20 @@ const MUSCLE_LABEL: Record<string, string> = {
   shoulders: "Shoulders",
   triceps: "Triceps",
 };
+
+// Deterministic confetti burst for the PR reveal — 18 pieces fanned around a
+// circle (module-level so positions are stable, no per-render randomness).
+const CONFETTI = Array.from({ length: 18 }, (_, i) => {
+  const a = (i / 18) * Math.PI * 2;
+  const d = 70 + (i % 5) * 22;
+  const colors = [LIME, "#e6c34e", BLUE, "#8ba0cc"];
+  return {
+    tx: Math.round(Math.cos(a) * d),
+    ty: Math.round(Math.sin(a) * d - 30),
+    color: colors[i % 4]!,
+    delay: 0.25 + (i % 3) * 0.05,
+  };
+});
 
 // A number that ticks up from 0 → its final value on mount, then rests on the
 // EXACT original string (so a count-up never leaves a rounded number behind).
@@ -164,6 +178,22 @@ function PrReveal({
         background: `radial-gradient(130% 130% at 12% 0%, color-mix(in srgb, ${LIME} 15%, transparent), transparent 55%), ${INK2}`,
       }}
     >
+      {/* Rotating gold ray-burst behind the trophy corner. */}
+      <div
+        aria-hidden
+        className="pr-rays"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 34,
+          width: 320,
+          height: 320,
+          pointerEvents: "none",
+          background:
+            "conic-gradient(from 0deg, rgba(230,195,78,.16), transparent 22%, rgba(198,248,79,.12) 40%, transparent 55%, rgba(230,195,78,.16) 72%, transparent 90%)",
+          borderRadius: "50%",
+        }}
+      />
       <div
         aria-hidden
         className="pr-sweep"
@@ -177,7 +207,17 @@ function PrReveal({
           filter: "blur(3px)",
         }}
       />
-      <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+      {/* Confetti burst from the trophy — deterministic angles, fired once. */}
+      <div aria-hidden style={{ position: "absolute", top: 26, left: 26, pointerEvents: "none" }}>
+        {CONFETTI.map((c, i) => (
+          <span
+            key={i}
+            className="pr-confetti"
+            style={{ position: "absolute", width: 7, height: 7, borderRadius: 2, background: c.color, animationDelay: `${c.delay}s`, "--tx": `${c.tx}px`, "--ty": `${c.ty}px` } as CSSProperties}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: space.sm, position: "relative" }}>
         <span className="pr-trophy" style={{ fontSize: 26, lineHeight: 1 }}>
           🏆
         </span>

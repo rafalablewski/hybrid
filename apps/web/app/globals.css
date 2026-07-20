@@ -475,9 +475,15 @@ html {
 .pr-trophy { animation: prTrophyPop .8s cubic-bezier(.2,1.5,.3,1) .1s both; }
 .pr-sweep { animation: prSweep 1.5s ease .3s 1 both; }
 .pr-rise { animation: prRise .5s ease both; }
+/* Rotating gold ray-burst behind the trophy — the "this LANDED" halo. */
+@keyframes prRaysSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.pr-rays { animation: prRaysSpin 16s linear infinite; }
+/* Confetti pieces burst outward once from the trophy (position via --tx/--ty). */
+@keyframes prConfetti { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(.4) rotate(220deg); } }
+.pr-confetti { animation: prConfetti .9s ease-out .25s forwards; }
 @media (prefers-reduced-motion: reduce) {
-  .pr-trophy, .pr-sweep, .pr-rise { animation: none; }
-  .pr-sweep { display: none; }
+  .pr-trophy, .pr-sweep, .pr-rise, .pr-rays, .pr-confetti { animation: none; }
+  .pr-sweep, .pr-confetti, .pr-rays { display: none; }
 }
 
 /* Screen entrance — content fades + rises when you change screens, so Aurora
