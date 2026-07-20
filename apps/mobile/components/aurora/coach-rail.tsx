@@ -93,7 +93,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
             <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
-              <LinearGradient colors={[`${accent}24`, "transparent"]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
+              <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
               <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
 
               <View style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingRight: 16 }}>
@@ -103,7 +103,12 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                 <View style={{ flex: 1 }}>
                   {/* Name in the display face — Mincho under Kyoto Hour — so the
                       person leads the card the way a byline leads an article. */}
-                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16.5 }}>{c.name}{c.verified ? <Text style={{ color: accentText, fontSize: 12 }}> ✓</Text> : null}</Text>
+                  {/* Name + check as row siblings: nested inside one truncating
+                      Text the ✓ would be the first thing ellipsized away. */}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16.5, flexShrink: 1 }}>{c.name}</Text>
+                    {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
+                  </View>
                   <Text numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 9.5, fontWeight: "600", letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>

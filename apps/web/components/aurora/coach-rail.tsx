@@ -65,8 +65,11 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
         <div style={{ minWidth: 0 }}>
           {/* Name in the display face — Mincho under Kyoto Hour — so the
               person leads the card the way a byline leads an article. */}
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16.5, letterSpacing: "-.015em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {c.name}{c.verified && <span style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</span>}
+          {/* Name + check as flex siblings: inside one truncating box the ✓
+              (rightmost inline content) would be the first thing clipped. */}
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16.5, letterSpacing: "-.015em", display: "flex", alignItems: "center" }}>
+            <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</span>
+            {c.verified && <span style={{ color: accentText, fontSize: 12, marginLeft: 4, flexShrink: 0 }}>✓</span>}
           </div>
           <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {c.specialties.slice(0, 2).join(" – ")}
