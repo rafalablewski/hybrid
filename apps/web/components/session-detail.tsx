@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState } from "react";
 import {
   LineChart,
   Line,
@@ -26,18 +26,15 @@ import { fs, space,
   tip,
   Mono,
   Card,
-  Stat,
   ChartFrame,
   txt,
-  ON_ACCENT,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { WorkoutWrapped } from "@/components/aurora/workout-wrapped";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
-import { fmtWeight, fmtTonnage, displayLoad, kgToUnit, sessionCelebration, statCountUp, type WeightUnit, type PrHit } from "@hybrid/core";
+import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
-  sessionVolume,
   blockBestE1rm,
   prsForSession,
   volumeByMuscle,
@@ -51,9 +48,6 @@ import {
   paceClock,
   formatCardioPr,
   cardioPrsForSession,
-  sessionShape,
-  sessionCardioTotals,
-  formatSportDistance,
   type CardioPrHit,
   type LoggedSession,
 } from "@hybrid/core";
@@ -70,189 +64,6 @@ const MUSCLE_LABEL: Record<string, string> = {
   shoulders: "Shoulders",
   triceps: "Triceps",
 };
-
-// Deterministic confetti burst for the PR reveal — 18 pieces fanned around a
-// circle (module-level so positions are stable, no per-render randomness).
-const CONFETTI = Array.from({ length: 18 }, (_, i) => {
-  const a = (i / 18) * Math.PI * 2;
-  const d = 70 + (i % 5) * 22;
-  const colors = [LIME, "#e6c34e", BLUE, "#8ba0cc"];
-  return {
-    tx: Math.round(Math.cos(a) * d),
-    ty: Math.round(Math.sin(a) * d - 30),
-    color: colors[i % 4]!,
-    delay: 0.25 + (i % 3) * 0.05,
-  };
-});
-
-// A number that ticks up from 0 → its final value on mount, then rests on the
-// EXACT original string (so a count-up never leaves a rounded number behind).
-// Honours reduced-motion by skipping straight to the value. Mirrors the mobile
-// CountUpText in lib/share.tsx and the summary CountUp — same statCountUp core.
-function SessionCountUp({ value }: { value: string }) {
-  const [disp, setDisp] = useState(value);
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setDisp(value);
-      return;
-    }
-    const { target, format } = statCountUp(value);
-    if (!target) {
-      setDisp(value);
-      return;
-    }
-    let raf = 0;
-    let t0 = 0;
-    const dur = 900;
-    const tick = (now: number) => {
-      if (!t0) t0 = now;
-      const p = Math.min(1, (now - t0) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      if (p < 1) {
-        setDisp(format(target * eased));
-        raf = requestAnimationFrame(tick);
-      } else {
-        setDisp(value);
-      }
-    };
-    setDisp(format(0));
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-  return <>{disp}</>;
-}
-
-/**
- * PR REVEAL — the personal-best hero on the individual-workout page. When a
- * session set a record, ONE headline record lands with a spring + a lime sweep
- * and a count-up (chosen by the shared `sessionCelebration` so web and mobile
- * agree), with "Share your win" as the payoff. Renders nothing when the session
- * set no records — the page falls back to its normal stats.
- */
-function PrReveal({
-  prs,
-  cardioPrs,
-  units,
-  t,
-  onShare,
-}: {
-  prs: PrHit[];
-  cardioPrs: CardioPrHit[];
-  units: WeightUnit;
-  t: (k: string) => string;
-  onShare: () => void;
-}) {
-  const cel = sessionCelebration(prs, cardioPrs);
-  if (!cel) return null;
-
-  const big =
-    cel.kind === "strength"
-      ? fmtWeight(cel.e1rm, units)
-      : cel.prKind === "distance"
-        ? formatSportDistance(cel.value, cel.move)
-        : `${paceClock(cel.value)} /km`;
-  const name = cel.kind === "strength" ? cel.lift : cel.move;
-  const sub = cel.firstEver
-    ? t("summary.firstEver")
-    : cel.kind === "strength"
-      ? `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`
-      : cel.prKind === "distance"
-        ? t("summary.furthestYet")
-        : t("summary.fastestYet");
-  const kicker = cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne");
-
-  return (
-    <div
-      className="win-pop"
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 24,
-        padding: space.lg,
-        border: `1px solid color-mix(in srgb, ${LIME} 45%, ${LINE})`,
-        background: `radial-gradient(130% 130% at 12% 0%, color-mix(in srgb, ${LIME} 15%, transparent), transparent 55%), ${INK2}`,
-      }}
-    >
-      {/* Rotating gold ray-burst behind the trophy corner. */}
-      <div
-        aria-hidden
-        className="pr-rays"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 34,
-          width: 320,
-          height: 320,
-          pointerEvents: "none",
-          background:
-            "conic-gradient(from 0deg, rgba(230,195,78,.16), transparent 22%, rgba(198,248,79,.12) 40%, transparent 55%, rgba(230,195,78,.16) 72%, transparent 90%)",
-          borderRadius: "50%",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pr-sweep"
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          width: "42%",
-          pointerEvents: "none",
-          background: `linear-gradient(105deg, transparent, color-mix(in srgb, ${LIME} 32%, transparent), transparent)`,
-          filter: "blur(3px)",
-        }}
-      />
-      {/* Confetti burst from the trophy — deterministic angles, fired once. */}
-      <div aria-hidden style={{ position: "absolute", top: 26, left: 26, pointerEvents: "none" }}>
-        {CONFETTI.map((c, i) => (
-          <span
-            key={i}
-            className="pr-confetti"
-            style={{ position: "absolute", width: 7, height: 7, borderRadius: 2, background: c.color, animationDelay: `${c.delay}s`, "--tx": `${c.tx}px`, "--ty": `${c.ty}px` } as CSSProperties}
-          />
-        ))}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: space.sm, position: "relative" }}>
-        <span className="pr-trophy" style={{ fontSize: 26, lineHeight: 1 }}>
-          🏆
-        </span>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em" }} c={LIME}>
-          {kicker}
-        </Mono>
-      </div>
-      <div
-        className="pr-rise"
-        style={{ ...disp, fontWeight: 800, fontSize: 60, letterSpacing: "-.03em", lineHeight: 1, marginTop: space.sm }}
-      >
-        <SessionCountUp value={big} />
-      </div>
-      <div
-        className="pr-rise"
-        style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 6, animationDelay: ".08s" }}
-      >
-        {name} <span style={{ color: txt(LIME) }}>— {sub}</span>
-      </div>
-      <button
-        onClick={onShare}
-        style={{
-          ...disp,
-          marginTop: space.lg,
-          width: "100%",
-          background: LIME,
-          color: ON_ACCENT,
-          border: "none",
-          borderRadius: 14,
-          padding: "15px 18px",
-          fontWeight: 800,
-          fontSize: fs.body,
-          cursor: "pointer",
-        }}
-      >
-        ↗ {t("summary.share")}
-      </button>
-    </div>
-  );
-}
 
 // ---------- SESSION DETAIL (web parity: PRs, e1RM trend, muscle focus) ----------
 export function SessionDetail({
@@ -287,20 +98,6 @@ export function SessionDetail({
   const ssLabels = supersetLabels(session.blocks);
   const muscles = volumeByMuscle(session.blocks);
   const muscleMax = muscles[0]?.volume || 1;
-  const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
-  const minutes = session.completedAt
-    ? Math.max(1, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60000))
-    : null;
-  // Sport-adaptive headline: a run/match has no "volume", so cardio sessions read
-  // as Duration · Distance · Pace; a lift keeps Minutes · Sets · Volume; a mixed
-  // session shows both. (#4 — per-session, sport-specific stats.)
-  const shape = sessionShape(session);
-  const cardio = sessionCardioTotals(session.blocks);
-  const cardioMin = cardio.minutes || minutes || 0;
-
-  // The "Wrapped" recap + story-share overlay (premium panels + story picker) —
-  // the one share entry for the page (header pill + the reveal both open it).
-  const [wrappedOpen, setWrappedOpen] = useState(false);
 
   // The session's heaviest lift → its e1RM trend across all history.
   const topLift = session.blocks
@@ -319,62 +116,18 @@ export function SessionDetail({
   // rowing, km otherwise) — one shared core formatter, see formatCardioPr.
   const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, "first!");
 
-  return (
+  // The workout's charts + set breakdown + manage row — shown as the trailing
+  // "details" section beneath the Wrapped panels (opening a session IS the
+  // reveal → premium recap → share experience now; see WorkoutWrapped).
+  const details = (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
-      <button
-        onClick={onBack}
-        style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
-      >
-        ← History
-      </button>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ ...disp, fontWeight: 800, fontSize: fs.display }}>{session.title}</div>
-          <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
-            {fmtDate(session.startedAt)}
-            {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
-          </Mono>
-        </div>
-        {/* Open the full Wrapped recap → story share (the one share entry). */}
-        <button
-          onClick={() => setWrappedOpen(true)}
-          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 45%, transparent)`, borderRadius: 999, padding: "9px 18px", cursor: "pointer", whiteSpace: "nowrap" }}
-        >
-          ✦ {t("session.wrapped.see")}
-        </button>
+      <div>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{t("session.theSession")}</div>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
+          {fmtDate(session.startedAt)}
+          {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
+        </Mono>
       </div>
-
-      {shape === "cardio" ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
-          <Stat label="Duration" value={cardioMin ? `${cardioMin} min` : "—"} />
-          <Stat label="Distance" value={cardio.distanceKm > 0 ? formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "") : "—"} c={BLUE} />
-          <Stat label="Pace" value={cardio.secPerKm ? `${paceClock(cardio.secPerKm)} /km` : "—"} c={BLUE} />
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
-          <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
-          <Stat label="Sets" value={sets} />
-          <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)} c={LIME} />
-          {shape === "mixed" && cardio.distanceKm > 0 && <Stat label="Distance" value={formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "")} c={BLUE} />}
-        </div>
-      )}
-
-      {/* PR reveal — the headline record lands as a hero (spring + sweep +
-          count-up); "Share your win" opens the Wrapped recap → story share.
-          Below it, the full PR list stays for the detail-minded. Renders nothing
-          on a no-PR session. */}
-      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={() => setWrappedOpen(true)} />
-
-      {/* No PR to celebrate? Every workout can still open its Wrapped recap. */}
-      {prs.length + cardioPrs.length === 0 && (
-        <button
-          onClick={() => setWrappedOpen(true)}
-          style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${LIME} 35%, transparent)`, borderRadius: 14, padding: "13px 18px", cursor: "pointer", textAlign: "center" }}
-        >
-          ✦ {t("session.wrapped.see")}
-        </button>
-      )}
 
       {prs.length + cardioPrs.length > 1 && (
         <Card style={{ borderColor: LINE }}>
@@ -503,10 +256,13 @@ export function SessionDetail({
           {onDelete && <Button label={t("w.analyze.hist.delete")} variant="outline" color={RED} onClick={onDelete} disabled={manageBusy} />}
         </div>
       )}
-
-      {wrappedOpen && (
-        <WorkoutWrapped session={session} all={all} units={units} bw={bw} onClose={() => setWrappedOpen(false)} />
-      )}
     </div>
+  );
+
+  // The individual session IS the experience: reveal (if a PR) → premium Wrapped
+  // panels → story share, with the charts/breakdown/manage riding along as
+  // `details`. Full-screen takeover; onBack returns to History.
+  return (
+    <WorkoutWrapped session={session} all={all} units={units} bw={bw} onBack={onBack} details={details} />
   );
 }
