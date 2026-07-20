@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Follow a coach — 5 Ideas</title>
+<style>
+  :root{
+    --ink:#0c0d0c;--ink2:#141614;--card:#151715;--card2:#1b1e19;
+    --line:#242724;--line2:#33372f;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5f6459;
+    --lime:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#6cb6bd;--amber:#d0cd94;--violet:#c9a9f0;--gold:#e3c069;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --page:#070806;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:44px 20px 90px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1280px;margin:0 auto 44px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:720px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+  .brief{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+  .tagb{font:600 12px/1 var(--mono);color:var(--ash);background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .tagb b{color:var(--lime);font-weight:700}
+
+  .gallery{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(374px,1fr));gap:56px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:420px}
+  .cap{margin:0 6px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:10px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.55}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  /* device frame — cropped phone showing the Today section in context */
+  .frame{position:relative;width:100%;border-radius:44px 44px 30px 30px;padding:11px 11px 0;
+    background:linear-gradient(160deg,#2a2e21,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;border-radius:34px 34px 20px 20px;overflow:hidden;background:var(--ink);padding:14px 0 0}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:4px 26px 2px;font-size:13.5px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:12.5px}
+  .bat{background:var(--amber);color:#161608;font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .ctx{padding:18px 20px 6px;opacity:.28}
+  .ctx .ck{font:600 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .ctx .cc{margin-top:10px;border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+  .ctx .cc b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .ctx .cc s{display:block;font:400 10.5px/1.5 var(--mono);color:var(--ash);margin-top:4px;text-decoration:none}
+  .fade{height:34px;background:linear-gradient(rgba(12,13,12,0),var(--page))}
+
+  /* shared section head — the Explore SectionHead golden standard */
+  .shead{display:flex;align-items:baseline;justify-content:space-between;padding:14px 20px 2px}
+  .shead b{font-size:18px;font-weight:800;letter-spacing:-.02em}
+  .shead a{font:700 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+  .ssub{padding:3px 20px 12px;font:400 11.5px/1.5 var(--mono);color:var(--ash2)}
+  .ssub b{color:var(--ash);font-weight:600}
+
+  .rail{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:6px 20px 22px}
+  .rail::-webkit-scrollbar{display:none}
+
+  .star{color:var(--gold)}
+  .chk{font-size:11px;vertical-align:1px}
+  .chk.v{color:var(--violet)}.chk.l{color:var(--lime)}.chk.b{color:var(--blue)}.chk.a{color:var(--amber)}
+
+  /* ===== 1 · THE LEDGER ===== */
+  .c1 .row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-top:1px solid var(--line)}
+  .c1 .row:last-of-type{border-bottom:1px solid var(--line)}
+  .c1 .av{width:42px;height:42px;border-radius:999px;flex:none;display:grid;place-items:center;
+    font:700 12.5px var(--mono);background:var(--ink2)}
+  .c1 .av.v{box-shadow:inset 0 0 0 1.5px var(--violet);color:var(--violet)}
+  .c1 .av.l{box-shadow:inset 0 0 0 1.5px var(--lime);color:var(--lime)}
+  .c1 .av.b{box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue)}
+  .c1 .av.a{box-shadow:inset 0 0 0 1.5px var(--amber);color:var(--amber)}
+  .c1 .who{min-width:0;flex:1}
+  .c1 .who b{display:block;font-size:15px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .c1 .who s{display:block;font:600 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:5px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .c1 .num{text-align:right;flex:none}
+  .c1 .num b{display:block;font:700 13px var(--mono);letter-spacing:0}
+  .c1 .num s{display:block;font:400 9.5px/1 var(--mono);color:var(--ash2);margin-top:5px;text-decoration:none}
+  .c1 .more{display:block;text-align:center;padding:14px 0 20px;font:700 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+
+  /* ===== 2 · THE BYLINE ===== */
+  .c2 .card{position:relative;flex:0 0 auto;width:280px;background:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column;min-height:172px}
+  .c2 .disc{font:700 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;margin-bottom:12px}
+  .c2 .disc.v{color:var(--violet)}.c2 .disc.l{color:var(--lime)}.c2 .disc.b{color:var(--blue)}
+  .c2 .card b.nm{font-size:21px;font-weight:800;letter-spacing:-.025em;line-height:1.1}
+  .c2 .hl{color:var(--ash);font-size:12.5px;line-height:1.45;margin-top:7px}
+  .c2 .foot{margin-top:auto;padding-top:14px;display:flex;align-items:center;justify-content:space-between}
+  .c2 .foot .rt{font:600 11.5px var(--mono);color:var(--ash)}
+  .c2 .foot .rt b{color:var(--chalk);font-weight:700}
+  .c2 .foot .go{font:700 12.5px var(--sans);color:var(--chalk)}
+
+  /* ===== 3 · THE SPINE ===== */
+  .c3 .card{position:relative;flex:0 0 auto;width:250px;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:15px 15px 13px;overflow:hidden}
+  .c3 .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+  .c3 .card.v::before{background:var(--violet)}.c3 .card.l::before{background:var(--lime)}.c3 .card.b::before{background:var(--blue)}
+  .c3 .top{display:flex;align-items:center;gap:11px}
+  .c3 .av{width:40px;height:40px;border-radius:999px;flex:none;display:grid;place-items:center;font:700 12px var(--mono);color:var(--ash);background:var(--ink);border:1px solid var(--line2)}
+  .c3 .top b{font-size:15px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .c3 .top .chev{margin-left:auto;color:var(--ash2);flex:none}
+  .c3 .meta{font:600 11px var(--mono);color:var(--ash);margin-top:11px}
+  .c3 .meta b{color:var(--chalk);font-weight:700}
+  .c3 .hl{color:var(--ash);font-size:12px;line-height:1.4;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .c3 .tags{display:flex;gap:6px;margin-top:12px;overflow:hidden}
+  .c3 .tg{font:600 9px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:5px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--ash);white-space:nowrap;flex:none}
+  .c3 .tg.hot.v{border-color:transparent;background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+  .c3 .tg.hot.l{border-color:transparent;background:color-mix(in srgb,var(--lime) 14%,transparent);color:var(--lime)}
+  .c3 .tg.hot.b{border-color:transparent;background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+
+  /* ===== 4 · THE POSTER ===== */
+  .c4 .card{position:relative;flex:0 0 auto;width:186px;border:1px solid var(--line);border-radius:22px;padding:20px 16px 16px;overflow:hidden;background:var(--ink2);display:flex;flex-direction:column;align-items:center;text-align:center}
+  .c4 .card::before{content:"";position:absolute;inset:0;height:110px;opacity:.16}
+  .c4 .card.v::before{background:radial-gradient(90% 100% at 50% 0%,var(--violet),transparent 70%)}
+  .c4 .card.l::before{background:radial-gradient(90% 100% at 50% 0%,var(--lime),transparent 70%)}
+  .c4 .card.b::before{background:radial-gradient(90% 100% at 50% 0%,var(--blue),transparent 70%)}
+  .c4 .av{position:relative;width:56px;height:56px;border-radius:999px;display:grid;place-items:center;font:700 15px var(--mono);background:var(--ink)}
+  .c4 .card.v .av{box-shadow:0 0 0 1.5px var(--violet),0 0 24px -6px var(--violet);color:var(--violet)}
+  .c4 .card.l .av{box-shadow:0 0 0 1.5px var(--lime),0 0 24px -6px var(--lime);color:var(--lime)}
+  .c4 .card.b .av{box-shadow:0 0 0 1.5px var(--blue),0 0 24px -6px var(--blue);color:var(--blue)}
+  .c4 .card b.nm{position:relative;font-size:15.5px;font-weight:800;letter-spacing:-.01em;margin-top:12px}
+  .c4 .disc{position:relative;font:700 9px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin-top:6px}
+  .c4 .stats{position:relative;display:flex;gap:0;margin-top:14px;width:100%;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .c4 .st{flex:1;padding:9px 0}
+  .c4 .st + .st{border-left:1px solid var(--line)}
+  .c4 .st b{display:block;font:700 13px var(--mono)}
+  .c4 .st s{display:block;font:400 8px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);margin-top:4px;text-decoration:none}
+  .c4 .cta{position:relative;margin-top:14px;width:100%;border:none;border-radius:999px;padding:10px 0;font:700 12.5px var(--sans);cursor:pointer;background:var(--chalk);color:var(--on-accent)}
+
+  /* ===== 5 · THE MARQUEE ===== */
+  .c5 .hero{margin:6px 20px 12px;border:1px solid var(--line);border-radius:22px;padding:18px;position:relative;overflow:hidden;background:var(--ink2)}
+  .c5 .hero::before{content:"";position:absolute;inset:0;opacity:.13;background:radial-gradient(120% 130% at 100% 0%,var(--violet),transparent 60%)}
+  .c5 .hk{position:relative;font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--violet)}
+  .c5 .hrow{position:relative;display:flex;align-items:center;gap:13px;margin-top:12px}
+  .c5 .hav{width:50px;height:50px;border-radius:999px;flex:none;display:grid;place-items:center;font:700 14px var(--mono);color:var(--violet);background:var(--ink);box-shadow:0 0 0 1.5px var(--violet)}
+  .c5 .hrow b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}
+  .c5 .hrow s{display:block;font:600 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:5px;text-decoration:none}
+  .c5 .quote{position:relative;margin-top:13px;font-size:13.5px;line-height:1.5;color:var(--chalk)}
+  .c5 .quote i{font-style:normal;color:var(--ash);font-size:11px;font-family:var(--mono);display:block;margin-top:6px}
+  .c5 .hstats{position:relative;display:flex;margin-top:14px;border-top:1px solid var(--line2)}
+  .c5 .hs{flex:1;padding-top:11px}
+  .c5 .hs b{display:block;font:700 15px var(--mono)}
+  .c5 .hs s{display:block;font:400 8.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash2);margin-top:4px;text-decoration:none}
+  .c5 .mini{display:flex;align-items:center;gap:11px;padding:10px 22px}
+  .c5 .mav{width:30px;height:30px;border-radius:999px;flex:none;display:grid;place-items:center;font:700 9.5px var(--mono);background:var(--ink2)}
+  .c5 .mav.l{box-shadow:inset 0 0 0 1.5px var(--lime);color:var(--lime)}
+  .c5 .mav.b{box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue)}
+  .c5 .mav.a{box-shadow:inset 0 0 0 1.5px var(--amber);color:var(--amber)}
+  .c5 .mini b{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+  .c5 .mini s{font:600 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash2);text-decoration:none;margin-left:2px}
+  .c5 .mini .r{margin-left:auto;font:600 11px var(--mono);color:var(--ash)}
+  .c5 .mini .r b{font:700 11px var(--mono);color:var(--chalk)}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="kicker">Hybrid design study</div>
+  <h1>Follow a coach <span>— five repairs</span></h1>
+  <p>The current rail suffers four sins: <b>ragged chips</b> (one card wraps its tags to two lines, its neighbour doesn't, so no two cards share a bottom edge), <b>too narrow</b> (220&nbsp;px strangles the headline and review count), <b>no sell</b> (an empty initials-circle and two grey chips give nobody a reason to follow), and <b>chaos</b> (five type styles competing in 200&nbsp;px of height). Each concept below removes something before it adds anything.</p>
+  <div class="brief">
+    <span class="tagb">fix <b>chip raggedness</b></span>
+    <span class="tagb">fix <b>width</b></span>
+    <span class="tagb">add <b>proof + invitation</b></span>
+    <span class="tagb">one <b>geometry for every card</b></span>
+  </div>
+</header>
+
+<main class="gallery">
+
+  <!-- ═══════════ 1 · THE LEDGER ═══════════ -->
+  <section class="concept c1">
+    <div class="cap">
+      <div class="n"><i>1</i>The Ledger</div>
+      <h2>Stop making cards</h2>
+      <p>The honest fix: a rail of near-identical cards is a list wearing a costume. Full-width rows use <b>every pixel of the screen</b>, the chips collapse into one disciplined mono line, and the rating becomes a right-aligned column you can scan like a table. Nothing can wrap, so nothing can be ragged.</p>
+    </div>
+    <div class="frame"><div class="screen">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><b>Follow a coach</b><a href="#">See all →</a></div>
+      <div class="ssub"><b>6 verified coaches</b> — 4.8 average across 435 reviews</div>
+      <div class="row"><span class="av v">PN</span><span class="who"><b>Priya Nair <span class="chk v">✓</span></b><s>Olympic lifting – Peaking</s></span><span class="num"><b><span class="star">★</span> 4.9</b><s>128 reviews</s></span></div>
+      <div class="row"><span class="av l">MB</span><span class="who"><b>Marcus Bell <span class="chk l">✓</span></b><s>Hyrox – Conditioning</s></span><span class="num"><b><span class="star">★</span> 4.7</b><s>64 reviews</s></span></div>
+      <div class="row"><span class="av b">SA</span><span class="who"><b>Sofia Almeida</b><s>Running – Endurance</s></span><span class="num"><b><span class="star">★</span> 4.8</b><s>91 reviews</s></span></div>
+      <div class="row"><span class="av a">DV</span><span class="who"><b>Dmitri Volkov</b><s>Powerlifting – Strength</s></span><span class="num"><b><span class="star">★</span> 4.6</b><s>42 reviews</s></span></div>
+      <a class="more" href="#">+ 2 more coaches</a>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+  <!-- ═══════════ 2 · THE BYLINE ═══════════ -->
+  <section class="concept c2">
+    <div class="cap">
+      <div class="n"><i>2</i>The Byline</div>
+      <h2>The discipline is the headline</h2>
+      <p>Nobody follows a circle with "PN" in it — so the avatar is <b>removed entirely</b>. Each card leads with its single accent-coloured discipline, then the name set large, like a byline under a headline. Chips are gone; the footer is one pinned baseline: proof on the left, invitation on the right. Wider (280&nbsp;px), and every card is the same height by construction.</p>
+    </div>
+    <div class="frame"><div class="screen">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><b>Follow a coach</b><a href="#">See all →</a></div>
+      <div class="ssub">Programs written by people, not templates</div>
+      <div class="rail">
+        <div class="card"><div class="disc v">Olympic lifting</div><b class="nm">Priya Nair <span class="chk v">✓</span></b><div class="hl">Ten years coaching the snatch and clean &amp; jerk to national level.</div><div class="foot"><span class="rt"><span class="star">★</span> <b>4.9</b> 128 reviews</span><span class="go">Follow →</span></div></div>
+        <div class="card"><div class="disc l">Hyrox</div><b class="nm">Marcus Bell <span class="chk l">✓</span></b><div class="hl">Hybrid engine-building for racers who also want a total.</div><div class="foot"><span class="rt"><span class="star">★</span> <b>4.7</b> 64 reviews</span><span class="go">Follow →</span></div></div>
+        <div class="card"><div class="disc b">Running</div><b class="nm">Sofia Almeida</b><div class="hl">Marathon &amp; 5k blocks that respect your lifting days.</div><div class="foot"><span class="rt"><span class="star">★</span> <b>4.8</b> 91 reviews</span><span class="go">Follow →</span></div></div>
+      </div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+  <!-- ═══════════ 3 · THE SPINE ═══════════ -->
+  <section class="concept c3">
+    <div class="cap">
+      <div class="n"><i>3</i>The Spine</div>
+      <h2>Keep the card, impose the grid</h2>
+      <p>The conservative repair. Every card gets <b>four fixed rows</b> — identity, proof, headline (one line, clamped), tags — so all bottoms align. The chip row can never wrap: exactly two chips, single line, and the first is tinted the coach's accent so the pair stops reading as grey noise. A 3&nbsp;px accent spine gives each coach a colour without shouting.</p>
+    </div>
+    <div class="frame"><div class="screen">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><b>Follow a coach</b><a href="#">See all →</a></div>
+      <div class="ssub">Swipe to find a coach for your goal</div>
+      <div class="rail">
+        <div class="card v"><div class="top"><span class="av">PN</span><b>Priya Nair <span class="chk v">✓</span></b><span class="chev">›</span></div><div class="meta"><span class="star">★</span> <b>4.9</b> — 128 reviews</div><div class="hl">Olympic weightlifting, 10y</div><div class="tags"><span class="tg hot v">Olympic lifting</span><span class="tg">Peaking</span></div></div>
+        <div class="card l"><div class="top"><span class="av">MB</span><b>Marcus Bell <span class="chk l">✓</span></b><span class="chev">›</span></div><div class="meta"><span class="star">★</span> <b>4.7</b> — 64 reviews</div><div class="hl">Hybrid &amp; Hyrox specialist</div><div class="tags"><span class="tg hot l">Hyrox</span><span class="tg">Conditioning</span></div></div>
+        <div class="card b"><div class="top"><span class="av">SA</span><b>Sofia Almeida</b><span class="chev">›</span></div><div class="meta"><span class="star">★</span> <b>4.8</b> — 91 reviews</div><div class="hl">Marathon &amp; 5k coach</div><div class="tags"><span class="tg hot b">Running</span><span class="tg">Endurance</span></div></div>
+      </div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+  <!-- ═══════════ 4 · THE POSTER ═══════════ -->
+  <section class="concept c4">
+    <div class="cap">
+      <div class="n"><i>4</i>The Poster</div>
+      <h2>Make the card sell</h2>
+      <p>If the section must earn a follow, give it a storefront. Tall, centred, symmetric — a lit avatar, one discipline word, and a <b>three-stat proof strip</b> (rating, reviews, years) that replaces both the chips and the headline. The Follow button lives on the card, so the invitation is explicit instead of implied by a chevron. Narrow is fine when the layout is vertical.</p>
+    </div>
+    <div class="frame"><div class="screen">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><b>Follow a coach</b><a href="#">See all →</a></div>
+      <div class="ssub">Real programming, from 9 €/mo</div>
+      <div class="rail">
+        <div class="card v"><span class="av">PN</span><b class="nm">Priya Nair <span class="chk v">✓</span></b><div class="disc">Olympic lifting</div><div class="stats"><span class="st"><b><span class="star">★</span>4.9</b><s>rating</s></span><span class="st"><b>128</b><s>reviews</s></span><span class="st"><b>10y</b><s>coaching</s></span></div><button class="cta">Follow</button></div>
+        <div class="card l"><span class="av">MB</span><b class="nm">Marcus Bell <span class="chk l">✓</span></b><div class="disc">Hyrox</div><div class="stats"><span class="st"><b><span class="star">★</span>4.7</b><s>rating</s></span><span class="st"><b>64</b><s>reviews</s></span><span class="st"><b>7y</b><s>coaching</s></span></div><button class="cta">Follow</button></div>
+        <div class="card b"><span class="av">SA</span><b class="nm">Sofia Almeida</b><div class="disc">Running</div><div class="stats"><span class="st"><b><span class="star">★</span>4.8</b><s>rating</s></span><span class="st"><b>91</b><s>reviews</s></span><span class="st"><b>8y</b><s>coaching</s></span></div><button class="cta">Follow</button></div>
+      </div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+  <!-- ═══════════ 5 · THE MARQUEE ═══════════ -->
+  <section class="concept c5">
+    <div class="cap">
+      <div class="n"><i>5</i>The Marquee</div>
+      <h2>One hero, then a roster</h2>
+      <p>Six equal cards means six equal shrugs. Feature <b>one coach at full width</b> — with an actual review quote doing the selling — and demote the rest to compact one-line rows. The hero rotates weekly, the roster rows share the Ledger's geometry, and the whole section finally has a hierarchy: someone to look at first.</p>
+    </div>
+    <div class="frame"><div class="screen">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><b>Follow a coach</b><a href="#">See all →</a></div>
+      <div class="hero">
+        <div class="hk">Featured this week</div>
+        <div class="hrow"><span class="hav">PN</span><span><b>Priya Nair <span class="chk v">✓</span></b><s>Olympic lifting – Peaking</s></span></div>
+        <div class="quote">"She rebuilt my snatch from scratch in twelve weeks. Worth every session."<i>— verified athlete review, <span class="star">★</span> 5.0</i></div>
+        <div class="hstats"><span class="hs"><b><span class="star">★</span> 4.9</b><s>rating</s></span><span class="hs"><b>128</b><s>reviews</s></span><span class="hs"><b>10y</b><s>coaching</s></span></div>
+      </div>
+      <div class="mini"><span class="mav l">MB</span><b>Marcus Bell</b><s>Hyrox</s><span class="r"><span class="star">★</span> <b>4.7</b></span></div>
+      <div class="mini"><span class="mav b">SA</span><b>Sofia Almeida</b><s>Running</s><span class="r"><span class="star">★</span> <b>4.8</b></span></div>
+      <div class="mini"><span class="mav a">DV</span><b>Dmitri Volkov</b><s>Powerlifting</s><span class="r"><span class="star">★</span> <b>4.6</b></span></div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Follow a coach — Marquee, as shipped</title>
+<style>
+  :root{
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --page:#070806;--pchalk:#f3f4ef;--pash:#8b8f86;--plime:#c6f84f;--pcard:#151715;--pline:#242724;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--page);color:var(--pchalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:44px 20px 90px}
+  ::selection{background:var(--plime);color:#0c0d0c}
+
+  .page-head{max-width:1280px;margin:0 auto 40px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--plime);margin-bottom:16px}
+  .page-head h1{font-size:clamp(30px,5vw,44px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px}
+  .page-head h1 span{color:var(--pash)}
+  .page-head p{color:var(--pash);max-width:720px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--pchalk);font-weight:600}
+
+  .gallery{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(374px,1fr));gap:52px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:430px}
+  .cap{margin:0 6px 18px}
+  .cap .n{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--plime);text-transform:uppercase;margin-bottom:10px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--pash);font-size:13px;line-height:1.55}
+  .cap p b{color:var(--pchalk);font-weight:600}
+
+  .frame{position:relative;width:100%;border-radius:44px 44px 30px 30px;padding:11px 11px 0;
+    background:linear-gradient(160deg,#2a2e21,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+
+  /* ===== theme scopes — token values copied verbatim from globals.css ===== */
+  .aurora{
+    --ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--gold:#e6c34e;
+    --lime:#c6f84f;--blue:#3c787e;--violet:#8296c4;--amber:#d0cd94;
+    --lime-text:#c6f84f;--blue-text:#6cb6bd;--violet-text:#8ba0cc;--amber-text:#d0cd94;
+    --shadow-card:0 6px 22px -12px rgba(0,0,0,.55);
+    --font-heading:"Archivo",system-ui,sans-serif;--hw:800;
+  }
+  .kyoto{
+    --ink:#f6f3ea;--ink2:#faf7ef;--line:#e6e1d2;--chalk:#2b2a26;--ash:#6f6b5e;--gold:#b58a24;
+    --lime:#44584c;--blue:#5f6d4b;--violet:#8296c4;--amber:#d0cd94;
+    --lime-text:#3c4f43;--blue-text:#4f5c3a;--violet-text:#4c5a78;--amber-text:#875427;
+    --shadow-card:0 14px 30px -18px rgba(88,74,52,.38);
+    --font-heading:"Shippori Mincho",Georgia,serif;--hw:700;
+  }
+  .screen{position:relative;border-radius:34px 34px 20px 20px;overflow:hidden;background:var(--ink);color:var(--chalk);padding:14px 0 0}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:4px 26px 2px;font-size:13.5px;font-weight:700}
+  .status .r{display:flex;gap:7px;align-items:center;font-size:12.5px}
+  .bat{background:var(--amber);color:#161608;font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .ctx{padding:18px 20px 6px;opacity:.28}
+  .ctx .ck{font:600 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+  .ctx .cc{margin-top:10px;border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+  .ctx .cc b{font-size:19px;font-weight:800;letter-spacing:-.02em;font-family:var(--font-heading)}
+  .ctx .cc s{display:block;font:400 10.5px/1.5 var(--mono);color:var(--ash);margin-top:4px;text-decoration:none}
+  .fade{height:30px}
+
+  /* ===== the section, exactly as the component renders it ===== */
+  .shead{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px}
+  .shead .t b{display:block;font-family:var(--font-heading);font-weight:var(--hw);font-size:17px;letter-spacing:-.01em}
+  .shead .t s{display:block;font:400 12px/1 var(--mono);color:var(--ash);margin-top:4px;text-decoration:none}
+  .shead a{font:400 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);text-decoration:none}
+
+  .rail{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:8px 20px 24px;scroll-snap-type:x mandatory;scroll-padding:0 20px}
+  .rail::-webkit-scrollbar{display:none}
+
+  .card{position:relative;scroll-snap-align:start;flex:0 0 auto;width:290px;background:var(--ink2);
+    border:1px solid var(--line);border-radius:20px;padding:16px 16px 14px;cursor:pointer;
+    box-shadow:var(--shadow-card);overflow:hidden;display:flex;flex-direction:column}
+  .wash{position:absolute;inset:0;pointer-events:none}
+  .card.v .wash{background:radial-gradient(120% 130% at 100% 0%,color-mix(in srgb,var(--violet) 14%,transparent),transparent 60%)}
+  .card.l .wash{background:radial-gradient(120% 130% at 100% 0%,color-mix(in srgb,var(--lime) 14%,transparent),transparent 60%)}
+  .card.b .wash{background:radial-gradient(120% 130% at 100% 0%,color-mix(in srgb,var(--blue) 14%,transparent),transparent 60%)}
+  .card.a .wash{background:radial-gradient(120% 130% at 100% 0%,color-mix(in srgb,var(--amber) 14%,transparent),transparent 60%)}
+  .chev{position:absolute;top:16px;right:16px;color:color-mix(in srgb,var(--ash) 55%,transparent);font-size:15px;line-height:1}
+
+  .hd{position:relative;display:flex;align-items:center;gap:13px;padding-right:18px}
+  .av{width:46px;height:46px;border-radius:999px;background:var(--ink);flex:none;display:grid;place-items:center;
+    font:700 13px var(--mono)}
+  .card.v .av{box-shadow:inset 0 0 0 1.5px var(--violet);color:var(--violet-text)}
+  .card.l .av{box-shadow:inset 0 0 0 1.5px var(--lime);color:var(--lime-text)}
+  .card.b .av{box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue-text)}
+  .card.a .av{box-shadow:inset 0 0 0 1.5px var(--amber);color:var(--amber-text)}
+  .who{min-width:0}
+  .who b{display:block;font-family:var(--font-heading);font-weight:var(--hw);font-size:16.5px;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card.v .who b i{color:var(--violet-text)}
+  .card.l .who b i{color:var(--lime-text)}
+  .card.b .who b i{color:var(--blue-text)}
+  .card.a .who b i{color:var(--amber-text)}
+  .who b i{font-style:normal;font-size:12px;margin-left:4px}
+  .who s{display:block;margin-top:5px;font:600 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .sell{position:relative;margin-top:12px;min-height:58px}
+  .q{font-size:13px;line-height:1.5;color:var(--chalk);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .qa{margin-top:5px;font:400 10px/1 var(--mono);color:color-mix(in srgb,var(--ash) 70%,transparent)}
+  .hl{font-size:13px;line-height:1.5;color:var(--ash);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  .strip{position:relative;display:flex;margin-top:auto;border-top:1px solid var(--line)}
+  .st{flex:1;padding-top:10px}
+  .st + .st{border-left:1px solid var(--line);padding-left:12px}
+  .st b{display:block;font:700 13px var(--mono);color:var(--chalk);white-space:nowrap}
+  .st b i{font-style:normal;color:var(--gold);margin-right:4px}
+  .st s{display:block;font:400 8.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:color-mix(in srgb,var(--ash) 70%,transparent);margin-top:4px;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="kicker">Hybrid — shipped</div>
+  <h1>Follow a coach <span>— the Marquee, live</span></h1>
+  <p>A 1:1 preview of the card now in <b>coach-rail.tsx</b> on both clients — same markup, same token values from <b>globals.css</b>. Every coach gets the marquee treatment in a swipeable, snap-aligned slider: accent wash, accent-ringed avatar, one non-wrapping specialty line, an athlete pull-quote, and the bottom-pinned proof strip. <b>Swipe the rails</b> — the last card in the dark rail shows the fallback state for a live marketplace coach with no featured review yet (headline instead of a quote, stat cells dropped when unknown).</p>
+</header>
+
+<main class="gallery">
+
+  <section class="concept">
+    <div class="cap">
+      <div class="n">Aurora — dark</div>
+      <h2>Today, as shipped</h2>
+      <p>All six placeholder people, each with their seeded review quote and years-coaching cell. The accent ring + wash carries each coach's colour; nothing wraps, so every bottom edge aligns.</p>
+    </div>
+    <div class="frame"><div class="screen aurora">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><span class="t"><b>Follow a coach</b><s>Swipe to find a coach for your goal</s></span><a href="#">Browse all →</a></div>
+      <div class="rail">
+        <div class="card v"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">PN</span><span class="who"><b>Priya Nair<i>✓</i></b><s>Olympic lifting – Peaking</s></span></div>
+          <div class="sell"><div class="q">“She rebuilt my snatch from scratch in twelve weeks. Worth every session.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.9</b><s>rating</s></span><span class="st"><b>128</b><s>reviews</s></span><span class="st"><b>10y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card l"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">MB</span><span class="who"><b>Marcus Bell<i>✓</i></b><s>Hyrox – Conditioning</s></span></div>
+          <div class="sell"><div class="q">“Took nine minutes off my Hyrox time without losing my squat.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.7</b><s>rating</s></span><span class="st"><b>64</b><s>reviews</s></span><span class="st"><b>7y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card b"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">SA</span><span class="who"><b>Sofia Almeida</b><s>Running – Endurance</s></span></div>
+          <div class="sell"><div class="q">“First marathon under four hours, still lifting twice a week.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.8</b><s>rating</s></span><span class="st"><b>91</b><s>reviews</s></span><span class="st"><b>8y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card a"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">DV</span><span class="who"><b>Dmitri Volkov</b><s>Powerlifting – Strength</s></span></div>
+          <div class="sell"><div class="q">“Forty kilos on my total in one prep. The man is a spreadsheet.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.6</b><s>rating</s></span><span class="st"><b>42</b><s>reviews</s></span><span class="st"><b>12y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card v"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">LH</span><span class="who"><b>Lena Hoffmann<i>✓</i></b><s>Bodybuilding – Fat loss</s></span></div>
+          <div class="sell"><div class="q">“Leaner than ever and stronger in every single lift.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>5.0</b><s>rating</s></span><span class="st"><b>73</b><s>reviews</s></span><span class="st"><b>6y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card l"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">CB</span><span class="who"><b>Coach Bray</b><s>Tactical – Strength</s></span></div>
+          <div class="sell"><div class="q">“Passed selection with room to spare. The rucks were dialled.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.4</b><s>rating</s></span><span class="st"><b>37</b><s>reviews</s></span><span class="st"><b>15y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card b"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">AK</span><span class="who"><b>Anna Kowalska</b><s>Strength – Speed</s></span></div>
+          <div class="sell"><div class="hl">Strength &amp; conditioning for team-sport athletes — live marketplace coach, no featured review yet.</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.5</b><s>rating</s></span><span class="st"><b>12</b><s>reviews</s></span></div>
+        </div>
+      </div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+  <section class="concept">
+    <div class="cap">
+      <div class="n">Kyoto Hour — light</div>
+      <h2>Same card, washi &amp; sumi</h2>
+      <p>The identical component under the light theme's tokens: names in the Mincho display face, pine and sage accent fills, deepened rating gold, the warm sumi card shadow. The wash and ring re-tint automatically — no per-theme code in the card.</p>
+    </div>
+    <div class="frame"><div class="screen kyoto">
+      <div class="status"><span>9:41</span><span class="r"><span>􀙇</span><span class="bat">92</span></span></div>
+      <div class="ctx"><div class="ck">Today</div><div class="cc"><b>Upper — Push</b><s>6 blocks, 52 min planned</s></div></div>
+      <div class="shead"><span class="t"><b>Follow a coach</b><s>Swipe to find a coach for your goal</s></span><a href="#">Browse all →</a></div>
+      <div class="rail">
+        <div class="card v"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">PN</span><span class="who"><b>Priya Nair<i>✓</i></b><s>Olympic lifting – Peaking</s></span></div>
+          <div class="sell"><div class="q">“She rebuilt my snatch from scratch in twelve weeks. Worth every session.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.9</b><s>rating</s></span><span class="st"><b>128</b><s>reviews</s></span><span class="st"><b>10y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card l"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">MB</span><span class="who"><b>Marcus Bell<i>✓</i></b><s>Hyrox – Conditioning</s></span></div>
+          <div class="sell"><div class="q">“Took nine minutes off my Hyrox time without losing my squat.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.7</b><s>rating</s></span><span class="st"><b>64</b><s>reviews</s></span><span class="st"><b>7y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card b"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">SA</span><span class="who"><b>Sofia Almeida</b><s>Running – Endurance</s></span></div>
+          <div class="sell"><div class="q">“First marathon under four hours, still lifting twice a week.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.8</b><s>rating</s></span><span class="st"><b>91</b><s>reviews</s></span><span class="st"><b>8y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card a"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">DV</span><span class="who"><b>Dmitri Volkov</b><s>Powerlifting – Strength</s></span></div>
+          <div class="sell"><div class="q">“Forty kilos on my total in one prep. The man is a spreadsheet.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.6</b><s>rating</s></span><span class="st"><b>42</b><s>reviews</s></span><span class="st"><b>12y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card v"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">LH</span><span class="who"><b>Lena Hoffmann<i>✓</i></b><s>Bodybuilding – Fat loss</s></span></div>
+          <div class="sell"><div class="q">“Leaner than ever and stronger in every single lift.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>5.0</b><s>rating</s></span><span class="st"><b>73</b><s>reviews</s></span><span class="st"><b>6y</b><s>coaching</s></span></div>
+        </div>
+        <div class="card l"><span class="wash"></span><span class="chev">›</span>
+          <div class="hd"><span class="av">CB</span><span class="who"><b>Coach Bray</b><s>Tactical – Strength</s></span></div>
+          <div class="sell"><div class="q">“Passed selection with room to spare. The rucks were dialled.”</div><div class="qa">— athlete review</div></div>
+          <div class="strip"><span class="st"><b><i>★</i>4.4</b><s>rating</s></span><span class="st"><b>37</b><s>reviews</s></span><span class="st"><b>15y</b><s>coaching</s></span></div>
+        </div>
+      </div>
+      <div class="fade"></div>
+    </div></div>
+  </section>
+
+</main>
+</body>
+</html>
