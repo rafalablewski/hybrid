@@ -35,7 +35,6 @@ import {
   type CardioPrHit,
 } from "@hybrid/core";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
@@ -57,7 +56,6 @@ export default function SessionDetail() {
   // Bodyweight-aware tonnage/e1RM — the athlete's weight AT this session's date.
   const bw = useBodyweightLookup();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const cardRef = useRef<View>(null);
   // The shared react-query sessions cache — coming from History this renders
   // instantly with zero network I/O instead of re-downloading every session.
   const q = useSessionsQuery();
@@ -121,16 +119,6 @@ export default function SessionDetail() {
   const cardio = sessionCardioTotals(session.blocks);
   const cardioMin = cardio.minutes || minutes || 0;
 
-  const bestMap = new Map<string, number>();
-  for (const b of session.blocks)
-    if (b.kind === "strength") {
-      const e = Math.round(blockBestE1rm(b, bwHere));
-      if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
-    }
-  const bests: ShareBest[] = [...bestMap.entries()]
-    .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
-    .sort((a, b) => b.e1rm - a.e1rm);
-
   // Manage this workout — lives on the breakdown since the classic History
   // list (and its swipe actions) was retired for live sessions. The flow
   // itself (busy, confirm, invalidation, errors) is the shared useSessionActions.
@@ -139,14 +127,6 @@ export default function SessionDetail() {
   };
   const doDelete = () => manage.confirmDelete(session, () => router.back());
 
-  const shareText = [
-    `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min – ` : ""}${sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)}`,
-    prs[0] ? `\u{1F3C6} ${prLine(prs[0], t, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
-    t("share.tracked"),
-  ]
-    .filter(Boolean)
-    .join("\n");
 
   return wrap(
     <>
@@ -269,21 +249,7 @@ export default function SessionDetail() {
         ))}
       </View>
 
-      {/* Shareable card — relive (and re-share) ANY session, like the finished
-          workout (P5), not just strength ones. */}
-      <>
-        <View style={{ marginTop: 6 }}>
-          <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? cardioMin ?? 0, sets, volume: sessionVolume(session.blocks, false, bwHere), bests }} />
-        </View>
-        <Pressable
-          onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
-          style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.share")}</Text>
-        </Pressable>
-      </>
-
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 24 }}>
         <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
         <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>

@@ -172,8 +172,9 @@ export function WorkoutWrapped({
             <View style={{ gap: 14 }}>
               {/* Hero */}
               <View style={{ borderRadius: 22, padding: 20, borderWidth: 1, borderColor: `${C.lime}44`, backgroundColor: C.ink2, overflow: "hidden" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{session.title}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 50, color: C.chalk, letterSpacing: -1, marginTop: 8 }}>{heroBig}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.5, color: premium.text, textTransform: "uppercase" }}>✦ {t("session.wrapped.title")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 6 }}>{session.title}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 64, color: C.chalk, letterSpacing: -1.5, marginTop: 6 }}>{heroBig}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: cel ? txt(C, C.lime) : C.ash, marginTop: 4 }}>{heroSub}</Text>
                 {/* Session signature — the effort fingerprint (one bar per set). */}
                 {signature.length >= SIGNATURE_MIN_BARS && (
