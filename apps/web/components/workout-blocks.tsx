@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { setLoggerPref } from "@/lib/logger-prefs";
@@ -141,6 +141,9 @@ export default function WorkoutBlocks({
   const [sportPicker, setSportPicker] = useState(false);
   // The block currently being dragged by its grip handle (for drop reordering).
   const [dragUid, setDragUid] = useState<string | null>(null);
+  // The set row currently dragged by its ⠿ grip (block uid + set index) — a
+  // set drag never crosses into another block.
+  const [dragSet, setDragSet] = useState<{ uid: string; i: number } | null>(null);
   // SIGNAL mode: blocks folded down to their header + metric row. New blocks
   // start expanded; the set survives reorders (keyed by uid).
   const [collapsedUids, setCollapsedUids] = useState<Set<string>>(new Set());
@@ -219,8 +222,6 @@ export default function WorkoutBlocks({
     );
   };
 
-  const move = (u: string, dir: -1 | 1) =>
-    setBlocks((bs) => moveItem(bs, bs.findIndex((b) => b.uid === u), dir));
   // Drag-and-drop reorder: drop the block being dragged onto another's card.
   const moveTo = (fromU: string, toU: string) =>
     setBlocks((bs) => moveItemTo(bs, bs.findIndex((b) => b.uid === fromU), bs.findIndex((b) => b.uid === toU)));
@@ -272,9 +273,9 @@ export default function WorkoutBlocks({
     );
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
-  // Reorder a set within its block (the ↑/↓ controls on each row).
-  const moveSet = (u: string, i: number, dir: -1 | 1) =>
-    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItem(b.sets, i, dir) } : b));
+  // Reorder a set within its block (drag the row's ⠿ grip onto another row).
+  const moveSetTo = (u: string, from: number, to: number) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItemTo(b.sets, from, to) } : b));
   // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
   const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
@@ -377,17 +378,9 @@ export default function WorkoutBlocks({
               <Mono s={{ fontSize: fs.micro, whiteSpace: "nowrap" }}>{blockSignalSummary(b)}</Mono>
             )}
             {reorder && !isCollapsed(b.uid) && (
-              <>
-                <button aria-label={t("common.moveUp")} onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
-                  ↑
-                </button>
-                <button aria-label={t("common.moveDown")} onClick={() => move(b.uid, 1)} disabled={idx === blocks.length - 1} style={iconBtn(ASH)}>
-                  ↓
-                </button>
-                <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
-                  ⧉
-                </button>
-              </>
+              <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
+                ⧉
+              </button>
             )}
             {!isCollapsed(b.uid) && b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
               <button
@@ -477,7 +470,18 @@ export default function WorkoutBlocks({
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 6, alignItems: "center" }}
+                  // Rows are drop targets for a set dragged within the SAME block.
+                  onDragOver={dragSet && dragSet.uid === b.uid && dragSet.i !== i ? (e) => e.preventDefault() : undefined}
+                  onDrop={
+                    dragSet && dragSet.uid === b.uid && dragSet.i !== i
+                      ? (e) => {
+                          e.preventDefault();
+                          moveSetTo(b.uid, dragSet.i, i);
+                          setDragSet(null);
+                        }
+                      : undefined
+                  }
+                  style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 6, alignItems: "center", opacity: dragSet?.uid === b.uid && dragSet.i === i ? 0.5 : 1 }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -524,24 +528,16 @@ export default function WorkoutBlocks({
                   {velocity && (
                     <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
                   )}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <button
-                      onClick={() => moveSet(b.uid, i, -1)}
-                      disabled={i === 0}
-                      title={t("w.train.blocks.moveSetUp")}
-                      style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === 0 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === 0 ? "default" : "pointer", padding: "2px 0" }}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      onClick={() => moveSet(b.uid, i, 1)}
-                      disabled={i === b.sets.length - 1}
-                      title={t("w.train.blocks.moveSetDown")}
-                      style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === b.sets.length - 1 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === b.sets.length - 1 ? "default" : "pointer", padding: "2px 0" }}
-                    >
-                      ↓
-                    </button>
-                  </div>
+                  <span
+                    // Grip — drag this row onto another row to reorder the sets.
+                    draggable={b.sets.length > 1}
+                    onDragStart={() => setDragSet({ uid: b.uid, i })}
+                    onDragEnd={() => setDragSet(null)}
+                    title={t("w.train.blocks.dragToReorder")}
+                    style={{ ...mono, fontSize: fs.body, color: txt(ASH), cursor: b.sets.length > 1 ? "grab" : "default", userSelect: "none", textAlign: "center", lineHeight: 1 }}
+                  >
+                    ⠿
+                  </span>
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>
