@@ -128,56 +128,19 @@ export default function SessionDetail() {
   const doDelete = () => manage.confirmDelete(session, () => router.back());
 
 
-  return wrap(
+  // The workout's set breakdown + manage row — shown as the trailing "details"
+  // section beneath the Wrapped panels (the reveal → premium recap → share IS
+  // the screen now; see WorkoutWrapped).
+  const details = (
     <>
-      <ABack />
-
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("session.theSession")}</Text>
       <Mono style={{ marginTop: 4 }}>
         {fmtDate(session.startedAt)} – {sessionClockTime(session.startedAt)}
         {session.readiness != null ? ` – ${t("home.readiness")} ${session.readiness}` : ""}
       </Mono>
 
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-        {shape === "cardio" ? (
-          <>
-            <Metric label={t("session.duration")} value={cardioMin ? `${cardioMin}` : "—"} />
-            <Metric label={t("session.distance")} value={cardio.distanceKm > 0 ? formatSportDistance(cardio.distanceKm, headlineRunMove(session.blocks) ?? "") : "—"} />
-            <Metric label={t("session.pace")} value={cardio.secPerKm ? `${paceClock(cardio.secPerKm)}` : "—"} />
-          </>
-        ) : (
-          <>
-            <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
-            <Metric label={t("summary.sets")} value={String(sets)} />
-            <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks, false, bwHere), units)} />
-          </>
-        )}
-      </View>
-
-      {/* PR reveal — the headline record lands (spring + count-up); "Share your
-          win" opens the Wrapped recap → story share; the full PR list stays
-          below when there's more than one. Renders nothing on a no-PR session. */}
-      <PrReveal
-        prs={prs}
-        cardioPrs={cardioPrs}
-        units={units}
-        t={t}
-        aurora={aurora}
-        onShare={() => setWrappedOpen(true)}
-      />
-
-      {/* No PR to celebrate? Every workout can still open its Wrapped recap. */}
-      {prs.length + cardioPrs.length === 0 && (
-        <Pressable
-          onPress={() => setWrappedOpen(true)}
-          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}0f`, borderRadius: aurora ? 999 : 14, paddingVertical: 14, alignItems: "center" }}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>✦ {t("session.wrapped.see")}</Text>
-        </Pressable>
-      )}
-
       {prs.length + cardioPrs.length > 1 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 12 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 14 }}>
           {prs.map((p) => (
             <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏆 {prLine(p, t, units)}</Text>
           ))}
@@ -187,10 +150,8 @@ export default function SessionDetail() {
         </View>
       )}
 
-      {/* Muscle focus — what this session actually trained */}
       <MuscleFocus blocks={session.blocks} t={t} />
 
-      {/* Per-exercise breakdown */}
       <View style={{ marginTop: 16 }}>
         {session.blocks.map((b, i) => (
           <Card key={i}>
@@ -253,11 +214,13 @@ export default function SessionDetail() {
         <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
         <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
+    </>
+  );
 
-      {wrappedOpen && (
-        <WorkoutWrapped session={session} all={all} units={units} bw={bw} onClose={() => setWrappedOpen(false)} />
-      )}
-    </>,
+  // The individual session IS the experience: reveal (if a PR) → premium Wrapped
+  // panels → story share, with the breakdown/manage riding along as `details`.
+  return (
+    <WorkoutWrapped session={session} all={all} units={units} bw={bw} onBack={() => router.back()} details={details} />
   );
 }
 
@@ -270,159 +233,6 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
 // otherwise) — one shared core formatter, see formatCardioPr.
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
   formatCardioPr(p, t("summary.firstTime"));
-
-// Deterministic confetti fan for the PR reveal (module-level → stable positions,
-// no per-render randomness). ci indexes the palette colours picked in-component.
-const CONFETTI_M = Array.from({ length: 14 }, (_, i) => {
-  const a = (i / 14) * Math.PI * 2;
-  const d = 64 + (i % 4) * 20;
-  return { tx: Math.round(Math.cos(a) * d), ty: Math.round(Math.sin(a) * d - 24), ci: i % 4 };
-});
-
-// A number that ticks up from 0 → final on mount, then rests on the EXACT
-// original string (so the resting value is never a rounded frame). Mirrors the
-// web SessionCountUp + the summary CountUpText — same statCountUp core.
-function RevealCount({ value, style }: { value: string; style: TextStyle }) {
-  const [disp, setDisp] = useState(value);
-  useEffect(() => {
-    const { target, format } = statCountUp(value);
-    if (!target) {
-      setDisp(value);
-      return;
-    }
-    const dur = 900;
-    const t0 = Date.now();
-    let raf: ReturnType<typeof requestAnimationFrame>;
-    const tick = () => {
-      const p = Math.min(1, (Date.now() - t0) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      if (p < 1) {
-        setDisp(format(target * eased));
-        raf = requestAnimationFrame(tick);
-      } else {
-        setDisp(value);
-      }
-    };
-    setDisp(format(0));
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-  return <Text style={style}>{disp}</Text>;
-}
-
-/**
- * PR REVEAL — the personal-best hero on the individual-workout page. When a
- * session set a record, ONE headline record lands (the trophy springs in, the
- * number counts up), chosen by the shared `sessionCelebration` so web + mobile
- * headline the SAME record, with "Share your win" as the payoff. Renders nothing
- * when the session set no records.
- */
-function PrReveal({
-  prs,
-  cardioPrs,
-  units,
-  t,
-  onShare,
-  aurora,
-}: {
-  prs: PrHit[];
-  cardioPrs: CardioPrHit[];
-  units: WeightUnit;
-  t: (k: string) => string;
-  onShare: () => void;
-  aurora: boolean;
-}) {
-  const C = useTheme().palette;
-  const cel = sessionCelebration(prs, cardioPrs);
-  const scale = useRef(new Animated.Value(0)).current;
-  const burst = useRef(new Animated.Value(0)).current; // confetti fan-out
-  const spin = useRef(new Animated.Value(0)).current; // rotating ray halo
-  useEffect(() => {
-    if (!cel) return;
-    scale.setValue(0);
-    burst.setValue(0);
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 120, delay: 120 }).start();
-    Animated.timing(burst, { toValue: 1, duration: 900, delay: 150, useNativeDriver: true }).start();
-    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, [cel, scale, burst, spin]);
-  if (!cel) return null;
-
-  const confettiCols = [C.lime, C.gold, C.blue, C.violet];
-
-  const big =
-    cel.kind === "strength"
-      ? fmtWeight(cel.e1rm, units)
-      : cel.prKind === "distance"
-        ? formatSportDistance(cel.value, cel.move)
-        : `${paceClock(cel.value)} /km`;
-  const name = cel.kind === "strength" ? cel.lift : cel.move;
-  const sub = cel.firstEver
-    ? t("summary.firstEver")
-    : cel.kind === "strength"
-      ? `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`
-      : cel.prKind === "distance"
-        ? t("summary.furthestYet")
-        : t("summary.fastestYet");
-  const kicker = cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne");
-
-  return (
-    <View
-      style={{
-        marginTop: 16,
-        borderWidth: 1,
-        borderColor: C.lime,
-        backgroundColor: `${C.lime}14`,
-        borderRadius: aurora ? 22 : 16,
-        padding: 18,
-        overflow: "hidden",
-      }}
-    >
-      {/* Rotating gold ray halo behind the trophy corner. */}
-      <Animated.View
-        pointerEvents="none"
-        style={{ position: "absolute", top: -70, left: -30, width: 200, height: 200, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}
-      >
-        <LinearGradient colors={[`${C.gold}26`, "transparent", `${C.lime}1f`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 100 }} />
-      </Animated.View>
-      {/* Confetti burst — deterministic angles, fired once. */}
-      {CONFETTI_M.map((c, i) => (
-        <Animated.View
-          key={i}
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 18,
-            left: 16,
-            width: 7,
-            height: 7,
-            borderRadius: 2,
-            backgroundColor: confettiCols[c.ci],
-            opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-            transform: [
-              { translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) },
-              { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) },
-            ],
-          }}
-        />
-      ))}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-        <Animated.Text style={{ fontSize: 24, transform: [{ scale }] }}>🏆</Animated.Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.5, color: txt(C, C.lime), textTransform: "uppercase" }}>
-          {kicker}
-        </Text>
-      </View>
-      <RevealCount value={big} style={{ fontFamily: F.black, fontSize: 52, color: C.chalk, marginTop: 8, letterSpacing: -1 }} />
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 4 }}>
-        {name} <Text style={{ color: txt(C, C.lime) }}>— {sub}</Text>
-      </Text>
-      <Pressable onPress={onShare} style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>↗ {t("summary.share")}</Text>
-      </Pressable>
-    </View>
-  );
-}
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -523,16 +333,6 @@ function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }
           />
         ))}
       </View>
-    </View>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  const C = useTheme().palette;
-  return (
-    <View style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
