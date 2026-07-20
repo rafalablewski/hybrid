@@ -98,6 +98,20 @@ client. Replace it by context:
 A standalone `·` used as content (e.g. an empty-avatar placeholder glyph) is not
 a separator — leave those.
 
+## RULE: screen-level sliders run FULL-BLEED — no gap at the screen edge (always)
+Every horizontal slider/rail that sits directly on a screen (Today's exercise
+widgets and "Train your way", Explore's "Follow a coach", …) must let its cards
+slide under the physical screen edge — never clip at the content column with
+the screen gutter showing beside a cut card. The **golden standard is the
+exercise-widget rail** (`aurora/exercise-widget.tsx`, both clients): negative
+horizontal margins the width of the screen gutter pull the scroll clip to the
+true edge (mobile `marginHorizontal: -16` against AuroraScreen's 16dp gutter;
+web `margin: 0 calc(-1 * var(--page-pad-x, 16px))`), with MATCHING internal
+padding so resting cards still align with the content column. `CoachRail`'s
+`bleed` prop is the same idiom. The one exception: a rail rendered inside a
+Sheet or a card respects its container's padding — bleed is only for rails
+sitting directly on a screen.
+
 ## RULE: no decorative dot/marker before section headers (always)
 A small dot, circle or square placed before a section label reads as AI slop.
 Never render one in front of a heading, kicker, or cluster label, on either
