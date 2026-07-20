@@ -167,12 +167,12 @@ export default function ExerciseWidgetRail({
           style={{
             flex: "0 0 40%", scrollSnapAlign: "center", cursor: "pointer",
             display: "grid", placeItems: "center", alignContent: "center", gap: 8,
-            background: C("ink2"), border: `1px dashed ${C("line")}`, borderRadius: 28,
-            color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.6, minHeight: 200,
+            background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 28,
+            fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.6, minHeight: 200,
           }}
         >
-          <span style={{ fontSize: 22, color: "var(--lime-text)" }}>＋</span>
-          <span>{t("w.home.exw.allCard")}</span>
+          <span style={{ fontSize: 22, color: C("ash") }}>＋</span>
+          <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.allCard")}</span>
         </button>
       </div>
     </div>

@@ -15,7 +15,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
  *  conditioning sand + ticker red ride accentText (parity with the web
@@ -157,10 +157,10 @@ export default function ExerciseWidgetRail({
         <Pressable
           onPress={onAll}
           accessibilityRole="button"
-          style={{ width: Math.round(cardW * 0.5), height: 200, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.card, paddingHorizontal: 14 }}
+          style={{ width: Math.round(cardW * 0.5), height: 200, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.card, paddingHorizontal: 14 }}
         >
-          <Text style={{ fontSize: 22, color: txt(C, C.lime) }}>＋</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textAlign: "center", lineHeight: 17 }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontSize: 22, color: C.ash }}>＋</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: txt(C, C.lime), textAlign: "center", lineHeight: 17 }}>{t("w.home.exw.allCard")}</Text>
         </Pressable>
       </ScrollView>
     </View>
