@@ -8,6 +8,13 @@ import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 // shared placeholder people (coachRailItems falls back), so the section is never
 // empty. Each card is a single tap-target (a chevron says so) that opens the
 // coach / marketplace, where following happens — no inline button.
+//
+// MARQUEE card (see design/follow-coach-redesign-ideas.html, concept 5, applied
+// to every card): an accent-washed card led by the person (accent-ringed avatar,
+// name, one mono specialty line), an athlete pull-quote doing the selling
+// (coach headline as the fallback when no quote exists), and a proof strip
+// (rating / reviews / years) pinned to the bottom so every card shares one
+// geometry — no wrapping chips, no ragged bottoms.
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -16,22 +23,75 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[1]?.[0] ?? "")).toUpperCase() || "C";
 }
 
-// Rating as a single gold star + the score, with an optional faint review count —
-// calmer than a five-star row, and the number does the work.
-function Stars({ rating, reviews }: { rating: number | null; reviews?: number }) {
-  if (rating == null) return <span style={{ color: C("ash"), fontSize: 11, fontFamily: "var(--font-mono)" }}>New</span>;
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontSize: 12 }}>
-      <span style={{ color: C("gold") }}>★</span>
-      <span style={{ color: C("chalk") }}>{rating.toFixed(1)}</span>
-      {reviews ? <span style={{ color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>{reviews} reviews</span> : null}
-    </span>
-  );
-}
-
 const Chevron = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
 );
+
+// One cell of the proof strip: mono value over a tiny mono label.
+function Stat({ value, label, first, star }: { value: string; label: string; first?: boolean; star?: boolean }) {
+  return (
+    <div style={{ flex: 1, paddingTop: 10, borderLeft: first ? "none" : `1px solid var(--color-line)`, paddingLeft: first ? 0 : 12 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, color: C("chalk"), whiteSpace: "nowrap" }}>
+        {star && <span style={{ color: C("gold"), marginRight: 4 }}>★</span>}{value}
+      </div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", textTransform: "uppercase", color: `color-mix(in srgb, ${C("ash")} 70%, transparent)`, marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
+  const accent = C(c.accent);
+  const accentText = `var(--${c.accent}-text)`;
+  const stats: Array<{ value: string; label: string; star?: boolean }> = [
+    { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
+    ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
+    ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+  ];
+  return (
+    <div
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      aria-label={`Open ${c.name}`}
+      style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 16px 14px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+    >
+      {/* accent wash — the coach's colour bleeding in from the top corner */}
+      <span aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(120% 130% at 100% 0%, color-mix(in srgb, ${accent} 14%, transparent), transparent 60%)` }} />
+      <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
+
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 13, paddingRight: 18 }}>
+        <span style={{ width: 46, height: 46, borderRadius: 999, boxShadow: `inset 0 0 0 1.5px ${accent}`, background: C("ink"), color: accentText, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
+        <div style={{ minWidth: 0 }}>
+          {/* Name in the display face — Mincho under Kyoto Hour — so the
+              person leads the card the way a byline leads an article. */}
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16.5, letterSpacing: "-.015em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {c.name}{c.verified && <span style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</span>}
+          </div>
+          <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {c.specialties.slice(0, 2).join(" – ")}
+          </div>
+        </div>
+      </div>
+
+      {/* the sell: an athlete's words, or the coach's own headline as fallback */}
+      <div style={{ position: "relative", marginTop: 12, minHeight: 58 }}>
+        {c.quote ? (
+          <>
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: C("chalk"), display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>“{c.quote}”</div>
+            <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>— athlete review</div>
+          </>
+        ) : (
+          <div style={{ fontSize: 13, lineHeight: 1.5, color: C("ash"), display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.headline}</div>
+        )}
+      </div>
+
+      <div style={{ position: "relative", display: "flex", gap: 0, marginTop: "auto", paddingTop: 0, borderTop: `1px solid ${C("line")}` }}>
+        {stats.map((s, i) => <Stat key={s.label} value={s.value} label={s.label} star={s.star} first={i === 0} />)}
+      </div>
+    </div>
+  );
+}
 
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
 // parent (Explore) can supply the shared, unified SectionHead instead. Today
@@ -75,36 +135,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
           the scroller's own padding, so without it the browser snaps the FIRST
           card to the scrollport start — glued to the bezel on a bleed rail. */}
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 16px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
-        {items.map((c, i) => (
-          <div
-            key={c.userId ?? c.handle ?? i}
-            onClick={onOpen}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-            aria-label={`Open ${c.name}`}
-            style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 220, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", boxShadow: "var(--shadow-card)" }}
-          >
-            <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, paddingRight: 18 }}>
-              <span style={{ width: 46, height: 46, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("ash"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
-              <div style={{ minWidth: 0 }}>
-                {/* Name in the display face — Mincho under Kyoto Hour — so the
-                    person leads the card the way a byline leads an article. */}
-                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, letterSpacing: "-.01em", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {c.name}{c.verified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
-                </div>
-                <div style={{ marginTop: 4 }}><Stars rating={c.rating} reviews={c.reviews} /></div>
-              </div>
-            </div>
-            <div style={{ color: C("ash"), fontSize: 12.5, marginTop: 12, lineHeight: 1.4, minHeight: 34 }}>{c.headline}</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12, minHeight: 24 }}>
-              {c.specialties.slice(0, 2).map((s) => (
-                <span key={s} style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".05em", textTransform: "uppercase", padding: "5px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, color: C("ash") }}>{s}</span>
-              ))}
-            </div>
-          </div>
-        ))}
+        {items.map((c, i) => <MarqueeCard key={c.userId ?? c.handle ?? i} c={c} onOpen={onOpen} />)}
       </div>
     </div>
   );

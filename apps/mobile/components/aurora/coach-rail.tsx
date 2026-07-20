@@ -1,17 +1,39 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, serifIf } from "../../lib/ui";
 import { getCoaches } from "../../lib/social-api";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
 // people as the fallback until coaches publish storefronts.
+//
+// MARQUEE card (web parity — see design/follow-coach-redesign-ideas.html,
+// concept 5, applied to every card): accent-washed card led by the person
+// (accent-ringed avatar, name, one mono specialty line), an athlete pull-quote
+// doing the selling (coach headline as the fallback), and a proof strip
+// (rating / reviews / years) pinned to the bottom so every card shares one
+// geometry — no wrapping chips, no ragged bottoms.
+
+const CARD_W = 290;
 
 function initials(name: string) {
   const p = name.trim().split(/\s+/).filter(Boolean);
   return ((p[0]?.[0] ?? "") + (p[1]?.[0] ?? "")).toUpperCase() || "C";
+}
+
+// One cell of the proof strip: mono value over a tiny mono label.
+function Stat({ C, value, label, first, star }: { C: Palette; value: string; label: string; first?: boolean; star?: boolean }) {
+  return (
+    <View style={{ flex: 1, paddingTop: 10, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line, paddingLeft: first ? 0 : 12 }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 13, color: C.chalk }}>
+        {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
+      </Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
+    </View>
+  );
 }
 
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
@@ -58,37 +80,52 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
 
       {/* Vertical padding inside the scroller (pulled back by the margins) so
           card shadows render instead of clipping at the scroll bounds. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={232} decelerationRate="fast" style={{ marginVertical: -10, marginHorizontal: bleed ? -SCREEN_PAD : 0 }} contentContainerStyle={{ gap: 12, paddingLeft: bleed ? SCREEN_PAD : 0, paddingRight: bleed ? SCREEN_PAD : 8, paddingVertical: 10 }}>
-        {items.map((c, i) => (
-          <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, ...cardShadow }}>
-            <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 16 }}>
-              <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={CARD_W + 12} decelerationRate="fast" style={{ marginVertical: -10, marginHorizontal: bleed ? -SCREEN_PAD : 0 }} contentContainerStyle={{ gap: 12, paddingLeft: bleed ? SCREEN_PAD : 0, paddingRight: bleed ? SCREEN_PAD : 8, paddingVertical: 10 }}>
+        {items.map((c, i) => {
+          const accent = C[c.accent];
+          const accentText = txt(C, accent);
+          const stats: Array<{ value: string; label: string; star?: boolean }> = [
+            { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
+            ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
+            ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+          ];
+          return (
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
+              {/* accent wash — the coach's colour bleeding in from the top corner
+                  (a diagonal fade stands in for the web's radial gradient). */}
+              <LinearGradient colors={[`${accent}24`, "transparent"]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
+              <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
+
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingRight: 16 }}>
+                <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1.5, borderColor: accent, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: accentText, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  {/* Name in the display face — Mincho under Kyoto Hour — so the
+                      person leads the card the way a byline leads an article. */}
+                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16.5 }}>{c.name}{c.verified ? <Text style={{ color: accentText, fontSize: 12 }}> ✓</Text> : null}</Text>
+                  <Text numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 9.5, fontWeight: "600", letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                {/* Name in the display face — Mincho under Kyoto Hour — so the
-                    person leads the card the way a byline leads an article. */}
-                <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 15 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
-                {c.rating == null ? (
-                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, marginTop: 4 }}>New</Text>
+
+              {/* the sell: an athlete's words, or the coach's own headline as fallback */}
+              <View style={{ marginTop: 12, minHeight: 58 }}>
+                {c.quote ? (
+                  <>
+                    <Text numberOfLines={2} style={{ fontSize: 13, lineHeight: 19.5, color: C.chalk }}>“{c.quote}”</Text>
+                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— athlete review</Text>
+                  </>
                 ) : (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
-                    <Text style={{ color: C.gold, fontSize: 12 }}>★</Text>
-                    <Text style={{ color: C.chalk, fontFamily: F.mono, fontSize: 12 }}>{c.rating.toFixed(1)}</Text>
-                    {c.reviews ? <Text style={{ color: `${C.ash}b3`, fontFamily: F.mono, fontSize: 12 }}>{c.reviews} reviews</Text> : null}
-                  </View>
+                  <Text numberOfLines={3} style={{ fontSize: 13, lineHeight: 19.5, color: C.ash }}>{c.headline}</Text>
                 )}
               </View>
-            </View>
-            <Text numberOfLines={2} style={{ color: C.ash, fontSize: 12.5, marginTop: 12, lineHeight: 17, minHeight: 34 }}>{c.headline}</Text>
-            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 12, minHeight: 24 }}>
-              {c.specialties.slice(0, 2).map((s) => (
-                <View key={s} style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>{s}</Text></View>
-              ))}
-            </View>
-          </Pressable>
-        ))}
+
+              <View style={{ flexDirection: "row", marginTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+                {stats.map((s, si) => <Stat key={s.label} C={C} value={s.value} label={s.label} star={s.star} first={si === 0} />)}
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </View>
   );

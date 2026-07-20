@@ -579,6 +579,12 @@ export interface DiscoverCoach {
   reviews?: number;
   verified: boolean;
   accent: CoachAccent;
+  /** A short athlete-review pull-quote for the marquee card; the card falls
+   *  back to the coach's own `headline` when absent (real coaches until the
+   *  storefront exposes a featured review). */
+  quote?: string;
+  /** Years coaching, for the proof strip; the cell is dropped when unknown. */
+  years?: number;
   /** true → not a real account; the card routes to the marketplace instead of following. */
   placeholder?: boolean;
 }
@@ -587,12 +593,12 @@ export interface DiscoverCoach {
  *  Deliberately diverse + clearly illustrative; the rail swaps to live coaches
  *  the moment the marketplace returns any. */
 export const PLACEHOLDER_COACHES: DiscoverCoach[] = [
-  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting, 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true },
-  { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true },
-  { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true },
-  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting, raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true },
-  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true },
-  { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true },
+  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting, 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true, quote: "She rebuilt my snatch from scratch in twelve weeks. Worth every session.", years: 10 },
+  { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true, quote: "Took nine minutes off my Hyrox time without losing my squat.", years: 7 },
+  { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true, quote: "First marathon under four hours, still lifting twice a week.", years: 8 },
+  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting, raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true, quote: "Forty kilos on my total in one prep. The man is a spreadsheet.", years: 12 },
+  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true, quote: "Leaner than ever and stronger in every single lift.", years: 6 },
+  { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true, quote: "Passed selection with room to spare. The rucks were dialled.", years: 15 },
 ];
 
 const RAIL_ACCENTS: CoachAccent[] = ["lime", "blue", "violet", "amber"];
@@ -612,6 +618,8 @@ export function coachRailItems(apiCoaches?: Array<Record<string, unknown>> | nul
     reviews: typeof c.reviews === "number" ? c.reviews : undefined,
     verified: c.coachVerified === true,
     accent: RAIL_ACCENTS[i % RAIL_ACCENTS.length]!,
+    quote: typeof c.quote === "string" && c.quote.trim() ? c.quote : undefined,
+    years: typeof c.years === "number" && c.years > 0 ? c.years : undefined,
     placeholder: false,
   }));
 }
