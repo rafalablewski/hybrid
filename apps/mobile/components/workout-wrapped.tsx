@@ -71,7 +71,7 @@ export function WorkoutWrapped({
     let alive = true;
     fetchTalent()
       .then((d) => {
-        const p = d.profile;
+        const p = d?.profile;
         if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
       })
       .catch(() => {});
