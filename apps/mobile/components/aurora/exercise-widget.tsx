@@ -160,7 +160,7 @@ export default function ExerciseWidgetRail({
           style={{ width: Math.round(cardW * 0.5), height: 200, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.card, paddingHorizontal: 14 }}
         >
           <Text style={{ fontSize: 22, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: txt(C, C.lime), textAlign: "center", lineHeight: 17 }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 17 }}>{t("w.home.exw.allCard")}</Text>
         </Pressable>
       </ScrollView>
     </View>

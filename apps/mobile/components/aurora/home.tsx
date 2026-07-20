@@ -873,7 +873,7 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
             <View style={{ width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
               <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{logLabel}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: 12, color: txt(C, C.lime) }}>{logLabel}</Text>
           </Pressable>
         ) : null}
       </View>
