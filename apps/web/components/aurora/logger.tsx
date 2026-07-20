@@ -493,6 +493,19 @@ export default function AuroraLogger({
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
+        {/* On-demand rest-timer switch — same persisted pref as Settings, so
+            flipping it mid-workout sticks for next time too. */}
+        <button
+          onClick={() => {
+            const next = !prefs.restTimer;
+            setLoggerPref("restTimer", next);
+            if (!next) setRestSince(null);
+          }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: prefs.restTimer ? C("blue") : C("ash"), background: "none", border: `1px solid ${prefs.restTimer ? C("blue") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+          title={t("loggerPrefs.restTimer")}
+        >
+          ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
+        </button>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
@@ -540,6 +553,7 @@ export default function AuroraLogger({
         emptyHint={t("w.train.logger.emptyHint")}
         reorder
         detailed={prefs.detailed}
+        velocity={prefs.velocity}
         rirMode={prefs.rpeAsRir}
         units={prefs.units}
         plateCalc={prefs.plateCalc}

@@ -82,7 +82,7 @@ import { useSession } from "../lib/session";
 import { usePersona } from "../lib/persona";
 import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
-import { useLoggerPrefs } from "../lib/logger-prefs";
+import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
@@ -885,12 +885,28 @@ export default function Workout() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename). */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 14 }}>
           <Mono style={{ flex: 1 }}>
             {exercises.length
               ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
               : t("workout.firstExercise")}
           </Mono>
+          {/* On-demand rest-timer switch — same persisted pref as Logger settings,
+              so flipping it mid-workout sticks for next time too. */}
+          <Pressable
+            onPress={() => {
+              const next = !prefs.restTimer;
+              setLoggerPref("restTimer", next);
+              if (!next) setRestSince(null);
+            }}
+            hitSlop={8}
+            accessibilityLabel={t("loggerPrefs.restTimer")}
+            style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
+              ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
+            </Text>
+          </Pressable>
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
           </Pressable>
@@ -1044,7 +1060,7 @@ export default function Workout() {
                     return m === "time" ? "SECS" : m === "distance" ? "M" : "REPS";
                   })()}</ColHead>
                   {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
-                  {prefs.detailed && <ColHead>M/S</ColHead>}
+                  {prefs.velocity && <ColHead>M/S</ColHead>}
                   <View style={{ width: 22 }} />
                   <View style={{ width: 40 }} />
                 </View>
@@ -1070,7 +1086,7 @@ export default function Workout() {
                     )}
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
-                    {prefs.detailed && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
+                    {prefs.velocity && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
                     <View style={{ width: 22, justifyContent: "center" }}>
                       <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={12} style={{ alignItems: "center" }}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === 0 ? C.line : C.ash }}>↑</Text>

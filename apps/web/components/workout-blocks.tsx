@@ -76,6 +76,7 @@ export default function WorkoutBlocks({
   emptyHint,
   reorder = false,
   detailed = true,
+  velocity = false,
   rirMode = false,
   units = "kg",
   plateCalc = false,
@@ -101,8 +102,10 @@ export default function WorkoutBlocks({
   /** The athlete's bodyweight (kg) — bodyweight lifts count it as tonnage
    *  (core effectiveSetLoadKg). Null/absent degrades to entered-load math. */
   bodyweightKg?: number | null;
-  /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
+  /** Detailed shows the RPE column; Simple hides it (load × reps). */
   detailed?: boolean;
+  /** Show the M/S bar-velocity column (VBT logging) — off by default. */
+  velocity?: boolean;
   /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
   rirMode?: boolean;
   /** Weight unit for the load column (display + input). Storage stays kg. */
@@ -313,7 +316,7 @@ export default function WorkoutBlocks({
   // Set-row grid: the base columns (badge, load unless bodyweight, reps
   // [, rpe, m/s], move, remove) gain a ✓-to-bank column at the end in live mode.
   const strengthCols = (name: string) => {
-    const inputs = (detailed ? 3 : 1) + (bwLift(name) ? 0 : 1);
+    const inputs = 1 + (detailed ? 1 : 0) + (velocity ? 1 : 0) + (bwLift(name) ? 0 : 1);
     return `26px${" 1fr".repeat(inputs)} 22px 28px${live ? " 40px" : ""}`;
   };
 
@@ -431,7 +434,7 @@ export default function WorkoutBlocks({
                 </Mono>
               )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-              <div style={{ minWidth: detailed ? 360 : 240 }}>
+              <div style={{ minWidth: 240 + (detailed ? 60 : 0) + (velocity ? 60 : 0) }}>
               {/* The exercise DB drives how THIS lift's sets read: a plank
                   counts seconds, a carry counts metres, a pull-up's load is
                   BW + added weight. */}
@@ -446,29 +449,27 @@ export default function WorkoutBlocks({
                     return t(m === "time" ? "w.train.blocks.secs" : m === "distance" ? "w.train.blocks.distM" : "w.train.blocks.reps");
                   })()}
                 </Mono>
+                {/* The column header is the RPE ⇄ RIR mode switch (persists
+                    as the device-wide logger pref); the ⓘ opens the help. */}
                 {detailed && (
-                  <>
-                    {/* The column header is the RPE ⇄ RIR mode switch (persists
-                        as the device-wide logger pref); the ⓘ opens the help. */}
-                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      <button
-                        onClick={() => setLoggerPref("rpeAsRir", !rirMode)}
-                        aria-label={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}
-                        style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-                      >
-                        {rirMode ? "rir" : "rpe"} ⇄
-                      </button>
-                      <button
-                        onClick={() => setRpeHelp((v) => !v)}
-                        title={t("w.train.blocks.whatIsRpe")}
-                        style={{ ...mono, fontSize: fs.nano, color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}
-                      >
-                        ⓘ
-                      </button>
-                    </span>
-                    <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>m/s</Mono>
-                  </>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <button
+                      onClick={() => setLoggerPref("rpeAsRir", !rirMode)}
+                      aria-label={`${rirMode ? "RIR" : "RPE"} — ${t("rpe.rir")}`}
+                      style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                    >
+                      {rirMode ? "rir" : "rpe"} ⇄
+                    </button>
+                    <button
+                      onClick={() => setRpeHelp((v) => !v)}
+                      title={t("w.train.blocks.whatIsRpe")}
+                      style={{ ...mono, fontSize: fs.nano, color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                    >
+                      ⓘ
+                    </button>
+                  </span>
                 )}
+                {velocity && <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>m/s</Mono>}
                 <span />
                 <span />
                 {live && <span />}
@@ -518,10 +519,10 @@ export default function WorkoutBlocks({
                     );
                   })()}
                   {detailed && (
-                    <>
-                      <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
-                      <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
-                    </>
+                    <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
+                  )}
+                  {velocity && (
+                    <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
                   )}
                   <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <button
