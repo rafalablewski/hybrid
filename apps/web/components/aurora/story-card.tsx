@@ -110,6 +110,27 @@ export function StoryCard({ slide, st, w, t, units, active = false }: { slide: S
           ))}
         </div>
       );
+    if (slide.kind === "trophy")
+      return (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: px(200), lineHeight: 1 }}>🏆</div>
+          <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(150), color: st.text, marginTop: px(24), lineHeight: 1 }}>{slide.value}</div>
+          <div style={{ fontFamily: D, fontWeight: 700, fontSize: px(60), color: st.text, marginTop: px(16) }}>{slide.caption}</div>
+          <div style={{ fontFamily: M, fontSize: px(34), color: st.barFill, letterSpacing: ".14em", marginTop: px(22), textTransform: "uppercase" }}>{slide.sub}</div>
+        </div>
+      );
+    if (slide.kind === "signature")
+      return (
+        <div>
+          <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(150), color: st.text, lineHeight: 1 }}>{slide.value}</div>
+          <div style={{ fontFamily: D, fontWeight: 700, fontSize: px(50), color: st.muted, marginTop: px(10) }}>{slide.caption}</div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: px(8), height: px(380), marginTop: px(80) }}>
+            {slide.bars.map((v, i) => (
+              <div key={i} style={{ flex: 1, height: `${Math.round(v * 100)}%`, borderRadius: px(8), background: st.barFill, opacity: 0.5 + v * 0.5 }} />
+            ))}
+          </div>
+        </div>
+      );
     return (
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: px(200), lineHeight: 1 }}>{slide.emoji}</div>

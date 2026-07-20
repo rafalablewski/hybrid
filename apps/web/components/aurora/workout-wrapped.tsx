@@ -129,7 +129,23 @@ export function WorkoutWrapped({
     : cardioPrs.length > 0
       ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}`
       : t("summary.todaysBests");
+  // Hero values + the bespoke workout-page share designs (Trophy / Signature),
+  // which LEAD the picker so the mockup's iconic cards are the first thing shared.
+  const heroBig = cel
+    ? cel.kind === "strength"
+      ? fmtWeight(cel.e1rm, units)
+      : cel.prKind === "distance"
+        ? formatSportDistance(cel.value, cel.move)
+        : `${paceClock(cel.value)} /km`
+    : fmtTonnage(volume, units);
+  const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
+  const signature = sessionSignature(session);
+  const bespoke: StorySlide[] = [
+    ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: heroSub, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as StorySlide] : []),
+    ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as StorySlide] : []),
+  ];
   const slides: StorySlide[] = [
+    ...bespoke,
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests, firstEver: false } },
     { kind: "stat", eyebrow: t("summary.slide.time"), value: String(minutes), unit: t("summary.minutes") },
     { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
@@ -159,16 +175,6 @@ export function WorkoutWrapped({
     const el = pagerRef.current;
     if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
   };
-
-  const heroBig = cel
-    ? cel.kind === "strength"
-      ? fmtWeight(cel.e1rm, units)
-      : cel.prKind === "distance"
-        ? formatSportDistance(cel.value, cel.move)
-        : `${paceClock(cel.value)} /km`
-    : fmtTonnage(volume, units);
-  const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
-  const signature = sessionSignature(session);
 
   const overlay: React.CSSProperties = {
     position: "fixed",
