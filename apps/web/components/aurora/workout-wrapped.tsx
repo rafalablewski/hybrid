@@ -181,11 +181,16 @@ export function WorkoutWrapped({
   const share = async () => {
     setSharing(true);
     setShareMsg("");
-    const caption = shareText({ title: session.title, minutes, sets, volume, bests, firstEver: false }, units, t);
-    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
-    setSharing(false);
-    if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
-    else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
+    try {
+      const caption = shareText({ title: session.title, minutes, sets, volume, bests, firstEver: false }, units, t);
+      const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
+      if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
+      else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
+    } finally {
+      // Always clear the busy state — even if the share pipeline throws — so the
+      // button can't get stuck disabled.
+      setSharing(false);
+    }
   };
 
   const onPagerScroll = () => {

@@ -136,16 +136,12 @@ function PrReveal({
   units,
   t,
   onShare,
-  sharing,
-  shareMsg,
 }: {
   prs: PrHit[];
   cardioPrs: CardioPrHit[];
   units: WeightUnit;
   t: (k: string) => string;
   onShare: () => void;
-  sharing: boolean;
-  shareMsg: string;
 }) {
   const cel = sessionCelebration(prs, cardioPrs);
   if (!cel) return null;
@@ -239,7 +235,6 @@ function PrReveal({
       </div>
       <button
         onClick={onShare}
-        disabled={sharing}
         style={{
           ...disp,
           marginTop: space.lg,
@@ -251,11 +246,10 @@ function PrReveal({
           padding: "15px 18px",
           fontWeight: 800,
           fontSize: fs.body,
-          cursor: sharing ? "default" : "pointer",
-          opacity: sharing ? 0.6 : 1,
+          cursor: "pointer",
         }}
       >
-        {shareMsg || (sharing ? "…" : `↗ ${t("summary.share")}`)}
+        ↗ {t("summary.share")}
       </button>
     </div>
   );
@@ -398,7 +392,7 @@ export function SessionDetail({
           count-up); "Share your win" opens the Wrapped recap → story share.
           Below it, the full PR list stays for the detail-minded. Renders nothing
           on a no-PR session. */}
-      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={() => setWrappedOpen(true)} sharing={false} shareMsg="" />
+      <PrReveal prs={prs} cardioPrs={cardioPrs} units={units} t={t} onShare={() => setWrappedOpen(true)} />
 
       {/* No PR to celebrate? Every workout can still open its Wrapped recap. */}
       {prs.length + cardioPrs.length === 0 && (
