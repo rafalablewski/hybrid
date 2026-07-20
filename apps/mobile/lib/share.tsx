@@ -128,7 +128,10 @@ export type SlideData =
   | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
-  | { kind: "fun"; eyebrow: string; emoji: string; text: string };
+  | { kind: "fun"; eyebrow: string; emoji: string; text: string }
+  // Bespoke workout-page share designs (reference/pr-wrapped-flow.html):
+  | { kind: "trophy"; eyebrow: string; value: string; caption: string; sub: string }
+  | { kind: "signature"; eyebrow: string; bars: number[]; value: string; caption: string };
 
 // Style-aware stat cell for the story card (colours come from the chosen style).
 // `run` ticks the value up from 0 (overview slide); CountUpText rests on the
@@ -296,6 +299,31 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
               </View>
             </View>
           ))}
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "trophy") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontSize: width * 0.2, textAlign: "center" }}>🏆</Text>
+            <Text style={{ fontFamily: F.black, fontSize: width * 0.16, color: st.text, marginTop: width * 0.04 }}>{slide.value}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: st.text, marginTop: width * 0.02 }}>{slide.caption}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: st.barFill, letterSpacing: 2, marginTop: width * 0.03, textTransform: "uppercase" }}>{slide.sub}</Text>
+          </View>
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "signature") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.16, color: st.text }}>{slide.value}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: width * 0.05, color: st.muted, marginTop: width * 0.01 }}>{slide.caption}</Text>
+          <View style={{ flexDirection: "row", alignItems: "flex-end", height: width * 0.42, marginTop: width * 0.08, gap: width * 0.008 }}>
+            {slide.bars.map((v, i) => (
+              <View key={i} style={{ flex: 1, height: `${Math.round(v * 100)}%`, borderRadius: width * 0.008, backgroundColor: st.barFill, opacity: 0.5 + v * 0.5 }} />
+            ))}
+          </View>
         </StoryShell>
       );
     }

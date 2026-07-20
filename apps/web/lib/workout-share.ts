@@ -147,7 +147,10 @@ export type StorySlide =
   | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
-  | { kind: "fun"; eyebrow: string; emoji: string; text: string };
+  | { kind: "fun"; eyebrow: string; emoji: string; text: string }
+  // Bespoke workout-page share designs (reference/pr-wrapped-flow.html):
+  | { kind: "trophy"; eyebrow: string; value: string; caption: string; sub: string }
+  | { kind: "signature"; eyebrow: string; bars: number[]; value: string; caption: string };
 
 const SW = 1080;
 const SH = 1920;
@@ -306,6 +309,39 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
       ctx.fillStyle = st.barFill;
       ctx.fillRect(SPAD, barY, Math.max(barW * 0.04, (barW * Math.max(4, b.pct)) / 100), 22);
       y += 130;
+    });
+  } else if (slide.kind === "trophy") {
+    ctx.textAlign = "center";
+    ctx.font = font(DISPLAY, 200);
+    ctx.fillText("🏆", SW / 2, 620);
+    ctx.font = font(DISPLAY, 150);
+    ctx.fillStyle = st.text;
+    ctx.fillText(slide.value, SW / 2, 820);
+    ctx.font = font(DISPLAY, 60);
+    ctx.fillText(slide.caption, SW / 2, 910);
+    ctx.font = font(MONO, 34);
+    ctx.fillStyle = st.barFill;
+    ctx.fillText(slide.sub.toUpperCase(), SW / 2, 984);
+    ctx.textAlign = "left";
+  } else if (slide.kind === "signature") {
+    ctx.font = font(DISPLAY, 150);
+    ctx.fillStyle = st.text;
+    ctx.fillText(slide.value, SPAD, 640);
+    ctx.font = font(DISPLAY, 50);
+    ctx.fillStyle = st.muted;
+    ctx.fillText(slide.caption, SPAD, 720);
+    const bars = slide.bars;
+    const gap = 8;
+    const areaW = SW - SPAD * 2;
+    const barW = (areaW - gap * Math.max(0, bars.length - 1)) / Math.max(1, bars.length);
+    const baseY = 1240;
+    const maxH = 380;
+    bars.forEach((v, i) => {
+      const h = Math.max(12, v * maxH);
+      const x = SPAD + i * (barW + gap);
+      ctx.fillStyle = st.barFill;
+      roundRectPath(ctx, x, baseY - h, barW, h, Math.min(barW / 2, 8));
+      ctx.fill();
     });
   } else {
     ctx.textAlign = "center";

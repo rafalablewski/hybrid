@@ -103,7 +103,22 @@ export function WorkoutWrapped({
     : cardioPrs.length > 0
       ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}`
       : t("summary.todaysBests");
+  const heroBig = cel
+    ? cel.kind === "strength"
+      ? fmtWeight(cel.e1rm, units)
+      : cel.prKind === "distance"
+        ? formatSportDistance(cel.value, cel.move)
+        : `${paceClock(cel.value)} /km`
+    : fmtTonnage(volume, units);
+  const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
+  const signature = sessionSignature(session);
+  // The bespoke workout-page share designs (Trophy / Signature) LEAD the picker.
+  const bespoke: SlideData[] = [
+    ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: heroSub, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
+    ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
+  ];
   const slides: SlideData[] = [
+    ...bespoke,
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests }, firstEver: false },
     { kind: "stat", eyebrow: t("summary.slide.time"), value: String(minutes), unit: t("summary.minutes") },
     { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
@@ -122,16 +137,6 @@ export function WorkoutWrapped({
     t("share.tracked"),
   ].filter(Boolean).join("\n");
   const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
-
-  const heroBig = cel
-    ? cel.kind === "strength"
-      ? fmtWeight(cel.e1rm, units)
-      : cel.prKind === "distance"
-        ? formatSportDistance(cel.value, cel.move)
-        : `${paceClock(cel.value)} /km`
-    : fmtTonnage(volume, units);
-  const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
-  const signature = sessionSignature(session);
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
