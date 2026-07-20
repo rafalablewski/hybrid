@@ -22,6 +22,8 @@ import {
   formatSportDistance,
   prsForSession,
   cardioPrsForSession,
+  sessionSignature,
+  SIGNATURE_MIN_BARS,
   storyStyle,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
@@ -166,6 +168,7 @@ export function WorkoutWrapped({
         : `${paceClock(cel.value)} /km`
     : fmtTonnage(volume, units);
   const heroSub = cel ? (cel.kind === "strength" ? cel.lift : cel.move) : t("summary.volumeMoved");
+  const signature = sessionSignature(session);
 
   const overlay: React.CSSProperties = {
     position: "fixed",
@@ -210,6 +213,14 @@ export function WorkoutWrapped({
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{session.title}</div>
               <div style={{ ...disp, fontWeight: 800, fontSize: 56, letterSpacing: "-.03em", lineHeight: 1, marginTop: 8 }}>{heroBig}</div>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 6, color: txt(cel ? LIME : ASH) }}>{heroSub}</div>
+              {/* Session signature — the effort fingerprint (one bar per set). */}
+              {signature.length >= SIGNATURE_MIN_BARS && (
+                <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 40, marginTop: space.md }}>
+                  {signature.map((v, i) => (
+                    <div key={i} style={{ flex: 1, height: `${Math.round(v * 100)}%`, borderRadius: 3, background: `linear-gradient(180deg, ${LIME_HEX}, color-mix(in srgb, ${LIME} 15%, transparent))`, opacity: 0.5 + v * 0.5 }} />
+                  ))}
+                </div>
+              )}
               {/* Basics grid (free) */}
               <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(4, wrapped.basics.length)}, 1fr)`, gap: 1, marginTop: space.md, background: LINE, border: `1px solid ${LINE}`, borderRadius: 14, overflow: "hidden" }}>
                 {wrapped.basics.map((b) => (

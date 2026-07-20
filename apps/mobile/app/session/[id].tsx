@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, type TextStyle } from "react-native";
+import { View, Text, Pressable, Animated, Easing, type TextStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   sessionClockTime,
@@ -304,6 +305,14 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
   formatCardioPr(p, t("summary.firstTime"));
 
+// Deterministic confetti fan for the PR reveal (module-level → stable positions,
+// no per-render randomness). ci indexes the palette colours picked in-component.
+const CONFETTI_M = Array.from({ length: 14 }, (_, i) => {
+  const a = (i / 14) * Math.PI * 2;
+  const d = 64 + (i % 4) * 20;
+  return { tx: Math.round(Math.cos(a) * d), ty: Math.round(Math.sin(a) * d - 24), ci: i % 4 };
+});
+
 // A number that ticks up from 0 → final on mount, then rests on the EXACT
 // original string (so the resting value is never a rounded frame). Mirrors the
 // web SessionCountUp + the summary CountUpText — same statCountUp core.
@@ -360,12 +369,21 @@ function PrReveal({
   const C = useTheme().palette;
   const cel = sessionCelebration(prs, cardioPrs);
   const scale = useRef(new Animated.Value(0)).current;
+  const burst = useRef(new Animated.Value(0)).current; // confetti fan-out
+  const spin = useRef(new Animated.Value(0)).current; // rotating ray halo
   useEffect(() => {
     if (!cel) return;
     scale.setValue(0);
+    burst.setValue(0);
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 120, delay: 120 }).start();
-  }, [cel, scale]);
+    Animated.timing(burst, { toValue: 1, duration: 900, delay: 150, useNativeDriver: true }).start();
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [cel, scale, burst, spin]);
   if (!cel) return null;
+
+  const confettiCols = [C.lime, C.gold, C.blue, C.violet];
 
   const big =
     cel.kind === "strength"
@@ -395,6 +413,34 @@ function PrReveal({
         overflow: "hidden",
       }}
     >
+      {/* Rotating gold ray halo behind the trophy corner. */}
+      <Animated.View
+        pointerEvents="none"
+        style={{ position: "absolute", top: -70, left: -30, width: 200, height: 200, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}
+      >
+        <LinearGradient colors={[`${C.gold}26`, "transparent", `${C.lime}1f`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 100 }} />
+      </Animated.View>
+      {/* Confetti burst — deterministic angles, fired once. */}
+      {CONFETTI_M.map((c, i) => (
+        <Animated.View
+          key={i}
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 18,
+            left: 16,
+            width: 7,
+            height: 7,
+            borderRadius: 2,
+            backgroundColor: confettiCols[c.ci],
+            opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+            transform: [
+              { translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) },
+              { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) },
+            ],
+          }}
+        />
+      ))}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         <Animated.Text style={{ fontSize: 24, transform: [{ scale }] }}>🏆</Animated.Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.5, color: txt(C, C.lime), textTransform: "uppercase" }}>
