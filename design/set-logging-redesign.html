@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HYBRID — Set logging, redesigned</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --blue:#6cb6bd; --sand:#d0cd94; --terra:#e58a5c;
+    --font:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--font); color:var(--chalk); background:#060706;
+    -webkit-font-smoothing:antialiased; padding:48px 24px 96px;
+    background-image:radial-gradient(1200px 600px at 20% -10%, #10140f 0%, transparent 60%),
+                     radial-gradient(1000px 500px at 100% 0%, #0f1414 0%, transparent 55%);
+  }
+
+  /* ---------- brief ---------- */
+  .head{max-width:900px;margin:0 auto 42px}
+  .kick{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--lime);margin-bottom:12px}
+  h1{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.02}
+  .head p{color:var(--ash);max-width:680px;margin-top:14px;font-size:15px;line-height:1.55}
+  .head ul{color:var(--ash);max-width:680px;margin:16px 0 0 2px;font-size:14px;line-height:1.75;list-style:none}
+  .head ul li{padding-left:22px;position:relative}
+  .head ul li::before{content:"→";position:absolute;left:0;color:var(--lime)}
+  .head ul b{color:var(--chalk);font-weight:700}
+  .head ul .l{color:var(--lime);font-weight:700}
+
+  .stage{max-width:430px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  .meta{padding-left:4px}
+  .meta .no{font-family:var(--mono);font-size:12px;color:var(--lime);letter-spacing:.14em}
+  .meta h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:3px}
+  .meta small{display:block;color:var(--ash);font-size:12.5px;line-height:1.5;margin-top:6px}
+
+  /* ---------- phone ---------- */
+  .phone{
+    position:relative;width:100%;aspect-ratio:390/818;border-radius:44px;overflow:hidden;
+    background:var(--ink);border:1px solid #1c1e1c;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.02) inset;
+  }
+  .screen{position:absolute;inset:0;overflow:hidden}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:108px;height:26px;border-radius:16px;background:#000;z-index:40}
+
+  .aurora{position:absolute;inset:-20% -10%;z-index:0;filter:saturate(1.05)}
+  .aurora::before,.aurora::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+  .aurora::before{width:70%;height:45%;left:-10%;top:6%;background:radial-gradient(circle,#3a5a1e,transparent 70%)}
+  .aurora::after{width:75%;height:50%;right:-15%;bottom:2%;background:radial-gradient(circle,#1c4a48,transparent 70%)}
+
+  .app{position:absolute;inset:0;z-index:2;padding:52px 18px 22px;display:flex;flex-direction:column}
+  .mono{font-family:var(--mono)}
+
+  .glass{background:rgba(30,34,30,.42);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,.08)}
+  .glass-lo{background:rgba(22,25,22,.34);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(255,255,255,.05)}
+  .spec{box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 20px 40px -20px rgba(0,0,0,.7)}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .topbar .cancel{color:var(--ash);font-size:14px}
+  .topbar .timer{text-align:center}
+  .topbar .timer b{font-family:var(--mono);font-size:20px;font-weight:600;display:block;line-height:1}
+  .topbar .timer span{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--ash)}
+  .topbar .fin{color:var(--lime);font-weight:700;font-size:14px}
+
+  .exhead{display:flex;align-items:center;gap:9px;padding:2px 4px 8px}
+  .exhead .tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--lime);border:1px solid rgba(198,248,79,.4);padding:3px 6px;border-radius:6px}
+  .exhead h3{font-size:17px;font-weight:800;flex:1;letter-spacing:-.01em}
+  .exhead .x{color:var(--ash);font-size:18px}
+  .last{font-family:var(--mono);font-size:11px;color:var(--ash);padding:0 4px 12px;line-height:1.4}
+
+  .setlist{display:flex;flex-direction:column;gap:8px}
+
+  /* completed set row */
+  .done-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:16px;opacity:.62}
+  .done-row .n{font-family:var(--mono);font-size:12px;color:var(--ash);width:14px}
+  .done-row .val{flex:1;font-family:var(--mono);font-size:14px;color:var(--chalk)}
+  .done-row .tick{color:var(--lime);font-size:15px}
+
+  /* ============ ACTIVE up-now slab ============ */
+  .active{border-radius:26px;padding:15px 16px 16px;position:relative}
+  .active .lab{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .active .lab b{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--lime)}
+  .active .lab .rest{font-family:var(--mono);font-size:10px;color:var(--ash)}
+  .active .lab .sp{flex:1}
+
+  /* RPE — tucked into the header as a quiet chip; expands inline on tap */
+  .rpe-chip{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ash);
+    border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;
+    background:rgba(255,255,255,.02);transition:.16s}
+  .rpe-chip:hover{color:var(--chalk);border-color:rgba(255,255,255,.2)}
+  .rpe-chip .val{color:var(--sand);font-weight:600}
+  .rpe-chip.set{border-color:rgba(208,205,148,.4);background:rgba(208,205,148,.08)}
+
+  .rpe-tray{max-height:0;overflow:hidden;transition:max-height .26s ease, margin .26s ease, opacity .2s;opacity:0;margin-top:0}
+  .rpe-tray.open{max-height:80px;opacity:1;margin-top:14px}
+  .rpe-tray .cap{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;justify-content:space-between}
+  .rpe-scale{display:flex;gap:5px}
+  .rpe-scale button{flex:1;font-family:var(--mono);font-size:12px;color:var(--ash);background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:8px 0;cursor:pointer;transition:.12s}
+  .rpe-scale button:hover{color:var(--chalk);border-color:rgba(255,255,255,.18)}
+  .rpe-scale button.on{background:var(--sand);color:#0c0d0c;border-color:var(--sand);font-weight:700}
+
+  /* the numbers — weight & reps as EQUAL, tappable inputs; kg/reps share one baseline */
+  .nums{display:flex;align-items:baseline;justify-content:center;gap:4px}
+  .field{display:flex;align-items:baseline;gap:5px;padding:4px 6px;border-radius:14px;border:1px solid transparent;transition:.15s;cursor:text}
+  .field:hover{background:rgba(255,255,255,.03)}
+  .field:focus-within{background:rgba(198,248,79,.07);border-color:rgba(198,248,79,.35)}
+  .field input{
+    width:1.9ch;font-family:var(--font);font-size:46px;font-weight:800;letter-spacing:-.035em;line-height:1;
+    color:var(--chalk);background:transparent;border:none;outline:none;text-align:right;padding:0;
+    -moz-appearance:textfield;caret-color:var(--lime);
+  }
+  .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .field .u{font-family:var(--mono);font-size:13px;color:var(--ash);cursor:text;user-select:none}
+  .nums .mul{font-size:22px;color:var(--ash);font-weight:200;align-self:center;margin:0 2px}
+
+  /* primary action — replaces the giant plus. A clear, sized "Log set". */
+  .logbtn{margin-top:14px;width:100%;border:none;border-radius:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:15px;font-family:var(--font);font-size:16px;font-weight:800;letter-spacing:-.01em;
+    color:#0c0d0c;background:var(--lime);
+    box-shadow:0 14px 30px -12px rgba(198,248,79,.5), inset 0 1px 0 rgba(255,255,255,.4);transition:transform .1s}
+  .logbtn:active{transform:scale(.985)}
+  .logbtn svg{width:19px;height:19px;stroke:#0c0d0c;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ action bar ============ */
+  .actions{display:flex;gap:8px;margin-top:12px}
+  /* split control: [ + Add set | ⋯ ] */
+  .addsplit{flex:1;display:flex;border-radius:18px;overflow:hidden}
+  .addsplit .add{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;
+    color:var(--lime);font-weight:700;font-size:14px;cursor:pointer;background:transparent;border:none;font-family:var(--font)}
+  .addsplit .add .ic{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--lime);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:0}
+  .addsplit .more{width:52px;border:none;border-left:1px solid rgba(255,255,255,.1);background:transparent;color:var(--ash);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:2px;font-size:20px;transition:.14s}
+  .addsplit .more:hover{color:var(--chalk)}
+  /* special = glyph only */
+  .special{width:52px;border-radius:18px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:var(--sand);font-size:19px;transition:.14s}
+  .special:hover{color:#f0e9b0}
+
+  /* ============ bottom sheet ============ */
+  .scrim{position:absolute;inset:0;z-index:20;background:rgba(4,5,4,.55);backdrop-filter:blur(2px);
+    opacity:0;pointer-events:none;transition:.24s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:21;transform:translateY(102%);transition:transform .32s cubic-bezier(.32,.72,0,1);
+    border-radius:28px 28px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom));background:rgba(20,23,20,.82);
+    backdrop-filter:blur(28px) saturate(1.4);-webkit-backdrop-filter:blur(28px) saturate(1.4);border-top:1px solid rgba(255,255,255,.1)}
+  .sheet.open{transform:translateY(0)}
+  .grab{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);margin:2px auto 14px}
+  .sheet h4{font-size:18px;font-weight:800;letter-spacing:-.01em;padding:0 2px 2px}
+  .sheet .sub{font-family:var(--mono);font-size:11px;color:var(--ash);padding:0 2px 16px;line-height:1.5}
+
+  /* presets grid */
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .preset{border-radius:18px;padding:15px 14px;text-align:left;cursor:pointer;border:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:3px;transition:.14s}
+  .preset:hover{border-color:rgba(198,248,79,.4);background:rgba(198,248,79,.06)}
+  .preset .s{font-size:26px;font-weight:800;letter-spacing:-.02em}
+  .preset .s em{font-style:normal;color:var(--ash);font-weight:400;font-size:20px;margin:0 1px}
+  .preset .t{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .preset:hover .t{color:var(--lime)}
+  .sheet .plan-link{margin-top:12px;width:100%;padding:14px;border-radius:16px;border:1px dashed rgba(255,255,255,.18);
+    background:transparent;color:var(--chalk);font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font)}
+  .sheet .plan-link span{color:var(--ash);font-weight:400;font-family:var(--mono);font-size:11px}
+
+  /* special list */
+  .slist{display:flex;flex-direction:column;gap:8px}
+  .srow{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:16px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);transition:.14s}
+  .srow:hover{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.05)}
+  .srow .ic{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:16px}
+  .srow .tx{flex:1}
+  .srow .tx b{font-size:15px;font-weight:700;display:block}
+  .srow .tx span{font-family:var(--mono);font-size:10.5px;color:var(--ash)}
+  .srow .arw{color:var(--ash2);font-size:16px}
+
+  /* toast */
+  .toast{position:absolute;left:50%;bottom:24px;transform:translate(-50%,20px);z-index:30;
+    font-family:var(--mono);font-size:12px;color:#0c0d0c;background:var(--lime);padding:9px 16px;border-radius:999px;font-weight:600;
+    opacity:0;transition:.26s;box-shadow:0 12px 24px -8px rgba(198,248,79,.5)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:520px){ body{padding:24px 14px 60px} }
+</style>
+</head>
+<body>
+  <header class="head">
+    <div class="kick">HYBRID — Logging redesign 02</div>
+    <h1>The active set, refined</h1>
+    <p>Your five notes, applied to the live logger. Everything runs on the Aurora dark palette, Archivo + JetBrains Mono, and the glass slab — tap the numbers, the presets menu, the ⚡, the RPE chip and the log button; it all works.</p>
+    <ul>
+      <li><b>The <span class="l">⋯</span> menu = popular presets.</b> Split into the Add-set control — opens a sheet with <b>3×3, 5×5, 3×12, 4×8</b> and a link to the full planner.</li>
+      <li><b>Special is glyph-only.</b> Just the <span style="color:var(--sand)">⚡</span> — tapping opens a sheet of special set types (warm-up, drop, AMRAP, to-failure…).</li>
+      <li><b>kg &amp; reps share one baseline</b>, both equal weight. Tapping a number <em>or</em> its unit focuses the input.</li>
+      <li><b>The giant plus is gone.</b> Logging is now a proper full-width <span class="l">Log set</span> button with a check — sized like the action it is.</li>
+      <li><b>RPE is hidden until wanted.</b> A quiet chip in the header; tap it and a compact 6–10 scale slides in, then collapses.</li>
+    </ul>
+  </header>
+
+  <div class="stage">
+    <div class="meta"><span class="no">A</span><h2>Live logger</h2><small>Set 5 banked, Set 6 up now. Interactive — every control below responds.</small></div>
+
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="aurora"></div>
+
+      <div class="app">
+        <div class="topbar">
+          <span class="cancel">Cancel</span>
+          <div class="timer"><b>24:18</b><span>ELAPSED</span></div>
+          <span class="fin">Finish</span>
+        </div>
+
+        <div class="exhead">
+          <span class="tag">STRENGTH</span>
+          <h3>Barbell Bench Press</h3>
+          <span class="x">×</span>
+        </div>
+        <div class="last">last time — 50×8, 50×8, 60×8, 60×6</div>
+
+        <div class="setlist">
+          <div class="done-row glass-lo">
+            <span class="n">5</span><span class="val">50 kg × 8 reps</span><span class="tick">✓</span>
+          </div>
+
+          <!-- ACTIVE -->
+          <div class="active glass spec">
+            <div class="lab">
+              <b>SET 6 — UP NOW</b>
+              <span class="sp"></span>
+              <span class="rest">rest 1:30</span>
+              <button class="rpe-chip" id="rpeChip">RPE <span class="val" id="rpeVal">–</span></button>
+            </div>
+
+            <div class="nums">
+              <label class="field" for="wIn"><input id="wIn" type="number" inputmode="decimal" value="50" aria-label="Weight" /><span class="u">kg</span></label>
+              <span class="mul">×</span>
+              <label class="field" for="rIn"><input id="rIn" type="number" inputmode="numeric" value="8" aria-label="Reps" /><span class="u">reps</span></label>
+            </div>
+
+            <!-- RPE tray, hidden by default -->
+            <div class="rpe-tray" id="rpeTray">
+              <div class="cap"><span>How hard? — RPE</span><span id="rpeHint">optional</span></div>
+              <div class="rpe-scale" id="rpeScale">
+                <button data-v="6">6</button><button data-v="7">7</button>
+                <button data-v="8">8</button><button data-v="9">9</button>
+                <button data-v="10">10</button>
+              </div>
+            </div>
+
+            <button class="logbtn" id="logBtn">
+              <svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg>
+              Log set
+            </button>
+          </div>
+        </div>
+
+        <!-- action bar -->
+        <div class="actions">
+          <div class="addsplit glass">
+            <button class="add" id="addBtn"><span class="ic">+</span> Add set</button>
+            <button class="more" id="moreBtn" aria-label="Presets">⋯</button>
+          </div>
+          <button class="special glass" id="specialBtn" aria-label="Special set">⚡</button>
+        </div>
+      </div>
+
+      <!-- ===== PRESETS SHEET ===== -->
+      <div class="scrim" id="scrimP"></div>
+      <div class="sheet" id="sheetP">
+        <div class="grab"></div>
+        <h4>Popular presets</h4>
+        <div class="sub">Lay the whole exercise out in one tap — sets × reps at your current weight.</div>
+        <div class="pgrid" id="pgrid">
+          <button class="preset" data-sets="3" data-reps="3"><span class="s">3<em>×</em>3</span><span class="t">Heavy strength</span></button>
+          <button class="preset" data-sets="5" data-reps="5"><span class="s">5<em>×</em>5</span><span class="t">Strength</span></button>
+          <button class="preset" data-sets="3" data-reps="12"><span class="s">3<em>×</em>12</span><span class="t">Hypertrophy</span></button>
+          <button class="preset" data-sets="4" data-reps="8"><span class="s">4<em>×</em>8</span><span class="t">Volume</span></button>
+        </div>
+        <button class="plan-link" id="planLink">Plan sets manually <span>count, shape, per-row</span></button>
+      </div>
+
+      <!-- ===== SPECIAL SHEET ===== -->
+      <div class="scrim" id="scrimS"></div>
+      <div class="sheet" id="sheetS">
+        <div class="grab"></div>
+        <h4>Special set</h4>
+        <div class="sub">Mark this set as something other than a straight working set.</div>
+        <div class="slist">
+          <div class="srow"><span class="ic" style="background:rgba(208,205,148,.14);color:var(--sand)">☀</span><div class="tx"><b>Warm-up</b><span>Ramp-in, excluded from volume</span></div><span class="arw">›</span></div>
+          <div class="srow"><span class="ic" style="background:rgba(108,182,189,.14);color:var(--blue)">▾</span><div class="tx"><b>Drop set</b><span>Strip load, keep going</span></div><span class="arw">›</span></div>
+          <div class="srow"><span class="ic" style="background:rgba(198,248,79,.14);color:var(--lime)">∞</span><div class="tx"><b>AMRAP</b><span>As many reps as possible</span></div><span class="arw">›</span></div>
+          <div class="srow"><span class="ic" style="background:rgba(229,138,92,.14);color:var(--terra)">✦</span><div class="tx"><b>To failure</b><span>Log the rep you failed on</span></div><span class="arw">›</span></div>
+          <div class="srow"><span class="ic" style="background:rgba(255,255,255,.07);color:var(--chalk)">‖</span><div class="tx"><b>Rest-pause</b><span>Short pauses, one target</span></div><span class="arw">›</span></div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast">Set 6 logged ✓</div>
+    </div></div>
+  </div>
+
+<script>
+(function(){
+  var $ = function(s){return document.querySelector(s)};
+
+  /* ---- sheets ---- */
+  function open(scrim,sheet){ scrim.classList.add('open'); sheet.classList.add('open'); }
+  function close(scrim,sheet){ scrim.classList.remove('open'); sheet.classList.remove('open'); }
+  var scrimP=$('#scrimP'),sheetP=$('#sheetP'),scrimS=$('#scrimS'),sheetS=$('#sheetS');
+  $('#moreBtn').onclick=function(){ open(scrimP,sheetP); };
+  $('#specialBtn').onclick=function(){ open(scrimS,sheetS); };
+  scrimP.onclick=function(){ close(scrimP,sheetP); };
+  scrimS.onclick=function(){ close(scrimS,sheetS); };
+
+  /* ---- toast ---- */
+  var toast=$('#toast'), tT;
+  function say(msg){ toast.textContent=msg; toast.classList.add('show'); clearTimeout(tT); tT=setTimeout(function(){toast.classList.remove('show')},1500); }
+
+  /* ---- presets ---- */
+  document.querySelectorAll('.preset').forEach(function(b){
+    b.onclick=function(){
+      var s=b.getAttribute('data-sets'), r=b.getAttribute('data-reps');
+      close(scrimP,sheetP);
+      say('Queued '+s+'×'+r+' @ '+$('#wIn').value+' kg');
+    };
+  });
+  $('#planLink').onclick=function(){ close(scrimP,sheetP); say('Opening planner…'); };
+
+  /* ---- add set ---- */
+  $('#addBtn').onclick=function(){ say('Set added'); };
+
+  /* ---- special rows ---- */
+  document.querySelectorAll('.srow').forEach(function(row){
+    row.onclick=function(){ close(scrimS,sheetS); say(row.querySelector('b').textContent+' set'); };
+  });
+
+  /* ---- RPE tray ---- */
+  var tray=$('#rpeTray'), chip=$('#rpeChip'), rpeVal=$('#rpeVal'), hint=$('#rpeHint');
+  chip.onclick=function(){ tray.classList.toggle('open'); };
+  document.querySelectorAll('#rpeScale button').forEach(function(btn){
+    btn.onclick=function(){
+      document.querySelectorAll('#rpeScale button').forEach(function(x){x.classList.remove('on')});
+      btn.classList.add('on');
+      var v=btn.getAttribute('data-v');
+      rpeVal.textContent=v; chip.classList.add('set'); hint.textContent='set';
+      setTimeout(function(){ tray.classList.remove('open'); },220);
+    };
+  });
+
+  /* ---- tapping unit focuses input (label[for] already does; keep number tidy) ---- */
+  document.querySelectorAll('.field input').forEach(function(inp){
+    inp.addEventListener('focus',function(){ inp.select(); });
+  });
+
+  /* ---- log ---- */
+  $('#logBtn').onclick=function(){
+    say('Set 6 logged — '+$('#wIn').value+' kg × '+$('#rIn').value + (rpeVal.textContent!=='–'?' @ RPE '+rpeVal.textContent:''));
+  };
+})();
+</script>
+</body>
+</html>
