@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, categoriesByName, type LibraryMovement } from "./movements";
+import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, categoriesByName, exerciseNameAliasMap, canonicalExerciseName, type LibraryMovement } from "./movements";
 
 // A name that is NOT in the built-in exercise DB (Zercher Squat now is).
 const custom: LibraryMovement[] = [
@@ -147,5 +147,48 @@ describe("categoriesByName", () => {
       { name: "No Cat", pattern: "pull", muscles: [], baseLoad: null, system: null },
     ]);
     expect(map).toEqual({ "Barbell Curl": "Biceps" });
+  });
+});
+
+describe("exerciseNameAliasMap + canonicalExerciseName", () => {
+  it("includes the built-in rename breadcrumbs with no custom library", () => {
+    const map = exerciseNameAliasMap([]);
+    expect(map["Incline Bench Press"]).toBe("Incline Dumbbell Bench Press");
+  });
+
+  it("folds admin-authored aliases (alias → the entry's primary name)", () => {
+    const map = exerciseNameAliasMap([
+      { name: "Barbell Bench Press", aliases: ["Bench Press", "BB Bench"] },
+    ]);
+    expect(map["Bench Press"]).toBe("Barbell Bench Press");
+    expect(map["BB Bench"]).toBe("Barbell Bench Press");
+  });
+
+  it("lets a custom rename re-point a built-in alias, and never maps a name to itself", () => {
+    const map = exerciseNameAliasMap([
+      { name: "Incline DB Press", aliases: ["Incline Dumbbell Bench Press", "Incline DB Press"] },
+    ]);
+    // custom wins over the built-in breadcrumb target
+    expect(map["Incline Dumbbell Bench Press"]).toBe("Incline DB Press");
+    // self-alias is dropped
+    expect(map["Incline DB Press"]).toBeUndefined();
+  });
+
+  it("canonicalizes through a rename chain and passes unknown names through", () => {
+    const map = { A: "B", B: "C" };
+    expect(canonicalExerciseName("A", map)).toBe("C");
+    expect(canonicalExerciseName("B", map)).toBe("C");
+    expect(canonicalExerciseName("Deadlift", map)).toBe("Deadlift");
+  });
+
+  it("guards against a cycle instead of looping forever", () => {
+    const map = { X: "Y", Y: "X" };
+    // resolves one hop then breaks on the cycle (never throws / hangs)
+    expect(canonicalExerciseName("X", map)).toBe("Y");
+  });
+
+  it("resolves the old incline name to the current one via the built-in map", () => {
+    const map = exerciseNameAliasMap([]);
+    expect(canonicalExerciseName("Incline Bench Press", map)).toBe("Incline Dumbbell Bench Press");
   });
 });

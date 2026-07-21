@@ -1,5 +1,5 @@
 import type { MuscleGroup, Movement } from "./types";
-import { GYM_MOVEMENTS, GYM_CATEGORY_BY_NAME } from "../exercise-db";
+import { GYM_MOVEMENTS, GYM_CATEGORY_BY_NAME, GYM_ALIASES } from "../exercise-db";
 
 /** All trackable muscle groups, in display order. */
 export const ALL_MUSCLES: MuscleGroup[] = [
@@ -173,6 +173,42 @@ export function catalogNames(
   for (const n of Object.keys(builtins ?? {})) if (!aliased.has(n)) names.add(n);
   for (const ex of custom ?? []) if (ex && !aliased.has(ex.name)) names.add(ex.name);
   return [...names];
+}
+
+/** Build the DISPLAY-name alias map: a stored/old exercise name → its CURRENT
+ *  canonical name. It merges the built-in rename breadcrumbs (`GYM_ALIASES`) with
+ *  the admin library's aliases (each custom entry's alias → that entry's primary
+ *  name). Feed it to `canonicalExerciseName` to rewrite a logged block name so a
+ *  rename or alias propagates to EVERY summary, history row and analytics view —
+ *  not just engine attribution (which `mergeMovements` already resolves). Custom
+ *  aliases win over built-in ones (an admin can re-point a name). Pure. Accepts
+ *  anything carrying `name` + `aliases` (a full LibraryMovement or a trimmed
+ *  server row), so the client hook and the API can share one builder. */
+export function exerciseNameAliasMap(
+  custom: ReadonlyArray<{ name: string; aliases?: string[] | null }> = [],
+): Record<string, string> {
+  const out: Record<string, string> = { ...GYM_ALIASES };
+  for (const ex of custom ?? []) {
+    if (!ex?.name) continue;
+    for (const a of ex.aliases ?? []) if (a && a !== ex.name) out[a] = ex.name;
+  }
+  return out;
+}
+
+/** Resolve one stored exercise name to its canonical display name through an
+ *  alias map (from `exerciseNameAliasMap`). Follows a rename CHAIN (A→B→C) so a
+ *  lift renamed twice still lands on the latest name, guarding against self-loops
+ *  and cycles; an unknown name passes through unchanged. Pure. */
+export function canonicalExerciseName(name: string, aliasMap: Record<string, string> = {}): string {
+  let cur = name;
+  const seen = new Set<string>([name]);
+  for (let i = 0; i < 8; i++) {
+    const next = aliasMap[cur] ?? aliasMap[cur.trim()];
+    if (!next || next === cur || seen.has(next)) break;
+    seen.add(next);
+    cur = next;
+  }
+  return cur;
 }
 
 /** name → library `category` for the custom entries that declare one, for the

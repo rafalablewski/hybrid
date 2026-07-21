@@ -1,6 +1,6 @@
 import type { TrainingLog, EnergySystem } from "./types";
-import { MOVEMENTS } from "./movements";
-import { gymExercise, loadUnitCount } from "../exercise-db";
+import { MOVEMENTS, canonicalExerciseName } from "./movements";
+import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport } from "../olympic-sports";
 
@@ -503,9 +503,9 @@ export function inferBlockKind(name: string): BlockKind {
  * a cardio block. Idempotent and defensive over raw JSON — apply at every point
  * stored Session.blocks are read back into a LoggedSession.
  */
-export function migrateBlocks(blocks: unknown): SessionBlock[] {
+export function migrateBlocks(blocks: unknown, aliasMap: Record<string, string> = GYM_ALIASES): SessionBlock[] {
   if (!Array.isArray(blocks)) return [];
-  return blocks.map((raw) => {
+  const migrated = blocks.map((raw) => {
     const b = raw as Record<string, unknown>;
     if (
       b?.kind === "conditioning" &&
@@ -525,11 +525,36 @@ export function migrateBlocks(blocks: unknown): SessionBlock[] {
     }
     return raw as SessionBlock;
   });
+  return canonicalizeBlockNames(migrated, aliasMap);
 }
 
-/** Migrate the blocks of a whole session list read from storage. */
-export function migrateSessions<T extends { blocks: unknown }>(sessions: T[]): (Omit<T, "blocks"> & { blocks: SessionBlock[] })[] {
-  return sessions.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }));
+/**
+ * Rewrite each block's exercise `name` to its CURRENT canonical name via an alias
+ * map. The default map (`GYM_ALIASES`) heals built-in renames — so a lift logged
+ * under an old catalog name (e.g. "Incline Bench Press") displays and attributes
+ * under the new one everywhere — while a caller with the admin library on hand
+ * passes `exerciseNameAliasMap(library)` to also fold admin-authored renames.
+ * Only the display `name` changes; sets and every other field are untouched.
+ * Idempotent and pure — safe to apply at any read boundary.
+ */
+export function canonicalizeBlockNames(
+  blocks: SessionBlock[],
+  aliasMap: Record<string, string> = GYM_ALIASES,
+): SessionBlock[] {
+  if (!aliasMap || Object.keys(aliasMap).length === 0) return blocks;
+  return blocks.map((b) => {
+    const canon = canonicalExerciseName(b.name, aliasMap);
+    return canon === b.name ? b : { ...b, name: canon };
+  });
+}
+
+/** Migrate the blocks of a whole session list read from storage. Threads an
+ *  optional alias map through so a caller can canonicalize admin renames too. */
+export function migrateSessions<T extends { blocks: unknown }>(
+  sessions: T[],
+  aliasMap: Record<string, string> = GYM_ALIASES,
+): (Omit<T, "blocks"> & { blocks: SessionBlock[] })[] {
+  return sessions.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks, aliasMap) }));
 }
 
 // ----- Supersets (A1/A2/A3 groups) -----
