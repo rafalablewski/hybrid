@@ -1,7 +1,7 @@
 import type { LoggedSession, PacePoint } from "./session";
 import type { MuscleGroup } from "./types";
 import { setsForVolume, effectiveSetLoadKg } from "./session";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { MOVEMENTS } from "./movements";
 import { exerciseHistory } from "./records";
@@ -47,11 +47,12 @@ export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Da
         if (b.kind !== "strength") continue;
         // Holds/carries (time or distance measures) count sets, never tonnage.
         const countsTonnage = (gymExercise(b.name)?.measure ?? "reps") === "reps";
+        const units = loadUnitCount(b.name);
         for (const set of setsForVolume(b, includeWarmups)) {
           const reps = num(set.reps);
           if (!Number.isFinite(reps) || reps <= 0) continue;
           sets += 1;
-          if (countsTonnage) tonnage += effectiveSetLoadKg(b.name, set.load, kg) * reps;
+          if (countsTonnage) tonnage += effectiveSetLoadKg(b.name, set.load, kg) * reps * units;
         }
       }
     }

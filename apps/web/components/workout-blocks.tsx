@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { setLoggerPref } from "@/lib/logger-prefs";
@@ -424,6 +424,13 @@ export default function WorkoutBlocks({
               {live && lastByLift?.get(b.name) && (
                 <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 8 }} c={ASH}>
                   {t("workout.lastTime")} – {lastByLift.get(b.name)}
+                </Mono>
+              )}
+              {/* A bilateral dumbbell lift takes ONE dumbbell's weight; tonnage
+                  counts both bells. Guide the athlete so the doubled volume reads. */}
+              {loadUnitCount(b.name) === 2 && (
+                <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 8 }} c={BLUE}>
+                  {t("w.train.blocks.dbPerHint")}
                 </Mono>
               )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>

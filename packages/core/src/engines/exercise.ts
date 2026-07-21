@@ -1,6 +1,6 @@
 import type { LoggedSession } from "./session";
 import { e1rm, blockBestE1rm, effectiveSetLoadKg, setsForVolume, isWorkingSet, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { runStats } from "./running";
 import { velocityProfileFor } from "./velocity";
@@ -139,6 +139,9 @@ export function exerciseDashboard(
     const kg = bwAt(bw, s.startedAt);
     // Holds/carries (time or distance measures) have no tonnage or e1RM.
     const countsTonnage = (gymExercise(name)?.measure ?? "reps") === "reps";
+    // A bilateral dumbbell lift moves two bells per rep (see loadUnitCount) —
+    // tonnage only; heaviestLoad + e1RM below stay per-bell.
+    const units = loadUnitCount(name);
     for (const b of s.blocks) {
       if (b.kind !== "strength" || b.name !== name) continue;
       trainedHere = true;
@@ -149,7 +152,7 @@ export function exerciseDashboard(
         setCount += 1;
         totalReps += reps;
         if (countsTonnage) {
-          volume += load * reps;
+          volume += load * reps * units;
           heaviestLoad = Math.max(heaviestLoad, load);
         }
         // e1RM / best-set stay warm-up-excluded regardless of the volume setting

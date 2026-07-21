@@ -22,6 +22,7 @@ import {
   inferBlockKind,
   migrateBlocks,
   exerciseProfile,
+  loadUnitCount,
   timedSportOnly,
   sportDistanceUnit,
   displaySportDistance,
@@ -1058,6 +1059,14 @@ export default function Workout() {
                     </Text>
                   ) : null;
                 })()}
+                {/* A bilateral dumbbell lift takes ONE dumbbell's weight;
+                    tonnage counts both bells. Guide the athlete so the doubled
+                    volume reads (parity with the Builder + web logger). */}
+                {loadUnitCount(x.name) === 2 && (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue), marginBottom: 8 }}>
+                    {t("w.train.blocks.dbPerHint")}
+                  </Text>
+                )}
                 <View style={{ flexDirection: "row", gap: space.xs, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
                   {/* The exercise DB decides the columns: a plain-bodyweight

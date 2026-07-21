@@ -6,6 +6,7 @@ import {
   gymExercisesByMuscle,
   gymExercisesByEquipment,
   GYM_CATEGORY_BY_NAME,
+  loadUnitCount,
 } from "./exercise-db";
 import { MOVEMENTS, exercisesByCategory, LIBRARY_CATEGORY_ORDER } from "./engines/movements";
 import { exerciseProfile } from "./exercise-profile";
@@ -61,6 +62,33 @@ describe("lookups", () => {
     );
     expect(gymExercisesByEquipment("kettlebell").every((e) => e.equipment === "kettlebell")).toBe(true);
     expect(gymExercisesByEquipment("kettlebell").length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
+  it("the incline dumbbell bench press is a dumbbell exercise", () => {
+    const e = gymExercise("Incline Dumbbell Bench Press");
+    expect(e?.equipment).toBe("dumbbell");
+    // The old barbell "Incline Bench Press" name is gone.
+    expect(gymExercise("Incline Bench Press")).toBeUndefined();
+  });
+
+  it("a bilateral dumbbell lift counts two implements, a barbell lift one", () => {
+    expect(loadUnitCount("Incline Dumbbell Bench Press")).toBe(2);
+    expect(loadUnitCount("DB Bench Press")).toBe(2);
+    expect(loadUnitCount("DB Curl")).toBe(2);
+    expect(loadUnitCount("Bench Press")).toBe(1); // barbell
+    expect(loadUnitCount("Goblet Squat")).toBe(2); // documented heuristic edge
+  });
+
+  it("single-arm (unilateral) dumbbell work logs one bell", () => {
+    expect(loadUnitCount("DB Row")).toBe(1); // unilateral
+    expect(loadUnitCount("Concentration Curl")).toBe(1); // unilateral
+  });
+
+  it("a single kettlebell and an unknown custom lift both count one", () => {
+    expect(loadUnitCount("KB Swing")).toBe(1);
+    expect(loadUnitCount("Bench Pressing Machine 3000")).toBe(1);
   });
 });
 

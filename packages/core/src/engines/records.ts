@@ -1,7 +1,7 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
 import { blockBestE1rm, setsForVolume, effectiveSetLoadKg } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { MOVEMENTS } from "./movements";
 import type { MuscleGroup } from "./types";
 
@@ -184,10 +184,13 @@ export function volumeByMuscle(
     // A hold or carry's "reps" are seconds/metres — never tonnage (mirrors
     // sessionVolume), so a plank can't gain bodyweight × seconds of "work".
     if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") continue;
+    // A bilateral dumbbell lift moves two bells per rep (loadUnitCount); e1RM/PRs
+    // stay per-bell, so the factor lives here, at the tonnage site.
+    const units = loadUnitCount(b.name);
     let tonnage = 0;
     for (const s of setsForVolume(b, includeWarmups)) {
       const reps = parseFloat(s.reps);
-      if (Number.isFinite(reps)) tonnage += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
+      if (Number.isFinite(reps)) tonnage += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps * units;
     }
     if (tonnage <= 0) continue;
     for (const m of muscles) map.set(m, (map.get(m) ?? 0) + tonnage);

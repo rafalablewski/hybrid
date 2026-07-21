@@ -152,7 +152,7 @@ const DIST = { measure: "distance" as const };
 export const GYM_EXERCISES: GymExercise[] = [
   // ---- Chest ----
   E("Bench Press", "Chest", "push-h", ["chest"], ["triceps", "front-delts"], "barbell", 100),
-  E("Incline Bench Press", "Chest", "push-h", ["chest", "front-delts"], ["triceps"], "barbell", 85),
+  E("Incline Dumbbell Bench Press", "Chest", "push-h", ["chest", "front-delts"], ["triceps"], "dumbbell", 24),
   E("Decline Bench Press", "Chest", "push-h", ["chest"], ["triceps"], "barbell", 100),
   E("Close-Grip Bench Press", "Chest", "push-h", ["triceps", "chest"], ["front-delts"], "barbell", 85),
   E("Smith Bench Press", "Chest", "push-h", ["chest"], ["triceps", "front-delts"], "smith", 90),
@@ -379,6 +379,24 @@ export function gymExercise(name: string): GymExercise | undefined {
   if (direct) return direct;
   const lower = name.trim().toLowerCase();
   return GYM_EXERCISES.find((e) => e.name.toLowerCase() === lower);
+}
+
+/**
+ * How many loaded implements a single rep moves — for VOLUME/tonnage only. A
+ * bilateral dumbbell lift is performed with TWO dumbbells, one per hand, each
+ * carrying the entered (per-bell) load, so a rep moves twice the number on the
+ * bell: 24 kg dumbbells × 10 reps = 480 kg of tonnage, not 240. Single-arm
+ * (unilateral) dumbbell work logs one bell per set, and every other implement
+ * (barbell, machine, cable, a single kettlebell…) moves one unit.
+ *
+ * This scales tonnage ONLY. e1RM, rep-maxes and PRs deliberately stay
+ * per-implement (a dumbbell 1RM is quoted per bell, and a cross-lift 1RM board
+ * must not rank dumbbell work on a doubled number), so this lives apart from
+ * `effectiveSetLoadKg` and is applied at each tonnage site, never inside it.
+ */
+export function loadUnitCount(name: string): number {
+  const e = gymExercise(name);
+  return e && e.equipment === "dumbbell" && !e.unilateral ? 2 : 1;
 }
 
 /** Every exercise of a category, in authored order. */

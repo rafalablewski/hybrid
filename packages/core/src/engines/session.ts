@@ -1,6 +1,6 @@
 import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS } from "./movements";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport } from "../olympic-sports";
 
@@ -676,10 +676,14 @@ export function sessionVolume(
     // load isn't tonnage; skip the block entirely.
     const measure = gymExercise(b.name)?.measure ?? "reps";
     if (measure !== "reps") continue;
+    // A bilateral dumbbell lift moves two bells per rep — count both (see
+    // loadUnitCount). e1RM/PRs stay per-bell, so this factor lives here, not in
+    // effectiveSetLoadKg.
+    const units = loadUnitCount(b.name);
     for (const s of setsForVolume(b, includeWarmups)) {
       const reps = num(s.reps);
       if (Number.isNaN(reps)) continue;
-      v += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
+      v += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps * units;
     }
   }
   return Math.round(v);
