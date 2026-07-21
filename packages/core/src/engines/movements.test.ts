@@ -158,7 +158,7 @@ describe("exerciseNameAliasMap + canonicalExerciseName", () => {
 
   it("folds admin-authored aliases (alias → the entry's primary name)", () => {
     const map = exerciseNameAliasMap([
-      { name: "Barbell Bench Press", pattern: "push", muscles: [], baseLoad: null, system: null, aliases: ["Bench Press", "BB Bench"] },
+      { name: "Barbell Bench Press", aliases: ["Bench Press", "BB Bench"] },
     ]);
     expect(map["Bench Press"]).toBe("Barbell Bench Press");
     expect(map["BB Bench"]).toBe("Barbell Bench Press");
@@ -166,7 +166,7 @@ describe("exerciseNameAliasMap + canonicalExerciseName", () => {
 
   it("lets a custom rename re-point a built-in alias, and never maps a name to itself", () => {
     const map = exerciseNameAliasMap([
-      { name: "Incline DB Press", pattern: "push", muscles: [], baseLoad: null, system: null, aliases: ["Incline Dumbbell Bench Press", "Incline DB Press"] },
+      { name: "Incline DB Press", aliases: ["Incline Dumbbell Bench Press", "Incline DB Press"] },
     ]);
     // custom wins over the built-in breadcrumb target
     expect(map["Incline Dumbbell Bench Press"]).toBe("Incline DB Press");
