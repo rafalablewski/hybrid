@@ -93,11 +93,15 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
   );
 }
 
-// Body & progress — the dated /api/body history, redesigned as a weekly body
-// report (narrative verdict + weight delta + logging cadence) over a trends grid
-// of every metric the athlete tracks (each a value, delta and column sparkline).
-// Empty until the first log, where it invites the first measurement. Mirrors the
-// mobile BodyBlock; all trend maths lives in @hybrid/core (body-progress.ts).
+// Body & progress — now a COMPACT card (the same nutrition-row idiom as Today's
+// "Nutrition" / "Follow a coach" rows): a crafted icon tile, the title, a live
+// subline (latest weight + how many metrics are tracked), and a chevron. Tapping
+// anywhere opens the slide-up sheet, which LEADS with the log-measurement form —
+// exactly like "Add a meal" opens from the Nutrition row — then unfolds the
+// weekly body report (narrative verdict + weight delta + logging cadence), the
+// per-metric trends grid, and the progress-photos link beneath it. Empty until
+// the first log; all trend maths lives in @hybrid/core (body-progress.ts).
+// Mirrors the mobile BodyBlock.
 function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => void }) {
   const { t } = useLang();
   const [metrics, setMetrics] = useState<BodyMetric[] | undefined>(undefined);
@@ -130,42 +134,56 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
   const has = !!metrics && metrics.length > 0;
   const trends = has ? metricTrends(metrics!) : [];
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
-  const subline = has ? `${trends.length} ${t("w.account.profile.priv-metrics")}` : t("w.account.profile.priv-body-s");
+  // Collapsed subline — lead with the latest weight when we have one (the big
+  // number the expanded card used to show), then how many metrics are tracked;
+  // otherwise the "what this is" descriptor. A spaced en dash joins the two,
+  // never a middot.
+  const wv = report?.latestWeightKg != null ? fmtMetricValue(BODY_METRIC_DEFS[0], report.latestWeightKg, units) : null;
+  const subline =
+    metrics === undefined ? "…"
+    : has ? [wv ? `${wv.value} ${wv.unit}` : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
+    : t("w.account.profile.priv-body-s");
 
   return (
-    <div style={{ border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), padding: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+    <>
+      {/* Collapsed card — whole surface tappable, opens the log sheet. */}
+      <button
+        onClick={() => setOpen(true)}
+        aria-label={t("w.account.profile.priv-body-t")}
+        style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
+      >
         <IconTile icon="user-square" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: C("chalk") }}>{t("w.account.profile.priv-body-t")}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: has ? LIME : C("ash"), marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{metrics === undefined ? "…" : subline}</div>
-        </div>
-        <button onClick={() => setOpen(true)} style={{ flex: "none", padding: "7px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: C("chalk") }}>{t("w.account.profile.priv-log")}</button>
-      </div>
-
-      {metrics !== undefined && (has ? (
-        <>
-          <ReportHero report={report!} units={units} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 10px" }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{t("w.account.profile.priv-trends-sub")}</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-            {trends.map((tr) => <MetricTile key={tr.def.key} tr={tr} units={units} />)}
-          </div>
-        </>
-      ) : <EmptyBody onLog={() => setOpen(true)} />)}
-
-      <button onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
-        <AuroraIcon name="eye" size={14} color={LIME} /> {t("w.account.profile.priv-photos")} →
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontWeight: 700, fontSize: 16, color: C("chalk") }}>{t("w.account.profile.priv-body-t")}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 12, color: has ? LIME : C("ash"), marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subline}</span>
+        </span>
+        <span style={{ flex: "none", fontFamily: "var(--font-mono)", fontSize: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
       </button>
 
-      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
-          modal Today uses for "Add a meal"), not an inline second form. */}
-      <Sheet open={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+      {/* The sheet — leads with "all the log measurements" (the same shared Sheet
+          Today uses for "Add a meal"), then the weekly report, the trends grid
+          and the progress-photos link. */}
+      <Sheet open={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}>
         <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />
+
+        {metrics !== undefined && has && (
+          <>
+            <ReportHero report={report!} units={units} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 10px" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{t("w.account.profile.priv-trends-sub")}</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
+              {trends.map((tr) => <MetricTile key={tr.def.key} tr={tr} units={units} />)}
+            </div>
+          </>
+        )}
+
+        <button onClick={onPhotos} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
+          <AuroraIcon name="eye" size={14} color={LIME} /> {t("w.account.profile.priv-photos")} →
+        </button>
       </Sheet>
-    </div>
+    </>
   );
 }
 
@@ -232,28 +250,6 @@ function Bars({ heights, muted }: { heights: number[]; muted?: boolean }) {
         const bg = muted ? C("line") : last ? C("lime") : `color-mix(in srgb, ${C("lime")} 26%, transparent)`;
         return <span key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, background: bg }} />;
       })}
-    </div>
-  );
-}
-
-function EmptyBody({ onLog }: { onLog: () => void }) {
-  const { t } = useLang();
-  return (
-    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".2em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
-      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", color: C("chalk"), margin: "8px 0 6px", textWrap: "balance" }}>{t("w.account.profile.priv-first-t")}</div>
-      <div style={{ fontSize: 13, color: C("ash"), lineHeight: 1.5 }}>{t("w.account.profile.priv-first-s")}</div>
-      <button onClick={onLog} style={{ marginTop: 14, width: "100%", background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)" }}>＋ {t("w.account.profile.priv-first-cta")}</button>
-      <div style={{ margin: "18px 0 10px", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-first-track")}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-        {BODY_METRIC_DEFS.slice(0, 4).map((def) => (
-          <div key={def.key} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 15, padding: "12px 12px 9px", display: "flex", flexDirection: "column", gap: 6, opacity: 0.6 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t(def.labelKey)}</span>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: C("ash"), lineHeight: 1 }}>—</div>
-            <Bars heights={[0.4, 0.4, 0.4, 0.4, 0.4]} muted />
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

@@ -97,10 +97,14 @@ function CommandCenterCard({ C, scheme, pa, locked, onPress }: { C: Palette; sch
 }
 
 // ── Body & progress ─────────────────────────────────────────────────────────
-// The dated /api/body history, redesigned as a weekly body report (narrative
-// verdict + weight delta + logging cadence) over a trends grid of every metric
-// the athlete tracks. Empty until the first log. Mirrors the web BodyBlock; all
-// trend maths lives in @hybrid/core (body-progress.ts).
+// Now a COMPACT card (the same nutrition-row idiom as Today's "Nutrition" /
+// "Follow a coach" rows): a crafted icon tile, the title, a live subline (latest
+// weight + how many metrics are tracked), and a chevron. Tapping anywhere opens
+// the slide-up sheet, which LEADS with the log-measurement form — exactly like
+// "Add a meal" opens from the Nutrition row — then unfolds the weekly body report
+// (narrative verdict + weight delta + logging cadence), the per-metric trends
+// grid, and the progress-photos link beneath it. Empty until the first log; all
+// trend maths lives in @hybrid/core (body-progress.ts). Mirrors the web BodyBlock.
 function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onPhotos: () => void }) {
   const { t } = useLang();
   const [metrics, setMetrics] = useState<BodyMetric[] | undefined>(undefined);
@@ -136,45 +140,53 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
   const has = !!metrics && metrics.length > 0;
   const trends = has ? metricTrends(metrics!) : [];
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
-  const subline = has ? `${trends.length} ${t("w.account.profile.priv-metrics")}` : t("w.account.profile.priv-body-s");
+  // Collapsed subline — lead with the latest weight when we have one (the big
+  // number the expanded card used to show), then how many metrics are tracked;
+  // otherwise the "what this is" descriptor. A spaced en dash joins the two,
+  // never a middot.
+  const wv = report?.latestWeightKg != null ? fmtMetricValue(BODY_METRIC_DEFS[0], report.latestWeightKg, units) : null;
+  const subline =
+    metrics === undefined ? "…"
+    : has ? [wv ? `${wv.value} ${wv.unit}` : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
+    : t("w.account.profile.priv-body-s");
 
   return (
-    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+    <>
+      {/* Collapsed card — whole surface tappable, opens the log sheet. */}
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-body-t")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, backgroundColor: C.ink2 }}>
         <IconTile C={C} icon="user-square" />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{metrics === undefined ? "…" : subline}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{subline}</Text>
         </View>
-        <Pressable onPress={() => setOpen(true)} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{t("w.account.profile.priv-log")}</Text>
-        </Pressable>
-      </View>
-
-      {metrics !== undefined && (has ? (
-        <>
-          <ReportHero C={C} report={report!} units={units} />
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 18, marginBottom: 10 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
-            {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
-          </View>
-        </>
-      ) : <EmptyBody C={C} onLog={() => setOpen(true)} />)}
-
-      <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <AuroraIcon name="eye" size={14} color={lime} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-photos")} →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
       </Pressable>
 
-      {/* Log measurement now opens as a slide-up sheet (the same shared Sheet
-          modal Today uses for "Add a meal"), not an inline second form. */}
-      <Sheet visible={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-first-cta")} sub={t("w.account.profile.priv-body-s")}>
+      {/* The sheet — leads with "all the log measurements" (the same shared Sheet
+          Today uses for "Add a meal"), then the weekly report, the trends grid
+          and the progress-photos link. */}
+      <Sheet visible={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}>
         <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
+
+        {metrics !== undefined && has && (
+          <>
+            <ReportHero C={C} report={report!} units={units} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 18, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+              {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
+            </View>
+          </>
+        )}
+
+        <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <AuroraIcon name="eye" size={14} color={lime} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-photos")} →</Text>
+        </Pressable>
       </Sheet>
-    </View>
+    </>
   );
 }
 
@@ -243,30 +255,6 @@ function Bars({ C, heights, muted }: { C: Palette; heights: number[]; muted?: bo
         const bg = muted ? C.line : last ? C.lime : `${C.lime}44`;
         return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: bg }} />;
       })}
-    </View>
-  );
-}
-
-function EmptyBody({ C, onLog }: { C: Palette; onLog: () => void }) {
-  const { t } = useLang();
-  return (
-    <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.4, color: C.chalk, marginTop: 8, marginBottom: 6 }}>{t("w.account.profile.priv-first-t")}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 19, color: C.ash }}>{t("w.account.profile.priv-first-s")}</Text>
-      <Pressable onPress={onLog} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.account.profile.priv-first-cta")}</Text>
-      </Pressable>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 18, marginBottom: 10 }}>{t("w.account.profile.priv-first-track")}</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
-        {BODY_METRIC_DEFS.slice(0, 4).map((def) => (
-          <View key={def.key} style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 15, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 9, gap: 6, opacity: 0.6 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t(def.labelKey)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "600", color: C.ash }}>—</Text>
-            <Bars C={C} heights={[0.4, 0.4, 0.4, 0.4, 0.4]} muted />
-          </View>
-        ))}
-      </View>
     </View>
   );
 }
