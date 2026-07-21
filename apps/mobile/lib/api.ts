@@ -254,6 +254,80 @@ export async function deleteRoutine(id: string): Promise<boolean> {
   }
 }
 
+// ── Nutrition library — the user's own saved meals + custom products ──────────
+export type SavedMealRow = { id: string; name: string; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
+export type FoodProductRow = { id: string; name: string; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
+
+export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/meals`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { meals?: SavedMealRow[] }).meals ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Status-aware so the caller can tell the free meal limit (403) from a missing
+// sign-in (401) or a network failure (status null) and route to upgrade on 403.
+export async function createSavedMeal(
+  meal: { name: string; emoji?: string; kcal?: number; protein: number; carbs: number; fat: number },
+): Promise<{ ok: boolean; status: number | null }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/meals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(meal),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+
+export async function deleteSavedMeal(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/meals/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { products?: FoodProductRow[] }).products ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createFoodProduct(
+  product: { name: string; servingLabel?: string; kcal?: number; protein: number; carbs: number; fat: number },
+): Promise<{ ok: boolean; status: number | null }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(product),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+
+export async function deleteFoodProduct(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Coach applications — a client applies to become a verified coach; an admin
 // approves (which promotes their role to COACH). Coach is no longer self-serve.
 export type CoachApplication = {

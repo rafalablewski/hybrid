@@ -11,11 +11,17 @@ import {
   isFullAccess,
   MEAL_PRESETS,
   mealPresetSignals,
+  FREE_MEAL_LIMIT,
   type NutritionGoal,
   type MealPreset,
   type WeightPoint,
 } from "@hybrid/core";
-import { createSignal, getAssignedDiet, scanNutritionLabel } from "../../lib/api";
+import {
+  createSignal, getAssignedDiet, scanNutritionLabel,
+  fetchSavedMeals, createSavedMeal, deleteSavedMeal,
+  fetchFoodProducts, createFoodProduct, deleteFoodProduct,
+  type SavedMealRow, type FoodProductRow,
+} from "../../lib/api";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
@@ -59,8 +65,67 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { getAssignedDiet().then(setCoachDiet).catch(() => {}); }, []);
 
-  const load = () => refetch();
+  // ── Personal library — the user's OWN saved meals + custom products.
+  const [meals, setMeals] = useState<SavedMealRow[]>([]);
+  const [products, setProducts] = useState<FoodProductRow[]>([]);
+  const [mealForm, setMealForm] = useState({ name: "", emoji: "🍽️", kcal: "", protein: "", carbs: "", fat: "" });
+  const [showMealBuilder, setShowMealBuilder] = useState(false);
+  const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
+  const [showProdBuilder, setShowProdBuilder] = useState(false);
+  const canSaveAnotherMeal = full || meals.length < FREE_MEAL_LIMIT;
+  const loadLibrary = () => { fetchSavedMeals().then(setMeals).catch(() => {}); fetchFoodProducts().then(setProducts).catch(() => {}); };
+  useEffect(() => { loadLibrary(); }, []);
+
+  const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
+
+  // Log a saved meal → the SAME signals as a manual add.
+  const logMeal = async (m: SavedMealRow) => {
+    setMealMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", m.kcal, "kcal"], ["protein", m.protein, "g"], ["carbs", m.carbs, "g"], ["fat", m.fat, "g"]];
+    for (const [kind, value, unit] of jobs) {
+      if (value <= 0) continue;
+      if (!(await createSignal(kind, value, unit))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    }
+    setMealMsg(`${m.name} +${m.kcal} kcal`);
+    revalidate.recovery();
+  };
+
+  const saveMeal = async () => {
+    if (!mealForm.name.trim()) return;
+    if (!canSaveAnotherMeal) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const res = await createSavedMeal({ name: mealForm.name.trim(), emoji: mealForm.emoji || undefined, kcal: num(mealForm.kcal) || undefined, protein: num(mealForm.protein), carbs: num(mealForm.carbs), fat: num(mealForm.fat) });
+    if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    setMealForm({ name: "", emoji: "🍽️", kcal: "", protein: "", carbs: "", fat: "" });
+    setShowMealBuilder(false);
+    loadLibrary();
+  };
+
+  const removeMeal = async (id: string) => { setMeals((xs) => xs.filter((x) => x.id !== id)); await deleteSavedMeal(id); };
+
+  const saveProduct = async () => {
+    if (!prodForm.name.trim()) return;
+    if (!full) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const res = await createFoodProduct({ name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) });
+    if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    setProdForm({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
+    setShowProdBuilder(false);
+    loadLibrary();
+  };
+
+  const removeProduct = async (id: string) => { setProducts((xs) => xs.filter((x) => x.id !== id)); await deleteFoodProduct(id); };
+
+  const addProductToMeal = (p: FoodProductRow) => {
+    setShowMealBuilder(true);
+    setMealForm((s) => {
+      const addv = (a: string, b: number) => String((parseFloat(a) || 0) + b);
+      return { ...s, name: s.name || p.name, kcal: addv(s.kcal, p.kcal), protein: addv(s.protein, p.protein), carbs: addv(s.carbs, p.carbs), fat: addv(s.fat, p.fat) };
+    });
+  };
 
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);
@@ -306,6 +371,107 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </View>
           {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {t("w.recovery.nutrition.mealLogged")} — {mealMsg}</Text> : null}
         </View>
+      </ACard>
+
+      {/* YOUR MEALS — the user's own saved-meal library (build + save + one-tap
+          log). Free users keep up to FREE_MEAL_LIMIT; the save CTA routes to
+          upgrade once at the cap. */}
+      <ACard style={{ marginTop: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourMeals")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`}</Text>
+        </View>
+        {meals.length === 0 && !showMealBuilder ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, lineHeight: 16 }}>{t("w.recovery.nutrition.yourMealsEmpty")}</Text>
+        ) : null}
+        {meals.length > 0 ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+            {meals.map((m) => (
+              <View key={m.id} style={{ width: "47%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 15, padding: 13 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Text style={{ fontSize: 20 }}>{m.emoji ?? "🍽️"}</Text>
+                  <Pressable onPress={() => removeMeal(m.id)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.deleteMeal")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 15, color: C.ash }}>×</Text></Pressable>
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }} numberOfLines={1}>{m.name}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{m.kcal} kcal ({m.protein}p {m.carbs}c {m.fat}f)</Text>
+                <Pressable onPress={() => logMeal(m)} accessibilityRole="button" style={{ marginTop: 10, borderRadius: 999, backgroundColor: C.lime, paddingVertical: 8, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime) }}>+ {t("w.recovery.nutrition.log")}</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {showMealBuilder ? (
+          <View style={{ marginTop: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TextInput value={mealForm.emoji} onChangeText={(v) => setMealForm((s) => ({ ...s, emoji: [...v][0] ?? "" }))} accessibilityLabel="emoji" style={{ width: 46, textAlign: "center", fontSize: 20, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 10 }} />
+              <TextInput value={mealForm.name} onChangeText={(v) => setMealForm((s) => ({ ...s, name: v }))} placeholder={t("w.recovery.nutrition.mealNameHint")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.mealName")} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }} />
+            </View>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              <Cell value={mealForm.kcal} onChange={(v) => setMealForm((s) => ({ ...s, kcal: v }))} ph="kcal" />
+              <Cell value={mealForm.protein} onChange={(v) => setMealForm((s) => ({ ...s, protein: v }))} ph={t("w.recovery.nutrition.proteinPh")} />
+              <Cell value={mealForm.carbs} onChange={(v) => setMealForm((s) => ({ ...s, carbs: v }))} ph={t("w.recovery.nutrition.carbsPh")} />
+              <Cell value={mealForm.fat} onChange={(v) => setMealForm((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
+            </View>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+              <Pressable onPress={() => setShowMealBuilder(false)} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text></Pressable>
+              <Pressable onPress={saveMeal} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveMeal")}</Text></Pressable>
+            </View>
+          </View>
+        ) : canSaveAnotherMeal ? (
+          <Pressable onPress={() => setShowMealBuilder(true)} accessibilityRole="button" style={{ marginTop: 12, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>＋ {t("w.recovery.nutrition.createMeal")}</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 12, flexDirection: "row", justifyContent: "center", gap: 8, backgroundColor: `${pa.fill}1f`, borderWidth: 1, borderColor: `${pa.fill}66`, borderRadius: 999, paddingVertical: 12 }}>
+            <Text style={{ color: pa.text }}>✦</Text><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.text }}>{t("w.recovery.nutrition.unlockMoreMeals")}</Text>
+          </Pressable>
+        )}
+      </ACard>
+
+      {/* YOUR PRODUCTS — custom foods (Full). "+" drops a product's macros into
+          the meal builder. Free users see the ✦ Full upsell. */}
+      <ACard style={{ marginTop: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourProducts")}</Text>
+          {!full ? <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: 9, color: pa.text }}>✦ FULL</Text></View> : null}
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{full ? t("w.recovery.nutrition.yourProductsSub") : t("w.recovery.nutrition.yourProductsLocked")}</Text>
+        {full && products.length > 0 ? (
+          <View style={{ marginTop: 12 }}>
+            {products.map((p, i) => (
+              <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{p.name}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{p.servingLabel} — {p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</Text>
+                </View>
+                <Pressable onPress={() => addProductToMeal(p)} accessibilityLabel={t("w.recovery.nutrition.addToMeal")} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.bold, color: txt(C, C.lime) }}>+</Text></Pressable>
+                <Pressable onPress={() => removeProduct(p.id)} accessibilityLabel={t("w.recovery.nutrition.deleteProduct")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 15, color: C.ash }}>×</Text></Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {full && showProdBuilder ? (
+          <View style={{ marginTop: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}>
+            <TextInput value={prodForm.name} onChangeText={(v) => setProdForm((s) => ({ ...s, name: v }))} placeholder={t("w.recovery.nutrition.productNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.productName")} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }} />
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              <Cell value={prodForm.serving} onChange={(v) => setProdForm((s) => ({ ...s, serving: v }))} ph={t("w.recovery.nutrition.servingPh")} />
+              <Cell value={prodForm.kcal} onChange={(v) => setProdForm((s) => ({ ...s, kcal: v }))} ph="kcal" />
+              <Cell value={prodForm.protein} onChange={(v) => setProdForm((s) => ({ ...s, protein: v }))} ph={t("w.recovery.nutrition.proteinPh")} />
+              <Cell value={prodForm.carbs} onChange={(v) => setProdForm((s) => ({ ...s, carbs: v }))} ph={t("w.recovery.nutrition.carbsPh")} />
+              <Cell value={prodForm.fat} onChange={(v) => setProdForm((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
+            </View>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+              <Pressable onPress={() => setShowProdBuilder(false)} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text></Pressable>
+              <Pressable onPress={saveProduct} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveProduct")}</Text></Pressable>
+            </View>
+          </View>
+        ) : null}
+        {!showProdBuilder ? (
+          <Pressable onPress={() => (full ? setShowProdBuilder(true) : onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 12, flexDirection: "row", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: full ? C.lime : `${pa.fill}73`, borderRadius: 999, paddingVertical: 12 }}>
+            {!full ? <Text style={{ color: pa.text }}>✦</Text> : null}<Text style={{ fontFamily: F.bold, fontSize: fs.body, color: full ? txt(C, C.lime) : pa.text }}>＋ {t("w.recovery.nutrition.addProduct")}</Text>
+          </Pressable>
+        ) : null}
       </ACard>
 
       {/* Recent */}
