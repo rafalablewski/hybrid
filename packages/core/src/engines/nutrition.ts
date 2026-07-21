@@ -160,6 +160,82 @@ export function adaptiveTargets(
 }
 
 /**
+ * A rolling summary of intake over the last `windowDays` (default 30) — the
+ * numbers behind the Nutrition SUMMARY dashboard on both clients. Computed once
+ * here so web + mobile show identical figures (parity rule). "Logged days" are
+ * days that recorded any energy intake; averages + adherence are over those.
+ */
+export interface NutritionSummary {
+  windowDays: number;
+  loggedDays: number;
+  avgKcal: number | null;
+  avgProtein: number | null;
+  /** % of logged days whose kcal landed within ±10% of the target (null if no target/logs) */
+  adherencePct: number | null;
+  /** logged days that met ≥90% of the protein target */
+  proteinHitDays: number;
+  /** average energy split as whole-number percentages (null when nothing logged) */
+  macroSplit: { protein: number; carbs: number; fat: number } | null;
+}
+
+export function nutritionSummary(
+  signals: Signal[],
+  opts: { targets?: MacroTargets; windowDays?: number; now?: number } = {},
+): NutritionSummary {
+  const now = opts.now ?? Date.now();
+  const windowDays = opts.windowDays ?? 30;
+  const since = now - windowDays * DAY;
+  const days = dailyNutrition(signals).filter((d) => Date.parse(`${d.date}T00:00:00`) >= since && d.kcal > 0);
+  const loggedDays = days.length;
+  if (loggedDays === 0)
+    return { windowDays, loggedDays: 0, avgKcal: null, avgProtein: null, adherencePct: null, proteinHitDays: 0, macroSplit: null };
+
+  const avgKcal = Math.round(days.reduce((a, b) => a + b.kcal, 0) / loggedDays);
+  const avgProtein = Math.round(days.reduce((a, b) => a + b.protein, 0) / loggedDays);
+  const avgCarbs = days.reduce((a, b) => a + b.carbs, 0) / loggedDays;
+  const avgFat = days.reduce((a, b) => a + b.fat, 0) / loggedDays;
+
+  const pK = avgProtein * 4, cK = avgCarbs * 4, fK = avgFat * 9;
+  const totalK = pK + cK + fK;
+  const macroSplit = totalK > 0
+    ? { protein: Math.round((pK / totalK) * 100), carbs: Math.round((cK / totalK) * 100), fat: Math.round((fK / totalK) * 100) }
+    : null;
+
+  const targets = opts.targets;
+  let adherencePct: number | null = null;
+  let proteinHitDays = 0;
+  if (targets && targets.kcal > 0) {
+    const within = days.filter((d) => d.kcal >= targets.kcal * 0.9 && d.kcal <= targets.kcal * 1.1).length;
+    adherencePct = Math.round((within / loggedDays) * 100);
+    proteinHitDays = days.filter((d) => d.protein >= targets.protein * 0.9).length;
+  }
+  return { windowDays, loggedDays, avgKcal, avgProtein, adherencePct, proteinHitDays, macroSplit };
+}
+
+/**
+ * The single most useful "what now?" line for today — the coach-voiced nudge on
+ * the Nutrition home. Pure + shared so both clients say the same thing. The
+ * client maps `kind` to localized copy and shows `gap` where relevant.
+ */
+export type NutritionNudgeKind = "cold-start" | "protein" | "calories-left" | "over" | "on-track";
+export interface NutritionNudge {
+  kind: NutritionNudgeKind;
+  /** grams (protein) or kcal (calories-left / over) the copy references; 0 otherwise */
+  gap: number;
+}
+
+export function nutritionNudge(today: NutritionDay, targets: MacroTargets): NutritionNudge {
+  if (today.kcal <= 0 && today.protein <= 0) return { kind: "cold-start", gap: 0 };
+  const proteinGap = Math.round(targets.protein - today.protein);
+  const kcalLeft = Math.round(targets.kcal - today.kcal);
+  // Protein first — it's the lever that matters most for a hybrid athlete.
+  if (proteinGap >= 20) return { kind: "protein", gap: proteinGap };
+  if (today.kcal > targets.kcal * 1.1) return { kind: "over", gap: Math.round(today.kcal - targets.kcal) };
+  if (kcalLeft >= 150) return { kind: "calories-left", gap: kcalLeft };
+  return { kind: "on-track", gap: Math.max(0, kcalLeft) };
+}
+
+/**
  * A premade meal preset — a saved, reusable meal a Full user can log with ONE
  * tap. The manual macro path (kcal/protein/carbs/fat inputs) stays free for
  * everyone; logging reusable premade meals is a Full feature, gated on

@@ -5,8 +5,11 @@ import {
   canEditEnrolledPlan,
   canScanFoodLabel,
   canSaveMealsAndProducts,
+  canSaveProduct,
+  canSaveMeal,
   canSaveRoutine,
   FREE_TEMPLATE_LIMIT,
+  FREE_MEAL_LIMIT,
 } from "./access";
 import type { Persona } from "./nav";
 
@@ -56,5 +59,31 @@ describe("free-tier access gates", () => {
   it("canSaveRoutine fails closed on invalid personas", () => {
     expect(canSaveRoutine(undefined as unknown as Persona, 0)).toBe(false);
     expect(canSaveRoutine("unknown" as unknown as Persona, 0)).toBe(false);
+  });
+
+  it("free users can save their own meals up to the free meal limit", () => {
+    expect(FREE_MEAL_LIMIT).toBe(4);
+    expect(canSaveMeal("casual", 0)).toBe(true);
+    expect(canSaveMeal("casual", 3)).toBe(true);
+    expect(canSaveMeal("casual", FREE_MEAL_LIMIT)).toBe(false);
+    expect(canSaveMeal("casual", FREE_MEAL_LIMIT + 10)).toBe(false);
+  });
+
+  it("Full personas save meals without a limit", () => {
+    for (const p of FULL) {
+      expect(canSaveMeal(p, 0)).toBe(true);
+      expect(canSaveMeal(p, 999)).toBe(true);
+    }
+  });
+
+  it("canSaveMeal fails closed on invalid personas", () => {
+    expect(canSaveMeal(undefined as unknown as Persona, 0)).toBe(false);
+    expect(canSaveMeal("unknown" as unknown as Persona, 0)).toBe(false);
+  });
+
+  it("saving custom products stays Full-only", () => {
+    expect(canSaveProduct("casual")).toBe(false);
+    for (const p of FULL) expect(canSaveProduct(p)).toBe(true);
+    expect(canSaveProduct(undefined as unknown as Persona)).toBe(false);
   });
 });
