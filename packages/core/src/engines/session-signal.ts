@@ -1,6 +1,6 @@
 import type { SessionBlock, StrengthBlock, CardioBlock, ConditioningBlock } from "./session";
 import { workingSets, cardioPace, sessionVolume, effectiveSetLoadKg } from "./session";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { formatSportDistance } from "../olympic-sports";
 
 // The Builder's "signal board" math — the live session summary both clients
@@ -106,6 +106,7 @@ export function strengthBlockStats(
 } {
   const working = workingSets(b).filter((s) => !s.drop);
   const countsTonnage = (gymExercise(b.name)?.measure ?? "reps") === "reps";
+  const units = loadUnitCount(b.name);
   let top = 0;
   let volume = 0;
   for (const s of workingSets(b)) {
@@ -113,7 +114,7 @@ export function strengthBlockStats(
     const reps = num(s.reps);
     if (!Number.isNaN(load)) top = Math.max(top, load);
     if (countsTonnage && !Number.isNaN(reps))
-      volume += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
+      volume += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps * units;
   }
   const reps = working[0]?.reps ?? "";
   return {

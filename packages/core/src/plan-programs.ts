@@ -769,7 +769,7 @@ const BB_DAYS: BBDay[] = [
     focus: "Push (Bench)",
     exercises: [
       { name: "Bench Press",             sets: 4, reps: 6,       rpe: 9, weightRef: "bench" },
-      { name: "Incline Bench Press",     sets: 3, reps: 8,       rpe: 8 },
+      { name: "Incline Dumbbell Bench Press", sets: 3, reps: 8,  rpe: 8 },
       { name: "Overhead Dumbbell Press", sets: 3, reps: 10,      rpe: 8 },
       { name: "Skull Crushers",          sets: 3, reps: 10,      rpe: 8 },
       { name: "Lateral Raises",          sets: 3, reps: 12,      rpe: 10 },

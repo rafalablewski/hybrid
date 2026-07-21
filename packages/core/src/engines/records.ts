@@ -2,6 +2,7 @@ import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
 import { blockBestE1rm, setsForVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { MOVEMENTS } from "./movements";
+import { loadUnitCount } from "../exercise-db";
 import type { MuscleGroup } from "./types";
 
 // Personal-record detection. Pure helpers shared by the post-workout summary
@@ -173,11 +174,12 @@ export function volumeByMuscle(blocks: SessionBlock[], includeWarmups = false): 
     if (b.kind !== "strength") continue;
     const muscles = MOVEMENTS[b.name]?.muscles;
     if (!muscles || muscles.length === 0) continue;
+    const units = loadUnitCount(b.name);
     let tonnage = 0;
     for (const s of setsForVolume(b, includeWarmups)) {
       const load = parseFloat(s.load);
       const reps = parseFloat(s.reps);
-      if (Number.isFinite(load) && Number.isFinite(reps)) tonnage += load * reps;
+      if (Number.isFinite(load) && Number.isFinite(reps)) tonnage += load * reps * units;
     }
     if (tonnage <= 0) continue;
     for (const m of muscles) map.set(m, (map.get(m) ?? 0) + tonnage);

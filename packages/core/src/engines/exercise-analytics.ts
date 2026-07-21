@@ -12,7 +12,7 @@
 
 import type { LoggedSession } from "./session";
 import { e1rm, effectiveSetLoadKg, isCardio, isWorkingSet } from "./session";
-import { gymExercise } from "../exercise-db";
+import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { periodCutoff, exerciseKind, type ExercisePeriod } from "./exercise";
 import { trainingHeatmap, type HeatCell } from "./calendar";
@@ -31,7 +31,12 @@ const num = (s: string | undefined): number => {
 interface LiftSet {
   t: number;
   date: string;
+  /** effective load PER implement, kg — for e1RM / rep-max / intensity. */
   loadKg: number;
+  /** load moved per rep for TONNAGE, kg — loadKg × implements (two for a
+   *  bilateral dumbbell lift). Kept apart from loadKg so tonnage doubles a
+   *  two-bell lift while its e1RM stays per-bell. */
+  tonnageKg: number;
   reps: number;
   rpe: number | null;
 }
@@ -40,6 +45,7 @@ interface LiftSet {
  *  tonnage or e1RM), oldest → newest, with bodyweight-effective loads. */
 function liftSets(sessions: LoggedSession[], name: string, bw?: BodyweightInput): LiftSet[] {
   if ((gymExercise(name)?.measure ?? "reps") !== "reps") return [];
+  const units = loadUnitCount(name);
   const out: LiftSet[] = [];
   for (const s of sessions) {
     const t = new Date(s.startedAt).getTime();
@@ -54,7 +60,7 @@ function liftSets(sessions: LoggedSession[], name: string, bw?: BodyweightInput)
         // here, so a single non-finite load/rep must never reach a chart.
         if (!Number.isFinite(loadKg) || loadKg <= 0 || !Number.isFinite(reps) || reps <= 0) continue;
         const rpe = num(set.rpe);
-        out.push({ t, date: s.startedAt, loadKg, reps, rpe: Number.isNaN(rpe) ? null : rpe });
+        out.push({ t, date: s.startedAt, loadKg, tonnageKg: loadKg * units, reps, rpe: Number.isNaN(rpe) ? null : rpe });
       }
     }
   }
@@ -205,7 +211,7 @@ export function weeklyTonnage(
     // Index by the set's LOCAL Monday so week boundaries match the heatmap.
     const w = rows.findIndex((r) => r.weekStart === localDayKey(localMondayMs(s.t)));
     if (w < 0) continue;
-    const kg = s.loadKg * s.reps;
+    const kg = s.tonnageKg * s.reps;
     if (s.rpe != null && s.rpe >= 8) rows[w]!.hardKg += kg;
     else rows[w]!.baseKg += kg;
   }
@@ -287,7 +293,7 @@ export function tonnageSurface(
     const bin = SURFACE_BINS.findIndex((b) => s.reps >= b.min && s.reps <= b.max);
     if (bin < 0) continue;
     const row = grid[bin]!;
-    row[w] = (row[w] ?? 0) + s.loadKg * s.reps;
+    row[w] = (row[w] ?? 0) + s.tonnageKg * s.reps;
   }
   const rounded = grid.map((row) => row.map((v) => Math.round(v)));
   return { weeks: weekKeys, bins: SURFACE_BINS.map((b) => b.label), grid: rounded, maxKg: Math.max(0, ...rounded.flat()) };
@@ -472,7 +478,7 @@ export function blockCompare(
   for (const s of liftSets(sessions, name, bw)) {
     if (s.t <= lo || s.t > now) continue;
     const side = s.t > mid ? cur : prev;
-    const kg = s.loadKg * s.reps;
+    const kg = s.tonnageKg * s.reps;
     const wi = weekIdx(s.t, s.t > mid ? now : mid);
     side.weekly[wi] = (side.weekly[wi] ?? 0) + kg;
     side.m.volumeKg += kg;

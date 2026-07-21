@@ -204,6 +204,23 @@ describe("session stats", () => {
     expect(sessionVolume(sessions[0]!.blocks)).toBe(100 * 5 + 110 * 3);
   });
 
+  it("a bilateral dumbbell lift counts both bells (24 kg × 10 = 480, not 240)", () => {
+    const db: LoggedSession["blocks"] = [
+      { kind: "strength", name: "Incline Dumbbell Bench Press", sets: [{ load: "24", reps: "10" }] },
+    ];
+    expect(sessionVolume(db)).toBe(480);
+    // A single-arm (unilateral) dumbbell lift stays per-bell.
+    const uni: LoggedSession["blocks"] = [
+      { kind: "strength", name: "DB Row", sets: [{ load: "30", reps: "10" }] },
+    ];
+    expect(sessionVolume(uni)).toBe(300);
+    // A barbell lift is unchanged.
+    const bar: LoggedSession["blocks"] = [
+      { kind: "strength", name: "Bench Press", sets: [{ load: "100", reps: "5" }] },
+    ];
+    expect(sessionVolume(bar)).toBe(500);
+  });
+
   it("totalVolume sums across sessions", () => {
     expect(totalVolume(sessions)).toBe(100 * 5 + 110 * 3 + 120 * 3);
   });
