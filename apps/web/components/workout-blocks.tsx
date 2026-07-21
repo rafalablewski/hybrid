@@ -446,6 +446,105 @@ export default function WorkoutBlocks({
                   {t("w.train.blocks.dbPerHint")}
                 </Mono>
               )}
+              {live ? (
+                (() => {
+                  // Concept 01 — Glass + ghost add (LIVE only). No set table: the
+                  // active set (first un-banked) is a frosted lime HERO card — a
+                  // big editable weight, its rep target, one Log button. Banked /
+                  // queued sets collapse to quiet rows (click the ✓ / summary to
+                  // re-open). The Builder (else branch) keeps its plain grid.
+                  const sp = exerciseProfile(b.name).strength;
+                  const bw = sp?.loadMode === "bodyweight";
+                  const measureLabel = sp?.measure === "time" ? "s" : sp?.measure === "distance" ? "m" : t("w.train.blocks.reps");
+                  const planned = !addSetIsNext(b.sets as { done?: boolean }[]);
+                  const bigInput = { ...mono, fontSize: 44, fontWeight: 300, letterSpacing: "-.02em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: 96 } as const;
+                  const repsInput = { ...mono, fontSize: 22, color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: 46, textAlign: "center" } as const;
+                  const detailInput = { ...input, background: "transparent", border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)` };
+                  const grip = (i: number) => (
+                    <span draggable={b.sets.length > 1} onDragStart={() => setDragSet({ uid: b.uid, i })} onDragEnd={() => setDragSet(null)} title={t("w.train.blocks.dragToReorder")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), cursor: b.sets.length > 1 ? "grab" : "default", userSelect: "none", lineHeight: 1 }}>⠿</span>
+                  );
+                  return b.sets.map((s, i) => {
+                    const isDone = !!(s as StrengthSet & { done?: boolean }).done;
+                    const focus = setFocus(b.sets as { done?: boolean }[], i);
+                    const dragging = dragSet?.uid === b.uid && dragSet.i === i;
+                    const isDrop = !!dragSet && dragSet.uid === b.uid && dragSet.i !== i;
+                    const st = setType(s);
+                    const typeAccent = st === "warmup" ? AMBER : st === "cooldown" ? BLUE : st === "drop" ? LIME : null;
+                    if (focus === "active") {
+                      return (
+                        <div
+                          key={i}
+                          onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
+                          onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
+                          style={{ borderRadius: 20, padding: 16, margin: "8px 0", background: `${LIME}0d`, border: `1px solid ${LIME}38`, boxShadow: "0 16px 34px -20px rgba(0,0,0,.75)", opacity: dragging ? 0.5 : 1 }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+                            <span style={{ ...mono, flex: 1, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
+                              {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
+                            </span>
+                            <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "3px 10px", cursor: "pointer" }}>
+                              {typeAccent ? setTypeBadge(s, i) : "+"}
+                            </button>
+                            <span style={{ marginLeft: 10 }}>{grip(i)}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flexWrap: "wrap" }}>
+                            <input className="ghost-ph" value={bw ? s.reps : displayLoad(s.load, units)} onChange={(e) => (bw ? updateSet(b.uid, i, "reps", e.target.value) : updateSet(b.uid, i, "load", storeLoad(e.target.value, units)))} placeholder="0" inputMode="decimal" aria-label={bw ? measureLabel : units} style={bigInput} />
+                            <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>{bw ? measureLabel : units}</span>
+                            {!bw && (
+                              <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 4, marginLeft: "auto" }}>
+                                <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>×</span>
+                                <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="0" inputMode="numeric" aria-label={measureLabel} style={repsInput} />
+                                <span style={{ ...mono, fontSize: fs.caption, color: ASH, marginBottom: 9 }}>{measureLabel}</span>
+                              </span>
+                            )}
+                          </div>
+                          {(detailed || velocity) && (
+                            <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
+                              {detailed && (
+                                <label style={{ flex: 1 }}>
+                                  <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>{rirMode ? "rir" : "rpe"}</span>
+                                  <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={detailInput} />
+                                </label>
+                              )}
+                              {velocity && (
+                                <label style={{ flex: 1 }}>
+                                  <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>m/s</span>
+                                  <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={detailInput} />
+                                </label>
+                              )}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", gap: space.xs, marginTop: 14 }}>
+                            <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.tapAsYouGo")} style={{ ...disp, flex: 1, fontWeight: 800, fontSize: fs.body, color: "var(--color-ink)", background: LIME, border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer" }}>
+                              {t("workout.logSet")} ✓
+                            </button>
+                            <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...cond, width: 46, color: txt(ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 12, cursor: "pointer", fontSize: fs.body }}>−</button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    const loadPart = !bw && s.load ? `${displayLoad(s.load, units)} ${units}` : "";
+                    const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
+                    const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
+                    return (
+                      <div
+                        key={i}
+                        onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
+                        onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", opacity: dragging ? 0.4 : focus === "done" ? 0.5 : 0.6 }}
+                      >
+                        {grip(i)}
+                        <span style={{ ...mono, width: 20, fontSize: fs.caption, color: typeAccent ? txt(typeAccent) : ASH }}>{setTypeBadge(s, i)}</span>
+                        <button onClick={isDone ? () => onToggleDone?.(b.uid, i, false) : undefined} style={{ ...mono, flex: 1, textAlign: "left", fontSize: fs.caption, color: ASH, background: "none", border: "none", padding: 0, cursor: isDone ? "pointer" : "default" }}>
+                          {summary}
+                        </button>
+                        <span style={{ ...disp, fontWeight: 800, fontSize: fs.caption, color: isDone ? txt(LIME) : ASH }}>{isDone ? "✓" : "○"}</span>
+                        <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...iconBtn(ASH), width: 26, height: 26, padding: 0, fontSize: fs.caption }}>−</button>
+                      </div>
+                    );
+                  });
+                })()
+              ) : (
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <div style={{ minWidth: 240 + (detailed ? 60 : 0) + (velocity ? 60 : 0) }}>
               {/* The exercise DB drives how THIS lift's sets read: a plank
@@ -625,6 +724,7 @@ export default function WorkoutBlocks({
               })}
               </div>
               </div>
+              )}
               {/* Add-set control: "+ Add set" wears the ghost/dashed add
                   affordance (one-accent rule — the screen's single lime fill
                   belongs to the primary Save/Finish action, not a repeated
