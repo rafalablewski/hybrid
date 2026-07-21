@@ -147,7 +147,7 @@ export function WorkoutWrapped({
     : session.title;
 
   // ── story slides for the share sheet (trophy + signature lead) ──
-  const muscleVol = volumeByMuscle(session.blocks);
+  const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(session.blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [

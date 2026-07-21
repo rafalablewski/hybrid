@@ -160,7 +160,9 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
     distanceKm: Math.round(distanceKm * 10) / 10,
     prs,
     cardioPrs,
-    topMuscle: volumeByMuscle(blocks)[0] ?? null,
+    // The week's blocks span several dates; the current weight is a fair basis
+    // for a coarse "top muscle" headline (bodyweight lifts now count, not 0).
+    topMuscle: volumeByMuscle(blocks, false, bwAt(bw))[0] ?? null,
     prevSessions: prevWeek.length,
     prevVolume,
     sessionsDelta: thisWeek.length - prevWeek.length,

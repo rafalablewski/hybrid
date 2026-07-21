@@ -1490,7 +1490,7 @@ function Summary({
     .join("\n");
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
-  const muscleVol = volumeByMuscle(summary.blocks);
+  const muscleVol = volumeByMuscle(summary.blocks, false, bodyweightKg);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(summary.blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [

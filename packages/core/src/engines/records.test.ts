@@ -73,6 +73,21 @@ describe("personal records", () => {
     expect(quads!.volume).toBe(500);
   });
 
+  it("volumeByMuscle is bodyweight-aware: dips count bodyweight, planks never do", () => {
+    // Without a bodyweight, a plain dip reads 0 (no muscle rows).
+    expect(volumeByMuscle([{ kind: "strength", name: "Dip", sets: [{ load: "", reps: "10" }] }])).toEqual([]);
+    // With 70 kg on file, 10 dips = 700 kg to triceps (primary) + chest.
+    const withBw = volumeByMuscle([{ kind: "strength", name: "Dip", sets: [{ load: "", reps: "10" }] }], false, 70);
+    const byMuscle = Object.fromEntries(withBw.map((x) => [x.muscle, x.volume]));
+    expect(byMuscle.triceps).toBe(700);
+    expect(byMuscle.chest).toBe(700);
+    // A plank never counts (seconds aren't tonnage) even with a bodyweight.
+    expect(volumeByMuscle([{ kind: "strength", name: "Plank", sets: [{ load: "", reps: "45" }] }], false, 70)).toEqual([]);
+    // A weighted dip adds the plate on top of bodyweight: (70+20)×5 = 450.
+    const weighted = volumeByMuscle([{ kind: "strength", name: "Weighted Dip", sets: [{ load: "20", reps: "5" }] }], false, 70);
+    expect(weighted.find((x) => x.muscle === "triceps")!.volume).toBe(450);
+  });
+
   it("exerciseHistory lists distinct exercises, most recent first, with counts", () => {
     const hist = exerciseHistory([s1, s2, s3]); // all Back Squat across 3 dates
     expect(hist).toHaveLength(1);

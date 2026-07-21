@@ -150,7 +150,7 @@ export default function SessionDetail() {
         </View>
       )}
 
-      <MuscleFocus blocks={session.blocks} t={t} />
+      <MuscleFocus blocks={session.blocks} bodyweightKg={bwHere} t={t} />
 
       <View style={{ marginTop: 16 }}>
         {session.blocks.map((b, i) => (
@@ -244,9 +244,9 @@ const MUSCLE_LABEL: Record<string, string> = {
   triceps: "Triceps",
 };
 
-function MuscleFocus({ blocks, t }: { blocks: LoggedSession["blocks"]; t: (k: string) => string }) {
+function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["blocks"]; bodyweightKg?: number | null; t: (k: string) => string }) {
   const C = useTheme().palette;
-  const vol = volumeByMuscle(blocks);
+  const vol = volumeByMuscle(blocks, false, bodyweightKg);
   if (vol.length === 0) return null;
   const max = vol[0]!.volume || 1;
   return (

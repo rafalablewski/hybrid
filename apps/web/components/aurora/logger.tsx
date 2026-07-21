@@ -659,7 +659,7 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
-  const muscleVol = volumeByMuscle(blocks);
+  const muscleVol = volumeByMuscle(blocks, false, bodyweightKg);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
