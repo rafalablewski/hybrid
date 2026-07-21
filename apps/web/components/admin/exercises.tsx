@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ALL_MUSCLES } from "@hybrid/core";
+import { ALL_MUSCLES, LIBRARY_PATTERNS } from "@hybrid/core";
 import { fs, space,
   INK,
   INK2,
@@ -43,7 +43,7 @@ type Exercise = {
   authorEmail: string | null;
 };
 
-const PATTERNS = ["squat", "hinge", "push", "pull", "lunge", "carry", "core", "cond"];
+const PATTERNS = LIBRARY_PATTERNS;
 const STATUS_COLOR: Record<string, string> = { draft: ASH, published: LIME, archived: AMBER };
 
 type Draft = {
@@ -82,6 +82,10 @@ export default function AdminExercises() {
   const [list, setList] = useState<Exercise[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  // When overriding a code built-in, its original name — so a rename can keep it
+  // as an alias (prior logs stay resolvable + summaries canonicalize). null for
+  // a fresh exercise or a plain custom edit.
+  const [overrideOf, setOverrideOf] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -102,10 +106,12 @@ export default function AdminExercises() {
 
   function openNew() {
     setDraft(EMPTY);
+    setOverrideOf(null);
     setEditing("new");
     setErr(null);
   }
   function openEdit(x: Exercise) {
+    const builtin = x.source === "builtin";
     setDraft({
       name: x.name,
       pattern: x.pattern,
@@ -120,7 +126,10 @@ export default function AdminExercises() {
       cues: x.cues.join("\n"),
       videoUrl: x.videoUrl ?? "",
     });
-    setEditing(x.id);
+    // A built-in has no DB row: editing it CREATES a custom override (POST),
+    // remembering the original name to preserve as an alias on rename.
+    setOverrideOf(builtin ? x.name : null);
+    setEditing(builtin ? "new" : x.id);
     setErr(null);
   }
 
@@ -136,6 +145,14 @@ export default function AdminExercises() {
     if (draft.muscles.length === 0) return setErr("Pick at least one muscle.");
     setBusy(true);
     setErr(null);
+    // Overriding a built-in that gets RENAMED: keep the original name as an alias
+    // so prior logs resolve and every summary canonicalizes to the new name (the
+    // PATCH route does this automatically on a custom rename; a create can't, so
+    // we seed it here).
+    const aliases = toList(draft.aliases);
+    if (overrideOf && draft.name.trim() !== overrideOf && !aliases.includes(overrideOf)) {
+      aliases.push(overrideOf);
+    }
     const payload: Record<string, unknown> = {
       name: draft.name,
       pattern: draft.pattern,
@@ -145,7 +162,7 @@ export default function AdminExercises() {
       kind: draft.kind,
       category: draft.category || null,
       equipment: toList(draft.equipment),
-      aliases: toList(draft.aliases),
+      aliases,
       description: draft.description || null,
       cues: toList(draft.cues),
       videoUrl: draft.videoUrl || null,
@@ -198,21 +215,11 @@ export default function AdminExercises() {
     load();
   }
 
-  if (unavailable)
-    return (
-      <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Exercise library not initialized</div>
-        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
-          The <b>Exercise</b> table doesn&apos;t exist yet. Run{" "}
-          <span style={{ color: txt(AMBER) }}>reference/sql-exercise.sql</span> in the Supabase SQL Editor to create it,
-          then reload.
-        </Mono>
-      </Card>
-    );
-
   const filtered = (list ?? []).filter(
     (x) => !q || x.name.toLowerCase().includes(q.toLowerCase()) || x.aliases.some((a) => a.toLowerCase().includes(q.toLowerCase())),
   );
+  const builtinCount = (list ?? []).filter((x) => x.source === "builtin").length;
+  const customCount = (list ?? []).length - builtinCount;
 
   return (
     <div>
@@ -224,7 +231,7 @@ export default function AdminExercises() {
           style={{ ...mono, fontSize: fs.bodyLg, flex: 1, minWidth: 200, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: fs.body }} c={ASH}>
-          {list ? `${list.length} custom` : "…"} – + built-ins
+          {list ? `${customCount} custom – ${builtinCount} built-in` : "…"}
         </Mono>
         {editing === null && (
           <button onClick={openNew} style={primaryBtn}>
@@ -233,15 +240,32 @@ export default function AdminExercises() {
         )}
       </div>
       <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 14 }} c={ASH}>
-        Custom exercises merge over the built-in catalog by name and become pickable across the app. The 9 built-ins
-        live in code; you only manage additions + overrides here.
+        Every exercise is editable — the code built-ins and your custom entries. Editing a built-in saves a custom
+        override that supersedes it by name; renaming any exercise keeps the old name as an alias, so prior logs stay
+        resolvable and every summary shows the new name.
       </Mono>
+
+      {unavailable && (
+        <Card style={{ marginBottom: 16, borderLeft: `3px solid ${AMBER}` }}>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            The <b>Exercise</b> table doesn&apos;t exist yet, so the built-ins below are read-only until it&apos;s
+            created. Run <span style={{ color: txt(AMBER) }}>reference/sql-exercise.sql</span> in the Supabase SQL
+            Editor to enable custom entries + overrides, then reload.
+          </Mono>
+        </Card>
+      )}
 
       {editing !== null && (
         <Card style={{ marginBottom: 18, borderLeft: `3px solid ${LIME}` }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 14 }}>
-            {editing === "new" ? "New exercise" : "Edit exercise"}
+            {overrideOf ? `Override built-in “${overrideOf}”` : editing === "new" ? "New exercise" : "Edit exercise"}
           </div>
+          {overrideOf && (
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 12, lineHeight: 1.6 }} c={ASH}>
+              Saving creates a custom entry that supersedes the built-in by name. Rename the exercise here and the old
+              name is kept as an alias automatically.
+            </Mono>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.md }}>
             <Field label="Name (the engine key)">
@@ -337,10 +361,12 @@ export default function AdminExercises() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
-        {filtered.map((x) => (
-          <Card key={x.id} style={{ borderLeft: `3px solid ${STATUS_COLOR[x.status] ?? ASH}` }}>
+        {filtered.map((x) => {
+          const isBuiltin = x.source === "builtin";
+          return (
+          <Card key={x.id} style={{ borderLeft: `3px solid ${isBuiltin ? LINE : STATUS_COLOR[x.status] ?? ASH}` }}>
             <div style={{ marginBottom: 6 }}>
-              <Chip c={STATUS_COLOR[x.status] ?? ASH}>{x.status}</Chip>
+              <Chip c={isBuiltin ? ASH : STATUS_COLOR[x.status] ?? ASH}>{isBuiltin ? "built-in" : x.status}</Chip>
               <Chip c={ASH}>{x.pattern}</Chip>
               <Chip c={ASH}>{x.kind}</Chip>
               {x.baseLoad != null && <Chip c={ASH}>{x.baseLoad}kg base</Chip>}
@@ -356,22 +382,29 @@ export default function AdminExercises() {
             )}
 
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 14 }}>
-              <button disabled={busy} onClick={() => openEdit(x)} style={miniBtn}>Edit</button>
-              {x.status !== "published" ? (
-                <button disabled={busy} onClick={() => patch(x.id, { status: "published" })} style={miniBtn}>Publish</button>
+              {isBuiltin ? (
+                <button disabled={busy || unavailable} onClick={() => openEdit(x)} style={miniBtn} title={unavailable ? "Create the Exercise table to override built-ins" : undefined}>Edit / override</button>
               ) : (
-                <button disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
+                <>
+                  <button disabled={busy} onClick={() => openEdit(x)} style={miniBtn}>Edit</button>
+                  {x.status !== "published" ? (
+                    <button disabled={busy} onClick={() => patch(x.id, { status: "published" })} style={miniBtn}>Publish</button>
+                  ) : (
+                    <button disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
+                  )}
+                  {x.status !== "archived" && <button disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
+                  <button disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
+                </>
               )}
-              {x.status !== "archived" && <button disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-              <button disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
             </div>
           </Card>
-        ))}
+          );
+        })}
 
         {list && filtered.length === 0 && (
           <Card>
             <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
-              {list.length === 0 ? "No custom exercises yet. Add one to extend the catalog." : "No matches."}
+              {list.length === 0 ? "Couldn't load the catalog — retry." : "No matches."}
             </Mono>
           </Card>
         )}

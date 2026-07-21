@@ -60,6 +60,28 @@ export type GymEquipment =
 
 export type Mechanics = "compound" | "isolation";
 
+/** Every pattern string the exercise library accepts: the CMS's coarse set plus
+ *  the built-in DB's finer movement patterns, so a built-in OVERRIDE round-trips
+ *  without losing its pattern. `Movement.pattern` is a free string engine-side —
+ *  this list is only the admin CMS's validation allow-list + editor dropdown. */
+export const LIBRARY_PATTERNS = [
+  "squat",
+  "hinge",
+  "lunge",
+  "push",
+  "push-h",
+  "push-v",
+  "pull",
+  "pull-h",
+  "pull-v",
+  "olympic",
+  "carry",
+  "core",
+  "isolation",
+  "plyo",
+  "cond",
+] as const;
+
 /** How the load field reads for this exercise. */
 export type LoadMode =
   | "external" // plates/stack/bells — the number IS the load
@@ -373,11 +395,35 @@ export const GYM_EXERCISE_MAP: Record<string, GymExercise> = Object.fromEntries(
   GYM_EXERCISES.map((e) => [e.name, e]),
 );
 
-/** Look up a gym exercise by name (case-insensitive), or undefined. */
+/**
+ * Built-in exercise RENAMES — an old (or alternate) name → its current canonical
+ * name in GYM_EXERCISES. This is the breadcrumb a rename leaves behind: a session
+ * logged under the OLD name still resolves to the exercise (its property sheet,
+ * tonnage, engine Movement) AND canonicalizes to the NEW name in every summary,
+ * with no data migration. Admin-authored renames extend this at runtime through
+ * the exercise library's `aliases` (see `exerciseNameAliasMap`); these are the
+ * ones baked into code.
+ *
+ * Keep the KEY the exact string prior logs stored, the VALUE an existing
+ * canonical `name`. Never map a name to itself, and never make the value the key
+ * of another entry (no chains here — the runtime resolver follows chains, but
+ * the built-in list stays flat and obvious).
+ */
+export const GYM_ALIASES: Record<string, string> = {
+  // The old barbell "Incline Bench Press" became a dumbbell lift.
+  "Incline Bench Press": "Incline Dumbbell Bench Press",
+};
+
+/** Look up a gym exercise by name (case-insensitive), following a built-in
+ *  rename breadcrumb (GYM_ALIASES) so an old logged name still resolves to its
+ *  current entry. Returns undefined for a genuinely unknown name. */
 export function gymExercise(name: string): GymExercise | undefined {
   const direct = GYM_EXERCISE_MAP[name];
   if (direct) return direct;
-  const lower = name.trim().toLowerCase();
+  const trimmed = name.trim();
+  const renamed = GYM_ALIASES[trimmed];
+  if (renamed && GYM_EXERCISE_MAP[renamed]) return GYM_EXERCISE_MAP[renamed];
+  const lower = trimmed.toLowerCase();
   return GYM_EXERCISES.find((e) => e.name.toLowerCase() === lower);
 }
 
@@ -458,3 +504,49 @@ export const GYM_MOVEMENTS: Record<string, Movement> = Object.fromEntries(
     return [e.name, { pattern: e.pattern, muscles, baseLoad: e.baseLoad, system: null } satisfies Movement];
   }),
 );
+
+/** The engine muscle groups a built-in exercise attributes to (its DB fine-
+ *  grained muscles collapsed to the 7 engine groups) — the shape the admin
+ *  exercise library stores. */
+export function engineMusclesFor(e: GymExercise): MuscleGroup[] {
+  return [...new Set([...e.primary, ...e.secondary].map((m) => ENGINE_GROUP[m]))].slice(0, 3);
+}
+
+/** A built-in exercise projected into the admin exercise-library's row shape, so
+ *  the CMS can LIST and pre-fill an OVERRIDE of a code-defined lift (the admin
+ *  edits/renames it by saving a custom row that supersedes the built-in by name
+ *  and keeps the old name as an alias). Engine fields mirror the derived
+ *  Movement; `category`/`equipment` come from the property sheet. */
+export interface BuiltinExerciseRef {
+  name: string;
+  slug: string;
+  pattern: string;
+  muscles: MuscleGroup[];
+  baseLoad: number | null;
+  system: string | null;
+  kind: "strength" | "conditioning";
+  category: string;
+  equipment: string[];
+}
+
+/** URL/engine-stable key from a display name — same rule as the CMS `slugify`,
+ *  kept in core so a built-in ref carries a stable virtual id. */
+function slugFor(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+
+/** Every built-in gym exercise as an admin-editable reference row. Pure — the
+ *  CMS folds these under DB rows (a custom entry of the same name wins). */
+export function builtinExerciseRefs(): BuiltinExerciseRef[] {
+  return GYM_EXERCISES.map((e) => ({
+    name: e.name,
+    slug: slugFor(e.name),
+    pattern: e.pattern,
+    muscles: engineMusclesFor(e),
+    baseLoad: e.baseLoad,
+    system: null,
+    kind: "strength" as const,
+    category: e.category,
+    equipment: [e.equipment],
+  }));
+}

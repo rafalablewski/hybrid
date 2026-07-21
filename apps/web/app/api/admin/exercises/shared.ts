@@ -1,10 +1,12 @@
-import { ALL_MUSCLES } from "@hybrid/core";
+import { ALL_MUSCLES, LIBRARY_PATTERNS } from "@hybrid/core";
 
 // Shared validation for the Exercise library CMS routes. Engine-critical fields
 // are checked against the SAME core enums the engines use, so a bad row can't
 // reach fatigue/prescription/injury math.
 
-export const PATTERNS = ["squat", "hinge", "push", "pull", "lunge", "carry", "core", "cond"] as const;
+// The full library pattern allow-list (the CMS's coarse set + the built-in DB's
+// finer patterns) lives in core so an override of a built-in keeps its pattern.
+export const PATTERNS = LIBRARY_PATTERNS;
 export const SYSTEMS = ["anaerobic", "threshold", "aerobic"] as const;
 export const KINDS = ["strength", "conditioning"] as const;
 export const STATUSES = ["draft", "published", "archived"] as const;

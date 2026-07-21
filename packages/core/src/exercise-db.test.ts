@@ -7,8 +7,10 @@ import {
   gymExercisesByEquipment,
   GYM_CATEGORY_BY_NAME,
   loadUnitCount,
+  builtinExerciseRefs,
+  LIBRARY_PATTERNS,
 } from "./exercise-db";
-import { MOVEMENTS, exercisesByCategory, LIBRARY_CATEGORY_ORDER } from "./engines/movements";
+import { MOVEMENTS, exercisesByCategory, LIBRARY_CATEGORY_ORDER, ALL_MUSCLES } from "./engines/movements";
 import { exerciseProfile } from "./exercise-profile";
 import { inferBlockKind } from "./engines/session";
 
@@ -69,8 +71,11 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
   it("the incline dumbbell bench press is a dumbbell exercise", () => {
     const e = gymExercise("Incline Dumbbell Bench Press");
     expect(e?.equipment).toBe("dumbbell");
-    // The old barbell "Incline Bench Press" name is gone.
-    expect(gymExercise("Incline Bench Press")).toBeUndefined();
+    // The old "Incline Bench Press" name is a rename breadcrumb (GYM_ALIASES):
+    // it still RESOLVES to the current dumbbell entry so historical logs keep
+    // their exercise profile + doubled (two-bell) tonnage.
+    expect(gymExercise("Incline Bench Press")?.name).toBe("Incline Dumbbell Bench Press");
+    expect(loadUnitCount("Incline Bench Press")).toBe(2);
   });
 
   it("a bilateral dumbbell lift counts two implements, a barbell lift one", () => {
@@ -89,6 +94,29 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
   it("a single kettlebell and an unknown custom lift both count one", () => {
     expect(loadUnitCount("KB Swing")).toBe(1);
     expect(loadUnitCount("Bench Pressing Machine 3000")).toBe(1);
+  });
+});
+
+describe("builtinExerciseRefs (admin-editable built-in rows)", () => {
+  it("projects every built-in into a CMS-valid, admin-editable row", () => {
+    const refs = builtinExerciseRefs();
+    expect(refs.length).toBe(GYM_EXERCISES.length);
+    const patterns = new Set<string>(LIBRARY_PATTERNS);
+    const muscles = new Set<string>(ALL_MUSCLES);
+    for (const r of refs) {
+      expect(r.name).toBeTruthy();
+      expect(r.slug).toBeTruthy();
+      // pattern + muscles pass the CMS validation allow-lists, so an override saves
+      expect(patterns.has(r.pattern)).toBe(true);
+      expect(r.muscles.length).toBeGreaterThan(0);
+      expect(r.muscles.every((m) => muscles.has(m))).toBe(true);
+    }
+  });
+
+  it("carries the incline dumbbell bench press with its category + equipment", () => {
+    const incline = builtinExerciseRefs().find((r) => r.name === "Incline Dumbbell Bench Press");
+    expect(incline?.category).toBe("Chest");
+    expect(incline?.equipment).toEqual(["dumbbell"]);
   });
 });
 

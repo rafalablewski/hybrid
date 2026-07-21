@@ -1,22 +1,61 @@
 import { NextResponse } from "next/server";
+import { builtinExerciseRefs } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { parseExercise, type ExerciseInput } from "./shared";
 
-// The exercise-library directory: every exercise (drafts, published, archived),
-// newest first. Admin-only. The Exercise table is created by
-// reference/sql-exercise.sql — if it's missing we flag it rather than 500.
+// A built-in exercise projected into the admin list's row shape: a virtual,
+// non-persisted entry an admin can OVERRIDE (saving creates a real custom row of
+// the same name that supersedes it). Marked source "builtin" with a synthetic id
+// so the UI can tell it apart and start an override instead of a PATCH.
+function builtinRows() {
+  return builtinExerciseRefs().map((e) => ({
+    id: `builtin:${e.slug}`,
+    slug: e.slug,
+    name: e.name,
+    pattern: e.pattern,
+    muscles: e.muscles,
+    baseLoad: e.baseLoad,
+    system: e.system,
+    kind: e.kind,
+    category: e.category,
+    equipment: e.equipment,
+    aliases: [] as string[],
+    description: null as string | null,
+    cues: [] as string[],
+    videoUrl: null as string | null,
+    thumbUrl: null as string | null,
+    status: "published" as const,
+    source: "builtin" as const,
+    authorEmail: null as string | null,
+  }));
+}
+
+// The exercise-library directory: EVERY exercise an admin can edit — the code
+// built-ins AND the custom DB rows (drafts, published, archived) — one A–Z list.
+// A custom row supersedes a built-in of the same name (the override wins). Admin-
+// only. The Exercise table is created by reference/sql-exercise.sql; if it's
+// missing we still return the built-ins so the library is never empty.
 export async function GET(request: Request) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
+  let custom: Awaited<ReturnType<typeof prisma.exercise.findMany>> = [];
+  let unavailable = false;
   try {
-    const exercises = await prisma.exercise.findMany({ orderBy: { name: "asc" } });
-    return NextResponse.json({ exercises });
+    custom = await prisma.exercise.findMany({ orderBy: { name: "asc" } });
   } catch {
-    return NextResponse.json({ exercises: [], unavailable: true });
+    unavailable = true;
   }
+
+  // Fold built-ins under the custom rows: a custom entry of the same name (an
+  // override) hides its built-in twin, so each lift appears once.
+  const overridden = new Set(custom.map((c) => c.name));
+  const builtins = builtinRows().filter((b) => !overridden.has(b.name));
+  const exercises = [...custom, ...builtins].sort((a, b) => a.name.localeCompare(b.name));
+
+  return NextResponse.json({ exercises, unavailable, builtinCount: builtins.length, customCount: custom.length });
 }
 
 // Create a new exercise. Defaults to published (a library entry is content, not

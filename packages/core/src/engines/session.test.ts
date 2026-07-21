@@ -18,6 +18,7 @@ import {
   headlineRunMove,
   paceClock,
   migrateBlocks,
+  canonicalizeBlockNames,
   inferBlockKind,
   lastStrengthByLift,
   isWorkingSet,
@@ -31,7 +32,7 @@ import {
   moveItem,
   moveItemTo,
 } from "./session";
-import type { LoggedSession, StrengthBlock } from "./session";
+import type { LoggedSession, StrengthBlock, SessionBlock } from "./session";
 
 const sessions: LoggedSession[] = [
   {
@@ -148,6 +149,24 @@ describe("cardio/conditioning split", () => {
   it("migrateBlocks leaves an interval block with distance as conditioning", () => {
     const out = migrateBlocks([{ kind: "conditioning", name: "X", distance: 2, work: 30, rest: 30, rounds: 5 }]);
     expect(out[0]!.kind).toBe("conditioning");
+  });
+  it("canonicalizeBlockNames folds an admin rename map and leaves other fields intact", () => {
+    const blocks: SessionBlock[] = [
+      { kind: "strength", name: "Bench Press", sets: [{ load: "100", reps: "5" }] },
+      { kind: "cardio", name: "Easy Run", distance: 5 },
+    ];
+    const out = canonicalizeBlockNames(blocks, { "Bench Press": "Barbell Bench Press" });
+    expect(out[0]!.name).toBe("Barbell Bench Press");
+    expect((out[0] as StrengthBlock).sets).toEqual([{ load: "100", reps: "5" }]);
+    expect(out[1]!.name).toBe("Easy Run"); // untouched
+  });
+  it("migrateBlocks heals a built-in rename in the logged block name", () => {
+    // A session logged under the OLD catalog name displays + attributes under
+    // the current one, with no data migration.
+    const out = migrateBlocks([
+      { kind: "strength", name: "Incline Bench Press", sets: [{ load: "24", reps: "10" }] },
+    ]);
+    expect(out[0]!.name).toBe("Incline Dumbbell Bench Press");
   });
   it("inferBlockKind classifies by catalog then keyword, defaulting to strength", () => {
     expect(inferBlockKind("Easy Run")).toBe("cardio");

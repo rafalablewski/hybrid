@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { migrateBlocks, sanitizeNote, sanitizeMood, sanitizeTags } from "@hybrid/core";
+import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, sanitizeTags } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
+import { getCachedPublishedExercises } from "@/lib/cache";
 import { prisma } from "@/lib/db";
 
 // The logger's backend. Both clients (web + mobile) call this.
@@ -20,9 +21,14 @@ export async function GET(request: Request) {
     orderBy: { startedAt: "desc" },
     take: 50,
   });
-  // Upgrade runs logged before the cardio/conditioning split so both clients
-  // read them as cardio (migrateBlocks is idempotent).
-  const sessions = rows.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }));
+  // Canonicalize logged exercise names to their CURRENT name before returning —
+  // so a rename (a built-in one, or an admin edit that kept the old name as an
+  // alias) shows up in every summary, history row and analytic for BOTH clients
+  // (mobile reads this same endpoint), with no data migration. The alias map is
+  // the built-in rename breadcrumbs folded with the cached admin library's
+  // aliases; migrateBlocks applies it while it upgrades pre-split cardio blocks.
+  const aliasMap = exerciseNameAliasMap(await getCachedPublishedExercises());
+  const sessions = rows.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks, aliasMap) }));
   return NextResponse.json({ sessions });
 }
 
