@@ -113,6 +113,12 @@ describe("bodyweight-aware tonnage", () => {
     expect(effectiveSetLoadKg("Deadlift", "100", 70)).toBe(100);
     expect(effectiveSetLoadKg("Pull-Up", "", 70)).toBe(70);
     expect(effectiveSetLoadKg("Weighted Pull-Up", "10", 70)).toBe(80);
+    // Dips are bodyweight too: a plain dip at 70 kg is 70 kg of load per rep;
+    // the weighted variants add the entered plate (chest + triceps alike).
+    expect(effectiveSetLoadKg("Dip", "", 70)).toBe(70);
+    expect(effectiveSetLoadKg("Weighted Dip", "20", 70)).toBe(90);
+    expect(effectiveSetLoadKg("Chest Dip", "", 70)).toBe(70);
+    expect(effectiveSetLoadKg("Weighted Chest Dip", "20", 70)).toBe(90);
     expect(effectiveSetLoadKg("Assisted Pull-Up", "20", 70)).toBe(50);
     // No known bodyweight → degrade to the entered number (pre-BW behaviour).
     expect(effectiveSetLoadKg("Pull-Up", "", null)).toBe(0);
@@ -127,6 +133,9 @@ describe("bodyweight-aware tonnage", () => {
     });
     expect(sessionVolume([pullUps("Pull-Up", "")], false, 70)).toBe(700);
     expect(sessionVolume([pullUps("Weighted Pull-Up", "10")], false, 70)).toBe(800);
+    // The user's dip example: 10 bodyweight dips at 70 kg = 700 kg.
+    expect(sessionVolume([pullUps("Dip", "")], false, 70)).toBe(700);
+    expect(sessionVolume([pullUps("Chest Dip", "")], false, 70)).toBe(700);
     // Without a bodyweight, behaviour is unchanged from before.
     expect(sessionVolume([pullUps("Pull-Up", "")])).toBe(0);
   });
