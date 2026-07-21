@@ -188,6 +188,22 @@ export async function renameSession(id: string, title: string): Promise<boolean>
   }
 }
 
+// Log a bodyweight measurement (Profile → Private → Body & progress, or the
+// logger's bodyweight nudge). Owner-only; best effort. The caller refreshes the
+// bodyweight lookup on success so tonnage recomputes without a reload.
+export async function logBodyweight(weightKg: number): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/body`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ weightKg }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Set the PRIVATE post-workout reflection (note + mood + tags) on a saved
 // session — the finish-screen note affordance. Owner-only; best effort.
 export async function patchSessionNote(

@@ -218,6 +218,13 @@ export const web_train = {
     "w.train.logger.share": "Share",
     "w.train.logger.shared": "Shared",
     "w.train.logger.downloaded": "Image saved",
+    "w.train.logger.bwNudgeTitle": "Set your bodyweight to count this",
+    "w.train.logger.bwNudgeBody": "Bodyweight moves count as your bodyweight × reps. Add yours so this session's volume is counted.",
+    "w.train.logger.bwNudgeSave": "Save",
+    "w.train.logger.bwNudgeSaving": "Saving…",
+    "w.train.logger.bwNudgeSaved": "Saved — volume updated",
+    "w.train.logger.bwNudgeError": "Couldn't save — try again",
+    "w.train.logger.bwNudgeDismiss": "Dismiss",
 
     // interval-timer.tsx
     "w.train.timer.back": "Back",
@@ -532,6 +539,13 @@ export const web_train = {
     "w.train.logger.share": "Udostępnij",
     "w.train.logger.shared": "Udostępniono",
     "w.train.logger.downloaded": "Zapisano obraz",
+    "w.train.logger.bwNudgeTitle": "Ustaw masę ciała, aby to liczyć",
+    "w.train.logger.bwNudgeBody": "Ćwiczenia z masą ciała liczą się jako masa ciała × powtórzenia. Dodaj swoją, aby objętość tej sesji była liczona.",
+    "w.train.logger.bwNudgeSave": "Zapisz",
+    "w.train.logger.bwNudgeSaving": "Zapisywanie…",
+    "w.train.logger.bwNudgeSaved": "Zapisano — objętość zaktualizowana",
+    "w.train.logger.bwNudgeError": "Nie udało się zapisać — spróbuj ponownie",
+    "w.train.logger.bwNudgeDismiss": "Zamknij",
 
     // interval-timer.tsx
     "w.train.timer.back": "Wstecz",
@@ -843,6 +857,13 @@ export const web_train = {
     "w.train.logger.share": "Teilen",
     "w.train.logger.shared": "Geteilt",
     "w.train.logger.downloaded": "Bild gespeichert",
+    "w.train.logger.bwNudgeTitle": "Körpergewicht angeben, damit es zählt",
+    "w.train.logger.bwNudgeBody": "Körpergewichtsübungen zählen als dein Körpergewicht × Wdh. Gib deins an, damit das Volumen dieser Einheit zählt.",
+    "w.train.logger.bwNudgeSave": "Speichern",
+    "w.train.logger.bwNudgeSaving": "Speichern…",
+    "w.train.logger.bwNudgeSaved": "Gespeichert — Volumen aktualisiert",
+    "w.train.logger.bwNudgeError": "Speichern fehlgeschlagen — erneut versuchen",
+    "w.train.logger.bwNudgeDismiss": "Schließen",
 
     // interval-timer.tsx
     "w.train.timer.back": "Zurück",

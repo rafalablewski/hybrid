@@ -96,7 +96,7 @@ export function SessionDetail({
   const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
   const ssLabels = supersetLabels(session.blocks);
-  const muscles = volumeByMuscle(session.blocks);
+  const muscles = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscles[0]?.volume || 1;
 
   // The session's heaviest lift → its e1RM trend across all history.
