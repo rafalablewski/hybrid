@@ -38,10 +38,37 @@ export function canScanFoodLabel(persona: Persona): boolean {
   return isFullAccess(persona);
 }
 
-/** Free users CAN add nutrition values manually. Saving reusable meals and
- *  products to a personal library is a Full feature. */
+/** Free users CAN add nutrition values manually. Logging a PREMADE meal preset
+ *  and saving custom PRODUCTS / using the food database are Full features.
+ *  (Saving your OWN meals is free up to {@link FREE_MEAL_LIMIT} — see
+ *  {@link canSaveMeal}; this predicate stays Full-only for products + presets.) */
 export function canSaveMealsAndProducts(persona: Persona): boolean {
   return isFullAccess(persona);
+}
+
+/** Saving a custom PRODUCT (a reusable food with per-serving macros) to the
+ *  personal library is Full-only — the free tier gets saved MEALS (capped, see
+ *  {@link canSaveMeal}) but not a products library. Alias of the Full gate,
+ *  named for the call-site so the intent is explicit at both clients + the API. */
+export function canSaveProduct(persona: Persona): boolean {
+  return isFullAccess(persona);
+}
+
+/** How many custom meals a FREE user may keep saved to their personal library.
+ *  Building a meal is always free; only the library SIZE is capped — more
+ *  requires the Full upgrade. Shared by both clients AND the API gate so the
+ *  number can never drift. */
+export const FREE_MEAL_LIMIT = 4;
+
+/** Free users CAN create and save their OWN meals (name + macros) — up to
+ *  {@link FREE_MEAL_LIMIT} of them. Saving MORE is the paid (Full) upgrade. The
+ *  API mirrors this on POST /api/nutrition/meals (403 upgrade_required once a
+ *  free client is at the limit), so the clients gate the "save" CTA on this
+ *  predicate and show an upgrade prompt instead of an error.
+ *  @param savedCount how many meals the user currently has saved. */
+export function canSaveMeal(persona: Persona, savedCount: number): boolean {
+  if (isFullAccess(persona)) return true;
+  return persona === "casual" && savedCount < FREE_MEAL_LIMIT;
 }
 
 /** How many reusable routines (WorkoutTemplates) a FREE user may keep saved.

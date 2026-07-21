@@ -86,6 +86,8 @@ model User {
   hiddenHighlights HiddenHighlight[]
   highlightOrder   HighlightOrder?
   templates       WorkoutTemplate[]
+  savedMeals      SavedMeal[]
+  foodProducts    FoodProduct[]
   planDayOverrides PlanDayOverride[]
   assignments     Assignment[]     @relation("assignmentAthlete")
   assignmentsMade Assignment[]     @relation("assignmentCoach")
@@ -506,6 +508,45 @@ model WorkoutTemplate {
   createdAt   DateTime @default(now())
 
   @@index([ownerId])
+}
+
+// A reusable MEAL the user built themselves (name + single-number macros), saved
+// to their personal Nutrition library for one-tap logging. Free users keep up to
+// FREE_MEAL_LIMIT (access.ts); Full is unlimited — the API gates POST on
+// access.canSaveMeal. kcal is stored explicitly (may be user-entered or derived
+// 4·4·9 from the macros) so a logged meal matches its saved total exactly.
+model SavedMeal {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  emoji     String? // a single glyph for the tile (🍳/🥗/…)
+  kcal      Int
+  protein   Int // grams
+  carbs     Int // grams
+  fat       Int // grams
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// A custom FOOD PRODUCT the user added (a reusable food with per-serving macros)
+// — the personal, offline half of the (blocked) food database. Full-only: the
+// API gates POST on access.canSaveProduct. Building a meal picks products and
+// sums their macros. servingLabel is free text ("100 g", "1 scoop", "1 med").
+model FoodProduct {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  name         String
+  servingLabel String   @default("1 serving")
+  kcal         Int
+  protein      Int // grams per serving
+  carbs        Int // grams per serving
+  fat          Int // grams per serving
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // A workout scheduled to an athlete on a date. Blocks are a SNAPSHOT of the
