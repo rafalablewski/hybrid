@@ -81,6 +81,7 @@ export default function WorkoutBlocks({
   units = "kg",
   plateCalc = false,
   live = false,
+  carryOver = false,
   signal = false,
   bodyweightKg,
   lastByLift,
@@ -110,6 +111,10 @@ export default function WorkoutBlocks({
   rirMode?: boolean;
   /** Weight unit for the load column (display + input). Storage stays kg. */
   units?: WeightUnit;
+  /** LIVE logger: pre-fill a new set with the previous set's load/reps/rpe (the
+   *  one-at-a-time lifter's tap-tap loop). Only the logger passes it — the
+   *  Builder keeps blank sets, so a template author starts each set clean. */
+  carryOver?: boolean;
   /** Show a barbell plates-per-side hint under each strength block. */
   plateCalc?: boolean;
   /** LIVE mode (the Logger, not the Builder): adds a ✓-to-bank column per set
@@ -240,9 +245,17 @@ export default function WorkoutBlocks({
         : b,
     );
   const addSet = (u: string) =>
-    patch(u, (b) =>
-      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "" }] } : b,
-    );
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      // Carry-over (logger only): seed the new set from the last one's numbers
+      // so the incremental lifter just taps + and logs. A fresh working set —
+      // never the prior set's done/drop/role flags — matching the mobile logger.
+      const prev = carryOver ? b.sets[b.sets.length - 1] : undefined;
+      const next: StrengthSet = prev
+        ? { load: prev.load, reps: prev.reps, rpe: prev.rpe ?? "" }
+        : { load: "", reps: "", rpe: "" };
+      return { ...b, sets: [...b.sets, next] };
+    });
   // A drop set is a lighter continuation of the previous set (no rest) — add it
   // pre-flagged so it reads as part of the same effort.
   const addDropSet = (u: string) =>

@@ -569,6 +569,7 @@ export default function AuroraLogger({
         units={prefs.units}
         plateCalc={prefs.plateCalc}
         live
+        carryOver={prefs.carryOver}
         lastByLift={lastByLift}
         onToggleDone={toggleDone}
       />
