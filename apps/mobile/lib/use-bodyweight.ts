@@ -10,6 +10,9 @@ import { sapi } from "./social-api";
 
 // One fetch per app session, shared across every hook instance.
 let pointsPromise: Promise<BodyweightPoint[]> | null = null;
+// Mounted hooks subscribe here so a fresh log (refreshBodyweight) re-fetches
+// everywhere at once — the logger's just-set weight lands without a reload.
+const listeners = new Set<() => void>();
 const fetchPoints = (): Promise<BodyweightPoint[]> => {
   pointsPromise ??= sapi<{ metrics?: { measuredAt?: string; weightKg?: number | null }[] }>("/api/body")
     .then((d) =>
@@ -24,17 +27,30 @@ const fetchPoints = (): Promise<BodyweightPoint[]> => {
   return pointsPromise;
 };
 
+/** Invalidate the shared cache and re-fetch in every mounted hook — call after
+ *  logging a new bodyweight (POST /api/body) so tonnage updates without a
+ *  reload. Safe to call when nothing is mounted (no-op beyond the reset). */
+export function refreshBodyweight(): void {
+  pointsPromise = null;
+  listeners.forEach((l) => l());
+}
+
 /** Dated bodyweight lookup — lookup(session.startedAt) → kg at that date;
  *  lookup() → current weight; null-returning until loaded / when empty. */
 export function useBodyweightLookup(): BodyweightLookup {
   const [points, setPoints] = useState<BodyweightPoint[]>([]);
   useEffect(() => {
     let on = true;
-    fetchPoints().then((p) => {
-      if (on) setPoints(p);
-    });
+    const load = () => {
+      fetchPoints().then((p) => {
+        if (on) setPoints(p);
+      });
+    };
+    load();
+    listeners.add(load);
     return () => {
       on = false;
+      listeners.delete(load);
     };
   }, []);
   return useMemo(() => bodyweightLookup(points), [points]);

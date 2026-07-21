@@ -21,6 +21,8 @@ import { fs, space,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
+  needsBodyweight,
+  unitToKg,
   defaultSessionTitle,
   fmtTonnage,
   fmtWeight,
@@ -36,7 +38,7 @@ import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import SaveRoutineCard, { SessionRename, SessionNote } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
-import { useBodyweightLookup } from "@/lib/use-bodyweight";
+import { useBodyweightLookup, refreshBodyweight } from "@/lib/use-bodyweight";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
@@ -222,6 +224,10 @@ export default function AuroraLogger({
   // Live in-session scoreboard — running exercises / sets / volume / PRs, off the
   // shared core helper so it matches the finish summary and the mobile logger.
   const live = useMemo(() => liveSessionStats(blocks as SessionBlock[], sessions, { bodyweightKg }), [blocks, sessions, bodyweightKg]);
+
+  // Nudge to set a bodyweight when the session has a bodyweight lift (dips,
+  // pull-ups…) and none is on file — otherwise its tonnage reads 0.
+  const needsBw = useMemo(() => needsBodyweight(blocks as SessionBlock[], bodyweightKg), [blocks, bodyweightKg]);
 
   // Pause/resume: shift the running rest forward by the held time too, so it
   // doesn't jump when the clock wakes back up (the elapsed clock is shifted in
@@ -491,6 +497,11 @@ export default function AuroraLogger({
           )}
         </div>
       )}
+
+      {/* Bodyweight nudge — appears when a bodyweight lift is on the board but no
+          bodyweight is on file, so its tonnage would silently read 0. Set it
+          right here and the live volume recomputes. */}
+      {needsBw && <BodyweightNudge units={prefs.units} />}
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
         {/* On-demand rest-timer switch — same persisted pref as Settings, so
@@ -855,6 +866,75 @@ function FinishOrb({
           {label}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Set-your-bodyweight nudge — a quiet amber card the logger shows when the
+ *  session has a bodyweight lift and no weight is on file (its tonnage would
+ *  read 0). Set it inline: POST /api/body then refreshBodyweight() recomputes
+ *  the live volume and the nudge self-dismisses. */
+function BodyweightNudge({ units }: { units: WeightUnit }) {
+  const { t } = useLang();
+  const [val, setVal] = useState("");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  const a = C("amber");
+  const save = async () => {
+    const n = parseFloat(val.replace(",", "."));
+    if (!Number.isFinite(n) || n <= 0) {
+      setState("error");
+      return;
+    }
+    setState("saving");
+    try {
+      const res = await fetch("/api/body", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weightKg: Math.round(unitToKg(n, units) * 10) / 10 }),
+      });
+      if (!res.ok) {
+        setState("error");
+        return;
+      }
+      setState("saved");
+      // Recompute tonnage everywhere; once the weight lands this card unmounts
+      // (needsBodyweight flips false), so the "saved" flash is brief but honest.
+      refreshBodyweight();
+    } catch {
+      setState("error");
+    }
+  };
+  return (
+    <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 18, padding: "12px 14px", marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: a }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</span>
+        <button onClick={() => setDismissed(true)} aria-label={t("w.train.logger.bwNudgeDismiss")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>✕</button>
+      </div>
+      <p style={{ fontFamily: "var(--font-display)", fontSize: fs.caption, color: C("chalk"), margin: "6px 0 10px", lineHeight: 1.4 }}>{t("w.train.logger.bwNudgeBody")}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <input
+            inputMode="decimal"
+            value={val}
+            onChange={(e) => { setVal(e.target.value); if (state === "error") setState("idle"); }}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); }}
+            placeholder={t("w.train.logger.bwNudgeTitle")}
+            aria-label={t("w.train.logger.bwNudgeTitle")}
+            style={{ width: "100%", boxSizing: "border-box", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${state === "error" ? C("red") : C("line")}`, borderRadius: 12, padding: "10px 44px 10px 12px" }}
+          />
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{units}</span>
+        </div>
+        <button
+          onClick={save}
+          disabled={state === "saving"}
+          style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", background: a, border: "none", borderRadius: 999, padding: "10px 18px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1, whiteSpace: "nowrap" }}
+        >
+          {state === "saving" ? t("w.train.logger.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
+        </button>
+      </div>
+      {state === "error" && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{t("w.train.logger.bwNudgeError")}</div>}
     </div>
   );
 }
