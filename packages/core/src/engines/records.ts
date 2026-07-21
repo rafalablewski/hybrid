@@ -1,6 +1,7 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
-import { blockBestE1rm, setsForVolume } from "./session";
+import { blockBestE1rm, setsForVolume, effectiveSetLoadKg } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
+import { gymExercise } from "../exercise-db";
 import { MOVEMENTS } from "./movements";
 import type { MuscleGroup } from "./types";
 
@@ -161,23 +162,32 @@ export interface MuscleVolume {
 }
 
 /**
- * Tonnage (load × reps) attributed to each muscle a session trained, using the
- * MOVEMENTS map — each strength set's volume counts toward every muscle the
- * movement touches. Working sets only by default (warm-up / cool-down excluded);
- * pass `includeWarmups` to count them too. Strongest first; custom movements
- * with no muscle data are skipped.
+ * Tonnage (effective load × reps) attributed to each muscle a session trained,
+ * using the MOVEMENTS map — each strength set's volume counts toward every
+ * muscle the movement touches. Bodyweight-aware: pass `bodyweightKg` so
+ * bodyweight lifts (dips, pull-ups…) count their true work (effectiveSetLoadKg;
+ * 10 dips at 70 kg = 700 kg) instead of reading 0. Holds and carries (seconds /
+ * metres) are never tonnage, matching sessionVolume. Working sets only by
+ * default (warm-up / cool-down excluded); pass `includeWarmups` to count them.
+ * Strongest first; custom movements with no muscle data are skipped.
  */
-export function volumeByMuscle(blocks: SessionBlock[], includeWarmups = false): MuscleVolume[] {
+export function volumeByMuscle(
+  blocks: SessionBlock[],
+  includeWarmups = false,
+  bodyweightKg?: number | null,
+): MuscleVolume[] {
   const map = new Map<MuscleGroup, number>();
   for (const b of blocks) {
     if (b.kind !== "strength") continue;
     const muscles = MOVEMENTS[b.name]?.muscles;
     if (!muscles || muscles.length === 0) continue;
+    // A hold or carry's "reps" are seconds/metres — never tonnage (mirrors
+    // sessionVolume), so a plank can't gain bodyweight × seconds of "work".
+    if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") continue;
     let tonnage = 0;
     for (const s of setsForVolume(b, includeWarmups)) {
-      const load = parseFloat(s.load);
       const reps = parseFloat(s.reps);
-      if (Number.isFinite(load) && Number.isFinite(reps)) tonnage += load * reps;
+      if (Number.isFinite(reps)) tonnage += effectiveSetLoadKg(b.name, s.load, bodyweightKg) * reps;
     }
     if (tonnage <= 0) continue;
     for (const m of muscles) map.set(m, (map.get(m) ?? 0) + tonnage);

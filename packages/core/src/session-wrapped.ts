@@ -123,8 +123,9 @@ export function sessionWrapped(
         });
     }
   }
-  // Muscle split — the session's most-trained muscle and its tonnage.
-  const muscles = volumeByMuscle(session.blocks);
+  // Muscle split — the session's most-trained muscle and its tonnage
+  // (bodyweight-aware via this session's weight, so dips/pull-ups count).
+  const muscles = volumeByMuscle(session.blocks, false, bwHereKg);
   if (muscles.length > 0) {
     const m = muscles[0]!;
     facts.push({ labelKey: MUSCLE_LABEL_KEY(m.muscle), value: fmtWeight(m.volume, units), tone: "neutral" });
