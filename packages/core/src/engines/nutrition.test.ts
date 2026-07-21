@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -93,5 +93,61 @@ describe("adaptive macro targets", () => {
     const t = adaptiveTargets([], { goal: "maintain", now: NOW });
     expect(t.kcal).toBeGreaterThan(1200);
     expect(t.basis).toMatch(/default/);
+  });
+});
+
+describe("nutritionSummary", () => {
+  const prot = (v: number, daysAgo: number): Signal => ({ athleteId: "u", kind: "protein", value: v, unit: "g", source: "manual", ts: at(daysAgo) });
+
+  it("returns an empty summary when nothing is logged", () => {
+    const s = nutritionSummary([], { now: NOW });
+    expect(s.loggedDays).toBe(0);
+    expect(s.avgKcal).toBeNull();
+    expect(s.macroSplit).toBeNull();
+    expect(s.adherencePct).toBeNull();
+  });
+
+  it("averages only over days that recorded intake, within the window", () => {
+    const signals = [kcal(2000, 0), kcal(2200, 1), kcal(1800, 2), kcal(9999, 45)]; // last is outside 30d
+    const s = nutritionSummary(signals, { now: NOW, windowDays: 30 });
+    expect(s.loggedDays).toBe(3);
+    expect(s.avgKcal).toBe(2000);
+  });
+
+  it("computes adherence + protein-hit against targets and a macro split", () => {
+    const targets = { kcal: 2000, protein: 150, carbs: 200, fat: 60, maintenance: 2000, goal: "maintain" as const, basis: "x" };
+    // day0 on target + protein hit; day1 way over (out of band) and protein short
+    const signals = [kcal(2000, 0), prot(150, 0), kcal(2600, 1), prot(80, 1)];
+    const s = nutritionSummary(signals, { now: NOW, targets, windowDays: 30 });
+    expect(s.loggedDays).toBe(2);
+    expect(s.adherencePct).toBe(50); // 1 of 2 days within ±10%
+    expect(s.proteinHitDays).toBe(1);
+    expect(s.macroSplit).not.toBeNull();
+    expect(s.macroSplit!.protein + s.macroSplit!.carbs + s.macroSplit!.fat).toBeGreaterThan(95);
+  });
+});
+
+describe("nutritionNudge", () => {
+  const targets = { kcal: 2400, protein: 160, carbs: 300, fat: 70, maintenance: 2400, goal: "maintain" as const, basis: "x" };
+  const day = (kcalV: number, proteinV: number): ReturnType<typeof todayNutrition> => ({ date: "2026-06-03", kcal: kcalV, protein: proteinV, carbs: 0, fat: 0, water: 0 });
+
+  it("flags a cold start when nothing is logged", () => {
+    expect(nutritionNudge(day(0, 0), targets).kind).toBe("cold-start");
+  });
+  it("prioritises a protein shortfall", () => {
+    const n = nutritionNudge(day(1600, 100), targets);
+    expect(n.kind).toBe("protein");
+    expect(n.gap).toBe(60);
+  });
+  it("reports calories left when protein is close", () => {
+    const n = nutritionNudge(day(1600, 155), targets);
+    expect(n.kind).toBe("calories-left");
+    expect(n.gap).toBe(800);
+  });
+  it("flags going over target", () => {
+    expect(nutritionNudge(day(2800, 170), targets).kind).toBe("over");
+  });
+  it("says on-track when close on both", () => {
+    expect(nutritionNudge(day(2350, 158), targets).kind).toBe("on-track");
   });
 });

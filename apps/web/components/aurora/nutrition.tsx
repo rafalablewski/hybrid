@@ -6,7 +6,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
   isFullAccess, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT,
-  type NutritionGoal, type Signal, type MealPreset,
+  nutritionSummary, nutritionNudge,
+  type NutritionGoal, type Signal, type MealPreset, type NutritionDay, type NutritionNudge, type NutritionSummary,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -152,6 +153,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const recent = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(signals), [signals]);
   const personalized = maint.kcal != null;
+  // Summary dashboard (08) window toggle + rolling summary; today's nudge (07).
+  const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
+  const summary = useMemo(() => nutritionSummary(signals, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
+  const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
 
   const add = async () => {
     setSaving(true); setError(""); setMealMsg("");
@@ -298,12 +303,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <AuroraIcon name="heart" size={22} color={C("lime")} />
       </div>
 
-      <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 16 }}>
-        {GOALS.map((g) => {
-          const on = goal === g.id;
-          return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(g.label)}</button>;
-        })}
-      </div>
+      {/* Established users keep the compact goal segment; first-run users get the
+          guided goal picker (onboarding) in the not-personalized branch below. */}
+      {personalized && (
+        <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 16 }}>
+          {GOALS.map((g) => {
+            const on = goal === g.id;
+            return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(g.label)}</button>;
+          })}
+        </div>
+      )}
 
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16, }}>
@@ -337,20 +346,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               {t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal, {targets.basis}{maint.weightChangeKg != null ? `, ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
             </div>
           </div>
+          <NutritionNudgeCard nudge={nudge} />
           <MacroRow label="w.recovery.nutrition.protein" cur={today.protein} target={targets.protein} color={C("blue")} />
           <MacroRow label="w.recovery.nutrition.carbs" cur={today.carbs} target={targets.carbs} color={C("amber")} />
           <MacroRow label="w.recovery.nutrition.fat" cur={today.fat} target={targets.fat} color={C("violet")} />
+          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} />
         </>
       ) : (
-        <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.recovery.nutrition.todayVsTarget")}</div>
-          <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, marginTop: 10 }}>{t("w.recovery.nutrition.adaptBody")}</p>
-          <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap" }}>
-            {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
-              <div key={l}><div style={{ fontWeight: 900, fontSize: 17 }}>{v}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{l}</div></div>
-            ))}
-          </div>
-        </div>
+        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => onNavigate?.("upgrade")} today={today} />
       )}
 
       {weight.points.length > 0 && (
@@ -571,4 +574,130 @@ function MacroRow({ label, cur, target, color }: { label: string; cur: number; t
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: 14 }}>{Math.round(cur)}/{target}g</span>
     </div>
   );
+}
+
+// The coach-voiced "what now?" line (07) — one nudge under the calories hero.
+function NutritionNudgeCard({ nudge }: { nudge: NutritionNudge }) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const text =
+    nudge.kind === "cold-start" ? t("w.recovery.nutrition.nudgeColdStart")
+    : nudge.kind === "protein" ? `${nudge.gap}${t("w.recovery.nutrition.nudgeProteinSuffix")}`
+    : nudge.kind === "calories-left" ? `${nudge.gap} ${t("w.recovery.nutrition.nudgeCalSuffix")}`
+    : nudge.kind === "over" ? `${nudge.gap} ${t("w.recovery.nutrition.nudgeOverSuffix")}`
+    : t("w.recovery.nutrition.nudgeOnTrack");
+  const accent = nudge.kind === "over" ? C("red") : nudge.kind === "on-track" ? C("lime") : C("blue");
+  const emoji = nudge.kind === "over" ? "⚠️" : nudge.kind === "on-track" ? "✓" : nudge.kind === "protein" ? "⚡" : "💬";
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderLeft: `3px solid ${accent}`, borderRadius: 20, boxShadow: "var(--shadow-card)", padding: 14, marginTop: 12 }}>
+      <span aria-hidden style={{ fontSize: 18, color: accent }}>{emoji}</span>
+      <div style={{ fontSize: fs.body, lineHeight: 1.4 }}>{text}</div>
+    </div>
+  );
+}
+
+// The SUMMARY dashboard (08) — a week/month rollup of stat tiles + macro balance.
+function SummaryDashboard({ summary, window, onWindow }: { summary: NutritionSummary; window: 7 | 30; onWindow: (w: 7 | 30) => void }) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const seg = (w: 7 | 30, label: string) => (
+    <button onClick={() => onWindow(w)} style={{ flex: 1, padding: "7px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, background: window === w ? C("lime") : "transparent", color: window === w ? C("ink") : C("ash") }}>{label}</button>
+  );
+  const tiles: [string, string, string, string][] = [
+    [t("w.recovery.nutrition.avgIntake"), summary.avgKcal != null ? String(summary.avgKcal) : "—", t("w.recovery.nutrition.perDay"), C("lime")],
+    [t("w.recovery.nutrition.adherence"), summary.adherencePct != null ? String(summary.adherencePct) : "—", t("w.recovery.nutrition.ofDays"), C("blue")],
+    [t("w.recovery.nutrition.proteinHit"), `${summary.proteinHitDays}/${summary.loggedDays}`, t("w.recovery.nutrition.daysUnit"), C("amber")],
+    [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), C("violet")],
+  ];
+  return (
+    <div style={{ ...cardStyle(C), marginTop: 16, padding: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <b style={{ fontSize: fs.note }}>{t("w.recovery.nutrition.summary")}</b>
+        <div style={{ display: "flex", gap: 3, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3, width: 128 }}>
+          {seg(7, t("w.recovery.nutrition.week"))}{seg(30, t("w.recovery.nutrition.month"))}
+        </div>
+      </div>
+      {summary.loggedDays === 0 ? (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 12 }}>{t("w.recovery.nutrition.summaryEmpty")}</div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+            {tiles.map(([label, val, unit, col]) => (
+              <div key={label} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 13 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: col }}>{label}</div>
+                <div style={{ fontWeight: 900, fontSize: 24, letterSpacing: "-.02em", marginTop: 5 }}>{val}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{unit}</div>
+              </div>
+            ))}
+          </div>
+          {summary.macroSplit && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.recovery.nutrition.macroBalance")}</div>
+              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C("blue")], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C("amber")], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C("violet")]] as const).map(([label, pct, col]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), width: 52 }}>{t(label)}</span>
+                  <div style={{ flex: 1, height: 7, borderRadius: 4, background: C("ink2"), overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: col }} /></div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, width: 30, textAlign: "right" }}>{pct}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// The guided goal onboarding (07) — the first-run state before targets exist:
+// tactile goal cards, the adaptive explainer, and a soft ✦ Full trial nudge.
+function OnboardingGoal({ goal, setGoal, onUpgrade, today }: { goal: NutritionGoal; setGoal: (g: NutritionGoal) => void; onUpgrade: () => void; today: NutritionDay }) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const OPTS: { id: NutritionGoal; emoji: string; label: string; sub: string }[] = [
+    { id: "lose", emoji: "📉", label: t("w.recovery.nutrition.goalLose"), sub: t("w.recovery.nutrition.goalLoseSub") },
+    { id: "maintain", emoji: "⚖️", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
+    { id: "gain", emoji: "📈", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
+  ];
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontWeight: 900, fontSize: fs.heading, letterSpacing: "-.02em" }}>{t("w.recovery.nutrition.pickGoal")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 5 }}>{t("w.recovery.nutrition.pickGoalSub")}</div>
+      <div style={{ marginTop: 14 }}>
+        {OPTS.map((o) => {
+          const on = goal === o.id;
+          return (
+            <button key={o.id} onClick={() => setGoal(o.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 20, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 15, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+              <span style={{ fontSize: 23 }}>{o.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{o.label}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{o.sub}</div>
+              </div>
+              <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent" }} />
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ ...cardStyle(C), padding: 15 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.recovery.nutrition.todayVsTarget")}</div>
+        <p style={{ fontSize: fs.body, lineHeight: 1.55, marginTop: 8 }}>{t("w.recovery.nutrition.adaptBody")}</p>
+        <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
+          {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
+            <div key={l}><div style={{ fontWeight: 900, fontSize: 17 }}>{v}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{l}</div></div>
+          ))}
+        </div>
+      </div>
+      <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, marginTop: 12, textAlign: "left", background: `color-mix(in srgb, var(--premium-accent) 10%, ${C("ink2")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 30%, transparent)`, borderRadius: 20, padding: 14, cursor: "pointer", color: C("chalk") }}>
+        <span aria-hidden style={{ color: "var(--premium-accent-text)", fontSize: 17 }}>✦</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: fs.body }}>{t("w.recovery.nutrition.trialTitle")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{t("w.recovery.nutrition.trialSub")}</div>
+        </div>
+        <span style={{ color: C("ash") }}>→</span>
+      </button>
+    </div>
+  );
+}
+
+function cardStyle(C: (v: string) => string) {
+  return { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)" } as const;
 }
