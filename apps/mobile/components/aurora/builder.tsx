@@ -15,6 +15,7 @@ import {
   strengthBlockStats,
   estimateBlockMinutes,
   exerciseProfile,
+  loadUnitCount,
   setType,
   setTypeBadge,
   rpeRirSwap,
@@ -393,6 +394,13 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
   const repsPh = sp?.measure === "time" ? "30" : sp?.measure === "distance" ? "20" : "5";
   return (
     <View style={{ marginTop: 12 }}>
+      {/* A bilateral dumbbell lift takes ONE dumbbell's weight; tonnage counts
+          both bells. Guide the athlete so the doubled volume reads. */}
+      {loadUnitCount(b.name) === 2 && (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue), marginBottom: 8 }}>
+          {t("w.train.blocks.dbPerHint")}
+        </Text>
+      )}
       <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 4 }}>
         <View style={{ width: 34 }}>{label(t("w.train.blocks.setCol"))}</View>
         {showLoad && <View style={{ flex: 1 }}>{label(`${t("w.train.blocks.load")} (${units})`)}</View>}
