@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — Set-focus redesign · 10 concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --acc:#c6f84f; --onAcc:#0c0d0c;
+    --disp:'Archivo',system-ui,sans-serif;
+    --cond:'Archivo Narrow',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --pad:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #16281a 0%, transparent 55%),
+      #060706;
+    color:var(--chalk); font-family:var(--disp);
+    padding:40px 20px 80px; line-height:1.4;
+  }
+  .head{max-width:1180px;margin:0 auto 44px}
+  .kick{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc)}
+  h1{font-weight:900;font-size:34px;letter-spacing:-.02em;margin:10px 0 8px}
+  .head p{color:var(--ash);max-width:640px;margin:0;font-size:15px}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ash);text-transform:uppercase}
+  .legend b{color:var(--chalk);font-weight:600}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin-right:6px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:34px;max-width:1180px;margin:0 auto;align-items:start}
+
+  .concept{}
+  .clabel{display:flex;align-items:baseline;gap:10px;margin:0 4px 12px}
+  .cnum{font-family:var(--mono);font-size:12px;color:var(--onAcc);background:var(--acc);border-radius:6px;padding:2px 7px;font-weight:700}
+  .ctitle{font-weight:800;font-size:18px;letter-spacing:-.01em}
+  .cdesc{color:var(--ash);font-size:12.5px;margin:0 4px 14px;min-height:34px}
+
+  /* phone frame */
+  .phone{
+    background:var(--ink); border:1px solid #1e211e; border-radius:30px;
+    padding:14px 0 16px; overflow:hidden;
+    box-shadow:0 24px 60px -30px #000, inset 0 1px 0 #ffffff08;
+    position:relative;
+  }
+  .phone::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:88px;height:5px;border-radius:3px;background:#2a2d2a}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;font-family:var(--mono)}
+  .topbar .t{font-weight:700;font-size:20px}
+  .topbar .el{font-size:9px;letter-spacing:.2em;color:var(--ash);text-align:center}
+  .topbar .fin{color:var(--acc);font-weight:700;font-size:13px;font-family:var(--disp)}
+  .topbar .cancel{color:var(--ash);font-size:13px;font-family:var(--disp)}
+
+  .ex{margin:6px 12px 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 14px 16px}
+  .exhead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--ash);text-transform:uppercase}
+  .a2{font-family:var(--mono);font-size:10px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--acc)}
+  .exname{font-weight:800;font-size:16px;letter-spacing:-.01em;flex:1}
+  .x{color:var(--ash);font-size:16px}
+
+  /* generic set-row scaffolding reused by several concepts */
+  .cols{display:grid;grid-template-columns:26px 1fr 1fr 1fr 34px;gap:8px;align-items:center}
+  .colhead{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase;padding:0 2px 8px}
+  .colhead .r{text-align:right}
+  .cell{background:#101210;border:1px solid var(--line);border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:17px}
+  .idx{font-family:var(--mono);color:var(--ash);font-size:13px;text-align:center}
+  .chk{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--ash);font-size:15px;margin-left:auto}
+  .chk.on{background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+  .row{display:grid;grid-template-columns:26px 1fr 1fr 1fr 34px;gap:8px;align-items:center;margin-bottom:8px}
+  .ghost .cell{color:#3a3d3a;background:#0d0f0d;border-color:#191b19}
+  .empty{color:transparent}
+
+  .btnrow{display:flex;gap:10px;margin-top:14px}
+  .addset{background:var(--acc);color:var(--onAcc);font-weight:700;border-radius:20px;padding:9px 18px;font-size:13px}
+  .special{border:1px solid var(--line);color:var(--ash);border-radius:20px;padding:9px 16px;font-size:13px}
+
+  .note{font-family:var(--mono);font-size:10px;color:var(--ash);letter-spacing:.04em;margin:14px 4px 0;padding-left:10px;border-left:2px solid var(--line)}
+
+  /* ---------- concept-specific ---------- */
+
+  /* 1 spotlight */
+  .doneline{display:flex;align-items:center;gap:10px;padding:7px 4px;font-family:var(--mono);font-size:13px;color:#5c5f5a}
+  .doneline .di{width:20px;color:#4a4d48}
+  .doneline .dv{color:#7d817b}
+  .doneline .dc{margin-left:auto;color:var(--acc);opacity:.5}
+  .active{background:linear-gradient(180deg,#1b2416,#151715);border:1px solid #3a5a1f;border-radius:16px;padding:12px;margin:8px 0;box-shadow:0 0 0 3px #c6f84f14, 0 10px 30px -14px #000}
+  .active .nowtag{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:8px;display:block}
+  .active .cell{background:#0e1109;border-color:#31491c;height:50px;font-size:20px;color:var(--chalk)}
+  .active .idx{color:var(--acc);font-weight:700}
+  .active .chk{width:40px;height:40px;background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+  .upnext{opacity:.32}
+  .upnext .row{margin-bottom:6px}
+  .upnext .cell{height:34px;font-size:14px}
+
+  /* 2 done drawer */
+  .drawer{display:flex;align-items:center;gap:10px;background:#101210;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:12px;font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .drawer .badge{background:#1c2618;color:var(--acc);border-radius:20px;padding:3px 9px;font-weight:700;font-size:11px}
+  .drawer .chev{margin-left:auto;color:#4a4d48}
+  .remain{text-align:center;font-family:var(--mono);font-size:11px;color:#5c5f5a;margin-top:12px;letter-spacing:.05em}
+  .remain b{color:var(--chalk)}
+
+  /* 3 stepper */
+  .dots{display:flex;justify-content:center;gap:7px;margin:4px 0 16px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#2a2d2a}
+  .dot.done{background:var(--acc);opacity:.55}
+  .dot.now{background:var(--acc);transform:scale(1.5);box-shadow:0 0 0 4px #c6f84f22}
+  .stepcard{text-align:center;padding:8px 0 4px}
+  .stepcard .sof{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--acc);text-transform:uppercase}
+  .bigrow{display:flex;justify-content:center;align-items:flex-end;gap:8px;margin:14px 0}
+  .bigfield{flex:1;max-width:120px}
+  .bigfield .v{font-family:var(--mono);font-weight:700;font-size:40px;line-height:1;letter-spacing:-.02em}
+  .bigfield .u{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ash);text-transform:uppercase;margin-top:6px}
+  .bigfield .div{width:1px;height:44px;background:var(--line)}
+  .logbtn{background:var(--acc);color:var(--onAcc);font-weight:800;border-radius:16px;padding:14px;text-align:center;font-size:15px;margin:14px 6px 4px}
+  .prevhint{font-family:var(--mono);font-size:10px;color:#5c5f5a;text-align:center}
+
+  /* 4 timeline */
+  .tl{position:relative;padding-left:30px}
+  .tl::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:var(--line)}
+  .tlnode{position:relative;margin-bottom:12px}
+  .tlnode::before{content:"";position:absolute;left:-25px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--ink2);border:2px solid var(--line)}
+  .tlnode.done::before{background:var(--acc);border-color:var(--acc);opacity:.5}
+  .tlnode.now::before{background:var(--acc);border-color:var(--acc);width:16px;height:16px;left:-27px;top:4px;box-shadow:0 0 0 4px #c6f84f22}
+  .tldone{font-family:var(--mono);font-size:13px;color:#6c6f6a}
+  .tlnow{background:#151715;border:1px solid #3a5a1f;border-radius:14px;padding:10px}
+  .tlnow .lab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:8px}
+  .tlfut{font-family:var(--mono);font-size:12px;color:#45483f}
+
+  /* 5 gradient sunset */
+  .sun .row .cell{transition:none}
+  .sun .row:nth-child(1){opacity:.28}
+  .sun .row:nth-child(2){opacity:.42}
+  .sun .row:nth-child(3){opacity:.6}
+  .sun .row.now{opacity:1}
+  .sun .row.now .cell{background:#0e1109;border-color:#31491c;height:48px;font-size:19px}
+  .sun .row.now .idx{color:var(--acc);font-weight:700}
+  .sun .row.now .chk{background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+  .sun .row:nth-child(5){opacity:.5}
+  .sun .row:nth-child(6){opacity:.34}
+  .sun .row:nth-child(7){opacity:.2}
+  .sun .row:nth-child(8){opacity:.12}
+
+  /* 6 collapse-identical */
+  .repeat{display:flex;align-items:center;gap:12px;background:#0f110f;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin-top:8px;font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .repeat .mult{font-size:16px;color:var(--chalk);font-weight:700}
+  .repeat .exp{margin-left:auto;color:var(--acc);opacity:.7;font-size:11px}
+
+  /* 7 hero ring */
+  .hero{display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,#181d15,#141614);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+  .ring{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
+    background:conic-gradient(var(--acc) 0turn .375turn,#26291f .375turn 1turn);
+    position:relative}
+  .ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--card)}
+  .ring span{position:relative;font-family:var(--mono);font-weight:700;font-size:15px}
+  .ring span small{color:var(--ash);font-size:11px}
+  .herodata .lab{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--acc);text-transform:uppercase}
+  .herodata .big{font-family:var(--mono);font-weight:700;font-size:26px;margin:2px 0 4px}
+  .herodata .sub{font-family:var(--mono);font-size:11px;color:var(--ash)}
+  .pips{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+  .pip{height:6px;flex:1;min-width:16px;border-radius:3px;background:#26291f}
+  .pip.done{background:var(--acc);opacity:.55}
+  .pip.now{background:var(--acc);box-shadow:0 0 0 2px #c6f84f22}
+
+  /* 8 ledger */
+  .ledger{font-family:var(--mono)}
+  .ledline{display:flex;align-items:center;gap:10px;padding:6px 2px;font-size:13px;color:#5f625d}
+  .ledline .n{width:16px;color:#494c47}
+  .ledline .chk2{margin-left:auto;color:var(--acc);opacity:.45}
+  .ledactive{background:#151715;border:1px solid #3a5a1f;border-radius:14px;padding:12px;margin:8px 0;box-shadow:0 8px 24px -14px #000}
+  .ledactive .row{margin:0}
+  .ledactive .lab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:8px;display:block}
+  .ledactive .cell{background:#0e1109;border-color:#31491c;height:46px;font-size:18px}
+  .ledactive .chk{background:var(--acc);color:var(--onAcc);border-color:var(--acc);width:38px;height:38px}
+  .lednext{display:flex;align-items:center;gap:10px;padding:8px 2px;font-family:var(--mono);font-size:12px;color:#45483f}
+  .lednext .n{width:16px}
+
+  /* 9 carousel */
+  .caro{display:flex;gap:10px;align-items:center;overflow:hidden;padding:6px 0}
+  .ccard{flex-shrink:0;width:96px;border-radius:14px;border:1px solid var(--line);background:#101210;padding:12px 8px;text-align:center;font-family:var(--mono)}
+  .ccard.done{opacity:.4}
+  .ccard.done .cv{color:#7d817b}
+  .ccard .ci{font-size:10px;letter-spacing:.1em;color:var(--ash);margin-bottom:8px}
+  .ccard .cv{font-weight:700;font-size:22px}
+  .ccard .cu{font-size:9px;color:var(--ash);margin-top:2px}
+  .ccard.center{width:130px;background:linear-gradient(180deg,#1b2416,#151715);border-color:#3a5a1f;transform:scale(1.02);box-shadow:0 0 0 3px #c6f84f14}
+  .ccard.center .cv{font-size:32px}
+  .ccard.center .ci{color:var(--acc)}
+  .ccard.fut{opacity:.28}
+
+  /* 10 focus-dim (single toggle, closest to current table) */
+  .fd .row{opacity:.22;transition:.2s}
+  .fd .row.done{opacity:.4}
+  .fd .row.done .cell{color:#7d817b}
+  .fd .row.now{opacity:1}
+  .fd .row.now .cell{background:#0e1109;border-color:#31491c}
+  .fd .row.now .idx{color:var(--acc);font-weight:700}
+  .fd .row.now .chk{background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+  .fd .row.now::after{content:"NOW";position:absolute}
+  .fdwrap{position:relative}
+  .nowchip{position:absolute;right:38px;top:-9px;font-family:var(--mono);font-size:8px;letter-spacing:.14em;background:var(--acc);color:var(--onAcc);border-radius:5px;padding:2px 6px;font-weight:700;z-index:2}
+
+  .foot{max-width:1180px;margin:56px auto 0;color:var(--ash);font-size:13px;border-top:1px solid var(--line);padding-top:22px}
+  .foot b{color:var(--chalk)}
+  @media(max-width:520px){h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="kick">HYBRID · Active workout</div>
+  <h1>Focus the next set. Sunset the rest.</h1>
+  <p>Same exercise as your screenshot — <b>Dumbbell Front Raise, 8 sets, 3 done</b> — reimagined 10 ways.
+  Every concept makes exactly one set the visual hero (Set 4) while completed and upcoming sets recede,
+  so the card stops shouting eight identical rows at once. All on the real Aurora dark palette.</p>
+  <div class="legend">
+    <span><i class="swatch" style="background:#c6f84f"></i><b>Now</b> — the set you're on</span>
+    <span><i class="swatch" style="background:#5c5f5a"></i><b>Done</b> — collapsed / dimmed</span>
+    <span><i class="swatch" style="background:#26291f"></i><b>Upcoming</b> — ghosted</span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- 1 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">01</span><span class="ctitle">Spotlight</span></div>
+    <p class="cdesc">Done sets shrink to one-line receipts, the next set blooms into a raised card, upcoming sets sit dimmed below. The eye lands in one place.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="doneline"><span class="di">1</span><span class="dv">5 × 10</span><span class="dc">✓</span></div>
+        <div class="doneline"><span class="di">2</span><span class="dv">5 × 10</span><span class="dc">✓</span></div>
+        <div class="doneline"><span class="di">3</span><span class="dv">5 × 10</span><span class="dc">✓</span></div>
+        <div class="active">
+          <span class="nowtag">Set 4 · up now</span>
+          <div class="row"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="upnext">
+          <div class="row"><span class="idx">5</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">6</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row" style="opacity:.6"><span class="idx">7</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row" style="opacity:.35"><span class="idx">8</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">One hero card + fading tail. Minimal change to data model.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">02</span><span class="ctitle">Done drawer</span></div>
+    <p class="cdesc">Completed sets fold into a single tappable "3 done" drawer. Only the live set is expanded; the future is summarised as a count, not repeated rows.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="drawer"><span class="badge">3 done</span><span>5 × 10 each</span><span class="chev">▾</span></div>
+        <div class="active">
+          <span class="nowtag">Set 4 · up now</span>
+          <div class="row"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="remain"><b>4 sets left</b> — planned 5 kg</div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Card height barely grows with set count. Best for high-volume days.</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">03</span><span class="ctitle">One-set stepper</span></div>
+    <p class="cdesc">Show a single set at a time, huge and thumb-friendly. A dot rail tells you where you are; logging advances to the next. Zero clutter.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="dots">
+          <span class="dot done"></span><span class="dot done"></span><span class="dot done"></span>
+          <span class="dot now"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div class="stepcard">
+          <div class="sof">Set 4 of 8</div>
+          <div class="bigrow">
+            <div class="bigfield"><div class="v">5</div><div class="u">kg</div></div>
+            <div class="div"></div>
+            <div class="bigfield"><div class="v" style="color:#4a4d48">10</div><div class="u">reps</div></div>
+          </div>
+          <div class="prevhint">last: 5 × 10 @ RPE 7</div>
+        </div>
+        <div class="logbtn">Log set 4 ✓</div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Feels like a guided set-by-set flow. Tap a dot to jump back.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">04</span><span class="ctitle">Timeline rail</span></div>
+    <p class="cdesc">A vertical progress spine. Done nodes are filled and terse, the current node is an open input, upcoming nodes are faint dots waiting their turn.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="tl">
+          <div class="tlnode done"><div class="tldone">Set 1 &nbsp; 5 × 10 ✓</div></div>
+          <div class="tlnode done"><div class="tldone">Set 2 &nbsp; 5 × 10 ✓</div></div>
+          <div class="tlnode done"><div class="tldone">Set 3 &nbsp; 5 × 10 ✓</div></div>
+          <div class="tlnode now">
+            <div class="tlnow"><span class="lab">Set 4 · up now</span>
+              <div class="row" style="grid-template-columns:1fr 1fr 34px"><span class="cell">5</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+            </div>
+          </div>
+          <div class="tlnode"><div class="tlfut">Set 5 &nbsp; 5 kg</div></div>
+          <div class="tlnode"><div class="tlfut">Set 6 &nbsp; 5 kg</div></div>
+          <div class="tlnode"><div class="tlfut">Set 7 · 8 &nbsp; 5 kg</div></div>
+        </div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Progress is legible at a glance; strong for supersets (A1/A2).</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">05</span><span class="ctitle">Sunset gradient</span></div>
+    <p class="cdesc">Keep the full table you already have — just wash opacity outward from the active row. Done fades up, upcoming fades down, the now-set is the only bright band.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="cols colhead"><span>#</span><span>KG</span><span>REPS</span><span class="r">RPE ⇄</span><span></span></div>
+        <div class="sun">
+          <div class="row"><span class="idx">1</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row"><span class="idx">2</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row"><span class="idx">3</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row now"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">5</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">6</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">7</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">8</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Smallest code change — pure CSS opacity keyed off set state.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">06</span><span class="ctitle">Collapse identical</span></div>
+    <p class="cdesc">The real noise is 5 identical planned rows. Fold repeats into one "× 5 @ 5 kg" chip; only the active set is a live row. Expands on tap when a set differs.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="doneline"><span class="di">1–3</span><span class="dv">5 × 10, all done</span><span class="dc">✓✓✓</span></div>
+        <div class="active">
+          <span class="nowtag">Set 4 · up now</span>
+          <div class="row"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="repeat"><span class="mult">× 4</span><span>more sets planned @ 5 kg</span><span class="exp">expand</span></div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Turns 8 rows into 3 blocks. Scales to 20-set kettlebell days.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">07</span><span class="ctitle">Hero ring</span></div>
+    <p class="cdesc">A progress-ring header owns the "where am I" question, so the set list can be reduced to a slim pip bar. Big current numbers, tiny history.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="hero">
+          <div class="ring"><span>4<small>/8</small></span></div>
+          <div class="herodata">
+            <div class="lab">Set 4 · up now</div>
+            <div class="big">5 kg</div>
+            <div class="sub">target 10 reps</div>
+          </div>
+        </div>
+        <div class="pips">
+          <span class="pip done"></span><span class="pip done"></span><span class="pip done"></span>
+          <span class="pip now"></span>
+          <span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span>
+        </div>
+        <div class="logbtn" style="margin-top:16px">Log set ✓</div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Most "app-like" / gamified. Pip bar stays one line at any count.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">08</span><span class="ctitle">Ledger</span></div>
+    <p class="cdesc">Completed sets become quiet mono ledger lines. The active set is the single editable row. The future is one faint "next up" placeholder — no repeated empty inputs.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="ledger">
+          <div class="ledline"><span class="n">1</span><span>5 × 10</span><span class="chk2">✓</span></div>
+          <div class="ledline"><span class="n">2</span><span>5 × 10</span><span class="chk2">✓</span></div>
+          <div class="ledline"><span class="n">3</span><span>5 × 10</span><span class="chk2">✓</span></div>
+          <div class="ledactive">
+            <span class="lab">Set 4 · up now</span>
+            <div class="row"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          </div>
+          <div class="lednext"><span class="n">5</span><span>next up · 5 kg → tap to open</span></div>
+          <div class="lednext"><span class="n">6–8</span><span>3 more planned</span></div>
+        </div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Reads like a training log. Numbers stay mono, aligned, calm.</p>
+  </section>
+
+  <!-- 9 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">09</span><span class="ctitle">Set carousel</span></div>
+    <p class="cdesc">Sets become a horizontal deck. The current card is centred and enlarged; done cards dim to the left, upcoming peek from the right. Swipe through your sets.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="caro">
+          <div class="ccard done"><div class="ci">SET 2</div><div class="cv">5</div><div class="cu">×10 ✓</div></div>
+          <div class="ccard done"><div class="ci">SET 3</div><div class="cv">5</div><div class="cu">×10 ✓</div></div>
+          <div class="ccard center"><div class="ci">SET 4 · NOW</div><div class="cv">5</div><div class="cu">kg — log →</div></div>
+          <div class="ccard fut"><div class="ci">SET 5</div><div class="cv">5</div><div class="cu">kg</div></div>
+        </div>
+        <div class="logbtn" style="margin-top:14px">Log set 4 ✓</div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Playful, one-handed. Great for phones, weaker for quick scanning.</p>
+  </section>
+
+  <!-- 10 -->
+  <section class="concept">
+    <div class="clabel"><span class="cnum">10</span><span class="ctitle">Focus-dim (in-place)</span></div>
+    <p class="cdesc">Closest to today's grid — nothing moves. Rows just dim by state: done are readable-grey, upcoming near-invisible, and the now-row is boxed with a NOW tag. Zero relayout.</p>
+    <div class="phone">
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength</span><span class="a2">A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="cols colhead"><span>#</span><span>KG</span><span>REPS</span><span class="r">RPE ⇄</span><span></span></div>
+        <div class="fd fdwrap">
+          <span class="nowchip">NOW</span>
+          <div class="row done"><span class="idx">1</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row done"><span class="idx">2</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row done"><span class="idx">3</span><span class="cell">5</span><span class="cell">10</span><span class="cell empty">·</span><span class="chk on">✓</span></div>
+          <div class="row now"><span class="idx">4</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">5</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">6</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">7</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+          <div class="row"><span class="idx">8</span><span class="cell">5</span><span class="cell empty">·</span><span class="cell empty">·</span><span class="chk">✓</span></div>
+        </div>
+        <div class="btnrow"><span class="addset">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+    <p class="note">Lowest-risk ship. Same layout, just a "state → opacity" style pass.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><b>How to read these.</b> All ten keep the exact same data — 3 logged sets, set 4 live, 4 more planned at 5&nbsp;kg — and differ only in how hard they push the non-active sets into the background.
+  Roughly ordered by effort: <b>05 Sunset</b> and <b>10 Focus-dim</b> are near-zero-risk CSS passes on your current table; <b>01 Spotlight</b>, <b>06 Collapse-identical</b> and <b>08 Ledger</b> restructure the list for real calm; <b>03 Stepper</b> and <b>07 Hero ring</b> rethink the interaction entirely.
+  My pick for a first ship: <b>01 Spotlight</b> (biggest clarity win, modest lift) or <b>10 Focus-dim</b> (ship this week). Tell me which one(s) to build for real on both web + mobile.</p>
+</footer>
+
+</body>
+</html>
