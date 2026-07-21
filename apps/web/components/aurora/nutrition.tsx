@@ -5,7 +5,7 @@ import { useRevalidate } from "@/lib/use-invalidate";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
-  isFullAccess, MEAL_PRESETS, mealPresetSignals,
+  isFullAccess, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT,
   type NutritionGoal, type Signal, type MealPreset,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
@@ -17,6 +17,8 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "w.recovery.nutrition.goalLose" }, { id: "maintain", label: "w.recovery.nutrition.goalMaintain" }, { id: "gain", label: "w.recovery.nutrition.goalGain" },
 ];
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
+type SavedMeal = { id: string; name: string; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
+type FoodProduct = { id: string; name: string; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
 
 /** AURORA Nutrition (web) — rounded macro tracker, same adaptive-targets engine
  *  + /api/signals logging + bodyweight trend as the classic. */
@@ -40,6 +42,99 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
+
+  // ── Personal library — the user's OWN saved meals + custom products (Phase B).
+  // Meals: free users keep up to FREE_MEAL_LIMIT; more (and any product) is Full.
+  const [meals, setMeals] = useState<SavedMeal[]>([]);
+  const [products, setProducts] = useState<FoodProduct[]>([]);
+  const [mealForm, setMealForm] = useState({ name: "", emoji: "🍽️", kcal: "", protein: "", carbs: "", fat: "" });
+  const [showMealBuilder, setShowMealBuilder] = useState(false);
+  const [libMsg, setLibMsg] = useState("");
+  const canSaveAnotherMeal = full || meals.length < FREE_MEAL_LIMIT;
+
+  const loadLibrary = useCallback(async () => {
+    try {
+      const [m, p] = await Promise.all([fetch("/api/nutrition/meals"), fetch("/api/nutrition/products")]);
+      if (m.ok) setMeals(((await m.json()).meals ?? []) as SavedMeal[]);
+      if (p.ok) setProducts(((await p.json()).products ?? []) as FoodProduct[]);
+    } catch { /* offline — leave what we have */ }
+  }, []);
+  useEffect(() => { loadLibrary(); }, [loadLibrary]);
+
+  // Log a saved meal → the SAME energyIntake/protein/carbs/fat signals as a
+  // manual add, so it's indistinguishable downstream.
+  const logMeal = async (m: SavedMeal) => {
+    setError(""); setMealMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", m.kcal, "kcal"], ["protein", m.protein, "g"], ["carbs", m.carbs, "g"], ["fat", m.fat, "g"]];
+    try {
+      for (const [kind, value, unit] of jobs) {
+        if (value <= 0) continue;
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "meal" }) });
+        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
+        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
+      }
+      setMealMsg(`${m.name} +${m.kcal} kcal`);
+      await load(); revalidate.recovery();
+    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
+  };
+
+  const saveMeal = async () => {
+    if (!mealForm.name.trim()) return;
+    if (!canSaveAnotherMeal) { onNavigate?.("upgrade"); return; }
+    setLibMsg("");
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const body = { name: mealForm.name.trim(), emoji: mealForm.emoji, kcal: num(mealForm.kcal) || undefined, protein: num(mealForm.protein), carbs: num(mealForm.carbs), fat: num(mealForm.fat) };
+    try {
+      const res = await fetch("/api/nutrition/meals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (res.status === 403) { onNavigate?.("upgrade"); return; }
+      if (res.status === 401) { setLibMsg(t("w.recovery.nutrition.errSignIn")); return; }
+      if (!res.ok) { setLibMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
+      setMealForm({ name: "", emoji: "🍽️", kcal: "", protein: "", carbs: "", fat: "" });
+      setShowMealBuilder(false);
+      await loadLibrary();
+    } catch { setLibMsg(t("w.recovery.nutrition.errNetwork")); }
+  };
+
+  const deleteMeal = async (id: string) => {
+    setMeals((xs) => xs.filter((x) => x.id !== id));
+    try { await fetch(`/api/nutrition/meals/${id}`, { method: "DELETE" }); } catch { /* revert on next load */ }
+  };
+
+  // Custom products — Full-only to CREATE (the free tier gets meals, not a
+  // products library). Building a meal can draw macros from these.
+  const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
+  const [showProdBuilder, setShowProdBuilder] = useState(false);
+
+  const saveProduct = async () => {
+    if (!prodForm.name.trim()) return;
+    if (!full) { onNavigate?.("upgrade"); return; }
+    setLibMsg("");
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const body = { name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) };
+    try {
+      const res = await fetch("/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (res.status === 403) { onNavigate?.("upgrade"); return; }
+      if (!res.ok) { setLibMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
+      setProdForm({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
+      setShowProdBuilder(false);
+      await loadLibrary();
+    } catch { setLibMsg(t("w.recovery.nutrition.errNetwork")); }
+  };
+
+  const deleteProduct = async (id: string) => {
+    setProducts((xs) => xs.filter((x) => x.id !== id));
+    try { await fetch(`/api/nutrition/products/${id}`, { method: "DELETE" }); } catch { /* revert on next load */ }
+  };
+
+  // Add a product's macros straight into the meal builder (compose a meal from
+  // your foods). Sums onto whatever's already typed.
+  const addProductToMeal = (p: FoodProduct) => {
+    setShowMealBuilder(true);
+    setMealForm((s) => {
+      const add = (a: string, b: number) => String((parseFloat(a) || 0) + b);
+      return { ...s, name: s.name || p.name, kcal: add(s.kcal, p.kcal), protein: add(s.protein, p.protein), carbs: add(s.carbs, p.carbs), fat: add(s.fat, p.fat) };
+    });
+  };
 
   const load = useCallback(async () => {
     try {
@@ -321,6 +416,104 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
           {mealMsg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}>✓ {t("w.recovery.nutrition.mealLogged")} — {mealMsg}</div>}
         </div>
+      </div>
+
+      {/* YOUR MEALS — the user's own saved-meal library (build + save + one-tap
+          log). Free users keep up to FREE_MEAL_LIMIT; the "Save" CTA routes to
+          upgrade once a free user is at the cap. */}
+      <div style={{ ...card, marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <b style={{ fontSize: fs.note }}>{t("w.recovery.nutrition.yourMeals")}</b>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`}</span>
+        </div>
+        {meals.length === 0 && !showMealBuilder && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.yourMealsEmpty")}</div>
+        )}
+        {meals.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+            {meals.map((m) => (
+              <div key={m.id} style={{ position: "relative", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 15, padding: 13 }}>
+                <button onClick={() => deleteMeal(m.id)} aria-label={t("w.recovery.nutrition.deleteMeal")} style={{ position: "absolute", top: 8, right: 9, background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 2 }}>×</button>
+                <div style={{ fontSize: 20 }}>{m.emoji ?? "🍽️"}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.body, marginTop: 6, paddingRight: 12, lineHeight: 1.2 }}>{m.name}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{m.kcal} kcal ({m.protein}p {m.carbs}c {m.fat}f)</div>
+                <button onClick={() => logMeal(m)} style={{ width: "100%", marginTop: 10, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 0", cursor: "pointer" }}>+ {t("w.recovery.nutrition.log")}</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {showMealBuilder ? (
+          <div style={{ marginTop: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={mealForm.emoji} onChange={(e) => setMealForm((s) => ({ ...s, emoji: [...e.target.value][0] ?? "" }))} aria-label="emoji" style={{ ...numField, flex: "0 0 46px", fontSize: 20 }} />
+              <input value={mealForm.name} onChange={(e) => setMealForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.mealNameHint")} aria-label={t("w.recovery.nutrition.mealName")} style={{ ...numField, flex: 1, textAlign: "left", fontFamily: "var(--font-display)" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+              <input value={mealForm.kcal} onChange={(e) => setMealForm((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
+              <input value={mealForm.protein} onChange={(e) => setMealForm((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
+              <input value={mealForm.carbs} onChange={(e) => setMealForm((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.carbsPh")} style={numField} />
+              <input value={mealForm.fat} onChange={(e) => setMealForm((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
+            </div>
+            {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{libMsg}</div>}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <button onClick={() => { setShowMealBuilder(false); setLibMsg(""); }} style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
+              <button onClick={saveMeal} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveMeal")}</button>
+            </div>
+          </div>
+        ) : canSaveAnotherMeal ? (
+          <button onClick={() => setShowMealBuilder(true)} style={{ width: "100%", marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>＋ {t("w.recovery.nutrition.createMeal")}</button>
+        ) : (
+          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+            <span aria-hidden>✦</span>{t("w.recovery.nutrition.unlockMoreMeals")}
+          </button>
+        )}
+      </div>
+
+      {/* YOUR PRODUCTS — a custom food library (Full). Free users see the
+          upsell; Full users add foods with per-serving macros and tap one to
+          drop its macros into the meal builder. The live food DB / barcode is
+          the separate blocked nutrition-fooddb layer. */}
+      <div style={{ ...card, marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <b style={{ fontSize: fs.note }}>{t("w.recovery.nutrition.yourProducts")}</b>
+          {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{full ? t("w.recovery.nutrition.yourProductsSub") : t("w.recovery.nutrition.yourProductsLocked")}</div>
+        {full && products.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            {products.map((p, i) => (
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: fs.body }}>{p.name}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{p.servingLabel} — {p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</div>
+                </div>
+                <button onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 26, height: 26, borderRadius: "50%", border: `1px solid ${C("lime")}`, background: "transparent", color: "var(--lime-text)", fontWeight: 800, cursor: "pointer" }}>+</button>
+                <button onClick={() => deleteProduct(p.id)} aria-label={t("w.recovery.nutrition.deleteProduct")} style={{ flex: "none", background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 15 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {full && showProdBuilder && (
+          <div style={{ marginTop: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14 }}>
+            <input value={prodForm.name} onChange={(e) => setProdForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.productNamePh")} aria-label={t("w.recovery.nutrition.productName")} style={{ ...numField, width: "100%", textAlign: "left", fontFamily: "var(--font-display)" }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+              <input value={prodForm.serving} onChange={(e) => setProdForm((s) => ({ ...s, serving: e.target.value }))} placeholder={t("w.recovery.nutrition.servingPh")} style={{ ...numField, fontFamily: "var(--font-display)" }} />
+              <input value={prodForm.kcal} onChange={(e) => setProdForm((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
+              <input value={prodForm.protein} onChange={(e) => setProdForm((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
+              <input value={prodForm.carbs} onChange={(e) => setProdForm((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.carbsPh")} style={numField} />
+              <input value={prodForm.fat} onChange={(e) => setProdForm((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <button onClick={() => setShowProdBuilder(false)} style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
+              <button onClick={saveProduct} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveProduct")}</button>
+            </div>
+          </div>
+        )}
+        {!showProdBuilder && (
+          <button onClick={() => (full ? setShowProdBuilder(true) : onNavigate?.("upgrade"))} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: full ? "var(--lime-text)" : "var(--premium-accent-text)", border: `1px solid ${full ? C("lime") : `color-mix(in srgb, var(--premium-accent) 45%, transparent)`}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+            {!full && <span aria-hidden>✦</span>}＋ {t("w.recovery.nutrition.addProduct")}
+          </button>
+        )}
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>
