@@ -38,6 +38,22 @@ const input = {
   boxSizing: "border-box",
 } as const;
 
+// Round ± stepper button (the plan-ahead count control).
+function stepBtn() {
+  return {
+    ...disp,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    fontSize: 22,
+    fontWeight: 300,
+    color: txt(CHALK),
+    background: INK2,
+    border: `1px solid ${LINE}`,
+    cursor: "pointer",
+  } as const;
+}
+
 export function blockBtn(color: string) {
   return {
     ...cond,
@@ -141,6 +157,12 @@ export default function WorkoutBlocks({
   // cool-down / drop). One primary "+ Add set" button keeps the common path a
   // single tap; the rarer set types tuck into this menu instead of a 5-button row.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
+  // Plan-ahead popover: which block has its "plan your sets" panel open, plus the
+  // count + shape it will lay down. Lets a lifter queue a whole exercise before
+  // the first rep instead of tapping "+ Add set" set-by-set.
+  const [planUid, setPlanUid] = useState<string | null>(null);
+  const [planCount, setPlanCount] = useState(3);
+  const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
   // The Olympic-sport quick-add picker (manual sport-session logging — no gear
   // needed). Picking a sport adds a cardio block named after it.
   const [sportPicker, setSportPicker] = useState(false);
@@ -255,6 +277,23 @@ export default function WorkoutBlocks({
         ? { load: prev.load, reps: prev.reps, rpe: prev.rpe ?? "" }
         : { load: "", reps: "", rpe: "" };
       return { ...b, sets: [...b.sets, next] };
+    });
+  // Plan ahead: append several working sets at once (the "plan your sets" panel).
+  // Straight carries the last set's numbers to every new set; pyramid steps the
+  // load up 2.5 kg per set from the last working load. New sets are plain working
+  // sets (no done/role flags) so they queue below the active one, ready to bank.
+  const addPlannedSets = (u: string, count: number, tmpl: "straight" | "pyramid") =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const prev = b.sets[b.sets.length - 1];
+      const baseKg = prev ? parseFloat(prev.load) : NaN;
+      const stepKg = 2.5;
+      const added: StrengthSet[] = Array.from({ length: count }, (_, k) => ({
+        load: tmpl === "pyramid" && Number.isFinite(baseKg) ? String(+(baseKg + (k + 1) * stepKg).toFixed(2)) : prev?.load ?? "",
+        reps: prev?.reps ?? "",
+        rpe: prev?.rpe ?? "",
+      }));
+      return { ...b, sets: [...b.sets, ...added] };
     });
   // A drop set is a lighter continuation of the previous set (no rest) — add it
   // pre-flagged so it reads as part of the same effort.
@@ -476,27 +515,38 @@ export default function WorkoutBlocks({
                           key={i}
                           onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                           onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                          style={{ borderRadius: 20, padding: 16, margin: "8px 0", background: `${LIME}0d`, border: `1px solid ${LIME}38`, boxShadow: "0 16px 34px -20px rgba(0,0,0,.75)", opacity: dragging ? 0.5 : 1 }}
+                          style={{ borderRadius: 22, padding: "14px 16px 16px", margin: "8px 0", background: `${LIME}0f`, border: `1px solid ${LIME}38`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -22px rgba(0,0,0,.8)", opacity: dragging ? 0.5 : 1 }}
                         >
-                          <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-                            <span style={{ ...mono, flex: 1, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
+                          {/* Label row — kicker on the left, planned-rest hint,
+                              then the type/grip/delete affordances tucked right. */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
                             </span>
-                            <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "3px 10px", cursor: "pointer" }}>
+                            <span style={{ ...mono, marginLeft: "auto", fontSize: fs.nano, color: txt(ASH) }}>
+                              {t("w.train.blocks.rest")} {Math.floor((b.restSec ?? DEFAULT_REST_SEC) / 60)}:{String((b.restSec ?? DEFAULT_REST_SEC) % 60).padStart(2, "0")}
+                            </span>
+                            <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "2px 9px", cursor: "pointer" }}>
                               {typeAccent ? setTypeBadge(s, i) : "+"}
                             </button>
-                            <span style={{ marginLeft: 10 }}>{grip(i)}</span>
+                            {grip(i)}
+                            <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...cond, width: 26, height: 26, padding: 0, color: txt(ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 8, cursor: "pointer", fontSize: fs.body, lineHeight: 1 }}>−</button>
                           </div>
-                          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flexWrap: "wrap" }}>
-                            <input className="ghost-ph" value={bw ? s.reps : displayLoad(s.load, units)} onChange={(e) => (bw ? updateSet(b.uid, i, "reps", e.target.value) : updateSet(b.uid, i, "load", storeLoad(e.target.value, units)))} placeholder="0" inputMode="decimal" aria-label={bw ? measureLabel : units} style={bigInput} />
-                            <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>{bw ? measureLabel : units}</span>
-                            {!bw && (
-                              <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 4, marginLeft: "auto" }}>
-                                <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>×</span>
-                                <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="0" inputMode="numeric" aria-label={measureLabel} style={repsInput} />
-                                <span style={{ ...mono, fontSize: fs.caption, color: ASH, marginBottom: 9 }}>{measureLabel}</span>
-                              </span>
-                            )}
+                          {/* Numbers on the left, the plain lime + (log this set) on
+                              the right — one tap banks it and starts the rest timer. */}
+                          <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
+                            <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 6, flexWrap: "wrap" }}>
+                              <input className="ghost-ph" value={bw ? s.reps : displayLoad(s.load, units)} onChange={(e) => (bw ? updateSet(b.uid, i, "reps", e.target.value) : updateSet(b.uid, i, "load", storeLoad(e.target.value, units)))} placeholder="0" inputMode="decimal" aria-label={bw ? measureLabel : units} style={bigInput} />
+                              <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>{bw ? measureLabel : units}</span>
+                              {!bw && (
+                                <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 4 }}>
+                                  <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>×</span>
+                                  <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="0" inputMode="numeric" aria-label={measureLabel} style={repsInput} />
+                                  <span style={{ ...mono, fontSize: fs.caption, color: ASH, marginBottom: 9 }}>{measureLabel}</span>
+                                </span>
+                              )}
+                            </div>
+                            <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, width: 58, height: 58, flex: "0 0 auto", borderRadius: 999, background: LIME, color: "var(--color-ink)", fontSize: 30, fontWeight: 400, lineHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer", boxShadow: `0 10px 24px -8px color-mix(in srgb, ${LIME} 55%, transparent), inset 0 1px 0 rgba(255,255,255,.4)` }}>+</button>
                           </div>
                           {(detailed || velocity) && (
                             <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
@@ -514,12 +564,6 @@ export default function WorkoutBlocks({
                               )}
                             </div>
                           )}
-                          <div style={{ display: "flex", gap: space.xs, marginTop: 14 }}>
-                            <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.tapAsYouGo")} style={{ ...disp, flex: 1, fontWeight: 800, fontSize: fs.body, color: "var(--color-ink)", background: LIME, border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer" }}>
-                              {t("workout.logSet")} ✓
-                            </button>
-                            <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...cond, width: 46, color: txt(ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 12, cursor: "pointer", fontSize: fs.body }}>−</button>
-                          </div>
                         </div>
                       );
                     }
@@ -531,7 +575,7 @@ export default function WorkoutBlocks({
                         key={i}
                         onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                         onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", opacity: dragging ? 0.4 : focus === "done" ? 0.5 : 0.6 }}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", margin: "6px 0", borderRadius: 14, background: `color-mix(in srgb, ${INK2} 55%, transparent)`, border: `1px solid color-mix(in srgb, ${LINE} 70%, transparent)`, opacity: dragging ? 0.4 : focus === "done" ? 0.62 : 0.72 }}
                       >
                         {grip(i)}
                         <span style={{ ...mono, width: 20, fontSize: fs.caption, color: typeAccent ? txt(typeAccent) : ASH }}>{setTypeBadge(s, i)}</span>
@@ -731,38 +775,74 @@ export default function WorkoutBlocks({
                   per-card control), with warm-up / ramp / cool-down / drop
                   tucked into a compact "Special ▾" menu. The set badge still
                   re-types a set with a tap, so the menu is just for ADDING. */}
-              <div style={{ display: "flex", gap: space.xs, alignItems: "center", position: "relative" }}>
-                {/* LIVE: when nothing is queued below the active set, "+ Add set"
-                    IS the next move — a prominent lime ghost mirroring the active
-                    row's tint; when a plan sits below (or in the Builder) it stays
-                    a quiet ash ghost so the queue keeps the focus. */}
+              <div style={{ display: "flex", gap: space.xs, alignItems: "stretch", position: "relative" }}>
+                {/* "+ Add set" is a split glass tile: the wide zone quick-adds one
+                    carry-over set (the incremental lifter's tap loop), the ⋯ zone
+                    opens the plan-ahead panel to queue several at once. When nothing
+                    is queued below, it wears the prominent lime tint (it's the next
+                    move); otherwise a quiet card so the queue keeps the focus. */}
                 {(() => {
                   const ghost = live && addSetIsNext(b.sets as { done?: boolean }[]);
                   return (
-                    <button
-                      onClick={() => addSet(b.uid)}
-                      style={
-                        ghost
-                          ? { ...disp, fontWeight: 700, fontSize: fs.caption, color: txt(LIME), background: `${LIME}14`, border: `1px dashed ${LIME}80`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }
-                          : { ...disp, fontWeight: 600, fontSize: fs.caption, color: ASH, background: "none", border: `1px dashed color-mix(in srgb, ${ASH} 50%, transparent)`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }
-                      }
-                    >
-                      {t("w.train.blocks.addSet")}
-                    </button>
+                    <div style={{ flex: 1, display: "flex", alignItems: "stretch", borderRadius: 16, overflow: "hidden", background: ghost ? `${LIME}14` : INK2, border: `1px solid ${ghost ? `${LIME}55` : LINE}` }}>
+                      <button
+                        onClick={() => addSet(b.uid)}
+                        style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, fontWeight: 700, fontSize: fs.caption, color: ghost ? txt(LIME) : txt(CHALK), background: "transparent", border: "none", padding: "12px 14px", cursor: "pointer" }}
+                      >
+                        <span style={{ width: 20, height: 20, borderRadius: 999, border: `1.5px solid ${ghost ? LIME : ASH}`, color: ghost ? txt(LIME) : txt(ASH), display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15, lineHeight: 0 }}>+</span>
+                        {t("w.train.blocks.addSet").replace(/^\+\s*/, "")}
+                      </button>
+                      <button
+                        onClick={() => { setPlanUid((u) => (u === b.uid ? null : b.uid)); setSpecialUid(null); }}
+                        title={t("w.train.blocks.planTitle")}
+                        aria-label={t("w.train.blocks.planTitle")}
+                        style={{ ...mono, padding: "0 13px", color: txt(ASH), background: "transparent", border: "none", borderLeft: `1px solid ${ghost ? `${LIME}33` : LINE}`, cursor: "pointer", fontSize: fs.body, letterSpacing: "1px" }}
+                      >
+                        ⋯
+                      </button>
+                    </div>
                   );
                 })()}
                 <button
-                  onClick={() => setSpecialUid((u) => (u === b.uid ? null : b.uid))}
+                  onClick={() => { setSpecialUid((u) => (u === b.uid ? null : b.uid)); setPlanUid(null); }}
                   title={t("w.train.blocks.specialTitle")}
-                  style={{ ...mono, fontSize: fs.caption, fontWeight: 600, color: ASH, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  style={{ ...mono, fontSize: fs.caption, fontWeight: 600, color: txt(CHALK), background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}
                 >
-                  {t("w.train.blocks.special")} <span style={{ display: "inline-block", transform: specialUid === b.uid ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▾</span>
+                  <span style={{ color: txt(AMBER), fontSize: 13 }}>⚡</span> {t("w.train.blocks.special")}
                 </button>
+                {/* Plan-ahead popover — a count stepper + shape, laid over the aurora
+                    so a lifter can queue the whole exercise before the first rep. */}
+                {planUid === b.uid && (
+                  <>
+                    <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
+                    <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 258, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 18, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
+                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.planTitle")}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                        <button onClick={() => setPlanCount((n) => Math.max(1, n - 1))} aria-label="−" style={stepBtn()}>−</button>
+                        <div style={{ flex: 1, textAlign: "center" }}>
+                          <div style={{ ...disp, fontSize: 30, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1 }}>{planCount}</div>
+                          <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".08em", marginTop: 3 }}>{t("w.train.blocks.planWorking")}</div>
+                        </div>
+                        <button onClick={() => setPlanCount((n) => Math.min(12, n + 1))} aria-label="+" style={stepBtn()}>+</button>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                        {(["straight", "pyramid"] as const).map((tm) => (
+                          <button key={tm} onClick={() => setPlanTmpl(tm)} style={{ ...disp, flex: 1, fontSize: fs.caption, fontWeight: 700, color: planTmpl === tm ? txt(LIME) : txt(ASH), background: planTmpl === tm ? `${LIME}14` : "transparent", border: `1px solid ${planTmpl === tm ? `${LIME}55` : LINE}`, borderRadius: 12, padding: "9px 0", cursor: "pointer" }}>
+                            {t(tm === "straight" ? "w.train.blocks.planStraight" : "w.train.blocks.planPyramid")}
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={() => { addPlannedSets(b.uid, planCount, planTmpl); setPlanUid(null); }} style={{ ...disp, width: "100%", fontWeight: 800, fontSize: fs.caption, color: "var(--color-ink)", background: LIME, border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer" }}>
+                        {t("w.train.blocks.planAdd")}
+                      </button>
+                    </div>
+                  </>
+                )}
                 {specialUid === b.uid && (
                   <>
                     {/* click-away catcher */}
                     <div onClick={() => setSpecialUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
-                    <div style={{ position: "absolute", top: 44, left: 110, zIndex: 31, minWidth: 230, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 6, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
+                    <div style={{ position: "absolute", top: 52, right: 0, zIndex: 31, minWidth: 230, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 6, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
                       {[
                         { run: addWarmupSet, c: AMBER, badge: "W", label: "warmupSet", desc: "warmupTitle" },
                         { run: addWarmupRamp, c: AMBER, badge: "↗", label: "rampSet", desc: "rampTitle" },

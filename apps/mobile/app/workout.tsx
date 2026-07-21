@@ -240,6 +240,12 @@ export default function Workout() {
   // Which exercise has its "Special ▾" add-set menu open (warm-up / ramp /
   // cool-down / drop). One primary "+ Add set" keeps the common path one tap.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
+  // Plan-ahead panel: which exercise has its "plan your sets" panel open, plus
+  // the count + shape it will lay down — queue a whole exercise before the first
+  // rep instead of tapping "+ Add set" set-by-set.
+  const [planUid, setPlanUid] = useState<string | null>(null);
+  const [planCount, setPlanCount] = useState(3);
+  const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
   const [exercises, setExercises] = useState<WExercise[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phase, setPhase] = useState<"active" | "done">("active");
@@ -575,6 +581,26 @@ export default function Workout() {
   const addSet = (u: string) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
+    );
+  // Plan ahead: append several working sets at once (the "plan your sets" panel).
+  // Straight carries the last set's numbers; pyramid steps the load up 2.5 kg per
+  // set. Plain working sets (no done/role flags) so they queue below the active one.
+  const addPlannedSets = (u: string, count: number, tmpl: "straight" | "pyramid") =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        const prev = x.sets[x.sets.length - 1];
+        const baseKg = prev ? parseFloat(prev.load) : NaN;
+        const stepKg = 2.5;
+        const added: WSet[] = Array.from({ length: count }, (_, k) => ({
+          uid: uid(),
+          load: tmpl === "pyramid" && Number.isFinite(baseKg) ? String(+(baseKg + (k + 1) * stepKg).toFixed(2)) : prev?.load ?? "",
+          reps: prev?.reps ?? "",
+          rpe: prev?.rpe ?? "",
+          done: false,
+        }));
+        return { ...x, sets: [...x.sets, ...added] };
+      }),
     );
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
@@ -1113,9 +1139,14 @@ export default function Workout() {
                             }}
                           >
                             <GlassSurface radius={20} tintColor={C.lime} />
-                            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-                              <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: txt(C, C.lime) }}>
+                            {/* Label row — kicker, planned-rest hint, then the
+                                type/grip/delete affordances tucked to the right. */}
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: txt(C, C.lime) }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
+                              </Text>
+                              <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+                                {t("workout.restShort")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
                               </Text>
                               <Pressable
                                 onPress={() => cycleType(x.uid, i)}
@@ -1125,32 +1156,42 @@ export default function Workout() {
                               >
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
                               </Pressable>
-                              <View style={{ marginLeft: 8 }}>{grip}</View>
+                              {grip}
+                              <Pressable onPress={() => removeSet(x.uid, i)} hitSlop={8} accessibilityLabel={t("workout.deleteSet")} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>−</Text>
+                              </Pressable>
                             </View>
-                            <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-                              <TextInput
-                                value={bw ? s.reps : displayLoad(s.load, prefs.units)}
-                                onChangeText={(v) => (bw ? setSetField(x.uid, i, "reps", v) : setSetField(x.uid, i, "load", storeLoad(v, prefs.units)))}
-                                keyboardType="numeric"
-                                placeholder="0"
-                                placeholderTextColor={C.ash}
-                                style={{ fontFamily: F.mono, fontSize: 44, fontWeight: "300", letterSpacing: -1, color: C.chalk, padding: 0, minWidth: 60 }}
-                              />
-                              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 6, marginBottom: 9 }}>{bw ? measureLabel : unitLabel}</Text>
-                              {!bw && (
-                                <View style={{ flexDirection: "row", alignItems: "flex-end", marginLeft: "auto" }}>
-                                  <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginBottom: 9, marginRight: 4 }}>×</Text>
-                                  <TextInput
-                                    value={s.reps}
-                                    onChangeText={(v) => setSetField(x.uid, i, "reps", v)}
-                                    keyboardType="numeric"
-                                    placeholder="0"
-                                    placeholderTextColor={C.ash}
-                                    style={{ fontFamily: F.mono, fontSize: 24, color: C.chalk, padding: 0, minWidth: 28, textAlign: "center" }}
-                                  />
-                                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginLeft: 5, marginBottom: 8 }}>{measureLabel}</Text>
-                                </View>
-                              )}
+                            {/* Numbers on the left, the plain lime ＋ (log this set)
+                                on the right — one tap banks it + starts the rest. */}
+                            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
+                              <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-end" }}>
+                                <TextInput
+                                  value={bw ? s.reps : displayLoad(s.load, prefs.units)}
+                                  onChangeText={(v) => (bw ? setSetField(x.uid, i, "reps", v) : setSetField(x.uid, i, "load", storeLoad(v, prefs.units)))}
+                                  keyboardType="numeric"
+                                  placeholder="0"
+                                  placeholderTextColor={C.ash}
+                                  style={{ fontFamily: F.mono, fontSize: 44, fontWeight: "300", letterSpacing: -1, color: C.chalk, padding: 0, minWidth: 60 }}
+                                />
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 6, marginBottom: 9 }}>{bw ? measureLabel : unitLabel}</Text>
+                                {!bw && (
+                                  <View style={{ flexDirection: "row", alignItems: "flex-end", marginLeft: 10 }}>
+                                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginBottom: 9, marginRight: 4 }}>×</Text>
+                                    <TextInput
+                                      value={s.reps}
+                                      onChangeText={(v) => setSetField(x.uid, i, "reps", v)}
+                                      keyboardType="numeric"
+                                      placeholder="0"
+                                      placeholderTextColor={C.ash}
+                                      style={{ fontFamily: F.mono, fontSize: 24, color: C.chalk, padding: 0, minWidth: 28, textAlign: "center" }}
+                                    />
+                                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginLeft: 5, marginBottom: 8 }}>{measureLabel}</Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ width: 58, height: 58, borderRadius: 999, backgroundColor: C.lime, alignItems: "center", justifyContent: "center", shadowColor: C.lime, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 }}>
+                                <Text style={{ fontFamily: F.reg, fontSize: 32, lineHeight: 36, color: C.onAccent }}>＋</Text>
+                              </Pressable>
                             </View>
                             {(prefs.detailed || prefs.velocity) && (
                               <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14 }}>
@@ -1170,9 +1211,6 @@ export default function Workout() {
                                 )}
                               </View>
                             )}
-                            <Pressable onPress={() => toggleDone(x.uid, i, true)} style={{ marginTop: 14, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center" }}>
-                              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{t("workout.logSet")} ✓</Text>
-                            </Pressable>
                           </View>
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
@@ -1181,7 +1219,7 @@ export default function Workout() {
                           const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
                           const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
                           return (
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, opacity: focus === "done" ? 0.42 : 0.52 }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 10, paddingHorizontal: 12, marginVertical: 4, borderRadius: 14, backgroundColor: withAlpha(C.ink2, 0.55), borderWidth: 1, borderColor: withAlpha(C.line, 0.7), opacity: focus === "done" ? 0.62 : 0.72 }}>
                               {grip}
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
@@ -1196,37 +1234,64 @@ export default function Workout() {
                     );
                   });
                 })()}
-                {/* Add-set control: one primary "+ Add set", with warm-up / ramp
-                    / cool-down / drop in a "Special ▾" menu (instead of a row of
-                    five). The set badge still re-types a set with a tap. */}
-                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginTop: 8 }}>
-                  {/* "+ Add set" reads the two logging habits (core addSetIsNext):
-                      when nothing is queued below the active set it IS the next
-                      move — a prominent lime ghost card that mirrors the active
-                      set's glass; when a plan already sits below, it's a quiet
-                      secondary control so the queue stays the focus. */}
+                {/* "+ Add set" is a split glass tile: the wide zone quick-adds one
+                    carry-over set (the incremental lifter's tap loop); the ⋯ zone
+                    opens the plan-ahead panel to queue several at once. "⚡ Special"
+                    holds warm-up / ramp / cool-down / drop. */}
+                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "stretch", marginTop: 8 }}>
                   {(() => {
                     const ghost = addSetIsNext(x.sets);
                     return (
-                      <Pressable
-                        onPress={() => addSet(x.uid)}
-                        style={
-                          ghost
-                            ? { flexGrow: 1, alignItems: "center", borderRadius: R.cta, paddingVertical: 11, paddingHorizontal: 18, backgroundColor: withAlpha(C.lime, 0.09), borderWidth: 1, borderColor: withAlpha(C.lime, 0.5), borderStyle: "dashed" }
-                            : { borderRadius: R.cta, paddingVertical: 9, paddingHorizontal: 18, borderWidth: 1, borderColor: C.line }
-                        }
-                      >
-                        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.ash }}>{t("workout.addSet")}</Text>
-                      </Pressable>
+                      <View style={{ flexGrow: 1, flexDirection: "row", alignItems: "stretch", borderRadius: R.cta, overflow: "hidden", backgroundColor: ghost ? withAlpha(C.lime, 0.1) : C.ink2, borderWidth: 1, borderColor: ghost ? withAlpha(C.lime, 0.5) : C.line }}>
+                        <Pressable onPress={() => addSet(x.uid)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 14 }}>
+                          <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: 1.5, borderColor: ghost ? C.lime : C.ash, alignItems: "center", justifyContent: "center" }}>
+                            <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 16, color: ghost ? txt(C, C.lime) : C.ash }}>＋</Text>
+                          </View>
+                          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
+                        </Pressable>
+                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("workout.planTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 1 }}>⋯</Text>
+                        </Pressable>
+                      </View>
                     );
                   })()}
                   <Pressable
-                    onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 14 }}
+                    onPress={() => { setSpecialUid((u) => (u === x.uid ? null : x.uid)); setPlanUid(null); }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 15 }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.special")} {specialUid === x.uid ? "▴" : "▾"}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>⚡</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t("workout.special")}</Text>
                   </Pressable>
                 </View>
+                {/* Plan-ahead panel — a count stepper + shape, so a lifter can
+                    queue the whole exercise before the first rep. */}
+                {planUid === x.uid && (
+                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, padding: 14 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 12 }}>{t("workout.planTitle")}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                      <Pressable onPress={() => setPlanCount((n) => Math.max(1, n - 1))} accessibilityLabel="−" style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.chalk }}>−</Text>
+                      </Pressable>
+                      <View style={{ flex: 1, alignItems: "center" }}>
+                        <Text style={{ fontFamily: F.black, fontSize: 30, letterSpacing: -1, color: C.chalk }}>{planCount}</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, marginTop: 2 }}>{t("workout.planWorking")}</Text>
+                      </View>
+                      <Pressable onPress={() => setPlanCount((n) => Math.min(12, n + 1))} accessibilityLabel="+" style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.chalk }}>+</Text>
+                      </Pressable>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 6, marginBottom: 14 }}>
+                      {(["straight", "pyramid"] as const).map((tm) => (
+                        <Pressable key={tm} onPress={() => setPlanTmpl(tm)} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: planTmpl === tm ? withAlpha(C.lime, 0.5) : C.line, backgroundColor: planTmpl === tm ? withAlpha(C.lime, 0.1) : "transparent" }}>
+                          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: planTmpl === tm ? txt(C, C.lime) : C.ash }}>{t(tm === "straight" ? "workout.planStraight" : "workout.planPyramid")}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Pressable onPress={() => { addPlannedSets(x.uid, planCount, planTmpl); setPlanUid(null); }} style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center" }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("workout.planAdd")}</Text>
+                    </Pressable>
+                  </View>
+                )}
                 {specialUid === x.uid && (
                   <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, overflow: "hidden" }}>
                     {[
