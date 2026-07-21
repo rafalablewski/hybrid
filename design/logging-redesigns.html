@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Logging redesign 01 (Liquid Glass)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f; --blue:#6cb6bd; --sand:#d0cd94; --terra:#e58a5c;
+    --font:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--font); color:var(--chalk); background:#060706;
+    -webkit-font-smoothing:antialiased; padding:48px 24px 96px;
+    background-image:radial-gradient(1200px 600px at 20% -10%, #10140f 0%, transparent 60%),
+                     radial-gradient(1000px 500px at 100% 0%, #0f1414 0%, transparent 55%);
+  }
+  .head{max-width:900px;margin:0 auto 42px}
+  .kick{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--lime);margin-bottom:12px}
+  h1{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.02}
+  .head p{color:var(--ash);max-width:660px;margin-top:14px;font-size:15px;line-height:1.55}
+  .head ul{color:var(--ash);max-width:660px;margin:14px 0 0 2px;font-size:14px;line-height:1.7;list-style:none}
+  .head ul li{padding-left:20px;position:relative}
+  .head ul li::before{content:"→";position:absolute;left:0;color:var(--lime)}
+  .head ul b{color:var(--chalk);font-weight:700}
+
+  .grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:44px 40px;justify-items:center}
+  .concept{width:100%;max-width:390px;display:flex;flex-direction:column;gap:16px}
+  .concept .meta{padding-left:4px}
+  .concept .meta .no{font-family:var(--mono);font-size:12px;color:var(--lime);letter-spacing:.14em}
+  .concept .meta h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:3px}
+  .concept .meta small{display:block;color:var(--ash);font-size:12.5px;line-height:1.5;margin-top:6px}
+
+  .phone{
+    position:relative;width:100%;aspect-ratio:390/800;border-radius:44px;overflow:hidden;
+    background:var(--ink);border:1px solid #1c1e1c;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.02) inset;
+  }
+  .screen{position:absolute;inset:0;overflow:hidden}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:108px;height:26px;border-radius:16px;background:#000;z-index:40}
+
+  .aurora{position:absolute;inset:-20% -10%;z-index:0;filter:saturate(1.05)}
+  .aurora::before,.aurora::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+  .aurora::before{width:70%;height:45%;left:-10%;top:6%;background:radial-gradient(circle,#3a5a1e,transparent 70%)}
+  .aurora::after{width:75%;height:50%;right:-15%;bottom:2%;background:radial-gradient(circle,#1c4a48,transparent 70%)}
+
+  .app{position:absolute;inset:0;z-index:2;padding:52px 18px 22px;display:flex;flex-direction:column}
+  .mono{font-family:var(--mono)}
+  .lime{color:var(--lime)} .ash{color:var(--ash)}
+
+  .glass{background:rgba(30,34,30,.42);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,.08)}
+  .glass-lo{background:rgba(22,25,22,.34);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(255,255,255,.05)}
+  .spec{box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 20px 40px -20px rgba(0,0,0,.7)}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .topbar .cancel{color:var(--ash);font-size:14px}
+  .topbar .timer{text-align:center}
+  .topbar .timer b{font-family:var(--mono);font-size:20px;font-weight:600;display:block;line-height:1}
+  .topbar .timer span{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--ash)}
+  .topbar .fin{color:var(--lime);font-weight:700;font-size:14px}
+
+  .stats3{display:flex;gap:8px;margin:12px 0 14px}
+  .stats3 .s{flex:1;border-radius:18px;padding:11px 12px;text-align:center}
+  .stats3 .s b{font-size:20px;font-weight:800;display:block;line-height:1}
+  .stats3 .s span{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--ash);text-transform:uppercase}
+
+  .exhead{display:flex;align-items:center;gap:9px;padding:2px 4px 8px}
+  .exhead .tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--lime);border:1px solid rgba(198,248,79,.4);padding:3px 6px;border-radius:6px}
+  .exhead h3{font-size:17px;font-weight:800;flex:1;letter-spacing:-.01em}
+  .exhead .x{color:var(--ash);font-size:18px}
+  .last{font-family:var(--mono);font-size:11px;color:var(--ash);padding:0 4px 12px;line-height:1.4}
+
+  /* ---- set list ---- */
+  .setlist{display:flex;flex-direction:column;gap:8px}
+
+  /* completed set row */
+  .done-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:16px;opacity:.62}
+  .done-row .n{font-family:var(--mono);font-size:12px;color:var(--ash);width:14px}
+  .done-row .val{flex:1;font-family:var(--mono);font-size:14px;color:var(--chalk)}
+  .done-row .tick{color:var(--lime);font-size:15px}
+
+  /* ACTIVE up-now slab */
+  .active{border-radius:26px;padding:16px 16px 16px;position:relative}
+  .active .lab{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .active .lab b{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--lime)}
+  .active .lab .rest{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ash)}
+  .active .body{display:flex;align-items:center;gap:12px}
+  .active .nums{flex:1;display:flex;align-items:baseline;gap:6px}
+  .active .nums .v{font-size:52px;font-weight:800;letter-spacing:-.035em;line-height:.85}
+  .active .nums .u{font-family:var(--mono);font-size:13px;color:var(--ash)}
+  .active .nums .x{font-size:24px;color:var(--ash);font-weight:200;margin:0 2px}
+  /* the plain plus = log */
+  .plus{width:60px;height:60px;border-radius:50%;flex:none;background:var(--lime);color:#0c0d0c;
+        font-size:32px;font-weight:400;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;
+        box-shadow:0 10px 26px -8px rgba(198,248,79,.55), inset 0 1px 0 rgba(255,255,255,.35)}
+  .active .rpe{margin-top:12px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--ash);letter-spacing:.08em;text-transform:uppercase}
+  .active .rpe .track{flex:1;height:1px;background:rgba(255,255,255,.1)}
+
+  /* queued (planned-ahead) set row */
+  .queue-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:16px}
+  .queue-row .n{font-family:var(--mono);font-size:12px;color:var(--ash);width:14px}
+  .queue-row .val{flex:1;font-family:var(--mono);font-size:14px;color:var(--chalk);opacity:.82}
+  .queue-row .grip{color:var(--ash);font-size:15px;letter-spacing:1px}
+  .queue-row.ghost .val{color:var(--ash)}
+
+  /* redesigned action bar */
+  .actions{display:flex;gap:8px;margin-top:12px}
+  .actions .add{flex:1;border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:center;gap:9px;
+                color:var(--lime);font-weight:700;font-size:14px;cursor:pointer}
+  .actions .add .ic{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--lime);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:0}
+  .actions .special{border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:8px;color:var(--chalk);font-size:13px;font-weight:600;cursor:pointer}
+  .actions .special .bolt{color:var(--sand);font-size:14px}
+
+  /* ============ PHONE B — plan ahead ============ */
+  .plan .sheethead{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 4px}
+  .plan .sheethead h3{font-size:20px;font-weight:800;letter-spacing:-.015em}
+  .plan .sheethead .close{color:var(--ash);font-size:20px}
+  .plan .subtitle{color:var(--ash);font-size:12.5px;padding:2px 4px 14px;line-height:1.5}
+
+  .counter{border-radius:22px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .counter .lab{flex:1}
+  .counter .lab b{font-size:15px;font-weight:700;display:block}
+  .counter .lab span{font-family:var(--mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+  .counter .step{display:flex;align-items:center;gap:12px}
+  .counter .step .b{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:300;color:var(--chalk)}
+  .counter .step .cnt{font-size:30px;font-weight:800;min-width:34px;text-align:center;letter-spacing:-.03em}
+
+  .tmpl{display:flex;gap:8px;margin-bottom:16px}
+  .tmpl .t{flex:1;border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer}
+  .tmpl .t.on{border-color:rgba(198,248,79,.45);background:rgba(198,248,79,.08)}
+  .tmpl .t b{font-size:13px;font-weight:700;display:block}
+  .tmpl .t.on b{color:var(--lime)}
+  .tmpl .t span{font-family:var(--mono);font-size:8.5px;color:var(--ash);letter-spacing:.06em;display:block;margin-top:3px}
+
+  .planlist{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+  .prow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px}
+  .prow .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ash);width:42px}
+  .prow.warm .n{color:var(--sand)}
+  .prow .cell{display:flex;align-items:baseline;gap:4px}
+  .prow .cell .v{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .prow .cell .u{font-family:var(--mono);font-size:10px;color:var(--ash)}
+  .prow .mult{color:var(--ash);font-size:16px;font-weight:200;margin:0 6px}
+  .prow .grip{margin-left:auto;color:var(--ash);font-size:15px;letter-spacing:1px}
+
+  .plandone{width:100%;border-radius:20px;padding:16px;font-size:16px;font-weight:700;color:#0c0d0c;background:var(--lime);border:none;margin-top:auto;cursor:pointer;
+             box-shadow:0 12px 30px -10px rgba(198,248,79,.5), inset 0 1px 0 rgba(255,255,255,.35)}
+</style>
+</head>
+<body>
+  <header class="head">
+    <div class="kick">HYBRID — Logging redesign 01</div>
+    <h1>Liquid Glass — refined</h1>
+    <p>Your guidance applied. The active set is still a single bright glass slab floating over the aurora, but the interaction is cleaner:</p>
+    <ul>
+      <li><b>Log = one plain <span class="lime">+</span> button.</b> No labelled pill — you thumb the big lime circle to bank the set. It sits right next to the numbers.</li>
+      <li><b>Add set &amp; Special, redesigned.</b> The dashed box and the ▾ menu are gone — twin glass tiles: a ringed <span class="lime">+ Add set</span> and a <span style="color:var(--sand)">⚡ Special</span> for warm-ups, drop sets, AMRAP, failure.</li>
+      <li><b>Plan sets in advance</b> (right phone). Queued sets show inline under the active one as ghosted rows; the planner sheet lets you set a count, pick a shape (straight / pyramid / warm-up ramp) and lay out the whole exercise before you lift.</li>
+    </ul>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ PHONE A — logging ============ -->
+    <div class="concept">
+      <div class="meta"><span class="no">A</span><h2>Logging</h2><small>Mid-session. Set 1 banked, Set 2 up now, Sets 3–4 already queued below and ready to bank as you go.</small></div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="aurora"></div>
+        <div class="app">
+          <div class="topbar">
+            <span class="cancel">Cancel</span>
+            <div class="timer"><b>1:56</b><span>ELAPSED</span></div>
+            <span class="fin">Finish</span>
+          </div>
+          <div class="stats3">
+            <div class="s glass spec"><b>1</b><span>Exercises</span></div>
+            <div class="s glass spec"><b>1</b><span>Sets</span></div>
+            <div class="s glass spec"><b>0.3<span style="font-size:11px">t</span></b><span>Volume</span></div>
+          </div>
+          <div class="exhead">
+            <span class="tag">STRENGTH</span>
+            <h3>Barbell Bench Press</h3>
+            <span class="x">×</span>
+          </div>
+          <div class="last">last time — 40×8, 40×8, 60×8, 60×8, 60×6</div>
+
+          <div class="setlist">
+            <!-- done -->
+            <div class="done-row glass-lo">
+              <span class="n">1</span><span class="val">50 kg × 5 reps</span><span class="tick">✓</span>
+            </div>
+
+            <!-- ACTIVE up-now -->
+            <div class="active glass spec">
+              <div class="lab"><b>SET 2 — UP NOW</b><span class="rest">rest 1:30</span></div>
+              <div class="body">
+                <div class="nums"><span class="v">50</span><span class="u">kg</span><span class="x">×</span><span class="v">5</span><span class="u">reps</span></div>
+                <button class="plus" aria-label="Log set">+</button>
+              </div>
+              <div class="rpe"><span>RPE</span><span class="track"></span><span>tap ⇄</span></div>
+            </div>
+
+            <!-- queued in advance -->
+            <div class="queue-row glass-lo ghost">
+              <span class="n">3</span><span class="val">50 kg × 5 reps</span><span class="grip">⋮⋮</span>
+            </div>
+            <div class="queue-row glass-lo ghost">
+              <span class="n">4</span><span class="val">50 kg × 5 reps</span><span class="grip">⋮⋮</span>
+            </div>
+          </div>
+
+          <!-- redesigned actions -->
+          <div class="actions">
+            <div class="add glass"><span class="ic">+</span> Add set</div>
+            <div class="special glass"><span class="bolt">⚡</span> Special</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ PHONE B — plan ahead ============ -->
+    <div class="concept">
+      <div class="meta"><span class="no">B</span><h2>Plan sets in advance</h2><small>Opens from “Add set”. Set a count, pick a shape, tweak any row — lay out the whole exercise before the first rep.</small></div>
+      <div class="phone"><div class="screen plan">
+        <div class="notch"></div>
+        <div class="aurora" style="opacity:.35"></div>
+        <div class="app">
+          <div class="topbar">
+            <span class="cancel">Cancel</span>
+            <div class="timer"><b>1:56</b><span>ELAPSED</span></div>
+            <span class="fin">Finish</span>
+          </div>
+
+          <div class="sheethead">
+            <h3>Plan your sets</h3>
+            <span class="close">✕</span>
+          </div>
+          <div class="subtitle">Barbell Bench Press — build the set list, then bank each one as you lift.</div>
+
+          <div class="counter glass spec">
+            <div class="lab"><b>How many sets</b><span>working sets</span></div>
+            <div class="step">
+              <div class="b glass">–</div>
+              <div class="cnt">5</div>
+              <div class="b glass">+</div>
+            </div>
+          </div>
+
+          <div class="tmpl">
+            <div class="t glass on"><b>Straight</b><span>50 × 5</span></div>
+            <div class="t glass"><b>Pyramid</b><span>↑ load</span></div>
+            <div class="t glass"><b>Warm-up</b><span>ramp in</span></div>
+          </div>
+
+          <div class="planlist">
+            <div class="prow glass-lo warm">
+              <span class="n">W · UP</span>
+              <span class="cell"><span class="v">40</span><span class="u">kg</span></span>
+              <span class="mult">×</span>
+              <span class="cell"><span class="v">8</span><span class="u">reps</span></span>
+              <span class="grip">⋮⋮</span>
+            </div>
+            <div class="prow glass-lo">
+              <span class="n">SET 1</span>
+              <span class="cell"><span class="v">50</span><span class="u">kg</span></span>
+              <span class="mult">×</span>
+              <span class="cell"><span class="v">5</span><span class="u">reps</span></span>
+              <span class="grip">⋮⋮</span>
+            </div>
+            <div class="prow glass-lo">
+              <span class="n">SET 2</span>
+              <span class="cell"><span class="v">50</span><span class="u">kg</span></span>
+              <span class="mult">×</span>
+              <span class="cell"><span class="v">5</span><span class="u">reps</span></span>
+              <span class="grip">⋮⋮</span>
+            </div>
+            <div class="prow glass-lo">
+              <span class="n">SET 3</span>
+              <span class="cell"><span class="v">50</span><span class="u">kg</span></span>
+              <span class="mult">×</span>
+              <span class="cell"><span class="v">5</span><span class="u">reps</span></span>
+              <span class="grip">⋮⋮</span>
+            </div>
+            <div class="prow glass-lo">
+              <span class="n">SET 4</span>
+              <span class="cell"><span class="v">50</span><span class="u">kg</span></span>
+              <span class="mult">×</span>
+              <span class="cell"><span class="v">5</span><span class="u">reps</span></span>
+              <span class="grip">⋮⋮</span>
+            </div>
+          </div>
+
+          <button class="plandone">Add 5 sets</button>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</body>
+</html>

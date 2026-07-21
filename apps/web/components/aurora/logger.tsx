@@ -571,6 +571,7 @@ export default function AuroraLogger({
         live
         carryOver={prefs.carryOver}
         lastByLift={lastByLift}
+        restSec={prefs.restTimer ? prefs.restSeconds : null}
         onToggleDone={toggleDone}
       />
 
