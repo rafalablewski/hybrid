@@ -1147,17 +1147,20 @@ export default function Workout() {
                               <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: txt(C, C.lime) }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
-                              <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: 10, color: C.ash }}>
-                                {t("workout.restShort")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
-                              </Text>
-                              <Pressable
-                                onPress={() => cycleType(x.uid, i)}
-                                onLongPress={() => removeSet(x.uid, i)}
-                                hitSlop={8}
-                                style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? `${typeAccent}1f` : "transparent" }}
-                              >
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
-                              </Pressable>
+                              <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                {prefs.restTimer && (
+                                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+                                    {t("workout.restShort")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
+                                  </Text>
+                                )}
+                                <Pressable
+                                  onPress={() => cycleType(x.uid, i)}
+                                  hitSlop={8}
+                                  style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? `${typeAccent}1f` : "transparent" }}
+                                >
+                                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
+                                </Pressable>
+                              </View>
                             </View>
                             {/* Numbers on the left, the plain lime ＋ (log this set)
                                 on the right — one tap banks it + starts the rest. */}

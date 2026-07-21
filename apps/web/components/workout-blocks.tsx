@@ -102,6 +102,7 @@ export default function WorkoutBlocks({
   signal = false,
   bodyweightKg,
   lastByLift,
+  restSec = null,
   onToggleDone,
 }: {
   blocks: EditableBlock[];
@@ -139,6 +140,10 @@ export default function WorkoutBlocks({
    *  logger. Banking is driven by onToggleDone so the parent runs the rest
    *  timer + haptics. */
   live?: boolean;
+  /** LIVE: the active set's planned-rest hint (seconds), shown on the up-now
+   *  card. The logger passes prefs.restSeconds when the rest timer is on, else
+   *  null (hint hidden) — mirrors the mobile logger. */
+  restSec?: number | null;
   /** Per-exercise "last time" summary string (e.g. "100×5 · 100×5"), keyed by
    *  exercise name. Shown above the set grid in live mode. */
   lastByLift?: Map<string, string>;
@@ -526,12 +531,16 @@ export default function WorkoutBlocks({
                             <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
                             </span>
-                            <span style={{ ...mono, marginLeft: "auto", fontSize: fs.nano, color: txt(ASH) }}>
-                              {t("w.train.blocks.rest")} {Math.floor((b.restSec ?? DEFAULT_REST_SEC) / 60)}:{String((b.restSec ?? DEFAULT_REST_SEC) % 60).padStart(2, "0")}
-                            </span>
-                            <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "2px 9px", cursor: "pointer" }}>
-                              {typeAccent ? setTypeBadge(s, i) : "+"}
-                            </button>
+                            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+                              {restSec != null && (
+                                <span style={{ ...mono, fontSize: fs.nano, color: txt(ASH) }}>
+                                  {t("w.train.blocks.rest")} {Math.floor(restSec / 60)}:{String(restSec % 60).padStart(2, "0")}
+                                </span>
+                              )}
+                              <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "2px 9px", cursor: "pointer" }}>
+                                {typeAccent ? setTypeBadge(s, i) : "+"}
+                              </button>
+                            </div>
                           </div>
                           {/* Numbers on the left, the plain lime + (log this set) on
                               the right — one tap banks it and starts the rest timer. */}
