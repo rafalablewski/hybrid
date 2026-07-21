@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — set-focus, as built</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --lime:#c6f84f; --onAcc:#0c0d0c;
+    --disp:'Archivo',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#060706;color:var(--chalk);font-family:var(--disp);padding:40px 16px 70px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
+  @media(max-width:760px){.wrap{grid-template-columns:1fr}}
+  h1{grid-column:1/-1;font-weight:800;font-size:24px;letter-spacing:-.02em;margin-bottom:2px}
+  .sub{grid-column:1/-1;color:var(--ash);font-size:13px;font-weight:300;margin-bottom:14px}
+  .caplab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:0 2px 10px}
+  .caplab b{color:var(--lime)}
+
+  .phone{background:radial-gradient(120% 42% at 50% 0%, #16240f 0%, transparent 42%),#0a0b0a;border-radius:30px;overflow:hidden;box-shadow:0 26px 60px -32px #000, inset 0 0 0 1px #ffffff08;padding-bottom:18px}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 10px}
+  .top .c{font-family:var(--mono);font-size:13px;color:var(--ash)}
+  .top .t{font-weight:700;font-size:20px;text-align:center}
+  .top .el{font-family:var(--mono);font-size:8px;letter-spacing:.24em;color:var(--ash);text-align:center;margin-top:1px}
+  .top .fin{font-weight:800;font-size:15px;color:var(--lime)}
+  .meta{display:flex;align-items:center;gap:12px;padding:10px 18px 14px;font-family:var(--mono);font-size:13px;color:var(--ash)}
+  .meta .off{margin-left:auto;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px}
+  .meta .rpe{color:#6cb6bd}
+
+  .card{margin:0 12px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px 16px 16px}
+  .exhead{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .grip{color:var(--ash);font-size:13px}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--lime);text-transform:uppercase}
+  .exname{font-weight:800;font-size:18px;flex:1}
+  .x{color:var(--ash);font-size:17px}
+  .last{font-family:var(--mono);font-size:12px;color:var(--ash);margin-bottom:14px}
+  .colh{display:grid;grid-template-columns:28px 1fr 1fr 1fr 22px 40px;gap:8px;margin-bottom:6px}
+  .colh span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ash);text-align:center}
+  .colh span:first-child{text-align:left;padding-left:6px}
+
+  /* ACTIVE card — the exact built styles */
+  .active{border-radius:18px;padding:11px 12px;background:rgba(198,248,79,.055);border:1px solid rgba(198,248,79,.20);box-shadow:0 8px 14px -8px rgba(0,0,0,.5);margin:2px 0}
+  .kick{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin:0 0 9px 2px}
+  .row{display:grid;grid-template-columns:28px 1fr 1fr 1fr 22px 40px;gap:8px;align-items:center}
+  .badge{height:30px;border-radius:10px;display:grid;place-items:center;font-family:var(--mono);font-size:14px;color:var(--ash)}
+  .cell{height:44px;background:var(--ink2);border:1px solid var(--line);border-radius:10px}
+  .drag{color:var(--ash);text-align:center;font-size:12px}
+  .ck{height:40px;background:var(--ink2);border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:var(--ash);font-size:15px}
+
+  /* ghost add */
+  .addrow{display:flex;gap:10px;align-items:center;margin-top:14px}
+  .ghost{flex:1;text-align:center;border-radius:999px;padding:12px;background:rgba(198,248,79,.09);border:1px dashed rgba(198,248,79,.5);color:var(--lime);font-weight:700;font-size:14px}
+  .special{border:1px solid var(--line);border-radius:999px;padding:11px 18px;color:var(--ash);font-family:var(--mono);font-size:13px}
+
+  /* done + upcoming recede demo (right phone) */
+  .recede .row{opacity:1;margin-bottom:6px}
+  .r-done{opacity:.42}
+  .r-up{opacity:.5}
+  .r-done .cell,.r-up .cell{background:var(--ink2)}
+  .r-done .ck{background:var(--lime);border-color:var(--lime);color:var(--onAcc)}
+  .val{display:grid;place-items:center;font-family:var(--mono);font-size:16px;color:var(--ash)}
+  .note{grid-column:1/-1;font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.7;border-top:1px solid var(--line);padding-top:16px;margin-top:6px}
+  .note b{color:var(--chalk)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>As built — the fix</h1>
+  <p class="sub">Left: your exact screen (empty Set 1). Right: the same treatment once a few sets are banked — the titled frosted card lifts one set, the rest recede. These mirror the shipped RN/CSS values 1:1.</p>
+
+  <!-- LEFT: the empty-Set-1 screen -->
+  <div>
+    <div class="caplab">Your screen — <b>incremental, one set</b></div>
+    <div class="phone">
+      <div class="top"><span class="c">Cancel</span><div><div class="t">0:08</div><div class="el">Elapsed</div></div><span class="fin">Finish</span></div>
+      <div class="meta">1 exercise — tap ✓ as you go <span class="off">⏱ Off</span><span class="rpe">What's RPE?</span></div>
+      <div class="card">
+        <div class="exhead"><span class="grip">⠿</span><span class="tag">Strength</span><span class="exname">Barbell Bench Press</span><span class="x">×</span></div>
+        <div class="last">last time – 40×8, 40×8, 60×8, 60×8, 60×6</div>
+        <div class="colh"><span>#</span><span>KG</span><span>REPS</span><span>RPE ⇄</span><span></span><span></span></div>
+        <div class="active">
+          <div class="kick">Up now</div>
+          <div class="row"><div class="badge">1</div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+        </div>
+        <div class="addrow"><span class="ghost">+ Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: a few banked, plan queued -->
+  <div>
+    <div class="caplab">Mid-exercise — <b>done recede, one active, queue faded</b></div>
+    <div class="phone">
+      <div class="top"><span class="c">Cancel</span><div><div class="t">14:49</div><div class="el">Elapsed</div></div><span class="fin">Finish</span></div>
+      <div class="meta">1 exercise — tap ✓ as you go <span class="off">⏱ 90s</span><span class="rpe">What's RPE?</span></div>
+      <div class="card">
+        <div class="exhead"><span class="grip">⠿</span><span class="tag">Strength</span><span class="exname">Barbell Bench Press</span><span class="x">×</span></div>
+        <div class="colh"><span>#</span><span>KG</span><span>REPS</span><span>RPE ⇄</span><span></span><span></span></div>
+        <div class="recede">
+          <div class="row r-done"><div class="badge">1</div><div class="cell val">40</div><div class="cell val">8</div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+          <div class="row r-done"><div class="badge">2</div><div class="cell val">40</div><div class="cell val">8</div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+          <div class="row r-done"><div class="badge">3</div><div class="cell val">60</div><div class="cell val">8</div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+        </div>
+        <div class="active">
+          <div class="kick">Up now</div>
+          <div class="row"><div class="badge">4</div><div class="cell val" style="color:var(--chalk)">60</div><div class="cell"></div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+        </div>
+        <div class="recede">
+          <div class="row r-up"><div class="badge">5</div><div class="cell val">60</div><div class="cell"></div><div class="cell"></div><div class="drag">⠿</div><div class="ck">✓</div></div>
+        </div>
+        <div class="addrow"><span class="special" style="opacity:.7">Add set</span><span class="special">Special ▾</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note"><b>What changed vs the screenshot.</b> The active set is now a titled frosted panel — a lime <b>UP NOW</b> kicker, a soft ~5% lime tint with a faint hairline, and a drop shadow for lift (plus the native Liquid Glass layer behind it on iOS 26+) — instead of the hard olive box with a bright outline. Cells stay in column with the header. When sets are banked they recede to quiet history (42% opacity) and any queued sets fade to a plan (50%); the ghost <b>+ Add set</b> is prominent only when it's your next move.</p>
+</div>
+</body>
+</html>

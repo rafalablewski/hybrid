@@ -495,9 +495,27 @@ export default function WorkoutBlocks({
                 // untouched — it edits a plan, it has no "now".
                 const focus = live ? setFocus(b.sets as { done?: boolean }[], i) : null;
                 const dragging = dragSet?.uid === b.uid && dragSet.i === i;
+                const active = focus === "active";
                 return (
+                // ACTIVE — the set you're on lifts onto a titled frosted panel: a
+                // lime "up now" kicker, a soft lime tint + hairline, and a drop
+                // shadow for depth. The wrapper is `display:contents` when not
+                // active so the recede rows are laid out exactly as before. No
+                // horizontal padding, so the cells stay in column with the header.
                 <div
                   key={i}
+                  style={
+                    active
+                      ? { borderRadius: 14, paddingBlock: 8, margin: "8px 0", background: `${LIME}0d`, border: `1px solid ${LIME}38`, boxShadow: "0 12px 26px -16px rgba(0,0,0,.7)" }
+                      : { display: "contents" }
+                  }
+                >
+                {active && (
+                  <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: txt(LIME), padding: "0 0 8px 2px" }}>
+                    {t("w.train.blocks.upNow")}
+                  </div>
+                )}
+                <div
                   // Rows are drop targets for a set dragged within the SAME block.
                   onDragOver={dragSet && dragSet.uid === b.uid && dragSet.i !== i ? (e) => e.preventDefault() : undefined}
                   onDrop={
@@ -513,14 +531,9 @@ export default function WorkoutBlocks({
                     display: "grid",
                     gridTemplateColumns: strengthCols(b.name),
                     gap: space.xs,
-                    marginBottom: 6,
+                    marginBottom: active ? 0 : 6,
                     alignItems: "center",
                     opacity: dragging ? 0.5 : focus === "done" ? 0.42 : focus === "upcoming" ? 0.5 : 1,
-                    // Vertical-only padding keeps the cells in column with the
-                    // header while the active row gains height + a tinted ring.
-                    ...(focus === "active"
-                      ? { borderRadius: 12, paddingBlock: 6, background: `${LIME}14`, boxShadow: `inset 0 0 0 1px ${LIME}55` }
-                      : {}),
                   }}
                 >
                   {(() => {
@@ -606,6 +619,7 @@ export default function WorkoutBlocks({
                       </button>
                     );
                   })()}
+                </div>
                 </div>
                 );
               })}

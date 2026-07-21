@@ -1111,70 +1111,84 @@ export default function Workout() {
                     style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
                   >
                   <SwipeRow label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        gap: space.xs,
-                        alignItems: "center",
-                        // Sunset the non-active rows so exactly one set reads as
-                        // "now". Banked recede furthest; the queue stays legible.
-                        opacity: focus === "done" ? 0.42 : focus === "upcoming" ? 0.5 : 1,
-                        // The active set lifts onto a lime-tinted glass panel. The
-                        // −8/+8 margin/padding pair bleeds the tint past the cells
-                        // without shifting them out of column with the header.
-                        ...(isActive
-                          ? {
-                              marginHorizontal: -8,
-                              marginVertical: 3,
-                              paddingHorizontal: 8,
-                              paddingVertical: 8,
-                              borderRadius: 16,
-                              backgroundColor: withAlpha(C.lime, 0.08),
-                              borderWidth: 1,
-                              borderColor: withAlpha(C.lime, 0.28),
-                            }
-                          : {}),
-                      }}
-                    >
-                      {/* Native Liquid Glass behind the active set (iOS 26+ /
-                          when enabled); the tint above is the everywhere floor. */}
-                      {isActive && <GlassSurface radius={16} tintColor={C.lime} />}
                     {(() => {
                       const st = setType(s);
                       const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
+                      // The set-row cells, shared by the active card and the quiet
+                      // recede rows so the two can't drift.
+                      const rowInner = (
+                        <>
+                          <Pressable
+                            onPress={() => cycleType(x.uid, i)}
+                            onLongPress={() => removeSet(x.uid, i)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
+                          >
+                            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                          </Pressable>
+                          {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
+                            <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
+                          )}
+                          <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
+                          {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
+                          {prefs.velocity && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
+                          <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
+                            <DragHandle
+                              onStart={() => setDrag.begin(x.uid, i, x.sets.length)}
+                              onMove={setDrag.move}
+                              onEnd={setDrag.end}
+                              color={lifted ? txt(C, C.lime) : C.ash}
+                              size={fs.note}
+                            />
+                          </View>
+                          <Pressable
+                            onPress={() => toggleDone(x.uid, i, !s.done)}
+                            style={{ width: 40, height: 40, borderRadius: R.field, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
+                          >
+                            <Text style={{ fontSize: fs.subtitle, color: s.done ? C.onAccent : C.ash, fontFamily: F.black }}>✓</Text>
+                          </Pressable>
+                        </>
+                      );
+                      // ACTIVE — the set you're on lifts onto a titled frosted
+                      // panel: a lime "up now" kicker, a soft lime tint + hairline,
+                      // a drop shadow for depth, and the native Liquid Glass behind
+                      // it when enabled. No horizontal padding so the cells stay in
+                      // column with the header above.
+                      if (isActive) {
+                        return (
+                          <View
+                            style={{
+                              marginVertical: 6,
+                              borderRadius: 18,
+                              paddingVertical: 11,
+                              paddingHorizontal: 12,
+                              marginHorizontal: -12,
+                              backgroundColor: withAlpha(C.lime, 0.055),
+                              borderWidth: 1,
+                              borderColor: withAlpha(C.lime, 0.2),
+                              shadowColor: "#000",
+                              shadowOpacity: 0.28,
+                              shadowRadius: 14,
+                              shadowOffset: { width: 0, height: 8 },
+                              elevation: 5,
+                            }}
+                          >
+                            <GlassSurface radius={18} tintColor={C.lime} />
+                            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime), marginBottom: 9, marginLeft: 2 }}>
+                              {t("workout.upNow")}
+                            </Text>
+                            <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>{rowInner}</View>
+                          </View>
+                        );
+                      }
+                      // Banked recede furthest; the queue stays legible — one set
+                      // reads as "now", the rest sunset.
                       return (
-                        <Pressable
-                          onPress={() => cycleType(x.uid, i)}
-                          onLongPress={() => removeSet(x.uid, i)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
-                        >
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
-                        </Pressable>
+                        <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center", opacity: focus === "done" ? 0.42 : 0.5 }}>
+                          {rowInner}
+                        </View>
                       );
                     })()}
-                    {exerciseProfile(x.name).strength?.loadMode !== "bodyweight" && (
-                      <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
-                    )}
-                    <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
-                    {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
-                    {prefs.velocity && <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} done={s.done} />}
-                    <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
-                      <DragHandle
-                        onStart={() => setDrag.begin(x.uid, i, x.sets.length)}
-                        onMove={setDrag.move}
-                        onEnd={setDrag.end}
-                        color={lifted ? txt(C, C.lime) : C.ash}
-                        size={fs.note}
-                      />
-                    </View>
-                    <Pressable
-                      onPress={() => toggleDone(x.uid, i, !s.done)}
-                      style={{ width: 40, height: 40, borderRadius: R.field, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
-                    >
-                      <Text style={{ fontSize: fs.subtitle, color: s.done ? C.onAccent : C.ash, fontFamily: F.black }}>✓</Text>
-                    </Pressable>
-                    </View>
                   </SwipeRow>
                   </Animated.View>
                   );
