@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — Set focus, reduced · 10 concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=Archivo+Narrow:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --hair:#1c1e1c; --chalk:#f3f4ef; --ash:#8b8f86; --dim:#54574f;
+    --acc:#c6f84f; --onAcc:#0c0d0c;
+    --disp:'Archivo',system-ui,sans-serif;
+    --cond:'Archivo Narrow',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  body{
+    background:#060706;
+    color:var(--chalk); font-family:var(--disp); line-height:1.45;
+    padding:56px 22px 90px; -webkit-font-smoothing:antialiased;
+  }
+  .head{max-width:1200px;margin:0 auto 52px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
+  h1{font-weight:800;font-size:32px;letter-spacing:-.025em;margin:14px 0 12px}
+  h1 em{font-style:normal;color:var(--ash);font-weight:300}
+  .head p{color:var(--ash);max-width:660px;font-size:15px;font-weight:300;line-height:1.6}
+  .head p b{color:var(--chalk);font-weight:500}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:40px;max-width:1200px;margin:0 auto;align-items:start}
+  .clabel{display:flex;align-items:baseline;gap:11px;margin:0 2px 9px}
+  .cnum{font-family:var(--mono);font-size:12px;color:var(--dim);font-weight:500}
+  .ctitle{font-weight:700;font-size:17px;letter-spacing:-.01em}
+  .cdesc{color:var(--ash);font-size:12.5px;font-weight:300;line-height:1.55;margin:0 2px 16px;min-height:52px}
+
+  /* phone */
+  .phone{background:var(--ink);border:1px solid #17191700;border-radius:34px;padding:0 0 20px;overflow:hidden;box-shadow:0 30px 70px -34px #000, inset 0 0 0 1px #ffffff06;position:relative}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:22px 22px 18px}
+  .topbar .t{font-family:var(--mono);font-weight:500;font-size:17px;letter-spacing:.02em}
+  .topbar .el{font-family:var(--mono);font-size:8px;letter-spacing:.24em;color:var(--dim);text-align:center;text-transform:uppercase;margin-top:2px}
+  .topbar .side{font-size:13px;font-weight:400;color:var(--dim)}
+  .topbar .fin{color:var(--ash)}
+
+  .ex{margin:0 14px;background:var(--card);border-radius:26px;padding:26px 24px 24px;box-shadow:inset 0 0 0 1px var(--hair)}
+  .exhead{display:flex;align-items:center;gap:9px;margin-bottom:22px}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+  .exname{font-weight:600;font-size:17px;letter-spacing:-.01em;flex:1}
+  .x{color:var(--dim);font-size:17px;font-weight:300}
+
+  .actions{display:flex;gap:22px;margin-top:26px;padding-top:20px;border-top:1px solid var(--hair)}
+  .act{font-family:var(--disp);font-size:13px;font-weight:500;color:var(--acc)}
+  .act.mut{color:var(--dim);font-weight:400}
+
+  .note{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.03em;margin:16px 2px 0;line-height:1.6}
+
+  /* ===== shared typographic set line (NO boxes) ===== */
+  .sl{display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:10px;align-items:baseline;font-family:var(--mono)}
+  .sl .n{font-size:12px;color:var(--dim);font-weight:400}
+  .sl .v{font-size:22px;font-weight:400;letter-spacing:-.01em}
+  .sl .v small{font-size:11px;color:var(--dim);margin-left:3px;font-weight:400}
+  .sl .u{font-size:11px;color:var(--dim)}
+  .colcap{display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:10px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:16px}
+
+  /* 1 Quiet ledger */
+  .ledger .sl{padding:11px 0}
+  .ledger .done .v{font-size:15px;color:var(--dim)}
+  .ledger .done .n{color:#3d403a}
+  .ledger .now{position:relative}
+  .ledger .now .v{font-size:26px;color:var(--chalk);font-weight:500}
+  .ledger .now .n{color:var(--acc)}
+  .ledger .now::before{content:"";position:absolute;left:-24px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--acc)}
+  .ledger .up .v{font-size:15px;color:#4a4d46}
+  .ledger .up .u{color:#33362f}
+
+  /* 2 The one set */
+  .oneset{text-align:center;padding:14px 0 6px}
+  .oneset .done{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em}
+  .oneset .big{font-family:var(--mono);font-weight:300;font-size:76px;line-height:1;letter-spacing:-.04em;margin:26px 0 6px}
+  .oneset .big small{font-size:22px;color:var(--ash);font-weight:400}
+  .oneset .tgt{font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .prog{height:2px;background:var(--hair);border-radius:2px;margin:30px 8px 4px;overflow:hidden}
+  .prog i{display:block;height:100%;width:44%;background:var(--acc);border-radius:2px}
+  .proglab{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;text-align:right;margin:8px 8px 0}
+
+  /* 3 Descending tone */
+  .tone .sl{padding:9px 0}
+  .tone .sl .v{color:var(--chalk)}
+  .tone .r0 .v{color:#3a3d38}.tone .r0 .n{color:#2e312c}
+  .tone .r1 .v{color:#4d504a}.tone .r1 .n{color:#3a3d38}
+  .tone .r2 .v{color:#6f726b}.tone .r2 .n{color:#54574f}
+  .tone .now .v{font-size:25px;font-weight:500;color:var(--chalk)}.tone .now .n{color:var(--acc)}
+  .tone .f1 .v{color:#54574f}.tone .f1 .u{color:#3a3d38}
+  .tone .f2 .v{color:#44473f}.tone .f2 .u{color:#33362f}
+  .tone .f3 .v{color:#37392f}.tone .f3 .u{color:#2a2c25}
+
+  /* 4 Present-marker thread */
+  .thread{position:relative;padding-left:20px}
+  .thread .sl{padding:10px 0}
+  .thread .sl .v{color:var(--dim);font-size:15px}
+  .thread .now .v{color:var(--chalk);font-size:24px;font-weight:500}
+  .thread .now .n{color:var(--chalk)}
+  .threadbar{position:absolute;left:0;width:2px;background:var(--acc);border-radius:2px;transition:.3s}
+
+  /* 5 Numeral hero */
+  .nh .past{display:flex;gap:20px;font-family:var(--mono);color:var(--dim);font-size:13px;margin-bottom:24px}
+  .nh .past .d{opacity:.7}
+  .nh .heronum{font-family:var(--mono);display:flex;align-items:baseline;gap:14px}
+  .nh .heronum .kg{font-size:64px;font-weight:300;letter-spacing:-.04em;line-height:.9}
+  .nh .heronum .kgu{font-size:14px;color:var(--ash)}
+  .nh .heronum .reps{margin-left:auto;text-align:right}
+  .nh .heronum .reps b{font-size:30px;font-weight:400}
+  .nh .heronum .reps span{display:block;font-size:10px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+  .nh .future{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:22px;letter-spacing:.03em}
+  .nh .sof{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+
+  /* 6 Settled / rising space */
+  .space .stack{font-family:var(--mono);font-size:13px;color:var(--dim);line-height:1.9}
+  .space .now{margin:38px 0;text-align:center}
+  .space .now .lab{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);margin-bottom:12px}
+  .space .now .v{font-family:var(--mono);font-size:44px;font-weight:300;letter-spacing:-.03em}
+  .space .now .v small{font-size:16px;color:var(--ash)}
+  .space .rest{font-family:var(--mono);font-size:12px;color:#3d403a;text-align:center}
+
+  /* 7 Breathing input (underline field) */
+  .field .done{font-family:var(--mono);font-size:13px;color:var(--dim);padding:8px 0;display:flex;gap:16px}
+  .field .live{margin:26px 0}
+  .field .live .lab{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);margin-bottom:18px}
+  .field .inputs{display:flex;gap:26px}
+  .field .fld{flex:1}
+  .field .fld .fv{font-family:var(--mono);font-size:34px;font-weight:300;letter-spacing:-.02em;padding-bottom:8px;border-bottom:1.5px solid var(--acc)}
+  .field .fld.empty .fv{color:var(--dim);border-bottom-color:var(--hair)}
+  .field .fld .fu{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:8px}
+  .field .next{font-family:var(--mono);font-size:11px;color:#3d403a;margin-top:24px}
+
+  /* 8 The caret */
+  .caret .sl{padding:11px 0;position:relative}
+  .caret .sl .v{font-size:16px;color:var(--dim)}
+  .caret .now .v{font-size:24px;color:var(--chalk);font-weight:500}
+  .caret .now .n{color:var(--chalk)}
+  .caret .now::before{content:"›";position:absolute;left:-18px;top:50%;transform:translateY(-50%);color:var(--acc);font-size:22px;font-weight:600;line-height:0}
+  .caret .up .v{color:#474a43}.caret .up .u{color:#33362f}
+
+  /* 9 Two states only */
+  .two .block{padding:20px 0;border-bottom:1px solid var(--hair)}
+  .two .block:last-of-type{border-bottom:0}
+  .two .lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+  .two .done .lab{color:var(--dim)}
+  .two .done .lab .chev{font-size:12px}
+  .two .live .lab{color:var(--acc);margin-bottom:16px}
+  .two .live .v{font-family:var(--mono);font-size:40px;font-weight:300;letter-spacing:-.03em}
+  .two .live .v small{font-size:15px;color:var(--ash)}
+  .two .future .lab{color:var(--dim)}
+  .two .future .lab b{color:#54574f;font-weight:500}
+
+  /* 10 Ambient light */
+  .amb{position:relative}
+  .amb .glow{position:absolute;left:50%;top:var(--gy,52%);transform:translate(-50%,-50%);width:280px;height:150px;background:radial-gradient(ellipse,#c6f84f14,transparent 70%);pointer-events:none;filter:blur(6px)}
+  .amb .sl{padding:10px 0;position:relative;z-index:1}
+  .amb .sl .v{color:#3c3f39;font-size:15px}
+  .amb .sl .n{color:#2f322c}
+  .amb .now .v{color:var(--chalk);font-size:25px;font-weight:500}
+  .amb .now .n{color:var(--ash)}
+  .amb .now .u{color:var(--ash)}
+
+  .foot{max-width:1200px;margin:64px auto 0;color:var(--ash);font-size:14px;font-weight:300;line-height:1.7;border-top:1px solid var(--hair);padding-top:26px}
+  .foot b{color:var(--chalk);font-weight:500}
+  @media(max-width:520px){h1{font-size:25px}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="kick">HYBRID · Active workout · reduced</div>
+  <h1>The next set. <em>Nothing else asking to be seen.</em></h1>
+  <p>Ten quieter takes. The rule this time: <b>no input boxes</b> — 24 outlined cells were the noise.
+  Values sit as bare numerals on the surface; hierarchy comes from <b>type scale, space, and tone</b>, and chartreuse
+  appears only as a whisper — one dot, one hairline, one caret. Same exercise as before:
+  <b>Front Raise, 3 sets done, Set 4 live, 4 more at 5&nbsp;kg.</b></p>
+</header>
+
+<main class="grid">
+
+  <!-- 1 -->
+  <section>
+    <div class="clabel"><span class="cnum">01</span><span class="ctitle">Quiet ledger</span></div>
+    <p class="cdesc">Sets are bare lines, no cells. Done recede to small ash, the live set grows and takes a single chartreuse dot. The grid holds alignment, but you never see it.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="ledger" style="padding-left:6px">
+          <div class="sl done"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span><span class="u"></span></div>
+          <div class="sl done"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span><span class="u"></span></div>
+          <div class="sl done"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span><span class="u"></span></div>
+          <div class="sl now"><span class="n">4</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl up"><span class="n">5</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl up"><span class="n">6</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl up"><span class="n">7</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl up"><span class="n">8</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">The whole table, calmed. One dot does what a green box did.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="clabel"><span class="cnum">02</span><span class="ctitle">The one set</span></div>
+    <p class="cdesc">Reduce to a single truth: the weight you lift next, alone in space. A 2px hairline underneath is the only progress indicator. History is a scroll away, not on screen.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="oneset">
+          <div class="done">Set 4 of 8 · three logged at 5 × 10</div>
+          <div class="big">5<small> kg</small></div>
+          <div class="tgt">target 10 reps</div>
+          <div class="prog"><i></i></div>
+          <div class="proglab">4 / 8</div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">Maximum deference. The number is the interface.</p>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="clabel"><span class="cnum">03</span><span class="ctitle">Descending tone</span></div>
+    <p class="cdesc">Every set stays, every border goes. Focus is built from text tone alone — brightest at now, dissolving into the surface above and below. No accent fill anywhere.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="tone">
+          <div class="sl r0"><span class="n">1</span><span class="v">5</span><span class="v">10</span><span class="u"></span></div>
+          <div class="sl r1"><span class="n">2</span><span class="v">5</span><span class="v">10</span><span class="u"></span></div>
+          <div class="sl r2"><span class="n">3</span><span class="v">5</span><span class="v">10</span><span class="u"></span></div>
+          <div class="sl now"><span class="n">4</span><span class="v">5<small>kg</small></span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl f1"><span class="n">5</span><span class="v">5</span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl f2"><span class="n">6</span><span class="v">5</span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl f3"><span class="n">7</span><span class="v">5</span><span class="v">—</span><span class="u"></span></div>
+          <div class="sl f3"><span class="n">8</span><span class="v">5</span><span class="v">—</span><span class="u"></span></div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">Nearest to today's layout; needs only a tone ramp. Ships fast.</p>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="clabel"><span class="cnum">04</span><span class="ctitle">The thread</span></div>
+    <p class="cdesc">One short chartreuse hairline runs down the left edge and rests beside the current set. To advance, the thread moves — not the colour of everything else. A single moving mark.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="thread">
+          <div class="threadbar" style="top:152px;height:40px"></div>
+          <div class="sl"><span class="n">1</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">2</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">3</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl now"><span class="n">4</span><span class="v">5 kg · —</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">5</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">6</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">7</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">8</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">The accent becomes a position, not a paint. Very calm to watch.</p>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="clabel"><span class="cnum">05</span><span class="ctitle">Numeral hero</span></div>
+    <p class="cdesc">Type scale is the entire hierarchy. Done sets are a whisper-line; the current weight is a large light numeral, reps balanced opposite. No boxes, no colour shift — just size.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex nh">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="past"><span class="d">1 · 5×10</span><span class="d">2 · 5×10</span><span class="d">3 · 5×10</span></div>
+        <div class="sof">Set 4</div>
+        <div class="heronum">
+          <span class="kg">5</span><span class="kgu">kg</span>
+          <span class="reps"><b>10</b><span>target reps</span></span>
+        </div>
+        <div class="future">then 5, 6, 7, 8 — 5 kg each</div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">Honest about what matters: the load. Everything else is caption.</p>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="clabel"><span class="cnum">06</span><span class="ctitle">Space as focus</span></div>
+    <p class="cdesc">No markers at all — only rhythm. Done sets compress tight at the top, the live set floats in generous air, the rest sink to one faint line. Negative space does the pointing.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex space">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="stack">1 &nbsp;5×10<br>2 &nbsp;5×10<br>3 &nbsp;5×10</div>
+        <div class="now">
+          <div class="lab">Set 4</div>
+          <div class="v">5<small> kg</small> &nbsp;·&nbsp; 10</div>
+        </div>
+        <div class="rest">4 more planned · 5 kg</div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">The quietest of all. Focus with no ink spent on it.</p>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="clabel"><span class="cnum">07</span><span class="ctitle">One field lit</span></div>
+    <p class="cdesc">Only the set you're logging looks touchable: a borderless underline that carries the chartreuse. Done sets are read-only text. The single interactive thing is unmistakable.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex field">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="done"><span>1 · 5×10</span><span>2 · 5×10</span><span>3 · 5×10</span></div>
+        <div class="live">
+          <div class="lab">Set 4 — log</div>
+          <div class="inputs">
+            <div class="fld"><div class="fv">5</div><div class="fu">kg</div></div>
+            <div class="fld empty"><div class="fv">10</div><div class="fu">reps</div></div>
+          </div>
+        </div>
+        <div class="next">next · set 5 at 5 kg</div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">Material honesty: touchable looks touchable, records look inert.</p>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="clabel"><span class="cnum">08</span><span class="ctitle">The caret</span></div>
+    <p class="cdesc">The whole card is one weight of quiet type. A single chartreuse caret in the margin points at where you are — the only ornament in the entire exercise. Move it to advance.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="caret" style="padding-left:16px">
+          <div class="sl"><span class="n">1</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">2</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">3</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl now"><span class="n">4</span><span class="v">5 kg · —</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl up"><span class="n">5</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl up"><span class="n">6</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl up"><span class="n">7</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl up"><span class="n">8</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">One glyph of colour in the whole screen. Restraint you can feel.</p>
+  </section>
+
+  <!-- 9 -->
+  <section>
+    <div class="clabel"><span class="cnum">09</span><span class="ctitle">Two states</span></div>
+    <p class="cdesc">Reduce eight rows to two ideas: what's <em>done</em> (collapsed, tap to open) and what's <em>now</em>. The remaining sets are a single quiet count. Complete only on demand.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex two">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="block done"><div class="lab"><span>Done · 3 sets · 5 × 10</span><span class="chev">⌄</span></div></div>
+        <div class="block live">
+          <div class="lab">Now · Set 4</div>
+          <div class="v">5<small> kg</small> &nbsp; · &nbsp; 10 reps</div>
+        </div>
+        <div class="block future"><div class="lab"><span>Remaining</span><span><b>4 sets</b> · 5 kg</span></div></div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">Inevitable through omission. Scales to any set count without growing.</p>
+  </section>
+
+  <!-- 10 -->
+  <section>
+    <div class="clabel"><span class="cnum">10</span><span class="ctitle">Ambient light</span></div>
+    <p class="cdesc">No markers, no boxes, no accent shapes. The live set is simply the only fully-lit line, with a barely-there glow behind it. The design disappears; attention is drawn by light.</p>
+    <div class="phone">
+      <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side fin">Finish</span></div>
+      <div class="ex">
+        <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+        <div class="amb">
+          <div class="glow"></div>
+          <div class="sl"><span class="n">1</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">2</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">3</span><span class="v">5 × 10</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl now"><span class="n">4</span><span class="v">5<small>kg</small></span><span class="v">—<small> rep</small></span><span class="u"></span></div>
+          <div class="sl"><span class="n">5</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">6</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">7</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+          <div class="sl"><span class="n">8</span><span class="v">5 kg</span><span class="v"></span><span class="u"></span></div>
+        </div>
+        <div class="actions"><span class="act">Add set</span><span class="act mut">Special</span></div>
+      </div>
+    </div>
+    <p class="note">The most invisible design. Focus made of light, not lines.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><b>The through-line.</b> None of these adds anything — they all subtract. The screenshot's chaos was outlined boxes and eight equal-weight rows; every concept here removes the boxes and lets one set be seen through scale, space, tone, or a single quiet mark of chartreuse.
+  <br><br>
+  <b>Ships this week:</b> 03 Descending tone and 10 Ambient light — same list, just a state→tone/light pass, no relayout.
+  <b>The reduction bets:</b> 02 The one set and 09 Two states — radically less on screen, best for high-volume days.
+  <b>My pick:</b> <b>01 Quiet ledger</b> — it keeps every set visible (athletes want to see the plan) but calms all of them, and the single chartreuse dot is the most Ive gesture in the set. Tell me which to build for real on web + mobile.</p>
+</footer>
+
+</body>
+</html>
