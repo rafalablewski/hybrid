@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — Apple × Ive set focus · both lifters · 10 concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c; --card:#151715; --line:#242724; --hair:#1c1e1c;
+    --chalk:#f3f4ef; --ash:#8b8f86; --dim:#54574f;
+    --acc:#c6f84f; --onAcc:#0c0d0c;
+    --disp:'Archivo',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:#060706;color:var(--chalk);font-family:var(--disp);line-height:1.45;padding:56px 22px 90px;-webkit-font-smoothing:antialiased}
+  .head{max-width:1160px;margin:0 auto 18px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
+  h1{font-weight:800;font-size:31px;letter-spacing:-.025em;margin:14px 0 12px}
+  h1 em{font-style:normal;color:var(--ash);font-weight:300}
+  .head p{color:var(--ash);max-width:700px;font-size:15px;font-weight:300;line-height:1.62}
+  .head p b{color:var(--chalk);font-weight:500}
+  .rule{max-width:1160px;margin:20px auto 0;background:#0f110f;border:1px solid var(--hair);border-radius:16px;padding:16px 20px;font-size:13.5px;color:var(--ash);font-weight:300;line-height:1.6}
+  .rule b{color:var(--chalk);font-weight:600}.rule .acc{color:var(--acc)}
+  .modekey{display:flex;gap:26px;flex-wrap:wrap;max-width:1160px;margin:18px auto 0;font-family:var(--mono);font-size:11px;color:var(--ash)}
+  .modekey .m{display:flex;align-items:center;gap:9px}
+  .chip{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:6px;font-weight:600}
+  .chip.inc{color:var(--acc);border:1px solid #37451c;background:#141a0d}
+  .chip.plan{color:var(--ash);border:1px solid var(--line);background:#101210}
+
+  .concepts{max-width:1160px;margin:44px auto 0;display:flex;flex-direction:column;gap:50px}
+  .clabel{display:flex;align-items:baseline;gap:11px;margin:0 2px 4px}
+  .cnum{font-family:var(--mono);font-size:12px;color:var(--dim);font-weight:500}
+  .ctitle{font-weight:700;font-size:19px;letter-spacing:-.01em}
+  .cdesc{color:var(--ash);font-size:13px;font-weight:300;line-height:1.55;margin:0 2px 18px;max-width:820px}
+  .cdesc b{color:var(--chalk);font-weight:500}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  @media(max-width:780px){.pair{grid-template-columns:1fr}}
+  .colhd{display:flex;align-items:center;gap:9px;margin:0 4px 11px}
+  .colhd .lab{font-size:12px;color:var(--ash);font-weight:400}
+  .colhd .lab b{color:var(--chalk);font-weight:600}
+
+  /* phone */
+  .phone{border-radius:30px;overflow:hidden;position:relative;padding-bottom:16px;
+    background:radial-gradient(120% 55% at 30% 0%, #1a2a12 0%, transparent 44%),radial-gradient(90% 45% at 92% 10%, #10201f 0%, transparent 50%),#0a0b0a;
+    box-shadow:0 26px 60px -32px #000, inset 0 0 0 1px #ffffff08}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px}
+  .topbar .t{font-family:var(--mono);font-weight:500;font-size:14px}
+  .topbar .el{font-family:var(--mono);font-size:7px;letter-spacing:.24em;color:var(--dim);text-align:center;text-transform:uppercase;margin-top:2px}
+  .topbar .side{font-size:11px;color:var(--dim)}
+  .exhead{display:flex;align-items:center;gap:8px;padding:0 18px;margin-bottom:14px}
+  .tag{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+  .exname{font-weight:600;font-size:14px;flex:1}
+  .x{color:var(--dim);font-size:15px;font-weight:300}
+  .note{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.02em;margin:15px 2px 0;line-height:1.6;max-width:820px}
+  .note b{color:var(--ash);font-weight:500}
+
+  .row{display:grid;grid-template-columns:18px 1fr 1fr;gap:9px;align-items:baseline;font-family:var(--mono);padding:7px 0}
+  .row .n{font-size:11px;color:var(--dim)}
+  .row .v{font-size:14px;color:var(--dim)}
+  .row .v small{font-size:9px;margin-left:2px}
+
+  /* shared materials */
+  .glass{position:relative;border-radius:20px;padding:16px 16px 14px;
+    background:linear-gradient(180deg, rgba(198,248,79,.10), rgba(255,255,255,.05));
+    backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);
+    box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -1px 0 rgba(0,0,0,.25) inset,0 18px 36px -20px #000;
+    border:1px solid rgba(198,248,79,.22)}
+  .glass .lab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+  .glass .big{font-family:var(--mono);font-weight:300;font-size:40px;letter-spacing:-.03em;line-height:1}
+  .glass .big small{font-size:14px;color:var(--ash)}
+  .glass .sub{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:4px}
+
+  /* elevated add (incremental) */
+  .addglass{margin-top:10px;display:flex;align-items:center;gap:10px;border-radius:18px;padding:14px 16px;
+    background:rgba(198,248,79,.08);border:1px dashed rgba(198,248,79,.4);color:var(--acc);font-weight:600;font-size:13px}
+  .addglass .p{font-family:var(--mono);font-size:18px;font-weight:400;line-height:0}
+  .addglass .h{margin-left:auto;font-family:var(--mono);font-size:9px;color:#6f7a4e;letter-spacing:.04em;font-weight:400}
+  .footact{display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
+  .footact span{font-size:12px;font-weight:500;color:var(--dim)}
+  .footact span.a{color:var(--ash)}
+
+  .body{padding:0 16px}
+
+  /* 2 live activity capsule */
+  .cap{display:flex;align-items:center;gap:12px;border-radius:22px;padding:12px 14px;
+    background:rgba(20,22,20,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 30px -18px #000,0 1px 0 rgba(255,255,255,.08) inset}
+  .cap .ring{width:40px;height:40px;border-radius:50%;flex-shrink:0;position:relative;background:conic-gradient(var(--acc) 0 .375turn,#2a2d24 .375turn 1turn)}
+  .cap .ring.open{background:conic-gradient(var(--acc) 0 .30turn,#2a2d24 .30turn .34turn,transparent .34turn 1turn)}
+  .cap .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#141614}
+  .cap .ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600}
+  .cap .info .l{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+  .cap .info .m{font-family:var(--mono);font-size:17px;font-weight:400;margin-top:1px}
+  .cap .info .m small{font-size:11px;color:var(--ash)}
+  .cap .seg{margin-left:auto;display:flex;gap:5px}
+  .cap .seg .b{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:15px;font-weight:700}
+  .cap .seg .b.log{background:var(--acc);color:var(--onAcc)}
+  .cap .seg .b.add{background:rgba(198,248,79,.14);color:var(--acc);border:1px solid rgba(198,248,79,.4)}
+  .cap .seg .b.solo{background:var(--acc);color:var(--onAcc)}
+  .caplist{margin-top:12px}
+  .caplist .row{opacity:.42}.caplist .done .v{color:#6f726b}
+  .caplist .now{opacity:1}.caplist .now .n{color:var(--acc)}.caplist .now .v{color:var(--chalk)}
+
+  /* 3 depth deck */
+  .deck{position:relative;height:210px;margin:0 4px}
+  .dc{position:absolute;left:6px;right:6px;border-radius:18px;font-family:var(--mono);background:#181a18;border:1px solid var(--hair);box-shadow:0 14px 30px -20px #000}
+  .dc.b1{top:0;transform:scale(.94);opacity:.5;padding:11px 15px}
+  .dc.front{top:26px;padding:16px 16px;background:linear-gradient(180deg,rgba(198,248,79,.09),#151715);border-color:rgba(198,248,79,.28);box-shadow:0 24px 46px -22px #000,0 1px 0 rgba(255,255,255,.1) inset}
+  .dc .l{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+  .dc.front .big{font-weight:300;font-size:38px;letter-spacing:-.03em;line-height:1;margin-top:6px}
+  .dc.front .big small{font-size:13px;color:var(--ash)}
+  .dc.front .sub{font-size:10px;color:var(--ash);margin-top:5px}
+  .dc .mini{font-size:12px;color:#6f726b}
+  .dc.deal{top:150px;transform:scale(.95);padding:13px 15px;background:rgba(198,248,79,.07);border:1px dashed rgba(198,248,79,.4);color:var(--acc)}
+  .dc.deal .mini{color:var(--acc);font-weight:600}
+  .dc.queue{top:150px;transform:scale(.95);opacity:.45;padding:11px 15px}
+  .dc.queue .mini{color:#4a4d46}
+
+  /* 4 ring */
+  .ring4{display:flex;flex-direction:column;align-items:center;padding-top:6px}
+  .br{width:150px;height:150px;border-radius:50%;position:relative}
+  .br.fill{background:conic-gradient(var(--acc) 0 .375turn,rgba(198,248,79,.9) .375turn .44turn,#23261e .44turn 1turn)}
+  .br.open{background:conic-gradient(var(--acc) 0 .30turn,rgba(198,248,79,.9) .30turn .35turn,#23261e .35turn .40turn,transparent .40turn 1turn)}
+  .br::after{content:"";position:absolute;inset:14px;border-radius:50%;background:#0d0f0d;box-shadow:0 0 26px -6px rgba(198,248,79,.2) inset}
+  .br .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .br .c .l{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+  .br .c .v{font-family:var(--mono);font-weight:300;font-size:34px;letter-spacing:-.03em;margin-top:1px}
+  .br .c .v small{font-size:12px;color:var(--ash)}
+  .br .c .s{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:1px}
+  .ring4 .meta{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:14px}
+  .ring4 .logbtn{margin-top:12px;width:100%;background:var(--acc);color:var(--onAcc);font-weight:700;border-radius:14px;padding:11px;font-size:14px;text-align:center}
+  .ring4 .logbtn.split{display:flex;gap:2px;padding:0;overflow:hidden;background:transparent}
+  .ring4 .logbtn.split span{flex:1;padding:11px;background:var(--acc);color:var(--onAcc)}
+  .ring4 .logbtn.split span.add{flex:0 0 46px;background:rgba(198,248,79,.15);color:var(--acc);border:1px solid rgba(198,248,79,.4)}
+
+  /* 5 sheet */
+  .sheet{position:relative;margin:0 4px}
+  .behind{padding:0 6px;filter:blur(1.3px)}.behind .row{opacity:.26}
+  .peek{text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim);margin:2px 0 4px}
+  .scard{margin-top:6px;border-radius:22px;padding:10px 18px 16px;
+    background:rgba(23,25,23,.82);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid rgba(255,255,255,.09);box-shadow:0 -16px 40px -20px #000,0 1px 0 rgba(255,255,255,.1) inset}
+  .scard .grab{width:34px;height:5px;border-radius:3px;background:#3a3d3a;margin:0 auto 12px}
+  .scard .l{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);text-align:center}
+  .scard .big{font-family:var(--mono);font-weight:300;font-size:46px;letter-spacing:-.04em;line-height:1;text-align:center;margin:8px 0 3px}
+  .scard .big small{font-size:14px;color:var(--ash)}
+  .scard .sub{font-family:var(--mono);font-size:10px;color:var(--ash);text-align:center}
+  .scard .prim{margin-top:14px;display:flex;gap:3px;border-radius:14px;overflow:hidden}
+  .scard .prim span{flex:1;padding:13px;text-align:center;font-weight:700;font-size:14px;background:var(--acc);color:var(--onAcc)}
+  .scard .prim span.add{flex:0 0 52px;background:rgba(198,248,79,.15);color:var(--acc)}
+
+  /* 6 wallet pass */
+  .pass{margin:0 4px;border-radius:20px;overflow:hidden;border:1px solid var(--hair);background:linear-gradient(160deg,#1a1d19,#121411)}
+  .pass .ph{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 10px}
+  .pass .ph .nm{font-weight:700;font-size:14px}
+  .pass .ph .lv{font-family:var(--mono);font-size:9px;color:var(--acc);letter-spacing:.1em}
+  .pass .punch{display:flex;gap:8px;flex-wrap:wrap;padding:6px 16px 16px}
+  .pass .pu{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;border:1px solid var(--line);color:var(--dim)}
+  .pass .pu.on{background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+  .pass .pu.now{border-color:var(--acc);color:var(--acc);box-shadow:0 0 0 3px rgba(198,248,79,.15)}
+  .pass .pu.add{border-style:dashed;border-color:rgba(198,248,79,.5);color:var(--acc)}
+  .pass .stub{border-top:1px dashed var(--line);padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--ash);display:flex;justify-content:space-between}
+
+  /* 7 scrubber */
+  .scrub{padding:14px 6px 0}
+  .scrub .load{font-family:var(--mono);text-align:center;margin-bottom:16px}
+  .scrub .load .v{font-weight:300;font-size:44px;letter-spacing:-.03em}
+  .scrub .load .v small{font-size:14px;color:var(--ash)}
+  .scrub .load .l{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+  .track{position:relative;height:6px;border-radius:6px;background:#23261e;margin:0 8px}
+  .track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:6px}
+  .track .head{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--chalk);transform:translate(-50%,-50%);box-shadow:0 2px 8px #000}
+  .track .cap{position:absolute;right:-4px;top:50%;width:18px;height:18px;border-radius:50%;background:rgba(198,248,79,.15);border:1px dashed var(--acc);color:var(--acc);transform:translateY(-50%);display:grid;place-items:center;font-family:var(--mono);font-size:11px}
+  .track .ticks{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 2px}
+  .track .ticks i{width:2px;height:2px;border-radius:2px;background:#3a3d3a}
+  .scrub .ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin:10px 8px 0}
+
+  /* 8 stepper */
+  .stp{padding:10px 16px 0;text-align:center}
+  .stp .of{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+  .stprow{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 0 6px}
+  .stprow .pm{width:46px;height:46px;border-radius:50%;background:#1c1e1c;border:1px solid var(--line);color:var(--chalk);display:grid;place-items:center;font-size:22px;font-weight:300;font-family:var(--mono)}
+  .stprow .val{font-family:var(--mono);font-weight:300;font-size:56px;letter-spacing:-.04em;line-height:1;min-width:110px}
+  .stprow .val small{font-size:15px;color:var(--ash)}
+  .stp .reps{font-family:var(--mono);font-size:10px;color:var(--ash)}
+  .stp .prevq{margin-top:14px}.stp .prevq .row{opacity:.4}
+
+  /* 9 vibrancy row */
+  .vib{padding:0 12px}
+  .vib .r{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:14px;font-family:var(--mono)}
+  .vib .r .n{font-size:11px;color:var(--dim);width:14px}
+  .vib .r .v{font-size:14px;color:var(--dim)}
+  .vib .r .acc{margin-left:auto;color:var(--dim);font-size:15px}
+  .vib .r.done .v{color:#6f726b}.vib .r.done .acc{color:var(--acc);opacity:.6}
+  .vib .r.now{background:rgba(198,248,79,.09);box-shadow:0 1px 0 rgba(255,255,255,.06) inset}
+  .vib .r.now .n{color:var(--acc)}.vib .r.now .v{color:var(--chalk);font-size:16px}
+  .vib .r.now .acc{color:var(--acc)}
+  .vib .r.addrow{color:var(--acc)}.vib .r.addrow .v{color:var(--acc);font-family:var(--disp);font-weight:600}
+  .vib .r.addrow .n{color:var(--acc)}
+  .vib .r.q .v{color:#474a43}
+
+  /* 10 dynamic island */
+  .di{padding:8px 16px 0;display:flex;flex-direction:column;align-items:center}
+  .island{background:#000;border-radius:26px;padding:10px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px -10px #000, 0 0 0 1px #1e211e;min-height:44px}
+  .island.compact{border-radius:22px;gap:9px}
+  .island .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+  .island .m{font-family:var(--mono);font-size:15px;font-weight:500}
+  .island .m small{font-size:11px;color:var(--ash)}
+  .island .add{width:30px;height:30px;border-radius:50%;background:rgba(198,248,79,.16);color:var(--acc);display:grid;place-items:center;font-size:15px;font-weight:700;border:1px solid rgba(198,248,79,.4)}
+  .island.exp{flex-direction:column;align-items:stretch;border-radius:26px;padding:14px 16px;gap:10px;min-width:230px}
+  .island.exp .top{display:flex;align-items:center;gap:10px}
+  .island.exp .prog{font-family:var(--mono);font-size:11px;color:var(--ash);margin-left:auto}
+  .island.exp .mini{font-family:var(--mono);font-size:11px;color:var(--dim);display:flex;justify-content:space-between}
+  .island.exp .mini b{color:#6f726b;font-weight:500}
+  .di .cae{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:14px;letter-spacing:.06em}
+
+  .foot{max-width:1160px;margin:60px auto 0;color:var(--ash);font-size:14px;font-weight:300;line-height:1.7;border-top:1px solid var(--hair);padding-top:26px}
+  .foot b{color:var(--chalk);font-weight:500}.foot .acc{color:var(--acc)}
+  @media(max-width:520px){h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="kick">HYBRID · Active workout · Apple × Ive · two lifters</div>
+  <h1>Ten material concepts, each built for both habits. <em>The material shows who you are.</em></h1>
+  <p>Same Apple direction — glass, depth, live activities, tactile controls — but now every concept
+  answers the split you flagged. <b>Left = adds one at a time</b> (no queue; the material turns
+  <b>+ Add set</b> into the next object, progress is open-ended). <b>Right = plans ahead</b>
+  (a real queue fades below; progress has a denominator). Same exercise: <b>Front Raise, Set 4, 5&nbsp;kg.</b></p>
+</header>
+
+<div class="rule">
+  <b>One rule underneath all ten:</b> the active set is always the first unlogged one. When a plan sits
+  below it, the queue recedes and progress reads <b>4 of 8</b>. When nothing sits below,
+  <span class="acc">+ Add set becomes the next material object</span> — a ghost card, a deck to deal,
+  an open arc — and progress goes indeterminate.
+</div>
+
+<div class="modekey">
+  <div class="m"><span class="chip inc">Adds one at a time</span> no queue — add-set is the next object</div>
+  <div class="m"><span class="chip plan">Plans ahead</span> queue fades below, progress has a total</div>
+</div>
+
+<main class="concepts">
+
+  <!-- 1 -->
+  <section>
+    <div class="clabel"><span class="cnum">01</span><span class="ctitle">Glass + ghost add</span></div>
+    <p class="cdesc">The live set floats on frosted glass. <b>Incremental:</b> a translucent dashed "ghost" add-card sits directly beneath — the same material, waiting to solidify into set 5. <b>Plan-ahead:</b> the ghost is replaced by the real, dimmed queue; add-set drops to a quiet footer.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Ghost card = the next set.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body">
+            <div class="row"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="row"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="row"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="glass" style="margin-top:6px"><div class="lab">Set 4 — now</div><div class="big">5<small> kg</small></div><div class="sub">target 10 reps</div></div>
+            <div class="addglass"><span class="p">+</span> Add set 5 <span class="h">↵ log &amp; repeat</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Real queue fades under the glass.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body">
+            <div class="row"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="row"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="row"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10<small>rep</small></span></div>
+            <div class="glass" style="margin-top:6px"><div class="lab">Set 4 of 8 — now</div><div class="big">5<small> kg</small></div><div class="sub">target 10 reps</div></div>
+            <div class="row" style="opacity:.26;margin-top:4px"><span class="n">5</span><span class="v">5<small>kg</small></span><span class="v">—</span></div>
+            <div class="row" style="opacity:.16"><span class="n">6</span><span class="v">5<small>kg</small></span><span class="v">—</span></div>
+            <div class="footact"><span class="a">Add set</span><span>Special</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> the ghost/real swap is the cleanest material metaphor for the two habits. My top pick.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="clabel"><span class="cnum">02</span><span class="ctitle">Live capsule</span></div>
+    <p class="cdesc">A pinned live-activity capsule owns the current set. <b>Incremental:</b> its ring is an <em>open</em> arc and it carries a segmented ✓ log / + add control — the loop lives in the capsule. <b>Plan-ahead:</b> the ring is a closed <em>4/8</em> and a single ✓ suffices; the queue lists below.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Open ring · log + add in the capsule.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body">
+            <div class="cap"><div class="ring open"><b>4</b></div><div class="info"><div class="l">Set 4 — now</div><div class="m">5<small>kg</small> — 10</div></div><div class="seg"><span class="b log">✓</span><span class="b add">+</span></div></div>
+            <div class="caplist"><div class="row done"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row done"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row done"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Closed 4/8 · single log · queue below.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body">
+            <div class="cap"><div class="ring"><b>4/8</b></div><div class="info"><div class="l">Set 4 — now</div><div class="m">5<small>kg</small> — 10</div></div><div class="seg"><span class="b solo">✓</span></div></div>
+            <div class="caplist"><div class="row done"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row now"><span class="n">4</span><span class="v">5<small>kg</small></span><span class="v">—</span></div><div class="row"><span class="n">5</span><span class="v">5<small>kg</small></span><span class="v">—</span></div><div class="row"><span class="n">6</span><span class="v">5<small>kg</small></span><span class="v">—</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> focus stays pinned on long lists, and the ring shape alone signals which lifter you are.</p>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="clabel"><span class="cnum">03</span><span class="ctitle">Deck to deal</span></div>
+    <p class="cdesc">Sets are a z-axis deck; done cards recede behind the lifted live card. <b>Incremental:</b> the next card in the deck is a dashed "+ deal set 5" — swiping forward literally deals a new set. <b>Plan-ahead:</b> the next cards are your queued sets, dimmed.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Next card deals a new set.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="deck">
+            <div class="dc b1"><span class="mini">Set 3 — 5 × 10 ✓</span></div>
+            <div class="dc front"><div class="l">Set 4 — now</div><div class="big">5<small> kg</small></div><div class="sub">swipe up to log</div></div>
+            <div class="dc deal"><span class="mini">+ deal set 5</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Next cards are the queue.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="deck">
+            <div class="dc b1"><span class="mini">Set 3 — 5 × 10 ✓</span></div>
+            <div class="dc front"><div class="l">Set 4 of 8 — now</div><div class="big">5<small> kg</small></div><div class="sub">swipe up to log</div></div>
+            <div class="dc queue"><span class="mini">Set 5 — 5 kg &nbsp;·&nbsp; 4 more</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> tactile and one-handed; the deal-vs-queue card is a lovely distinction, but scanning the full plan needs a swipe.</p>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="clabel"><span class="cnum">04</span><span class="ctitle">Open arc vs full ring</span></div>
+    <p class="cdesc">One Apple-Fitness ring. <b>Incremental:</b> an <em>open</em> arc with no end-cap — each set adds a segment, a dashed leader means "+ add next"; there's no total to fill. <b>Plan-ahead:</b> a closed ring of 8 that fills toward a known finish.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Open arc — grows, no end.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body ring4">
+            <div class="br open"><div class="c"><div class="l">Set 4</div><div class="v">5<small> kg</small></div><div class="s">10 reps</div></div></div>
+            <div class="meta">3 logged — going</div>
+            <div class="logbtn split"><span>Log set ✓</span><span class="add">+</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Full ring — fills to 8.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="body ring4">
+            <div class="br fill"><div class="c"><div class="l">Set 4</div><div class="v">5<small> kg</small></div><div class="s">10 reps</div></div></div>
+            <div class="meta">3 of 8 — 4 to go</div>
+            <div class="logbtn">Log set ✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> the open/closed ring is the most poetic read of the two habits — but it's the biggest departure from a set table.</p>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="clabel"><span class="cnum">05</span><span class="ctitle">Sheet detent</span></div>
+    <p class="cdesc">The live set rides a frosted sheet over the blurred plan. <b>Incremental:</b> the primary splits into <em>Log</em> + a <em>+</em> that spawns the next set. <b>Plan-ahead:</b> a single Log, with a peek of the next queued set just above the grabber.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Split Log + Add primary.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="sheet">
+            <div class="behind"><div class="row"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10</span></div></div>
+            <div class="scard"><div class="grab"></div><div class="l">Set 4 — now</div><div class="big">5<small> kg</small></div><div class="sub">target 10 reps</div><div class="prim"><span>Log set</span><span class="add">+</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Single Log · next-set peek.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="sheet">
+            <div class="behind"><div class="row"><span class="n">1</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row"><span class="n">2</span><span class="v">5<small>kg</small></span><span class="v">10</span></div><div class="row"><span class="n">3</span><span class="v">5<small>kg</small></span><span class="v">10</span></div></div>
+            <div class="peek">next · set 5 — 5 kg &nbsp;·&nbsp; 4 to go</div>
+            <div class="scard"><div class="grab"></div><div class="l">Set 4 of 8 — now</div><div class="big">5<small> kg</small></div><div class="sub">target 10 reps</div><div class="prim"><span>Log set</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> calm by default, and the split-button is a natural home for the incremental loop. Drag-up reveals the whole plan.</p>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="clabel"><span class="cnum">06</span><span class="ctitle">Wallet punch pass</span></div>
+    <p class="cdesc">The exercise as a Wallet pass; sets are punches. <b>Incremental:</b> punches accumulate left-to-right with a dashed "+" slot always at the end. <b>Plan-ahead:</b> a fixed punch-card of 8 slots, 3 punched, the current one ringed.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Punches grow · trailing + slot.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="pass">
+            <div class="ph"><span class="nm">Front Raise</span><span class="lv">5 KG</span></div>
+            <div class="punch"><span class="pu on">✓</span><span class="pu on">✓</span><span class="pu on">✓</span><span class="pu now">4</span><span class="pu add">+</span></div>
+            <div class="stub"><span>Set 4 — 5 kg × 10</span><span style="color:var(--acc)">Log ✓</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Fixed card of 8 punches.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="pass">
+            <div class="ph"><span class="nm">Front Raise</span><span class="lv">4 / 8</span></div>
+            <div class="punch"><span class="pu on">✓</span><span class="pu on">✓</span><span class="pu on">✓</span><span class="pu now">4</span><span class="pu">5</span><span class="pu">6</span><span class="pu">7</span><span class="pu">8</span></div>
+            <div class="stub"><span>Set 4 — 5 kg × 10</span><span style="color:var(--acc)">Log ✓</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> playful and glanceable; the trailing + vs fixed grid is an honest read of both. Novel, less conventional.</p>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="clabel"><span class="cnum">07</span><span class="ctitle">Now-playing scrubber</span></div>
+    <p class="cdesc">A media-scrubber for your sets. <b>Incremental:</b> an open-ended track with the playhead at the end and a dashed "+" cap to extend. <b>Plan-ahead:</b> a fixed-length track with 8 ticks and the playhead parked at set 4.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Open track · + cap to extend.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="scrub">
+            <div class="load"><div class="l">Set 4 — now</div><div class="v">5<small> kg</small></div></div>
+            <div class="track"><div class="fill" style="width:82%"></div><div class="head" style="left:82%"></div><div class="cap">+</div></div>
+            <div class="ends"><span>3 logged</span><span>tap + to add</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Fixed track · 8 ticks.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="scrub">
+            <div class="load"><div class="l">Set 4 of 8 — now</div><div class="v">5<small> kg</small></div></div>
+            <div class="track"><div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="fill" style="width:44%"></div><div class="head" style="left:44%"></div></div>
+            <div class="ends"><span>set 1</span><span>set 8</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> instantly legible progress; the open-vs-fixed track nails the mental model. Best paired with a second detail view.</p>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="clabel"><span class="cnum">08</span><span class="ctitle">Tactile stepper</span></div>
+    <p class="cdesc">The weight as a big − 5 + stepper — the one control you touch. <b>Incremental:</b> the split primary is Log + Add, and there's no queue beneath. <b>Plan-ahead:</b> a "Set 4 of 8" caption and the faded queue sit below the stepper.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Stepper · Log + Add · no queue.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="stp">
+            <div class="of">Set 4</div>
+            <div class="stprow"><span class="pm">−</span><span class="val">5<small>kg</small></span><span class="pm">+</span></div>
+            <div class="reps">target 10 reps</div>
+            <div class="ring4" style="padding:0"><div class="logbtn split" style="margin-top:16px"><span>Log set ✓</span><span class="add">+</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Of-8 · queue faded below.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="stp">
+            <div class="of">Set 4 of 8</div>
+            <div class="stprow"><span class="pm">−</span><span class="val">5<small>kg</small></span><span class="pm">+</span></div>
+            <div class="reps">target 10 reps</div>
+            <div class="prevq"><div class="row"><span class="n">5</span><span class="v">5<small>kg</small></span><span class="v">—</span></div><div class="row" style="opacity:.28"><span class="n">6</span><span class="v">5<small>kg</small></span><span class="v">—</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> best when tuning load matters; the split button carries the incremental loop without a separate control.</p>
+  </section>
+
+  <!-- 9 -->
+  <section>
+    <div class="clabel"><span class="cnum">09</span><span class="ctitle">Vibrancy row</span></div>
+    <p class="cdesc">Barely a redesign — keep the list, give the live row an iOS vibrancy tint and a trailing accessory. <b>Incremental:</b> the accessory is a "+" insert row directly below. <b>Plan-ahead:</b> the accessory is a chevron and the queue continues, greyed.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Tinted row · + insert below.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="vib">
+            <div class="r done"><span class="n">1</span><span class="v">5 kg × 10</span><span class="acc">✓</span></div>
+            <div class="r done"><span class="n">2</span><span class="v">5 kg × 10</span><span class="acc">✓</span></div>
+            <div class="r done"><span class="n">3</span><span class="v">5 kg × 10</span><span class="acc">✓</span></div>
+            <div class="r now"><span class="n">4</span><span class="v">5 kg — 10</span><span class="acc">○</span></div>
+            <div class="r addrow"><span class="n">+</span><span class="v">Add set 5</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Tinted row · chevron · queue.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="vib">
+            <div class="r done"><span class="n">1</span><span class="v">5 kg × 10</span><span class="acc">✓</span></div>
+            <div class="r done"><span class="n">3</span><span class="v">5 kg × 10</span><span class="acc">✓</span></div>
+            <div class="r now"><span class="n">4</span><span class="v">5 kg — 10</span><span class="acc">›</span></div>
+            <div class="r q"><span class="n">5</span><span class="v">5 kg</span><span class="acc"></span></div>
+            <div class="r q"><span class="n">6</span><span class="v">5 kg</span><span class="acc"></span></div>
+            <div class="r q"><span class="n">7</span><span class="v">5 kg</span><span class="acc"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> lowest-risk, most native. Ships fastest — the whole change is one tinted row + an accessory that swaps by mode.</p>
+  </section>
+
+  <!-- 10 -->
+  <section>
+    <div class="clabel"><span class="cnum">10</span><span class="ctitle">Island morph</span></div>
+    <p class="cdesc">A Dynamic-Island-style element that changes shape by habit. <b>Incremental:</b> a compact island — "Set 4 · 5 kg · +" — tap to log and it re-forms for the next. <b>Plan-ahead:</b> it expands to show 4/8 and a peek of the upcoming queue.</p>
+    <div class="pair">
+      <div>
+        <div class="colhd"><span class="chip inc">Adds one at a time</span><span class="lab">Compact · tap-log-reform.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="di">
+            <div class="island compact"><span class="dot"></span><span class="m">Set 4 &nbsp; 5<small>kg</small> — 10</span><span class="add">+</span></div>
+            <div class="cae">tap ✓ to log — island re-forms for set 5</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="colhd"><span class="chip plan">Plans ahead</span><span class="lab">Expanded · 4/8 · queue peek.</span></div>
+        <div class="phone">
+          <div class="topbar"><span class="side">Cancel</span><div style="text-align:center"><div class="t">67:50</div><div class="el">Elapsed</div></div><span class="side" style="color:var(--ash)">Finish</span></div>
+          <div class="exhead"><span class="tag">Strength · A2</span><span class="exname">Dumbbell Front Raise</span><span class="x">×</span></div>
+          <div class="di">
+            <div class="island exp"><div class="top"><span class="dot"></span><span class="m">Set 4 &nbsp; 5<small>kg</small> — 10</span><span class="prog">4/8</span></div><div class="mini"><span>up next — set 5</span><b>4 to go · 5 kg</b></div></div>
+            <div class="cae">expands because a plan exists to preview</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Verdict —</b> the shape-shift is the most distinctly-Apple gesture, and it encodes the two habits into one component's compact/expanded states.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><b>The throughline.</b> Every concept resolves the two habits with a single component: the material simply changes state. <span class="acc">Add-set becomes an object</span> (ghost card, dealt card, + cap, open arc) for the one-at-a-time lifter; a <b>real queue + denominator</b> for the planner.
+  <br><br>
+  <b>Cleanest metaphor:</b> 01 Glass + ghost add — the ghost that solidifies into the next set is the truest read of "adding as you go." <b>Fastest to ship:</b> 09 Vibrancy row — one tinted row + a mode-swapped accessory. <b>Most Apple:</b> 10 Island morph and 04 Open-vs-full ring.
+  <br><br>
+  <b>My recommendation:</b> build <b>01 Glass + ghost add</b> as the hero, borrowing <b>02's pinned capsule</b> for long lists and <b>09's tinted-row</b> restraint as the low-risk fallback. All are pure presentation over the "first-unlogged-set" state — no data-model change. Tell me which to build (web + mobile) and whether the incremental add should auto-carry the last set's weight.</p>
+</footer>
+
+</body>
+</html>
