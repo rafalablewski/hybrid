@@ -5,6 +5,7 @@ import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
+import SwipeRow from "@/components/swipe-row";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "../lib/use-dialog";
@@ -511,14 +512,14 @@ export default function WorkoutBlocks({
                     const typeAccent = st === "warmup" ? AMBER : st === "cooldown" ? BLUE : st === "drop" ? LIME : null;
                     if (focus === "active") {
                       return (
+                        <SwipeRow key={i} radius={22} margin="8px 0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
                         <div
-                          key={i}
                           onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                           onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                          style={{ borderRadius: 22, padding: "14px 16px 16px", margin: "8px 0", background: `${LIME}0f`, border: `1px solid ${LIME}38`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -22px rgba(0,0,0,.8)", opacity: dragging ? 0.5 : 1 }}
+                          style={{ borderRadius: 22, padding: "14px 16px 16px", background: `${LIME}0f`, border: `1px solid ${LIME}38`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -22px rgba(0,0,0,.8)", opacity: dragging ? 0.5 : 1 }}
                         >
                           {/* Label row — kicker on the left, planned-rest hint,
-                              then the type/grip/delete affordances tucked right. */}
+                              then the type + grip tucked right (swipe left to delete). */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                             <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
@@ -530,7 +531,6 @@ export default function WorkoutBlocks({
                               {typeAccent ? setTypeBadge(s, i) : "+"}
                             </button>
                             {grip(i)}
-                            <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...cond, width: 26, height: 26, padding: 0, color: txt(ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 8, cursor: "pointer", fontSize: fs.body, lineHeight: 1 }}>−</button>
                           </div>
                           {/* Numbers on the left, the plain lime + (log this set) on
                               the right — one tap banks it and starts the rest timer. */}
@@ -565,17 +565,18 @@ export default function WorkoutBlocks({
                             </div>
                           )}
                         </div>
+                        </SwipeRow>
                       );
                     }
                     const loadPart = !bw && s.load ? `${displayLoad(s.load, units)} ${units}` : "";
                     const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
                     const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
                     return (
+                      <SwipeRow key={i} radius={14} margin="6px 0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
                       <div
-                        key={i}
                         onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                         onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", margin: "6px 0", borderRadius: 14, background: `color-mix(in srgb, ${INK2} 55%, transparent)`, border: `1px solid color-mix(in srgb, ${LINE} 70%, transparent)`, opacity: dragging ? 0.4 : focus === "done" ? 0.62 : 0.72 }}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, background: `color-mix(in srgb, ${INK2} 55%, transparent)`, border: `1px solid color-mix(in srgb, ${LINE} 70%, transparent)`, opacity: dragging ? 0.4 : focus === "done" ? 0.62 : 0.72 }}
                       >
                         {grip(i)}
                         <span style={{ ...mono, width: 20, fontSize: fs.caption, color: typeAccent ? txt(typeAccent) : ASH }}>{setTypeBadge(s, i)}</span>
@@ -583,8 +584,8 @@ export default function WorkoutBlocks({
                           {summary}
                         </button>
                         <span style={{ ...disp, fontWeight: 800, fontSize: fs.caption, color: isDone ? txt(LIME) : ASH }}>{isDone ? "✓" : "○"}</span>
-                        <button onClick={() => removeSet(b.uid, i)} title={t("common.delete")} style={{ ...iconBtn(ASH), width: 26, height: 26, padding: 0, fontSize: fs.caption }}>−</button>
                       </div>
+                      </SwipeRow>
                     );
                   });
                 })()

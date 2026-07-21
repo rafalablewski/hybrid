@@ -1157,9 +1157,6 @@ export default function Workout() {
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
                               </Pressable>
                               {grip}
-                              <Pressable onPress={() => removeSet(x.uid, i)} hitSlop={8} accessibilityLabel={t("workout.deleteSet")} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>−</Text>
-                              </Pressable>
                             </View>
                             {/* Numbers on the left, the plain lime ＋ (log this set)
                                 on the right — one tap banks it + starts the rest. */}
