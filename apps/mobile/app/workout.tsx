@@ -1139,9 +1139,11 @@ export default function Workout() {
                             }}
                           >
                             <GlassSurface radius={20} tintColor={C.lime} />
-                            {/* Label row — kicker, planned-rest hint, then the
-                                type/grip/delete affordances tucked to the right. */}
+                            {/* Label row — grip on the left (matching the recede
+                                rows), kicker, planned-rest hint, then the type badge
+                                on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                              {grip}
                               <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: txt(C, C.lime) }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
@@ -1156,7 +1158,6 @@ export default function Workout() {
                               >
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
                               </Pressable>
-                              {grip}
                             </View>
                             {/* Numbers on the left, the plain lime ＋ (log this set)
                                 on the right — one tap banks it + starts the rest. */}

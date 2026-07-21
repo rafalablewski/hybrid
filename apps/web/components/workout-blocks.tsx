@@ -518,9 +518,11 @@ export default function WorkoutBlocks({
                           onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
                           style={{ borderRadius: 22, padding: "14px 16px 16px", background: `${LIME}0f`, border: `1px solid ${LIME}38`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -22px rgba(0,0,0,.8)", opacity: dragging ? 0.5 : 1 }}
                         >
-                          {/* Label row — kicker on the left, planned-rest hint,
-                              then the type + grip tucked right (swipe left to delete). */}
+                          {/* Label row — grip on the left (matching the recede
+                              rows), kicker, planned-rest hint, then the type badge
+                              on the right (swipe left to delete). */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                            {grip(i)}
                             <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
                             </span>
@@ -530,7 +532,6 @@ export default function WorkoutBlocks({
                             <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "2px 9px", cursor: "pointer" }}>
                               {typeAccent ? setTypeBadge(s, i) : "+"}
                             </button>
-                            {grip(i)}
                           </div>
                           {/* Numbers on the left, the plain lime + (log this set) on
                               the right — one tap banks it and starts the rest timer. */}
