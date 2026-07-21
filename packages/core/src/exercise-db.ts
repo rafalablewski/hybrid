@@ -167,8 +167,11 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Push-Up", "Chest", "push-h", ["chest"], ["triceps", "front-delts", "abs"], "bodyweight", null),
   E("Weighted Push-Up", "Chest", "push-h", ["chest"], ["triceps", "front-delts"], "bodyweight", null, BWPLUS),
   E("Deficit Push-Up", "Chest", "push-h", ["chest"], ["triceps", "front-delts"], "bodyweight", null),
-  E("Dip", "Chest", "push-v", ["chest", "triceps"], ["front-delts"], "bodyweight", null),
-  E("Weighted Dip", "Chest", "push-v", ["chest", "triceps"], ["front-delts"], "bodyweight", null, BWPLUS),
+  // Chest dips (forward lean, elbows flared → chest-primary). Triceps dips live
+  // under Triceps. Both count bodyweight toward tonnage (loadMode bodyweight);
+  // the weighted variants add the entered plate on top (bodyweight-plus).
+  E("Chest Dip", "Chest", "push-v", ["chest"], ["triceps", "front-delts"], "bodyweight", null),
+  E("Weighted Chest Dip", "Chest", "push-v", ["chest"], ["triceps", "front-delts"], "bodyweight", null, BWPLUS),
   E("Ring Push-Up", "Chest", "push-h", ["chest"], ["triceps", "abs"], "bodyweight", null),
   E("Landmine Press", "Chest", "push-h", ["chest", "front-delts"], ["triceps", "abs"], "landmine", 30, UNI),
   E("Svend Press", "Chest", "isolation", ["chest"], ["front-delts"], "other", 10, ISO),
@@ -297,6 +300,10 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Cable Kickback", "Triceps", "isolation", ["triceps"], [], "cable", 8, { ...ISO, ...UNI }),
   E("JM Press", "Triceps", "push-h", ["triceps"], ["chest", "front-delts"], "barbell", 50),
   E("Close-Grip Push-Up", "Triceps", "push-h", ["triceps", "chest"], ["front-delts"], "bodyweight", null),
+  // Triceps dips (upright torso, elbows tucked → triceps-primary) plus the
+  // weighted variant (bodyweight-plus). Chest-focused dips live under Chest.
+  E("Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null),
+  E("Weighted Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null, BWPLUS),
   E("Bench Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null),
 
   // ---- Abs & Core ----
