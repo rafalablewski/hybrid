@@ -6,7 +6,7 @@ import {
   blockSignalSummary,
   DEFAULT_REST_SEC,
 } from "./session-signal";
-import { effectiveSetLoadKg, sessionVolume } from "./session";
+import { effectiveSetLoadKg, sessionVolume, isBodyweightDependent, needsBodyweight } from "./session";
 import type { SessionBlock, StrengthBlock } from "./session";
 
 const squat = (over: Partial<StrengthBlock> = {}): StrengthBlock => ({
@@ -138,6 +138,27 @@ describe("bodyweight-aware tonnage", () => {
     expect(sessionVolume([pullUps("Chest Dip", "")], false, 70)).toBe(700);
     // Without a bodyweight, behaviour is unchanged from before.
     expect(sessionVolume([pullUps("Pull-Up", "")])).toBe(0);
+  });
+
+  it("needsBodyweight flags a session with a BW-dependent lift and no weight on file", () => {
+    const dips: SessionBlock = { kind: "strength", name: "Dip", sets: [{ load: "", reps: "10" }] };
+    const bench: SessionBlock = { kind: "strength", name: "Bench Press", sets: [{ load: "80", reps: "5" }] };
+    const plank: SessionBlock = { kind: "strength", name: "Plank", sets: [{ load: "", reps: "45" }] };
+    // BW-dependent lifts under-count without a weight → nudge.
+    expect(isBodyweightDependent("Dip")).toBe(true);
+    expect(isBodyweightDependent("Weighted Dip")).toBe(true);
+    expect(isBodyweightDependent("Assisted Pull-Up")).toBe(true);
+    // External lifts and holds/carries don't depend on bodyweight.
+    expect(isBodyweightDependent("Bench Press")).toBe(false);
+    expect(isBodyweightDependent("Plank")).toBe(false);
+    expect(isBodyweightDependent("Farmer Carry")).toBe(false);
+    // The nudge: on when a BW lift has no weight, off once one is known or when
+    // the session has no BW-dependent lift.
+    expect(needsBodyweight([dips], null)).toBe(true);
+    expect(needsBodyweight([dips], 0)).toBe(true);
+    expect(needsBodyweight([dips], 75)).toBe(false);
+    expect(needsBodyweight([bench, plank], null)).toBe(false);
+    expect(needsBodyweight([], null)).toBe(false);
   });
 
   it("holds and carries never count as tonnage", () => {

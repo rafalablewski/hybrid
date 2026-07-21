@@ -6,8 +6,9 @@ import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useBodyweightLookup } from "../lib/use-bodyweight";
+import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import {
+  needsBodyweight,
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
@@ -71,7 +72,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, renameSession, patchSessionNote, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
+import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import SwipeRow from "../components/swipe-row";
@@ -778,6 +779,11 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current, { bodyweightKg }), [exercises, bodyweightKg]);
 
+  // Nudge to set a bodyweight when the session has a bodyweight lift (dips,
+  // pull-ups…) and none is on file — otherwise its tonnage reads 0.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const needsBw = useMemo(() => needsBodyweight(buildBlocks(), bodyweightKg), [exercises, bodyweightKg]);
+
   const finish = async () => {
     const blocks = buildBlocks();
     if (!blocks.length) {
@@ -932,6 +938,11 @@ export default function Workout() {
             )}
           </View>
         )}
+
+        {/* Bodyweight nudge — a bodyweight lift is on the board but no weight is
+            on file, so its tonnage would read 0. Set it inline; the live volume
+            recomputes and the card self-dismisses. */}
+        {needsBw && <BodyweightNudge C={C} R={R} t={t} units={prefs.units} />}
 
         {showTip && (
           <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
@@ -2027,6 +2038,66 @@ function LiveStat({ C, label, value }: { C: Palette; label: string; value: strin
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+}
+
+// Set-your-bodyweight nudge — a quiet amber card the logger shows when the
+// session has a bodyweight lift and no weight is on file (its tonnage would
+// read 0). Set it inline: POST /api/body then refreshBodyweight() recomputes
+// the live volume and the card self-dismisses. Parity with the web logger.
+function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof auroraRadii>; t: (k: string) => string; units: WeightUnit }) {
+  const [val, setVal] = useState("");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [dismissed, setDismissed] = useState(false);
+  const a = C.amber;
+  if (dismissed) return null;
+  const save = async () => {
+    const n = parseFloat(val.replace(",", "."));
+    if (!Number.isFinite(n) || n <= 0) {
+      setState("error");
+      return;
+    }
+    setState("saving");
+    const ok = await logBodyweight(Math.round(unitToKg(n, units) * 10) / 10);
+    if (!ok) {
+      setState("error");
+      return;
+    }
+    setState("saved");
+    // Recompute tonnage everywhere; once the weight lands this card unmounts
+    // (needsBodyweight flips false), so the "saved" flash is brief but honest.
+    refreshBodyweight();
+  };
+  return (
+    <View style={{ backgroundColor: `${a}12`, borderWidth: 1, borderColor: `${a}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("live.bwNudgeTitle")}</Text>
+        <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("live.bwNudgeDismiss")}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.ash }}>✕</Text>
+        </Pressable>
+      </View>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 10 }}>{t("live.bwNudgeBody")}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: state === "error" ? C.red : C.line, borderRadius: 10, paddingHorizontal: 12 }}>
+          <TextInput
+            value={val}
+            onChangeText={(v) => { setVal(v); if (state === "error") setState("idle"); }}
+            keyboardType="numeric"
+            placeholder={t("live.bwNudgeTitle")}
+            placeholderTextColor={C.ash}
+            onSubmitEditing={save}
+            style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, paddingVertical: 10 }}
+          />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{units}</Text>
+        </View>
+        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: R.cta, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>
+            {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("live.bwNudgeSaved") : t("live.bwNudgeSave")}
+          </Text>
+        </Pressable>
+      </View>
+      {state === "error" && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 8 }}>{t("live.bwNudgeError")}</Text>}
     </View>
   );
 }

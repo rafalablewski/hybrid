@@ -632,6 +632,31 @@ export function effectiveSetLoadKg(
 }
 
 /**
+ * Does this lift's EFFECTIVE tonnage depend on the athlete's bodyweight? True
+ * for rep-counted bodyweight / bodyweight-plus / assisted moves — the ones that
+ * silently UNDER-count until a bodyweight is on file (a plain bodyweight lift
+ * reads 0, a weighted one counts only the added plate). Holds and carries are
+ * excluded (their seconds/metres are never tonnage), and an unknown lift is
+ * external by default, so this is false for it.
+ */
+export function isBodyweightDependent(exerciseName: string): boolean {
+  const ex = gymExercise(exerciseName);
+  if (!ex || ex.measure !== "reps") return false;
+  return ex.loadMode === "bodyweight" || ex.loadMode === "bodyweight-plus" || ex.loadMode === "assisted";
+}
+
+/**
+ * Should the logger nudge the athlete to record a bodyweight? True when the
+ * session has a bodyweight-dependent lift (see isBodyweightDependent) AND no
+ * bodyweight is known — the case where tonnage reads wrong (often 0) until they
+ * set it. Once a weight is on file this is false, so the nudge self-dismisses.
+ */
+export function needsBodyweight(blocks: SessionBlock[], bodyweightKg?: number | null): boolean {
+  if (bodyweightKg != null && bodyweightKg > 0) return false;
+  return blocks.some((b) => isStrength(b) && isBodyweightDependent(b.name));
+}
+
+/**
  * Tonnage (effective load × reps) summed across a session's strength sets.
  * Working sets only by default; pass `includeWarmups` to count warm-up /
  * cool-down sets too (the user volume setting). Pass the athlete's
