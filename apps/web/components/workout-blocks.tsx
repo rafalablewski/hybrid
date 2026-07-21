@@ -169,6 +169,9 @@ export default function WorkoutBlocks({
   const [planUid, setPlanUid] = useState<string | null>(null);
   const [planCount, setPlanCount] = useState(3);
   const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
+  // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
+  // block (only one set is active per block, so keying by block uid is enough).
+  const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
   // The Olympic-sport quick-add picker (manual sport-session logging — no gear
   // needed). Picking a sport adds a cardio block named after it.
   const [sportPicker, setSportPicker] = useState(false);
@@ -300,6 +303,17 @@ export default function WorkoutBlocks({
         rpe: prev?.rpe ?? "",
       }));
       return { ...b, sets: [...b.sets, ...added] };
+    });
+  // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
+  // in one tap. Each rep count is a SINGLE number (project rule), carrying the
+  // block's current load. Banked sets are kept; the un-banked plan is replaced.
+  const applyPreset = (u: string, count: number, reps: number) =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const done = b.sets.filter((s) => (s as StrengthSet & { done?: boolean }).done);
+      const load = [...b.sets].reverse().find((s) => s.load)?.load ?? "";
+      const work: StrengthSet[] = Array.from({ length: count }, () => ({ load, reps: String(reps), rpe: "" }));
+      return { ...b, sets: [...done, ...work] };
     });
   // A drop set is a lighter continuation of the previous set (no rest) — add it
   // pre-flagged so it reads as part of the same effort.
@@ -502,8 +516,13 @@ export default function WorkoutBlocks({
                   const bw = sp?.loadMode === "bodyweight";
                   const measureLabel = sp?.measure === "time" ? "s" : sp?.measure === "distance" ? "m" : t("w.train.blocks.reps");
                   const planned = !addSetIsNext(b.sets as { done?: boolean }[]);
-                  const bigInput = { ...mono, fontSize: 44, fontWeight: 300, letterSpacing: "-.02em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: 96 } as const;
-                  const repsInput = { ...mono, fontSize: 22, color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: 46, textAlign: "center" } as const;
+                  // Weight & reps read at the SAME size and share one baseline, so
+                  // "kg" and "reps" sit level (each unit is a <label> — tapping the
+                  // text focuses its field). Width tracks the value so the units
+                  // hug the number instead of floating on a fixed-width input.
+                  const numInput = { ...disp, fontSize: 46, fontWeight: 800, letterSpacing: "-.035em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: "2.2ch", textAlign: "center" } as const;
+                  const numField = { display: "inline-flex", alignItems: "baseline", gap: 4, cursor: "text", padding: "2px 4px", borderRadius: 12 } as const;
+                  const unitLbl = { ...mono, fontSize: fs.body, color: ASH, cursor: "text", userSelect: "none" } as const;
                   const detailInput = { ...input, background: "transparent", border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)` };
                   const grip = (i: number) => (
                     <span draggable={b.sets.length > 1} onDragStart={() => setDragSet({ uid: b.uid, i })} onDragEnd={() => setDragSet(null)} title={t("w.train.blocks.dragToReorder")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), cursor: b.sets.length > 1 ? "grab" : "default", userSelect: "none", lineHeight: 1 }}>⠿</span>
@@ -537,43 +556,69 @@ export default function WorkoutBlocks({
                                   {t("w.train.blocks.rest")} {Math.floor(restSec / 60)}:{String(restSec % 60).padStart(2, "0")}
                                 </span>
                               )}
+                              {/* RPE — a quiet chip, not a permanent field. Tap to
+                                  reveal the compact scale below; the value rides on
+                                  the chip once set. Hidden entirely in Simple mode. */}
+                              {detailed && (() => {
+                                const rpeShown = rpeRirSwap(s.rpe ?? "", rirMode);
+                                const open = rpeOpenUid === b.uid;
+                                return (
+                                  <button
+                                    onClick={() => setRpeOpenUid((u) => (u === b.uid ? null : b.uid))}
+                                    aria-expanded={open}
+                                    title={t("w.train.blocks.whatIsRpe")}
+                                    style={{ ...mono, fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: txt(rpeShown ? AMBER : ASH), background: rpeShown ? `${AMBER}14` : "transparent", border: `1px solid ${rpeShown ? `${AMBER}66` : LINE}`, borderRadius: 999, padding: "4px 9px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                                  >
+                                    {rirMode ? "rir" : "rpe"} <span style={{ color: txt(rpeShown ? AMBER : ASH), fontWeight: 700 }}>{rpeShown || "–"}</span>
+                                  </button>
+                                );
+                              })()}
                               <button onClick={() => cycleType(b.uid, i)} title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(typeAccent ?? ASH), background: typeAccent ? `${typeAccent}1f` : "transparent", border: `1px solid ${typeAccent ?? LINE}`, borderRadius: 8, padding: "2px 9px", cursor: "pointer" }}>
                                 {typeAccent ? setTypeBadge(s, i) : "+"}
                               </button>
                             </div>
                           </div>
-                          {/* Numbers on the left, the plain lime + (log this set) on
-                              the right — one tap banks it and starts the rest timer. */}
-                          <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
-                            <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 6, flexWrap: "wrap" }}>
-                              <input className="ghost-ph" value={bw ? s.reps : displayLoad(s.load, units)} onChange={(e) => (bw ? updateSet(b.uid, i, "reps", e.target.value) : updateSet(b.uid, i, "load", storeLoad(e.target.value, units)))} placeholder="0" inputMode="decimal" aria-label={bw ? measureLabel : units} style={bigInput} />
-                              <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>{bw ? measureLabel : units}</span>
-                              {!bw && (
-                                <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 4 }}>
-                                  <span style={{ ...mono, fontSize: fs.body, color: ASH, marginBottom: 9 }}>×</span>
-                                  <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="0" inputMode="numeric" aria-label={measureLabel} style={repsInput} />
-                                  <span style={{ ...mono, fontSize: fs.caption, color: ASH, marginBottom: 9 }}>{measureLabel}</span>
-                                </span>
-                              )}
-                            </div>
-                            <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, width: 58, height: 58, flex: "0 0 auto", borderRadius: 999, background: LIME, color: "var(--color-ink)", fontSize: 30, fontWeight: 400, lineHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer", boxShadow: `0 10px 24px -8px color-mix(in srgb, ${LIME} 55%, transparent), inset 0 1px 0 rgba(255,255,255,.4)` }}>+</button>
+                          {/* Numbers centred; kg & reps share one baseline and read at
+                              one size. Each unit is a <label> so tapping the text
+                              focuses its input (native for-association via wrapping). */}
+                          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
+                            <label style={numField}>
+                              <input className="ghost-ph" value={bw ? s.reps : displayLoad(s.load, units)} onChange={(e) => (bw ? updateSet(b.uid, i, "reps", e.target.value) : updateSet(b.uid, i, "load", storeLoad(e.target.value, units)))} placeholder="0" inputMode="decimal" aria-label={bw ? measureLabel : units} style={numInput} />
+                              <span style={unitLbl}>{bw ? measureLabel : units}</span>
+                            </label>
+                            {!bw && (
+                              <>
+                                <span style={{ ...disp, fontSize: 24, color: ASH, fontWeight: 200, margin: "0 2px" }}>×</span>
+                                <label style={numField}>
+                                  <input className="ghost-ph" value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="0" inputMode="numeric" aria-label={measureLabel} style={numInput} />
+                                  <span style={unitLbl}>{measureLabel}</span>
+                                </label>
+                              </>
+                            )}
                           </div>
-                          {(detailed || velocity) && (
-                            <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
-                              {detailed && (
-                                <label style={{ flex: 1 }}>
-                                  <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>{rirMode ? "rir" : "rpe"}</span>
-                                  <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={detailInput} />
-                                </label>
-                              )}
-                              {velocity && (
-                                <label style={{ flex: 1 }}>
-                                  <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>m/s</span>
-                                  <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={detailInput} />
-                                </label>
-                              )}
+                          {/* RPE tray — reveals under the numbers only when the chip
+                              is tapped; the RIR ⇄ swap sits in the caption. */}
+                          {detailed && rpeOpenUid === b.uid && (
+                            <div style={{ marginTop: 12 }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: txt(ASH) }}>{t("w.train.blocks.whatIsRpe")}</span>
+                                <button onClick={() => setLoggerPref("rpeAsRir", !rirMode)} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}>{rirMode ? "rir" : "rpe"} ⇄</button>
+                              </div>
+                              <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} inputMode="numeric" autoFocus style={detailInput} />
                             </div>
                           )}
+                          {velocity && (
+                            <div style={{ marginTop: 12 }}>
+                              <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>m/s</span>
+                              <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={detailInput} />
+                            </div>
+                          )}
+                          {/* Primary action — a proper, sized Log button (the old
+                              floating + is retired). Full-width, banks the set and
+                              starts the rest timer. */}
+                          <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 14, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "14px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, border: "none", cursor: "pointer", boxShadow: `0 12px 28px -12px color-mix(in srgb, ${LIME} 55%, transparent), inset 0 1px 0 rgba(255,255,255,.4)` }}>
+                            <span style={{ fontSize: 17, lineHeight: 0, fontWeight: 900 }}>✓</span> {t("workout.logSet")}
+                          </button>
                         </div>
                         </SwipeRow>
                       );
@@ -814,12 +859,14 @@ export default function WorkoutBlocks({
                     </div>
                   );
                 })()}
+                {/* Special = glyph only (the ⚡). Opens the special-set menu. */}
                 <button
                   onClick={() => { setSpecialUid((u) => (u === b.uid ? null : b.uid)); setPlanUid(null); }}
-                  title={t("w.train.blocks.specialTitle")}
-                  style={{ ...mono, fontSize: fs.caption, fontWeight: 600, color: txt(CHALK), background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}
+                  title={t("w.train.blocks.special")}
+                  aria-label={t("w.train.blocks.special")}
+                  style={{ fontSize: 16, color: txt(AMBER), background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, width: 50, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                 >
-                  <span style={{ color: txt(AMBER), fontSize: 13 }}>⚡</span> {t("w.train.blocks.special")}
+                  ⚡
                 </button>
                 {/* Plan-ahead popover — a count stepper + shape, laid over the aurora
                     so a lifter can queue the whole exercise before the first rep. */}
@@ -827,7 +874,26 @@ export default function WorkoutBlocks({
                   <>
                     <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
                     <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 258, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 18, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
-                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.planTitle")}</div>
+                      {/* Popular presets — one tap lays out the whole exercise. */}
+                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 10 }}>{t("w.train.blocks.presetsTitle")}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                        {([
+                          { sets: 3, reps: 3, k: "schemeHeavy" },
+                          { sets: 5, reps: 5, k: "schemeStrength" },
+                          { sets: 3, reps: 12, k: "schemeHypertrophy" },
+                          { sets: 4, reps: 8, k: "schemeVolume" },
+                        ] as const).map((p) => (
+                          <button
+                            key={p.k}
+                            onClick={() => { applyPreset(b.uid, p.sets, p.reps); setPlanUid(null); }}
+                            style={{ textAlign: "left", background: `color-mix(in srgb, ${INK2} 60%, transparent)`, border: `1px solid ${LINE}`, borderRadius: 14, padding: "11px 12px", cursor: "pointer" }}
+                          >
+                            <div style={{ ...disp, fontSize: 22, fontWeight: 800, letterSpacing: "-.02em", color: CHALK }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 17 }}>×</span>{p.reps}</div>
+                            <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t(`w.train.blocks.${p.k}`)}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 10, paddingTop: 4, borderTop: `1px solid ${LINE}` }}>{t("w.train.blocks.planManual")}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                         <button onClick={() => setPlanCount((n) => Math.max(1, n - 1))} aria-label="−" style={stepBtn()}>−</button>
                         <div style={{ flex: 1, textAlign: "center" }}>

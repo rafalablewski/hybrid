@@ -246,6 +246,12 @@ export default function Workout() {
   const [planUid, setPlanUid] = useState<string | null>(null);
   const [planCount, setPlanCount] = useState(3);
   const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
+  // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
+  // exercise (only one set is active per exercise, so keying by uid is enough).
+  const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
+  // Refs to the active set's load/reps inputs (keyed `${uid}:load|reps`) so
+  // tapping the unit label focuses the field — the RN twin of a web <label for>.
+  const inputRefs = useRef<Record<string, TextInput | null>>({});
   const [exercises, setExercises] = useState<WExercise[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phase, setPhase] = useState<"active" | "done">("active");
@@ -600,6 +606,19 @@ export default function Workout() {
           done: false,
         }));
         return { ...x, sets: [...x.sets, ...added] };
+      }),
+    );
+  // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
+  // in one tap. Each rep count is a SINGLE number (project rule), carrying the
+  // current load. Banked sets are kept; the un-banked plan is replaced.
+  const applyPreset = (u: string, count: number, reps: number) =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        const done = x.sets.filter((s) => s.done);
+        const load = [...x.sets].reverse().find((s) => s.load)?.load ?? "";
+        const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
+        return { ...x, sets: [...done, ...work] };
       }),
     );
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
@@ -1153,6 +1172,23 @@ export default function Workout() {
                                     {t("workout.restShort")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
                                   </Text>
                                 )}
+                                {/* RPE — a quiet chip, not a permanent field. Tap to
+                                    reveal the compact input below; the value rides on
+                                    the chip once set. Hidden entirely in Simple mode. */}
+                                {prefs.detailed && (() => {
+                                  const rpeShown = rpeRirSwap(s.rpe, prefs.rpeAsRir);
+                                  const set = !!rpeShown;
+                                  return (
+                                    <Pressable
+                                      onPress={() => setRpeOpenUid((u) => (u === x.uid ? null : x.uid))}
+                                      hitSlop={6}
+                                      style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, 0.1) : "transparent" }}
+                                    >
+                                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.6, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
+                                      <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
+                                    </Pressable>
+                                  );
+                                })()}
                                 <Pressable
                                   onPress={() => cycleType(x.uid, i)}
                                   hitSlop={8}
@@ -1162,56 +1198,62 @@ export default function Workout() {
                                 </Pressable>
                               </View>
                             </View>
-                            {/* Numbers on the left, the plain lime ＋ (log this set)
-                                on the right — one tap banks it + starts the rest. */}
-                            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-                              <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-end" }}>
+                            {/* Numbers centred; weight & reps read at one size and
+                                share a baseline so "kg" and "reps" sit level. Tapping
+                                a unit focuses its input (via inputRefs). */}
+                            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", flexWrap: "wrap" }}>
+                              <Pressable style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 4 }} onPress={() => inputRefs.current[`${x.uid}:load`]?.focus()}>
                                 <TextInput
+                                  ref={(r) => { inputRefs.current[`${x.uid}:load`] = r; }}
                                   value={bw ? s.reps : displayLoad(s.load, prefs.units)}
                                   onChangeText={(v) => (bw ? setSetField(x.uid, i, "reps", v) : setSetField(x.uid, i, "load", storeLoad(v, prefs.units)))}
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.mono, fontSize: 44, fontWeight: "300", letterSpacing: -1, color: C.chalk, padding: 0, minWidth: 60 }}
+                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.5, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 6, marginBottom: 9 }}>{bw ? measureLabel : unitLabel}</Text>
-                                {!bw && (
-                                  <View style={{ flexDirection: "row", alignItems: "flex-end", marginLeft: 10 }}>
-                                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginBottom: 9, marginRight: 4 }}>×</Text>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
+                              </Pressable>
+                              {!bw && (
+                                <>
+                                  <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.ash, marginHorizontal: 3 }}>×</Text>
+                                  <Pressable style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 4 }} onPress={() => inputRefs.current[`${x.uid}:reps`]?.focus()}>
                                     <TextInput
+                                      ref={(r) => { inputRefs.current[`${x.uid}:reps`] = r; }}
                                       value={s.reps}
                                       onChangeText={(v) => setSetField(x.uid, i, "reps", v)}
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.mono, fontSize: 24, color: C.chalk, padding: 0, minWidth: 28, textAlign: "center" }}
+                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.5, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
-                                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginLeft: 5, marginBottom: 8 }}>{measureLabel}</Text>
-                                  </View>
-                                )}
-                              </View>
-                              <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ width: 58, height: 58, borderRadius: 999, backgroundColor: C.lime, alignItems: "center", justifyContent: "center", shadowColor: C.lime, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 }}>
-                                <Text style={{ fontFamily: F.reg, fontSize: 32, lineHeight: 36, color: C.onAccent }}>＋</Text>
-                              </Pressable>
+                                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
+                                  </Pressable>
+                                </>
+                              )}
                             </View>
-                            {(prefs.detailed || prefs.velocity) && (
-                              <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14 }}>
-                                {prefs.detailed && (
-                                  <View style={{ flex: 1 }}>
-                                    <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
-                                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
-                                    </Pressable>
-                                    <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} active />
-                                  </View>
-                                )}
-                                {prefs.velocity && (
-                                  <View style={{ flex: 1 }}>
-                                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>M/S</Text>
-                                    <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} active />
-                                  </View>
-                                )}
+                            {/* RPE tray — reveals under the numbers only when the chip
+                                is tapped; the RIR ⇄ swap sits in the caption. */}
+                            {prefs.detailed && rpeOpenUid === x.uid && (
+                              <View style={{ marginTop: 14 }}>
+                                <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
+                                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
+                                </Pressable>
+                                <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} active />
                               </View>
                             )}
+                            {prefs.velocity && (
+                              <View style={{ marginTop: 14 }}>
+                                <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>M/S</Text>
+                                <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} active />
+                              </View>
+                            )}
+                            {/* Primary action — a proper, sized Log button (the old
+                                floating ＋ is retired). Banks the set + starts rest. */}
+                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 14, shadowColor: C.lime, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 }}>
+                              <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
+                              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
+                            </Pressable>
                           </View>
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
@@ -1256,19 +1298,40 @@ export default function Workout() {
                       </View>
                     );
                   })()}
+                  {/* Special = glyph only (the ⚡). Opens the special-set menu. */}
                   <Pressable
                     onPress={() => { setSpecialUid((u) => (u === x.uid ? null : x.uid)); setPlanUid(null); }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 15 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("workout.special")}
+                    style={{ width: 48, alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>⚡</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t("workout.special")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>⚡</Text>
                   </Pressable>
                 </View>
                 {/* Plan-ahead panel — a count stepper + shape, so a lifter can
                     queue the whole exercise before the first rep. */}
                 {planUid === x.uid && (
                   <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, padding: 14 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 12 }}>{t("workout.planTitle")}</Text>
+                    {/* Popular presets — one tap lays out the whole exercise. */}
+                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("workout.presetsTitle")}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                      {([
+                        { sets: 3, reps: 3, k: "workout.schemeHeavy" },
+                        { sets: 5, reps: 5, k: "workout.schemeStrength" },
+                        { sets: 3, reps: 12, k: "workout.schemeHypertrophy" },
+                        { sets: 4, reps: 8, k: "workout.schemeVolume" },
+                      ] as const).map((p) => (
+                        <Pressable
+                          key={p.k}
+                          onPress={() => { applyPreset(x.uid, p.sets, p.reps); setPlanUid(null); }}
+                          style={{ flexGrow: 1, flexBasis: "46%", borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, backgroundColor: withAlpha(C.ink2, 0.6) }}
+                        >
+                          <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 17, color: C.ash }}>×</Text>{p.reps}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t(p.k)}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>{t("workout.planManual")}</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
                       <Pressable onPress={() => setPlanCount((n) => Math.max(1, n - 1))} accessibilityLabel="−" style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.chalk }}>−</Text>
