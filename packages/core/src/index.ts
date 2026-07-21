@@ -60,6 +60,7 @@ export * from "./analytics";
 export * from "./units";
 export * from "./plates";
 export * from "./logger-prefs";
+export * from "./set-focus";
 export * from "./live-stats";
 export * from "./done-receipt";
 export * from "./session-celebration";

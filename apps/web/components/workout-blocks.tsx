@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { setLoggerPref } from "@/lib/logger-prefs";
@@ -474,7 +474,15 @@ export default function WorkoutBlocks({
                 <span />
                 {live && <span />}
               </div>
-              {b.sets.map((s, i) => (
+              {b.sets.map((s, i) => {
+                // LIVE logger: focus the set you're on, sunset the rest (shared
+                // core model). The first un-banked set is the "active" hero on a
+                // lime-tinted panel; banked sets recede to quiet history, the
+                // queue below to a faded plan. The Builder (live=false) is
+                // untouched — it edits a plan, it has no "now".
+                const focus = live ? setFocus(b.sets as { done?: boolean }[], i) : null;
+                const dragging = dragSet?.uid === b.uid && dragSet.i === i;
+                return (
                 <div
                   key={i}
                   // Rows are drop targets for a set dragged within the SAME block.
@@ -488,7 +496,19 @@ export default function WorkoutBlocks({
                         }
                       : undefined
                   }
-                  style={{ display: "grid", gridTemplateColumns: strengthCols(b.name), gap: space.xs, marginBottom: 6, alignItems: "center", opacity: dragSet?.uid === b.uid && dragSet.i === i ? 0.5 : 1 }}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: strengthCols(b.name),
+                    gap: space.xs,
+                    marginBottom: 6,
+                    alignItems: "center",
+                    opacity: dragging ? 0.5 : focus === "done" ? 0.42 : focus === "upcoming" ? 0.5 : 1,
+                    // Vertical-only padding keeps the cells in column with the
+                    // header while the active row gains height + a tinted ring.
+                    ...(focus === "active"
+                      ? { borderRadius: 12, paddingBlock: 6, background: `${LIME}14`, boxShadow: `inset 0 0 0 1px ${LIME}55` }
+                      : {}),
+                  }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -574,7 +594,8 @@ export default function WorkoutBlocks({
                     );
                   })()}
                 </div>
-              ))}
+                );
+              })}
               </div>
               </div>
               {/* Add-set control: "+ Add set" wears the ghost/dashed add
@@ -584,12 +605,25 @@ export default function WorkoutBlocks({
                   tucked into a compact "Special ▾" menu. The set badge still
                   re-types a set with a tap, so the menu is just for ADDING. */}
               <div style={{ display: "flex", gap: space.xs, alignItems: "center", position: "relative" }}>
-                <button
-                  onClick={() => addSet(b.uid)}
-                  style={{ ...disp, fontWeight: 600, fontSize: fs.caption, color: ASH, background: "none", border: `1px dashed color-mix(in srgb, ${ASH} 50%, transparent)`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }}
-                >
-                  {t("w.train.blocks.addSet")}
-                </button>
+                {/* LIVE: when nothing is queued below the active set, "+ Add set"
+                    IS the next move — a prominent lime ghost mirroring the active
+                    row's tint; when a plan sits below (or in the Builder) it stays
+                    a quiet ash ghost so the queue keeps the focus. */}
+                {(() => {
+                  const ghost = live && addSetIsNext(b.sets as { done?: boolean }[]);
+                  return (
+                    <button
+                      onClick={() => addSet(b.uid)}
+                      style={
+                        ghost
+                          ? { ...disp, fontWeight: 700, fontSize: fs.caption, color: txt(LIME), background: `${LIME}14`, border: `1px dashed ${LIME}80`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }
+                          : { ...disp, fontWeight: 600, fontSize: fs.caption, color: ASH, background: "none", border: `1px dashed color-mix(in srgb, ${ASH} 50%, transparent)`, borderRadius: 999, padding: "8px 17px", cursor: "pointer" }
+                      }
+                    >
+                      {t("w.train.blocks.addSet")}
+                    </button>
+                  );
+                })()}
                 <button
                   onClick={() => setSpecialUid((u) => (u === b.uid ? null : b.uid))}
                   title={t("w.train.blocks.specialTitle")}

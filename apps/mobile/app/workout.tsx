@@ -37,6 +37,8 @@ import {
   setType,
   cycleSetType,
   setTypeBadge,
+  setFocus,
+  addSetIsNext,
   moveItemTo,
   warmupRamp,
   defaultSessionTitle,
@@ -1097,6 +1099,11 @@ export default function Workout() {
                 </View>
                 {x.sets.map((s, i) => {
                   const lifted = setDrag.dragKey === setDrag.key(x.uid, i);
+                  // Focus the set you're on, sunset the rest: the first un-banked
+                  // set is the "active" hero (lifted onto glass), banked sets read
+                  // as quiet history, still-to-do sets as a faded plan. (core.)
+                  const focus = setFocus(x.sets, i);
+                  const isActive = focus === "active";
                   return (
                   <Animated.View
                     key={s.uid ?? i}
@@ -1104,7 +1111,34 @@ export default function Workout() {
                     style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
                   >
                   <SwipeRow label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
-                    <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: space.xs,
+                        alignItems: "center",
+                        // Sunset the non-active rows so exactly one set reads as
+                        // "now". Banked recede furthest; the queue stays legible.
+                        opacity: focus === "done" ? 0.42 : focus === "upcoming" ? 0.5 : 1,
+                        // The active set lifts onto a lime-tinted glass panel. The
+                        // −8/+8 margin/padding pair bleeds the tint past the cells
+                        // without shifting them out of column with the header.
+                        ...(isActive
+                          ? {
+                              marginHorizontal: -8,
+                              marginVertical: 3,
+                              paddingHorizontal: 8,
+                              paddingVertical: 8,
+                              borderRadius: 16,
+                              backgroundColor: withAlpha(C.lime, 0.08),
+                              borderWidth: 1,
+                              borderColor: withAlpha(C.lime, 0.28),
+                            }
+                          : {}),
+                      }}
+                    >
+                      {/* Native Liquid Glass behind the active set (iOS 26+ /
+                          when enabled); the tint above is the everywhere floor. */}
+                      {isActive && <GlassSurface radius={16} tintColor={C.lime} />}
                     {(() => {
                       const st = setType(s);
                       const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
@@ -1148,10 +1182,27 @@ export default function Workout() {
                 {/* Add-set control: one primary "+ Add set", with warm-up / ramp
                     / cool-down / drop in a "Special ▾" menu (instead of a row of
                     five). The set badge still re-types a set with a tap. */}
-                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginTop: 4 }}>
-                  <Pressable onPress={() => addSet(x.uid)} style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 9, paddingHorizontal: 18 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("workout.addSet")}</Text>
-                  </Pressable>
+                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginTop: 8 }}>
+                  {/* "+ Add set" reads the two logging habits (core addSetIsNext):
+                      when nothing is queued below the active set it IS the next
+                      move — a prominent lime ghost card that mirrors the active
+                      set's glass; when a plan already sits below, it's a quiet
+                      secondary control so the queue stays the focus. */}
+                  {(() => {
+                    const ghost = addSetIsNext(x.sets);
+                    return (
+                      <Pressable
+                        onPress={() => addSet(x.uid)}
+                        style={
+                          ghost
+                            ? { flexGrow: 1, alignItems: "center", borderRadius: R.cta, paddingVertical: 11, paddingHorizontal: 18, backgroundColor: withAlpha(C.lime, 0.09), borderWidth: 1, borderColor: withAlpha(C.lime, 0.5), borderStyle: "dashed" }
+                            : { borderRadius: R.cta, paddingVertical: 9, paddingHorizontal: 18, borderWidth: 1, borderColor: C.line }
+                        }
+                      >
+                        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.ash }}>{t("workout.addSet")}</Text>
+                      </Pressable>
+                    );
+                  })()}
                   <Pressable
                     onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
                     style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 14 }}
