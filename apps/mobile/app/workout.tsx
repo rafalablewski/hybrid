@@ -240,12 +240,9 @@ export default function Workout() {
   // Which exercise has its "Special ▾" add-set menu open (warm-up / ramp /
   // cool-down / drop). One primary "+ Add set" keeps the common path one tap.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
-  // Plan-ahead panel: which exercise has its "plan your sets" panel open, plus
-  // the count + shape it will lay down — queue a whole exercise before the first
-  // rep instead of tapping "+ Add set" set-by-set.
+  // Popular-preset rail: which exercise has its preset rail open. One tap lays
+  // out the whole exercise before the first rep instead of "+ Add set" one-by-one.
   const [planUid, setPlanUid] = useState<string | null>(null);
-  const [planCount, setPlanCount] = useState(3);
-  const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
   // exercise (only one set is active per exercise, so keying by uid is enough).
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
@@ -587,26 +584,6 @@ export default function Workout() {
   const addSet = (u: string) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
-    );
-  // Plan ahead: append several working sets at once (the "plan your sets" panel).
-  // Straight carries the last set's numbers; pyramid steps the load up 2.5 kg per
-  // set. Plain working sets (no done/role flags) so they queue below the active one.
-  const addPlannedSets = (u: string, count: number, tmpl: "straight" | "pyramid") =>
-    setExercises((xs) =>
-      xs.map((x) => {
-        if (x.uid !== u) return x;
-        const prev = x.sets[x.sets.length - 1];
-        const baseKg = prev ? parseFloat(prev.load) : NaN;
-        const stepKg = 2.5;
-        const added: WSet[] = Array.from({ length: count }, (_, k) => ({
-          uid: uid(),
-          load: tmpl === "pyramid" && Number.isFinite(baseKg) ? String(+(baseKg + (k + 1) * stepKg).toFixed(2)) : prev?.load ?? "",
-          reps: prev?.reps ?? "",
-          rpe: prev?.rpe ?? "",
-          done: false,
-        }));
-        return { ...x, sets: [...x.sets, ...added] };
-      }),
     );
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
@@ -1292,7 +1269,7 @@ export default function Workout() {
                           </View>
                           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
                         </Pressable>
-                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("workout.planTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
+                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("workout.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 1 }}>⋯</Text>
                         </Pressable>
                       </View>
@@ -1308,52 +1285,38 @@ export default function Workout() {
                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>⚡</Text>
                   </Pressable>
                 </View>
-                {/* Plan-ahead panel — a count stepper + shape, so a lifter can
-                    queue the whole exercise before the first rep. */}
+                {/* Popular-preset rail — one tap lays out the whole exercise. A
+                    single horizontal rail replaces the old nested grid + manual
+                    planner; it bleeds to the card's edges (negative margin =
+                    card gutter, matching inner padding) so cards slide under the
+                    edge, matching the exercise-widget idiom. */}
                 {planUid === x.uid && (
-                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, padding: 14 }}>
-                    {/* Popular presets — one tap lays out the whole exercise. */}
+                  <View style={{ marginTop: 10 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("workout.presetsTitle")}</Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ marginHorizontal: -space.lg }}
+                      contentContainerStyle={{ paddingHorizontal: space.lg, gap: 10 }}
+                    >
                       {([
                         { sets: 3, reps: 3, k: "workout.schemeHeavy" },
                         { sets: 5, reps: 5, k: "workout.schemeStrength" },
                         { sets: 3, reps: 12, k: "workout.schemeHypertrophy" },
                         { sets: 4, reps: 8, k: "workout.schemeVolume" },
-                      ] as const).map((p) => (
+                        { sets: 10, reps: 10, k: "workout.schemeGvt" },
+                      ] as const).map((p, pi) => (
                         <Pressable
                           key={p.k}
                           onPress={() => { applyPreset(x.uid, p.sets, p.reps); setPlanUid(null); }}
-                          style={{ flexGrow: 1, flexBasis: "46%", borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, backgroundColor: withAlpha(C.ink2, 0.6) }}
+                          style={{ width: 116, paddingVertical: 16, paddingHorizontal: 15, borderRadius: 20, backgroundColor: pi === 0 ? withAlpha(C.lime, 0.08) : C.card, borderWidth: 1, borderColor: pi === 0 ? withAlpha(C.lime, 0.3) : C.line }}
                         >
-                          <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 17, color: C.ash }}>×</Text>{p.reps}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t(p.k)}</Text>
+                          <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -1, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 19, color: C.ash }}>×</Text>{p.reps}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 8 }}>{t(p.k)}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime), marginTop: 10 }}>{p.sets * p.reps} {t("workout.presetReps")}</Text>
                         </Pressable>
                       ))}
-                    </View>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>{t("workout.planManual")}</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                      <Pressable onPress={() => setPlanCount((n) => Math.max(1, n - 1))} accessibilityLabel="−" style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.chalk }}>−</Text>
-                      </Pressable>
-                      <View style={{ flex: 1, alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.black, fontSize: 30, letterSpacing: -1, color: C.chalk }}>{planCount}</Text>
-                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, marginTop: 2 }}>{t("workout.planWorking")}</Text>
-                      </View>
-                      <Pressable onPress={() => setPlanCount((n) => Math.min(12, n + 1))} accessibilityLabel="+" style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.chalk }}>+</Text>
-                      </Pressable>
-                    </View>
-                    <View style={{ flexDirection: "row", gap: 6, marginBottom: 14 }}>
-                      {(["straight", "pyramid"] as const).map((tm) => (
-                        <Pressable key={tm} onPress={() => setPlanTmpl(tm)} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: planTmpl === tm ? withAlpha(C.lime, 0.5) : C.line, backgroundColor: planTmpl === tm ? withAlpha(C.lime, 0.1) : "transparent" }}>
-                          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: planTmpl === tm ? txt(C, C.lime) : C.ash }}>{t(tm === "straight" ? "workout.planStraight" : "workout.planPyramid")}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                    <Pressable onPress={() => { addPlannedSets(x.uid, planCount, planTmpl); setPlanUid(null); }} style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("workout.planAdd")}</Text>
-                    </Pressable>
+                    </ScrollView>
                   </View>
                 )}
                 {specialUid === x.uid && (
