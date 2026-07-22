@@ -13,6 +13,7 @@ import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "w.recovery.nutrition.goalLose" }, { id: "maintain", label: "w.recovery.nutrition.goalMaintain" }, { id: "gain", label: "w.recovery.nutrition.goalGain" },
@@ -49,6 +50,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const full = isFullAccess(usePersona());
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
+  // The goal is changed through a deliberate Sheet (opened from a card), never a
+  // live top-of-screen toggle — switching it recomputes every target, so an
+  // accidental tap must not be able to do it.
+  const [goalPicker, setGoalPicker] = useState(false);
+  const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
+  const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [scanning, setScanning] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -357,15 +364,35 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
       </div>
 
-      {/* Goal segment — established (personalized) users only. */}
-      {(
-        <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 18 }}>
+      {/* Goal — a card you OPEN (never a live toggle): switching the goal
+          recomputes every target, so it must take a deliberate tap. */}
+      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "13px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+          <Glyph name="target" size={20} color={C("ash")} />
+          <div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.goalLabel")}</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.bodyLg, marginTop: 2 }}>{goalName(goal)}</div>
+          </div>
+        </div>
+        <Glyph name="chevron" size={16} color={C("ash")} />
+      </button>
+
+      <Sheet open={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 8 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
-            return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase", background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(g.label)}</button>;
+            return (
+              <button key={g.id} onClick={() => { setGoal(g.id); setGoalPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: 15, cursor: "pointer", color: C("chalk") }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.bodyLg }}>{t(g.label)}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{goalSub(g.id)}</div>
+                </div>
+                <span style={{ width: 22, height: 22, borderRadius: 999, border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center", flexShrink: 0 }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
+              </button>
+            );
           })}
         </div>
-      )}
+      </Sheet>
 
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16 }}>

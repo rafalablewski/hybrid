@@ -38,8 +38,9 @@ import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS, Ring } from "./kit";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring } from "./kit";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -78,6 +79,11 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const { data: signals = [], isFetching: refreshing, refetch } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
+  // The goal is changed through a deliberate Sheet (opened from a card), never a
+  // live top-of-screen toggle — switching it recomputes every target.
+  const [goalPicker, setGoalPicker] = useState(false);
+  const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
+  const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   // Signal kinds already logged for the meal being entered — survives a partial
   // failure so a retry doesn't duplicate the kinds that already succeeded.
@@ -324,9 +330,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </View>
       </View>
 
-      <View style={{ marginTop: 18 }}>
-        <ASegment options={GOALS.map((g) => ({ id: g.id, label: t(g.labelKey) }))} value={goal} onPick={setGoal} />
-      </View>
+      {/* Goal — a card you OPEN (never a live toggle): switching the goal
+          recomputes every target, so it must take a deliberate tap. */}
+      <Pressable onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+          <Glyph name="target" size={20} color={C.ash} strokeWidth={5} />
+          <View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.goalLabel")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: 2 }}>{goalName(goal)}</Text>
+          </View>
+        </View>
+        <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
+      </Pressable>
 
       {coachDiet?.diet && (
         <ACard style={{ marginTop: 16 }}>
@@ -588,6 +603,23 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           ))}
         </View>
       </ACard>
+
+      <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
+        <View style={{ gap: 10, paddingBottom: 8 }}>
+          {GOALS.map((g) => {
+            const on = goal === g.id;
+            return (
+              <Pressable key={g.id} onPress={() => { setGoal(g.id); setGoalPicker(false); }} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: 16, padding: 15 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(g.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{goalSub(g.id)}</Text>
+                </View>
+                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={txt(C, C.lime)} /> : null}</View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Sheet>
     </>
   );
 
