@@ -371,52 +371,43 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
       {personalized ? (
         <>
-          {/* CALORIE RING — the hero. The whole card defers to it: a big tick-ring,
-              the one number you came for, then macros as hairline lines beneath. */}
-          <div style={{ ...card, marginTop: 16, padding: "28px 22px 22px" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.calories")}</div>
-              <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
-                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={today.kcal > targets.kcal * 1.05 ? C("red") : C("lime")} size={200} ticks={52} center={
-                  <span style={{ display: "block", textAlign: "center" }}>
-                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums" }}>{Math.round(today.kcal)}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.ofKcal").replace("{n}", String(targets.kcal))}</span>
-                  </span>
-                } />
-              </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 18 }}>
-                {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
-              </div>
+          {/* CALORIE RING — the hero. The one number you came for is calories
+              LEFT; the ring fills as the day is consumed. */}
+          <div style={{ ...card, marginTop: 16, padding: "28px 22px 24px", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={today.kcal > targets.kcal * 1.05 ? C("red") : C("lime")} size={200} ticks={52} center={
+                <span style={{ display: "block", textAlign: "center" }}>
+                  <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: today.kcal > targets.kcal ? "var(--red-text)" : C("chalk") }}>{Math.round(targets.kcal - today.kcal)}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{Math.round(today.kcal)} / {targets.kcal}</span>
+                </span>
+              } />
             </div>
-            <div style={{ marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
-                <div key={label} style={{ marginTop: i ? 18 : 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{Math.round(cur)} / {tgt} g</span>
-                  </div>
-                  <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 99, background: col }} /></div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 18 }}>
+              {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+            </div>
+          </div>
+
+          {/* Macros — their own card, hairline lines beneath the hero. */}
+          <div style={{ ...card, marginTop: 12, padding: "20px 22px" }}>
+            {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
+              <div key={label} style={{ marginTop: i ? 18 : 0 }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{Math.round(cur)} / {tgt} g</span>
                 </div>
-              ))}
-            </div>
+                <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 99, background: col }} /></div>
+              </div>
+            ))}
           </div>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
 
-          {/* Quick actions — monoline glyphs, no fills. Add / Scan / Meals. */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 14 }}>
-            {([
-              [t("w.recovery.nutrition.add"), <AuroraIcon key="a" name="add" size={20} color={C("chalk")} />, () => scrollTo(addRef)],
-              [t("w.recovery.nutrition.scanLabel"), <Glyph key="s" name="scan" size={20} color={full ? C("chalk") : "var(--premium-accent-text)"} />, () => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))],
-              [t("w.recovery.nutrition.yourMeals"), <Glyph key="m" name="bowl" size={20} color={C("chalk")} />, () => scrollTo(mealsRef)],
-            ] as const).map(([label, glyph, onClick]) => (
-              <button key={label} onClick={onClick} style={{ ...card, padding: "16px 8px", textAlign: "center", cursor: "pointer", color: C("chalk"), display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                {glyph}
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
-              </button>
-            ))}
-          </div>
+          {/* One primary action — log a meal (jumps to the entry card). */}
+          <button onClick={() => scrollTo(addRef)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: "pointer" }}>
+            <AuroraIcon name="add" size={16} color="var(--on-accent)" />{t("w.recovery.nutrition.logMealCta")}
+          </button>
           <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => onNavigate?.("upgrade")} full={full} />
         </>
       ) : (
@@ -446,10 +437,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
       {/* ADD TO TODAY — the unified manual entry + one-tap premade meals. */}
       <div ref={addRef} style={{ ...card, marginTop: 16, scrollMarginTop: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-          <AuroraIcon name="add" size={20} color={C("lime")} />
-          <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+            <AuroraIcon name="add" size={20} color={C("lime")} />
+            <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
+          </div>
+          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", gap: 7, background: "transparent", border: "none", cursor: scanning ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--premium-accent-text)", opacity: scanning ? 0.6 : 1 }}>
+            <Glyph name="scan" size={16} color="var(--premium-accent-text)" />{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full && <span style={{ fontSize: 11 }}>✦</span>}
+          </button>
         </div>
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file); e.target.value = ""; }} />
         <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
           <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
           <input value={f.protein} onChange={(e) => setF((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
