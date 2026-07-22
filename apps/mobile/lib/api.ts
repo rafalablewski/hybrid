@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -341,6 +341,22 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// Search the Open Food Facts database (via our /api/nutrition/search proxy).
+// `query` is text or a barcode number; returns normalized foods (empty on any
+// failure so the UI can fall back to manual entry). See @hybrid/core OffFood.
+export async function searchFoods(query: string, opts?: { barcode?: boolean }): Promise<OffFood[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const param = opts?.barcode ? `barcode=${encodeURIComponent(q)}` : `q=${encodeURIComponent(q)}`;
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/search?${param}`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { foods?: OffFood[] }).foods ?? [];
+  } catch {
+    return [];
   }
 }
 
