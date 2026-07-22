@@ -290,22 +290,35 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     );
   }
 
+  // Cold start (no maintenance estimate yet) → onboarding is its OWN focused
+  // flow, not stacked above the tracker. A weigh-in in the wizard personalizes
+  // the estimate and drops the user into the full screen below.
+  if (!personalized) {
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+          <ABack />
+          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
+        </View>
+        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} today={today} onWeighIn={logWeighIn} />
+      </AuroraScreen>
+    );
+  }
+
   const body = (
     <>
       {/* Masthead — the subpage back button, an eyebrow, and one quiet headline. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <ABack />
         <View>
-          {personalized && greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
+          {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
           <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
         </View>
       </View>
 
-      {personalized && (
-        <View style={{ marginTop: 18 }}>
-          <ASegment options={GOALS.map((g) => ({ id: g.id, label: t(g.labelKey) }))} value={goal} onPick={setGoal} />
-        </View>
-      )}
+      <View style={{ marginTop: 18 }}>
+        <ASegment options={GOALS.map((g) => ({ id: g.id, label: t(g.labelKey) }))} value={goal} onPick={setGoal} />
+      </View>
 
       {coachDiet?.diet && (
         <ACard style={{ marginTop: 16 }}>
@@ -326,7 +339,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </ACard>
       )}
 
-      {personalized ? (
+      {(
         <>
           {/* CALORIE RING — the hero. Calories LEFT is the number; the ring fills
               as the day is consumed. */}
@@ -365,8 +378,6 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </Pressable>
           <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} full={full} />
         </>
-      ) : (
-        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} today={today} onWeighIn={logWeighIn} />
       )}
 
       {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate, from the

@@ -331,17 +331,28 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     );
   }
 
+  // Cold start (no maintenance estimate yet) → onboarding is its OWN focused
+  // flow, not stacked above the tracker. A weigh-in in the wizard personalizes
+  // the estimate and drops the user into the full screen below.
+  if (!personalized) {
+    return (
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
+        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => onNavigate?.("upgrade")} today={today} onWeighIn={logWeighIn} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* Masthead — an eyebrow + one quiet headline. No decorative mark. */}
       <div>
-        {personalized && greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
+        {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
         <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
       </div>
 
-      {/* Established users keep the compact goal segment; first-run users get the
-          guided goal picker (onboarding) in the not-personalized branch below. */}
-      {personalized && (
+      {/* Goal segment — established (personalized) users only. */}
+      {(
         <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 18 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
@@ -369,7 +380,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       )}
 
-      {personalized ? (
+      {(
         <>
           {/* CALORIE RING — the hero. The one number you came for is calories
               LEFT; the ring fills as the day is consumed. */}
@@ -410,8 +421,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </button>
           <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => onNavigate?.("upgrade")} full={full} />
         </>
-      ) : (
-        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => onNavigate?.("upgrade")} today={today} onWeighIn={logWeighIn} />
       )}
 
       {weight.points.length > 0 && (
