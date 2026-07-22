@@ -39,19 +39,29 @@ export function canScanFoodLabel(persona: Persona): boolean {
 }
 
 /** Free users CAN add nutrition values manually. Logging a PREMADE meal preset
- *  and saving custom PRODUCTS / using the food database are Full features.
- *  (Saving your OWN meals is free up to {@link FREE_MEAL_LIMIT} — see
- *  {@link canSaveMeal}; this predicate stays Full-only for products + presets.) */
+ *  is a Full feature. (Saving your OWN meals + products is free up to
+ *  {@link FREE_MEAL_LIMIT} / {@link FREE_PRODUCT_LIMIT} — see {@link canSaveMeal}
+ *  / {@link canSaveProduct}; this predicate stays Full-only for presets.) */
 export function canSaveMealsAndProducts(persona: Persona): boolean {
   return isFullAccess(persona);
 }
 
-/** Saving a custom PRODUCT (a reusable food with per-serving macros) to the
- *  personal library is Full-only — the free tier gets saved MEALS (capped, see
- *  {@link canSaveMeal}) but not a products library. Alias of the Full gate,
- *  named for the call-site so the intent is explicit at both clients + the API. */
-export function canSaveProduct(persona: Persona): boolean {
-  return isFullAccess(persona);
+/** How many custom PRODUCTS a FREE user may keep saved to their personal
+ *  library — the offline half of the (blocked) food database. Building a product
+ *  is always free; only the library SIZE is capped, mirroring {@link
+ *  FREE_MEAL_LIMIT}. Shared by both clients AND the API gate so the number can
+ *  never drift. */
+export const FREE_PRODUCT_LIMIT = 4;
+
+/** Free users CAN create and save their OWN custom products (a reusable food
+ *  with per-serving macros) — up to {@link FREE_PRODUCT_LIMIT} of them. Saving
+ *  MORE is the paid (Full) upgrade. The API mirrors this on POST
+ *  /api/nutrition/products (403 upgrade_required at the cap), so the clients
+ *  gate the "add" CTA on this predicate.
+ *  @param savedCount how many products the user currently has saved. */
+export function canSaveProduct(persona: Persona, savedCount: number): boolean {
+  if (isFullAccess(persona)) return true;
+  return persona === "casual" && savedCount < FREE_PRODUCT_LIMIT;
 }
 
 /** How many custom meals a FREE user may keep saved to their personal library.

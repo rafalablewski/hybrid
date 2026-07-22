@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { FREE_PRODUCT_LIMIT } from "@hybrid/core";
 import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // The user's custom FOOD PRODUCT library (FoodProduct) — reusable foods with
 // per-serving macros, the offline half of the (blocked) food database. GET lists;
-// POST creates. Full-only to CREATE (mirrors access.canSaveProduct): a free client
-// gets a 403 upgrade_required. Owner-scoped (RLS + explicit where).
+// POST creates. Free clients keep up to FREE_PRODUCT_LIMIT (mirrors
+// access.canSaveProduct); a 403 upgrade_required lands at the cap. Owner-scoped
+// (RLS + explicit where).
 
 const int = (v: unknown, max: number): number | null => {
   const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) : NaN;
@@ -28,13 +30,16 @@ export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // Saving custom products is a Full feature. Entitlement from the DB row (source
-  // of truth) — never from user-writable Supabase metadata.
+  // Free clients keep up to FREE_PRODUCT_LIMIT saved products. Entitlement from
+  // the DB row (source of truth) — never from user-writable Supabase metadata.
   if (me.role === "CLIENT" && entitlementOf(me) !== "paid") {
-    return NextResponse.json(
-      { error: "Saving custom products is a Full feature. Upgrade to build your food library.", code: "upgrade_required" },
-      { status: 403 },
-    );
+    const saved = await prisma.foodProduct.count({ where: { userId: me.id } });
+    if (saved >= FREE_PRODUCT_LIMIT) {
+      return NextResponse.json(
+        { error: `Free includes ${FREE_PRODUCT_LIMIT} saved products. Upgrade to Full for an unlimited food library.`, code: "upgrade_required" },
+        { status: 403 },
+      );
+    }
   }
 
   const parsed = await readJsonLimited<Record<string, unknown>>(request, 8 * 1024);

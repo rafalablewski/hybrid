@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
@@ -13,13 +14,13 @@ import {
   MEAL_PRESETS,
   mealPresetSignals,
   FREE_MEAL_LIMIT,
+  FREE_PRODUCT_LIMIT,
   nutritionSummary,
   nutritionNudge,
   NUTRITION_GLYPHS,
   type NutritionGoal,
   type MealPreset,
   type WeightPoint,
-  type NutritionDay,
   type NutritionNudge,
   type NutritionSummary,
   type NutritionGlyphName,
@@ -95,8 +96,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
   const [showProdBuilder, setShowProdBuilder] = useState(false);
   const canSaveAnotherMeal = full || meals.length < FREE_MEAL_LIMIT;
+  const canSaveAnotherProduct = full || products.length < FREE_PRODUCT_LIMIT;
   const loadLibrary = () => { fetchSavedMeals().then(setMeals).catch(() => {}); fetchFoodProducts().then(setProducts).catch(() => {}); };
   useEffect(() => { loadLibrary(); }, []);
+  // First-run onboarding is a separate flow (see the early return). A weigh-in
+  // personalizes; "Continue on Free" finishes it without a weigh-in, persisted
+  // same-device so the free user isn't re-prompted every visit.
+  const [onboarded, setOnboarded] = useState(false);
+  useEffect(() => { AsyncStorage.getItem("hybrid.nutrition.onboarded").then((v) => { if (v === "1") setOnboarded(true); }).catch(() => {}); }, []);
+  const finishOnboarding = () => { AsyncStorage.setItem("hybrid.nutrition.onboarded", "1").catch(() => {}); setOnboarded(true); };
 
   const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
@@ -129,7 +137,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   const saveProduct = async () => {
     if (!prodForm.name.trim()) return;
-    if (!full) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    if (!canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const res = await createFoodProduct({ name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
@@ -293,14 +301,14 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // Cold start (no maintenance estimate yet) → onboarding is its OWN focused
   // flow, not stacked above the tracker. A weigh-in in the wizard personalizes
   // the estimate and drops the user into the full screen below.
-  if (!personalized) {
+  if (!personalized && !onboarded) {
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <ABack />
           <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
         </View>
-        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} today={today} onWeighIn={logWeighIn} />
+        <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} onWeighIn={logWeighIn} onContinueFree={finishOnboarding} />
       </AuroraScreen>
     );
   }
@@ -353,7 +361,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 </View>
               </Ring>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 18, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text>
+            {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 18, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
           </ACard>
 
           {/* Macros — their own card, hairline lines beneath the hero. */}
@@ -496,21 +504,22 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         )}
       </ACard>
 
-      {/* YOUR PRODUCTS — custom foods (Full). "+" drops a product's macros into
-          the meal builder. Free users see the ✦ Full upsell. */}
+      {/* YOUR PRODUCTS — custom foods. Free users keep up to FREE_PRODUCT_LIMIT
+          (mirrors saved meals); "+" drops a product's macros into the meal
+          builder. */}
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourProducts")}</Text>
-          {!full ? <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: pa.text }}>✦ Full</Text> : null}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`}</Text>
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, lineHeight: 16 }}>{full ? t("w.recovery.nutrition.yourProductsSub") : t("w.recovery.nutrition.yourProductsLocked")}</Text>
-        {full && products.length > 3 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, lineHeight: 16 }}>{t("w.recovery.nutrition.yourProductsSub")}</Text>
+        {products.length > 3 ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 10 }}>
             <AuroraIcon name="search" size={16} color={C.ash} />
             <TextInput value={prodSearch} onChangeText={setProdSearch} placeholder={t("w.recovery.nutrition.searchProducts")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.searchProducts")} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, padding: 0 }} />
           </View>
         ) : null}
-        {full && products.length > 0 ? (
+        {products.length > 0 ? (
           <View style={{ marginTop: 12 }}>
             {products.filter((p) => !prodSearch.trim() || p.name.toLowerCase().includes(prodSearch.trim().toLowerCase())).map((p, i) => (
               <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
@@ -524,7 +533,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             ))}
           </View>
         ) : null}
-        {full && showProdBuilder ? (
+        {showProdBuilder ? (
           <View style={{ marginTop: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}>
             <TextInput value={prodForm.name} onChangeText={(v) => setProdForm((s) => ({ ...s, name: v }))} placeholder={t("w.recovery.nutrition.productNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.productName")} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }} />
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
@@ -540,11 +549,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </View>
           </View>
         ) : null}
-        {!showProdBuilder ? (
-          <Pressable onPress={() => (full ? setShowProdBuilder(true) : onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: full ? C.lime : `${pa.fill}73`, borderRadius: 999, paddingVertical: 12 }}>
-            {!full ? <Text style={{ color: pa.text }}>✦</Text> : null}<AuroraIcon name="add" size={15} color={full ? txt(C, C.lime) : pa.text} /><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: full ? txt(C, C.lime) : pa.text }}>{t("w.recovery.nutrition.addProduct")}</Text>
+        {showProdBuilder ? null : canSaveAnotherProduct ? (
+          <Pressable onPress={() => setShowProdBuilder(true)} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
+            <AuroraIcon name="add" size={15} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addProduct")}</Text>
           </Pressable>
-        ) : null}
+        ) : (
+          <Pressable onPress={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", gap: 8, backgroundColor: `${pa.fill}1f`, borderWidth: 1, borderColor: `${pa.fill}66`, borderRadius: 999, paddingVertical: 12 }}>
+            <Text style={{ color: pa.text }}>✦</Text><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: pa.text }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
+          </Pressable>
+        )}
       </ACard>
 
       {/* CONSISTENCY — the honest record of the week + recent days. A streak is a
@@ -737,7 +750,7 @@ const MACT: { id: string; labelKey: string; subKey: string }[] = [
   { id: "moderate", labelKey: "w.recovery.nutrition.actModerate", subKey: "w.recovery.nutrition.actModerateSub" },
   { id: "high", labelKey: "w.recovery.nutrition.actHigh", subKey: "w.recovery.nutrition.actHighSub" },
 ];
-function OnboardingGoal({ goal, setGoal, onUpgrade, today, onWeighIn }: { goal: NutritionGoal; setGoal: (g: NutritionGoal) => void; onUpgrade: () => void; today: NutritionDay; onWeighIn: (kg: number) => void }) {
+function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree }: { goal: NutritionGoal; setGoal: (g: NutritionGoal) => void; onUpgrade: () => void; onWeighIn: (kg: number) => void; onContinueFree: () => void }) {
   const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
@@ -802,14 +815,25 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, today, onWeighIn }: { goal: 
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>
             <Pressable onPress={onUpgrade} style={{ alignSelf: "stretch", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 15, marginTop: 16 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: pa.ink }}>{t("w.recovery.nutrition.startTrial")}</Text><Glyph name="chevron" size={15} color={pa.ink} strokeWidth={6} /></Pressable>
           </ACard>
+          {/* The FREE alternative — a limited plan to start on now, no card
+              needed. Full is the trial card above; this is the way out that
+              isn't an upgrade. */}
           <ACard style={{ marginTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.todayVsTarget")}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{t("w.recovery.nutrition.adaptBody")}</Text>
-            <View style={{ flexDirection: "row", gap: space.lg, marginTop: 12, flexWrap: "wrap" }}>
-              {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
-                <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{l}</Text></View>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.freePlanTitle")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
+            </View>
+            <View style={{ marginTop: 12 }}>
+              {["w.recovery.nutrition.freeBulletLogging", "w.recovery.nutrition.freeBulletMeals", "w.recovery.nutrition.freeBulletProducts", "w.recovery.nutrition.freeBulletInsights"].map((k) => (
+                <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 7 }}>
+                  <AuroraIcon name="check" size={15} color={txt(C, C.lime)} />
+                  <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t(k)}</Text>
+                </View>
               ))}
             </View>
+            <Pressable onPress={onContinueFree} accessibilityRole="button" style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 14, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.continueFree")}</Text>
+            </Pressable>
           </ACard>
         </View>
       ) : null}

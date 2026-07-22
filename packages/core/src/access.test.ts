@@ -10,6 +10,7 @@ import {
   canSaveRoutine,
   FREE_TEMPLATE_LIMIT,
   FREE_MEAL_LIMIT,
+  FREE_PRODUCT_LIMIT,
 } from "./access";
 import type { Persona } from "./nav";
 
@@ -81,9 +82,11 @@ describe("free-tier access gates", () => {
     expect(canSaveMeal("unknown" as unknown as Persona, 0)).toBe(false);
   });
 
-  it("saving custom products stays Full-only", () => {
-    expect(canSaveProduct("casual")).toBe(false);
-    for (const p of FULL) expect(canSaveProduct(p)).toBe(true);
-    expect(canSaveProduct(undefined as unknown as Persona)).toBe(false);
+  it("free users save products up to FREE_PRODUCT_LIMIT, then it's Full", () => {
+    expect(canSaveProduct("casual", 0)).toBe(true);
+    expect(canSaveProduct("casual", FREE_PRODUCT_LIMIT - 1)).toBe(true);
+    expect(canSaveProduct("casual", FREE_PRODUCT_LIMIT)).toBe(false);
+    for (const p of FULL) expect(canSaveProduct(p, 999)).toBe(true);
+    expect(canSaveProduct(undefined as unknown as Persona, 0)).toBe(false);
   });
 });
