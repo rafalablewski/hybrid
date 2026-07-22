@@ -263,6 +263,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
   const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subtitle: q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, source: mealType });
+  // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
+  // fast path — no portion editor). Same signals + meal attribution as the picker.
+  const relogRecent = async (q: QuickFood) => {
+    setError(""); setMealMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", q.kcal, "kcal"], ["protein", q.protein, "g"], ["carbs", q.carbs, "g"], ["fat", q.fat, "g"]];
+    try {
+      for (const [kind, value, unit] of jobs) {
+        if (value <= 0) continue;
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: Math.round(value), unit, source: mealType }) });
+        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
+        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
+      }
+      pushRecent(q);
+      setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
+      await load(); revalidate.recovery();
+    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
+  };
 
   // Save the Create Food form → the existing products API (serving + unit →
   // servingLabel), then return to the picker on the Personal tab.
@@ -462,7 +479,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     if (!jobs.length) { setSaving(false); return; }
     try {
       for (const [kind, value, unit] of jobs) {
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "manual" }) });
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: mealType }) });
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
         loggedKinds.current.add(kind);
@@ -534,6 +551,36 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22 }}>{t("w.recovery.nutrition.addMealTitle")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</div>
+
+        {/* Meal selector — the quick-add is attributed to the chosen meal, matching
+            the full picker so today's intake groups the same way. */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 7, marginTop: 14 }}>
+          {MEAL_TYPES.map((m) => {
+            const on = mealType === m;
+            return (
+              <button key={m} onClick={() => setMealType(m)} aria-label={t(`w.recovery.nutrition.meal.${m}`)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 14, padding: "10px 4px", cursor: "pointer", color: on ? "var(--on-accent)" : C("chalk") }}>
+                <Glyph name={mealGlyph(m)} size={18} color={on ? "var(--on-accent)" : C("ash")} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".04em", textTransform: "uppercase", fontWeight: on ? 700 : 500 }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Recent — one-tap re-log of a recent food to the chosen meal. */}
+        {recent.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.recovery.nutrition.tab.recent")}</div>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px) 2px" }}>
+              {recent.slice(0, 8).map((q) => (
+                <button key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "9px 14px 9px 11px", cursor: "pointer", color: C("chalk") }}>
+                  <span style={{ width: 22, height: 22, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={12} color="var(--lime-text)" strokeWidth={2.4} /></span>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.caption, whiteSpace: "nowrap" }}>{q.name}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), whiteSpace: "nowrap" }}>{Math.round(q.kcal)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry. Each macro
@@ -1348,10 +1395,26 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
       )}
 
-      {/* DIARY — the honest record of the week + recent days. A streak is a
-          number, not a trophy. */}
+      {/* DIARY — today by meal, then the honest record of the week + recent days.
+          A streak is a number, not a trophy. */}
       {view === "diary" && (
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.todaysMeals")}</div>
+        <div style={{ marginTop: 12 }}>
+          {MEAL_TYPES.map((m, i) => (
+            <button key={m} onClick={() => openAdd(m)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", borderTop: i ? `1px solid ${C("line")}` : "none", padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
+              <Glyph name={mealGlyph(m)} size={19} color={C("ash")} />
+              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: mealTotals[m] > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : "—"}</span>
+              <Glyph name="chevron" size={14} color={C("ash")} />
+            </button>
+          ))}
+        </div>
+      </div>
+      )}
+
+      {view === "diary" && (
+      <div style={{ ...card, marginTop: 12, padding: 20 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.recentDays")}</div>
           {streakDays > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontVariantNumeric: "tabular-nums" }}>{streakDays}/7</span>}

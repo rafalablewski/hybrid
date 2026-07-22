@@ -278,6 +278,19 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
   const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subtitle: q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat });
+  // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
+  // fast path — no portion editor). Same signals + meal attribution as the picker.
+  const relogRecent = async (q: QuickFood) => {
+    setMealMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", q.kcal, "kcal"], ["protein", q.protein, "g"], ["carbs", q.carbs, "g"], ["fat", q.fat, "g"]];
+    for (const [kind, value, unit] of jobs) {
+      if (value <= 0) continue;
+      if (!(await postSignal(kind, Math.round(value), unit, mealType))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    }
+    pushRecent(q);
+    setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
+    revalidate.recovery();
+  };
   // Log a product (saved food) from the picker → portion editor.
   const logProduct = (p: FoodProductRow) => openPortion({ name: p.name, subtitle: p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat });
 
@@ -446,7 +459,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     if (!jobs.length) { setSaving(false); return; }
     let failed = false;
     for (const [kind, value, unit] of jobs) {
-      if (!(await createSignal(kind, value, unit))) { failed = true; break; }
+      if (!(await postSignal(kind, value, unit, mealType))) { failed = true; break; }
       loggedKinds.current.add(kind);
     }
     if (failed) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
@@ -489,6 +502,36 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       <View>
         <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{t("w.recovery.nutrition.addMealTitle")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
+
+        {/* Meal selector — the quick-add is attributed to the chosen meal,
+            matching the full picker so today's intake groups the same way. */}
+        <View style={{ flexDirection: "row", gap: 7, marginTop: 14 }}>
+          {MEAL_TYPES.map((m) => {
+            const on = mealType === m;
+            return (
+              <Pressable key={m} onPress={() => setMealType(m)} accessibilityLabel={t(`w.recovery.nutrition.meal.${m}`)} style={{ flex: 1, alignItems: "center", gap: 5, backgroundColor: on ? C.lime : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 4 }}>
+                <Glyph name={mealGlyph(m)} size={18} color={on ? C.onAccent : C.ash} strokeWidth={5} />
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.4, textTransform: "uppercase", fontWeight: on ? "700" : "500", color: on ? C.onAccent : C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Recent — one-tap re-log of a recent food to the chosen meal. */}
+        {recent.length > 0 ? (
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.recovery.nutrition.tab.recent")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {recent.slice(0, 8).map((q) => (
+                <Pressable key={q.key} onPress={() => relogRecent(q)} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingLeft: 11, paddingRight: 14 }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 999, borderWidth: 1.4, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={12} color={txt(C, C.lime)} strokeWidth={2.4} /></View>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{q.name}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{Math.round(q.kcal)}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry. Each macro
@@ -1251,6 +1294,22 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {/* DIARY — the honest record of the week + recent days. */}
       {view === "diary" && (
       <ACard style={{ marginTop: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.todaysMeals")}</Text>
+        <View style={{ marginTop: 12 }}>
+          {MEAL_TYPES.map((m, i) => (
+            <Pressable key={m} onPress={() => openAdd(m)} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, paddingVertical: 12, paddingHorizontal: 2 }}>
+              <Glyph name={mealGlyph(m)} size={19} color={C.ash} strokeWidth={5} />
+              <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: mealTotals[m] > 0 ? C.chalk : C.ash }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : "—"}</Text>
+              <Glyph name="chevron" size={14} color={C.ash} strokeWidth={6} />
+            </Pressable>
+          ))}
+        </View>
+      </ACard>
+      )}
+
+      {view === "diary" && (
+      <ACard style={{ marginTop: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.recentDays")}</Text>
           {streakDays > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{streakDays}/7</Text> : null}
