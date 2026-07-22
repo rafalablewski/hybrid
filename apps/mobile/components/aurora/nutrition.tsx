@@ -125,15 +125,29 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
 
-  // Log a saved meal → the SAME signals as a manual add.
-  const logMeal = async (m: SavedMealRow) => {
-    setMealMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", m.kcal, "kcal"], ["protein", m.protein, "g"], ["carbs", m.carbs, "g"], ["fat", m.fat, "g"]];
+  // ── Portion & quantity — logging any food/meal opens a sheet where a
+  //    serving × quantity stepper scales the macros LIVE before they're written.
+  //    One editor for an OFF search hit (offers Save too), a saved food, or a
+  //    saved meal, so scaling isn't just for the database.
+  const [portion, setPortion] = useState<{ name: string; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: OffFood } | null>(null);
+  const [qty, setQty] = useState(1);
+  const openPortion = (base: NonNullable<typeof portion>) => { setQty(1); setPortion(base); };
+
+  // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
+  const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subtitle: t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+
+  // Write the scaled macros for the open portion, then close.
+  const commitPortion = async () => {
+    if (!portion) return;
+    const q = qty > 0 ? qty : 1;
+    setMealMsg(""); setFoodMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", portion.kcal * q, "kcal"], ["protein", portion.protein * q, "g"], ["carbs", portion.carbs * q, "g"], ["fat", portion.fat * q, "g"]];
     for (const [kind, value, unit] of jobs) {
       if (value <= 0) continue;
-      if (!(await createSignal(kind, value, unit))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+      if (!(await createSignal(kind, Math.round(value), unit))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     }
-    setMealMsg(`${m.name} +${m.kcal} kcal`);
+    setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
+    setPortion(null);
     revalidate.recovery();
   };
 
@@ -192,17 +206,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     return () => clearTimeout(id);
   }, [foodQuery]);
 
-  // Log a database food straight to today — the SAME signals as a manual add.
-  const logFood = async (food: OffFood) => {
-    setFoodMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", food.kcal, "kcal"], ["protein", food.protein, "g"], ["carbs", food.carbs, "g"], ["fat", food.fat, "g"]];
-    for (const [kind, value, unit] of jobs) {
-      if (value <= 0) continue;
-      if (!(await createSignal(kind, value, unit))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    }
-    setFoodMsg(`${food.name} +${food.kcal} kcal`);
-    revalidate.recovery();
-  };
+  // Log a database food → opens the portion editor (serving × quantity), which
+  // also offers to save it into the library.
+  const logFood = (food: OffFood) => openPortion({ name: food.name, subtitle: food.brand ?? undefined, serving: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat, offFood: food });
 
   // Save a database food into the personal library (respects the free cap).
   const saveFood = async (food: OffFood) => {
@@ -766,6 +772,44 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             );
           })}
         </View>
+      </Sheet>
+
+      {/* Portion & quantity — serving × quantity stepper, macros scale live. */}
+      <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle} scroll={false}>
+        {portion ? (() => {
+          const q = qty > 0 ? qty : 1;
+          const sc = (v: number) => Math.round(v * q);
+          const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
+          return (
+            <View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 }}>
+                <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
+                <View style={{ alignItems: "center" }}>
+                  <TextInput value={String(qty)} onChangeText={(v) => { const n = parseFloat(v); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.quantity")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: -0.9, color: C.chalk, padding: 0 }} />
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.servings")}</Text>
+                </View>
+                <Pressable onPress={() => step(0.5)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "700", lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
+                <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: -1.6, color: C.chalk }}>{sc(portion.kcal)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+                {([["w.recovery.nutrition.protein", txt(C, C.blue), portion.protein], ["w.recovery.nutrition.carbs", txt(C, C.amber), portion.carbs], ["w.recovery.nutrition.fat", txt(C, C.violet), portion.fat]] as const).map(([lab, col, base]) => (
+                  <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: col }}>{t(lab)}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, marginTop: 4 }}>{sc(base)}<Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}> g</Text></Text>
+                  </View>
+                ))}
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+                {portion.offFood ? <Pressable onPress={() => { const f = portion.offFood; setPortion(null); if (f) saveFood(f); }} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.saveToFoods")}</Text></Pressable> : null}
+                <Pressable onPress={commitPortion} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.logToday")}</Text></Pressable>
+              </View>
+            </View>
+          );
+        })() : null}
       </Sheet>
     </>
   );

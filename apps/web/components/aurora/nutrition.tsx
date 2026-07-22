@@ -99,19 +99,34 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   }, []);
   useEffect(() => { loadLibrary(); }, [loadLibrary]);
 
-  // Log a saved meal → the SAME energyIntake/protein/carbs/fat signals as a
-  // manual add, so it's indistinguishable downstream.
-  const logMeal = async (m: SavedMeal) => {
-    setError(""); setMealMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", m.kcal, "kcal"], ["protein", m.protein, "g"], ["carbs", m.carbs, "g"], ["fat", m.fat, "g"]];
+  // ── Portion & quantity — logging any food/meal opens a sheet where a
+  //    serving × quantity stepper scales the macros LIVE before they're written.
+  //    One editor for an OFF search hit (offers Save too), a saved food, or a
+  //    saved meal, so scaling isn't just for the database.
+  type PortionBase = { name: string; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; source: string; offFood?: OffFood };
+  const [portion, setPortion] = useState<PortionBase | null>(null);
+  const [qty, setQty] = useState(1);
+  const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
+
+  // Log a saved meal → opens the portion editor (default 1×); the SAME
+  // energyIntake/protein/carbs/fat signals as a manual add, scaled by quantity.
+  const logMeal = (m: SavedMeal) => openPortion({ name: m.name, subtitle: t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, source: "meal" });
+
+  // Write the scaled macros for the open portion, then close.
+  const commitPortion = async () => {
+    if (!portion) return;
+    const q = qty > 0 ? qty : 1;
+    setError(""); setMealMsg(""); setFoodMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", portion.kcal * q, "kcal"], ["protein", portion.protein * q, "g"], ["carbs", portion.carbs * q, "g"], ["fat", portion.fat * q, "g"]];
     try {
       for (const [kind, value, unit] of jobs) {
         if (value <= 0) continue;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "meal" }) });
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: Math.round(value), unit, source: portion.source }) });
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
       }
-      setMealMsg(`${m.name} +${m.kcal} kcal`);
+      setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
+      setPortion(null);
       await load(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
@@ -196,21 +211,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return () => clearTimeout(id);
   }, [foodQuery]);
 
-  // Log a database food straight to today — the SAME signals as a manual add.
-  const logFood = async (food: OffFood) => {
-    setFoodMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", food.kcal, "kcal"], ["protein", food.protein, "g"], ["carbs", food.carbs, "g"], ["fat", food.fat, "g"]];
-    try {
-      for (const [kind, value, unit] of jobs) {
-        if (value <= 0) continue;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: "off" }) });
-        if (res.status === 401) { setFoodMsg(t("w.recovery.nutrition.errSignIn")); return; }
-        if (!res.ok) { setFoodMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      }
-      setFoodMsg(`${food.name} +${food.kcal} kcal`);
-      await load(); revalidate.recovery();
-    } catch { setFoodMsg(t("w.recovery.nutrition.errNetwork")); }
-  };
+  // Log a database food → opens the portion editor (serving × quantity), which
+  // also offers to save it into the library. The write is the SAME signals as a
+  // manual add, scaled by quantity.
+  const logFood = (food: OffFood) => openPortion({ name: food.name, subtitle: food.brand ?? undefined, serving: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat, source: "off", offFood: food });
 
   // Save a database food into the personal library (respects the free cap).
   const saveFood = async (food: OffFood) => {
@@ -479,6 +483,45 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             );
           })}
         </div>
+      </Sheet>
+
+      {/* Portion & quantity — serving × quantity stepper, macros scale live. */}
+      <Sheet open={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle}>
+        {portion && (() => {
+          const q = qty > 0 ? qty : 1;
+          const s = (v: number) => Math.round(v * q);
+          const stepBtn = { width: 44, height: 44, borderRadius: 14, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
+          return (
+            <div style={{ paddingBottom: 6 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", marginTop: 14 }}>
+                <button onClick={() => setQty((x) => Math.max(0.5, Math.round((x - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={stepBtn}>–</button>
+                <div style={{ textAlign: "center" }}>
+                  <input value={String(qty)} onChange={(e) => { const n = parseFloat(e.target.value); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} inputMode="decimal" aria-label={t("w.recovery.nutrition.quantity")} style={{ width: 96, textAlign: "center", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 30, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums" }} />
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.servings")}</div>
+                </div>
+                <button onClick={() => setQty((x) => Math.min(50, Math.round((x + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={stepBtn}>+</button>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 48, letterSpacing: "-.04em", fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{s(portion.kcal)}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>kcal</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                {([["w.recovery.nutrition.protein", "var(--blue-text)", portion.protein], ["w.recovery.nutrition.carbs", "var(--amber-text)", portion.carbs], ["w.recovery.nutrition.fat", "var(--violet-text)", portion.fat]] as const).map(([lab, col, base]) => (
+                  <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px" }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: col }}>{t(lab)}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{s(base)}<span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}> g</span></div>
+                  </div>
+                ))}
+              </div>
+              {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
+              <div style={{ display: "grid", gridTemplateColumns: portion.offFood ? "1fr 1fr" : "1fr", gap: 10, marginTop: 16 }}>
+                {portion.offFood && <button onClick={() => { const f = portion.offFood; setPortion(null); if (f) saveFood(f); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 13, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
+                <button onClick={commitPortion} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 13, cursor: "pointer" }}>{t("w.recovery.nutrition.logToday")}</button>
+              </div>
+            </div>
+          );
+        })()}
       </Sheet>
 
       {coachDiet?.diet && (
