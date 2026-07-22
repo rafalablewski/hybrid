@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -63,6 +63,10 @@ function Glyph({ name, size = 22, color = "#fff", strokeWidth = 6 }: { name: Nut
 // Meal presets read as times of day — the one place a glyph carries meaning.
 const presetGlyph = (id: string): NutritionGlyphName => id.startsWith("breakfast") ? "sunrise" : id.startsWith("lunch") ? "sun" : id.startsWith("dinner") ? "moon" : "cup";
 
+// The Nutrition subpage is a HUB: a focused landing + sub-screens reached from a
+// menu, so the daily essentials aren't buried in one long scroll.
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods";
+
 /** AURORA Nutrition (mobile) — the adaptive macro tracker on one restrained
  *  system, in parity with the web screen: the calorie tick-ring is the hero,
  *  macros read as hairline lines, iconography is one monoline voice, and colour
@@ -82,6 +86,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // The goal is changed through a deliberate Sheet (opened from a card), never a
   // live top-of-screen toggle — switching it recomputes every target.
   const [goalPicker, setGoalPicker] = useState(false);
+  const [view, setView] = useState<NutView>("home");
+  const [weighIn, setWeighIn] = useState("");
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -321,15 +327,23 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   const body = (
     <>
-      {/* Masthead — the subpage back button, an eyebrow, and one quiet headline. */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <View>
-          {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
-          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
+      {/* Hub masthead (home), or a sub-screen back-header. */}
+      {view === "home" ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+          <ABack />
+          <View>
+            {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
+            <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
+          </View>
         </View>
-      </View>
+      ) : (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Pressable onPress={() => setView("home")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={18} color={C.chalk} /></Pressable>
+          <AHeading style={{ fontSize: 26 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</AHeading>
+        </View>
+      )}
 
+      {view === "home" && (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
       <Pressable onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
@@ -362,8 +376,6 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </ACard>
       )}
 
-      {(
-        <>
           {/* CALORIE RING — the hero. Calories LEFT is the number; the ring fills
               as the day is consumed. */}
           <ACard style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
@@ -394,18 +406,52 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
-          {/* One primary action — log a meal (focuses the entry field). */}
-          <Pressable onPress={() => kcalRef.current?.focus()} accessibilityRole="button" style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 15, marginTop: 14 }}>
+          {/* One primary action — log a meal (opens the Log sub-screen). */}
+          <Pressable onPress={() => setView("log")} accessibilityRole="button" style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 15, marginTop: 14 }}>
             <AuroraIcon name="add" size={16} color={txt(C, C.lime)} />
             <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.logMealCta")}</Text>
           </Pressable>
-          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} full={full} />
-        </>
+
+          {/* Menu — the deliberate way into every deeper feature. */}
+          {([
+            ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C.ash} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
+            ["insights", <Glyph key="i" name="spark" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
+            ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
+            ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
+            ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
+          ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
+            <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
+              {icon}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
+              </View>
+              {badge ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{badge}</Text> : null}
+              <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
+            </Pressable>
+          ))}
+      </>
       )}
 
-      {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate, from the
-          same composition engine the web nutrition screen uses. */}
-      {weight.points.length > 0 && (
+      {view === "insights" && (
+        <View style={{ marginTop: 16 }}>
+          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} full={full} />
+        </View>
+      )}
+
+      {view === "body" && (
+        <ACard style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addWeighIn")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</Text>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+            <TextInput value={weighIn} onChangeText={setWeighIn} keyboardType="decimal-pad" placeholder="kg" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.addWeighIn")} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 11, textAlign: "center" }} />
+            <Pressable onPress={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingHorizontal: 18, justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.save")}</Text></Pressable>
+          </View>
+        </ACard>
+      )}
+
+      {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate. */}
+      {view === "body" && weight.points.length > 0 && (
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
@@ -415,7 +461,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </ACard>
       )}
 
-      {/* ADD TO TODAY — the unified manual entry + one-tap premade meals. */}
+      {/* LOG — the unified manual entry + scan + one-tap premade meals. */}
+      {view === "log" && (
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
@@ -465,9 +512,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </View>
       </ACard>
 
-      {/* YOUR MEALS — the user's own saved-meal library (build + save + one-tap
-          log). Free users keep up to FREE_MEAL_LIMIT; the save CTA routes to
-          upgrade once at the cap. */}
+      )}
+
+      {/* MY MEALS — the user's own saved-meal library. */}
+      {view === "meals" && (
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourMeals")}</Text>
@@ -519,9 +567,12 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         )}
       </ACard>
 
-      {/* YOUR PRODUCTS — custom foods. Free users keep up to FREE_PRODUCT_LIMIT
+      )}
+
+      {/* MY FOODS — custom foods. Free users keep up to FREE_PRODUCT_LIMIT
           (mirrors saved meals); "+" drops a product's macros into the meal
           builder. */}
+      {view === "foods" && (
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourProducts")}</Text>
@@ -575,8 +626,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         )}
       </ACard>
 
-      {/* CONSISTENCY — the honest record of the week + recent days. A streak is a
-          number, not a trophy. */}
+      )}
+
+      {/* DIARY — the honest record of the week + recent days. */}
+      {view === "diary" && (
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.recentDays")}</Text>
@@ -603,6 +656,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           ))}
         </View>
       </ACard>
+      )}
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
         <View style={{ gap: 10, paddingBottom: 8 }}>

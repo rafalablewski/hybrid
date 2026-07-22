@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -18,6 +18,9 @@ import Sheet from "./sheet";
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "w.recovery.nutrition.goalLose" }, { id: "maintain", label: "w.recovery.nutrition.goalMaintain" }, { id: "gain", label: "w.recovery.nutrition.goalGain" },
 ];
+// The Nutrition subpage is a HUB: a focused landing (view "home") + sub-screens
+// reached from a menu, so the daily essentials aren't buried in one long scroll.
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods";
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 type SavedMeal = { id: string; name: string; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
 type FoodProduct = { id: string; name: string; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
@@ -54,6 +57,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // live top-of-screen toggle — switching it recomputes every target, so an
   // accidental tap must not be able to do it.
   const [goalPicker, setGoalPicker] = useState(false);
+  const [view, setView] = useState<NutView>("home");
+  const [weighIn, setWeighIn] = useState("");
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -192,9 +197,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Time-of-day greeting (client-only) + anchors for the quick-action tiles.
   const [greeting, setGreeting] = useState("");
   useEffect(() => { const h = new Date().getHours(); setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening")); }, [t]);
-  const addRef = useRef<HTMLDivElement>(null);
-  const mealsRef = useRef<HTMLDivElement>(null);
-  const scrollTo = (r: React.RefObject<HTMLDivElement | null>) => r.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   // Last-7-calendar-days logging strip for the history streak.
   const week = useMemo(() => {
     const logged = new Set(dailyNutrition(signals).filter((d) => d.kcal > 0).map((d) => d.date));
@@ -358,12 +360,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Masthead — an eyebrow + one quiet headline. No decorative mark. */}
-      <div>
-        {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
-        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
-      </div>
+      {/* Hub masthead (home), or a sub-screen back-header. */}
+      {view === "home" ? (
+        <div>
+          {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", margin: 0 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</h1>
+        </div>
+      )}
 
+      {view === "home" && (
+      <>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
       <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "13px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
@@ -413,8 +424,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       )}
 
-      {(
-        <>
           {/* CALORIE RING — the hero. The one number you came for is calories
               LEFT; the ring fills as the day is consumed. */}
           <div style={{ ...card, marginTop: 16, padding: "28px 22px 24px", textAlign: "center" }}>
@@ -450,15 +459,51 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
 
-          {/* One primary action — log a meal (jumps to the entry card). */}
-          <button onClick={() => scrollTo(addRef)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: "pointer" }}>
+          {/* One primary action — log a meal (opens the Log sub-screen). */}
+          <button onClick={() => setView("log")} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: "pointer" }}>
             <AuroraIcon name="add" size={16} color="var(--on-accent)" />{t("w.recovery.nutrition.logMealCta")}
           </button>
-          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => onNavigate?.("upgrade")} full={full} />
+
+          {/* Menu — the deliberate way into every deeper feature, so the daily
+              essentials above aren't buried under one long scroll. */}
+          {([
+            ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
+            ["insights", <Glyph key="i" name="spark" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
+            ["body", <AuroraIcon key="b" name="heart" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
+            ["meals", <Glyph key="m" name="bowl" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
+            ["foods", <AuroraIcon key="f" name="store" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
+          ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
+            <button key={key} onClick={() => setView(key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
+              {icon}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.body }}>{title}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{sub}</div>
+              </div>
+              {badge && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{badge}</span>}
+              <Glyph name="chevron" size={16} color={C("ash")} />
+            </button>
+          ))}
         </>
       )}
 
-      {weight.points.length > 0 && (
+      {view === "insights" && (
+        <div style={{ marginTop: 16 }}>
+          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => onNavigate?.("upgrade")} full={full} />
+        </div>
+      )}
+
+      {view === "body" && (
+        <div style={{ ...card, marginTop: 16 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.addWeighIn")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <input value={weighIn} onChange={(e) => setWeighIn(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.addWeighIn")} style={{ ...numField, flex: 1 }} />
+            <button onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 14, padding: "0 18px", cursor: "pointer" }}>{t("w.recovery.nutrition.save")}</button>
+          </div>
+        </div>
+      )}
+
+      {view === "body" && weight.points.length > 0 && (
         <div style={{ ...card, marginTop: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.bodyweightTrend")}</b>
@@ -479,8 +524,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       )}
 
-      {/* ADD TO TODAY — the unified manual entry + one-tap premade meals. */}
-      <div ref={addRef} style={{ ...card, marginTop: 16, scrollMarginTop: 16 }}>
+      {/* LOG — the unified manual entry + scan + one-tap premade meals. */}
+      {view === "log" && (
+      <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
           <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
             <AuroraIcon name="add" size={20} color={C("lime")} />
@@ -530,10 +576,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       </div>
 
-      {/* YOUR MEALS — the user's own saved-meal library (build + save + one-tap
+      )}
+
+      {/* MY MEALS — the user's own saved-meal library (build + save + one-tap
           log). Free users keep up to FREE_MEAL_LIMIT; the "Save" CTA routes to
           upgrade once a free user is at the cap. */}
-      <div ref={mealsRef} style={{ ...card, marginTop: 16, scrollMarginTop: 16 }}>
+      {view === "meals" && (
+      <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.yourMeals")}</b>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`}</span>
@@ -580,10 +629,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         )}
       </div>
 
-      {/* YOUR PRODUCTS — a custom food library. Free users keep up to
+      )}
+
+      {/* MY FOODS — a custom food library. Free users keep up to
           FREE_PRODUCT_LIMIT (mirrors saved meals); tapping one drops its macros
           into the meal builder. The live food DB / barcode is the separate
           blocked nutrition-fooddb layer. */}
+      {view === "foods" && (
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.yourProducts")}</b>
@@ -637,8 +689,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         )}
       </div>
 
-      {/* CONSISTENCY — the honest record of the week + recent days. A streak is a
+      )}
+
+      {/* DIARY — the honest record of the week + recent days. A streak is a
           number, not a trophy. */}
+      {view === "diary" && (
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.recentDays")}</div>
@@ -665,6 +720,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
