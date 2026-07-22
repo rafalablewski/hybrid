@@ -141,6 +141,51 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
 };
 
 /**
+ * NUTRITION glyphs — a small, purpose-built extension of the Aurora line set
+ * for the Nutrition surface (meal times, water, scan/voice, the calorie ring
+ * accent). Same 72×72 stroke convention as AURORA_ICON_PATHS so the renderers
+ * are identical; kept SEPARATE from AuroraIconName because these have no
+ * design-kit PNG (they render as true vectors on both clients — inline <svg> on
+ * web, react-native-svg on mobile). This is how the Nutrition redesign speaks
+ * ONE monoline icon language and never falls back to an emoji.
+ */
+export type NutritionGlyphName =
+  | "sunrise" | "sun" | "moon" | "cup" | "bowl"
+  | "water" | "scan" | "mic" | "spark" | "target" | "chevron";
+
+export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
+  // morning — sun over a horizon with three short rays
+  sunrise: ["M12 54 L60 54", "M22 54 a14 14 0 0 1 28 0", "M36 24 L36 32", "M18 33 L23 38", "M54 33 L49 38"],
+  // midday — full sun, eight rays
+  sun: [
+    "M23 36 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0",
+    "M36 9 L36 17", "M36 55 L36 63", "M9 36 L17 36", "M55 36 L63 36",
+    "M16.9 16.9 L22.6 22.6", "M55.1 55.1 L49.4 49.4", "M55.1 16.9 L49.4 22.6", "M16.9 55.1 L22.6 49.4",
+  ],
+  // evening — crescent moon
+  moon: ["M46 12 A26 26 0 1 0 46 60 A20 20 0 1 1 46 12 Z"],
+  // between meals — a mug with steam
+  cup: ["M18 26 L54 26 L50 52 a6 6 0 0 1 -6 5 L28 57 a6 6 0 0 1 -6 -5 Z", "M54 31 a8 8 0 0 1 0 15", "M30 12 q4 5 0 9", "M42 12 q4 5 0 9"],
+  // generic meal — a bowl with rising steam
+  bowl: ["M13 33 L59 33 a23 17 0 0 1 -46 0 Z", "M28 22 q4 -6 0 -10", "M40 24 q4 -6 0 -10"],
+  // water — a droplet
+  water: ["M36 12 C48 30 52 38 52 46 a16 16 0 0 1 -32 0 C20 38 24 30 36 12 Z"],
+  // scan — a viewfinder with a scan line
+  scan: [
+    "M14 26 L14 18 a4 4 0 0 1 4 -4 L26 14", "M46 14 L54 14 a4 4 0 0 1 4 4 L58 26",
+    "M58 46 L58 54 a4 4 0 0 1 -4 4 L46 58", "M26 58 L18 58 a4 4 0 0 1 -4 -4 L14 46", "M12 36 L60 36",
+  ],
+  // voice — a microphone
+  mic: ["M27 12 a9 9 0 0 1 18 0 L45 34 a9 9 0 0 1 -18 0 Z", "M18 33 a18 18 0 0 0 36 0", "M36 51 L36 62", "M27 62 L45 62"],
+  // a four-point sparkle — the coach nudge / AI insight mark
+  spark: ["M36 10 C38 26 46 34 62 36 C46 38 38 46 36 62 C34 46 26 38 10 36 C26 34 34 26 36 10 Z"],
+  // concentric target — echoes the calorie ring
+  target: ["M9 36 a27 27 0 1 0 54 0 a27 27 0 1 0 -54 0", "M25 36 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0"],
+  // right chevron
+  chevron: ["M28 20 L44 36 L28 52"],
+};
+
+/**
  * AURORA nav glyphs — maps EVERY NAV_ITEMS id to a design-kit line icon (icons1/
  * 2/3), so the Aurora nav uses ONLY the uploaded icon set — never a unicode or
  * emoji glyph. The kit is a generic UI set with no fitness/chart glyphs, so a
