@@ -269,8 +269,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
           <Pressable onPress={add} disabled={saving} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.addMeal")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 12, opacity: saving ? 0.6 : 1 }}>
-            <AuroraIcon name="add" size={15} color={txt(C, C.lime)} />
-            <Text style={{ color: txt(C, C.lime), fontFamily: F.mono, fontSize: fs.body, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
+            <AuroraIcon name="add" size={15} color={C.onAccent} />
+            <Text style={{ color: C.onAccent, fontFamily: F.mono, fontSize: fs.body, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
           </Pressable>
           <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: `${pa.fill}73`, backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
             <Glyph name="scan" size={16} color={pa.text} strokeWidth={5} />
@@ -408,8 +408,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <NutritionNudge nudge={nudge} />
           {/* One primary action — log a meal (opens the Log sub-screen). */}
           <Pressable onPress={() => setView("log")} accessibilityRole="button" style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 15, marginTop: 14 }}>
-            <AuroraIcon name="add" size={16} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.logMealCta")}</Text>
+            <AuroraIcon name="add" size={16} color={C.onAccent} />
+            <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logMealCta")}</Text>
           </Pressable>
 
           {/* Menu — the deliberate way into every deeper feature. */}
@@ -534,7 +534,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{m.kcal} kcal — {m.protein}P {m.carbs}C {m.fat}F</Text>
                 </View>
                 <Pressable onPress={() => logMeal(m)} accessibilityRole="button" style={{ borderRadius: 999, backgroundColor: C.lime, paddingVertical: 8, paddingHorizontal: 16 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.log")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: C.onAccent }}>{t("w.recovery.nutrition.log")}</Text>
                 </Pressable>
                 <Pressable onPress={() => removeMeal(m.id)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.deleteMeal")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>×</Text></Pressable>
               </View>
@@ -552,7 +552,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </View>
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
               <Pressable onPress={() => setShowMealBuilder(false)} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text></Pressable>
-              <Pressable onPress={saveMeal} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveMeal")}</Text></Pressable>
+              <Pressable onPress={saveMeal} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.saveMeal")}</Text></Pressable>
             </View>
           </View>
         ) : canSaveAnotherMeal ? (
@@ -611,7 +611,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </View>
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
               <Pressable onPress={() => setShowProdBuilder(false)} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text></Pressable>
-              <Pressable onPress={saveProduct} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveProduct")}</Text></Pressable>
+              <Pressable onPress={saveProduct} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.saveProduct")}</Text></Pressable>
             </View>
           </View>
         ) : null}
@@ -668,7 +668,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                   <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(g.labelKey)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{goalSub(g.id)}</Text>
                 </View>
-                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={txt(C, C.lime)} /> : null}</View>
+                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
               </Pressable>
             );
           })}
@@ -762,7 +762,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
   const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const seg = (w: 7 | 30, label: string) => (
     <Pressable key={w} onPress={() => onWindow(w)} style={{ flex: 1, paddingVertical: 7, borderRadius: 999, alignItems: "center", backgroundColor: window === w ? C.lime : "transparent" }}>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, letterSpacing: 0.4, textTransform: "uppercase", color: window === w ? txt(C, C.lime) : C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, letterSpacing: 0.4, textTransform: "uppercase", color: window === w ? C.onAccent : C.ash }}>{label}</Text>
     </Pressable>
   );
   // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
@@ -851,11 +851,11 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree }:
   const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
     <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: on ? 2 : 1, borderColor: on ? C.lime : C.line, borderRadius: 20, padding: on ? 15 : 16, marginBottom: 10 }}>
       <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
-      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={txt(C, C.lime)} /> : null}</View>
+      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
     </Pressable>
   );
   const primary = (label: string, onPress: () => void) => (
-    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 6 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: txt(C, C.lime) }}>{label}</Text></Pressable>
+    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 6 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.onAccent }}>{label}</Text></Pressable>
   );
   return (
     <View style={{ marginTop: 16 }}>
