@@ -126,7 +126,7 @@ describe("nutritionSummary", () => {
   });
 
   it("computes adherence + protein-hit against targets and a macro split", () => {
-    const targets = { kcal: 2000, protein: 150, carbs: 200, fat: 60, maintenance: 2000, goal: "maintain" as const, basis: "x" };
+    const targets = { kcal: 2000, protein: 150, carbs: 200, fat: 60, maintenance: 2000, goal: "maintain" as const, basis: "x", trainingKcal: 0 };
     // day0 on target + protein hit; day1 way over (out of band) and protein short
     const signals = [kcal(2000, 0), prot(150, 0), kcal(2600, 1), prot(80, 1)];
     const s = nutritionSummary(signals, { now: NOW, targets, windowDays: 30 });
@@ -139,7 +139,7 @@ describe("nutritionSummary", () => {
 });
 
 describe("nutritionNudge", () => {
-  const targets = { kcal: 2400, protein: 160, carbs: 300, fat: 70, maintenance: 2400, goal: "maintain" as const, basis: "x" };
+  const targets = { kcal: 2400, protein: 160, carbs: 300, fat: 70, maintenance: 2400, goal: "maintain" as const, basis: "x", trainingKcal: 0 };
   const day = (kcalV: number, proteinV: number): ReturnType<typeof todayNutrition> => ({ date: "2026-06-03", kcal: kcalV, protein: proteinV, carbs: 0, fat: 0, water: 0 });
 
   it("flags a cold start when nothing is logged", () => {
