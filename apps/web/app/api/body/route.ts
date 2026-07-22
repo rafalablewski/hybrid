@@ -46,6 +46,18 @@ export async function POST(request: Request) {
   const hasValue = Object.entries(data).some(([k, v]) => k !== "userId" && k !== "measuredAt" && k !== "note" && v != null);
   if (!hasValue) return NextResponse.json({ error: "empty" }, { status: 400 });
   const metric = await prisma.bodyMetric.create({ data });
+
+  // Mirror the profile weigh-in into the Signal ontology (bodyMass) so the
+  // Nutrition engine's maintenance estimate + smoothed bodyweight trend run on
+  // the athlete's REAL profile weight — one canonical bodyweight, entered once
+  // in the profile (or the nutrition weigh-in, which now writes here too).
+  // Best-effort: a duplicate (same instant already logged) must not fail the log.
+  if (data.weightKg != null && data.weightKg > 0) {
+    await prisma.signal
+      .create({ data: { userId: me.id, kind: "bodyMass", value: data.weightKg, unit: "kg", source: "profile", ts: measuredAt } })
+      .catch(() => {});
+  }
+
   return NextResponse.json({ metric }, { status: 201 });
 }
 

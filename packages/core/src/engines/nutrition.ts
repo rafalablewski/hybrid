@@ -119,6 +119,8 @@ export interface MacroTargets {
   maintenance: number;
   goal: NutritionGoal;
   basis: string;
+  /** training fuel added to today's target (kcal), 0 on a rest day */
+  trainingKcal: number;
 }
 
 /**
@@ -126,10 +128,16 @@ export interface MacroTargets {
  * fat loss (capped at −600 kcal), maintenance, or a ~10% surplus (capped +400)
  * for gaining. Protein is set from bodyweight (1.8–2.2 g/kg), fat at ~25% of
  * energy, carbohydrate fills the remainder.
+ *
+ * Training-aware: pass `trainingKcal` (today's estimated training expenditure,
+ * from load.trainingEnergyOnDay) to FUEL the day — the extra energy is added on
+ * top of the goal target and routed entirely to carbohydrate (the fuel that
+ * matters for the work), so a hard training day earns a higher carb + calorie
+ * target while protein and fat hold. A rest day (0) leaves the target untouched.
  */
 export function adaptiveTargets(
   signals: Signal[],
-  opts: { goal?: NutritionGoal; bodyMassKg?: number; now?: number; days?: number } = {},
+  opts: { goal?: NutritionGoal; bodyMassKg?: number; trainingKcal?: number; now?: number; days?: number } = {},
 ): MacroTargets {
   const goal = opts.goal ?? "maintain";
   const est = estimateMaintenance(signals, opts);
@@ -150,12 +158,20 @@ export function adaptiveTargets(
   const proteinPerKg = goal === "lose" ? 2.2 : goal === "gain" ? 1.8 : 1.8;
   const protein = latestBw ? Math.round(latestBw * proteinPerKg) : Math.round((kcal * 0.3) / 4);
   const fat = Math.round((kcal * 0.25) / 9);
-  const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  let carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+
+  // Training fuel — add today's estimated expenditure on top, all as carbs.
+  const trainingKcal = Math.max(0, Math.round(opts.trainingKcal ?? 0));
+  if (trainingKcal > 0) {
+    kcal += trainingKcal;
+    carbs += Math.round(trainingKcal / 4);
+  }
 
   return {
     kcal, protein, carbs, fat, maintenance,
     goal,
     basis: est.kcal != null ? est.basis : "default (log intake + weight to personalize)",
+    trainingKcal,
   };
 }
 

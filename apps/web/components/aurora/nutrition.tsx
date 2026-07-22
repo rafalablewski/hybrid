@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
+import { useSessions } from "@/lib/use-sessions";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
   isFullAccess, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
-  nutritionSummary, nutritionNudge, NUTRITION_GLYPHS,
+  nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
@@ -184,8 +185,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  // Training-aware targets — today's sessions estimate a fuel bump (carbs) added
+  // to the goal target, so a hard training day earns more food (note #4).
+  const { sessions } = useSessions();
+  const bodyMassKg = useMemo(() => {
+    const w = [...signals].filter((s) => s.kind === "bodyMass").sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))[0];
+    return w?.value;
+  }, [signals]);
+  const trainingKcal = useMemo(() => trainingEnergyOnDay(sessions, bodyMassKg ?? 75), [sessions, bodyMassKg]);
+
   const today = useMemo(() => todayNutrition(signals), [signals]);
-  const targets = useMemo(() => adaptiveTargets(signals, { goal }), [signals, goal]);
+  const targets = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(signals), [signals]);
@@ -205,9 +215,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return out;
   }, [signals]);
   const streakDays = useMemo(() => week.filter((d) => d.on).length, [week]);
-  // First-run weigh-in (onboarding) → a bodyMass signal that sharpens the estimate.
+  // A weigh-in writes to the PROFILE (/api/body); the server mirrors it into the
+  // bodyMass Signal, so nutrition's maintenance + trend read the one canonical
+  // bodyweight the profile owns (note #1 — "body weight derived from profile").
   const logWeighIn = async (kg: number) => {
-    try { await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "bodyMass", value: kg, unit: "kg", source: "manual" }) }); await load(); revalidate.recovery(); } catch { /* offline */ }
+    try { await fetch("/api/body", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weightKg: kg }) }); await load(); revalidate.recovery(); } catch { /* offline */ }
   };
 
   const add = async () => {
@@ -439,6 +451,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {maint.kcal != null && (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 18 }}>
                 {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+              </div>
+            )}
+            {trainingKcal > 0 && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>
+                <Glyph name="spark" size={13} color="var(--lime-text)" strokeWidth={4} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</span>
               </div>
             )}
           </div>

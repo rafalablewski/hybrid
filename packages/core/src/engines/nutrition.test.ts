@@ -94,6 +94,17 @@ describe("adaptive macro targets", () => {
     expect(t.kcal).toBeGreaterThan(1200);
     expect(t.basis).toMatch(/default/);
   });
+
+  it("adds training fuel entirely as carbs, leaving protein and fat", () => {
+    const rest = adaptiveTargets(stable, { goal: "maintain", now: NOW });
+    const trained = adaptiveTargets(stable, { goal: "maintain", now: NOW, trainingKcal: 400 });
+    expect(rest.trainingKcal).toBe(0);
+    expect(trained.trainingKcal).toBe(400);
+    expect(trained.kcal).toBe(rest.kcal + 400);
+    expect(trained.carbs).toBe(rest.carbs + 100); // 400 kcal / 4
+    expect(trained.protein).toBe(rest.protein);
+    expect(trained.fat).toBe(rest.fat);
+  });
 });
 
 describe("nutritionSummary", () => {

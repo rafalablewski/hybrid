@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sessionLoad, computeLoad } from "./load";
+import { sessionLoad, computeLoad, sessionEnergyKcal, trainingEnergyOnDay } from "./load";
 import type { LoggedSession } from "./session";
 
 const DAY = 86_400_000;
@@ -23,6 +23,36 @@ describe("sessionLoad (sRPE)", () => {
   it("uses conditioning minutes × rpe", () => {
     const s: LoggedSession = { id: "c", title: "C", startedAt: ago(0), blocks: [{ kind: "conditioning", name: "Row", minutes: 30, rpe: 7 }] };
     expect(sessionLoad(s)).toBe(210);
+  });
+});
+
+describe("sessionEnergyKcal (training fuel estimate)", () => {
+  it("estimates a positive kcal cost that scales with bodyweight", () => {
+    const s = strengthSession("a", 0, 6, "8");
+    const light = sessionEnergyKcal(s, 60);
+    const heavy = sessionEnergyKcal(s, 90);
+    expect(light).toBeGreaterThan(0);
+    expect(heavy).toBeGreaterThan(light);
+  });
+  it("costs more for harder conditioning than easy cardio of equal length", () => {
+    const easy: LoggedSession = { id: "e", title: "E", startedAt: ago(0), blocks: [{ kind: "cardio", name: "Jog", minutes: 30, rpe: 4 }] };
+    const hard: LoggedSession = { id: "h", title: "H", startedAt: ago(0), blocks: [{ kind: "conditioning", name: "Intervals", minutes: 30, rpe: 9 }] };
+    expect(sessionEnergyKcal(hard, 75)).toBeGreaterThan(sessionEnergyKcal(easy, 75));
+  });
+  it("defaults to a 75 kg athlete when weight is unknown", () => {
+    const s = strengthSession("a", 0, 6, "8");
+    expect(sessionEnergyKcal(s)).toBe(sessionEnergyKcal(s, 75));
+  });
+});
+
+describe("trainingEnergyOnDay", () => {
+  it("sums only sessions on the day containing now", () => {
+    const s = [strengthSession("today", 0, 6, "8"), strengthSession("today2", 0, 4, "7"), strengthSession("yesterday", 1, 6, "8")];
+    const total = trainingEnergyOnDay(s, 80, NOW);
+    expect(total).toBe(sessionEnergyKcal(s[0]!, 80) + sessionEnergyKcal(s[1]!, 80));
+  });
+  it("is 0 on a rest day", () => {
+    expect(trainingEnergyOnDay([strengthSession("y", 2)], 80, NOW)).toBe(0);
   });
 });
 

@@ -39,6 +39,52 @@ export function sessionLoad(s: LoggedSession): number {
   return Math.round(load);
 }
 
+/** Approximate MINUTES of a block, mirroring the duration heuristic sessionLoad
+ *  uses (strength ≈ 3.5 min/set incl. rest; cardio/conditioning from minutes or
+ *  the work/rest/rounds interval). Kept beside sessionLoad so the two never drift. */
+function blockMinutes(b: LoggedSession["blocks"][number]): number {
+  if (b.kind === "strength") return b.sets.length * 3.5;
+  if (b.kind === "cardio") return b.minutes ?? 30;
+  return b.minutes ?? (b.work && b.rest && b.rounds ? ((b.work + b.rest) * b.rounds) / 60 : 12);
+}
+
+/** A per-kind MET (metabolic equivalent) scaled by intensity. Resistance work is
+ *  metabolically flatter than conditioning, so strength sits near a moderate ~5
+ *  MET while cardio/conditioning climb with RPE. Bounded to keep the estimate
+ *  honest (a rough fuel figure, never a lab measurement). */
+function blockMet(b: LoggedSession["blocks"][number]): number {
+  if (b.kind === "strength") {
+    const rpes = b.sets.map((x) => num(x.rpe)).filter((n) => Number.isFinite(n));
+    const rpe = rpes.length ? Math.max(...rpes) : 7;
+    return Math.min(7, 3.5 + rpe * 0.25); // ~5.25 at RPE 7, capped at 7
+  }
+  const rpe = b.rpe ?? (b.kind === "cardio" ? 6 : 7);
+  return Math.min(13, 3 + rpe * 0.95); // ~8.7 at RPE 6, ~9.65 at RPE 7
+}
+
+/**
+ * Rough energy expenditure (kcal) of one logged session, from each block's
+ * minutes × a MET scaled by intensity × bodyweight (the standard
+ * kcal/min = MET × 3.5 × kg / 200). This is the "eat for the work you did"
+ * figure the nutrition engine adds to a training-day target — an estimate, not a
+ * measurement. Defaults to a 75 kg athlete when bodyweight is unknown.
+ */
+export function sessionEnergyKcal(s: LoggedSession, bodyMassKg = 75): number {
+  const kg = bodyMassKg > 0 ? bodyMassKg : 75;
+  let kcal = 0;
+  for (const b of s.blocks) kcal += (blockMinutes(b) * blockMet(b) * 3.5 * kg) / 200;
+  return Math.round(kcal);
+}
+
+/** Total estimated training energy (kcal) burned across every session on the
+ *  day containing `now` — today's fuel bump for the nutrition target. */
+export function trainingEnergyOnDay(sessions: LoggedSession[], bodyMassKg = 75, now = Date.now()): number {
+  const key = new Date(now).toDateString();
+  return sessions
+    .filter((s) => new Date(Date.parse(s.startedAt)).toDateString() === key)
+    .reduce((sum, s) => sum + sessionEnergyKcal(s, bodyMassKg), 0);
+}
+
 export type AcwrBand = "detraining" | "sweet-spot" | "caution" | "danger" | "insufficient";
 
 export interface LoadState {

@@ -17,6 +17,7 @@ import {
   FREE_PRODUCT_LIMIT,
   nutritionSummary,
   nutritionNudge,
+  trainingEnergyOnDay,
   NUTRITION_GLYPHS,
   type NutritionGoal,
   type MealPreset,
@@ -26,12 +27,12 @@ import {
   type NutritionGlyphName,
 } from "@hybrid/core";
 import {
-  createSignal, getAssignedDiet, scanNutritionLabel,
+  createSignal, logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
   fetchFoodProducts, createFoodProduct, deleteFoodProduct,
   type SavedMealRow, type FoodProductRow,
 } from "../../lib/api";
-import { useSignalsQuery, useRevalidate } from "../../lib/queries";
+import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
@@ -169,9 +170,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     });
   };
 
+  // Training-aware targets — today's sessions estimate a fuel bump (carbs) added
+  // to the goal target, so a hard training day earns more food (see note #4).
+  const { data: sessions = [] } = useSessionsQuery();
+  const bodyMassKg = useMemo(() => {
+    const w = signals.filter((s) => s.kind === "bodyMass").sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))[0];
+    return w?.value;
+  }, [signals]);
+  const trainingKcal = useMemo(() => trainingEnergyOnDay(sessions, bodyMassKg ?? 75), [sessions, bodyMassKg]);
+
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);
-  const targets = useMemo(() => adaptiveTargets(sig, { goal }), [signals, goal]);
+  const targets = useMemo(() => adaptiveTargets(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(sig), [signals]);
@@ -190,7 +200,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     return out;
   }, [signals]);
   const streakDays = useMemo(() => week.filter((d) => d.on).length, [week]);
-  const logWeighIn = async (kg: number) => { await createSignal("bodyMass", kg, "kg"); revalidate.recovery(); load(); };
+  // A weigh-in writes to the PROFILE (/api/body); the server mirrors it into the
+  // bodyMass Signal, so nutrition's maintenance + trend read the one canonical
+  // bodyweight the profile owns (see note #1 — "body weight derived from profile").
+  const logWeighIn = async (kg: number) => { await logBodyweight(kg); revalidate.recovery(); load(); };
 
   const add = async () => {
     setSaving(true);
@@ -389,6 +402,12 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               </Ring>
             </View>
             {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 18, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
+            {trainingKcal > 0 ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}47`, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 13 }}>
+                <Glyph name="spark" size={13} color={txt(C, C.lime)} strokeWidth={5} />
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.lime) }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</Text>
+              </View>
+            ) : null}
           </ACard>
 
           {/* Macros — their own card, hairline lines beneath the hero. */}
