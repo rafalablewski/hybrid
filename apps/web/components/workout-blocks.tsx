@@ -39,22 +39,6 @@ const input = {
   boxSizing: "border-box",
 } as const;
 
-// Round ± stepper button (the plan-ahead count control).
-function stepBtn() {
-  return {
-    ...disp,
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    fontSize: 22,
-    fontWeight: 300,
-    color: txt(CHALK),
-    background: INK2,
-    border: `1px solid ${LINE}`,
-    cursor: "pointer",
-  } as const;
-}
-
 export function blockBtn(color: string) {
   return {
     ...cond,
@@ -163,12 +147,9 @@ export default function WorkoutBlocks({
   // cool-down / drop). One primary "+ Add set" button keeps the common path a
   // single tap; the rarer set types tuck into this menu instead of a 5-button row.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
-  // Plan-ahead popover: which block has its "plan your sets" panel open, plus the
-  // count + shape it will lay down. Lets a lifter queue a whole exercise before
-  // the first rep instead of tapping "+ Add set" set-by-set.
+  // Popular-preset popover: which block has its preset rail open. One tap lays
+  // out the whole exercise before the first rep instead of "+ Add set" one-by-one.
   const [planUid, setPlanUid] = useState<string | null>(null);
-  const [planCount, setPlanCount] = useState(3);
-  const [planTmpl, setPlanTmpl] = useState<"straight" | "pyramid">("straight");
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
   // block (only one set is active per block, so keying by block uid is enough).
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
@@ -286,23 +267,6 @@ export default function WorkoutBlocks({
         ? { load: prev.load, reps: prev.reps, rpe: prev.rpe ?? "" }
         : { load: "", reps: "", rpe: "" };
       return { ...b, sets: [...b.sets, next] };
-    });
-  // Plan ahead: append several working sets at once (the "plan your sets" panel).
-  // Straight carries the last set's numbers to every new set; pyramid steps the
-  // load up 2.5 kg per set from the last working load. New sets are plain working
-  // sets (no done/role flags) so they queue below the active one, ready to bank.
-  const addPlannedSets = (u: string, count: number, tmpl: "straight" | "pyramid") =>
-    patch(u, (b) => {
-      if (b.kind !== "strength") return b;
-      const prev = b.sets[b.sets.length - 1];
-      const baseKg = prev ? parseFloat(prev.load) : NaN;
-      const stepKg = 2.5;
-      const added: StrengthSet[] = Array.from({ length: count }, (_, k) => ({
-        load: tmpl === "pyramid" && Number.isFinite(baseKg) ? String(+(baseKg + (k + 1) * stepKg).toFixed(2)) : prev?.load ?? "",
-        reps: prev?.reps ?? "",
-        rpe: prev?.rpe ?? "",
-      }));
-      return { ...b, sets: [...b.sets, ...added] };
     });
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
@@ -850,8 +814,8 @@ export default function WorkoutBlocks({
                       </button>
                       <button
                         onClick={() => { setPlanUid((u) => (u === b.uid ? null : b.uid)); setSpecialUid(null); }}
-                        title={t("w.train.blocks.planTitle")}
-                        aria-label={t("w.train.blocks.planTitle")}
+                        title={t("w.train.blocks.presetsTitle")}
+                        aria-label={t("w.train.blocks.presetsTitle")}
                         style={{ ...mono, padding: "0 13px", color: txt(ASH), background: "transparent", border: "none", borderLeft: `1px solid ${ghost ? `${LIME}33` : LINE}`, cursor: "pointer", fontSize: fs.body, letterSpacing: "1px" }}
                       >
                         ⋯
@@ -868,50 +832,35 @@ export default function WorkoutBlocks({
                 >
                   ⚡
                 </button>
-                {/* Plan-ahead popover — a count stepper + shape, laid over the aurora
-                    so a lifter can queue the whole exercise before the first rep. */}
+                {/* Popular-preset popover — a single horizontal rail replaces the
+                    old nested grid + manual planner. The rail bleeds to the
+                    popover's padding (negative margin = pad, matching inner
+                    padding) so cards slide under the edge; one tap lays out the
+                    whole exercise. */}
                 {planUid === b.uid && (
                   <>
                     <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
-                    <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 258, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 18, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
-                      {/* Popular presets — one tap lays out the whole exercise. */}
-                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 10 }}>{t("w.train.blocks.presetsTitle")}</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                    <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 300, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 18, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
+                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.presetsTitle")}</div>
+                      <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -14px", padding: "0 14px 2px", scrollbarWidth: "none" }}>
                         {([
                           { sets: 3, reps: 3, k: "schemeHeavy" },
                           { sets: 5, reps: 5, k: "schemeStrength" },
                           { sets: 3, reps: 12, k: "schemeHypertrophy" },
                           { sets: 4, reps: 8, k: "schemeVolume" },
-                        ] as const).map((p) => (
+                          { sets: 10, reps: 10, k: "schemeGvt" },
+                        ] as const).map((p, pi) => (
                           <button
                             key={p.k}
                             onClick={() => { applyPreset(b.uid, p.sets, p.reps); setPlanUid(null); }}
-                            style={{ textAlign: "left", background: `color-mix(in srgb, ${INK2} 60%, transparent)`, border: `1px solid ${LINE}`, borderRadius: 14, padding: "11px 12px", cursor: "pointer" }}
+                            style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: pi === 0 ? `${LIME}14` : "var(--color-card)", border: `1px solid ${pi === 0 ? `${LIME}4d` : LINE}`, borderRadius: 20, padding: "16px 15px", cursor: "pointer" }}
                           >
-                            <div style={{ ...disp, fontSize: 22, fontWeight: 800, letterSpacing: "-.02em", color: CHALK }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 17 }}>×</span>{p.reps}</div>
-                            <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t(`w.train.blocks.${p.k}`)}</div>
+                            <div style={{ ...disp, fontSize: 28, fontWeight: 900, letterSpacing: "-.035em", color: CHALK, lineHeight: 1 }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 19 }}>×</span>{p.reps}</div>
+                            <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 8 }}>{t(`w.train.blocks.${p.k}`)}</div>
+                            <div style={{ ...mono, fontSize: fs.nano, color: txt(LIME), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</div>
                           </button>
                         ))}
                       </div>
-                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 10, paddingTop: 4, borderTop: `1px solid ${LINE}` }}>{t("w.train.blocks.planManual")}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                        <button onClick={() => setPlanCount((n) => Math.max(1, n - 1))} aria-label="−" style={stepBtn()}>−</button>
-                        <div style={{ flex: 1, textAlign: "center" }}>
-                          <div style={{ ...disp, fontSize: 30, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1 }}>{planCount}</div>
-                          <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".08em", marginTop: 3 }}>{t("w.train.blocks.planWorking")}</div>
-                        </div>
-                        <button onClick={() => setPlanCount((n) => Math.min(12, n + 1))} aria-label="+" style={stepBtn()}>+</button>
-                      </div>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-                        {(["straight", "pyramid"] as const).map((tm) => (
-                          <button key={tm} onClick={() => setPlanTmpl(tm)} style={{ ...disp, flex: 1, fontSize: fs.caption, fontWeight: 700, color: planTmpl === tm ? txt(LIME) : txt(ASH), background: planTmpl === tm ? `${LIME}14` : "transparent", border: `1px solid ${planTmpl === tm ? `${LIME}55` : LINE}`, borderRadius: 12, padding: "9px 0", cursor: "pointer" }}>
-                            {t(tm === "straight" ? "w.train.blocks.planStraight" : "w.train.blocks.planPyramid")}
-                          </button>
-                        ))}
-                      </div>
-                      <button onClick={() => { addPlannedSets(b.uid, planCount, planTmpl); setPlanUid(null); }} style={{ ...disp, width: "100%", fontWeight: 800, fontSize: fs.caption, color: "var(--color-ink)", background: LIME, border: "none", borderRadius: 12, padding: "12px 0", cursor: "pointer" }}>
-                        {t("w.train.blocks.planAdd")}
-                      </button>
                     </div>
                   </>
                 )}
