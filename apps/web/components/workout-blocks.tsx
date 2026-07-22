@@ -853,7 +853,7 @@ export default function WorkoutBlocks({
                           <button
                             key={p.k}
                             onClick={() => { applyPreset(b.uid, p.sets, p.reps); setPlanUid(null); }}
-                            style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: pi === 0 ? `${LIME}14` : "var(--color-card)", border: `1px solid ${pi === 0 ? `${LIME}4d` : LINE}`, borderRadius: 20, padding: "16px 15px", cursor: "pointer" }}
+                            style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: pi === 0 ? `${LIME}14` : INK2, border: `1px solid ${pi === 0 ? `${LIME}4d` : LINE}`, borderRadius: 20, padding: "16px 15px", cursor: "pointer" }}
                           >
                             <div style={{ ...disp, fontSize: 28, fontWeight: 900, letterSpacing: "-.035em", color: CHALK, lineHeight: 1 }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 19 }}>×</span>{p.reps}</div>
                             <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 8 }}>{t(`w.train.blocks.${p.k}`)}</div>
