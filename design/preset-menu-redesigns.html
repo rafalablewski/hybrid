@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Preset menu redesigns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#3c787e; --violet:#8296c4; --amber:#d0cd94; --red:#d56f3e;
+    --onAccent:#0c0d0c;
+    --display:'Archivo',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% -10%, #17210f 0%, transparent 55%),
+      var(--ink);
+    color:var(--chalk); font-family:var(--display);
+    -webkit-font-smoothing:antialiased; padding:48px 20px 96px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---- page header ---- */
+  .masthead{margin-bottom:40px;max-width:720px;}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--lime);margin-bottom:14px;}
+  h1{font-weight:900;font-size:34px;letter-spacing:-1px;line-height:1.05;margin-bottom:14px;}
+  .lede{color:var(--ash);font-size:15px;line-height:1.6;}
+  .lede b{color:var(--chalk);font-weight:600;}
+  .note{margin-top:18px;display:inline-flex;gap:10px;align-items:center;font-size:13px;color:var(--amber);
+    border:1px solid #33341f;background:#1b1c10;border-radius:999px;padding:8px 15px;font-family:var(--mono);letter-spacing:.3px;}
+
+  /* ---- gallery grid ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:34px 30px;align-items:start;}
+  .idea{display:flex;flex-direction:column;gap:16px;}
+  .idea-head{display:flex;align-items:baseline;gap:12px;}
+  .idx{font-family:var(--mono);font-size:12px;color:var(--onAccent);background:var(--lime);border-radius:7px;
+    padding:3px 8px;font-weight:700;letter-spacing:.5px;}
+  .idea-head h2{font-size:20px;font-weight:800;letter-spacing:-.4px;}
+  .idea p{color:var(--ash);font-size:13.5px;line-height:1.55;}
+  .idea p b{color:var(--chalk);font-weight:600;}
+
+  /* ---- phone frame ---- */
+  .phone{
+    background:var(--ink); border:1px solid var(--line); border-radius:34px;
+    padding:14px 12px 16px; box-shadow:0 30px 60px -30px #000, inset 0 1px 0 #ffffff08;
+    position:relative; overflow:hidden;
+  }
+  .phone::before{content:"";position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:96px;height:5px;border-radius:999px;background:#ffffff10;}
+  .screen{padding:26px 6px 4px;}
+
+  /* app header */
+  .apphead{display:flex;align-items:center;justify-content:space-between;padding:2px 8px 16px;}
+  .apphead .cancel{color:var(--ash);font-size:15px;}
+  .apphead .clock{text-align:center;}
+  .apphead .clock .t{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.5px;line-height:1;}
+  .apphead .clock .e{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--ash);margin-top:3px;}
+  .apphead .finish{color:var(--lime);font-weight:700;font-size:15px;}
+
+  /* context: add-set row */
+  .addrow{display:flex;gap:8px;align-items:stretch;margin:2px 8px 4px;}
+  .addset{flex:1;display:flex;align-items:center;border:1px solid var(--line);background:var(--ink2);border-radius:16px;overflow:hidden;}
+  .addset .main{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;}
+  .addset .plus{width:20px;height:20px;border-radius:999px;border:1.5px solid var(--ash);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:13px;}
+  .addset .lbl{font-weight:700;font-size:14px;}
+  .addset .dots{padding:0 15px;align-self:stretch;display:flex;align-items:center;border-left:1px solid var(--line);color:var(--ash);font-family:var(--mono);}
+  .addset.on{border-color:#3f4a2b;}
+  .addset.on .dots{color:var(--lime);border-left-color:#3f4a2b;}
+  .zap{width:46px;border:1px solid var(--line);background:var(--ink2);border-radius:16px;display:flex;align-items:center;justify-content:center;color:var(--amber);}
+
+  .caret{text-align:center;color:var(--ash);font-size:11px;margin:6px 0 2px;font-family:var(--mono);letter-spacing:1px;}
+
+  /* shared label */
+  .plabel{font-family:var(--mono);font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ash);}
+
+  /* ============ IDEA 1 — flat rows ============ */
+  .p1{margin:0 8px;}
+  .p1 .plabel{padding:0 4px 10px;}
+  .prow{display:flex;align-items:center;gap:14px;padding:13px 6px;border-top:1px solid var(--line);}
+  .prow:first-of-type{border-top:none;}
+  .prow .scheme{font-weight:900;font-size:24px;letter-spacing:-.5px;min-width:70px;}
+  .prow .scheme .x{font-weight:400;font-size:17px;color:var(--ash);}
+  .prow .meta{flex:1;}
+  .prow .meta .nm{font-weight:700;font-size:14px;}
+  .prow .meta .ds{font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:2px;}
+  .prow .go{color:var(--ash);font-size:18px;}
+
+  /* ============ IDEA 2 — tonal chips ============ */
+  .p2{margin:0 8px;}
+  .p2 .plabel{padding:0 4px 12px;}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;}
+  .chip{display:flex;flex-direction:column;gap:1px;padding:11px 15px;border-radius:15px;border:none;}
+  .chip .s{font-weight:900;font-size:20px;letter-spacing:-.5px;line-height:1;}
+  .chip .s .x{font-weight:400;font-size:15px;opacity:.6;}
+  .chip .n{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:4px;opacity:.85;}
+  .chip.lime{background:#c6f84f1f;color:#dcff7e;}
+  .chip.amber{background:#d0cd941c;color:#e0dda6;}
+  .chip.blue{background:#3c787e26;color:#8fd0d6;}
+  .chip.violet{background:#8296c422;color:#b3c1e6;}
+  .chip.red{background:#d56f3e1f;color:#eb9a70;}
+
+  /* ============ IDEA 3 — goal-first ============ */
+  .p3{margin:0 8px;}
+  .seg{display:flex;gap:6px;margin-bottom:16px;}
+  .seg .s{flex:1;text-align:center;padding:8px 4px;border-radius:11px;font-family:var(--mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--ash);border:1px solid var(--line);}
+  .seg .s.on{color:var(--lime);border-color:#3f4a2b;background:#c6f84f14;}
+  .hero{display:flex;align-items:center;gap:18px;padding:20px 20px;border-radius:20px;background:linear-gradient(180deg,#c6f84f10,#c6f84f05);border:1px solid #33401f;}
+  .hero .big{font-weight:900;font-size:52px;letter-spacing:-2px;line-height:.9;}
+  .hero .big .x{font-weight:400;font-size:34px;color:var(--ash);}
+  .hero .side{flex:1;}
+  .hero .side .nm{font-weight:800;font-size:16px;}
+  .hero .side .ds{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:4px;line-height:1.5;}
+  .hero .apply{margin-top:12px;display:inline-block;background:var(--lime);color:var(--onAccent);font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;}
+  .swaps{display:flex;gap:8px;margin-top:14px;padding-left:2px;}
+  .swaps .sw{font-family:var(--mono);font-size:11px;color:var(--ash);padding:5px 11px;border-radius:999px;border:1px solid var(--line);}
+
+  /* ============ IDEA 4 — full-bleed rail ============ */
+  .p4 .plabel{padding:0 14px 12px;}
+  .rail{display:flex;gap:11px;overflow-x:auto;padding:0 14px 6px;scrollbar-width:none;}
+  .rail::-webkit-scrollbar{display:none;}
+  .rcard{flex:0 0 auto;width:118px;padding:18px 16px 15px;border-radius:20px;background:var(--card);border:1px solid var(--line);}
+  .rcard .s{font-weight:900;font-size:30px;letter-spacing:-1px;line-height:1;}
+  .rcard .s .x{font-weight:400;font-size:20px;color:var(--ash);}
+  .rcard .n{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-top:8px;}
+  .rcard .tot{font-family:var(--mono);font-size:10px;color:var(--lime);margin-top:12px;}
+  .rcard.first{background:linear-gradient(180deg,#c6f84f12,#161816);border-color:#3f4a2b;}
+
+  /* ============ IDEA 5 — inline ribbon ============ */
+  .p5{margin:2px 8px 0;}
+  .ribbon{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;}
+  .ribbon::-webkit-scrollbar{display:none;}
+  .tok{flex:0 0 auto;font-weight:800;font-size:16px;letter-spacing:-.3px;padding:8px 13px;border-radius:12px;background:var(--ink2);border:1px solid var(--line);}
+  .tok .x{font-weight:400;color:var(--ash);font-size:13px;}
+  .tok.hot{background:#c6f84f16;border-color:#3f4a2b;color:#dcff7e;}
+  .ribbon .more{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--ash);padding:8px 6px;}
+  .p5 .hint{font-family:var(--mono);font-size:10px;color:var(--ash);letter-spacing:.4px;margin-top:4px;padding:0 2px;}
+
+  .foot{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--ash);font-size:13px;line-height:1.6;max-width:720px;}
+  .foot b{color:var(--chalk);font-weight:600;}
+  @media(max-width:640px){ h1{font-size:27px;} body{padding:30px 14px 70px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">Workout logger — the ⋯ panel</div>
+    <h1>Popular presets, five ways</h1>
+    <p class="lede">Same brand, fewer walls. The current panel nests a card inside a card inside a card and bolts on a manual planner. Each concept below <b>drops “plan manually” entirely</b> and strips the borders so the schemes themselves are the interface. One tap lays out the whole exercise. Pick a direction and I’ll wire it into both clients.</p>
+    <span class="note">✕ removed — manual set builder (stepper + straight/pyramid)</span>
+  </header>
+
+  <div class="grid">
+
+    <!-- ===================== IDEA 1 ===================== -->
+    <section class="idea">
+      <div class="idea-head"><span class="idx">01</span><h2>Flat rows</h2></div>
+      <p><b>Zero nested cards.</b> Each preset is a full-width tap row — big scheme on the left, name + a one-line intent on the right, hairline dividers only. Reads like a menu, scans top-to-bottom.</p>
+      <div class="phone"><div class="screen">
+        <div class="addrow">
+          <div class="addset on"><div class="main"><span class="plus">＋</span><span class="lbl">Add set</span></div><div class="dots">⋯</div></div>
+          <div class="zap">⚡</div>
+        </div>
+        <div class="caret">▾</div>
+        <div class="p1">
+          <div class="plabel">Popular presets</div>
+          <div class="prow"><div class="scheme">3<span class="x">×</span>3</div><div class="meta"><div class="nm">Heavy</div><div class="ds">Low-rep strength triples</div></div><div class="go">→</div></div>
+          <div class="prow"><div class="scheme">5<span class="x">×</span>5</div><div class="meta"><div class="nm">Strength</div><div class="ds">The classic linear driver</div></div><div class="go">→</div></div>
+          <div class="prow"><div class="scheme">3<span class="x">×</span>12</div><div class="meta"><div class="nm">Hypertrophy</div><div class="ds">Volume for size</div></div><div class="go">→</div></div>
+          <div class="prow"><div class="scheme">4<span class="x">×</span>8</div><div class="meta"><div class="nm">Volume</div><div class="ds">Balanced work capacity</div></div><div class="go">→</div></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ===================== IDEA 2 ===================== -->
+    <section class="idea">
+      <div class="idea-head"><span class="idx">02</span><h2>Tonal chips</h2></div>
+      <p><b>Borders become colour.</b> Each preset is a soft-filled pill tinted by its goal — chartreuse for strength, sand for power, teal for hypertrophy. No boxes, just a warm wrap of chips you thumb through.</p>
+      <div class="phone"><div class="screen">
+        <div class="addrow">
+          <div class="addset on"><div class="main"><span class="plus">＋</span><span class="lbl">Add set</span></div><div class="dots">⋯</div></div>
+          <div class="zap">⚡</div>
+        </div>
+        <div class="caret">▾</div>
+        <div class="p2">
+          <div class="plabel">Popular presets</div>
+          <div class="chips">
+            <div class="chip lime"><span class="s">3<span class="x">×</span>3</span><span class="n">Heavy</span></div>
+            <div class="chip lime"><span class="s">5<span class="x">×</span>5</span><span class="n">Strength</span></div>
+            <div class="chip amber"><span class="s">5<span class="x">×</span>3</span><span class="n">Power</span></div>
+            <div class="chip blue"><span class="s">3<span class="x">×</span>12</span><span class="n">Hypertrophy</span></div>
+            <div class="chip blue"><span class="s">4<span class="x">×</span>8</span><span class="n">Volume</span></div>
+            <div class="chip red"><span class="s">3<span class="x">×</span>15</span><span class="n">Pump</span></div>
+          </div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ===================== IDEA 3 ===================== -->
+    <section class="idea">
+      <div class="idea-head"><span class="idx">03</span><h2>Goal-first</h2></div>
+      <p><b>Intent, not arithmetic.</b> Pick a goal and the panel collapses to a single hero scheme with a coached rationale. Alternate schemes sit as quiet swaps below. Fastest path for people who don’t think in “sets × reps”.</p>
+      <div class="phone"><div class="screen">
+        <div class="addrow">
+          <div class="addset on"><div class="main"><span class="plus">＋</span><span class="lbl">Add set</span></div><div class="dots">⋯</div></div>
+          <div class="zap">⚡</div>
+        </div>
+        <div class="caret">▾</div>
+        <div class="p3">
+          <div class="seg">
+            <div class="s on">Strength</div><div class="s">Size</div><div class="s">Power</div><div class="s">Endure</div>
+          </div>
+          <div class="hero">
+            <div class="big">5<span class="x">×</span>5</div>
+            <div class="side">
+              <div class="nm">Strength</div>
+              <div class="ds">Five hard sets of five — the proven driver for raw strength on the big lifts.</div>
+              <span class="apply">Lay out 5 sets</span>
+            </div>
+          </div>
+          <div class="swaps"><span class="plabel" style="align-self:center;">Or</span><span class="sw">3×3</span><span class="sw">5×3</span><span class="sw">3×5</span></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ===================== IDEA 4 ===================== -->
+    <section class="idea">
+      <div class="idea-head"><span class="idx">04</span><h2>Full-bleed rail</h2></div>
+      <p><b>One rail, no grid.</b> The presets ride a single horizontal swipe that bleeds to the screen edge — our golden-standard rail. Each card shows the scheme plus total reps; browse as many schemes as you like without a wall of boxes.</p>
+      <div class="phone"><div class="screen">
+        <div class="addrow">
+          <div class="addset on"><div class="main"><span class="plus">＋</span><span class="lbl">Add set</span></div><div class="dots">⋯</div></div>
+          <div class="zap">⚡</div>
+        </div>
+        <div class="caret">▾</div>
+        <div class="p4">
+          <div class="plabel">Popular presets</div>
+          <div class="rail">
+            <div class="rcard first"><div class="s">3<span class="x">×</span>3</div><div class="n">Heavy</div><div class="tot">9 reps</div></div>
+            <div class="rcard"><div class="s">5<span class="x">×</span>5</div><div class="n">Strength</div><div class="tot">25 reps</div></div>
+            <div class="rcard"><div class="s">3<span class="x">×</span>12</div><div class="n">Hypertrophy</div><div class="tot">36 reps</div></div>
+            <div class="rcard"><div class="s">4<span class="x">×</span>8</div><div class="n">Volume</div><div class="tot">32 reps</div></div>
+            <div class="rcard"><div class="s">10<span class="x">×</span>10</div><div class="n">GVT</div><div class="tot">100 reps</div></div>
+          </div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ===================== IDEA 5 ===================== -->
+    <section class="idea">
+      <div class="idea-head"><span class="idx">05</span><h2>Inline ribbon</h2></div>
+      <p><b>No panel at all.</b> The lightest treatment — tapping ⋯ slides a slim single-line ribbon of schemes right under the Add-set button. No card, no header block, no walls. Tap a token and the exercise fills in. “More” opens the full set.</p>
+      <div class="phone"><div class="screen">
+        <div class="addrow">
+          <div class="addset on"><div class="main"><span class="plus">＋</span><span class="lbl">Add set</span></div><div class="dots">⋯</div></div>
+          <div class="zap">⚡</div>
+        </div>
+        <div class="p5">
+          <div class="ribbon">
+            <span class="tok hot">3<span class="x">×</span>3</span>
+            <span class="tok">5<span class="x">×</span>5</span>
+            <span class="tok">3<span class="x">×</span>12</span>
+            <span class="tok">4<span class="x">×</span>8</span>
+            <span class="tok">5<span class="x">×</span>3</span>
+            <span class="more">more →</span>
+          </div>
+          <div class="hint">One tap lays out the whole exercise</div>
+        </div>
+      </div></div>
+    </section>
+
+  </div>
+
+  <p class="foot"><b>Notes.</b> Every frame uses the real tokens — ink <b>#0c0d0c</b>, surface <b>#141614</b>, chartreuse <b>#c6f84f</b>, Archivo + JetBrains Mono — so what you see is what ships. My pick is <b>01 Flat rows</b> for clarity or <b>05 Inline ribbon</b> for the lightest touch; <b>03 Goal-first</b> is the most opinionated. Tell me the number and I’ll build it into web + mobile in one change and delete the manual planner.</p>
+
+</div>
+</body>
+</html>
