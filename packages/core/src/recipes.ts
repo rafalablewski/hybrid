@@ -311,3 +311,29 @@ export function recipeMacrosForServes(recipe: Recipe, serves: number): RecipeMac
     fat: Math.round(recipe.macros.fat * s),
   };
 }
+
+/** A saveable meal draft (name + emoji + single-number macros) — the shape the
+ *  SavedMeal library POST accepts. */
+export interface RecipeMealDraft {
+  name: string;
+  emoji: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/** Turn a recipe into a personal-library meal ("Create meal" from a recipe). A
+ *  saved meal logs as ONE serving, so the draft carries the recipe's PER-SERVE
+ *  macros (the same numbers the detail macro strip shows) under the recipe name
+ *  + dish emoji. Both clients POST this to /api/nutrition/meals. */
+export function recipeToMeal(recipe: Recipe): RecipeMealDraft {
+  return {
+    name: recipe.name,
+    emoji: recipe.emoji,
+    kcal: recipe.macros.kcal,
+    protein: recipe.macros.protein,
+    carbs: recipe.macros.carbs,
+    fat: recipe.macros.fat,
+  };
+}

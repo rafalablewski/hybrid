@@ -287,3 +287,40 @@ export function mealPresetSignals(p: MealPreset): { kind: Signal["kind"]; value:
     { kind: "fat", value: p.fat, unit: "g" },
   ];
 }
+
+/**
+ * One component of a meal being composed from saved products — a product's
+ * single-serving macros plus how many servings of it the meal includes. Shared
+ * by both clients so the "create a meal FROM products" builder sums identically.
+ */
+export interface MealComponent {
+  kcal: number;
+  protein: number; // g
+  carbs: number; // g
+  fat: number; // g
+  /** number of servings of this product in the meal (≥ 1) */
+  qty: number;
+}
+
+/** Sum a meal's product components into single-number macros (each product's
+ *  macros × its serving count), rounded — the totals a "meal of products" saves
+ *  and later logs. A non-positive qty counts as one serving. */
+export function sumMealComponents(items: MealComponent[]): { kcal: number; protein: number; carbs: number; fat: number } {
+  const total = items.reduce(
+    (acc, it) => {
+      const q = it.qty > 0 ? it.qty : 1;
+      acc.kcal += it.kcal * q;
+      acc.protein += it.protein * q;
+      acc.carbs += it.carbs * q;
+      acc.fat += it.fat * q;
+      return acc;
+    },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+  );
+  return {
+    kcal: Math.round(total.kcal),
+    protein: Math.round(total.protein),
+    carbs: Math.round(total.carbs),
+    fat: Math.round(total.fat),
+  };
+}

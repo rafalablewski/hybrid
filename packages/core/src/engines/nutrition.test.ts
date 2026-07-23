@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -160,5 +160,22 @@ describe("nutritionNudge", () => {
   });
   it("says on-track when close on both", () => {
     expect(nutritionNudge(day(2350, 158), targets).kind).toBe("on-track");
+  });
+});
+
+describe("sumMealComponents (meal built from products)", () => {
+  it("sums each product's macros scaled by its serving count, rounded", () => {
+    const total = sumMealComponents([
+      { kcal: 165, protein: 31, carbs: 0, fat: 3.6, qty: 2 }, // 2× chicken
+      { kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, qty: 1 }, // 1× rice
+    ]);
+    expect(total).toEqual({ kcal: 460, protein: 65, carbs: 28, fat: 8 });
+  });
+  it("treats a non-positive qty as a single serving", () => {
+    const total = sumMealComponents([{ kcal: 100, protein: 10, carbs: 5, fat: 2, qty: 0 }]);
+    expect(total).toEqual({ kcal: 100, protein: 10, carbs: 5, fat: 2 });
+  });
+  it("is zero for an empty meal", () => {
+    expect(sumMealComponents([])).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
   });
 });

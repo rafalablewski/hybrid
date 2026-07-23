@@ -46,6 +46,14 @@ export function canSaveMealsAndProducts(persona: Persona): boolean {
   return isFullAccess(persona);
 }
 
+/** The curated Recipes library (browse → scale → cook-along, and building a meal
+ *  from a recipe) is a Full feature. Free users see the entry with a ✦ lock and
+ *  tapping it routes to the upgrade screen. Mirrored on both clients so the gate
+ *  can't drift. */
+export function canUseRecipes(persona: Persona): boolean {
+  return isFullAccess(persona);
+}
+
 /** How many custom PRODUCTS a FREE user may keep saved to their personal
  *  library — the offline half of the (blocked) food database. Building a product
  *  is always free; only the library SIZE is capped, mirroring {@link
