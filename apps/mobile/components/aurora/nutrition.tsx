@@ -20,6 +20,8 @@ import {
   nutritionSummary,
   nutritionNudge,
   trainingEnergyOnDay,
+  localDayKey,
+  localTodayKey,
   NUTRITION_GLYPHS,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById,
   type NutritionGoal,
@@ -419,12 +421,12 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const today = useMemo(() => todayNutrition(sig), [signals]);
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = localTodayKey();
     const totals: Record<MealType, number> = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
     for (const s of signals) {
       if (s.kind !== "energyIntake") continue;
       if (!(MEAL_TYPES as string[]).includes(s.source)) continue;
-      if (new Date(s.ts).toISOString().slice(0, 10) !== todayKey) continue;
+      if (localDayKey(s.ts) !== todayKey) continue;
       totals[s.source as MealType] += s.value;
     }
     return totals;
@@ -452,7 +454,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // bodyweight the profile owns (see note #1 — "body weight derived from profile").
   const logWeighIn = async (kg: number) => { await logBodyweight(kg); revalidate.recovery(); load(); };
 
-  const add = async () => {
+  // Returns true when the whole meal landed (so the Quick Log sheet closes only
+  // on success and leaves the error Alert visible otherwise).
+  const add = async (): Promise<boolean> => {
     setSaving(true);
     setMealMsg("");
     // One unified entry: kcal + macros. When kcal is left blank, derive it from
@@ -466,7 +470,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     // kinds and never double-logs. Reset once the whole meal is in.
     const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
       .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
-    if (!jobs.length) { setSaving(false); return; }
+    if (!jobs.length) { setSaving(false); return false; }
     let failed = false;
     for (const [kind, value, unit] of jobs) {
       if (!(await postSignal(kind, value, unit, mealType))) { failed = true; break; }
@@ -476,6 +480,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     else { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); loggedKinds.current = new Set(); }
     setSaving(false);
     revalidate.recovery();
+    return !failed;
   };
 
   // Premade meal → one signal per macro (SAME kinds as the manual add). Free
@@ -676,7 +681,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         ))}
       </View>
       <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-        <Pressable onPress={async () => { await add(); setQuickLog(false); }} disabled={saving} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, opacity: saving ? 0.6 : 1 }}><IPlus size={16} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text></Pressable>
+        <Pressable onPress={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, opacity: saving ? 0.6 : 1 }}><IPlus size={16} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text></Pressable>
         <Pressable onPress={scan} disabled={scanning} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: `${pa.fill}73`, borderRadius: 999, paddingVertical: 14 }}><Glyph name="scan" size={16} color={pa.text} strokeWidth={5} /><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: pa.text }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full ? " ✦" : ""}</Text></Pressable>
       </View>
     </Sheet>

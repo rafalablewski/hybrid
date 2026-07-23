@@ -8,7 +8,7 @@ import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
   isFullAccess, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS,
-  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById,
+  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type OffFood,
   type Recipe, type RecipeMeal, type RecipeFilter,
 } from "@hybrid/core";
@@ -337,8 +337,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     try { await fetch(`/api/nutrition/meals/${id}`, { method: "DELETE" }); } catch { /* revert on next load */ }
   };
 
-  // Custom products — Full-only to CREATE (the free tier gets meals, not a
-  // products library). Building a meal can draw macros from these.
+  // Custom products — free users keep up to FREE_PRODUCT_LIMIT (canSaveProduct,
+  // mirrored client + server); Full is unlimited. Building a meal can draw macros
+  // from these.
   const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
   const [showProdBuilder, setShowProdBuilder] = useState(false);
 
@@ -436,12 +437,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const today = useMemo(() => todayNutrition(signals), [signals]);
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = localTodayKey();
     const totals: Record<MealType, number> = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
     for (const s of signals) {
       if (s.kind !== "energyIntake") continue;
       if (!(MEAL_TYPES as string[]).includes(s.source)) continue;
-      if (new Date(s.ts).toISOString().slice(0, 10) !== todayKey) continue;
+      if (localDayKey(s.ts) !== todayKey) continue;
       totals[s.source as MealType] += s.value;
     }
     return totals;
@@ -473,7 +474,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     try { await fetch("/api/body", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weightKg: kg }) }); await load(); revalidate.recovery(); } catch { /* offline */ }
   };
 
-  const add = async () => {
+  // Returns true when the whole meal landed (so the Quick Log sheet can close
+  // only on success and leave an error visible otherwise).
+  const add = async (): Promise<boolean> => {
     setSaving(true); setError(""); setMealMsg("");
     // One unified entry: kcal + macros. When kcal is left blank, derive it from
     // the macros (4·4·9) so the calorie total always moves — mirrors how a preset
@@ -486,20 +489,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     // failed kinds and never double-logs. Reset once the whole meal is in.
     const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
       .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
-    if (!jobs.length) { setSaving(false); return; }
+    if (!jobs.length) { setSaving(false); return false; }
     try {
       for (const [kind, value, unit] of jobs) {
         const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: mealType }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
+        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return false; }
+        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return false; }
         loggedKinds.current.add(kind);
       }
       setF({ kcal: "", protein: "", carbs: "", fat: "" });
       setMealMsg(`+${Math.round(kcal)} kcal`);
       loggedKinds.current = new Set();
       await load(); revalidate.recovery();
+      setSaving(false);
+      return true;
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
+    return false;
   };
 
   // Premade meal → one POST per macro (the SAME signal kinds as the manual add).
@@ -537,6 +543,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       const d = (await res.json()) as { name: string | null; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null };
       setF({ kcal: d.kcal != null ? String(d.kcal) : "", protein: d.protein != null ? String(d.protein) : "", carbs: d.carbs != null ? String(d.carbs) : "", fat: d.fat != null ? String(d.fat) : "" });
     } catch { setError(t("w.recovery.nutrition.scanFailed")); }
+    setScanning(false);
+  };
+
+  // Scan a label straight INTO the Create form (name + macros) — the dedicated
+  // Create-screen path, so the scan prefills the builder, not the quick-log `f`.
+  const scanIntoCreate = async (file: File) => {
+    setScanning(true); setLibMsg("");
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(new Error("read")); r.readAsDataURL(file); });
+      const res = await fetch("/api/nutrition/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: dataUrl }) });
+      if (res.status === 403) { onNavigate?.("upgrade"); setScanning(false); return; }
+      if (!res.ok) { setLibMsg(t("w.recovery.nutrition.scanFailed")); setScanning(false); return; }
+      const d = (await res.json()) as { name: string | null; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null };
+      setCreateForm((s) => ({ ...s, name: d.name || s.name, kcal: d.kcal != null ? String(d.kcal) : s.kcal, protein: d.protein != null ? String(d.protein) : s.protein, carbs: d.carbs != null ? String(d.carbs) : s.carbs, fat: d.fat != null ? String(d.fat) : s.fat }));
+    } catch { setLibMsg(t("w.recovery.nutrition.scanFailed")); }
     setScanning(false);
   };
 
@@ -717,7 +738,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-          <button onClick={async () => { await add(); if (!error) setQuickLog(false); }} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body }}><IPlus size={16} color="var(--on-accent)" strokeWidth={2.4} />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+          <button onClick={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body }}><IPlus size={16} color="var(--on-accent)" strokeWidth={2.4} />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
           <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, ${C("line")})`, borderRadius: 999, padding: 14, cursor: "pointer", color: "var(--premium-accent-text)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption }}>
             <Glyph name="scan" size={16} color="var(--premium-accent-text)" />{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full && <span style={{ fontSize: 11 }}>✦</span>}
           </button>
@@ -858,7 +879,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </button>
           ),
         })}
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file).then(() => setCreateForm((s) => ({ ...s, kcal: f.kcal || s.kcal, protein: f.protein || s.protein, carbs: f.carbs || s.carbs, fat: f.fat || s.fat }))); e.target.value = ""; }} />
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanIntoCreate(file); e.target.value = ""; }} />
 
         {/* Title plate — Name + the personal Subname, one surface. */}
         <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 22, padding: "18px 18px 20px" }}>
