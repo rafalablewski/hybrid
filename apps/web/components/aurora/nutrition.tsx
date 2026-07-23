@@ -36,10 +36,10 @@ const mealGlyph = (m: MealType): NutritionGlyphName => m === "breakfast" ? "sunr
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
-type QuickFood = { key: string; name: string; serving: string; kcal: number; protein: number; carbs: number; fat: number };
+type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
-type SavedMeal = { id: string; name: string; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
-type FoodProduct = { id: string; name: string; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
+type SavedMeal = { id: string; name: string; subname?: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
+type FoodProduct = { id: string; name: string; subname?: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
 
 // Recent / Favorites persistence — a tiny per-device MRU + starred list so the
 // picker's tabs work without a backend (best-effort; ignores private-mode).
@@ -107,8 +107,8 @@ function recipeHeroBg(tint: string): React.CSSProperties {
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a swipe-left-to-reveal delete (a
 // personal item). The row body opens the portion editor; the trash sits behind.
-function FoodRow({ C, name, meta, onAdd, chevron, starred, onStar, onDelete }: {
-  C: (v: string) => string; name: string; meta: string; onAdd: () => void;
+function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete }: {
+  C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void;
 }) {
   const [dx, setDx] = useState(0);
@@ -130,7 +130,10 @@ function FoodRow({ C, name, meta, onAdd, chevron, starred, onStar, onDelete }: {
       >
         <button onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
         <button onClick={onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
+            {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
+          </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
         </button>
         {onStar && <button onClick={onStar} aria-label="Favorite" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
@@ -163,10 +166,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [mealPicker, setMealPicker] = useState(false); // the "Dinner ▾" chooser
   const [foodTab, setFoodTab] = useState<"recent" | "favorites" | "personal">("personal");
   const [quickLog, setQuickLog] = useState(false); // the Quick Log sheet
-  // Create Food form (redesigned product builder) — serving + unit compose the
-  // stored servingLabel, e.g. 100 + "gram" → "100 gram".
-  const [createForm, setCreateForm] = useState({ name: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+  // Create Food form (redesigned builder) — one blend form for a PRODUCT or a
+  // MEAL. Name + the personal Subname sit on the title plate; serving + unit
+  // (products only) compose the stored servingLabel, e.g. 100 + "gram".
+  const [createMode, setCreateMode] = useState<"product" | "meal">("product");
+  const [createForm, setCreateForm] = useState({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
   const [unitPicker, setUnitPicker] = useState(false);
+  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setLibMsg(""); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
   // Recipes library (read-only) — the open recipe, its serving count, cook step.
   const [recipeId, setRecipeId] = useState<string | null>(null);
   const [recipeServes, setRecipeServes] = useState(2);
@@ -230,14 +236,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   //    serving × quantity stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
   //    saved meal, so scaling isn't just for the database.
-  type PortionBase = { name: string; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; source: string; offFood?: OffFood };
+  type PortionBase = { name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; source: string; offFood?: OffFood };
   const [portion, setPortion] = useState<PortionBase | null>(null);
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
 
   // Log a saved meal → opens the portion editor (default 1×); the SAME
   // energyIntake/protein/carbs/fat signals as a manual add, scaled by quantity.
-  const logMeal = (m: SavedMeal) => openPortion({ name: m.name, subtitle: t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, source: "meal" });
+  const logMeal = (m: SavedMeal) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, source: "meal" });
 
   // Write the scaled macros for the open portion, then close. The log is
   // attributed to the current meal (source = mealType) so the hub can group
@@ -254,7 +260,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
       }
-      pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
+      pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
       setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
       setPortion(null);
       await load(); revalidate.recovery();
@@ -262,7 +268,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   };
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
-  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subtitle: q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, source: mealType });
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, source: mealType });
   // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
@@ -281,29 +287,33 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
-  // Save the Create Food form → the existing products API (serving + unit →
-  // servingLabel), then return to the picker on the Personal tab.
+  // Save the Create form → products OR meals API (one blend form, two targets),
+  // carrying the personal subname, then return to the picker Personal tab.
   const submitCreateFood = async () => {
     if (!createForm.name.trim()) return;
-    if (!canSaveAnotherProduct) { onNavigate?.("upgrade"); return; }
+    const isMeal = createMode === "meal";
+    if (isMeal ? !canSaveAnotherMeal : !canSaveAnotherProduct) { onNavigate?.("upgrade"); return; }
     setLibMsg("");
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const subname = createForm.subname.trim() || undefined;
+    const macros = { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
     const serving = createForm.serving.trim();
-    const servingLabel = serving ? `${serving} ${createForm.unit}`.trim() : undefined;
-    const body = { name: createForm.name.trim(), servingLabel, kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
+    const body = isMeal
+      ? { name: createForm.name.trim(), subname, ...macros }
+      : { name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, ...macros };
     try {
-      const res = await fetch("/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(isMeal ? "/api/nutrition/meals" : "/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 403) { onNavigate?.("upgrade"); return; }
       if (res.status === 401) { setLibMsg(t("w.recovery.nutrition.errSignIn")); return; }
       if (!res.ok) { setLibMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      setCreateForm({ name: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+      setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
       await loadLibrary();
       setFoodTab("personal"); setView("add");
     } catch { setLibMsg(t("w.recovery.nutrition.errNetwork")); }
   };
 
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProduct) => openPortion({ name: p.name, subtitle: p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, source: mealType });
+  const logProduct = (p: FoodProduct) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, source: mealType });
 
   const saveMeal = async () => {
     if (!mealForm.name.trim()) return;
@@ -734,7 +744,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const foods: QuickFood[] =
       foodTab === "recent" ? recent
       : foodTab === "favorites" ? favorites
-      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
+      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
     const q = foodQuery.trim();
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -770,7 +780,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <button onClick={() => setQuickLog(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IBolt size={18} color={C("chalk")} />{t("w.recovery.nutrition.quickLog")}
           </button>
-          <button onClick={() => setView("create")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
+          <button onClick={() => openCreate("product")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IPlusBox size={18} color={C("chalk")} />{t("w.recovery.nutrition.createFood")}
           </button>
         </div>
@@ -805,6 +815,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 <FoodRow
                   key={food.key} C={C}
                   name={food.name}
+                  subname={food.subname}
                   meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}`}
                   onAdd={() => prodId ? logProduct(products.find((p) => p.id === prodId)!) : logQuickFood(food)}
                   starred={isFavorite(food.key)}
@@ -822,59 +833,76 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     );
   }
 
-  // ============ CREATE FOOD (redesigned product builder) ============
+  // ============ CREATE (blend: title plate + macro hero) ============
+  // One form for a PRODUCT or a MEAL. No nested boxes: Name + Subname on a title
+  // plate, calories as the hero number, P/C/F as three light tiles, serving on
+  // one quiet line (products only).
   if (view === "create") {
-    const field = (label: ReactNode, value: string, onChange: (v: string) => void, ph: string, opts?: { mono?: boolean; right?: ReactNode }) => (
-      <div>
-        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, marginBottom: 9 }}>{label}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "14px 15px" }}>
-          <input value={value} onChange={(e) => onChange(e.target.value)} inputMode={opts?.mono ? "numeric" : "text"} placeholder={ph} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: opts?.mono ? "var(--font-mono)" : "var(--font-display)", fontSize: fs.subtitle }} />
-          {opts?.right}
+    const isMeal = createMode === "meal";
+    const setCF = (patch: Partial<typeof createForm>) => setCreateForm((s) => ({ ...s, ...patch }));
+    const tile = (label: string, colorVar: string, value: string, onChange: (v: string) => void) => (
+      <div style={{ flex: 1, minWidth: 0, background: C("ink2"), borderRadius: 16, padding: "14px 13px" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: colorVar }}>{label}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 7 }}>
+          <input value={value} onChange={(e) => onChange(e.target.value)} inputMode="numeric" placeholder="0" aria-label={label} style={{ width: "100%", minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24, letterSpacing: "-.02em", padding: 0 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), flex: "none" }}>g</span>
         </div>
       </div>
     );
-    const unitLabel = <>{t("w.recovery.nutrition.unit")}</>;
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {screenHead(t("w.recovery.nutrition.createFood"), () => setView("add"))}
-        {/* Photo / label uploader — repurposed to the AI label scan (Full). */}
-        <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ width: 104, height: 104, borderRadius: 999, border: `1.5px dashed ${C("line")}`, background: "transparent", color: C("ash"), display: "grid", placeItems: "center", margin: "10px auto 4px", cursor: "pointer" }}>
-          {scanning ? <span style={{ fontFamily: "var(--font-mono)", fontSize: 10 }}>…</span> : <IPlus size={32} color={C("ash")} strokeWidth={1.7} />}
-        </button>
-        <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{full ? t("w.recovery.nutrition.scanLabelHint") : t("w.recovery.nutrition.addPhoto")}</div>
+        {screenHead(isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => setView("add"), {
+          right: (
+            <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} aria-label={t("w.recovery.nutrition.scanLabel")} style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--premium-accent-text)" }}>
+              <Glyph name="scan" size={19} color="var(--premium-accent-text)" />
+            </button>
+          ),
+        })}
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file).then(() => setCreateForm((s) => ({ ...s, kcal: f.kcal || s.kcal, protein: f.protein || s.protein, carbs: f.carbs || s.carbs, fat: f.fat || s.fat }))); e.target.value = ""; }} />
-        <div style={{ height: 1, background: C("line"), margin: "16px 0" }} />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {field(t("w.recovery.nutrition.foodName"), createForm.name, (v) => setCreateForm((s) => ({ ...s, name: v })), t("w.recovery.nutrition.foodNamePh"))}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {field(t("w.recovery.nutrition.servingLabel2"), createForm.serving, (v) => setCreateForm((s) => ({ ...s, serving: v })), "100", { mono: true })}
-            <div>
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, marginBottom: 9 }}>{unitLabel}</div>
-              <button onClick={() => setUnitPicker(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "14px 15px", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.subtitle }}>
-                {t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}<IChevDown size={16} color={C("ash")} />
-              </button>
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {field(<>{t("w.recovery.nutrition.calorie")} <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>kcal</span></>, createForm.kcal, (v) => setCreateForm((s) => ({ ...s, kcal: v })), "100", { mono: true })}
-            {field(<span style={{ color: "var(--amber-text)" }}>{t("w.recovery.nutrition.carbs")} <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>g</span></span>, createForm.carbs, (v) => setCreateForm((s) => ({ ...s, carbs: v })), "100", { mono: true })}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {field(<span style={{ color: "var(--blue-text)" }}>{t("w.recovery.nutrition.protein")} <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>g</span></span>, createForm.protein, (v) => setCreateForm((s) => ({ ...s, protein: v })), "100", { mono: true })}
-            {field(<span style={{ color: "var(--violet-text)" }}>{t("w.recovery.nutrition.fat")} <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>g</span></span>, createForm.fat, (v) => setCreateForm((s) => ({ ...s, fat: v })), "100", { mono: true })}
-          </div>
+        {/* Title plate — Name + the personal Subname, one surface. */}
+        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 22, padding: "18px 18px 20px" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.recovery.nutrition.foodName")}</div>
+          <input value={createForm.name} onChange={(e) => setCF({ name: e.target.value })} placeholder={t("w.recovery.nutrition.foodNamePh")} aria-label={t("w.recovery.nutrition.foodName")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", padding: 0 }} />
+          <div style={{ height: 1, background: C("line"), margin: "14px 0" }} />
+          <input value={createForm.subname} onChange={(e) => setCF({ subname: e.target.value })} placeholder={t("w.recovery.nutrition.subnamePh")} aria-label={t("w.recovery.nutrition.subname")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 16, padding: 0 }} />
         </div>
-        {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{libMsg}</div>}
 
-        <button onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 17, marginTop: 24, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
-          <IPlus size={18} color="var(--on-accent)" strokeWidth={2.4} />{t("w.recovery.nutrition.add")}
+        {/* Macro hero — calories as the big number, P/C/F as three tiles. */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 9, marginTop: 26 }}>
+          <input value={createForm.kcal} onChange={(e) => setCF({ kcal: e.target.value })} inputMode="numeric" placeholder="0" aria-label={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 60, letterSpacing: "-.04em", padding: 0 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>kcal</span>
+        </div>
+        <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.calorie")}</div>
+        {(() => { const mk = macroKcalOf(createForm.protein, createForm.carbs, createForm.fat); return mk > 0 && !createForm.kcal.trim() ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "center", marginTop: 8 }}>{t("w.recovery.nutrition.macrosApprox")} {mk} kcal</div> : null; })()}
+
+        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+          {tile(t("w.recovery.nutrition.protein"), "var(--blue-text)", createForm.protein, (v) => setCF({ protein: v }))}
+          {tile(t("w.recovery.nutrition.carbs"), "var(--amber-text)", createForm.carbs, (v) => setCF({ carbs: v }))}
+          {tile(t("w.recovery.nutrition.fat"), "var(--violet-text)", createForm.fat, (v) => setCF({ fat: v }))}
+        </div>
+
+        {/* Serving — one quiet line (products only; a meal logs as one serving). */}
+        {!isMeal && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 24, fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>
+            <span>{t("w.recovery.nutrition.per")}</span>
+            <input value={createForm.serving} onChange={(e) => setCF({ serving: e.target.value })} inputMode="numeric" placeholder="1" aria-label={t("w.recovery.nutrition.servingLabel2")} style={{ width: 44, textAlign: "right", border: "none", borderBottom: `1px solid ${C("line")}`, outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: 15, padding: "0 0 3px" }} />
+            <button onClick={() => setUnitPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 13px", cursor: "pointer", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+              {t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}<IChevDown size={13} color={C("ash")} />
+            </button>
+          </div>
+        )}
+
+        {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center" }}>{libMsg}</div>}
+
+        <button onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 17, marginTop: 28, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+          <IPlus size={18} color="var(--on-accent)" strokeWidth={2.4} />{isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}
         </button>
 
         <Sheet open={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
             {UNIT_OPTIONS.map((u) => (
-              <button key={u} onClick={() => { setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 14, padding: 14, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
+              <button key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 14, padding: 14, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
                 {t(`w.recovery.nutrition.unitOpt.${u}`)}{createForm.unit === u && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
@@ -1270,7 +1298,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 {m.emoji ? <span style={{ fontSize: 20, width: 22, textAlign: "center" }}>{m.emoji}</span> : <Glyph name="bowl" size={22} color={C("ash")} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: fs.body }}>{m.name}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{m.name}</span>{m.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{m.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{m.kcal} kcal — {m.protein}P {m.carbs}C {m.fat}F</div>
                 </div>
                 <button onClick={() => logMeal(m)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
@@ -1297,7 +1325,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
           </div>
         ) : canSaveAnotherMeal ? (
-          <button onClick={() => setShowMealBuilder(true)} style={{ width: "100%", marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}><AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.createMeal")}</button>
+          <button onClick={() => openCreate("meal")} style={{ width: "100%", marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}><AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.createMeal")}</button>
         ) : (
           <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
             <span aria-hidden>✦</span>{t("w.recovery.nutrition.unlockMoreMeals")}
@@ -1355,7 +1383,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {products.map((p, i) => (
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</div>
                 </div>
                 <button onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="add" size={14} color="var(--lime-text)" /></button>
@@ -1383,7 +1411,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
         )}
         {showProdBuilder ? null : canSaveAnotherProduct ? (
-          <button onClick={() => setShowProdBuilder(true)} style={{ width: "100%", marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+          <button onClick={() => openCreate("product")} style={{ width: "100%", marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
             <AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.addManually")}
           </button>
         ) : (
