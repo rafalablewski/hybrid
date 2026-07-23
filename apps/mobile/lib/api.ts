@@ -271,8 +271,8 @@ export async function deleteRoutine(id: string): Promise<boolean> {
 }
 
 // ── Nutrition library — the user's own saved meals + custom products ──────────
-export type SavedMealRow = { id: string; name: string; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
-export type FoodProductRow = { id: string; name: string; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
+export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
+export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
 
 export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
   try {
@@ -287,7 +287,7 @@ export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
 // Status-aware so the caller can tell the free meal limit (403) from a missing
 // sign-in (401) or a network failure (status null) and route to upgrade on 403.
 export async function createSavedMeal(
-  meal: { name: string; emoji?: string; kcal?: number; protein: number; carbs: number; fat: number },
+  meal: { name: string; subname?: string; emoji?: string; kcal?: number; protein: number; carbs: number; fat: number },
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/meals`, {
@@ -321,7 +321,7 @@ export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
 }
 
 export async function createFoodProduct(
-  product: { name: string; servingLabel?: string; kcal?: number; protein: number; carbs: number; fat: number },
+  product: { name: string; subname?: string; servingLabel?: string; kcal?: number; protein: number; carbs: number; fat: number },
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {

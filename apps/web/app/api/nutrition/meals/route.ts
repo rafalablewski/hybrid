@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
   const parsed = await readJsonLimited<Record<string, unknown>>(request, 8 * 1024);
   if (parsed.error) return parsed.error;
-  const b = parsed.data as { name?: unknown; emoji?: unknown; kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown };
+  const b = parsed.data as { name?: unknown; subname?: unknown; emoji?: unknown; kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown };
 
   if (typeof b.name !== "string" || !b.name.trim())
     return NextResponse.json({ error: "name is required" }, { status: 400 });
@@ -61,6 +61,7 @@ export async function POST(request: Request) {
     data: {
       userId: me.id,
       name: b.name.trim().slice(0, 80),
+      subname: typeof b.subname === "string" && b.subname.trim() ? b.subname.trim().slice(0, 60) : null,
       emoji: typeof b.emoji === "string" && b.emoji ? [...b.emoji][0] : null,
       kcal,
       protein,

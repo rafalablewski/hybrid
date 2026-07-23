@@ -29,6 +29,7 @@ export * from "./olympic-sports";
 export * from "./bodyweight";
 export * from "./body-progress";
 export * from "./nutrition-off";
+export * from "./recipes";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";

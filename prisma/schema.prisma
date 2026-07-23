@@ -520,6 +520,7 @@ model SavedMeal {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   name      String
+  subname   String? // the user's personal label ("w/ sushi rice", "the usual way")
   emoji     String? // a single glyph for the tile (🍳/🥗/…)
   kcal      Int
   protein   Int // grams
@@ -539,6 +540,7 @@ model FoodProduct {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   name         String
+  subname      String? // the user's personal label ("w/ sushi rice", "the usual way")
   servingLabel String   @default("1 serving")
   kcal         Int
   protein      Int // grams per serving

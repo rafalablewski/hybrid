@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import { View, Text, TextInput, Pressable, Alert, ScrollView, StyleSheet } from "react-native";
+import Svg, { Path, Rect, Circle } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { supabase } from "../../lib/supabase";
 import {
   todayNutrition,
   adaptiveTargets,
@@ -18,7 +20,10 @@ import {
   nutritionSummary,
   nutritionNudge,
   trainingEnergyOnDay,
+  localDayKey,
+  localTodayKey,
   NUTRITION_GLYPHS,
+  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById,
   type NutritionGoal,
   type MealPreset,
   type WeightPoint,
@@ -26,11 +31,13 @@ import {
   type NutritionSummary,
   type NutritionGlyphName,
   type OffFood,
+  type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
   createSignal, logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
   fetchFoodProducts, createFoodProduct, deleteFoodProduct, searchFoods,
+  API_BASE,
   type SavedMealRow, type FoodProductRow,
 } from "../../lib/api";
 import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
@@ -67,9 +74,88 @@ const presetGlyph = (id: string): NutritionGlyphName => id.startsWith("breakfast
 // kcal implied by protein/carbs/fat (4·4·9) — the live readout in the builders.
 const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((parseFloat(protein) || 0) * 4 + (parseFloat(carbs) || 0) * 4 + (parseFloat(fat) || 0) * 9);
 
-// The Nutrition subpage is a HUB: a focused landing + sub-screens reached from a
-// menu, so the daily essentials aren't buried in one long scroll.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods";
+// The Nutrition subpage is a HUB: a focused landing (view "home") + sub-screens
+// reached from a menu, plus the redesigned add-to-meal / create-food / recipes
+// flows. "add" is the meal-food picker, "create" the Create Food form, and
+// recipes → recipe → cook is the read-only recipes library.
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook";
+// The meal a log is attributed to. Carried into the Signal `source` so the hub
+// can group today's intake by meal (breakfast / lunch / dinner / snack).
+type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+const mealGlyph = (m: MealType): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : "cup";
+const UNIT_OPTIONS = ["gram", "ml", "oz", "piece", "serving"];
+// A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
+// same macro shape the portion editor writes, kept per-device so the two tabs
+// work without a backend change.
+type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
+
+// Small stroke icons for the redesigned flows (close, chevron, barcode, trash,
+// restart, star, bolt, plus-box) — inline react-native-svg so the mockup chrome
+// renders exactly, at the same monoline weight as the rest of the surface.
+type IconProps = { size?: number; color?: string; strokeWidth?: number; fill?: boolean };
+function SvgIcon({ size = 20, color = "#fff", strokeWidth = 2, d, fill = false }: IconProps & { d: string }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d={d} stroke={fill ? "none" : color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
+}
+const IClose = (p: IconProps) => <SvgIcon {...p} d="M6 6l12 12M18 6L6 18" strokeWidth={p.strokeWidth ?? 2.2} />;
+const IChevDown = (p: IconProps) => <SvgIcon {...p} d="M6 9l6 6 6-6" strokeWidth={p.strokeWidth ?? 2.4} />;
+const IChevRight = (p: IconProps) => <SvgIcon {...p} d="M9 6l6 6-6 6" strokeWidth={p.strokeWidth ?? 2.2} />;
+const IPlus = (p: IconProps) => <SvgIcon {...p} d="M12 6v12M6 12h12" strokeWidth={p.strokeWidth ?? 2.2} />;
+const IBarcode = (p: IconProps) => <SvgIcon {...p} d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11" strokeWidth={p.strokeWidth ?? 1.9} />;
+const ITrash = (p: IconProps) => <SvgIcon {...p} d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" strokeWidth={p.strokeWidth ?? 1.9} />;
+const IBolt = (p: IconProps) => <SvgIcon {...p} d="M13 2L4 14h7l-1 8 9-12h-7z" strokeWidth={p.strokeWidth ?? 2} />;
+function IStar({ size = 20, color = "#fff", strokeWidth = 1.8, fill = false }: IconProps) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
+}
+function IRestart({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M3 12a9 9 0 1 0 3-6.7L3 8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /><Path d="M3 3v5h5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
+}
+function IClock({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="13" r="8" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 9v4l2.5 2.5M9 2h6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
+}
+function IPlusBox({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Rect x="3" y="3" width="18" height="18" rx="5" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 8v8M8 12h8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" /></Svg>;
+}
+
+// Recipe hero — no photo assets, so a warm accent-tinted gradient over a dark
+// base carries the card + detail hero, with the dish emoji on top (mirrors the
+// web recipeHeroBg). Fixed dark base so it reads as a photo stand-in in either
+// theme, with the brand accent (amber/blue/red/lime) glowing through low-alpha.
+function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: string; emoji: string; height: number; fontSize: number; style?: object; children?: ReactNode }) {
+  const { palette: C } = useTheme();
+  const accent = tint === "blue" ? C.blue : tint === "red" ? C.red : tint === "lime" ? C.lime : C.amber;
+  return (
+    <View style={[{ height, alignItems: "center", justifyContent: "center", backgroundColor: "#181a12", overflow: "hidden" }, style]}>
+      <LinearGradient pointerEvents="none" colors={[`${accent}5c`, `${accent}12`, "transparent"]} start={{ x: 0.45, y: 0.35 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <Text style={{ fontSize }}>{emoji}</Text>
+      {children}
+    </View>
+  );
+}
+
+// A food row in the picker — a lime add-circle, name + macro meta, and either a
+// chevron (a DB hit), a favourite star, or a trash affordance (a personal item).
+// The row body + the add-circle both open the portion editor.
+function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete }: {
+  C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+      <Pressable onPress={onAdd} style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
+          {subname ? <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
+      </Pressable>
+      {onStar ? <Pressable onPress={onStar} accessibilityLabel="Favorite" hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
+      {onDelete ? <Pressable onPress={onDelete} accessibilityLabel="Delete" hitSlop={8} style={{ padding: 4 }}><ITrash size={20} color={C.ash} /></Pressable> : null}
+      {chevron ? <IChevRight size={18} color={C.ash} /> : null}
+    </View>
+  );
+}
 
 /** AURORA Nutrition (mobile) — the adaptive macro tracker on one restrained
  *  system, in parity with the web screen: the calorie tick-ring is the hero,
@@ -91,6 +177,38 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // live top-of-screen toggle — switching it recomputes every target.
   const [goalPicker, setGoalPicker] = useState(false);
   const [view, setView] = useState<NutView>("home");
+  // The meal the picker is adding to (drives the log `source` + the picker head).
+  const [mealType, setMealType] = useState<MealType>("dinner");
+  const [mealPicker, setMealPicker] = useState(false); // the "Dinner ▾" chooser
+  const [foodTab, setFoodTab] = useState<"recent" | "favorites" | "personal">("personal");
+  const [quickLog, setQuickLog] = useState(false); // the Quick Log sheet
+  // Create form (blend: title plate + macro hero) — one form for a PRODUCT or a
+  // MEAL. Name + the personal Subname on the plate; serving + unit (products
+  // only) compose the stored servingLabel, e.g. 100 + "gram" → "100 gram".
+  const [createMode, setCreateMode] = useState<"product" | "meal">("product");
+  const [createForm, setCreateForm] = useState({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+  const [unitPicker, setUnitPicker] = useState(false);
+  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
+  // Recipes library (read-only) — the open recipe, its serving count, cook step.
+  const [recipeId, setRecipeId] = useState<string | null>(null);
+  const [recipeServes, setRecipeServes] = useState(2);
+  const [cookStep, setCookStep] = useState(0);
+  const [recipeFilter, setRecipeFilter] = useState<RecipeFilter>("all");
+  const recipe = recipeId ? recipeById(recipeId) : undefined;
+  const openRecipe = (r: Recipe) => { setRecipeId(r.id); setRecipeServes(r.baseServes); setCookStep(0); setView("recipe"); };
+  const openAdd = (m: MealType) => { setMealType(m); setView("add"); };
+  // Recent (MRU) + Favorites — persisted per-device (AsyncStorage) so the
+  // picker's tabs work without a backend. Recent is written on every log;
+  // Favorites toggles a star. Loaded once on mount, written on change.
+  const [recent, setRecent] = useState<QuickFood[]>([]);
+  const [favorites, setFavorites] = useState<QuickFood[]>([]);
+  useEffect(() => {
+    AsyncStorage.getItem("hybrid.nutrition.recent").then((r) => { if (r) try { setRecent(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
+    AsyncStorage.getItem("hybrid.nutrition.favorites").then((r) => { if (r) try { setFavorites(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
+  }, []);
+  const pushRecent = (q: QuickFood) => setRecent((xs) => { const next = [q, ...xs.filter((x) => x.key !== q.key)].slice(0, 20); AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {}); return next; });
+  const isFavorite = (key: string) => favorites.some((x) => x.key === key);
+  const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
   const [weighIn, setWeighIn] = useState("");
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
@@ -129,14 +247,28 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   //    serving × quantity stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
   //    saved meal, so scaling isn't just for the database.
-  const [portion, setPortion] = useState<{ name: string; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: OffFood } | null>(null);
+  const [portion, setPortion] = useState<{ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: OffFood } | null>(null);
   const [qty, setQty] = useState(1);
   const openPortion = (base: NonNullable<typeof portion>) => { setQty(1); setPortion(base); };
 
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
-  const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subtitle: t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+  const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
 
-  // Write the scaled macros for the open portion, then close.
+  // Post a single signal attributed to a specific `source` (e.g. the meal type),
+  // which `createSignal` can't do (it hardcodes source:"manual"). Mirrors the
+  // web's raw fetch in commitPortion so today's intake can be grouped by meal.
+  const postSignal = async (kind: string, value: number, unit: string, source: string) => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch(`${API_BASE}/api/signals`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ kind, value, unit, source }) });
+      return res.ok;
+    } catch { return false; }
+  };
+
+  // Write the scaled macros for the open portion, then close. The log is
+  // attributed to the current meal (source = mealType) so the hub can group
+  // today's intake by meal, and the food is remembered in the Recent MRU.
   const commitPortion = async () => {
     if (!portion) return;
     const q = qty > 0 ? qty : 1;
@@ -144,11 +276,66 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     const jobs: [string, number, string][] = [["energyIntake", portion.kcal * q, "kcal"], ["protein", portion.protein * q, "g"], ["carbs", portion.carbs * q, "g"], ["fat", portion.fat * q, "g"]];
     for (const [kind, value, unit] of jobs) {
       if (value <= 0) continue;
-      if (!(await createSignal(kind, Math.round(value), unit))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+      if (!(await postSignal(kind, Math.round(value), unit, mealType))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     }
+    pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
     setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
     setPortion(null);
     revalidate.recovery();
+  };
+
+  // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat });
+  // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
+  // fast path — no portion editor). Same signals + meal attribution as the picker.
+  const relogRecent = async (q: QuickFood) => {
+    setMealMsg("");
+    const jobs: [string, number, string][] = [["energyIntake", q.kcal, "kcal"], ["protein", q.protein, "g"], ["carbs", q.carbs, "g"], ["fat", q.fat, "g"]];
+    for (const [kind, value, unit] of jobs) {
+      if (value <= 0) continue;
+      if (!(await postSignal(kind, Math.round(value), unit, mealType))) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    }
+    pushRecent(q);
+    setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
+    revalidate.recovery();
+  };
+  // Log a product (saved food) from the picker → portion editor.
+  const logProduct = (p: FoodProductRow) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat });
+
+  // Save the Create form → products OR meals API (one blend form, two targets),
+  // carrying the personal subname, then return to the picker Personal tab.
+  const submitCreateFood = async () => {
+    if (!createForm.name.trim()) return;
+    const isMeal = createMode === "meal";
+    if (isMeal ? !canSaveAnotherMeal : !canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const subname = createForm.subname.trim() || undefined;
+    const macros = { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
+    const serving = createForm.serving.trim();
+    const res = isMeal
+      ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros })
+      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, ...macros });
+    if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+    loadLibrary();
+    setFoodTab("personal"); setView("add");
+  };
+
+  // Scan a nutrition label into the Create Food form (Full) — pick a photo, send
+  // it to the AI vision endpoint, and prefill the fields. Free → upgrade.
+  const scanIntoCreate = async () => {
+    if (scanning) return;
+    if (!full) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6 });
+    const asset = res.canceled ? null : res.assets?.[0];
+    if (!asset?.base64) return;
+    setScanning(true);
+    const out = await scanNutritionLabel(asset.base64, asset.mimeType ?? "image/jpeg");
+    setScanning(false);
+    if (!out.ok || !out.data) { Alert.alert(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
+    const d = out.data;
+    setCreateForm((s) => ({ ...s, name: d.name ?? s.name, kcal: d.kcal != null ? String(d.kcal) : s.kcal, protein: d.protein != null ? String(d.protein) : s.protein, carbs: d.carbs != null ? String(d.carbs) : s.carbs, fat: d.fat != null ? String(d.fat) : s.fat }));
   };
 
   const saveMeal = async () => {
@@ -232,9 +419,21 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);
+  // Today's energy grouped by meal (source = meal type) for the hub sections.
+  const mealTotals = useMemo(() => {
+    const todayKey = localTodayKey();
+    const totals: Record<MealType, number> = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+    for (const s of signals) {
+      if (s.kind !== "energyIntake") continue;
+      if (!(MEAL_TYPES as string[]).includes(s.source)) continue;
+      if (localDayKey(s.ts) !== todayKey) continue;
+      totals[s.source as MealType] += s.value;
+    }
+    return totals;
+  }, [signals]);
   const targets = useMemo(() => adaptiveTargets(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
-  const recent = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
+  const recentDays = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(sig), [signals]);
   const personalized = maint.kcal != null;
   const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
@@ -255,7 +454,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // bodyweight the profile owns (see note #1 — "body weight derived from profile").
   const logWeighIn = async (kg: number) => { await logBodyweight(kg); revalidate.recovery(); load(); };
 
-  const add = async () => {
+  // Returns true when the whole meal landed (so the Quick Log sheet closes only
+  // on success and leaves the error Alert visible otherwise).
+  const add = async (): Promise<boolean> => {
     setSaving(true);
     setMealMsg("");
     // One unified entry: kcal + macros. When kcal is left blank, derive it from
@@ -269,16 +470,17 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     // kinds and never double-logs. Reset once the whole meal is in.
     const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
       .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
-    if (!jobs.length) { setSaving(false); return; }
+    if (!jobs.length) { setSaving(false); return false; }
     let failed = false;
     for (const [kind, value, unit] of jobs) {
-      if (!(await createSignal(kind, value, unit))) { failed = true; break; }
+      if (!(await postSignal(kind, value, unit, mealType))) { failed = true; break; }
       loggedKinds.current.add(kind);
     }
     if (failed) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
     else { setF({ kcal: "", protein: "", carbs: "", fat: "" }); setMealMsg(`+${Math.round(kcal)} kcal`); loggedKinds.current = new Set(); }
     setSaving(false);
     revalidate.recovery();
+    return !failed;
   };
 
   // Premade meal → one signal per macro (SAME kinds as the manual add). Free
@@ -315,6 +517,36 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       <View>
         <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{t("w.recovery.nutrition.addMealTitle")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
+
+        {/* Meal selector — the quick-add is attributed to the chosen meal,
+            matching the full picker so today's intake groups the same way. */}
+        <View style={{ flexDirection: "row", gap: 7, marginTop: 14 }}>
+          {MEAL_TYPES.map((m) => {
+            const on = mealType === m;
+            return (
+              <Pressable key={m} onPress={() => setMealType(m)} accessibilityLabel={t(`w.recovery.nutrition.meal.${m}`)} style={{ flex: 1, alignItems: "center", gap: 5, backgroundColor: on ? C.lime : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 4 }}>
+                <Glyph name={mealGlyph(m)} size={18} color={on ? C.onAccent : C.ash} strokeWidth={5} />
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.4, textTransform: "uppercase", fontWeight: on ? "700" : "500", color: on ? C.onAccent : C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Recent — one-tap re-log of a recent food to the chosen meal. */}
+        {recent.length > 0 ? (
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.recovery.nutrition.tab.recent")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {recent.slice(0, 8).map((q) => (
+                <Pressable key={q.key} onPress={() => relogRecent(q)} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingLeft: 11, paddingRight: 14 }}>
+                  <View style={{ width: 22, height: 22, borderRadius: 999, borderWidth: 1.4, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={12} color={txt(C, C.lime)} strokeWidth={2.4} /></View>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{q.name}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{Math.round(q.kcal)}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         <CDivider label={t("w.recovery.nutrition.logManuallyFree")} tier={t("w.account.settings.free")} />
         {/* Quadrant — kcal + protein + carbs + fat, one unified entry. Each macro
@@ -384,6 +616,349 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
         </View>
         <OnboardingGoal goal={goal} setGoal={setGoal} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} onWeighIn={logWeighIn} onContinueFree={finishOnboarding} />
+      </AuroraScreen>
+    );
+  }
+
+  // The portion editor — one Sheet reused by the hub, the picker and the saved
+  // library. Attributed to the current meal + remembered in Recent on commit.
+  const renderPortionSheet = () => (
+    <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle} scroll={false}>
+      {portion ? (() => {
+        const q = qty > 0 ? qty : 1;
+        const sc = (v: number) => Math.round(v * q);
+        const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
+        return (
+          <View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 }}>
+              <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
+              <View style={{ alignItems: "center" }}>
+                <TextInput value={String(qty)} onChangeText={(v) => { const n = parseFloat(v); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.quantity")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: -0.9, color: C.chalk, padding: 0 }} />
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.servings")}</Text>
+              </View>
+              <Pressable onPress={() => step(0.5)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "700", lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: -1.6, color: C.chalk }}>{sc(portion.kcal)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+              {([["w.recovery.nutrition.protein", txt(C, C.blue), portion.protein], ["w.recovery.nutrition.carbs", txt(C, C.amber), portion.carbs], ["w.recovery.nutrition.fat", txt(C, C.violet), portion.fat]] as const).map(([lab, col, base]) => (
+                <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: col }}>{t(lab)}</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, marginTop: 4 }}>{sc(base)}<Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}> g</Text></Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+              {portion.offFood ? <Pressable onPress={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.saveToFoods")}</Text></Pressable> : null}
+              <Pressable onPress={commitPortion} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", t(`w.recovery.nutrition.meal.${mealType}`))}</Text></Pressable>
+            </View>
+          </View>
+        );
+      })() : null}
+    </Sheet>
+  );
+
+  // Quick Log — the fast kcal + macro entry, opened from the picker.
+  const renderQuickLog = () => (
+    <Sheet visible={quickLog} onClose={() => setQuickLog(false)} title={t("w.recovery.nutrition.quickLog")} sub={t("w.recovery.nutrition.quickLogSub")} scroll={false}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        {([
+          { k: "kcal" as const, label: t("w.recovery.nutrition.calorie"), color: txt(C, C.lime), unit: "kcal" },
+          { k: "protein" as const, label: t("w.recovery.nutrition.protein"), color: txt(C, C.blue), unit: "g" },
+          { k: "carbs" as const, label: t("w.recovery.nutrition.carbs"), color: txt(C, C.amber), unit: "g" },
+          { k: "fat" as const, label: t("w.recovery.nutrition.fat"), color: txt(C, C.violet), unit: "g" },
+        ]).map((tile) => (
+          <View key={tile.k} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 13, paddingHorizontal: 15 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: tile.color }}>{tile.label}</Text>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+              <TextInput value={f[tile.k]} onChangeText={(v) => setF((s) => ({ ...s, [tile.k]: v }))} keyboardType="numeric" placeholder="0" placeholderTextColor={C.line} accessibilityLabel={tile.label} style={{ flex: 1, fontFamily: F.black, fontSize: 27, letterSpacing: -0.9, color: C.chalk, padding: 0 }} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{tile.unit}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+        <Pressable onPress={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, opacity: saving ? 0.6 : 1 }}><IPlus size={16} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text></Pressable>
+        <Pressable onPress={scan} disabled={scanning} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: `${pa.fill}73`, borderRadius: 999, paddingVertical: 14 }}><Glyph name="scan" size={16} color={pa.text} strokeWidth={5} /><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: pa.text }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full ? " ✦" : ""}</Text></Pressable>
+      </View>
+    </Sheet>
+  );
+
+  // Full-screen chrome for the redesigned modal screens (Add / Create / Cook) —
+  // an X (or back) at the left, a centred title, an optional right slot.
+  const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+      <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+        {opts?.icon === "back" ? <AuroraIcon name="back" size={20} color={C.chalk} /> : <IClose size={22} color={C.chalk} />}
+      </Pressable>
+      <View style={{ flex: 1, alignItems: "center" }}>{typeof title === "string" ? <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{title}</Text> : title}</View>
+      <View style={{ width: 44, alignItems: "center" }}>{opts?.right}</View>
+    </View>
+  );
+
+  // ============ ADD TO MEAL — the food picker ============
+  if (view === "add") {
+    const foods: QuickFood[] =
+      foodTab === "recent" ? recent
+      : foodTab === "favorites" ? favorites
+      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
+    const q = foodQuery.trim();
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(
+          <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{t(`w.recovery.nutrition.meal.${mealType}`)}</Text><IChevDown size={16} color={C.chalk} />
+          </Pressable>,
+          () => setView("home"),
+        )}
+
+        <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")} scroll={false}>
+          <View style={{ gap: 8 }}>
+            {MEAL_TYPES.map((m) => (
+              <Pressable key={m} onPress={() => { setMealType(m); setMealPicker(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink, borderWidth: 1, borderColor: mealType === m ? C.lime : C.line, borderRadius: 16, padding: 14 }}>
+                <Glyph name={mealGlyph(m)} size={20} color={mealType === m ? txt(C, C.lime) : C.ash} strokeWidth={5} />
+                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+                {mealType === m ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        </Sheet>
+
+        {/* Search — text or barcode */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 13, paddingHorizontal: 15 }}>
+          <AuroraIcon name="search" size={18} color={C.ash} />
+          <TextInput value={foodQuery} onChangeText={setFoodQuery} placeholder={t("w.recovery.nutrition.searchPh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.chalk, padding: 0 }} />
+          {q ? <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")}><IClose size={18} color={C.ash} /></Pressable> : <IBarcode size={20} color={C.ash} />}
+        </View>
+
+        {/* Quick Log + Create Food */}
+        <View style={{ flexDirection: "row", gap: 11, marginTop: 12 }}>
+          <Pressable onPress={() => setQuickLog(true)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 14 }}><IBolt size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.quickLog")}</Text></Pressable>
+          <Pressable onPress={() => openCreate("product")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 14 }}><IPlusBox size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.createFood")}</Text></Pressable>
+        </View>
+
+        {/* Tabs */}
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 4, gap: 4, marginTop: 14 }}>
+          {(["recent", "favorites", "personal"] as const).map((tab) => (
+            <Pressable key={tab} onPress={() => setFoodTab(tab)} style={{ flex: 1, borderRadius: 11, paddingVertical: 10, alignItems: "center", backgroundColor: foodTab === tab ? C.lime : "transparent" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: foodTab === tab ? C.onAccent : C.ash }}>{t(`w.recovery.nutrition.tab.${tab}`)}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {q.length >= 2 ? (
+          <View style={{ marginTop: 8 }}>
+            {searching ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14 }}>{t("w.recovery.nutrition.searching")}</Text>
+            ) : foodResults.length === 0 ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14, lineHeight: 18 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+            ) : foodResults.map((food, i) => (
+              <FoodRow key={`${food.code}-${i}`} C={C} name={food.name} meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`} onAdd={() => logFood(food)} chevron />
+            ))}
+          </View>
+        ) : (
+          <View style={{ marginTop: 8 }}>
+            {foods.length === 0 ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 18, lineHeight: 20 }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+            ) : foods.map((food) => {
+              const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
+              return (
+                <FoodRow
+                  key={food.key} C={C}
+                  name={food.name}
+                  subname={food.subname}
+                  meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}`}
+                  onAdd={() => { const p = prodId ? products.find((x) => x.id === prodId) : null; p ? logProduct(p) : logQuickFood(food); }}
+                  starred={isFavorite(food.key)}
+                  onStar={() => toggleFavorite(food)}
+                  onDelete={prodId ? () => removeProduct(prodId) : undefined}
+                />
+              );
+            })}
+          </View>
+        )}
+
+        {renderPortionSheet()}
+        {renderQuickLog()}
+      </AuroraScreen>
+    );
+  }
+
+  // ============ CREATE FOOD ============
+  if (view === "create") {
+    const isMeal = createMode === "meal";
+    const setCF = (patch: Partial<typeof createForm>) => setCreateForm((s) => ({ ...s, ...patch }));
+    const tile = (label: string, color: string, value: string, onChange: (v: string) => void) => (
+      <View style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 13 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color }}>{label}</Text>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 7 }}>
+          <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.chalk, padding: 0 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>g</Text>
+        </View>
+      </View>
+    );
+    const approx = macroKcal(createForm.protein, createForm.carbs, createForm.fat);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => setView("add"), {
+          right: (
+            <Pressable onPress={scanIntoCreate} accessibilityLabel={t("w.recovery.nutrition.scanLabel")} hitSlop={8} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+              <Glyph name="scan" size={19} color={pa.text} strokeWidth={5} />
+            </Pressable>
+          ),
+        })}
+
+        {/* Title plate — Name + the personal Subname, one surface. */}
+        <LinearGradient colors={[`${C.lime}12`, C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingHorizontal: 18, paddingTop: 18, paddingBottom: 20 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.recovery.nutrition.foodName")}</Text>
+          <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor="#3a3d34" accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.5, color: C.chalk, padding: 0 }} />
+          <View style={{ height: 1, backgroundColor: C.line, marginVertical: 14 }} />
+          <TextInput value={createForm.subname} onChangeText={(v) => setCF({ subname: v })} placeholder={t("w.recovery.nutrition.subnamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.subname")} style={{ fontFamily: F.reg, fontSize: 16, color: C.ash, padding: 0 }} />
+        </LinearGradient>
+
+        {/* Macro hero — calories as the big number, P/C/F as three tiles. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 9, marginTop: 26 }}>
+          <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: -2, color: C.chalk, padding: 0 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: 13, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
+        </View>
+        <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>
+        {approx > 0 && !createForm.kcal.trim() ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8 }}>{t("w.recovery.nutrition.macrosApprox")} {approx} kcal</Text> : null}
+
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 22 }}>
+          {tile(t("w.recovery.nutrition.protein"), txt(C, C.blue), createForm.protein, (v) => setCF({ protein: v }))}
+          {tile(t("w.recovery.nutrition.carbs"), txt(C, C.amber), createForm.carbs, (v) => setCF({ carbs: v }))}
+          {tile(t("w.recovery.nutrition.fat"), txt(C, C.violet), createForm.fat, (v) => setCF({ fat: v }))}
+        </View>
+
+        {/* Serving — one quiet line (products only; a meal logs as one serving). */}
+        {!isMeal ? (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 24 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.per")}</Text>
+            <TextInput value={createForm.serving} onChangeText={(v) => setCF({ serving: v })} keyboardType="numeric" placeholder="1" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.servingLabel2")} style={{ width: 44, textAlign: "right", fontFamily: F.mono, fontSize: 15, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
+            <Pressable onPress={() => setUnitPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 13 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}</Text><IChevDown size={13} color={C.ash} />
+            </Pressable>
+          </View>
+        ) : null}
+
+        <Pressable onPress={submitCreateFood} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, marginTop: 28 }}>
+          <IPlus size={18} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}</Text>
+        </Pressable>
+
+        <Sheet visible={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")} scroll={false}>
+          <View style={{ gap: 8 }}>
+            {UNIT_OPTIONS.map((u) => (
+              <Pressable key={u} onPress={() => { setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink, borderWidth: 1, borderColor: createForm.unit === u ? C.lime : C.line, borderRadius: 14, padding: 14 }}>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t(`w.recovery.nutrition.unitOpt.${u}`)}</Text>
+                {createForm.unit === u ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        </Sheet>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ RECIPES — browse ============
+  if (view === "recipes") {
+    const list = filterRecipes(RECIPES, recipeFilter);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          {RECIPE_FILTERS.map((rf) => (
+            <Pressable key={rf} onPress={() => setRecipeFilter(rf)} style={{ borderWidth: 1, borderColor: recipeFilter === rf ? C.lime : C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 15, backgroundColor: recipeFilter === rf ? C.lime : C.ink2 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: recipeFilter === rf ? C.onAccent : C.ash }}>{t(`w.recovery.nutrition.recipeFilter.${rf}`)}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 14 }}>
+          {list.map((r) => (
+            <Pressable key={r.id} onPress={() => openRecipe(r)} style={{ width: "47.5%", flexGrow: 1, borderWidth: 1, borderColor: C.line, borderRadius: 20, overflow: "hidden", backgroundColor: C.ink2 }}>
+              <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
+              <View style={{ paddingHorizontal: 12, paddingTop: 11, paddingBottom: 13 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 7 }}>{r.macros.kcal} kcal</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ RECIPE — detail ============
+  if (view === "recipe" && recipe) {
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load} padding={0}>
+        <RecipeHero tint={recipe.tint} emoji={recipe.emoji} height={240} fontSize={92}>
+          <Pressable onPress={() => setView("recipes")} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ position: "absolute", top: 14, left: 14, width: 42, height: 42, borderRadius: 999, backgroundColor: "rgba(12,13,12,0.5)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={20} color={C.chalk} /></Pressable>
+        </RecipeHero>
+        <View style={{ marginTop: -28, backgroundColor: C.ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 16, paddingTop: 18, paddingBottom: 24 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 4 }}>
+            <View style={{ position: "absolute", left: 0 }}><IRestart size={22} color={C.chalk} /></View>
+            <Text style={{ fontFamily: F.black, fontSize: 30, letterSpacing: -0.6, color: C.chalk }}>{recipe.name}</Text>
+          </View>
+          <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, color: C.ash, marginTop: 5 }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}  –  {recipe.timeMins} {t("w.recovery.nutrition.mins")}</Text>
+
+          <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 6, marginTop: 18 }}>
+            {([["w.recovery.nutrition.energy", recipe.macros.kcal, txt(C, C.lime), false], ["w.recovery.nutrition.protein", recipe.macros.protein, txt(C, C.blue), true], ["w.recovery.nutrition.carbs", recipe.macros.carbs, txt(C, C.amber), true], ["w.recovery.nutrition.fat", recipe.macros.fat, txt(C, C.violet), true]] as const).map(([lab, val, col, g]) => (
+              <View key={lab} style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>{g ? "g" : ""}</Text></Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", marginTop: 5, color: col }}>{t(lab)}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 9 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.ingredients")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recipeServes} {t("w.recovery.nutrition.serves")}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
+              <Pressable onPress={() => setRecipeServes((x) => Math.max(1, x - 1))} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>–</Text></Pressable>
+              <Text style={{ width: 40, textAlign: "center", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line, lineHeight: 38 }}>{recipeServes}</Text>
+              <Pressable onPress={() => setRecipeServes((x) => Math.min(12, x + 1))} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>+</Text></Pressable>
+            </View>
+          </View>
+          {recipe.ingredients.map((ing, i) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line }}>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: ing.optional ? C.ash : C.chalk }}>{ing.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>{formatIngredient(ing, recipe.baseServes, recipeServes)}</Text>
+            </View>
+          ))}
+          <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, alignItems: "center", marginTop: 20 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+        </View>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ COOK — step-through ============
+  if (view === "cook" && recipe) {
+    const cstep = recipe.steps[cookStep]!;
+    const last = cookStep >= recipe.steps.length - 1;
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(recipe.name, () => setView("recipe"))}
+        <RecipeHero tint={recipe.tint} emoji={recipe.emoji} height={150} fontSize={64} style={{ borderRadius: 24, marginTop: 2, marginBottom: 20 }} />
+        <View style={{ flexDirection: "row", gap: 6, marginBottom: 18 }}>
+          {recipe.steps.map((_, i) => <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= cookStep ? C.lime : C.line }} />)}
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepXofY").replace("{x}", String(cookStep + 1)).replace("{y}", String(recipe.steps.length))}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: 23, lineHeight: 31, letterSpacing: -0.2, color: C.chalk, marginTop: 12 }}>{cstep.text}</Text>
+        {cstep.timerSec != null ? (
+          <View style={{ flexDirection: "row", alignSelf: "flex-start", alignItems: "center", gap: 8, marginTop: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 15 }}>
+            <IClock size={15} color={txt(C, C.amber)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>{Math.floor(cstep.timerSec / 60)}:{String(cstep.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}</Text>
+          </View>
+        ) : null}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
+          {cookStep > 0 ? <Pressable onPress={() => setCookStep((s) => s - 1)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 26, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.stepBack")}</Text></Pressable> : null}
+          <Pressable onPress={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</Text></Pressable>
+        </View>
       </AuroraScreen>
     );
   }
@@ -475,10 +1050,32 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
-          {/* One primary action — log a meal (opens the Log sub-screen). */}
-          <Pressable onPress={() => setView("log")} accessibilityRole="button" style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 15, marginTop: 14 }}>
-            <AuroraIcon name="add" size={16} color={C.onAccent} />
-            <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logMealCta")}</Text>
+
+          {/* Today's meals — Breakfast / Lunch / Dinner / Snacks. Each opens the
+              picker attributed to that meal; the kcal already logged is shown. */}
+          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginHorizontal: 2 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.todaysMeals")}</Text>
+            <Pressable onPress={() => setView("diary")}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.menuDiary")} →</Text></Pressable>
+          </View>
+          {MEAL_TYPES.map((m) => (
+            <Pressable key={m} onPress={() => openAdd(m)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 15, marginTop: 10 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Glyph name={mealGlyph(m)} size={19} color={C.ash} strokeWidth={5} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: mealTotals[m] > 0 ? C.ash : txt(C, C.lime), marginTop: 2 }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : t("w.recovery.nutrition.addFirstFood")}</Text>
+              </View>
+              <View style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.4} /></View>
+            </Pressable>
+          ))}
+
+          {/* Recipes — the read-only library entry. */}
+          <Pressable onPress={() => setView("recipes")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 24 }}>
+            <Glyph name="bowl" size={20} color={C.ash} strokeWidth={5} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.recipes")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.recipesSub")}</Text>
+            </View>
+            <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
           </Pressable>
 
           {/* Menu — the deliberate way into every deeper feature. */}
@@ -599,7 +1196,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <View key={m.id} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                 {m.emoji ? <Text style={{ fontSize: 20, width: 22, textAlign: "center" }}>{m.emoji}</Text> : <Glyph name="bowl" size={22} color={C.ash} strokeWidth={5} />}
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{m.name}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }} numberOfLines={1}>{m.name}</Text>
+                    {m.subname ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }} numberOfLines={1}>{m.subname}</Text> : null}
+                  </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{m.kcal} kcal — {m.protein}P {m.carbs}C {m.fat}F</Text>
                 </View>
                 <Pressable onPress={() => logMeal(m)} accessibilityRole="button" style={{ borderRadius: 999, backgroundColor: C.lime, paddingVertical: 8, paddingHorizontal: 16 }}>
@@ -627,7 +1227,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </View>
           </View>
         ) : canSaveAnotherMeal ? (
-          <Pressable onPress={() => setShowMealBuilder(true)} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
+          <Pressable onPress={() => openCreate("meal")} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
             <AuroraIcon name="add" size={15} color={txt(C, C.lime)} />
             <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text>
           </Pressable>
@@ -687,7 +1287,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             {products.map((p, i) => (
               <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{p.name}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }} numberOfLines={1}>{p.name}</Text>
+                    {p.subname ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }} numberOfLines={1}>{p.subname}</Text> : null}
+                  </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</Text>
                 </View>
                 <Pressable onPress={() => addProductToMeal(p)} accessibilityLabel={t("w.recovery.nutrition.addToMeal")} style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="add" size={14} color={txt(C, C.lime)} /></Pressable>
@@ -715,7 +1318,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </View>
         ) : null}
         {showProdBuilder ? null : canSaveAnotherProduct ? (
-          <Pressable onPress={() => setShowProdBuilder(true)} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
+          <Pressable onPress={() => openCreate("product")} accessibilityRole="button" style={{ marginTop: 14, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
             <AuroraIcon name="add" size={15} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
           </Pressable>
         ) : (
@@ -730,6 +1333,22 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {/* DIARY — the honest record of the week + recent days. */}
       {view === "diary" && (
       <ACard style={{ marginTop: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.todaysMeals")}</Text>
+        <View style={{ marginTop: 12 }}>
+          {MEAL_TYPES.map((m, i) => (
+            <Pressable key={m} onPress={() => openAdd(m)} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, paddingVertical: 12, paddingHorizontal: 2 }}>
+              <Glyph name={mealGlyph(m)} size={19} color={C.ash} strokeWidth={5} />
+              <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t(`w.recovery.nutrition.meal.${m}`)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: mealTotals[m] > 0 ? C.chalk : C.ash }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : "—"}</Text>
+              <Glyph name="chevron" size={14} color={C.ash} strokeWidth={6} />
+            </Pressable>
+          ))}
+        </View>
+      </ACard>
+      )}
+
+      {view === "diary" && (
+      <ACard style={{ marginTop: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.recentDays")}</Text>
           {streakDays > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{streakDays}/7</Text> : null}
@@ -744,9 +1363,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           ))}
         </View>
         <View style={{ marginTop: 16 }}>
-          {recent.length === 0 ? (
+          {recentDays.length === 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.nutrition.recentEmpty")}</Text>
-          ) : recent.map((d, i) => (
+          ) : recentDays.map((d, i) => (
             <View key={d.date} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 11, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, width: 48 }}>{d.date.slice(5)}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{Math.round(d.kcal)} kcal</Text>
@@ -775,42 +1394,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       </Sheet>
 
       {/* Portion & quantity — serving × quantity stepper, macros scale live. */}
-      <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle} scroll={false}>
-        {portion ? (() => {
-          const q = qty > 0 ? qty : 1;
-          const sc = (v: number) => Math.round(v * q);
-          const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
-          return (
-            <View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 }}>
-                <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
-                <View style={{ alignItems: "center" }}>
-                  <TextInput value={String(qty)} onChangeText={(v) => { const n = parseFloat(v); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.quantity")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: -0.9, color: C.chalk, padding: 0 }} />
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.servings")}</Text>
-                </View>
-                <Pressable onPress={() => step(0.5)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "700", lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
-                <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: -1.6, color: C.chalk }}>{sc(portion.kcal)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
-              </View>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-                {([["w.recovery.nutrition.protein", txt(C, C.blue), portion.protein], ["w.recovery.nutrition.carbs", txt(C, C.amber), portion.carbs], ["w.recovery.nutrition.fat", txt(C, C.violet), portion.fat]] as const).map(([lab, col, base]) => (
-                  <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: col }}>{t(lab)}</Text>
-                    <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, marginTop: 4 }}>{sc(base)}<Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}> g</Text></Text>
-                  </View>
-                ))}
-              </View>
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-                {portion.offFood ? <Pressable onPress={() => { const f = portion.offFood; setPortion(null); if (f) saveFood(f); }} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.saveToFoods")}</Text></Pressable> : null}
-                <Pressable onPress={commitPortion} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.logToday")}</Text></Pressable>
-              </View>
-            </View>
-          );
-        })() : null}
-      </Sheet>
+      {renderPortionSheet()}
     </>
   );
 
