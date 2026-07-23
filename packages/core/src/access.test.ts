@@ -5,6 +5,7 @@ import {
   canEditEnrolledPlan,
   canScanFoodLabel,
   canSaveMealsAndProducts,
+  canUseRecipes,
   canSaveProduct,
   canSaveMeal,
   canSaveRoutine,
@@ -23,6 +24,7 @@ describe("free-tier access gates", () => {
     expect(canEditEnrolledPlan("casual")).toBe(false);
     expect(canScanFoodLabel("casual")).toBe(false);
     expect(canSaveMealsAndProducts("casual")).toBe(false);
+    expect(canUseRecipes("casual")).toBe(false);
   });
 
   it("athlete / coach / admin all have Full access", () => {
@@ -32,6 +34,7 @@ describe("free-tier access gates", () => {
       expect(canEditEnrolledPlan(p)).toBe(true);
       expect(canScanFoodLabel(p)).toBe(true);
       expect(canSaveMealsAndProducts(p)).toBe(true);
+      expect(canUseRecipes(p)).toBe(true);
     }
   });
 

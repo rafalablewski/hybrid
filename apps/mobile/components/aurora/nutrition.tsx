@@ -13,6 +13,7 @@ import {
   dailyNutrition,
   weightTrend,
   isFullAccess,
+  canUseRecipes,
   MEAL_PRESETS,
   mealPresetSignals,
   FREE_MEAL_LIMIT,
@@ -23,6 +24,7 @@ import {
   localDayKey,
   localTodayKey,
   NUTRITION_GLYPHS,
+  sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById,
   type NutritionGoal,
   type MealPreset,
@@ -169,7 +171,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const router = useRouter();
   // Free (casual) users log macros manually; scanning a label and saving
   // meals/products is a Full feature (see canScanFoodLabel / canSaveMealsAndProducts).
-  const full = isFullAccess(usePersona());
+  const persona = usePersona();
+  const full = isFullAccess(persona);
+  // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
+  const recipesUnlocked = canUseRecipes(persona);
   const { data: signals = [], isFetching: refreshing, refetch } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -188,14 +193,31 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [createMode, setCreateMode] = useState<"product" | "meal">("product");
   const [createForm, setCreateForm] = useState({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
   const [unitPicker, setUnitPicker] = useState(false);
-  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
+  // A meal can be composed FROM saved products: each component is a product with
+  // a serving count; the meal's macros are the summed total (sumMealComponents).
+  // Empty → the create-meal form falls back to manual macro entry.
+  type MealComp = { productId: string; name: string; subname?: string | null; kcal: number; protein: number; carbs: number; fat: number; qty: number };
+  const [mealComps, setMealComps] = useState<MealComp[]>([]);
+  const [compPicker, setCompPicker] = useState(false); // the "Add product" sheet
+  const [compQuery, setCompQuery] = useState("");
+  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setMealComps([]); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
+  // Add a saved product to the meal being composed (or bump its serving count if
+  // already added); remove / re-count keep the summed macros in sync.
+  const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
+    const i = xs.findIndex((x) => x.productId === p.id);
+    if (i >= 0) { const next = [...xs]; next[i] = { ...next[i]!, qty: next[i]!.qty + 1 }; return next; }
+    return [...xs, { productId: p.id, name: p.name, subname: p.subname, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 }];
+  });
+  const setCompQty = (productId: string, qty: number) => setMealComps((xs) => xs.map((x) => x.productId === productId ? { ...x, qty: Math.max(1, qty) } : x));
+  const removeMealComp = (productId: string) => setMealComps((xs) => xs.filter((x) => x.productId !== productId));
+  const compTotals = useMemo(() => sumMealComponents(mealComps.map((c) => ({ kcal: c.kcal, protein: c.protein, carbs: c.carbs, fat: c.fat, qty: c.qty }))), [mealComps]);
   // Recipes library (read-only) — the open recipe, its serving count, cook step.
   const [recipeId, setRecipeId] = useState<string | null>(null);
   const [recipeServes, setRecipeServes] = useState(2);
   const [cookStep, setCookStep] = useState(0);
   const [recipeFilter, setRecipeFilter] = useState<RecipeFilter>("all");
   const recipe = recipeId ? recipeById(recipeId) : undefined;
-  const openRecipe = (r: Recipe) => { setRecipeId(r.id); setRecipeServes(r.baseServes); setCookStep(0); setView("recipe"); };
+  const openRecipe = (r: Recipe) => { setRecipeId(r.id); setRecipeServes(r.baseServes); setCookStep(0); setRecipeMsg(""); setView("recipe"); };
   const openAdd = (m: MealType) => { setMealType(m); setView("add"); };
   // Recent (MRU) + Favorites — persisted per-device (AsyncStorage) so the
   // picker's tabs work without a backend. Recent is written on every log;
@@ -310,7 +332,12 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     if (isMeal ? !canSaveAnotherMeal : !canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const subname = createForm.subname.trim() || undefined;
-    const macros = { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
+    // A meal composed from products takes its macros from the summed components;
+    // otherwise (a manually-typed meal, or a product) from the macro fields.
+    const useComps = isMeal && mealComps.length > 0;
+    const macros = useComps
+      ? { kcal: compTotals.kcal || undefined, protein: compTotals.protein, carbs: compTotals.carbs, fat: compTotals.fat }
+      : { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
     const serving = createForm.serving.trim();
     const res = isMeal
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros })
@@ -318,6 +345,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+    setMealComps([]);
     loadLibrary();
     setFoodTab("personal"); setView("add");
   };
@@ -351,6 +379,20 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   };
 
   const removeMeal = async (id: string) => { setMeals((xs) => xs.filter((x) => x.id !== id)); await deleteSavedMeal(id); };
+
+  // "Create meal" from a recipe → save its PER-SERVE macros (recipeToMeal) into
+  // the personal meal library, so a Full user can one-tap log a favourite recipe
+  // as a meal. Respects the free meal cap (recipes are Full-only anyway).
+  const [recipeMsg, setRecipeMsg] = useState("");
+  const saveRecipeAsMeal = async (r: Recipe) => {
+    if (!canSaveAnotherMeal) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    setRecipeMsg("");
+    const res = await createSavedMeal(recipeToMeal(r));
+    if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    loadLibrary();
+    setRecipeMsg(t("w.recovery.nutrition.recipeSavedMeal"));
+  };
 
   const saveProduct = async () => {
     if (!prodForm.name.trim()) return;
@@ -791,16 +833,22 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   if (view === "create") {
     const isMeal = createMode === "meal";
     const setCF = (patch: Partial<typeof createForm>) => setCreateForm((s) => ({ ...s, ...patch }));
-    const tile = (label: string, color: string, value: string, onChange: (v: string) => void) => (
+    // When a meal is composed from products, the macros are DERIVED from the
+    // summed components (read-only); otherwise they're typed in.
+    const fromComps = isMeal && mealComps.length > 0;
+    const tile = (label: string, color: string, value: string, onChange: (v: string) => void, fixed?: number) => (
       <View style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 13 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color }}>{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 7 }}>
-          <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.chalk, padding: 0 }} />
+          {fixed != null
+            ? <Text style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.chalk }}>{fixed}</Text>
+            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>g</Text>
         </View>
       </View>
     );
     const approx = macroKcal(createForm.protein, createForm.carbs, createForm.fat);
+    const compList = compQuery.trim() ? products.filter((p) => p.name.toLowerCase().includes(compQuery.trim().toLowerCase()) || (p.subname ?? "").toLowerCase().includes(compQuery.trim().toLowerCase())) : products;
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => setView("add"), {
@@ -819,19 +867,50 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <TextInput value={createForm.subname} onChangeText={(v) => setCF({ subname: v })} placeholder={t("w.recovery.nutrition.subnamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.subname")} style={{ fontFamily: F.reg, fontSize: 16, color: C.ash, padding: 0 }} />
         </LinearGradient>
 
-        {/* Macro hero — calories as the big number, P/C/F as three tiles. */}
+        {/* Macro hero — calories as the big number, P/C/F as three tiles. When
+            the meal is built from products these show the summed total. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 9, marginTop: 26 }}>
-          <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: -2, color: C.chalk, padding: 0 }} />
+          {fromComps
+            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: -2, color: C.chalk }}>{compTotals.kcal}</Text>
+            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: -2, color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: 13, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
         </View>
         <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>
-        {approx > 0 && !createForm.kcal.trim() ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8 }}>{t("w.recovery.nutrition.macrosApprox")} {approx} kcal</Text> : null}
+        {!fromComps && approx > 0 && !createForm.kcal.trim() ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8 }}>{t("w.recovery.nutrition.macrosApprox")} {approx} kcal</Text> : null}
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 22 }}>
-          {tile(t("w.recovery.nutrition.protein"), txt(C, C.blue), createForm.protein, (v) => setCF({ protein: v }))}
-          {tile(t("w.recovery.nutrition.carbs"), txt(C, C.amber), createForm.carbs, (v) => setCF({ carbs: v }))}
-          {tile(t("w.recovery.nutrition.fat"), txt(C, C.violet), createForm.fat, (v) => setCF({ fat: v }))}
+          {tile(t("w.recovery.nutrition.protein"), txt(C, C.blue), createForm.protein, (v) => setCF({ protein: v }), fromComps ? compTotals.protein : undefined)}
+          {tile(t("w.recovery.nutrition.carbs"), txt(C, C.amber), createForm.carbs, (v) => setCF({ carbs: v }), fromComps ? compTotals.carbs : undefined)}
+          {tile(t("w.recovery.nutrition.fat"), txt(C, C.violet), createForm.fat, (v) => setCF({ fat: v }), fromComps ? compTotals.fat : undefined)}
         </View>
+
+        {/* Products — compose a meal from your saved products (meal only). Each
+            component carries a serving count; the macros above are their sum. */}
+        {isMeal ? (
+          <View style={{ marginTop: 24 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.mealProducts")}</Text>
+              {mealComps.length > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{mealComps.length}</Text> : null}
+            </View>
+            {mealComps.map((c) => (
+              <View key={c.productId} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}><Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }}>{c.name}</Text>{c.subname ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash }}>{c.subname}</Text> : null}</View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{Math.round(c.kcal * c.qty)} kcal — {Math.round(c.protein * c.qty)}P {Math.round(c.carbs * c.qty)}C {Math.round(c.fat * c.qty)}F</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.line, borderRadius: 10, overflow: "hidden" }}>
+                  <Pressable onPress={() => setCompQty(c.productId, c.qty - 1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 32, height: 32, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, color: txt(C, C.lime) }}>–</Text></Pressable>
+                  <Text style={{ minWidth: 26, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{c.qty}</Text>
+                  <Pressable onPress={() => setCompQty(c.productId, c.qty + 1)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 32, height: 32, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, color: txt(C, C.lime) }}>+</Text></Pressable>
+                </View>
+                <Pressable onPress={() => removeMealComp(c.productId)} accessibilityLabel={t("w.recovery.nutrition.remove")} hitSlop={8} style={{ padding: 2 }}><Text style={{ fontSize: 16, color: C.ash }}>×</Text></Pressable>
+              </View>
+            ))}
+            <Pressable onPress={() => { setCompQuery(""); setCompPicker(true); }} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
+              <IPlus size={15} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addProduct")}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* Serving — one quiet line (products only; a meal logs as one serving). */}
         {!isMeal ? (
@@ -857,6 +936,32 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               </Pressable>
             ))}
           </View>
+        </Sheet>
+
+        {/* Add product — pick from the saved-products library to compose the meal. */}
+        <Sheet visible={compPicker} onClose={() => setCompPicker(false)} title={t("w.recovery.nutrition.addProduct")}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13, marginBottom: 10 }}>
+            <AuroraIcon name="search" size={17} color={C.ash} />
+            <TextInput value={compQuery} onChangeText={setCompQuery} placeholder={t("w.recovery.nutrition.searchProducts")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.searchProducts")} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, padding: 0 }} />
+          </View>
+          {products.length === 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14, lineHeight: 20 }}>{t("w.recovery.nutrition.noProductsYet")}</Text>
+          ) : compList.length === 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+          ) : compList.map((p) => {
+            const added = mealComps.find((c) => c.productId === p.id);
+            return (
+              <Pressable key={p.id} onPress={() => addMealComp(p)} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: 1, borderBottomColor: C.line, paddingVertical: 12 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} /></View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}><Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }}>{p.name}</Text>{p.subname ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash }}>{p.subname}</Text> : null}</View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{p.servingLabel || t("w.recovery.nutrition.serving")} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</Text>
+                </View>
+                {added ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>×{added.qty}</Text> : null}
+              </Pressable>
+            );
+          })}
+          <Pressable onPress={() => setCompPicker(false)} style={{ marginTop: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.done")}</Text></Pressable>
         </Sheet>
       </AuroraScreen>
     );
@@ -931,7 +1036,11 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>{formatIngredient(ing, recipe.baseServes, recipeServes)}</Text>
             </View>
           ))}
-          <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, alignItems: "center", marginTop: 20 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+          {recipeMsg ? <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 20 }}><AuroraIcon name="check" size={13} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{recipeMsg}</Text></View> : null}
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
+            <Pressable onPress={() => saveRecipeAsMeal(recipe)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 17, paddingHorizontal: 22 }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
+            <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+          </View>
         </View>
       </AuroraScreen>
     );
@@ -1068,13 +1177,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </Pressable>
           ))}
 
-          {/* Recipes — the read-only library entry. */}
-          <Pressable onPress={() => setView("recipes")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 24 }}>
+          {/* Recipes — the cook-along library (Full-only; free users route to
+              upgrade). */}
+          <Pressable onPress={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 24 }}>
             <Glyph name="bowl" size={20} color={C.ash} strokeWidth={5} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.recipes")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.recipesSub")}</Text>
             </View>
+            {!recipesUnlocked ? <Text style={{ color: pa.text, fontSize: 12 }}>✦</Text> : null}
             <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
           </Pressable>
 
