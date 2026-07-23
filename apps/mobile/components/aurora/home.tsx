@@ -64,6 +64,7 @@ import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
 import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
+import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
@@ -671,6 +672,14 @@ export default function AuroraHome() {
           onPicked={loadFeeling}
         />
 
+        {/* FUEL — the nutrition summary widget (one calendar-style stateful
+            surface: empty → refuel / on-track / over → goal-hit, with a
+            persistent quick-log rail). Real today only; nutrition targets are
+            always today's. State + macros come from @hybrid/core fuelToday() so
+            web matches. Tapping opens the same quick-add sheet the Recover row
+            used. */}
+        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
             it's the semantic premium signifier, not a decorative marker. ───── */}
@@ -688,7 +697,6 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
         </View>
         <View style={{ gap: 10 }}>
-          <DeferRow C={C} icon="heart" tint={C.ash} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
           <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 

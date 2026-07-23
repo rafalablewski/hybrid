@@ -252,6 +252,95 @@ export function nutritionNudge(today: NutritionDay, targets: MacroTargets): Nutr
 }
 
 /**
+ * FUEL — the Today-screen nutrition widget's state, in ONE place so web + mobile
+ * render the same surface (parity rule). Like the week rail, it's a single
+ * stateful object: the client reads meaning from the ring + a headline, not a
+ * different card per case. Composes todayNutrition + adaptiveTargets (pass the
+ * caller's trainingKcal from load.trainingEnergyOnDay so a trained day fuels the
+ * target and flips the state to "refuel"). Pure + testable.
+ */
+export type FuelStateKind =
+  | "empty" //     nothing logged today yet
+  | "refuel" //    trained today and still short — recovery emphasis
+  | "protein" //   rest day, but protein still ≥20 g short
+  | "on-track" //  logging in progress, within range, no urgent gap
+  | "over" //      over the calorie target by >10%
+  | "goal-hit"; // every macro essentially met
+
+export interface FuelMacro {
+  key: "protein" | "carbs" | "fat";
+  value: number; // logged grams
+  target: number; // target grams
+  pct: number; // value / target, 0–100 clamped
+  hit: boolean; // value ≥ 95% of target
+}
+
+export interface FuelToday {
+  state: FuelStateKind;
+  /** did the athlete train today (trainingKcal > 0) — drives the refuel framing */
+  trained: boolean;
+  trainingKcal: number;
+  today: NutritionDay;
+  targets: MacroTargets;
+  /** targets.kcal − today.kcal (negative once over) */
+  kcalLeft: number;
+  /** eaten ÷ target as a 0–100 ring fill */
+  kcalPct: number;
+  /** grams of protein still to go (≥ 0) */
+  proteinGap: number;
+  macros: { protein: FuelMacro; carbs: FuelMacro; fat: FuelMacro };
+  allMacrosHit: boolean;
+}
+
+// A macro counts as "hit" at ≥95% of target; protein nudges from 20 g short;
+// calories read "left" from 150 kcal down; "over" past 110% of target. The
+// thresholds mirror nutritionNudge so the two never disagree.
+const MACRO_HIT = 0.95;
+const PROTEIN_NUDGE_G = 20;
+const KCAL_LEFT_MIN = 150;
+const OVER_FACTOR = 1.1;
+
+function fuelMacro(key: FuelMacro["key"], value: number, target: number): FuelMacro {
+  const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((value / target) * 100))) : 0;
+  return { key, value: Math.round(value), target, pct, hit: target > 0 && value >= target * MACRO_HIT };
+}
+
+export function fuelToday(
+  signals: Signal[],
+  opts: { goal?: NutritionGoal; trainingKcal?: number; bodyMassKg?: number; now?: number } = {},
+): FuelToday {
+  const trainingKcal = Math.max(0, Math.round(opts.trainingKcal ?? 0));
+  const today = todayNutrition(signals, opts.now);
+  const targets = adaptiveTargets(signals, opts);
+
+  const protein = fuelMacro("protein", today.protein, targets.protein);
+  const carbs = fuelMacro("carbs", today.carbs, targets.carbs);
+  const fat = fuelMacro("fat", today.fat, targets.fat);
+  const macros = { protein, carbs, fat };
+  const allMacrosHit = protein.hit && carbs.hit && fat.hit;
+
+  const kcalLeft = Math.round(targets.kcal - today.kcal);
+  const kcalPct = targets.kcal > 0 ? Math.max(0, Math.min(100, Math.round((today.kcal / targets.kcal) * 100))) : 0;
+  const proteinGap = Math.max(0, Math.round(targets.protein - today.protein));
+  const trained = trainingKcal > 0;
+
+  const state: FuelStateKind =
+    today.kcal <= 0 && today.protein <= 0
+      ? "empty"
+      : allMacrosHit
+        ? "goal-hit"
+        : trained && (proteinGap >= PROTEIN_NUDGE_G || kcalLeft >= KCAL_LEFT_MIN)
+          ? "refuel"
+          : proteinGap >= PROTEIN_NUDGE_G
+            ? "protein"
+            : today.kcal > targets.kcal * OVER_FACTOR
+              ? "over"
+              : "on-track";
+
+  return { state, trained, trainingKcal, today, targets, kcalLeft, kcalPct, proteinGap, macros, allMacrosHit };
+}
+
+/**
  * A premade meal preset — a saved, reusable meal a Full user can log with ONE
  * tap. The manual macro path (kcal/protein/carbs/fat inputs) stays free for
  * everyone; logging reusable premade meals is a Full feature, gated on
