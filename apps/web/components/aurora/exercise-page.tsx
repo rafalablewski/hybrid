@@ -20,6 +20,7 @@ import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { tip, mono, ASH, VIOLET } from "@/lib/ui";
 import { kindStroke, TickerDelta, upHex, downHex } from "./exercise-widget";
+import AuroraExerciseAnatomy from "./exercise-anatomy";
 import { useTheme } from "@/lib/use-theme";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -561,7 +562,11 @@ export default function AuroraExercisePage({
         <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.01em", margin: 0 }}>{name}</h1>
       </div>
 
-      <div style={{ display: "flex", gap: 18, margin: "14px 2px 6px" }}>
+      {/* HOW IT'S DONE — looping animation + muscles worked + form cues (gym
+          lifts only; cardio/custom names render nothing). */}
+      <AuroraExerciseAnatomy name={name} />
+
+      <div style={{ display: "flex", gap: 18, margin: "18px 2px 6px" }}>
         {PERIODS.map((p) => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: period === p.id ? C("chalk") : C("ash"), borderBottom: `2px solid ${period === p.id ? C("lime") : "transparent"}` }}>
             {t(p.key)}

@@ -33,6 +33,7 @@ export * from "./recipes";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";
+export * from "./exercise-anatomy";
 export * from "./exercise-widget";
 export * from "./capabilities";
 export * from "./rpe";
