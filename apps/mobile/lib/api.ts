@@ -368,6 +368,54 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
   }
 }
 
+// ── Editable food log — the per-entry records the Diary lists + edit/delete.
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string };
+export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { logs?: FoodLogRow[] }).logs ?? [];
+  } catch {
+    return [];
+  }
+}
+// Log one food/meal → creates the editable entry AND the mirrored Signals the
+// engines read. Macros are PER SERVING; qty scales them.
+export async function createFoodLog(
+  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number },
+): Promise<{ ok: boolean; status: number | null }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(entry),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+export async function updateFoodLogQty(id: string, qty: number): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ qty }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+export async function deleteFoodLog(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Search the Open Food Facts database (via our /api/nutrition/search proxy).
 // `query` is text or a barcode number; returns normalized foods (empty on any
 // failure so the UI can fall back to manual entry). See @hybrid/core OffFood.

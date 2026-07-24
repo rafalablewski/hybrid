@@ -40,6 +40,8 @@ const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunris
 // work without a backend change.
 type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
+// One editable logged entry (per-serving macros + qty) the Diary lists.
+type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string };
 type SavedMeal = { id: string; name: string; subname?: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
 type FoodProduct = { id: string; name: string; subname?: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
 
@@ -226,9 +228,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mealMsg, setMealMsg] = useState("");
-  // Signal kinds already POSTed for the meal being entered — survives a partial
-  // failure so a retry doesn't duplicate the kinds that already succeeded.
-  const loggedKinds = useRef<Set<string>>(new Set());
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
@@ -306,6 +305,32 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   }, []);
   useEffect(() => { loadLibrary(); }, [loadLibrary]);
 
+  // ── Editable food log — the per-entry records the Diary lists + edit/delete.
+  const [logs, setLogs] = useState<FoodLogRow[]>([]);
+  const loadLogs = useCallback(async () => {
+    try { const r = await fetch("/api/nutrition/log"); if (r.ok) setLogs(((await r.json()).logs ?? []) as FoodLogRow[]); } catch { /* offline */ }
+  }, []);
+  useEffect(() => { loadLogs(); }, [loadLogs]);
+  // Log one food/meal → creates the editable entry AND the mirrored Signals the
+  // engines read (one round-trip). Returns false (with an error set) on failure.
+  const logEntry = useCallback(async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number }): Promise<boolean> => {
+    const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(e) });
+    if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return false; }
+    if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return false; }
+    return true;
+  }, [t]);
+  // Change an entry's quantity (rescales its Signals) or delete it (removes them).
+  const editLogQty = async (id: string, qty: number) => {
+    setLogs((xs) => xs.map((x) => x.id === id ? { ...x, qty } : x)); // optimistic
+    try { await fetch(`/api/nutrition/log/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty }) }); } catch { /* revert on reload */ }
+    await load(); await loadLogs(); revalidate.recovery();
+  };
+  const deleteLog = async (id: string) => {
+    setLogs((xs) => xs.filter((x) => x.id !== id)); // optimistic
+    try { await fetch(`/api/nutrition/log/${id}`, { method: "DELETE" }); } catch { /* revert on reload */ }
+    await load(); await loadLogs(); revalidate.recovery();
+  };
+
   // ── Portion & quantity — logging any food/meal opens a sheet where a
   //    serving × quantity stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
@@ -326,18 +351,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     if (!portion) return;
     const q = qty > 0 ? qty : 1;
     setError(""); setMealMsg(""); setFoodMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", portion.kcal * q, "kcal"], ["protein", portion.protein * q, "g"], ["carbs", portion.carbs * q, "g"], ["fat", portion.fat * q, "g"]];
     try {
-      for (const [kind, value, unit] of jobs) {
-        if (value <= 0) continue;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: Math.round(value), unit, source: mealType }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      }
+      // Store per-serving macros + qty so the entry stays editable (a later qty
+      // change rescales it). Attributed to the current part of the day.
+      const ok = await logEntry({ name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, qty: q });
+      if (!ok) return;
       pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
       setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
       setPortion(null);
-      await load(); revalidate.recovery();
+      await load(); await loadLogs(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
@@ -347,17 +369,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
     setError(""); setMealMsg("");
-    const jobs: [string, number, string][] = [["energyIntake", q.kcal, "kcal"], ["protein", q.protein, "g"], ["carbs", q.carbs, "g"], ["fat", q.fat, "g"]];
     try {
-      for (const [kind, value, unit] of jobs) {
-        if (value <= 0) continue;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: Math.round(value), unit, source: mealType }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      }
+      const ok = await logEntry({ name: q.name, subname: q.subname ?? null, source: mealType, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, qty: 1 });
+      if (!ok) return;
       pushRecent(q);
       setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
-      await load(); revalidate.recovery();
+      await load(); await loadLogs(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
@@ -545,6 +562,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     }
     return totals;
   }, [signals]);
+  // Diary day scope — which day's individual entries the Diary shows (default
+  // today; the recent-days list can select a past day to edit/delete its records).
+  const [diaryDay, setDiaryDay] = useState<string>(() => localTodayKey());
+  const dayLogs = useMemo(() => logs.filter((l) => localDayKey(l.ts) === diaryDay).sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts)), [logs, diaryDay]);
   const targets = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
@@ -586,23 +607,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const protein = num(f.protein), carbs = num(f.carbs), fat = num(f.fat);
     const kcal = num(f.kcal) || protein * 4 + carbs * 4 + fat * 9;
-    // Post one signal per macro, remembering which kinds already landed
-    // (loggedKinds) so a retry after a partial network failure re-sends ONLY the
-    // failed kinds and never double-logs. Reset once the whole meal is in.
-    const jobs = ([["energyIntake", kcal, "kcal"], ["protein", protein, "g"], ["carbs", carbs, "g"], ["fat", fat, "g"]] as [string, number, string][])
-      .filter(([kind, value]) => value > 0 && !loggedKinds.current.has(kind));
-    if (!jobs.length) { setSaving(false); return false; }
+    if (kcal <= 0 && protein <= 0 && carbs <= 0 && fat <= 0) { setSaving(false); return false; }
     try {
-      for (const [kind, value, unit] of jobs) {
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value, unit, source: mealType }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return false; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return false; }
-        loggedKinds.current.add(kind);
-      }
+      // A manual macro entry is still a real, editable/deletable log entry —
+      // routed through the same endpoint so it appears in the Diary.
+      const ok = await logEntry({ name: t("w.recovery.nutrition.quickEntry"), source: mealType, kcal, protein, carbs, fat, qty: 1 });
+      if (!ok) { setSaving(false); return false; }
       setF({ kcal: "", protein: "", carbs: "", fat: "" });
       setMealMsg(`+${Math.round(kcal)} kcal`);
-      loggedKinds.current = new Set();
-      await load(); revalidate.recovery();
+      await load(); await loadLogs(); revalidate.recovery();
       setSaving(false);
       return true;
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
@@ -1694,23 +1707,50 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
       )}
 
-      {/* DIARY — today by meal, then the honest record of the week + recent days.
+      {/* DIARY — the selected day's individual entries, grouped by part, each one
+          editable (quantity) and deletable. Defaults to today; pick a past day in
+          the record below. Then the week strip + recent days.
           A streak is a number, not a trophy. */}
-      {view === "diary" && (
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); return (
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.todaysMeals")}</div>
-        <div style={{ marginTop: 12 }}>
-          {partList.map((p, i) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <button key={p.key} onClick={() => openAdd(p.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", borderTop: i ? `1px solid ${C("line")}` : "none", padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
-              <Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} />
-              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{p.label}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: kcal > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</span>
-              <Glyph name="chevron" size={14} color={C("ash")} />
-            </button>
-          ); })}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDay.slice(5)}</div>
+          {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.backToToday")} →</button>}
         </div>
+        <div style={{ marginTop: 12 }}>
+          {partList.map((p, i) => {
+            const entries = dayLogs.filter((l) => l.source === p.key);
+            const kcal = entries.reduce((s, l) => s + l.kcal * l.qty, 0);
+            return (
+            <div key={p.key} style={{ borderTop: i ? `1px solid ${C("line")}` : "none", paddingTop: 12, paddingBottom: entries.length ? 6 : 12 }}>
+              <button onClick={() => isToday && openAdd(p.key)} disabled={!isToday} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", padding: "0 2px", cursor: isToday ? "pointer" : "default", color: C("chalk") }}>
+                <Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} />
+                <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{p.label}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: kcal > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</span>
+                {isToday && <span style={{ width: 26, height: 26, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={13} color="var(--lime-text)" strokeWidth={2.4} /></span>}
+              </button>
+              {entries.map((l) => (
+                <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px 9px 31px" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
+                  </div>
+                  {/* Quantity stepper — rescales the entry (and its mirror). */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <button onClick={() => editLogQty(l.id, Math.max(0.5, Math.round((l.qty - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
+                    <span style={{ minWidth: 22, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.qty}</span>
+                    <button onClick={() => editLogQty(l.id, Math.min(50, Math.round((l.qty + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
+                  </div>
+                  <button onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
+                </div>
+              ))}
+            </div>
+            );
+          })}
+        </div>
+        {logs.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.5 }}>{t("w.recovery.nutrition.diaryEntriesHint")}</div>}
       </div>
-      )}
+      ); })()}
 
       {view === "diary" && (
       <div style={{ ...card, marginTop: 12, padding: 20 }}>
@@ -1730,13 +1770,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ marginTop: 16 }}>
           {recentDays.length === 0 ? (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.recovery.nutrition.recentEmpty")}</div>
-          ) : recentDays.map((d, i) => (
-            <div key={d.date} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "11px 0", borderTop: i ? `1px solid ${C("line")}` : "none", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
-              <span style={{ color: C("ash"), width: 48 }}>{d.date.slice(5)}</span>
+          ) : recentDays.map((d, i) => {
+            const on = d.date === diaryDay;
+            return (
+            <button key={d.date} onClick={() => setDiaryDay(d.date)} aria-label={`${t("w.recovery.nutrition.viewDay")} ${d.date.slice(5)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "11px 6px", borderTop: i ? `1px solid ${C("line")}` : "none", background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", borderRadius: on ? 10 : 0, border: "none", borderLeft: on ? "2px solid var(--color-lime)" : "2px solid transparent", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
+              <span style={{ color: on ? "var(--lime-text)" : C("ash"), width: 48, textAlign: "left" }}>{d.date.slice(5)}</span>
               <span style={{ fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{Math.round(d.kcal)} kcal</span>
               <span style={{ color: C("ash"), flex: 1, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(d.protein)}P {Math.round(d.carbs)}C {Math.round(d.fat)}F</span>
-            </div>
-          ))}
+            </button>
+            );
+          })}
         </div>
       </div>
       )}
