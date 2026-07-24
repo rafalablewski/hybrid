@@ -1,6 +1,7 @@
 "use client";
 
-import { exerciseAnatomy, fs, type MuscleActivation } from "@hybrid/core";
+import { useEffect, useRef, useState } from "react";
+import { exerciseAnatomy, fs, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraExerciseAnimation from "./exercise-animation";
 
@@ -42,33 +43,20 @@ function Group({ label, rows, t }: { label: string; rows: MuscleActivation[]; t:
   );
 }
 
-/**
- * The exercise-page ANATOMY section (web): a looping schematic animation of the
- * movement, the muscles it works with a share-of-effort %, the stabilizers that
- * brace it, and the step-by-step form cues. Data + geometry come from
- * @hybrid/core (exercise-anatomy) so this renders identically on mobile. Returns
- * null for a name the exercise DB doesn't know (custom lifts, cardio sports).
- */
-export default function AuroraExerciseAnatomy({ name }: { name: string }) {
-  const { t } = useLang();
-  const a = exerciseAnatomy(name);
-  if (!a) return null;
+/* ── the sheet body: the movement demo + muscles + stabilizers + cues ── */
 
+function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string; active: boolean; t: (k: string) => string }) {
   return (
-    <section style={{ margin: "22px 2px 0", paddingTop: 18, borderTop: `1px solid ${C("line")}` }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <h2 style={{ fontWeight: 900, fontSize: 18, letterSpacing: -0.3, margin: 0, color: C("chalk") }}>{t("w.analyze.exp.anatomy.title")}</h2>
-        <span style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1, textTransform: "uppercase" }}>{a.mechanics === "isolation" ? t("w.analyze.exp.anatomy.isolation") : t("w.analyze.exp.anatomy.compound")}</span>
-      </div>
-
+    <>
       {/* the movement demo (swappable: procedural skeleton today, professional
-          sketch later — see exercise-animation.tsx) */}
-      <div style={{ marginTop: 14, borderRadius: 20, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 14px", display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "62%", maxWidth: 240 }}>
-          <AuroraExerciseAnimation name={name} />
+          sketch later — see exercise-animation.tsx). Loops only while the sheet
+          is open. */}
+      <div style={{ marginTop: 4, borderRadius: 20, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 14px", display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "58%", maxWidth: 220 }}>
+          <AuroraExerciseAnimation name={name} active={active} />
         </div>
       </div>
-      <p style={{ margin: "12px 2px 0", fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{a.emphasis}</p>
+      <p style={{ margin: "13px 2px 0", fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{a.emphasis}</p>
 
       {/* muscles worked */}
       <div style={{ marginTop: 20 }}>
@@ -99,6 +87,108 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
           ))}
         </ol>
       </div>
-    </section>
+    </>
+  );
+}
+
+/* ── the bottom sheet (scrim + slide-up panel) ── */
+
+function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; onClose: () => void; title: string; meta: string; children: React.ReactNode }) {
+  const [render, setRender] = useState(open);
+  const [shown, setShown] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      const id = requestAnimationFrame(() => setShown(true));
+      return () => cancelAnimationFrame(id);
+    }
+    setShown(false);
+    const id = setTimeout(() => setRender(false), 320);
+    return () => clearTimeout(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (!render) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [render, onClose]);
+
+  if (!render) return null;
+  return (
+    <div
+      role="presentation"
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: `rgba(0,0,0,${shown ? 0.6 : 0})`, transition: "background .3s ease", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "26px 26px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: "10px 20px 30px", transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
+      >
+        <div aria-hidden style={{ width: 38, height: 4, borderRadius: 3, background: C("line"), margin: "2px auto 14px" }} />
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+            <h2 style={{ fontWeight: 900, fontSize: 20, letterSpacing: -0.3, margin: 0, color: C("chalk") }}>{title}</h2>
+            <span style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1, textTransform: "uppercase" }}>{meta}</span>
+          </div>
+          <button ref={closeRef} onClick={onClose} style={{ ...monoRow(11, C("ash")), background: "none", border: "none", cursor: "pointer", padding: "2px 2px 2px 12px", flexShrink: 0 }}>✕</button>
+        </div>
+        <div style={{ marginTop: 14 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The exercise-page "How it's done" surface (web): a compact PILL under the
+ * exercise name that opens a BOTTOM SHEET with the movement animation, the
+ * muscles it works (with a share-of-effort %), the stabilizers and the form
+ * cues. Keeping it in a sheet leaves the page as a clean stats view for the many
+ * athletes who already know the lift; the animation only loops while the sheet
+ * is open. Data comes from @hybrid/core (exercise-anatomy) so this stays at
+ * parity with mobile. Returns null for a name the DB doesn't know (custom lifts,
+ * cardio sports).
+ */
+export default function AuroraExerciseAnatomy({ name }: { name: string }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const a = exerciseAnatomy(name);
+  if (!a) return null;
+  const meta = a.mechanics === "isolation" ? t("w.analyze.exp.anatomy.isolation") : t("w.analyze.exp.anatomy.compound");
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        style={{
+          marginTop: 16, display: "inline-flex", alignItems: "center", gap: 9, cursor: "pointer",
+          fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: 0.4, color: "var(--lime-text)",
+          border: `1px solid color-mix(in srgb, ${C("lime")} 42%, ${C("line")})`,
+          background: `color-mix(in srgb, ${C("lime")} 8%, ${C("ink2")})`,
+          borderRadius: 999, padding: "9px 15px",
+        }}
+      >
+        <span aria-hidden style={{ display: "inline-flex", width: 14, height: 14, alignItems: "center", justifyContent: "center" }}>
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden><path d="M5 3.5v9l7-4.5-7-4.5Z" fill="currentColor" /></svg>
+        </span>
+        {t("w.analyze.exp.anatomy.title")}
+      </button>
+
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={t("w.analyze.exp.anatomy.title")} meta={meta}>
+        <AnatomyBody a={a} name={name} active={open} t={t} />
+      </BottomSheet>
+    </>
   );
 }

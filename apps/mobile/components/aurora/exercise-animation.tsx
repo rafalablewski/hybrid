@@ -21,25 +21,30 @@ import { useTheme, type Palette } from "../../lib/theme";
  * apps/web/components/aurora/exercise-animation.tsx. Returns null for a name the
  * DB doesn't know (custom lifts, cardio sports).
  */
-export default function AuroraExerciseAnimation({ name }: { name: string }) {
+export default function AuroraExerciseAnimation({ name, active = true }: { name: string; active?: boolean }) {
   const { palette: C } = useTheme();
   const anim = exerciseAnimation(name);
   if (!anim) return null;
   switch (anim.kind) {
     case "skeleton":
-      return <SkeletonFigure C={C} frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} />;
+      return <SkeletonFigure C={C} frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
     case "sketch":
-      return <SketchFigure anim={anim} />;
+      return <SketchFigure anim={anim} active={active} />;
   }
 }
 
 /* ── procedural stick-figure renderer (today's default) ── */
 
-function SkeletonFigure({ C, frames, load, cycleMs }: { C: Palette; frames: Skeleton[]; load: LoadGlyph; cycleMs: number }) {
-  const [phase, setPhase] = useState(0);
+function SkeletonFigure({ C, frames, load, cycleMs, active }: { C: Palette; frames: Skeleton[]; load: LoadGlyph; cycleMs: number; active: boolean }) {
+  const [phase, setPhase] = useState(0.28);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Paused (sheet closed) → hold a representative mid-rep pose, no loop.
+    if (!active) {
+      setPhase(0.28);
+      return;
+    }
     let cancelled = false;
     let start = 0;
     const loop = (now: number) => {
@@ -60,7 +65,7 @@ function SkeletonFigure({ C, frames, load, cycleMs }: { C: Palette; frames: Skel
       cancelled = true;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [cycleMs]);
+  }, [cycleMs, active]);
 
   const s = skeletonAt(frames, phase);
   const seg = (a: { x: number; y: number }, b: { x: number; y: number }, key: string) => (
@@ -130,12 +135,12 @@ function LoadSVG({ load, x, y, accent }: { load: LoadGlyph; x: number; y: number
    Wired but dormant until core's SKETCH_ANIMATIONS is populated. Frame refs are
    remote URLs (or bundled asset uris) the illustrator's export provides. */
 
-function SketchFigure({ anim }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }> }) {
+function SketchFigure({ anim, active }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }>; active: boolean }) {
   const { frames, cycleMs } = anim;
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    if (frames.length <= 1) return;
+    if (frames.length <= 1 || !active) return;
     let id: ReturnType<typeof setInterval> | null = null;
     AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
       if (reduce) return;
@@ -145,7 +150,7 @@ function SketchFigure({ anim }: { anim: Extract<ExerciseAnimation, { kind: "sket
     return () => {
       if (id) clearInterval(id);
     };
-  }, [frames.length, cycleMs]);
+  }, [frames.length, cycleMs, active]);
 
   return (
     <View style={{ width: "100%", aspectRatio: 1 }}>

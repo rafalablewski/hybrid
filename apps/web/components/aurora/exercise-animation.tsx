@@ -21,28 +21,29 @@ const C = (v: string) => `var(--color-${v})`;
  * (exercise-anatomy.tsx) never changes. Returns null for a name the DB doesn't
  * know (custom lifts, cardio sports).
  */
-export default function AuroraExerciseAnimation({ name }: { name: string }) {
+export default function AuroraExerciseAnimation({ name, active = true }: { name: string; active?: boolean }) {
   const anim = exerciseAnimation(name);
   if (!anim) return null;
   switch (anim.kind) {
     case "skeleton":
-      return <SkeletonFigure frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} />;
+      return <SkeletonFigure frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
     case "sketch":
-      return <SketchFigure anim={anim} />;
+      return <SketchFigure anim={anim} active={active} />;
   }
 }
 
 /* ── procedural stick-figure renderer (today's default) ── */
 
-function SkeletonFigure({ frames, load, cycleMs }: { frames: Skeleton[]; load: LoadGlyph; cycleMs: number }) {
-  const [phase, setPhase] = useState(0);
+function SkeletonFigure({ frames, load, cycleMs, active }: { frames: Skeleton[]; load: LoadGlyph; cycleMs: number; active: boolean }) {
+  const [phase, setPhase] = useState(0.28);
   const rafRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const reduce =
       typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setPhase(0.28); // a representative mid-rep pose, held still
+    // Paused (collapsed) or reduced-motion → hold a representative mid-rep pose.
+    if (!active || reduce) {
+      setPhase(0.28);
       return;
     }
     const start = performance.now();
@@ -54,7 +55,7 @@ function SkeletonFigure({ frames, load, cycleMs }: { frames: Skeleton[]; load: L
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [cycleMs]);
+  }, [cycleMs, active]);
 
   const s = skeletonAt(frames, phase);
   const line = (a: { x: number; y: number }, b: { x: number; y: number }, key: string) => (
@@ -125,19 +126,19 @@ function LoadSVG({ load, x, y, accent }: { load: LoadGlyph; x: number; y: number
    Wired but dormant until core's SKETCH_ANIMATIONS is populated. Frame refs are
    URLs/data-URIs the illustrator's export provides. */
 
-function SketchFigure({ anim }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }> }) {
+function SketchFigure({ anim, active }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }>; active: boolean }) {
   const { frames, cycleMs } = anim;
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    if (frames.length <= 1) return;
+    if (frames.length <= 1 || !active) return;
     const reduce =
       typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
     const per = Math.max(60, cycleMs / frames.length);
     const id = setInterval(() => setI((n) => (n + 1) % frames.length), per);
     return () => clearInterval(id);
-  }, [frames.length, cycleMs]);
+  }, [frames.length, cycleMs, active]);
 
   return (
     <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1" }}>

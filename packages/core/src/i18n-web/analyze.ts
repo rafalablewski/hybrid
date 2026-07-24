@@ -151,6 +151,7 @@ export const web_analyze = {
     "w.analyze.exp.now": "now",
     // how-it's-done / anatomy section
     "w.analyze.exp.anatomy.title": "How it's done",
+    "w.analyze.exp.anatomy.close": "Close",
     "w.analyze.exp.anatomy.compound": "Compound",
     "w.analyze.exp.anatomy.isolation": "Isolation",
     "w.analyze.exp.anatomy.muscles": "Muscles worked",
@@ -508,6 +509,7 @@ export const web_analyze = {
     "w.analyze.exp.now": "teraz",
     // how-it's-done / anatomy section
     "w.analyze.exp.anatomy.title": "Jak to wykonać",
+    "w.analyze.exp.anatomy.close": "Zamknij",
     "w.analyze.exp.anatomy.compound": "Złożone",
     "w.analyze.exp.anatomy.isolation": "Izolowane",
     "w.analyze.exp.anatomy.muscles": "Pracujące mięśnie",
@@ -865,6 +867,7 @@ export const web_analyze = {
     "w.analyze.exp.now": "jetzt",
     // how-it's-done / anatomy section
     "w.analyze.exp.anatomy.title": "So geht's",
+    "w.analyze.exp.anatomy.close": "Schließen",
     "w.analyze.exp.anatomy.compound": "Verbundübung",
     "w.analyze.exp.anatomy.isolation": "Isolation",
     "w.analyze.exp.anatomy.muscles": "Beanspruchte Muskeln",
