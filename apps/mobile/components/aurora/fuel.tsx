@@ -204,12 +204,11 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
           card's padding — the golden rule's in-card exception). */}
       <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 4 }}>
-          {/* ＋ Quick log — the entry to the full sheet, styled like the exercise
-              rail's "All exercises & favourites" card; first so it's always reachable */}
-          <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t("w.home.fuel.quickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 9, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.lime, 0.45), borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 15 }}>
-            <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: withAlpha(C.lime, 0.12), borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.lime, 0.45), alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontSize: 19, color: txt(C, C.lime), marginTop: -2 }}>＋</Text>
-            </View>
+          {/* ＋ Quick log — the entry to the full sheet, echoing the exercise
+              rail's "All exercises & favourites" card: a bare ＋ glyph + lime
+              label (not a boxed tile); first so it's always reachable. */}
+          <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t("w.home.fuel.quickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4), borderRadius: 14, paddingVertical: 9, paddingHorizontal: 17 }}>
+            <Text style={{ fontSize: 20, color: C.ash, marginTop: -2 }}>＋</Text>
             <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: txt(C, C.lime) }}>{t("w.home.fuel.quickLog")}</Text>
           </Pressable>
           {MEAL_PRESETS.map((p) => {
