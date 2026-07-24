@@ -405,7 +405,7 @@ export default function AuroraToday({
            third card at phone widths). NO section head — the "How do you want
            to start?" question was retired with the masthead redesign (the page
            already opens with "Today" + the greeting, and three cards titled
-           Follow a plan / Build your own / Just train need no sentence
+           Follow a plan / Build your own / Log a workout need no sentence
            announcing that a choice is available); "Free" is said ONCE on the
            masthead's caption line. Each full-width card wears the Go-Full
            anatomy with its corner glow, the hue confined to glyph + CTA, and
