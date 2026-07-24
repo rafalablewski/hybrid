@@ -5,7 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { fs, space,
-  colors, totalVolume, sessionVolume, bestE1rmByLift, e1rmSeries, liftNames,
+  colors, totalVolume, sessionVolume, bestTopLoadByLift, topLoadSeries, liftNames,
   kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
 } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -73,9 +73,9 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
     return <AEmpty title={t("w.home.analytics.noAnalytics")} body={t("w.home.analytics.noAnalyticsBody")} />;
 
   const vol = totalVolume(sessions, bw);
-  const prs = bestE1rmByLift(sessions, bw).slice(0, 6);
+  const prs = bestTopLoadByLift(sessions, bw).slice(0, 6);
   const topLift = liftNames(sessions)[0];
-  const series = topLift ? e1rmSeries(sessions, topLift, bw).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
+  const series = topLift ? topLoadSeries(sessions, topLift, bw).map((p) => ({ w: fmtDate(p.date), top: Math.round(kgToUnit(p.weightKg, units)) })) : [];
   const volSeries = [...sessions].slice(0, 8).reverse().map((s) => ({ w: fmtDate(s.startedAt), vol: Math.round(kgToUnit(sessionVolume(s.blocks, false, bw(s.startedAt)), units)) }));
   const lastReadiness = sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null;
   const best = prs[0];
@@ -84,17 +84,17 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
     <div style={grid}>
       <AStat label={t("w.home.analytics.sessions")} value={sessions.length} accent="lime" />
       <AStat label={t("w.home.analytics.totalVolume")} value={fmtTonnage(vol, units)} />
-      <AStat label={best ? `${best.lift} e1RM` : t("w.home.analytics.bestE1rm")} value={best ? fmtWeight(best.e1rm, units) : "—"} accent="lime" />
+      <AStat label={best ? `${best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={best ? fmtWeight(best.weightKg, units) : "—"} accent="lime" />
       <AStat label={t("w.home.analytics.lastReadiness")} value={lastReadiness ?? "—"} accent="blue" />
 
       {series.length > 0 && (
-        <AFrame title={`${topLift} – e1RM`} kicker={t("w.home.analytics.fromLogs")} span={2}>
+        <AFrame title={`${topLift} – ${t("w.home.analytics.col.heaviest")}`} kicker={t("w.home.analytics.fromLogs")} span={2}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={series}>
               <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
               <XAxis dataKey="w" {...axis} /><YAxis {...axis} domain={["auto", "auto"]} />
               <Tooltip contentStyle={chartTip} />
-              <Line type="monotone" dataKey="e1rm" stroke={colors.lime} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="top" stroke={colors.lime} strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </AFrame>
@@ -112,8 +112,8 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
       </AFrame>
 
       {prs.length > 0 && (
-        <AFrame title={t("w.home.analytics.personalRecords")} kicker={t("w.home.analytics.bestE1rmPerLift")} span={4}>
-          <Table head={[t("w.home.analytics.col.lift"), t("w.home.analytics.col.bestE1rm"), t("w.home.analytics.col.when")]} rows={prs.map((p) => [p.lift, fmtWeight(p.e1rm, units), fmtDate(p.when)])} />
+        <AFrame title={t("w.home.analytics.personalRecords")} kicker={t("w.home.analytics.heaviestPerLift")} span={4}>
+          <Table head={[t("w.home.analytics.col.lift"), t("w.home.analytics.col.heaviest"), t("w.home.analytics.col.when")]} rows={prs.map((p) => [p.lift, fmtWeight(p.weightKg, units), fmtDate(p.when)])} />
         </AFrame>
       )}
     </div>

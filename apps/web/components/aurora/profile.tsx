@@ -8,7 +8,7 @@ import { fs, space,
   computeAchievements,
   longestWeekStreak,
   streak,
-  bestE1rmMap,
+  topLoadMap,
   fmtWeight,
   fmtTonnage,
   sessionVolume,
@@ -155,9 +155,9 @@ export default function AuroraProfile({
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions, bw), [sessions, bw]);
   const earnedCount = useMemo(() => achievements.filter((a) => a.earned).length, [achievements]);
 
-  // Top personal records — best e1RM per lift, descending, top 3.
+  // Top personal records — heaviest actual lift per movement, descending, top 3.
   const prs = useMemo(() => {
-    return [...bestE1rmMap(sessions).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+    return [...topLoadMap(sessions).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
   }, [sessions]);
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22 } as const;
@@ -376,20 +376,20 @@ export default function AuroraProfile({
       {tab === "prs" && (
         <div style={{ marginTop: 16 }}>
           {prs.length ? (
-            prs.map(([lift, e1rm]) => (
+            prs.map(([lift, wt]) => (
               <div key={lift} style={{ ...card, padding: "13px 14px", marginBottom: 9 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
                     <span style={{ fontSize: fs.subtitle }}>🏆</span>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>e1RM</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>{t("w.account.profile.pr-metric")}</div>
                     </div>
                   </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(e1rm, units)}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(wt, units)}</div>
                 </div>
                 <div style={{ height: 4, borderRadius: 2, background: C("line"), marginTop: 11, overflow: "hidden" }}>
-                  <div style={{ width: `${Math.max(8, Math.round((e1rm / prs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, background: C("lime") }} />
+                  <div style={{ width: `${Math.max(8, Math.round((wt / prs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, background: C("lime") }} />
                 </div>
               </div>
             ))

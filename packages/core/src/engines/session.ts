@@ -795,6 +795,29 @@ export interface PrRow {
   when: string;
 }
 
+export interface TopLiftRow {
+  lift: string;
+  weightKg: number;
+  when: string;
+}
+
+/** Heaviest ACTUAL load per lift (all-time), heaviest first — the real top
+ *  weight, not an estimated 1RM. Bodyweight-aware when `bw` is passed (each
+ *  session resolves at its own date). */
+export function bestTopLoadByLift(sessions: LoggedSession[], bw?: BodyweightInput): TopLiftRow[] {
+  const map = new Map<string, { weightKg: number; when: string }>();
+  for (const s of sessions)
+    for (const b of s.blocks)
+      if (isStrength(b)) {
+        const best = Math.round(blockTopLoad(b, bwAt(bw, s.startedAt)) * 10) / 10;
+        const cur = map.get(b.name);
+        if (best > 0 && (!cur || best > cur.weightKg)) map.set(b.name, { weightKg: best, when: s.startedAt });
+      }
+  return [...map.entries()]
+    .map(([lift, v]) => ({ lift, ...v }))
+    .sort((a, b) => b.weightKg - a.weightKg);
+}
+
 /** Best e1RM per lift (all-time PRs), strongest first — bodyweight-aware when
  *  `bw` is passed (each session resolves at its own date). */
 export function bestE1rmByLift(sessions: LoggedSession[], bw?: BodyweightInput): PrRow[] {
