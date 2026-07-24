@@ -75,17 +75,33 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
   const ringColor = state === "over" ? txt(C, C.red) : C.lime;
   const title = state === "refuel" ? t("w.home.fuel.titleRefuel") : state === "goal-hit" ? t("w.home.fuel.titleGoal") : t("w.home.fuel.title");
 
-  const MacroBar = ({ m, label, thick }: { m: FuelMacro; label: string; thick?: boolean }) => (
-    <View style={{ gap: 5 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: macroText[m.key] }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{m.value} / {m.target} g</Text>
+  const MacroBar = ({ m, label, thick }: { m: FuelMacro; label: string; thick?: boolean }) => {
+    // Surpassed target — a distinctive treatment: the track fills to the WHOLE
+    // logged amount, chartreuse-macro up to the target line then a terracotta
+    // overflow past it, and the readout calls out "+Ng" in the over colour.
+    const targetFrac = m.over && m.value > 0 ? Math.max(0, Math.min(100, (m.target / m.value) * 100)) : 100;
+    return (
+      <View style={{ gap: 5 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, color: macroText[m.key] }}>{label}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>
+            <Text style={{ color: m.over ? txt(C, C.red) : C.ash }}>{m.value}</Text> / {m.target} g
+            {m.over ? <Text style={{ color: txt(C, C.red), fontWeight: "600" }}> +{m.overBy}</Text> : null}
+          </Text>
+        </View>
+        <View style={{ height: thick ? 7 : 5, borderRadius: 5, backgroundColor: C.line, overflow: "hidden" }}>
+          {m.over ? (
+            <View style={{ flexDirection: "row", height: "100%", width: "100%" }}>
+              <View style={{ width: `${targetFrac}%`, backgroundColor: macroFill[m.key] }} />
+              <View style={{ flex: 1, backgroundColor: C.red }} />
+            </View>
+          ) : (
+            <View style={{ height: "100%", width: `${m.pct}%`, backgroundColor: macroFill[m.key], borderRadius: 5 }} />
+          )}
+        </View>
       </View>
-      <View style={{ height: thick ? 7 : 5, borderRadius: 5, backgroundColor: C.line, overflow: "hidden" }}>
-        <View style={{ height: "100%", width: `${m.pct}%`, backgroundColor: macroFill[m.key], borderRadius: 5 }} />
-      </View>
-    </View>
-  );
+    );
+  };
 
   const Pill = ({ tone, children }: { tone: "lime" | "red"; children: React.ReactNode }) => (
     <View style={{ flexDirection: "row", alignItems: "center", borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, backgroundColor: withAlpha(tone === "lime" ? C.lime : C.red, 0.14) }}>
@@ -187,11 +203,15 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
           types. Full-bleed to the card edge (a rail inside a card respects the
           card's padding — the golden rule's in-card exception). */}
       <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("w.home.fuel.quickLog")}</Text>
-          <Pressable onPress={onOpen} accessibilityRole="button"><Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase" }}>{t("w.home.fuel.allMeals")}</Text></Pressable>
-        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 4 }}>
+          {/* ＋ Quick log — the entry to the full sheet, styled like the exercise
+              rail's "All exercises & favourites" card; first so it's always reachable */}
+          <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t("w.home.fuel.quickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 9, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.lime, 0.45), borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 15 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: withAlpha(C.lime, 0.12), borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.lime, 0.45), alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 19, color: txt(C, C.lime), marginTop: -2 }}>＋</Text>
+            </View>
+            <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: txt(C, C.lime) }}>{t("w.home.fuel.quickLog")}</Text>
+          </Pressable>
           {MEAL_PRESETS.map((p) => {
             const isDone = done === p.id;
             const isBusy = busy === p.id;

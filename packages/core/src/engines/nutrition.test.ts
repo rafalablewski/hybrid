@@ -210,6 +210,17 @@ describe("fuelToday (Today widget state)", () => {
     expect(fuel.state).toBe("over");
     expect(fuel.kcalLeft).toBeLessThan(0);
   });
+
+  it("marks a macro that surpasses its target with over + overBy", () => {
+    // protein target is 144 g (80 kg × 1.8); log 170 → over by 26.
+    const fuel = fuelToday([bw, kcal(2000, 0), p(170, 0), c(150, 0), f(40, 0)], { now: NOW });
+    expect(fuel.macros.protein.over).toBe(true);
+    expect(fuel.macros.protein.overBy).toBe(26);
+    expect(fuel.macros.protein.pct).toBe(100); // still clamped for the bar
+    // a macro under target is not over
+    expect(fuel.macros.carbs.over).toBe(false);
+    expect(fuel.macros.carbs.overBy).toBe(0);
+  });
 });
 
 describe("sumMealComponents (meal built from products)", () => {
