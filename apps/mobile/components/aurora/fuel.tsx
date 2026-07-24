@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   fuelToday,
@@ -35,7 +36,7 @@ type P = ReturnType<typeof useTheme>["palette"];
 export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
-  const { data: rawSignals = [] } = useSignalsQuery();
+  const { data: rawSignals = [], isLoading } = useSignalsQuery();
   const signals = rawSignals as unknown as Signal[];
   const revalidate = useRevalidate();
   const full = isFullAccess(usePersona());
@@ -92,6 +93,11 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
     </View>
   );
 
+  // Hold the widget back until the first signals fetch resolves, so a returning
+  // athlete never sees the cold-start "Nothing logged yet" flash. (Usually the
+  // cache is already warm from the parent screen.)
+  if (isLoading) return null;
+
   return (
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: glow ? withAlpha(C.lime, 0.3) : C.line, borderRadius: RADIUS.card, padding: 20, marginTop: 12, overflow: "hidden" }}>
       {glow && (
@@ -124,7 +130,9 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
       <Pressable onPress={onOpen} accessibilityRole="button" style={{ flexDirection: "row", gap: 20, alignItems: "center", marginTop: 14 }}>
         <Ring value={state === "empty" ? 0 : kcalPct} size={96} ticks={32} color={ringColor} track={C.line}>
           {state === "goal-hit" ? (
-            <Text style={{ fontSize: 30, color: C.lime }}>{"✓"}</Text>
+            <Svg width={30} height={30} viewBox="0 0 24 24" fill="none"><Path d="M5 12.5 10 17.5 19.5 7" stroke={C.lime} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+          ) : state === "empty" ? (
+            <Svg width={26} height={26} viewBox="0 0 24 24" fill="none"><Path d="M4 3v7a4 4 0 0 0 8 0V3M8 3v18M17 3c-1.5 1.5-2 4-2 7s.5 4 2 4 2-1 2-4-.5-5.5-2-7zM17 14v7" stroke={C.ash} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" /></Svg>
           ) : (
             <View style={{ alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 23, letterSpacing: -0.4, color: C.chalk }}>{nf(Math.abs(kcalLeft))}</Text>
