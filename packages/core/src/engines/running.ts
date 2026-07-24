@@ -1,12 +1,58 @@
 import type { LoggedSession, CardioBlock } from "./session";
+import { olympicSport } from "../olympic-sports";
 
 // Running / cardio analytics — pure aggregates over logged cardio blocks, so the
 // web/mobile Running screens (and anything else) read one source of truth. A
 // "cardio effort" is any cardio block; pace stats need distance + minutes.
+//
+// The aggregates below count EVERY cardio block (the Cockpit's "Endurance"
+// summary + the AI coach read them as all-cardio). The Running SCREEN wants
+// running only — a pool or tennis session must never show up as a "run" — so it
+// pre-filters its sessions through `runningSessions` (built on `isRunMove`)
+// before handing them here. Keeping the split here means both clients' Running
+// screens stay in lockstep from one source of truth.
 
 const isCardio = (b: { kind: string }): b is CardioBlock => b.kind === "cardio";
 const WEEK = 7 * 86_400_000;
 const ms = (iso: string) => new Date(iso).getTime();
+
+// A "run" is locomotion on foot — not swims, rides, rows, rackets or any other
+// logged sport/cardio that also lands in a cardio block. A logged Olympic sport
+// resolves through the catalog (only the foot-races count); a generic or custom
+// cardio name ("Easy Run", "Treadmill", a typed-in "Bike") falls back to a
+// keyword test, with an explicit NON-running block first so a shared word can't
+// leak a "Row Sprints" or "Bike Intervals" through.
+const RUN_SPORTS = new Set(["Running", "Marathon"]);
+const NOT_RUN_RE = /\b(swim|bike|cycl|ride|row|erg|paddle|kayak|canoe|ski|skate|elliptical|walk|hike|ruck|climb|stair|surf|sail)\b/i;
+const RUN_RE = /\b(run|running|jog|jogging|sprint|treadmill|fartlek|parkrun)\b/i;
+
+/**
+ * True when a cardio move is running on foot. Named Olympic sports resolve
+ * through the catalog (only Running/Marathon count — Swimming, Tennis, Cycling,
+ * Rowing, … don't); generic/custom names use a keyword test that excludes the
+ * other cardio modalities. Powers the Running screen so a swim or tennis session
+ * never counts as a run.
+ */
+export function isRunMove(name: string): boolean {
+  if (!name) return false;
+  const sport = olympicSport(name);
+  if (sport) return RUN_SPORTS.has(sport.name);
+  if (NOT_RUN_RE.test(name)) return false;
+  return RUN_RE.test(name);
+}
+
+/**
+ * The sessions with every NON-running cardio block dropped — feed this to the
+ * running aggregates so the Running screen shows runs only. Strength and other
+ * blocks pass through untouched (the aggregates ignore them anyway); only a
+ * cardio block that isn't a run is removed. Pure — a shallow copy per session.
+ */
+export function runningSessions(sessions: LoggedSession[]): LoggedSession[] {
+  return sessions.map((s) => ({
+    ...s,
+    blocks: s.blocks.filter((b) => !isCardio(b) || isRunMove(b.name)),
+  }));
+}
 
 export interface RunTotals {
   efforts: number;

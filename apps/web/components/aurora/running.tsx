@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
-  runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock, type LoggedSession,
+  runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock, runningSessions, type LoggedSession,
 } from "@hybrid/core";
 import { fs, space, LINE, LINE_HEX, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
@@ -22,11 +22,15 @@ const head = (color: string, k: string) => <div style={{ fontFamily: "var(--font
  *  + recharts mileage/pace charts. */
 export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] }) {
   const { t } = useLang();
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
-  const stats = useMemo(() => runStats(sessions), [sessions]);
-  const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
-  const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
+  // Running screen = runs only — drop swims, rides, rows and logged sports so a
+  // pool or tennis session never counts as a run (Cockpit's Endurance summary
+  // keeps counting all cardio; only this screen narrows to running).
+  const runs = useMemo(() => runningSessions(sessions), [sessions]);
+  const totals = useMemo(() => runTotals(runs), [runs]);
+  const stats = useMemo(() => runStats(runs), [runs]);
+  const mileage = useMemo(() => weeklyMileage(runs, 8), [runs]);
+  const split = useMemo(() => paceEffortSplit(runs), [runs]);
+  const paceMoves = useMemo(() => pacedRunMoves(runs), [runs]);
   const [move, setMove] = useState("");
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
 
@@ -40,7 +44,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   }
 
   const mileageData = mileage.map((w) => ({ w: fmtWeek(w.weekStart), km: w.km }));
-  const paceData = active ? paceSeries(sessions, active).map((p) => ({ w: fmtWeek(p.date), pace: p.secPerKm })) : [];
+  const paceData = active ? paceSeries(runs, active).map((p) => ({ w: fmtWeek(p.date), pace: p.secPerKm })) : [];
   const splitTotal = split.easy + split.moderate + split.hard;
   const hasEffort = splitTotal > 0;
   const easyPct = hasEffort ? Math.round((split.easy / splitTotal) * 100) : null;

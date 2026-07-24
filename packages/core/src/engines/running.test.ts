@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves } from "./running";
+import { runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, isRunMove, runningSessions } from "./running";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z").getTime();
@@ -58,6 +58,52 @@ describe("running analytics", () => {
     expect(e.hard).toBe(40);
     expect(e.easy).toBe(50);
     expect(e.moderate).toBe(0);
+  });
+
+  it("isRunMove: foot-races are runs; swims, rackets, rides, rows are not", () => {
+    // Logged Olympic sports resolve through the catalog.
+    expect(isRunMove("Running")).toBe(true);
+    expect(isRunMove("Marathon")).toBe(true);
+    expect(isRunMove("Swimming")).toBe(false);
+    expect(isRunMove("Tennis")).toBe(false);
+    expect(isRunMove("Road Cycling")).toBe(false);
+    expect(isRunMove("Rowing")).toBe(false);
+    // Generic / custom cardio names use the keyword test.
+    expect(isRunMove("Easy Run")).toBe(true);
+    expect(isRunMove("Tempo Run")).toBe(true);
+    expect(isRunMove("Treadmill")).toBe(true);
+    // A shared word must not leak a non-running modality through.
+    expect(isRunMove("Row Intervals")).toBe(false);
+    expect(isRunMove("Assault Bike")).toBe(false);
+    expect(isRunMove("Canoe Sprint")).toBe(false);
+  });
+
+  it("runningSessions strips non-running cardio so swims/tennis never count as runs", () => {
+    // Two pool sessions + one tennis session — zero actual runs.
+    const notRuns: LoggedSession[] = [
+      run("s1", daysAgo(1), "Swimming", 1.5, 40),
+      run("s2", daysAgo(3), "Swimming", 1.2, 35),
+      run("t1", daysAgo(5), "Tennis", undefined, 60),
+    ];
+    expect(runTotals(runningSessions(notRuns)).efforts).toBe(0);
+
+    // A mixed history keeps the runs, drops the rest.
+    const mixed: LoggedSession[] = [...notRuns, run("r1", daysAgo(2), "Easy Run", 8, 48)];
+    const filtered = runningSessions(mixed);
+    const t = runTotals(filtered);
+    expect(t.efforts).toBe(1);
+    expect(t.distanceKm).toBe(8);
+    expect(runStats(filtered).map((r) => r.move)).toEqual(["Easy Run"]);
+    expect(pacedRunMoves(filtered)).toEqual(["Easy Run"]);
+    // Strength blocks in the same session survive the filter untouched.
+    const withLift = runningSessions([
+      { id: "m", title: "Brick", startedAt: daysAgo(1), blocks: [
+        { kind: "cardio", name: "Swimming", distance: 1, minutes: 30 },
+        { kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }] },
+      ] },
+    ]);
+    expect(withLift[0]!.blocks).toHaveLength(1);
+    expect(withLift[0]!.blocks[0]!.name).toBe("Back Squat");
   });
 
   it("paceEffortSplit calls a tightly-clustered move steady (no false hard)", () => {

@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock,
-  type LoggedSession,
+  runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock, runningSessions,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -27,13 +26,17 @@ export default function AuroraRunning() {
   const load = () => refetch();
   useRefreshOnFocus(refetch);
 
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
-  const stats = useMemo(() => runStats(sessions), [sessions]);
-  const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
-  const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
+  // Running screen = runs only — drop swims, rides, rows and logged sports so a
+  // pool or tennis session never counts as a run (Cockpit's Endurance summary
+  // keeps counting all cardio; only this screen narrows to running).
+  const runs = useMemo(() => runningSessions(sessions), [sessions]);
+  const totals = useMemo(() => runTotals(runs), [runs]);
+  const stats = useMemo(() => runStats(runs), [runs]);
+  const mileage = useMemo(() => weeklyMileage(runs, 8), [runs]);
+  const split = useMemo(() => paceEffortSplit(runs), [runs]);
+  const paceMoves = useMemo(() => pacedRunMoves(runs), [runs]);
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
-  const pace = useMemo(() => (active ? paceSeries(sessions, active).map((p) => p.secPerKm) : []), [sessions, active]);
+  const pace = useMemo(() => (active ? paceSeries(runs, active).map((p) => p.secPerKm) : []), [runs, active]);
 
   const header = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
