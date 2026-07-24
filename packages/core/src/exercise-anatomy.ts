@@ -1,9 +1,12 @@
 import { gymExercise, type GymExercise, type Muscle } from "./exercise-db";
+import { exerciseArchetype, type AnimArchetype } from "./exercise-animation";
 
-// EXERCISE ANATOMY — the per-exercise "how it's done" + "what works" model,
-// written once in core and rendered on BOTH clients (web + mobile) on the
-// exercise page. Three things live here, all derived from the exercise DB so
-// every one of the ~190 gym lifts is covered with no per-exercise authoring:
+// EXERCISE ANATOMY — the per-exercise "what works" model (muscles + stabilizers
+// + form cues), written once in core and rendered on BOTH clients (web + mobile)
+// on the exercise page. The MOVEMENT ANIMATION lives separately in
+// exercise-animation.ts, so the demo can be swapped (procedural → professional
+// sketch) without touching any of this. Everything here is derived from the
+// exercise DB so all ~190 gym lifts are covered with no per-exercise authoring:
 //
 //   1. MUSCLE ACTIVATION — the DB already carries each lift's `primary` and
 //      `secondary` muscles (order = importance). We turn that into a ranked
@@ -12,16 +15,10 @@ import { gymExercise, type GymExercise, type Muscle } from "./exercise-db";
 //      a High/Moderate/Low activation tier — the "Pectoralis major — main
 //      driver … triceps ~22-25%" breakdown, computed, not hand-typed.
 //   2. STABILIZERS — the trunk/scapular/grip muscles that brace but don't drive,
-//      keyed off the movement pattern (pressing → rotator cuff + serratus + core;
-//      hinging → erectors + grip; …).
-//   3. THE ANIMATION — a schematic side-profile stick-figure that LOOPS through
-//      the rep, so "how it's done" is shown, not just told. The demo-VIDEO
-//      library is blocked on a licensed clip catalog (see capabilities), so this
-//      procedural animation is the unblocked, offline, zero-asset way to show
-//      the movement. Each exercise maps to a movement ARCHETYPE (squat, hinge,
-//      press, pull, curl, …); the archetype carries 2-3 skeleton keyframes and
-//      the clients ping-pong through them. `skeletonAt()` does the interpolation
-//      so web and mobile render the exact same motion.
+//      keyed off the movement archetype (pressing → rotator cuff + serratus +
+//      core; hinging → erectors + grip; …).
+//   3. FORM CUES + an emphasis line — the step-by-step "how it's done" text, also
+//      keyed off the archetype.
 //
 // Pure + shared. The clients only render — no anatomy logic lives client-side.
 
@@ -122,78 +119,7 @@ export function muscleActivation(e: GymExercise): MuscleActivation[] {
   return rows;
 }
 
-// ── 3. Movement archetypes (drive stabilizers, cues and the animation) ──────
-
-export type AnimArchetype =
-  | "squat"
-  | "lunge"
-  | "hinge"
-  | "hipThrust"
-  | "pressH"
-  | "pressV"
-  | "dip"
-  | "pullH"
-  | "pullV"
-  | "curl"
-  | "extension"
-  | "raise"
-  | "calf"
-  | "plank"
-  | "crunch"
-  | "hangingLeg"
-  | "twist"
-  | "jump"
-  | "carry"
-  | "olympic"
-  | "generic";
-
-const has = (name: string, ...needles: string[]): boolean => {
-  const l = name.toLowerCase();
-  return needles.some((n) => l.includes(n));
-};
-
-/** Which movement archetype a lift animates as — pattern-first, refined by
- *  category/name so a curl, a lateral raise and a triceps pushdown (all
- *  "isolation") each get the right motion. */
-export function exerciseArchetype(e: GymExercise): AnimArchetype {
-  const n = e.name;
-  switch (e.pattern) {
-    case "squat":
-      return "squat";
-    case "lunge":
-      return "lunge";
-    case "hinge":
-      return has(n, "hip thrust", "glute bridge") ? "hipThrust" : "hinge";
-    case "push-h":
-      return "pressH";
-    case "push-v":
-      return has(n, "dip") ? "dip" : "pressV";
-    case "pull-h":
-      return "pullH";
-    case "pull-v":
-      return has(n, "upright row") ? "raise" : "pullV";
-    case "olympic":
-      return "olympic";
-    case "carry":
-      return "carry";
-    case "plyo":
-      return has(n, "slam", "ball", "rope") ? "twist" : "jump";
-    case "core":
-      if (has(n, "plank", "hold", "dead bug", "bird dog", "l-sit", "rollout", "bear crawl", "get-up")) return "plank";
-      if (has(n, "twist", "pallof", "wood")) return "twist";
-      if (has(n, "hanging", "toes-to-bar", "knee raise", "leg raise")) return "hangingLeg";
-      return "crunch";
-    case "isolation":
-      if (e.category === "Calves" || has(n, "calf")) return "calf";
-      if (e.category === "Biceps" || has(n, "curl")) return "curl";
-      if (e.category === "Triceps" || has(n, "pushdown", "extension", "kickback", "skull", "jm")) return "extension";
-      if (has(n, "raise", "fly", "face pull", "delt", "upright")) return "raise";
-      if (e.category === "Abs & Core") return "crunch";
-      return "curl";
-  }
-}
-
-// ── 4. Stabilizers + cues + emphasis note, per archetype ────────────────────
+// ── 3. Stabilizers + cues + emphasis note, per movement archetype ───────────
 
 interface ArchetypeInfo {
   /** the trunk/scapular/grip muscles that brace but don't drive. */
@@ -425,200 +351,15 @@ const ARCHETYPE_INFO: Record<AnimArchetype, ArchetypeInfo> = {
   },
 };
 
-// ── 5. The animation skeleton ───────────────────────────────────────────────
-
-export interface Pt {
-  x: number;
-  y: number;
-}
-
-/** A side-profile stick-figure pose in a 0-100 box (x → right, y → down,
- *  ground ≈ 94). The figure faces right; `bar` is where the implement sits. */
-export interface Skeleton {
-  head: Pt;
-  shoulder: Pt;
-  elbow: Pt;
-  hand: Pt;
-  hip: Pt;
-  knee: Pt;
-  ankle: Pt;
-  bar: Pt;
-}
-
-/** How the implement is drawn at `bar`. */
-export type LoadGlyph = "barbell" | "dumbbell" | "kettlebell" | "bodyweight" | "fixed";
-
-const p = (x: number, y: number): Pt => ({ x, y });
-const S = (
-  head: Pt, shoulder: Pt, elbow: Pt, hand: Pt, hip: Pt, knee: Pt, ankle: Pt, bar: Pt,
-): Skeleton => ({ head, shoulder, elbow, hand, hip, knee, ankle, bar });
-
-// Two (or three) keyframes per archetype; the clients ping-pong through them so
-// the rep loops start → end → start. Hand-tuned schematic geometry — reads as
-// the movement, not an anatomy render.
-const KEYFRAMES: Record<AnimArchetype, Skeleton[]> = {
-  squat: [
-    S(p(50, 14), p(50, 29), p(42, 37), p(46, 30), p(50, 52), p(50, 73), p(50, 93), p(46, 29)),
-    S(p(57, 31), p(53, 42), p(45, 50), p(48, 43), p(43, 64), p(60, 74), p(50, 93), p(49, 43)),
-  ],
-  lunge: [
-    S(p(50, 13), p(50, 28), p(50, 40), p(50, 52), p(50, 50), p(52, 70), p(52, 92), p(50, 53)),
-    S(p(50, 25), p(50, 40), p(50, 52), p(50, 64), p(50, 62), p(58, 74), p(52, 92), p(50, 65)),
-  ],
-  hinge: [
-    S(p(50, 14), p(50, 29), p(52, 41), p(53, 54), p(50, 52), p(50, 73), p(50, 92), p(53, 55)),
-    S(p(64, 30), p(58, 36), p(58, 52), p(57, 66), p(42, 55), p(52, 73), p(50, 92), p(57, 68)),
-  ],
-  hipThrust: [
-    S(p(24, 50), p(30, 54), p(34, 62), p(38, 68), p(50, 70), p(66, 66), p(70, 86), p(50, 66)),
-    S(p(24, 50), p(30, 54), p(34, 60), p(38, 64), p(50, 56), p(66, 62), p(70, 86), p(50, 52)),
-  ],
-  pressH: [
-    S(p(26, 56), p(38, 58), p(40, 50), p(39, 46), p(66, 60), p(78, 70), p(86, 86), p(39, 44)),
-    S(p(26, 56), p(38, 58), p(38, 46), p(38, 34), p(66, 60), p(78, 70), p(86, 86), p(38, 32)),
-  ],
-  pressV: [
-    S(p(50, 15), p(50, 29), p(56, 38), p(52, 26), p(50, 52), p(50, 73), p(50, 92), p(50, 25)),
-    S(p(49, 16), p(50, 28), p(51, 18), p(50, 8), p(50, 52), p(50, 73), p(50, 92), p(50, 6)),
-  ],
-  dip: [
-    S(p(50, 18), p(50, 30), p(52, 42), p(52, 44), p(52, 54), p(54, 72), p(54, 90), p(52, 44)),
-    S(p(52, 30), p(50, 42), p(58, 48), p(52, 44), p(52, 62), p(54, 78), p(54, 92), p(52, 44)),
-  ],
-  pullH: [
-    S(p(64, 32), p(58, 38), p(60, 50), p(60, 64), p(42, 56), p(52, 72), p(50, 92), p(60, 66)),
-    S(p(64, 32), p(58, 38), p(52, 44), p(56, 50), p(42, 56), p(52, 72), p(50, 92), p(56, 52)),
-  ],
-  pullV: [
-    S(p(53, 26), p(50, 36), p(50, 25), p(50, 10), p(50, 58), p(50, 76), p(50, 90), p(50, 8)),
-    S(p(53, 16), p(50, 26), p(50, 16), p(50, 10), p(50, 48), p(50, 66), p(50, 80), p(50, 8)),
-  ],
-  curl: [
-    S(p(50, 14), p(50, 28), p(52, 42), p(54, 55), p(50, 53), p(50, 73), p(50, 92), p(54, 56)),
-    S(p(50, 14), p(50, 28), p(52, 42), p(50, 33), p(50, 53), p(50, 73), p(50, 92), p(50, 32)),
-  ],
-  extension: [
-    S(p(50, 14), p(50, 28), p(52, 42), p(52, 33), p(50, 53), p(50, 73), p(50, 92), p(52, 32)),
-    S(p(50, 14), p(50, 28), p(52, 42), p(53, 54), p(50, 53), p(50, 73), p(50, 92), p(53, 55)),
-  ],
-  raise: [
-    S(p(50, 14), p(50, 28), p(52, 40), p(53, 52), p(50, 53), p(50, 73), p(50, 92), p(53, 53)),
-    S(p(50, 14), p(50, 28), p(58, 30), p(66, 28), p(50, 53), p(50, 73), p(50, 92), p(66, 28)),
-  ],
-  calf: [
-    S(p(50, 15), p(50, 30), p(50, 42), p(50, 54), p(50, 54), p(50, 74), p(50, 92), p(50, 54)),
-    S(p(50, 11), p(50, 26), p(50, 38), p(50, 50), p(50, 50), p(50, 70), p(50, 88), p(50, 50)),
-  ],
-  plank: [
-    S(p(20, 54), p(30, 56), p(30, 62), p(24, 66), p(58, 60), p(74, 64), p(88, 68), p(24, 66)),
-    S(p(20, 55), p(30, 57), p(30, 63), p(24, 67), p(58, 61), p(74, 65), p(88, 69), p(24, 67)),
-  ],
-  crunch: [
-    S(p(22, 60), p(32, 62), p(30, 56), p(26, 52), p(64, 64), p(74, 54), p(80, 66), p(26, 52)),
-    S(p(34, 52), p(40, 56), p(36, 50), p(32, 46), p(64, 64), p(74, 54), p(80, 66), p(32, 46)),
-  ],
-  hangingLeg: [
-    S(p(50, 20), p(50, 30), p(50, 20), p(50, 10), p(50, 52), p(50, 70), p(50, 88), p(50, 8)),
-    S(p(50, 20), p(50, 30), p(50, 20), p(50, 10), p(50, 50), p(64, 44), p(70, 34), p(50, 8)),
-  ],
-  twist: [
-    S(p(50, 22), p(50, 34), p(54, 42), p(60, 46), p(50, 58), p(48, 74), p(48, 92), p(60, 46)),
-    S(p(50, 22), p(50, 34), p(46, 42), p(40, 46), p(50, 58), p(52, 74), p(52, 92), p(40, 46)),
-  ],
-  jump: [
-    S(p(50, 14), p(50, 28), p(44, 40), p(40, 48), p(50, 52), p(50, 73), p(50, 92), p(40, 48)),
-    S(p(54, 26), p(52, 36), p(42, 48), p(36, 56), p(44, 58), p(58, 72), p(50, 92), p(36, 56)),
-    S(p(50, 8), p(50, 22), p(52, 14), p(54, 6), p(50, 46), p(50, 64), p(50, 82), p(54, 6)),
-  ],
-  carry: [
-    S(p(50, 14), p(50, 29), p(50, 42), p(50, 55), p(50, 53), p(54, 72), p(56, 92), p(50, 56)),
-    S(p(50, 14), p(50, 29), p(50, 42), p(50, 55), p(50, 53), p(46, 72), p(44, 92), p(50, 56)),
-  ],
-  olympic: [
-    S(p(62, 30), p(56, 36), p(58, 52), p(57, 70), p(44, 58), p(56, 70), p(50, 90), p(57, 72)),
-    S(p(50, 12), p(50, 26), p(52, 38), p(53, 50), p(50, 50), p(50, 70), p(50, 88), p(53, 50)),
-    S(p(49, 16), p(50, 28), p(51, 17), p(50, 7), p(50, 52), p(52, 64), p(50, 90), p(50, 6)),
-  ],
-  generic: [
-    S(p(50, 14), p(50, 29), p(50, 42), p(50, 54), p(50, 52), p(50, 73), p(50, 92), p(50, 55)),
-    S(p(50, 16), p(50, 31), p(50, 44), p(50, 56), p(50, 54), p(50, 74), p(50, 93), p(50, 57)),
-  ],
-};
-
-const LOAD_GLYPH = (e: GymExercise): LoadGlyph => {
-  switch (e.equipment) {
-    case "barbell":
-    case "ez-bar":
-    case "trap-bar":
-    case "smith":
-    case "landmine":
-      return "barbell";
-    case "dumbbell":
-      return "dumbbell";
-    case "kettlebell":
-      return "kettlebell";
-    case "bodyweight":
-      return "bodyweight";
-    case "cable":
-    case "machine":
-    case "band":
-      return "fixed";
-    default:
-      return "barbell";
-  }
-};
-
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-const lerpPt = (a: Pt, b: Pt, t: number): Pt => p(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
-const easeInOut = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-
-/**
- * The skeleton at cycle phase `phase` ∈ [0, 1). The phase is mapped to a
- * triangle wave so the rep goes start → end → start on a loop (for a 3-keyframe
- * archetype: start → mid → end → mid → start). Eased so it holds briefly at the
- * turnarounds like a real rep. Pure — both clients feed a time-driven phase and
- * render the returned points identically.
- */
-export function skeletonAt(frames: Skeleton[], phase: number): Skeleton {
-  if (frames.length === 1) return frames[0]!;
-  const tri = phase < 0.5 ? phase * 2 : (1 - phase) * 2; // 0→1→0
-  const u = easeInOut(Math.max(0, Math.min(1, tri)));
-  const segs = frames.length - 1;
-  const scaled = u * segs;
-  const i = Math.min(segs - 1, Math.floor(scaled));
-  const t = scaled - i;
-  const a = frames[i]!, b = frames[i + 1]!;
-  return S(
-    lerpPt(a.head, b.head, t),
-    lerpPt(a.shoulder, b.shoulder, t),
-    lerpPt(a.elbow, b.elbow, t),
-    lerpPt(a.hand, b.hand, t),
-    lerpPt(a.hip, b.hip, t),
-    lerpPt(a.knee, b.knee, t),
-    lerpPt(a.ankle, b.ankle, t),
-    lerpPt(a.bar, b.bar, t),
-  );
-}
-
-export interface ExerciseAnimation {
-  archetype: AnimArchetype;
-  frames: Skeleton[];
-  load: LoadGlyph;
-  /** milliseconds for one full rep loop. */
-  cycleMs: number;
-}
-
-/** Cardio/plyo reps are quicker; grinding barbell reps are slower. */
-const cycleMsFor = (a: AnimArchetype): number =>
-  a === "jump" || a === "twist" || a === "carry" ? 1600 : a === "olympic" ? 2600 : a === "plank" ? 3200 : 2200;
-
-// ── 6. The public resolver ──────────────────────────────────────────────────
+// ── 4. The public resolver ──────────────────────────────────────────────────
 
 export interface ExerciseAnatomy {
   name: string;
   category: string;
   equipment: string;
   mechanics: "compound" | "isolation";
+  /** the movement archetype (shared with the animation module). */
+  archetype: AnimArchetype;
   /** ranked muscle activation, primary first, %s summing to 100. */
   activation: MuscleActivation[];
   primary: MuscleActivation[];
@@ -626,11 +367,14 @@ export interface ExerciseAnatomy {
   stabilizers: string[];
   cues: string[];
   emphasis: string;
-  animation: ExerciseAnimation;
 }
 
-/** The full anatomy model for a gym lift, or null for a name the DB doesn't
- *  know (custom lifts, cardio sports — those pages skip the anatomy block). */
+/**
+ * The muscles/stabilizers/cues model for a gym lift, or null for a name the DB
+ * doesn't know (custom lifts, cardio sports — those pages skip the section).
+ * The movement ANIMATION is resolved separately via exerciseAnimation() in
+ * exercise-animation.ts, so the demo can be swapped without touching this.
+ */
 export function exerciseAnatomy(name: string): ExerciseAnatomy | null {
   const e = gymExercise(name);
   if (!e) return null;
@@ -642,12 +386,12 @@ export function exerciseAnatomy(name: string): ExerciseAnatomy | null {
     category: e.category,
     equipment: e.equipment,
     mechanics: e.mechanics,
+    archetype,
     activation,
     primary: activation.filter((a) => a.tier === "primary"),
     secondary: activation.filter((a) => a.tier === "secondary"),
     stabilizers: info.stabilizers,
     cues: info.cues,
     emphasis: info.emphasis,
-    animation: { archetype, frames: KEYFRAMES[archetype], load: LOAD_GLYPH(e), cycleMs: cycleMsFor(archetype) },
   };
 }
