@@ -524,12 +524,12 @@ export async function fetchSignals(): Promise<CoreSignal[]> {
   }
 }
 
-export async function createSignal(kind: string, value: number, unit?: string): Promise<boolean> {
+export async function createSignal(kind: string, value: number, unit?: string, source = "manual"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ kind, value, unit, source: "manual" }),
+      body: JSON.stringify({ kind, value, unit, source }),
     });
     return res.ok;
   } catch {
