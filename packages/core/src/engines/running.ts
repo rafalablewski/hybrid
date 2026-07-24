@@ -1,44 +1,32 @@
-import type { LoggedSession, CardioBlock } from "./session";
-import { olympicSport } from "../olympic-sports";
+import { cardioDiscipline, type LoggedSession, type CardioBlock, type CardioDiscipline } from "./session";
 
 // Running / cardio analytics — pure aggregates over logged cardio blocks, so the
 // web/mobile Running screens (and anything else) read one source of truth. A
 // "cardio effort" is any cardio block; pace stats need distance + minutes.
 //
-// The aggregates below count EVERY cardio block (the Cockpit's "Endurance"
-// summary + the AI coach read them as all-cardio). The Running SCREEN wants
-// running only — a pool or tennis session must never show up as a "run" — so it
-// pre-filters its sessions through `runningSessions` (built on `isRunMove`)
-// before handing them here. Keeping the split here means both clients' Running
-// screens stay in lockstep from one source of truth.
+// The aggregates below count EVERY cardio block they're handed. Callers narrow
+// FIRST via the filters here: the Running screen feeds `runningSessions` (runs
+// only — a pool or tennis session must never show up as a "run"); the Cockpit's
+// Endurance summary feeds `enduranceSessions` (drops racket/team/combat sports
+// but keeps swims/rides/rows). Both filters read the block's `discipline` tag
+// (stamped at log time, else backfilled from the name by migrateBlocks), so the
+// two clients can't drift on what counts.
 
 const isCardio = (b: { kind: string }): b is CardioBlock => b.kind === "cardio";
 const WEEK = 7 * 86_400_000;
 const ms = (iso: string) => new Date(iso).getTime();
 
-// A "run" is locomotion on foot — not swims, rides, rows, rackets or any other
-// logged sport/cardio that also lands in a cardio block. A logged Olympic sport
-// resolves through the catalog (only the foot-races count); a generic or custom
-// cardio name ("Easy Run", "Treadmill", a typed-in "Bike") falls back to a
-// keyword test, with an explicit NON-running block first so a shared word can't
-// leak a "Row Sprints" or "Bike Intervals" through.
-const RUN_SPORTS = new Set(["Running", "Marathon"]);
-const NOT_RUN_RE = /\b(swim|bike|cycl|ride|row|erg|paddle|kayak|canoe|ski|skate|elliptical|walk|hike|ruck|climb|stair|surf|sail)\b/i;
-const RUN_RE = /\b(run|running|jog|jogging|sprint|treadmill|fartlek|parkrun)\b/i;
+/** A cardio block's modality — the stamped tag if present, else classified from
+ *  the name (the same fallback migrateBlocks uses to backfill it). */
+const disciplineOf = (b: CardioBlock): CardioDiscipline => b.discipline ?? cardioDiscipline(b.name);
 
 /**
- * True when a cardio move is running on foot. Named Olympic sports resolve
- * through the catalog (only Running/Marathon count — Swimming, Tennis, Cycling,
- * Rowing, … don't); generic/custom names use a keyword test that excludes the
- * other cardio modalities. Powers the Running screen so a swim or tennis session
- * never counts as a run.
+ * True when a cardio move is running on foot — a swim, ride, row, or any logged
+ * sport is not. Name-based (the Running screen's block-level filter reads the
+ * stamped tag directly); exported for callers that only have a move name.
  */
 export function isRunMove(name: string): boolean {
-  if (!name) return false;
-  const sport = olympicSport(name);
-  if (sport) return RUN_SPORTS.has(sport.name);
-  if (NOT_RUN_RE.test(name)) return false;
-  return RUN_RE.test(name);
+  return cardioDiscipline(name) === "running";
 }
 
 /**
@@ -50,7 +38,20 @@ export function isRunMove(name: string): boolean {
 export function runningSessions(sessions: LoggedSession[]): LoggedSession[] {
   return sessions.map((s) => ({
     ...s,
-    blocks: s.blocks.filter((b) => !isCardio(b) || isRunMove(b.name)),
+    blocks: s.blocks.filter((b) => !isCardio(b) || disciplineOf(b) === "running"),
+  }));
+}
+
+/**
+ * The sessions with only NON-endurance SPORTS dropped from their cardio — feed
+ * this to the "Endurance" summaries so a tennis/football session doesn't count
+ * as endurance while swims, rides, rows and generic cardio still do. (Contrast
+ * `runningSessions`, which keeps runs alone.) Pure — a shallow copy per session.
+ */
+export function enduranceSessions(sessions: LoggedSession[]): LoggedSession[] {
+  return sessions.map((s) => ({
+    ...s,
+    blocks: s.blocks.filter((b) => !isCardio(b) || disciplineOf(b) !== "sport"),
   }));
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type SessionBlock } from "@hybrid/core";
+import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, cardioDiscipline, type SessionBlock } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
@@ -136,7 +136,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
             sport as an activity (no wearable needed). */}
         {onLogSession && (
           <button
-            onClick={() => onLogSession([{ kind: "cardio", name: sport }])}
+            onClick={() => onLogSession([{ kind: "cardio", name: sport, discipline: cardioDiscipline(sport) }])}
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 800,

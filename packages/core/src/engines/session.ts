@@ -2,7 +2,7 @@ import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { sportPacePerMeters, formatSportDistance, olympicSport } from "../olympic-sports";
+import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -185,9 +185,33 @@ export interface StrengthBlock {
   superset?: boolean;
 }
 
+/**
+ * Coarse cardio modality — what KIND of endurance/sport activity a cardio block
+ * is, independent of its display name. Endurance modalities are named
+ * specifically; a known non-distance sport (tennis, football, judo…) is
+ * `"sport"` (counts as neither running nor endurance mileage); anything else
+ * generic is `"other"`. Lets the Running screen stay runs-only and the endurance
+ * summaries exclude racket/team/combat sports without re-guessing from the name.
+ */
+export type CardioDiscipline =
+  | "running"
+  | "swimming"
+  | "cycling"
+  | "rowing"
+  | "skiing"
+  | "walking"
+  | "sport"
+  | "other";
+
 export interface CardioBlock {
   kind: "cardio";
   name: string;
+  /**
+   * The activity's coarse modality — stamped at log time when the sport is known
+   * (the sport/run loggers set it), else backfilled from the name on read by
+   * `migrateBlocks`. Consumers should prefer this over re-classifying the name.
+   */
+  discipline?: CardioDiscipline;
   /** distance covered, km — pace is derived from minutes. */
   distance?: number;
   minutes?: number;
@@ -478,6 +502,35 @@ export function lastStrengthByLift(sessions: LoggedSession[]): Map<string, Stren
 const CARDIO_RE = /\b(run|jog|walk|hike|ruck|sprint|swim|bike|cycl|ride|row(?!ing intervals)|erg|ski|elliptical|treadmill|cardio)\b/i;
 const CONDITIONING_RE = /\b(metcon|emom|amrap|wod|circuit|interval|conditioning|tabata|complex|finisher)s?\b/i;
 
+// Keyword → cardio modality, most-specific first so a shared word can't
+// cross-classify: "Canoe Sprint" is rowing (not running via "sprint"), "Ski
+// Erg" is skiing (not rowing via "erg"), "Bike Sprints" is cycling (not
+// running), "Race Walking" is walking (not running via a stray "run"-like word).
+// Leading word-boundary + stem (no trailing boundary) so "swim" matches
+// "Swimming", "cycl" matches "Cycling", "run" matches "Running", etc.
+const DISCIPLINE_PATTERNS: [CardioDiscipline, RegExp][] = [
+  ["swimming", /\b(swim|freestyle|breaststroke|backstroke|butterfly|pool)/i],
+  ["cycling", /\b(bike|biking|cycl|spin|peloton|bmx|ride|riding)/i],
+  ["skiing", /\b(skiing|ski\b|skate|skating|snowboard)/i],
+  ["walking", /\b(walk|hike|hiking|ruck|stair|step)/i],
+  ["rowing", /\b(row|erg|paddle|kayak|canoe|scull)/i],
+  ["running", /\b(run|jog|sprint|treadmill|fartlek|parkrun|marathon)/i],
+];
+
+/**
+ * Coarse cardio modality for an activity NAME. Endurance modalities are matched
+ * by keyword (running/swimming/cycling/rowing/skiing/walking — covering both the
+ * Olympic endurance sports and generic/custom names like "Easy Run" or
+ * "Treadmill"); a known Olympic sport that tracks no distance (tennis, football,
+ * judo…) is `"sport"`; anything else generic is `"other"`. This is the fallback
+ * when a block carries no stamped `discipline` — see `CardioDiscipline`.
+ */
+export function cardioDiscipline(name: string): CardioDiscipline {
+  for (const [d, re] of DISCIPLINE_PATTERNS) if (re.test(name)) return d;
+  if (timedSportOnly(name)) return "sport";
+  return "other";
+}
+
 /**
  * Best-guess block kind for an exercise name — checks the MOVEMENTS catalog
  * first (a movement with a system / a "cond" pattern is cardio or conditioning),
@@ -525,7 +578,13 @@ export function migrateBlocks(blocks: unknown, aliasMap: Record<string, string> 
     }
     return raw as SessionBlock;
   });
-  return canonicalizeBlockNames(migrated, aliasMap);
+  // Backfill each cardio block's modality from its (canonical) name unless it was
+  // already stamped at log time — so every consumer can read `discipline` as a
+  // stable tag rather than re-classifying the name. Derived AFTER canonicalizing
+  // so a renamed move classifies off its current name.
+  return canonicalizeBlockNames(migrated, aliasMap).map((b) =>
+    b.kind === "cardio" && !b.discipline ? { ...b, discipline: cardioDiscipline(b.name) } : b,
+  );
 }
 
 /**

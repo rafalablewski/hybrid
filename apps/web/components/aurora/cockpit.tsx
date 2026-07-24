@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, toTrainingLog, velocityProfiles, LEVELS,
+  runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
   ROLE_COLOR, hpiRole, riskRole, readinessRole,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand,
 } from "@hybrid/core";
@@ -57,7 +57,9 @@ export default function AuroraCockpit({
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
+  // racket/team/combat sports so a tennis session doesn't inflate the summary.
+  const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
 
   if (persona === "casual") {

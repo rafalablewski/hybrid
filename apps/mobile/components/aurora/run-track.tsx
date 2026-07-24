@@ -54,6 +54,7 @@ export default function AuroraRunTrack() {
       blocks: [{
         kind: "cardio",
         name: "Run",
+        discipline: "running",
         ...(Number.isFinite(km) && km > 0 ? { distance: km } : {}),
         ...(minutes > 0 ? { minutes: Math.round(minutes) } : {}),
       }],

@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, toTrainingLog, toBiometrics,
+  runTotals, enduranceSessions, toTrainingLog, toBiometrics,
   velocityProfiles, hpiRole, riskRole, readinessRole, SPORTS, LEVELS,
   type LoggedSession, type Macrocycle, type AcwrBand,
 } from "@hybrid/core";
@@ -76,7 +76,9 @@ function Full() {
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
   const bw = useBodyweightLookup();
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
+  // racket/team/combat sports so a tennis session doesn't inflate the summary.
+  const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
