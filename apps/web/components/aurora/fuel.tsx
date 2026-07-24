@@ -135,14 +135,16 @@ export default function AuroraFuel({
           in-card exception). */}
       <div style={{ marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
         <div style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", margin: "0 -20px", padding: "0 20px 4px" }}>
-          {/* ＋ Quick log — the entry to the full sheet, first so it's always reachable */}
+          {/* ＋ Quick log — the entry to the full sheet, first so it's always
+              reachable. Bare ＋ glyph + lime label (not a boxed tile), echoing
+              the exercise rail's "All exercises & favourites" card. */}
           <button
             onClick={onOpen}
             aria-label={t("w.home.fuel.quickLog")}
-            style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: "none", border: `1px dashed color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 14, padding: "9px 15px 9px 9px", cursor: "pointer", color: "var(--lime-text)" }}
+            style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 10, background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 14, padding: "9px 17px", cursor: "pointer" }}
           >
-            <span style={{ width: 32, height: 32, borderRadius: 9, background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px dashed color-mix(in srgb, ${C("lime")} 45%, transparent)`, display: "grid", placeItems: "center", fontSize: 19, flexShrink: 0, color: "var(--lime-text)" }}>＋</span>
-            <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{t("w.home.fuel.quickLog")}</span>
+            <span aria-hidden style={{ fontSize: 20, lineHeight: 1, color: C("ash") }}>＋</span>
+            <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap", color: "var(--lime-text)" }}>{t("w.home.fuel.quickLog")}</span>
           </button>
           {MEAL_PRESETS.map((p) => {
             const isDone = done === p.id;
