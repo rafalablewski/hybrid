@@ -48,7 +48,7 @@ export default function AuroraFuel({
   onOpen: () => void;
 }) {
   const { t } = useLang();
-  const { signals, refresh } = useSignals();
+  const { signals, loading, refresh } = useSignals();
   const full = isFullAccess(usePersona());
   // One-tap preset logging: the chip being written (busy) and the one that just
   // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
@@ -94,6 +94,11 @@ export default function AuroraFuel({
 
   const title = state === "refuel" ? t("w.home.fuel.titleRefuel") : state === "goal-hit" ? t("w.home.fuel.titleGoal") : t("w.home.fuel.title");
   const mono = { fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" } as const;
+
+  // Hold the widget back until the first signals fetch resolves, so a returning
+  // athlete never sees the cold-start "Nothing logged yet" flash before their
+  // real intake loads. (The cache is usually already warm from app-shell.)
+  if (loading) return null;
 
   return (
     <div style={{ ...card, ...goalGlow, marginTop: 12 }}>
