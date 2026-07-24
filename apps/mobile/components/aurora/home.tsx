@@ -40,7 +40,7 @@ import {
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, type Assignment, type Checkin } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, fetchRoutines, favouriteRoutine, type Assignment, type Checkin } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsQuery, useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useSession } from "../../lib/session";
@@ -62,6 +62,7 @@ import { MetaLine } from "./meta";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
+import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
@@ -121,6 +122,12 @@ export default function AuroraHome() {
   // feeling card, so it no longer opens a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
+  // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
+  // routine (favourites rail + shuffle-able rest). `routines` stays null until the
+  // first fetch resolves so the card doesn't flash before we know whether the
+  // user has any saved routines.
+  const [quickStartOpen, setQuickStartOpen] = useState(false);
+  const [routines, setRoutines] = useState<QuickRoutine[] | null>(null);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle so
   // the card reads at a glance instead of a wall of percentage schemes.
   const [liftsOpen, setLiftsOpen] = useState(false);
@@ -149,7 +156,24 @@ export default function AuroraHome() {
       .catch((err) => console.error("Failed to load home data:", err))
       .finally(() => { setRefreshing(false); setInitialLoad(false); });
   }, [loadFeeling]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const loadRoutines = useCallback(() => {
+    fetchRoutines().then((r) => setRoutines(r)).catch(() => setRoutines([]));
+  }, []);
+  useFocusEffect(useCallback(() => { load(); loadRoutines(); }, [load, loadRoutines]));
+
+  const hasRoutines = !!routines && routines.length > 0;
+  // Optimistic favourite toggle — flip locally, then PATCH; revert on failure.
+  const toggleFavourite = useCallback((r: QuickRoutine) => {
+    const next = !r.favourite;
+    setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: next } : x)) ?? cur);
+    favouriteRoutine(r.id, next).then((ok) => {
+      if (!ok) setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: r.favourite } : x)) ?? cur);
+    });
+  }, []);
+  const launchRoutine = useCallback((r: QuickRoutine) => {
+    setQuickStartOpen(false);
+    router.push(`/workout?source=template&templateId=${r.id}`);
+  }, [router]);
 
   // Subtle entrance — content fades + rises each time Today gains focus, matching
   // the AuroraScreen transition so the home doesn't hard-cut in. Shared hook
@@ -475,6 +499,9 @@ export default function AuroraHome() {
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <StructureCard C={C} width={structW} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+              {/* The fourth path — only once the user owns a routine to quick-start
+                  (a dead door helps nobody). Opens the favourites sheet. */}
+              {hasRoutines && <StructureCard C={C} width={structW} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />}
             </ScrollView>
           </View>
         ) : firstRun ? (
@@ -493,6 +520,7 @@ export default function AuroraHome() {
               <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+              {hasRoutines && <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />}
             </View>
           </View>
         ) : (
@@ -721,6 +749,16 @@ export default function AuroraHome() {
       <Sheet visible={coachOpen} onClose={() => setCoachOpen(false)}>
         <CoachRail onOpen={() => { setCoachOpen(false); router.push("/coaches"); }} />
       </Sheet>
+
+      {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
+      <QuickStartSheet
+        visible={quickStartOpen}
+        onClose={() => setQuickStartOpen(false)}
+        routines={routines ?? []}
+        onLaunch={launchRoutine}
+        onToggleFavourite={toggleFavourite}
+        onBuildNew={() => router.push("/builder")}
+      />
 
       {/* DONE TODAY sheet — everything logged on the viewed day + the calendar. */}
       <Sheet

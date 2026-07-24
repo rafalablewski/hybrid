@@ -50,6 +50,7 @@ import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import Sheet from "./sheet";
+import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
@@ -129,6 +130,39 @@ export default function AuroraToday({
   // feeling card, so it no longer opens a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
+  // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
+  // routine (favourites rail + shuffle-able rest). `routines` stays null until the
+  // first fetch resolves so the Quick-start card doesn't flash before we know
+  // whether the user has any saved routines.
+  const [quickStartOpen, setQuickStartOpen] = useState(false);
+  const [routines, setRoutines] = useState<QuickRoutine[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/templates")
+      .then((r) => (r.ok ? r.json() : { templates: [] }))
+      .then((d: { templates?: QuickRoutine[] }) => { if (alive) setRoutines(d.templates ?? []); })
+      .catch(() => { if (alive) setRoutines([]); });
+    return () => { alive = false; };
+  }, []);
+  const hasRoutines = !!routines && routines.length > 0;
+  // Optimistic favourite toggle — flip locally, then PATCH; revert on failure.
+  const toggleFavourite = useCallback((r: QuickRoutine) => {
+    const next = !r.favourite;
+    setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: next } : x)) ?? cur);
+    fetch(`/api/templates/${r.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ favourite: next }),
+    })
+      .then((res) => {
+        if (!res.ok) setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: r.favourite } : x)) ?? cur);
+      })
+      .catch(() => setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: r.favourite } : x)) ?? cur));
+  }, []);
+  const launchRoutine = useCallback((r: QuickRoutine) => {
+    setQuickStartOpen(false);
+    onStart(r.blocks, r.name);
+  }, [onStart]);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle.
   const [liftsOpen, setLiftsOpen] = useState(false);
   // Keep keyboard focus with the lift toggle across open/close: the "Show all"
@@ -397,6 +431,9 @@ export default function AuroraToday({
             <StructureCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
             <StructureCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
             <StructureCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+            {/* The fourth path — only once the user actually owns a routine to
+                quick-start (a dead door helps nobody). Opens the favourites sheet. */}
+            {hasRoutines && <StructureCard glyph="⚡" accent="violet" title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onClick={() => setQuickStartOpen(true)} />}
           </div>
         </div>
       ) : firstRun ? (
@@ -416,6 +453,7 @@ export default function AuroraToday({
             <ChooserCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
             <ChooserCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
             <ChooserCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+            {hasRoutines && <ChooserCard glyph="⚡" accent="violet" title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onClick={() => setQuickStartOpen(true)} />}
           </div>
         </div>
       ) : (
@@ -664,6 +702,16 @@ export default function AuroraToday({
         <CoachRail onOpen={() => { setCoachOpen(false); if (onNavigate) onNavigate("coaches"); else router.push("/coaches"); }} />
       </Sheet>
 
+      {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
+      <QuickStartSheet
+        open={quickStartOpen}
+        onClose={() => setQuickStartOpen(false)}
+        routines={routines ?? []}
+        onLaunch={launchRoutine}
+        onToggleFavourite={toggleFavourite}
+        onBuildNew={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))}
+      />
+
       {/* DONE TODAY sheet — everything logged on the viewed day + the calendar. */}
       <Sheet
         open={doneOpen}
@@ -699,7 +747,7 @@ export default function AuroraToday({
  *  beginner, tinted by the path's accent. Full-width in a stacked column at
  *  natural height; the hue lives in the small glyph + CTA only — title and
  *  body stay neutral. Mirrored on mobile (aurora/home.tsx ChooserCard). */
-function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber" | "violet"; title: string; sub: string; cta: string; onClick: () => void }) {
   const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (
@@ -722,7 +770,7 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
  *  glow, glyph, title, sub, mono CTA) at rail width, so the options stay
  *  reachable without re-onboarding a regular every day.
  *  Mirrored on mobile (aurora/home.tsx StructureCard). */
-function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber" | "violet"; title: string; sub: string; cta: string; onClick: () => void }) {
   const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (
