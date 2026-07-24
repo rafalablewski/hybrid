@@ -1,6 +1,7 @@
 "use client";
 
-import { fs, PLAN_PREVIEWS } from "@hybrid/core";
+import { useEffect, useState } from "react";
+import { fs, FEATURED_PREVIEWS } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
@@ -14,7 +15,23 @@ const C = (v: string) => `var(--color-${v})`;
 // same everywhere. Fixed dark base, never the theme's ink token.
 const COVER_INK = "#0c0d0c";
 
-type Preview = (typeof PLAN_PREVIEWS)[number];
+type Preview = (typeof FEATURED_PREVIEWS)[number];
+
+// Mirrors the mobile useReducedMotion + the app's @media (prefers-reduced-motion)
+// coverage (pill-nav.tsx) so the press feedback is suppressed for users who ask
+// for less motion.
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return reduced;
+}
 
 /**
  * AURORA Explore (web) — the discovery surface for the Explore tab: search, a
@@ -31,8 +48,8 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
   const { t } = useLang();
   const go = (s: string) => onNavigate?.(s);
 
-  const featured = PLAN_PREVIEWS.slice(0, 3);
-  const more = PLAN_PREVIEWS.slice(3);
+  const featured = FEATURED_PREVIEWS.slice(0, 3);
+  const more = FEATURED_PREVIEWS.slice(3);
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -90,19 +107,29 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
 function PlanCover({ p, onOpen }: { p: Preview; onOpen: () => void }) {
   const accent = p.color;
   const weeks = `${p.plan.weeks} ${p.plan.weeks === 1 ? "WEEK" : "WEEKS"}`;
+  const reduced = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
+  const down = () => setPressed(true);
+  const up = () => setPressed(false);
   return (
     <button
       onClick={onOpen}
+      onPointerDown={down}
+      onPointerUp={up}
+      onPointerLeave={up}
+      onPointerCancel={up}
+      onBlur={up}
       aria-label={`Open ${p.plan.name}`}
-      style={{ position: "relative", overflow: "hidden", width: "100%", height: 196, textAlign: "left", cursor: "pointer", borderRadius: 28, border: `1px solid ${C("line")}`, padding: 18, color: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between", background: COVER_INK, boxShadow: "var(--shadow-card)" }}
+      style={{ position: "relative", overflow: "hidden", width: "100%", height: 196, textAlign: "left", cursor: "pointer", borderRadius: 28, border: `1px solid ${C("line")}`, padding: 18, color: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between", background: COVER_INK, boxShadow: "var(--shadow-card)", transform: reduced ? undefined : `scale(${pressed ? 0.98 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       {/* duotone wash — accent bleeding from the top corner into dark */}
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at 86% 8%, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
       {/* bottom scrim so the title stays legible over any accent */}
       <span aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 52%)" }} />
-      {/* oversized discipline glyph — placeholder cover art until real imagery */}
-      <span aria-hidden style={{ position: "absolute", top: -36, right: -16, fontSize: 152, lineHeight: 1, color: "rgba(255,255,255,.07)", pointerEvents: "none" }}>{p.icon}</span>
+      {/* oversized discipline glyph — placeholder cover art; drifts slightly on
+          press for a parallax feel against the card scale (reduced-motion off). */}
+      <span aria-hidden style={{ position: "absolute", top: -36, right: -16, fontSize: 152, lineHeight: 1, color: "rgba(255,255,255,.07)", pointerEvents: "none", transform: reduced ? undefined : `translate(${pressed ? -6 : 0}px, ${pressed ? 5 : 0}px)`, transition: reduced ? undefined : "transform .24s ease" }}>{p.icon}</span>
 
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 11px", borderRadius: 999 }}>{p.goalName}</span>
@@ -125,11 +152,20 @@ function PlanCover({ p, onOpen }: { p: Preview; onOpen: () => void }) {
 // tail of the library stays swipeable, not a bottomless scroll.
 function PlanMini({ p, onOpen }: { p: Preview; onOpen: () => void }) {
   const accent = p.color;
+  const reduced = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
+  const down = () => setPressed(true);
+  const up = () => setPressed(false);
   return (
     <button
       onClick={onOpen}
+      onPointerDown={down}
+      onPointerUp={up}
+      onPointerLeave={up}
+      onPointerCancel={up}
+      onBlur={up}
       aria-label={`Open ${p.plan.name}`}
-      style={{ flex: "0 0 auto", width: 182, scrollSnapAlign: "start", display: "flex", alignItems: "center", gap: 11, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "12px 13px", cursor: "pointer", textAlign: "left", color: C("chalk"), boxShadow: "var(--shadow-card)" }}
+      style={{ flex: "0 0 auto", width: 182, scrollSnapAlign: "start", display: "flex", alignItems: "center", gap: 11, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "12px 13px", cursor: "pointer", textAlign: "left", color: C("chalk"), boxShadow: "var(--shadow-card)", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: `color-mix(in srgb, ${accent} 13%, ${C("ink")})`, border: `1px solid color-mix(in srgb, ${accent} 32%, ${C("line")})`, color: accent }}>{p.icon}</span>
       <span style={{ minWidth: 0 }}>

@@ -1,10 +1,11 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { PLAN_PREVIEWS } from "@hybrid/core";
+import { FEATURED_PREVIEWS } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -12,7 +13,7 @@ import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
 
 type P = ReturnType<typeof useTheme>["palette"];
-type Preview = (typeof PLAN_PREVIEWS)[number];
+type Preview = (typeof FEATURED_PREVIEWS)[number];
 
 // AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
 // back out by exactly that so its scroll clip reaches the true screen edge.
@@ -40,8 +41,8 @@ export default function AuroraExplore() {
   const { t } = useLang();
   const router = useRouter();
 
-  const featured = PLAN_PREVIEWS.slice(0, 3);
-  const more = PLAN_PREVIEWS.slice(3);
+  const featured = FEATURED_PREVIEWS.slice(0, 3);
+  const more = FEATURED_PREVIEWS.slice(3);
 
   // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
   // Kyoto Hour, the usual black bloom on Aurora.
@@ -112,31 +113,37 @@ export default function AuroraExplore() {
 function PlanCover({ p, scheme, shadow, onOpen }: { p: Preview; scheme: "light" | "dark"; shadow: object; onOpen: () => void }) {
   const accent = p.color;
   const weeks = `${p.plan.weeks} ${p.plan.weeks === 1 ? "WEEK" : "WEEKS"}`;
+  const reduce = useReducedMotion();
   return (
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={`Open ${p.plan.name}`}
-      style={{ height: 196, borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", backgroundColor: COVER_INK, justifyContent: "space-between", padding: 18, ...shadow }}
+      style={({ pressed }) => ({ height: 196, borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", backgroundColor: COVER_INK, justifyContent: "space-between", padding: 18, ...shadow, transform: [{ scale: pressed && !reduce ? 0.98 : 1 }] })}
     >
-      {/* accent wash bleeding from the top corner, then a dark scrim so the
-          title stays legible over any accent (a diagonal fade for the radial). */}
-      <LinearGradient colors={[`${accent}c8`, `${accent}4d`, `${accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
-      <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
-      {/* oversized discipline glyph — placeholder cover art until real imagery */}
-      <Text pointerEvents="none" style={{ position: "absolute", top: -34, right: -10, fontSize: 142, lineHeight: 150, color: "rgba(255,255,255,0.07)" }}>{p.icon}</Text>
+      {({ pressed }) => (
+        <>
+          {/* accent wash bleeding from the top corner, then a dark scrim so the
+              title stays legible over any accent (a diagonal fade for the radial). */}
+          <LinearGradient colors={[`${accent}c8`, `${accent}4d`, `${accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          {/* oversized discipline glyph — placeholder cover art; drifts slightly
+              on press for a parallax feel against the card scale. */}
+          <Text pointerEvents="none" style={{ position: "absolute", top: -34, right: -10, fontSize: 142, lineHeight: 150, color: "rgba(255,255,255,0.07)", transform: [{ translateX: pressed && !reduce ? -6 : 0 }, { translateY: pressed && !reduce ? 5 : 0 }] }}>{p.icon}</Text>
 
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{p.goalName}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "600", letterSpacing: 0.6, color: "rgba(255,255,255,0.85)", paddingTop: 3 }}>{weeks}</Text>
-      </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{p.goalName}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "600", letterSpacing: 0.6, color: "rgba(255,255,255,0.85)", paddingTop: 3 }}>{weeks}</Text>
+          </View>
 
-      <View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, letterSpacing: -0.7, lineHeight: 26, color: "#fff", maxWidth: "86%" }}>{p.plan.name}</Text>
-        <View style={{ marginTop: 8 }}>
-          <MetaLine parts={[`${p.plan.sessions}×/wk`, p.plan.tag, p.plan.hot ? "★ Popular" : null]} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
-        </View>
-      </View>
+          <View>
+            <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, letterSpacing: -0.7, lineHeight: 26, color: "#fff", maxWidth: "86%" }}>{p.plan.name}</Text>
+            <View style={{ marginTop: 8 }}>
+              <MetaLine parts={[`${p.plan.sessions}×/wk`, p.plan.tag, p.plan.hot ? "★ Popular" : null]} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
+            </View>
+          </View>
+        </>
+      )}
     </Pressable>
   );
 }
@@ -145,12 +152,13 @@ function PlanCover({ p, scheme, shadow, onOpen }: { p: Preview; scheme: "light" 
 // icon tile, name + one mono meta line.
 function PlanMini({ p, C, shadow, onOpen }: { p: Preview; C: P; shadow: object; onOpen: () => void }) {
   const accent = p.color;
+  const reduce = useReducedMotion();
   return (
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={`Open ${p.plan.name}`}
-      style={{ width: MINI_W, flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 13, ...shadow }}
+      style={({ pressed }) => ({ width: MINI_W, flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 13, ...shadow, transform: [{ scale: pressed && !reduce ? 0.97 : 1 }] })}
     >
       <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${accent}22`, borderWidth: 1, borderColor: `${accent}55` }}>
         <Text style={{ fontSize: 17, color: accent }}>{p.icon}</Text>
