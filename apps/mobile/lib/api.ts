@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -307,6 +307,30 @@ export async function deleteSavedMeal(id: string): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// ── Nutrition prefs — the small cross-device state the Nutrition hub remembers:
+// onboarding completion, the chosen goal, and any custom parts of the day.
+export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[] };
+export async function getNutritionPrefs(): Promise<NutritionPrefs> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    return ((await res.json()) as { prefs?: NutritionPrefs }).prefs ?? {};
+  } catch {
+    return {};
+  }
+}
+export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+  } catch {
+    /* best-effort — the client keeps its local cache */
   }
 }
 
