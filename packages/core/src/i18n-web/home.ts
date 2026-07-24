@@ -6,8 +6,8 @@
 export const web_home = {
   en: {
     // today
-    "w.home.quickSport.title": "Already trained?",
-    "w.home.quickSport.sub": "Log it — it still counts",
+    "w.home.quickSport.title": "Log a sport",
+    "w.home.quickSport.sub": "A run, a swim, a match — it still counts",
     "w.home.quickSport.other": "Other",
     "w.home.quickSport.search": "Search 100+ sports…",
     "w.home.quickSport.choose": "Choose sport",
@@ -120,7 +120,8 @@ export const web_home = {
     "w.home.today.doneModalEmpty": "Nothing logged yet today — start your session or quick-log a sport.",
     "w.home.today.doneModalEmptyDay": "Nothing was logged on this day.",
     "w.home.today.doneCalendar": "See full calendar",
-    "w.home.today.alsoTodayLog": "Log another workout",
+    "w.home.today.alsoTodayLogSport": "Log a sport",
+    "w.home.today.alsoTodayLogSportMore": "Log another sport",
     "w.home.today.alsoTodayLogFirst": "Log a workout",
     "w.home.today.alsoTodaySubEmpty": "a match, a run, a swim — it lands here",
     "w.home.exw.kicker": "Exercises – your favourites",
@@ -425,8 +426,8 @@ export const web_home = {
   } as Record<string, string>,
   pl: {
     // today
-    "w.home.quickSport.title": "Już trenowałeś?",
-    "w.home.quickSport.sub": "Zapisz to — to się liczy",
+    "w.home.quickSport.title": "Zapisz sport",
+    "w.home.quickSport.sub": "Bieg, pływanie, mecz — to też się liczy",
     "w.home.quickSport.other": "Inne",
     "w.home.quickSport.search": "Szukaj wśród 100+ sportów…",
     "w.home.quickSport.choose": "Wybierz sport",
@@ -539,7 +540,8 @@ export const web_home = {
     "w.home.today.doneModalEmpty": "Nic jeszcze dziś — zacznij sesję lub szybko zapisz sport.",
     "w.home.today.doneModalEmptyDay": "Tego dnia nic nie zapisano.",
     "w.home.today.doneCalendar": "Zobacz cały kalendarz",
-    "w.home.today.alsoTodayLog": "Dodaj kolejny trening",
+    "w.home.today.alsoTodayLogSport": "Zapisz sport",
+    "w.home.today.alsoTodayLogSportMore": "Zapisz kolejny sport",
     "w.home.today.alsoTodayLogFirst": "Dodaj trening",
     "w.home.today.alsoTodaySubEmpty": "mecz, bieg, basen — wyląduje tutaj",
     "w.home.exw.kicker": "Ćwiczenia – twoje ulubione",
@@ -844,8 +846,8 @@ export const web_home = {
   } as Record<string, string>,
   de: {
     // today
-    "w.home.quickSport.title": "Schon trainiert?",
-    "w.home.quickSport.sub": "Erfasse es — es zählt trotzdem",
+    "w.home.quickSport.title": "Sport loggen",
+    "w.home.quickSport.sub": "Ein Lauf, ein Schwimmen, ein Match — es zählt trotzdem",
     "w.home.quickSport.other": "Andere",
     "w.home.quickSport.search": "Über 100 Sportarten suchen…",
     "w.home.quickSport.choose": "Sportart wählen",
@@ -957,7 +959,8 @@ export const web_home = {
     "w.home.today.doneModalEmpty": "Heute noch nichts — starte die Session oder logge schnell einen Sport.",
     "w.home.today.doneModalEmptyDay": "An diesem Tag wurde nichts geloggt.",
     "w.home.today.doneCalendar": "Ganzen Kalender ansehen",
-    "w.home.today.alsoTodayLog": "Weiteres Training loggen",
+    "w.home.today.alsoTodayLogSport": "Sport loggen",
+    "w.home.today.alsoTodayLogSportMore": "Weiteren Sport loggen",
     "w.home.today.alsoTodayLogFirst": "Training loggen",
     "w.home.today.alsoTodaySubEmpty": "ein Match, ein Lauf, Schwimmen — landet hier",
     "w.home.exw.kicker": "Übungen – deine Favoriten",
