@@ -40,10 +40,12 @@ export default function AuroraExplore() {
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.explore.search")}</Text>
       </Pressable>
 
-      {/* COACHES — headerless rail under the SHARED SectionHead, so all three
-          sections share one title + one "See all" CTA (no bespoke "Browse all"). */}
-      <SectionHead C={C} scheme={scheme} title={t("w.explore.coaches")} onAction={() => router.push("/coaches")} />
-      <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
+      {/* COACHES — headerless rail under the SHARED SectionHead. The "see the
+          rest" affordance is a trailing "See more" button at the END of the
+          rail (unified with the community rail), so the header carries only the
+          title. */}
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.coaches")} />
+      <CoachRail onOpen={() => router.push("/coaches")} headerless bleed seeMore />
 
       {/* PLANS — the shipped library, tap through to the full Plans screen */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} onAction={() => router.push("/(tabs)/plans")} />
@@ -66,24 +68,29 @@ export default function AuroraExplore() {
         ))}
       </View>
 
-      {/* COMMUNITY — a left/right slider (max 6) with a trailing "See all" card,
-          Threads-style, instead of an ever-growing stacked wall. */}
-      <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} onAction={() => router.push("/feed")} />
+      {/* COMMUNITY — a left/right slider (max 6) with a trailing "See more"
+          button (unified with the coach rail), Threads-style, instead of an
+          ever-growing stacked wall. */}
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} />
       <FeedPreview onOpen={() => router.push("/feed")} horizontal bleed />
     </AuroraScreen>
   );
 }
 
-// ONE section header for every Explore section — a title + a single unified
-// "See all →" CTA. Kills the old mix of "Browse all" / "All plans" / "Feed".
-function SectionHead({ C, scheme, title, onAction }: { C: P; scheme: "light" | "dark"; title: string; onAction: () => void }) {
+// ONE section header for every Explore section — a bold display-face title with
+// an optional right-side "See all →" CTA. The rail sections (coaches, community)
+// omit the CTA and carry a trailing "See more" button at the end of the rail
+// instead; the stacked Plans section keeps the header CTA.
+function SectionHead({ C, scheme, title, onAction }: { C: P; scheme: "light" | "dark"; title: string; onAction?: () => void }) {
   const { t } = useLang();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
-      <Pressable onPress={onAction} hitSlop={8}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")} →</Text>
-      </Pressable>
+      {onAction && (
+        <Pressable onPress={onAction} hitSlop={8}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")} →</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

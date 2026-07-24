@@ -1,12 +1,13 @@
 /**
  * History views — the data behind the merged History × Calendar screen.
  *
- * The History screen offers five switchable layouts (agenda, journal, weeks,
- * timeline, blocks — the classic list and the heatmap were trialled and
- * retired; the list survives only as the archived-management surface). Every
- * layout is a different PROJECTION of the same logged sessions (+ optionally
- * the date-anchored plan schedule), so all the grouping/aggregation math lives
- * here — pure and client-agnostic — and web + mobile only render.
+ * The History screen offers three switchable layouts (agenda, weeks,
+ * timeline — the classic list, heatmap, journal and blocks layouts were
+ * trialled and retired; the list survives only as the archived-management
+ * surface). Every layout is a different PROJECTION of the same logged sessions
+ * (+ optionally the date-anchored plan schedule), so all the grouping/
+ * aggregation math lives here — pure and client-agnostic — and web + mobile
+ * only render.
  *
  * Day keys follow the app's canonical LOCAL calendar-day convention
  * (day-key.ts) — the same keys the plan schedule and the calendar engine use,
@@ -17,7 +18,7 @@ import type { LoggedSession } from "./session";
 import { sessionVolume, sessionShape } from "./session";
 import { sessionLoad } from "./load";
 import { prsForSession } from "./records";
-import { sessionsByDay, monthMatrix, loadLevel, type MonthCell } from "./calendar";
+import { loadLevel } from "./calendar";
 import { localDayKey, localTodayKey, localMondayMs, addLocalDays, dayKeyDiff } from "../day-key";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import type { PlanScheduleResult } from "../plan-schedule";
@@ -30,8 +31,8 @@ const mondayOf = localMondayMs;
  *  view function accepts it so PR detection (O(n) per session) never re-runs. */
 export type PrLookup = (id: string) => number;
 
-/** The seven weekday-header i18n keys (Mon→Sun), shared by the week strip,
- *  the journal grid and the weeks sparkline so the clients can't drift. */
+/** The seven weekday-header i18n keys (Mon→Sun), shared by the week strip
+ *  and the weeks sparkline so the clients can't drift. */
 export const WEEKDAY_LABEL_KEYS = [
   "w.analyze.cal.weekdayMon",
   "w.analyze.cal.weekdayTue",
@@ -52,21 +53,19 @@ const desc = (sessions: LoggedSession[]) =>
 //  View registry
 // ============================================================
 
-/** The five switchable History layouts. */
-export type HistoryViewId = "agenda" | "journal" | "weeks" | "timeline" | "blocks";
+/** The three switchable History layouts. */
+export type HistoryViewId = "agenda" | "weeks" | "timeline";
 
 /** Switcher entries, in display order. `labelKey` resolves via i18n `t()`. */
 export const HISTORY_VIEWS: ReadonlyArray<{ id: HistoryViewId; labelKey: string }> = [
   { id: "agenda", labelKey: "histview.agenda" },
-  { id: "journal", labelKey: "histview.journal" },
   { id: "weeks", labelKey: "histview.weeks" },
   { id: "timeline", labelKey: "histview.timeline" },
-  { id: "blocks", labelKey: "histview.blocks" },
 ];
 
 /** Normalize a persisted view id. Unknown values — including the retired
- *  "list" and "heatmap" ids a device may still have stored — fall back to
- *  the agenda. */
+ *  "list", "heatmap", "journal" and "blocks" ids a device may still have
+ *  stored — fall back to the agenda. */
 export const normalizeHistoryView = (v: unknown): HistoryViewId =>
   HISTORY_VIEWS.some((x) => x.id === v) ? (v as HistoryViewId) : "agenda";
 
@@ -192,63 +191,6 @@ export function upcomingPlanDays(
 }
 
 // ============================================================
-//  Month journal (journal view)
-// ============================================================
-
-export interface JournalDay {
-  count: number;
-  /** 0 rest, 1..4 relative load (cell shading). */
-  level: 0 | 1 | 2 | 3 | 4;
-  /** one tick per session (capped at 3 by the UI): its discipline. */
-  ticks: ("strength" | "cardio" | "mixed")[];
-  /** any PR set that day. */
-  pr: boolean;
-}
-
-export interface JournalMonth {
-  matrix: MonthCell[][];
-  days: Record<string, JournalDay>;
-}
-
-/** The month grid enriched with per-day discipline ticks, PR flags and load
- *  levels — the whole-screen calendar of the journal view. */
-export function journalMonth(
-  all: LoggedSession[],
-  year: number,
-  monthIndex0: number,
-  opts?: { bw?: BodyweightInput; prs?: PrLookup },
-): JournalMonth {
-  const matrix = monthMatrix(year, monthIndex0);
-  const summaries = sessionsByDay(all, opts?.bw);
-  const maxLoad = Math.max(1, ...Object.values(summaries).map((d) => d.load));
-  const prsOf = opts?.prs ?? ((id: string) => prsForSession(all, id, opts?.bw).length);
-
-  const days: Record<string, JournalDay> = {};
-  for (const s of desc(all)) {
-    const k = dayKey(s.startedAt);
-    const row = (days[k] ??= { count: 0, level: 0, ticks: [], pr: false });
-    row.count++;
-    row.ticks.push(sessionShape(s));
-    if (!row.pr && prsOf(s.id) > 0) row.pr = true;
-  }
-  for (const [k, row] of Object.entries(days)) {
-    row.level = loadLevel(summaries[k]?.load ?? 0, maxLoad) as JournalDay["level"];
-  }
-  return { matrix, days };
-}
-
-/** The most recent day key that has sessions (the journal's default selection),
- *  or today when history is empty. */
-export function latestTrainingDayKey(all: LoggedSession[], now = Date.now()): string {
-  let best: string | null = null;
-  for (const s of all) {
-    const k = dayKey(s.startedAt);
-    if (!best || k > best) best = k;
-  }
-  return best ?? todayKeyOf(now);
-}
-
-// ============================================================
 //  Week chapters (weeks view)
 // ============================================================
 
@@ -319,156 +261,4 @@ export function weekChapters(
         sessions: group,
       };
     });
-}
-
-// ============================================================
-//  Block chapters (blocks view)
-// ============================================================
-
-export interface BlockChapterRow {
-  key: string;
-  /** "Day 2" for plan rows; the session title for freestyle rows. */
-  title: string;
-  dateKey: string | null;
-  status: "done" | "missed" | "skipped" | "postponed" | "today" | "upcoming";
-  /** the logged session fulfilling the row (tap → session detail), if any. */
-  sessionId: string | null;
-}
-
-export interface BlockChapter {
-  kind: "plan" | "free";
-  /** plan name, or null for the freestyle chapter (caller localizes the label). */
-  planName: string | null;
-  week: number | null;
-  /** progress ring numbers — for freestyle, done === total === session count. */
-  done: number;
-  total: number;
-  complete: boolean;
-  rows: BlockChapterRow[];
-  /** sort anchor (newest chapter first): latest activity/scheduled day in it. */
-  sortKey: string;
-}
-
-/** Matches the client-composed plan-session title "<plan> – Week N, <day>"
- *  (the workout screens set `${planName} – ${day}`, day from planProgramToday).
- *  Known limit: single-week plans compose "<plan> – <day>" with no "Week N,"
- *  segment, so their sessions fall into Freestyle on this fallback path — the
- *  primary, schedule-based path (sessionId matching) is unaffected. */
-const PLAN_TITLE_RE = /^(.+) – Week (\d+), (.+)$/;
-
-/**
- * Group history by training block ("plan — week N" chapters with a done/total
- * ring; plan days still ahead appear as unchecked rows), plus one "freestyle"
- * chapter for sessions logged outside any plan.
- *
- * With the date-anchored `schedule` the chapters come straight from it
- * (statuses, dateKeys, fulfilled sessionIds). Without one, plan-titled sessions
- * ("<plan> – Week N, <day>") are parsed from their titles, so the view still
- * works for un-enrolled or historical plans.
- */
-export function blockChapters(
-  all: LoggedSession[],
-  opts?: { schedule?: PlanScheduleResult | null },
-): BlockChapter[] {
-  const chapters: BlockChapter[] = [];
-  const claimed = new Set<string>();
-  const sorted = desc(all);
-
-  const schedule = opts?.schedule ?? null;
-  if (schedule) {
-    // Claim EVERY session the schedule recognised as plan-fulfilling — not just
-    // each day's first (sessionId) — so the second session of an AM/PM day
-    // can't fall through to the Freestyle chapter while Today counts it as plan.
-    for (const id of schedule.fulfilledSessionIds) claimed.add(id);
-    const weeks = new Map<number, typeof schedule.days>();
-    for (const d of schedule.days) {
-      if (d.isRest) continue;
-      const arr = weeks.get(d.week);
-      if (arr) arr.push(d);
-      else weeks.set(d.week, [d]);
-    }
-    for (const [week, days] of weeks) {
-      // Only weeks that have started (or produced a session) tell a story here.
-      const started = days.some((d) => d.status !== "upcoming");
-      if (!started) continue;
-      const rows: BlockChapterRow[] = days.map((d) => {
-        if (d.sessionId) claimed.add(d.sessionId);
-        return {
-          key: d.dateKey,
-          title: d.title,
-          dateKey: d.dateKey,
-          status: d.status as BlockChapterRow["status"], // rest days filtered above, so "rest" can't reach here
-          sessionId: d.sessionId,
-        };
-      });
-      const done = rows.filter((r) => r.status === "done").length;
-      chapters.push({
-        kind: "plan",
-        planName: schedule.planName,
-        week,
-        done,
-        total: rows.length,
-        complete: done === rows.length,
-        rows,
-        sortKey: days[days.length - 1]!.dateKey,
-      });
-    }
-  } else {
-    // Title-parse fallback: "<plan> – Week N, <day>".
-    const groups = new Map<string, { planName: string; week: number; sessions: LoggedSession[] }>();
-    for (const s of sorted) {
-      const m = PLAN_TITLE_RE.exec(s.title);
-      if (!m) continue;
-      const key = `${m[1]}#${m[2]}`;
-      const g = groups.get(key) ?? { planName: m[1]!, week: Number(m[2]), sessions: [] };
-      g.sessions.push(s);
-      groups.set(key, g);
-    }
-    for (const g of groups.values()) {
-      const rows: BlockChapterRow[] = g.sessions.map((s) => {
-        claimed.add(s.id);
-        return {
-          key: s.id,
-          title: PLAN_TITLE_RE.exec(s.title)?.[3] ?? s.title,
-          dateKey: dayKey(s.startedAt),
-          status: "done" as const,
-          sessionId: s.id,
-        };
-      });
-      chapters.push({
-        kind: "plan",
-        planName: g.planName,
-        week: g.week,
-        done: rows.length,
-        total: rows.length,
-        complete: true,
-        rows,
-        sortKey: rows[0]?.dateKey ?? "",
-      });
-    }
-  }
-
-  // With a schedule, every unclaimed session is freestyle regardless of title;
-  // on the title-parse path, plan-titled sessions were already grouped above.
-  const free = sorted.filter((s) => !claimed.has(s.id) && (!!schedule || !PLAN_TITLE_RE.test(s.title)));
-  if (free.length) {
-    chapters.push({
-      kind: "free",
-      planName: null,
-      week: null,
-      done: free.length,
-      total: free.length,
-      complete: true,
-      rows: free.map((s) => ({
-        key: s.id,
-        title: s.title,
-        dateKey: dayKey(s.startedAt),
-        status: "done" as const,
-        sessionId: s.id,
-      })),
-      sortKey: free[0] ? dayKey(free[0].startedAt) : "",
-    });
-  }
-
-  return chapters.sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0));
 }

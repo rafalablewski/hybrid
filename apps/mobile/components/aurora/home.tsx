@@ -669,6 +669,7 @@ export default function AuroraHome() {
           dayTs={railDay?.ts ?? null}
           dayLabel={dayLabel}
           onPicked={loadFeeling}
+          onLogMore={() => router.push("/checkin")}
         />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
@@ -918,7 +919,7 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked, onLogMore }: {
   C: P;
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
@@ -928,6 +929,7 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   dayTs: number | null;
   dayLabel: string | null;
   onPicked: () => void;
+  onLogMore?: () => void;
 }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
@@ -991,6 +993,23 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
             </View>
           ) : null}
         </View>
+      ) : null}
+      {/* Once today's readiness is set, nudge the athlete to log the fuller
+          picture — the guided check-in refines TODAY's row (sleep, soreness,
+          mood, weight, a note), no second entry, no cooldown block. */}
+      {isToday && feeling && onLogMore ? (
+        <Pressable
+          onPress={onLogMore}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.recovery.readiness.logMore")}
+          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{t("w.recovery.readiness.logMoreSub")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
       ) : null}
     </View>
   );

@@ -4,10 +4,7 @@ import {
   normalizeHistoryView,
   historyStream,
   upcomingPlanDays,
-  journalMonth,
-  latestTrainingDayKey,
   weekChapters,
-  blockChapters,
 } from "./history-views";
 import { planSchedule } from "../plan-schedule";
 import type { LoggedSession } from "./session";
@@ -86,36 +83,6 @@ describe("historyStream", () => {
   });
 });
 
-describe("journalMonth", () => {
-  const j = journalMonth(FIXTURE, 2026, 6); // July 2026
-
-  it("builds ticks per session and load levels", () => {
-    expect(j.days["2026-07-13"]!.ticks).toEqual(["strength", "strength", "strength"]);
-    expect(j.days["2026-07-13"]!.level).toBe(3);
-    expect(j.days["2026-07-09"]!.level).toBe(4);
-    expect(j.days["2026-07-16"]!.ticks).toEqual(["cardio"]);
-    expect(j.days["2026-07-16"]!.count).toBe(1);
-    expect(j.matrix.flat()).toHaveLength(42);
-  });
-
-  it("flags PR days", () => {
-    // d2 (120) beats d1/w1 loads on Back Squat → Jul 13 is a PR day
-    expect(j.days["2026-07-13"]!.pr).toBe(true);
-  });
-
-  it("uses the injected prs lookup instead of re-detecting", () => {
-    const j2 = journalMonth(FIXTURE, 2026, 6, { prs: () => 0 });
-    expect(Object.values(j2.days).every((d) => !d.pr)).toBe(true);
-    const w2 = weekChapters(FIXTURE, { now: NOW, prs: () => 1 });
-    expect(w2[0]!.totals.prs).toBe(w2[0]!.totals.sessions);
-  });
-
-  it("picks the latest training day as default selection", () => {
-    expect(latestTrainingDayKey(FIXTURE, NOW)).toBe("2026-07-16");
-    expect(latestTrainingDayKey([], NOW)).toBe("2026-07-16");
-  });
-});
-
 describe("weekChapters", () => {
   const weeks = weekChapters(FIXTURE, { now: NOW });
 
@@ -135,30 +102,14 @@ describe("weekChapters", () => {
     expect(w.totals.sessions).toBe(4);
     expect(w.sessions[0]!.id).toBe("t1"); // newest first
   });
-});
 
-describe("blockChapters (title-parse fallback)", () => {
-  const chapters = blockChapters(FIXTURE);
-
-  it("groups plan-titled sessions into plan-week chapters + freestyle", () => {
-    expect(chapters.map((c) => `${c.kind}:${c.planName ?? "free"}#${c.week ?? "-"}`)).toEqual([
-      "free:free#-", // Tennis Jul 16 (newest activity)
-      "plan:Soviet 8-Week Peaking#2",
-      "plan:Soviet 8-Week Peaking#1",
-    ]);
-    const w2 = chapters[1]!;
-    expect(w2.done).toBe(2);
-    expect(w2.rows.map((r) => r.title)).toEqual(["Day 2", "Day 1"]);
-    expect(w2.rows[0]!.sessionId).toBe("d2");
-  });
-
-  it("collects non-plan sessions into the freestyle chapter", () => {
-    const free = chapters[0]!;
-    expect(free.rows.map((r) => r.title)).toEqual(["Tennis", "Afternoon workout", "Morning run"]);
+  it("uses the injected prs lookup instead of re-detecting", () => {
+    const w2 = weekChapters(FIXTURE, { now: NOW, prs: () => 1 });
+    expect(w2[0]!.totals.prs).toBe(w2[0]!.totals.sessions);
   });
 });
 
-describe("blockChapters + upcomingPlanDays (with a real schedule)", () => {
+describe("upcomingPlanDays (with a real schedule)", () => {
   // A real 8-week program anchored so that NOW falls inside week 2.
   const PLAN = "oly-soviet-8wk";
   const sched = planSchedule({
@@ -170,22 +121,6 @@ describe("blockChapters + upcomingPlanDays (with a real schedule)", () => {
 
   it("resolves a schedule for the fixture plan", () => {
     expect(sched).not.toBeNull();
-  });
-
-  it("emits started weeks with done/total and claims fulfilled sessions", () => {
-    const chapters = blockChapters(FIXTURE, { schedule: sched });
-    const plan = chapters.filter((c) => c.kind === "plan");
-    expect(plan.length).toBeGreaterThan(0);
-    for (const c of plan) {
-      expect(c.total).toBeGreaterThan(0);
-      expect(c.done).toBeLessThanOrEqual(c.total);
-      expect(c.planName).toBe(sched!.planName);
-    }
-    // Sessions matched by the schedule land in plan chapters, not freestyle.
-    const free = chapters.find((c) => c.kind === "free");
-    const claimed = plan.flatMap((c) => c.rows.map((r) => r.sessionId)).filter(Boolean);
-    expect(claimed.length).toBeGreaterThan(0);
-    for (const id of claimed) expect(free?.rows.some((r) => r.sessionId === id) ?? false).toBe(false);
   });
 
   it("lists the next upcoming training days as agenda ghosts", () => {

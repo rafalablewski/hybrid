@@ -8,10 +8,7 @@ import {
   sessionsByDay,
   historyStream,
   upcomingPlanDays,
-  journalMonth,
-  latestTrainingDayKey,
   weekChapters,
-  blockChapters,
   blockSummary,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
@@ -28,11 +25,11 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
-import { RADIUS, Ring, withAlpha } from "./kit";
+import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
-// The five merged History × Calendar layouts (agenda / journal / weeks /
-// timeline / blocks) behind the History screen's view switcher — parity with
+// The three merged History × Calendar layouts (agenda / weeks / timeline)
+// behind the History screen's view switcher — parity with
 // apps/web/components/aurora/history-views.tsx. All grouping math lives in
 // @hybrid/core (engines/history-views.ts); these components only render.
 // Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
@@ -41,7 +38,6 @@ const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const fmtDayShort = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const fmtWeekday = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
-const fmtMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 
 export interface ViewCtx {
   sessions: LoggedSession[];
@@ -78,7 +74,7 @@ function keyMetric(s: LoggedSession, ctx: ViewCtx, t: (k: string) => string): { 
   return { color: "ash", label: fmtTonnage(sessionVolumeOf(s, ctx), ctx.units) };
 }
 
-/** Compact tappable session card shared by agenda / timeline / journal. */
+/** Compact tappable session card shared by agenda / timeline. */
 function SessionCard({ C, s, ctx, ghost, lines = 3 }: { C: Palette; s: LoggedSession; ctx: ViewCtx; ghost?: boolean; lines?: number }) {
   const { t } = useLang();
   const prs = ctx.prs(s.id);
@@ -237,77 +233,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  2 — Month journal
-// ============================================================
-
-export function JournalView({ ctx }: { ctx: ViewCtx }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const now = new Date();
-  // Open on the latest training day's month so the default selection is
-  // actually visible (last session may be in an earlier month than today).
-  const [initKey] = useState(() => latestTrainingDayKey(ctx.sessions));
-  const [year, setYear] = useState(() => Number(initKey.slice(0, 4)));
-  const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
-  const [selected, setSelected] = useState(initKey);
-  const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
-  const today = localTodayKey();
-  const lime = txt(C, C.lime) as string;
-  const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
-  const selSessions = ctx.sessions.filter((s) => localDayKey(s.startedAt) === selected);
-  const shadeAlpha = [0, 0.07, 0.11, 0.16, 0.24];
-  const navBtn = { minWidth: 34, height: 34, paddingHorizontal: 10, borderRadius: 17, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };
-
-  return (
-    <View style={{ gap: 12, marginTop: 12 }}>
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 14 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{fmtMonth(year, month)}</Text>
-          <View style={{ flexDirection: "row", gap: 6 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel={t("common.previousMonth")} onPress={() => go(-1)} style={navBtn}><Text style={{ fontFamily: F.bold, color: C.chalk }}>‹</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(today); }} style={navBtn}><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{t("w.analyze.cal.today")}</Text></Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={t("common.nextMonth")} onPress={() => go(1)} style={navBtn}><Text style={{ fontFamily: F.bold, color: C.chalk }}>›</Text></Pressable>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", marginBottom: 4 }}>
-          {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
-        </View>
-        {j.matrix.map((week, wi) => (
-          <View key={wi} style={{ flexDirection: "row" }}>
-            {week.map((cell) => {
-              const d = j.days[cell.date];
-              const isSel = cell.date === selected;
-              const isToday = cell.date === today;
-              return (
-                <Pressable key={cell.date} onPress={() => setSelected(cell.date)} style={{ flex: 1, aspectRatio: 0.84, margin: 2, borderRadius: 12, paddingTop: 5, alignItems: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, 0.4) : C.line, backgroundColor: d ? withAlpha(C.lime, shadeAlpha[d.level]!) : C.ink }}>
-                  {d?.pr && <Text style={{ position: "absolute", top: 2, right: 4, fontSize: 8, color: lime }}>★</Text>}
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: isSel || isToday ? lime : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
-                  <View style={{ gap: 2.5, width: "100%", paddingHorizontal: 5, marginTop: "auto", marginBottom: 3 }}>
-                    {(d?.ticks ?? []).slice(0, 3).map((tk, i) => (
-                      <View key={i} style={{ height: 3.5, borderRadius: 2, backgroundColor: tk === "cardio" ? C.blue : C.lime }} />
-                    ))}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-
-      <View style={{ gap: 8 }}>
-        <DayLabel C={C} text={fmtDayLong(selected)} today={selected === today} />
-        {selSessions.length === 0 ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
-        ) : (
-          selSessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} lines={6} />)
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ============================================================
-//  3 — Week chapters
+//  2 — Week chapters
 // ============================================================
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
@@ -365,7 +291,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  4 — Timeline rail
+//  3 — Timeline rail
 // ============================================================
 
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
@@ -397,72 +323,6 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
           </View>
         ),
       )}
-    </View>
-  );
-}
-
-// ============================================================
-//  5 — Block chapters
-// ============================================================
-
-export function BlocksView({ ctx }: { ctx: ViewCtx }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const chapters = useMemo(() => blockChapters(ctx.sessions, { schedule: ctx.schedule }), [ctx.sessions, ctx.schedule]);
-  const lime = txt(C, C.lime) as string;
-  const blue = txt(C, C.blue) as string;
-
-  const statusLabel: Record<string, string> = {
-    done: t("w.home.rail.done"),
-    missed: t("w.home.rail.missed"),
-    skipped: t("w.home.rail.skipped"),
-    postponed: t("w.home.rail.postponed"),
-    today: t("w.analyze.cal.today"),
-    upcoming: t("w.home.rail.upcoming"),
-  };
-
-  return (
-    <View style={{ gap: 14, marginTop: 12 }}>
-      {chapters.map((ch, ci) => {
-        const accent = ch.kind === "free" ? C.blue : C.lime;
-        const accentText = ch.kind === "free" ? blue : lime;
-        const pct = ch.total > 0 ? (ch.done / ch.total) * 100 : 0;
-        return (
-          <View key={ci} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, overflow: "hidden" }}>
-            <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />
-            <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
-              <Ring value={pct} size={54} color={accent} track={C.line}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: accentText }}>{ch.kind === "free" ? ch.done : `${ch.done}/${ch.total}`}</Text>
-              </Ring>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, lineHeight: 19 }}>{ch.planName ?? t("histview.freestyle")}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, letterSpacing: 0.6, textTransform: "uppercase" }}>
-                  {ch.kind === "free"
-                    ? t("histview.outsidePlan")
-                    : `${t("histview.weekLbl")} ${ch.week}${ch.complete ? ` — ${t("histview.completeLbl")}` : ""}`}
-                </Text>
-              </View>
-            </View>
-            <View style={{ marginTop: 10 }}>
-              {ch.rows.map((r) => {
-                const done = r.status === "done";
-                const openable = !!r.sessionId;
-                return (
-                  <Pressable key={r.key} disabled={!openable} onPress={() => r.sessionId && ctx.onOpen(r.sessionId)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
-                    <View style={{ width: 19, height: 19, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: done ? withAlpha(accent, 0.18) : "transparent", borderWidth: done ? 0 : 1.5, borderStyle: done ? "solid" : "dashed", borderColor: done ? "transparent" : withAlpha(C.ash, 0.5) }}>
-                      {done && <Text style={{ fontSize: 10, color: accentText }}>✓</Text>}
-                    </View>
-                    <Text numberOfLines={1} style={{ flex: 1, fontFamily: done ? F.semi : F.reg, fontSize: fs.body, color: done ? C.chalk : C.ash }}>{r.title}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: r.status === "missed" ? C.red : C.ash, textTransform: "uppercase" }}>
-                      {r.dateKey ? fmtDayShort(r.dateKey) : ""}{!done ? ` – ${statusLabel[r.status] ?? r.status}` : ""}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        );
-      })}
     </View>
   );
 }

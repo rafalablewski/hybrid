@@ -18,17 +18,15 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
-import { ViewSwitcher, AgendaView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, WeeksView, TimelineView, type ViewCtx } from "./history-views";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
 // its component here is a type error, not a silent fall-back.
 const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
   agenda: AgendaView,
-  journal: JournalView,
   weeks: WeeksView,
   timeline: TimelineView,
-  blocks: BlocksView,
 };
 
 const VIEW_KEY = "hybrid.historyView";

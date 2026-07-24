@@ -609,6 +609,7 @@ export default function AuroraToday({
         dayTs={railDay?.ts ?? null}
         dayLabel={dayLabel}
         onPicked={loadFeeling}
+        onLogMore={() => onNavigate?.("checkin")}
       />
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
@@ -874,7 +875,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked, onLogMore }: {
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
   cooldownFrom: number | null;
@@ -883,6 +884,7 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
   dayTs: number | null;
   dayLabel: string | null;
   onPicked: () => void;
+  onLogMore?: () => void;
 }) {
   const { t } = useLang();
   const [busy, setBusy] = useState(false);
@@ -949,6 +951,21 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
             </span>
           )}
         </div>
+      )}
+      {/* Once today's readiness is set, nudge the athlete to log the fuller
+          picture — the guided check-in refines TODAY's row (sleep, soreness,
+          mood, weight, a note), no second entry, no cooldown block. */}
+      {isToday && feeling && onLogMore && (
+        <button
+          onClick={onLogMore}
+          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 26%, transparent)`, cursor: "pointer", color: C("chalk") }}
+        >
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>{t("w.recovery.readiness.logMore")}</span>
+            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{t("w.recovery.readiness.logMoreSub")}</span>
+          </span>
+          <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: "var(--lime-text)" }}>→</span>
+        </button>
       )}
     </div>
   );

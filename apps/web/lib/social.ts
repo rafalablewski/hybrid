@@ -174,20 +174,25 @@ export interface AuthorCard {
 }
 
 /** Load SocialProfile cards for a set of user ids, keyed by user id. Users
- *  without a profile yet fall back to a derived handle from their name/email. */
+ *  without a profile yet show their real name (User.name) and fall back to an
+ *  opaque id-slice handle — NEVER their email. The community surface shows a
+ *  person's first + last name, so an email address must never leak into a
+ *  card's name or @handle. */
 export async function authorCards(userIds: string[]): Promise<Map<string, AuthorCard>> {
   const out = new Map<string, AuthorCard>();
   if (!userIds.length) return out;
   const [profiles, users] = await Promise.all([
     prisma.socialProfile.findMany({ where: { userId: { in: userIds } } }),
-    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }),
+    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }),
   ]);
   const profById = new Map(profiles.map((p) => [p.userId, p]));
   for (const u of users) {
     const p = profById.get(u.id);
     out.set(u.id, {
       id: u.id,
-      handle: p?.handle ?? (u.email?.split("@")[0] || u.id.slice(0, 8)),
+      // Never derive a handle from the email local-part — an id-slice keeps the
+      // fallback unique without exposing the address.
+      handle: p?.handle ?? u.id.slice(0, 8),
       displayName: p?.displayName ?? u.name ?? null,
       avatarUrl: p?.avatarUrl ?? null,
     });

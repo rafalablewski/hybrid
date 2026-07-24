@@ -7,17 +7,15 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
-import { ViewSwitcher, AgendaView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, WeeksView, TimelineView, type ViewCtx } from "./history-views";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
 // its component here is a type error, not a silent fall-back.
 const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
   agenda: AgendaView,
-  journal: JournalView,
   weeks: WeeksView,
   timeline: TimelineView,
-  blocks: BlocksView,
 };
 
 const VIEW_KEY = "hybrid.historyView";
