@@ -230,6 +230,10 @@ export type Routine = {
   description?: string | null;
   blocks: SessionBlock[];
   createdAt: string;
+  /** Starred → floated to the Quick-start sheet's Favourites rail. Defaults
+   *  false (the GET reads false for everyone until the favourite column is
+   *  migrated — see reference/sql-routine-favourite.sql). */
+  favourite?: boolean;
 };
 
 export async function fetchRoutines(): Promise<Routine[]> {
@@ -264,6 +268,22 @@ export async function createRoutine(
 export async function deleteRoutine(id: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/templates/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Toggle a routine's favourite star. Soft-degrades to false if the favourite
+// column isn't migrated yet (the server returns 503) or on a network error, so
+// the caller can optimistically flip and quietly revert on failure.
+export async function favouriteRoutine(id: string, favourite: boolean): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/templates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ favourite }),
+    });
     return res.ok;
   } catch {
     return false;

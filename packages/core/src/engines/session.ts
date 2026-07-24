@@ -417,6 +417,32 @@ export function sessionShape(session: LoggedSession): "strength" | "cardio" | "m
   return "strength";
 }
 
+/**
+ * A one-line, HONEST summary of a saved routine (WorkoutTemplate) for the
+ * Quick-start picker — no fabricated numbers. `moves` is the block count; `kind`
+ * is the discipline (single kind, else "mixed"); `minutes` is summed ONLY from
+ * cardio/conditioning blocks that actually carry a minutes value (a pure gym
+ * routine has none → null, so the client shows just the move count). Shared so
+ * the web sheet + mobile sheet read identically.
+ */
+export function routineSummary(blocks: SessionBlock[]): {
+  moves: number;
+  minutes: number | null;
+  kind: BlockKind | "mixed";
+} {
+  const moves = blocks.length;
+  const kinds = [...new Set(blocks.map((b) => b.kind))];
+  const kind: BlockKind | "mixed" = kinds.length === 1 ? (kinds[0] ?? "mixed") : "mixed";
+  let minutes = 0;
+  let hasMinutes = false;
+  for (const b of blocks)
+    if ((b.kind === "cardio" || b.kind === "conditioning") && typeof b.minutes === "number" && b.minutes > 0) {
+      minutes += b.minutes;
+      hasMinutes = true;
+    }
+  return { moves, minutes: hasMinutes ? Math.round(minutes) : null, kind };
+}
+
 /** Local clock time a session was logged at — "21:05" (locale clock, no
  *  seconds). One formatter shared by both clients (session rows, detail). */
 export function sessionClockTime(iso: string): string {

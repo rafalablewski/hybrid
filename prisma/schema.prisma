@@ -505,6 +505,12 @@ model WorkoutTemplate {
   name        String
   description String?
   blocks      Json // SessionBlock[]
+  // Starred by the owner → floated to the Quick-start sheet's Favourites rail.
+  // Added via reference/sql-routine-favourite.sql; read/written through guarded
+  // raw queries so the app runs safely before the column is migrated (mirrors the
+  // planMaxes soft-guard idiom). Never selected by the hot findMany/findUnique
+  // reads — the GET merges it via a separate guarded sub-query.
+  favourite   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   @@index([ownerId])
