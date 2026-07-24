@@ -672,14 +672,6 @@ export default function AuroraHome() {
           onPicked={loadFeeling}
         />
 
-        {/* FUEL — the nutrition summary widget (one calendar-style stateful
-            surface: empty → refuel / on-track / over → goal-hit, with a
-            persistent quick-log rail). Real today only; nutrition targets are
-            always today's. State + macros come from @hybrid/core fuelToday() so
-            web matches. Tapping opens the same quick-add sheet the Recover row
-            used. */}
-        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
             it's the semantic premium signifier, not a decorative marker. ───── */}
@@ -691,12 +683,18 @@ export default function AuroraHome() {
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
-            Explore-standard section head — no marker dot. ───── */}
+        {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
+            (coaches). Explore-standard section head — no marker dot. ───── */}
         <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
         </View>
-        <View style={{ gap: 10 }}>
+        {/* FUEL — the nutrition summary widget (one calendar-style stateful
+            surface: empty → refuel / on-track / over → goal-hit, with a
+            persistent quick-log rail). Real today only; nutrition targets are
+            always today's. State + macros come from @hybrid/core fuelToday() so
+            web matches. Tapping opens the same quick-add sheet the rows use. */}
+        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+        <View style={{ gap: 10, marginTop: 10 }}>
           <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 

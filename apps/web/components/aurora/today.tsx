@@ -612,14 +612,6 @@ export default function AuroraToday({
         onPicked={loadFeeling}
       />
 
-      {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
-          empty → refuel / on-track / over → goal-hit, with a persistent quick-log
-          rail). Shows on the real today only; a scrubbed past/future day scopes
-          the cards above but nutrition targets are always today's. State + macros
-          come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
-          same quick-add sheet the Recover row used. */}
-      {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
           Explore-standard section head (bold display title); the ✦ stays — it's
           the semantic premium signifier, not a decorative marker. ───── */}
@@ -641,12 +633,19 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
-          Explore-standard section head — no marker dot. ───── */}
+      {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
+          (coaches). Explore-standard section head — no marker dot. ───── */}
       <div style={{ margin: "26px 2px 12px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.recoverMore")}</span>
       </div>
-      <div style={{ display: "grid", gap: 10 }}>
+      {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
+          empty → refuel / on-track / over → goal-hit, with a persistent quick-log
+          rail). Shows on the real today only; a scrubbed past/future day scopes
+          the cards above but nutrition targets are always today's. State + macros
+          come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
+          same quick-add sheet the coach/nutrition rows use. */}
+      {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
         <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
 
