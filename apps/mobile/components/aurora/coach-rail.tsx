@@ -76,10 +76,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
       {!headerless && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <View>
-            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>Follow a coach</Text>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>Swipe to find a coach for your goal</Text>
+            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
           </View>
-          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>Browse all →</Text></Pressable>
+          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</Text></Pressable>
         </View>
       )}
 
@@ -90,12 +90,12 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
           const accent = C[c.accent];
           const accentText = txt(C, accent);
           const stats: Array<{ value: string; label: string; star?: boolean }> = [
-            { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
-            ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
-            ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+            { value: c.rating != null ? c.rating.toFixed(1) : t("w.explore.coachNew"), label: t("w.explore.coachRating"), star: c.rating != null },
+            ...(c.reviews ? [{ value: String(c.reviews), label: t("w.explore.coachReviews") }] : []),
+            ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
           ];
           return (
-            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
               <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
@@ -123,7 +123,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
                 {c.quote ? (
                   <>
                     <Text numberOfLines={2} style={{ fontSize: 13, lineHeight: 19.5, color: C.chalk }}>“{c.quote}”</Text>
-                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— athlete review</Text>
+                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— {t("w.explore.coachReview")}</Text>
                   </>
                 ) : (
                   <Text numberOfLines={3} style={{ fontSize: 13, lineHeight: 19.5, color: C.ash }}>{c.headline}</Text>

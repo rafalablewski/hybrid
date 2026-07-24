@@ -171,6 +171,10 @@ export interface AuthorCard {
   handle: string;
   displayName: string | null;
   avatarUrl: string | null;
+  /** True only when the user has a real SocialProfile (so `handle` is their
+   *  chosen handle, not the opaque id-slice fallback). Surfaces that a card can
+   *  hide the synthetic @handle and show just the name. */
+  hasProfile: boolean;
 }
 
 /** Load SocialProfile cards for a set of user ids, keyed by user id. Users
@@ -195,6 +199,7 @@ export async function authorCards(userIds: string[]): Promise<Map<string, Author
       handle: p?.handle ?? u.id.slice(0, 8),
       displayName: p?.displayName ?? u.name ?? null,
       avatarUrl: p?.avatarUrl ?? null,
+      hasProfile: !!p,
     });
   }
   return out;

@@ -41,12 +41,13 @@ function Stat({ value, label, first, star }: { value: string; label: string; fir
 }
 
 function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
+  const { t } = useLang();
   const accent = C(c.accent);
   const accentText = `var(--${c.accent}-text)`;
   const stats: Array<{ value: string; label: string; star?: boolean }> = [
-    { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
-    ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
-    ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+    { value: c.rating != null ? c.rating.toFixed(1) : t("w.explore.coachNew"), label: t("w.explore.coachRating"), star: c.rating != null },
+    ...(c.reviews ? [{ value: String(c.reviews), label: t("w.explore.coachReviews") }] : []),
+    ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
   ];
   return (
     <div
@@ -54,7 +55,7 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      aria-label={`Open ${c.name}`}
+      aria-label={`${t("w.explore.coachOpen")} ${c.name}`}
       style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 16px 14px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
     >
       {/* accent wash — the coach's colour bleeding in from the top corner */}
@@ -83,7 +84,7 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
         {c.quote ? (
           <>
             <div style={{ fontSize: 13, lineHeight: 1.5, color: C("chalk"), display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>“{c.quote}”</div>
-            <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>— athlete review</div>
+            <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>— {t("w.explore.coachReview")}</div>
           </>
         ) : (
           <div style={{ fontSize: 13, lineHeight: 1.5, color: C("ash"), display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.headline}</div>
@@ -129,10 +130,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
       {!headerless && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>Browse all →</button>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</button>
         </div>
       )}
 

@@ -38,7 +38,10 @@ export async function GET(request: Request) {
       return {
         author: {
           id,
-          handle: c?.handle ?? id.slice(0, 8),
+          // Only a REAL profile handle is shown; a profile-less user (id-slice
+          // fallback) gets an empty handle so the card renders just their name,
+          // never a synthetic "@a1b2c3d4".
+          handle: c?.hasProfile ? c.handle : "",
           displayName: id === me.id ? "You" : c?.displayName ?? null,
           avatarUrl: c?.avatarUrl ?? null,
           closeFriend: closeSet.has(id),
