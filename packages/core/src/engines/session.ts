@@ -266,6 +266,24 @@ export function blockBestE1rm(b: StrengthBlock, bodyweightKg?: number | null): n
 }
 
 /**
+ * Heaviest EFFECTIVE working-set load in a strength block (kg) — the ACTUAL top
+ * weight lifted, not an estimated 1RM. Bodyweight-aware like `blockBestE1rm`
+ * (a +20 kg weighted pull-up at 70 kg BW counts as 90 kg). Holds/carries (time
+ * or distance measures) have no load and return 0. This is the headline
+ * strength number; e1RM stays a secondary, derived stat.
+ */
+export function blockTopLoad(b: StrengthBlock, bodyweightKg?: number | null): number {
+  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return 0;
+  let best = 0;
+  for (const s of workingSets(b)) {
+    const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
+    const reps = num(s.reps);
+    if (load > 0 && !Number.isNaN(reps) && reps > 0) best = Math.max(best, load);
+  }
+  return best;
+}
+
+/**
  * Pace per km for a cardio block (e.g. "5:42 /km"), derived from distance +
  * minutes. Null unless both are logged — pace isn't stored, it's computed so it
  * can never disagree with the distance/time it came from.
@@ -746,6 +764,27 @@ export function e1rmSeries(sessions: LoggedSession[], lift: string, bw?: Bodywei
       if (isStrength(b) && b.name === lift) {
         const best = blockBestE1rm(b, bwAt(bw, s.startedAt));
         if (best > 0) pts.push({ date: s.startedAt, e1rm: Math.round(best) });
+      }
+  return pts;
+}
+
+export interface TopLoadPoint {
+  date: string;
+  weightKg: number;
+}
+
+/** Heaviest working-set load per session for one lift, oldest → newest — the
+ *  ACTUAL top weight (not e1RM), bodyweight-aware when `bw` is passed. */
+export function topLoadSeries(sessions: LoggedSession[], lift: string, bw?: BodyweightInput): TopLoadPoint[] {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
+  const pts: TopLoadPoint[] = [];
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (isStrength(b) && b.name === lift) {
+        const best = blockTopLoad(b, bwAt(bw, s.startedAt));
+        if (best > 0) pts.push({ date: s.startedAt, weightKg: Math.round(best * 10) / 10 });
       }
   return pts;
 }

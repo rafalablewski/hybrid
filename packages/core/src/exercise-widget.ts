@@ -1,5 +1,5 @@
 import type { LoggedSession } from "./engines/session";
-import { e1rmSeries, paceSeries, type PacePoint } from "./engines/session";
+import { topLoadSeries, paceSeries, type PacePoint } from "./engines/session";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -9,7 +9,7 @@ import {
   type ExerciseStats,
 } from "./engines/exercise";
 import {
-  e1rmTrendWithPRs,
+  topLoadTrendWithPRs,
   weeklyTonnage,
   intensityDistribution,
   paceCurve,
@@ -19,7 +19,7 @@ import {
   tonnageSurface,
   exerciseConsistency,
   blockCompare,
-  type PrPoint,
+  type WeightPrPoint,
   type WeekTonnage,
   type IntensityZone,
   type PaceBand,
@@ -42,14 +42,14 @@ const DAY = 86_400_000;
 /** The widget's comparison window: this 8 weeks vs the previous 8 weeks. */
 export const WIDGET_WINDOW_DAYS = 56;
 
-export type ExerciseWidgetMetric = "e1rm" | "pace" | "volume" | "time";
+export type ExerciseWidgetMetric = "weight" | "pace" | "volume" | "time";
 
 export interface ExerciseWidgetCard {
   name: string;
   kind: "strength" | "cardio" | "conditioning";
   metric: ExerciseWidgetMetric;
-  /** headline value — kg (e1rm), sec/km (pace), total kg (volume) or total
-   *  minutes (time), 8-week window */
+  /** headline value — kg (weight = heaviest lift), sec/km (pace), total kg
+   *  (volume) or total minutes (time), 8-week window */
   value: number;
   /** signed % change vs the previous 8-week window, 1 decimal; null = no baseline */
   deltaPct: number | null;
@@ -153,14 +153,14 @@ export function exerciseWidgetCard(
   }
 
   if (kind === "strength") {
-    const all = e1rmSeries(sessions, name, bw).filter((p) => ts(p.date) <= now);
+    const all = topLoadSeries(sessions, name, bw).filter((p) => ts(p.date) <= now);
     if (all.length > 0) {
       const { cur, prev } = splitWindows(all, now);
-      const best = (pts: { e1rm: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.e1rm)) : NaN);
+      const best = (pts: { weightKg: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.weightKg)) : NaN);
       const value = cur.length ? best(cur) : best(all.slice(-1));
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
-      const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.e1rm);
-      return { name, kind, metric: "e1rm", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark, sessions: count };
+      const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.weightKg);
+      return { name, kind, metric: "weight", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark, sessions: count };
     }
     // strength logged without parseable loads: weekly tonnage as the fallback
     const weeks = weeklyTonnage(sessions, name, 16, now, bw).map((w) => w.baseKg + w.hardKg);
@@ -224,7 +224,7 @@ export function exerciseWidgetCards(
 // ────────────────────────────────────────────────────────────────────
 
 export type ExercisePageSlide =
-  | { kind: "e1rmTrend"; points: PrPoint[]; bestE1rm: number; deltaPct: number | null; improving: boolean | null }
+  | { kind: "weightTrend"; points: WeightPrPoint[]; bestWeight: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "tonnage"; weeks: WeekTonnage[]; avgWeekKg: number; deltaPct: number | null; improving: boolean | null }
   | { kind: "zones"; zones: IntensityZone[]; topZone: IntensityZone | null }
   | { kind: "repMax"; cells: (RepMax | null)[]; heaviestKg: number }
@@ -349,16 +349,16 @@ export function exercisePageModel(
   }
 
   if (kind === "strength") {
-    const points = e1rmTrendWithPRs(sessions, name, period, now, bw);
+    const points = topLoadTrendWithPRs(sessions, name, period, now, bw);
     if (points.length > 0) {
-      const all = e1rmSeries(sessions, name, bw).filter((p) => ts(p.date) <= now);
+      const all = topLoadSeries(sessions, name, bw).filter((p) => ts(p.date) <= now);
       const { cur, prev } = splitWindows(all, now);
-      const best = (pts: { e1rm: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.e1rm)) : NaN);
+      const best = (pts: { weightKg: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.weightKg)) : NaN);
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
       slides.push({
-        kind: "e1rmTrend",
+        kind: "weightTrend",
         points,
-        bestE1rm: Math.max(...points.map((p) => p.e1rm)),
+        bestWeight: Math.max(...points.map((p) => p.weightKg)),
         deltaPct,
         improving: deltaPct == null ? null : deltaPct > 0,
       });

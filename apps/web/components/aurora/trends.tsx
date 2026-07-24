@@ -100,7 +100,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
         <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
           <div style={{ minWidth: 420 }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-              {([["w.analyze.trends.colExercise", "name"], ["w.analyze.trends.colFreq", "sessions"], ["w.analyze.trends.colBestE1rm", "bestE1rm"], ["w.analyze.trends.colVolume", "volume"], ["w.analyze.trends.colTrend", null]] as const).map(([h, k]) => (
+              {([["w.analyze.trends.colExercise", "name"], ["w.analyze.trends.colFreq", "sessions"], ["w.analyze.trends.colHeaviest", "topWeight"], ["w.analyze.trends.colVolume", "volume"], ["w.analyze.trends.colTrend", null]] as const).map(([h, k]) => (
                 <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{t(h)}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
               ))}
             </div>
@@ -108,7 +108,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
               <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "9px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
                 <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
                 <span>{r.sessions}×</span>
-                <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</span>
+                <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : "–"}</span>
                 <span>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</span>
                 <span style={{ color: C(tr.c) }}>{tr.g}</span>
               </button>
