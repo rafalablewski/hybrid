@@ -1,20 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   fuelToday,
   trainingEnergyOnDay,
   MEAL_PRESETS,
+  mealPresetSignals,
+  isFullAccess,
   type FuelToday,
   type FuelMacro,
   type LoggedSession,
+  type MealPreset,
   type Signal,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { useSignalsQuery } from "../../lib/queries";
-import { fs, F, serifIf } from "../../lib/ui";
+import { useSignalsQuery, useRevalidate } from "../../lib/queries";
+import { usePersona } from "../../lib/persona";
+import { createSignal } from "../../lib/api";
+import { F, serifIf } from "../../lib/ui";
 import { Ring, withAlpha, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
 
@@ -31,6 +37,26 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
   const { t } = useLang();
   const { data: rawSignals = [] } = useSignalsQuery();
   const signals = rawSignals as unknown as Signal[];
+  const revalidate = useRevalidate();
+  const full = isFullAccess(usePersona());
+  // One-tap preset logging: the chip being written (busy) and the one that just
+  // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
+  // where the premium framing lives (parity with Nutrition's locked tiles).
+  const [busy, setBusy] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  const logPreset = async (p: MealPreset) => {
+    if (!full) return onOpen();
+    if (busy) return;
+    setBusy(p.id);
+    setDone(null);
+    const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit, "preset")));
+    setBusy(null);
+    if (ok.includes(false)) return onOpen(); // failure — fall back to manual sheet
+    revalidate.recovery();
+    setDone(p.id);
+    setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);
+  };
 
   const fuel = useMemo<FuelToday>(() => {
     const bodyMassKg = [...signals].filter((s) => s.kind === "bodyMass").sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))[0]?.value;
@@ -158,15 +184,28 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
           <Pressable onPress={onOpen} accessibilityRole="button"><Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase" }}>{t("w.home.fuel.allMeals")}</Text></Pressable>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 4 }}>
-          {MEAL_PRESETS.map((p) => (
-            <Pressable key={p.id} onPress={onOpen} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 13 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 16 }}>{p.emoji}</Text></View>
-              <View>
-                <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{presetShort(t(p.labelKey))}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash, marginTop: 1 }}>{p.kcal} kcal – {p.protein}P</Text>
-              </View>
-            </Pressable>
-          ))}
+          {MEAL_PRESETS.map((p) => {
+            const isDone = done === p.id;
+            const isBusy = busy === p.id;
+            return (
+              <Pressable
+                key={p.id}
+                onPress={() => logPreset(p)}
+                disabled={isBusy}
+                accessibilityRole="button"
+                accessibilityLabel={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+                style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.14) : C.ink, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 13, opacity: isBusy ? 0.55 : 1 }}
+              >
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.2) : C.ink2, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, alignItems: "center", justifyContent: "center" }}>
+                  {isDone ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : <Text style={{ fontSize: 16 }}>{p.emoji}</Text>}
+                </View>
+                <View>
+                  <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{presetShort(t(p.labelKey))}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: isDone ? txt(C, C.lime) : C.ash, marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
     </View>

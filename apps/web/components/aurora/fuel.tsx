@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   fuelToday,
   trainingEnergyOnDay,
   MEAL_PRESETS,
+  mealPresetSignals,
+  isFullAccess,
   type FuelToday,
   type FuelMacro,
   type LoggedSession,
+  type MealPreset,
 } from "@hybrid/core";
 import { useSignals } from "@/lib/use-signals";
 import { useLang } from "@/lib/i18n";
+import { usePersona } from "@/lib/persona";
 
 const C = (v: string) => `var(--color-${v})`;
 // Per the Nutrition surface's colour code: blue = protein, amber = carbs,
@@ -44,7 +48,33 @@ export default function AuroraFuel({
   onOpen: () => void;
 }) {
   const { t } = useLang();
-  const { signals } = useSignals();
+  const { signals, refresh } = useSignals();
+  const full = isFullAccess(usePersona());
+  // One-tap preset logging: the chip being written (busy) and the one that just
+  // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
+  // where the premium framing lives (parity with Nutrition's locked tiles).
+  const [busy, setBusy] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  const logPreset = async (p: MealPreset) => {
+    if (!full) return onOpen();
+    if (busy) return;
+    setBusy(p.id);
+    setDone(null);
+    try {
+      for (const s of mealPresetSignals(p)) {
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "preset" }) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      }
+      await refresh();
+      setDone(p.id);
+      window.setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);
+    } catch {
+      onOpen(); // network/auth failure — fall back to the manual quick-add sheet
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const fuel = useMemo<FuelToday>(() => {
     const bodyMassKg = [...signals].filter((s) => s.kind === "bodyMass").sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))[0]?.value;
@@ -102,15 +132,27 @@ export default function AuroraFuel({
           <button onClick={onOpen} style={{ ...mono, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.fuel.allMeals")}</button>
         </div>
         <div style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", margin: "0 -20px", padding: "0 20px 4px" }}>
-          {MEAL_PRESETS.map((p) => (
-            <button key={p.id} onClick={onOpen} style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "9px 13px 9px 9px", cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 32, height: 32, borderRadius: 9, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0 }}>{p.emoji}</span>
-              <span style={{ textAlign: "left" }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{presetShort(t(p.labelKey))}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{p.kcal} kcal – {p.protein}P</span>
-              </span>
-            </button>
-          ))}
+          {MEAL_PRESETS.map((p) => {
+            const isDone = done === p.id;
+            const isBusy = busy === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => logPreset(p)}
+                disabled={isBusy}
+                aria-label={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+                style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, borderRadius: 14, padding: "9px 13px 9px 9px", cursor: isBusy ? "default" : "pointer", color: C("chalk"), opacity: isBusy ? 0.55 : 1, transition: "opacity .15s ease, background .2s ease, border-color .2s ease" }}
+              >
+                <span style={{ width: 32, height: 32, borderRadius: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 20%, transparent)` : C("ink2"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0, color: "var(--lime-text)" }}>
+                  {isDone ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5 10 17.5 19.5 7" /></svg> : p.emoji}
+                </span>
+                <span style={{ textAlign: "left" }}>
+                  <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{presetShort(t(p.labelKey))}</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: isDone ? "var(--lime-text)" : C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
