@@ -9,8 +9,9 @@ import {
   isFullAccess, canUseRecipes, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
+  resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type OffFood,
-  type Recipe, type RecipeMeal, type RecipeFilter,
+  type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -28,11 +29,12 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
 type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook";
-// The meal a log is attributed to. Carried into the Signal `source` so the hub
-// can group today's intake by meal (breakfast / lunch / dinner / snack).
-type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
-const mealGlyph = (m: MealType): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : "cup";
+// The part of the day a log is attributed to, carried into the Signal `source`
+// so the hub can group today's intake. The four built-ins plus any custom parts
+// a Full user added — so it's a plain key string, not a closed union.
+type MealType = string;
+const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
+const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
@@ -249,7 +251,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // local cache; the derived `hasNutritionData` below is the final safety net.
   const [onboarded, setOnboarded] = useState(() => { try { return typeof window !== "undefined" && localStorage.getItem("hybrid.nutrition.onboarded") === "1"; } catch { return false; } });
   // Persist a slice of the Nutrition prefs (best-effort — never blocks the UI).
-  const saveNutritionPrefs = useCallback((patch: { onboarded?: boolean; goal?: NutritionGoal }) => {
+  const saveNutritionPrefs = useCallback((patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }) => {
     fetch("/api/nutrition/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }).catch(() => {});
   }, []);
   const finishOnboarding = useCallback(() => {
@@ -260,13 +262,36 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Choose the goal AND remember it (server + the onboarding gate). The goal is a
   // saved preference, not a per-session default — switching it recomputes targets.
   const chooseGoal = useCallback((g: NutritionGoal) => { setGoal(g); saveNutritionPrefs({ goal: g }); }, [saveNutritionPrefs]);
-  // Load saved prefs once: restore the goal + short-circuit onboarding if the
-  // server already recorded completion.
+  // Custom parts of the day (Full only) — e.g. "Pre-workout". Persisted in prefs
+  // so they appear on every device alongside the four built-ins.
+  const [customParts, setCustomParts] = useState<NutritionMealPart[]>([]);
+  const [partSheet, setPartSheet] = useState(false);
+  const [newPart, setNewPart] = useState("");
+  const persistParts = useCallback((next: NutritionMealPart[]) => { setCustomParts(next); saveNutritionPrefs({ mealParts: next }); }, [saveNutritionPrefs]);
+  const addPart = () => {
+    const label = newPart.trim(); if (!label) return;
+    const key = mealPartKey(label);
+    if (!key || (DEFAULT_MEAL_PART_KEYS as readonly string[]).includes(key) || customParts.some((p) => p.key === key) || customParts.length >= MAX_CUSTOM_MEAL_PARTS) { setNewPart(""); return; }
+    persistParts([...customParts, { key, label }]);
+    setNewPart("");
+  };
+  const removePart = (key: string) => persistParts(customParts.filter((p) => p.key !== key));
+  // The full ordered list of parts to render — built-ins (localized) + custom
+  // (Full only). Free users always see just the four.
+  const partList: MealPartDef[] = useMemo(
+    () => resolveMealParts(full ? customParts : [], (k) => t(`w.recovery.nutrition.meal.${k}`)),
+    [full, customParts, t],
+  );
+  const partLabel = useCallback((key: string) => partList.find((p) => p.key === key)?.label ?? t(`w.recovery.nutrition.meal.${key}`), [partList, t]);
+
+  // Load saved prefs once: restore the goal + custom parts, and short-circuit
+  // onboarding if the server already recorded completion.
   useEffect(() => {
     let alive = true;
     fetch("/api/nutrition/prefs").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (!alive || !d?.prefs) return;
       if (d.prefs.goal) setGoal(d.prefs.goal as NutritionGoal);
+      if (Array.isArray(d.prefs.mealParts)) setCustomParts(d.prefs.mealParts as NutritionMealPart[]);
       if (d.prefs.onboardedAt) { setOnboarded(true); try { localStorage.setItem("hybrid.nutrition.onboarded", "1"); } catch { /* ignore */ } }
     }).catch(() => {});
     return () => { alive = false; };
@@ -510,12 +535,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
     const todayKey = localTodayKey();
-    const totals: Record<MealType, number> = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+    // Keyed by the log `source` (the part of the day). Reading by a part key
+    // naturally ignores non-part sources like "manual"/"off".
+    const totals: Record<string, number> = {};
     for (const s of signals) {
       if (s.kind !== "energyIntake") continue;
-      if (!(MEAL_TYPES as string[]).includes(s.source)) continue;
       if (localDayKey(s.ts) !== todayKey) continue;
-      totals[s.source as MealType] += s.value;
+      totals[s.source] = (totals[s.source] ?? 0) + s.value;
     }
     return totals;
   }, [signals]);
@@ -749,6 +775,31 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     );
   }
 
+  // Manage custom parts of the day (Full) — shared by the hub + the picker's
+  // chooser so "Add a part" works from either place.
+  const renderPartSheet = () => (
+    <Sheet open={partSheet} onClose={() => { setPartSheet(false); setNewPart(""); }} title={t("w.recovery.nutrition.addPart")} sub={t("w.recovery.nutrition.addPartSub")}>
+      <div style={{ paddingBottom: 6 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={newPart} onChange={(e) => setNewPart(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addPart(); }} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} aria-label={t("w.recovery.nutrition.addPart")} style={{ ...numField, flex: 1, textAlign: "left" }} />
+          <button onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 14, padding: "0 18px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
+        </div>
+        {customParts.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            {customParts.map((p) => (
+              <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderTop: `1px solid ${C("line")}` }}>
+                <Glyph name="bowl" size={18} color={C("ash")} />
+                <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk") }}>{p.label}</span>
+                <button onClick={() => removePart(p.key)} aria-label={t("w.recovery.nutrition.removePart")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: C("ash") }}><ITrash size={18} color={C("ash")} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12 }}>{customParts.length}/{MAX_CUSTOM_MEAL_PARTS}</div>
+      </div>
+    </Sheet>
+  );
+
   // The portion editor — one sheet reused by the hub, the picker and the saved
   // library. Extracted so the "add" full screen can open it too.
   const renderPortionSheet = () => (
@@ -847,21 +898,27 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {screenHead(
           <button onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
-            {t(`w.recovery.nutrition.meal.${mealType}`)}<IChevDown size={16} color={C("chalk")} />
+            {partLabel(mealType)}<IChevDown size={16} color={C("chalk")} />
           </button>,
           () => setView("home"),
         )}
 
-        {/* Meal chooser */}
+        {/* Meal chooser — the four built-in parts + any custom parts (Full). */}
         <Sheet open={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
-            {MEAL_TYPES.map((m) => (
-              <button key={m} onClick={() => { setMealType(m); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === m ? C("lime") : C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
-                <Glyph name={mealGlyph(m)} size={20} color={mealType === m ? "var(--lime-text)" : C("ash")} />
-                <span style={{ flex: 1, fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.bodyLg }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
-                {mealType === m && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
+            {partList.map((p) => (
+              <button key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
+                <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? "var(--lime-text)" : C("ash")} />
+                <span style={{ flex: 1, fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.bodyLg }}>{p.label}</span>
+                {mealType === p.key && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
+            {full && (
+              <button onClick={() => { setMealPicker(false); setPartSheet(true); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("ash") }}>
+                <IPlus size={18} color={C("ash")} strokeWidth={2.2} />
+                <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>{t("w.recovery.nutrition.addPart")}</span>
+              </button>
+            )}
           </div>
         </Sheet>
 
@@ -943,6 +1000,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {renderPortionSheet()}
         {renderQuickLog()}
+        {renderPartSheet()}
       </div>
     );
   }
@@ -1270,6 +1328,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       {/* Portion & quantity — serving × quantity stepper, macros scale live. */}
       {renderPortionSheet()}
 
+      {renderPartSheet()}
+
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
@@ -1336,16 +1396,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.todaysMeals")}</div>
             <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.menuDiary")} →</button>
           </div>
-          {MEAL_TYPES.map((m) => (
-            <button key={m} onClick={() => openAdd(m)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><Glyph name={mealGlyph(m)} size={19} color={C("ash")} /></span>
+          {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
+            <button key={p.key} onClick={() => openAdd(p.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t(`w.recovery.nutrition.meal.${m}`)}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: mealTotals[m] > 0 ? C("ash") : "var(--lime-text)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : t("w.recovery.nutrition.addFirstFood")}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{p.label}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: kcal > 0 ? C("ash") : "var(--lime-text)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : t("w.recovery.nutrition.addFirstFood")}</div>
               </div>
               <span style={{ width: 34, height: 34, borderRadius: 999, border: "1.6px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.4} /></span>
             </button>
-          ))}
+          ); })}
+          {/* Full users can add their own parts of the day (e.g. Pre-workout). */}
+          {full && (
+            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 18, padding: "13px 15px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, border: `1px dashed ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={18} color={C("ash")} strokeWidth={2.2} /></span>
+              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.addPart")}</span>
+            </button>
+          )}
 
           {/* Recipes — the cook-along library (Full-only; free users route to
               upgrade). */}
@@ -1633,14 +1700,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.todaysMeals")}</div>
         <div style={{ marginTop: 12 }}>
-          {MEAL_TYPES.map((m, i) => (
-            <button key={m} onClick={() => openAdd(m)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", borderTop: i ? `1px solid ${C("line")}` : "none", padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
-              <Glyph name={mealGlyph(m)} size={19} color={C("ash")} />
-              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: mealTotals[m] > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{mealTotals[m] > 0 ? `${Math.round(mealTotals[m])} kcal` : "—"}</span>
+          {partList.map((p, i) => { const kcal = mealTotals[p.key] ?? 0; return (
+            <button key={p.key} onClick={() => openAdd(p.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", borderTop: i ? `1px solid ${C("line")}` : "none", padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
+              <Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} />
+              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{p.label}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: kcal > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</span>
               <Glyph name="chevron" size={14} color={C("ash")} />
             </button>
-          ))}
+          ); })}
         </div>
       </div>
       )}
