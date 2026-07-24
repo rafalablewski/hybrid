@@ -58,3 +58,20 @@ export function checkinFeeling(c: CheckinScores | null | undefined): ReadinessFe
   const rating = checkinRating(c);
   return rating == null ? null : feelingFromRating(rating);
 }
+
+/** How today's SUBJECTIVE readiness scales the prescribed working load — the
+ *  picker's per-level guidance ("push, add load" … "deload, protect recovery")
+ *  made mechanical. A primed athlete earns a touch more; a flat one holds back;
+ *  a wrecked one deloads. Applied on top of the progression-signal dose in
+ *  prescribeSession, so the one-tap readiness pick actually moves today's load. */
+export const READINESS_LOAD_FACTOR: Record<ReadinessFeeling, number> = {
+  primed: 1.05,
+  good: 1.0,
+  flat: 0.94,
+  wrecked: 0.85,
+};
+
+/** The load multiplier for a feeling — 1.0 (neutral) when none is logged. */
+export function readinessLoadFactor(feeling: ReadinessFeeling | null | undefined): number {
+  return feeling ? READINESS_LOAD_FACTOR[feeling] : 1;
+}

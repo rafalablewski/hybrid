@@ -163,9 +163,16 @@ export default function AuroraHome() {
 
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  // TODAY's readiness feeling (independent of the rail's selected day) → feeds
+  // the prescription so the one-tap check-in mechanically scales today's load.
+  const todayFeeling = useMemo(() => {
+    const today = new Date().toDateString();
+    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    return c ? checkinFeeling(c) : null;
+  }, [checkins]);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
-    [log, sessions, bio, prefExp, prefEquip],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
@@ -938,7 +945,11 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
   const cooling = coolMs > 0;
-  const locked = busy || cooling || isFuture;
+  // A day that ALREADY has a check-in can be re-tapped to adjust it — the server
+  // upserts the same day (cooldown-exempt). The 6h cooldown only locks STARTING
+  // a fresh check-in on a day that has none yet (a new-day create would 429).
+  const blockingCooldown = cooling && !feeling;
+  const locked = busy || isFuture || blockingCooldown;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
@@ -980,14 +991,14 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
       {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
           alone while cooling (it explains why the faces are locked on a day
           without its own check-in). */}
-      {(feeling && loggedAt != null) || cooling ? (
+      {(feeling && loggedAt != null) || blockingCooldown ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
           {feeling && loggedAt != null ? (
             <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
               {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
             </Text>
           ) : null}
-          {cooling ? (
+          {blockingCooldown ? (
             <View style={{ marginLeft: "auto", borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
             </View>

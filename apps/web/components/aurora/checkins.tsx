@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import {
   fs,
@@ -35,6 +35,36 @@ export default function AuroraCheckins() {
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   const C = (v: string) => `var(--color-${v})`;
+
+  // Prefill from TODAY's check-in so the guided flow REFINES the quick one-tap
+  // readiness (or a prior full check-in) instead of resetting to neutral — the
+  // server upserts the same day, so what's shown here is what gets updated. A
+  // fresh "New check-in" (restart) is exempt: it re-arms the neutral defaults.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/checkins")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null; bodyMassKg?: number | null; adherencePct?: number | null; note?: string | null; sharedWithCoach?: boolean }[] } | null) => {
+        if (!alive || !d?.checkins) return;
+        const today = new Date().toDateString();
+        const c = d.checkins.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
+        if (!c) return;
+        setRatings((s) => ({
+          energy: c.energy ?? s.energy,
+          sleep: c.sleep ?? s.sleep,
+          soreness: c.soreness ?? s.soreness,
+          mood: c.mood ?? s.mood,
+        }));
+        setExtras((s) => ({
+          bodyMassKg: c.bodyMassKg != null ? String(c.bodyMassKg) : s.bodyMassKg,
+          adherencePct: c.adherencePct != null ? String(c.adherencePct) : s.adherencePct,
+          note: c.note ?? s.note,
+          sharedWithCoach: c.sharedWithCoach ?? s.sharedWithCoach,
+        }));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const detailsStep = CHECKIN_METRICS.length; // index 4
   const isDetails = step === detailsStep;

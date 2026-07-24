@@ -9,7 +9,7 @@ import {
   type CheckinMetricKey,
   type ReadinessFeeling,
 } from "@hybrid/core";
-import { createCheckin, fetchBillingStatus } from "../../lib/api";
+import { createCheckin, fetchBillingStatus, fetchCheckins } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -40,6 +40,35 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
 
   useEffect(() => { fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {}); }, []);
+
+  // Prefill from TODAY's check-in so the guided flow REFINES the quick one-tap
+  // readiness (or a prior full check-in) instead of resetting to neutral — the
+  // server upserts the same day, so what's shown here is what gets updated. A
+  // fresh "New check-in" (restart) is exempt: it re-arms the neutral defaults.
+  useEffect(() => {
+    let alive = true;
+    fetchCheckins()
+      .then((list) => {
+        if (!alive) return;
+        const today = new Date().toDateString();
+        const c = list.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
+        if (!c) return;
+        setRatings((s) => ({
+          energy: c.energy ?? s.energy,
+          sleep: c.sleep ?? s.sleep,
+          soreness: c.soreness ?? s.soreness,
+          mood: c.mood ?? s.mood,
+        }));
+        setExtras((s) => ({
+          bodyMassKg: c.bodyMassKg != null ? String(c.bodyMassKg) : s.bodyMassKg,
+          adherencePct: c.adherencePct != null ? String(c.adherencePct) : s.adherencePct,
+          note: c.note ?? s.note,
+          sharedWithCoach: c.sharedWithCoach ?? s.sharedWithCoach,
+        }));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const detailsStep = CHECKIN_METRICS.length; // index 4
   const isDetails = step === detailsStep;

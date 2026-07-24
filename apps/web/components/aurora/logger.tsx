@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
   brand,
   prescribeSession,
+  checkinFeeling,
   toTrainingLog,
   velocityProfiles,
   newPrsInSession,
@@ -295,10 +296,26 @@ export default function AuroraLogger({
     setTitle(r.name);
   };
 
+  // Today's one-tap readiness feeling scales the in-logger "AI session" quick-
+  // start's load, at parity with Today's readout (client-only fetch).
+  const [todayFeeling, setTodayFeeling] = useState<ReturnType<typeof checkinFeeling>>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/checkins")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] } | null) => {
+        if (!alive || !d?.checkins) return;
+        const today = new Date().toDateString();
+        const c = d.checkins.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
+        setTodayFeeling(c ? checkinFeeling(c) : null);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const rx = useMemo(() => {
     const log = toTrainingLog(sessions);
-    return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
-  }, [sessions]);
+    return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined });
+  }, [sessions, todayFeeling]);
 
   const loadPrescribed = () => {
     if (!isAthlete) {
