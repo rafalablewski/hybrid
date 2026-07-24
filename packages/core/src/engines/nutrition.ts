@@ -273,6 +273,8 @@ export interface FuelMacro {
   target: number; // target grams
   pct: number; // value / target, 0–100 clamped
   hit: boolean; // value ≥ 95% of target
+  over: boolean; // value strictly past 100% of target (surpassed)
+  overBy: number; // grams past target (0 unless over)
 }
 
 export interface FuelToday {
@@ -302,7 +304,8 @@ const OVER_FACTOR = 1.1;
 
 function fuelMacro(key: FuelMacro["key"], value: number, target: number): FuelMacro {
   const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((value / target) * 100))) : 0;
-  return { key, value: Math.round(value), target, pct, hit: target > 0 && value >= target * MACRO_HIT };
+  const over = target > 0 && value > target;
+  return { key, value: Math.round(value), target, pct, hit: target > 0 && value >= target * MACRO_HIT, over, overBy: over ? Math.round(value - target) : 0 };
 }
 
 export function fuelToday(

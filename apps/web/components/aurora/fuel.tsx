@@ -128,15 +128,22 @@ export default function AuroraFuel({
       </button>
 
       {/* quick-log rail — persistent across every state; presets ARE the meal
-          types (breakfast / lunch / dinner / snack). Full-bleed to the card edge
+          types (breakfast / lunch / dinner / snack), and the trailing dashed
+          "＋ Quick log" card (styled like the exercise rail's "All exercises &
+          favourites" card) opens the full quick-add. Full-bleed to the card edge
           (rail inside a card respects the card's padding — the golden rule's
-          in-card exception). Tapping opens the quick-add sheet. */}
+          in-card exception). */}
       <div style={{ marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
-          <span style={{ ...mono, color: C("ash") }}>{t("w.home.fuel.quickLog")}</span>
-          <button onClick={onOpen} style={{ ...mono, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.fuel.allMeals")}</button>
-        </div>
         <div style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", margin: "0 -20px", padding: "0 20px 4px" }}>
+          {/* ＋ Quick log — the entry to the full sheet, first so it's always reachable */}
+          <button
+            onClick={onOpen}
+            aria-label={t("w.home.fuel.quickLog")}
+            style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: "none", border: `1px dashed color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 14, padding: "9px 15px 9px 9px", cursor: "pointer", color: "var(--lime-text)" }}
+          >
+            <span style={{ width: 32, height: 32, borderRadius: 9, background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px dashed color-mix(in srgb, ${C("lime")} 45%, transparent)`, display: "grid", placeItems: "center", fontSize: 19, flexShrink: 0, color: "var(--lime-text)" }}>＋</span>
+            <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{t("w.home.fuel.quickLog")}</span>
+          </button>
           {MEAL_PRESETS.map((p) => {
             const isDone = done === p.id;
             const isBusy = busy === p.id;
@@ -230,14 +237,29 @@ function FuelBody({ state, proteinGap, targets, macros, overKcal, t, nf }: { sta
 }
 
 function MacroBar({ m, label, thick }: { m: FuelMacro; label: string; thick?: boolean }) {
+  // Surpassed target — a distinctive treatment: the track fills to the WHOLE
+  // logged amount, chartreuse-macro up to the target line, then a terracotta
+  // overflow past it, and the readout calls out "+Ng" in the over colour.
+  const h = thick ? 7 : 5;
+  const targetFrac = m.over && m.value > 0 ? Math.max(0, Math.min(100, (m.target / m.value) * 100)) : 100;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11 }}>
         <span style={{ color: MACRO_TEXT[m.key] }}>{label}</span>
-        <span style={{ color: C("ash") }}>{m.value} / {m.target} g</span>
+        <span style={{ color: C("ash") }}>
+          <span style={{ color: m.over ? "var(--red-text)" : C("ash") }}>{m.value}</span> / {m.target} g
+          {m.over && <span style={{ color: "var(--red-text)", fontWeight: 600 }}> +{m.overBy}</span>}
+        </span>
       </div>
-      <div style={{ height: thick ? 7 : 5, borderRadius: 5, background: C("line"), overflow: "hidden" }}>
-        <span style={{ display: "block", height: "100%", width: `${m.pct}%`, background: MACRO_FILL[m.key], borderRadius: 5 }} />
+      <div style={{ height: h, borderRadius: 5, background: C("line"), overflow: "hidden" }}>
+        {m.over ? (
+          <div style={{ display: "flex", height: "100%", width: "100%" }}>
+            <span style={{ width: `${targetFrac}%`, background: MACRO_FILL[m.key] }} />
+            <span style={{ flex: 1, background: C("red") }} />
+          </div>
+        ) : (
+          <span style={{ display: "block", height: "100%", width: `${m.pct}%`, background: MACRO_FILL[m.key], borderRadius: 5 }} />
+        )}
       </div>
     </div>
   );
