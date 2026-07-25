@@ -145,6 +145,19 @@ export const SPORTS: Record<string, Sport> = {
       { name: "Cable Straight-arm Pulldown", demand: "Lat / pulling strength", lvl: 2, why: "Mimics the exact freestyle pull path under load." },
     ],
   },
+  Squash: {
+    icon: "🎾", family: "Racquet",
+    marker: { label: "Playing level", ph: "e.g. club league, div 3" },
+    demands: ["Lunge strength & stability", "Change-of-direction power", "Repeat-sprint conditioning", "Rotational power"],
+    pool: [
+      { name: "Bulgarian Split Squat", demand: "Lunge strength & stability", lvl: 0, why: "The deep front-corner lunge is squash's signature move — own it under load." },
+      { name: "Lateral Bound", demand: "Change-of-direction power", lvl: 0, why: "Trains the explosive side-push and single-leg landing that plant-and-redirect demands." },
+      { name: "Shuttle Sprints", demand: "Repeat-sprint conditioning", lvl: 0, why: "Court-length repeats build the anaerobic engine that outlasts long rallies." },
+      { name: "Med Ball Rotational Throw", demand: "Rotational power", lvl: 0, why: "Hip-to-racquet rotation — where a heavy, deceptive swing comes from." },
+      { name: "Reverse Lunge", demand: "Lunge strength & stability", lvl: 1, why: "Loaded stepping strength that carries your lunges deeper into a long match." },
+      { name: "Depth Jump", demand: "Change-of-direction power", lvl: 2, why: "Advanced reactive plyometric for elite first-step quickness off the T." },
+    ],
+  },
 };
 
 export const SPORT_NAMES: string[] = Object.keys(SPORTS);

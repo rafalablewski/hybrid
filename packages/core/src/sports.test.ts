@@ -48,4 +48,18 @@ describe("prescribeForSport", () => {
     expect(prescribeForSport("Cycling", 0).setScheme).toBe("3×8");
     expect(prescribeForSport("Cycling", 3).setScheme).toBe("5×3");
   });
+
+  it("prescribes Squash from its signature lunge, personalized from logs", () => {
+    const rx = prescribeForSport("Squash", 0, { sessions: [session("Bulgarian Split Squat", "40", "6")] });
+    const lunge = rx.blocks.find((b) => b.name === "Bulgarian Split Squat")!;
+    expect(lunge).toBeDefined();
+    expect(lunge.demand).toBe("Lunge strength & stability");
+    expect(lunge.load).toBeGreaterThan(0);
+    expect(lunge.loadBasis).toContain("e1RM");
+    expect(rx.personalized).toBe(true);
+    // court-specific plyo/conditioning picks have no load source → bodyweight/tempo
+    const bound = rx.blocks.find((b) => b.name === "Lateral Bound")!;
+    expect(bound.bodyweight).toBe(true);
+    expect(bound.load).toBeUndefined();
+  });
 });
