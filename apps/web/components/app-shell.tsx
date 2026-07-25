@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -16,6 +16,7 @@ import { fs, space,
   CHALK,
   ASH,
   BLUE,
+  VIOLET,
   AMBER,
   RED,
   LIME_T,
@@ -42,6 +43,10 @@ const AuroraRunTrack = dynamic(() => import("./aurora/run-track"), { ssr: false 
 const AuroraCoach = dynamic(() => import("./aurora/coach"), { ssr: false });
 const AuroraUpgrade = dynamic(() => import("./aurora/upgrade"), { ssr: false });
 const AuroraOrg = dynamic(() => import("./aurora/org"), { ssr: false });
+const AuroraAthleteAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraAthleteAnalytics })), { ssr: false });
+const AuroraCoachAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraCoachAnalytics })), { ssr: false });
+const AuroraOperatorAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraOperatorAnalytics })), { ssr: false });
+const AuroraEndurance = dynamic(() => import("./aurora/endurance"), { ssr: false });
 const AuroraTalent = dynamic(() => import("./aurora/talent"), { ssr: false });
 const AuroraTactical = dynamic(() => import("./aurora/tactical"), { ssr: false });
 const AuroraTeamCompare = dynamic(() => import("./aurora/team-compare"), { ssr: false });
@@ -84,6 +89,7 @@ import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
+import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
@@ -94,29 +100,12 @@ import { useSignals } from "@/lib/use-signals";
 // keys (nav.group.*); item labels are i18n (nav.<id>) with the core fallback.
 // Operator-only tools (Capabilities, Data network) live in the /admin console.
 
-/** A "this lives in the mobile app" pointer — the web treatment for surfaces
- *  that are mobile-only (mobile-first). Analytics and the Endurance hub both use
- *  it; see the web-dashboards / endurance-hub capabilities. */
-function MobileOnlyScreen({ aurora, icon, title, body }: { aurora: boolean; icon: AuroraIconName; title: string; body: React.ReactNode }) {
-  return (
-    <div style={{ maxWidth: 560, margin: "24px auto 0", textAlign: "center" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.md, padding: "40px 28px", borderRadius: aurora ? 28 : 12, background: INK2, border: `1px solid ${LINE}`, boxShadow: "var(--shadow-card)" }}>
-        <span style={{ display: "inline-flex", padding: 16, borderRadius: 999, background: `${BLUE}14`, border: `1px solid ${BLUE}33` }}>
-          <AuroraIcon name={icon} size={30} color={BLUE} />
-        </span>
-        <h1 style={{ ...disp, fontWeight: 900, fontSize: fs.display, color: CHALK, margin: 0 }}>{title}</h1>
-        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, maxWidth: 420 }} c={ASH}>{body}</Mono>
-        <Mono s={{ fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase" }} c={BLUE}>iOS – on the HYBRID mobile app</Mono>
-      </div>
-    </div>
-  );
-}
-
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, loading: sessionsLoading, error: sessionsError, refresh } = useSessions();
   const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
+  const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
   const { bio: bioFromSignals } = useSignals();
@@ -218,6 +207,20 @@ export default function AppShell() {
   useEffect(() => {
     if (screen === "periodize" && persona === "casual") { setScreen("today"); setUpgradeOpen(true); }
   }, [screen, persona]);
+
+  // Analytics scope — which of the three dashboards is showing. Availability
+  // comes from the SHARED resolver in @hybrid/core (role-derived, never persona-
+  // derived), the same one the mobile screen uses, so the two clients can never
+  // disagree about who may see whose data. Land on the highest scope the role
+  // holds (an admin opens on the platform view).
+  const authRole = normalizeAuthRole(session?.role);
+  const allowedScopes = useMemo(() => analyticsScopesFor(authRole), [authRole]);
+  const [scope, setScope] = useState<AnalyticsScope>("athlete");
+  useEffect(() => {
+    setScope(allowedScopes[allowedScopes.length - 1]!);
+  }, [allowedScopes]);
+  // A demotion mid-session must not leave the user on a scope they've lost.
+  const activeScope = resolveAnalyticsScope(authRole, scope);
 
   // Auth guard — bounce to /login when there's no session.
   useEffect(() => {
@@ -719,13 +722,42 @@ export default function AppShell() {
         {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
             changes (Aurora only). The banners/header above stay put. */}
         <div key={screen} className={aurora ? "aurora-enter" : undefined}>
+        {/* ANALYTICS — the 3-scope dashboard. Ships on BOTH clients (parity rule);
+            the mobile twin is components/aurora/analytics.tsx and reads the same
+            engines + endpoints. Scope tabs appear only when the role holds more
+            than one, and each scope states what it can and cannot see. */}
         {screen === "analytics" && (
-          <MobileOnlyScreen
-            aurora={aurora}
-            icon="grid"
-            title="Analytics lives in the app"
-            body={<>Your training analytics — trends, weekly mileage, effort balance and the coach &amp; admin dashboards — are built mobile-first. Open HYBRID on your phone to explore them.</>}
-          />
+          <>
+            {allowedScopes.length > 1 && (
+              <div style={{ display: "flex", gap: space.sm, marginBottom: 12, flexWrap: "wrap" }}>
+                {allowedScopes.map((id) => {
+                  const on = activeScope === id;
+                  const c = id === "operator" ? AMBER : id === "coach" ? VIOLET : LIME;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setScope(id)}
+                      aria-pressed={on}
+                      style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", padding: "9px 18px", borderRadius: aurora ? 999 : 10, cursor: "pointer", border: `1px solid ${on ? c : LINE}`, background: on ? c : "transparent", color: on ? ON_ACCENT : ASH }}
+                    >
+                      {t(analyticsScopeLabelKey(id))}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {(() => {
+              const acc = activeScope === "operator" ? AMBER : activeScope === "coach" ? VIOLET : LIME;
+              return (
+                <div style={{ padding: "10px 14px", borderRadius: aurora ? 18 : 10, background: `${acc}12`, borderLeft: `3px solid ${acc}`, marginBottom: 20 }}>
+                  <Mono s={{ fontSize: fs.caption, lineHeight: 1.4 }} c={CHALK}>{t(analyticsScopePrivacyKey(activeScope))}</Mono>
+                </div>
+              );
+            })()}
+            {activeScope === "athlete" && <AuroraAthleteAnalytics sessions={sessions} />}
+            {activeScope === "coach" && <AuroraCoachAnalytics roster={roster} />}
+            {activeScope === "operator" && <AuroraOperatorAnalytics />}
+          </>
         )}
 
         {screen === "today" && (
@@ -754,14 +786,7 @@ export default function AppShell() {
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
-        {screen === "endurance" && (
-          <MobileOnlyScreen
-            aurora={aurora}
-            icon="gps"
-            title="Endurance lives in the app"
-            body={<>Your per-discipline endurance analytics — runs, swims, rides and rows, each in its own pace units — are built mobile-first. Open HYBRID on your phone to explore them.</>}
-          />
-        )}
+        {screen === "endurance" && <AuroraEndurance sessions={sessions} />}
 
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 

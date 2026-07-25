@@ -6,6 +6,10 @@ import {
   navVisibleTo,
   resolvePersona,
   sanitizePersonaAccess,
+  analyticsScopesFor,
+  resolveAnalyticsScope,
+  analyticsScopeLabelKey,
+  analyticsScopePrivacyKey,
 } from "./nav";
 
 describe("navForPersonaWithLocks", () => {
@@ -184,5 +188,42 @@ describe("navVisibleTo", () => {
     expect(navVisibleTo("coach", "squad")).toBe(true);
     expect(navVisibleTo("athlete", "squad")).toBe(false);
     expect(navVisibleTo("casual", "not-a-real-id")).toBe(false);
+  });
+});
+
+describe("analytics scopes", () => {
+  it("gives a client only their own dashboard", () => {
+    expect(analyticsScopesFor("client")).toEqual(["athlete"]);
+  });
+
+  it("gives a coach their roster AND their own training (a coach trains too)", () => {
+    expect(analyticsScopesFor("coach")).toEqual(["athlete", "coach"]);
+  });
+
+  it("gives an admin all three", () => {
+    expect(analyticsScopesFor("admin")).toEqual(["athlete", "coach", "operator"]);
+  });
+
+  it("never lets a lower role reach a higher scope", () => {
+    expect(analyticsScopesFor("client")).not.toContain("coach");
+    expect(analyticsScopesFor("client")).not.toContain("operator");
+    expect(analyticsScopesFor("coach")).not.toContain("operator");
+  });
+
+  it("resolves a held scope the role has lost back to athlete", () => {
+    // A coach demoted to client must not stay on the roster dashboard.
+    expect(resolveAnalyticsScope("client", "coach")).toBe("athlete");
+    expect(resolveAnalyticsScope("client", "operator")).toBe("athlete");
+    expect(resolveAnalyticsScope("coach", "operator")).toBe("athlete");
+    // A scope the role still holds is kept as-is.
+    expect(resolveAnalyticsScope("coach", "coach")).toBe("coach");
+    expect(resolveAnalyticsScope("admin", "operator")).toBe("operator");
+  });
+
+  it("every scope has a label + privacy string key", () => {
+    for (const scope of analyticsScopesFor("admin")) {
+      expect(analyticsScopeLabelKey(scope)).toBe(`analytics.scope.${scope}`);
+      expect(analyticsScopePrivacyKey(scope)).toBe(`analytics.privacy.${scope}`);
+    }
   });
 });

@@ -144,6 +144,46 @@ const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2,
 const ALL_PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 
 /**
+ * The three scopes of the Analytics dashboard. Both clients render all three —
+ * web↔mobile parity is absolute, so neither client owns a surface the other
+ * lacks.
+ */
+export type AnalyticsScope = "athlete" | "coach" | "operator";
+
+/**
+ * Which Analytics scopes an auth ROLE may view. Derived from the role, never
+ * from the self-serve persona — choosing "athlete" mode must not hand anyone a
+ * coach roster or the platform aggregates.
+ *
+ * The scopes NEST the same way personas do (see {@link Persona}): a coach keeps
+ * their own athlete dashboard because a coach trains too, and an admin sees
+ * everything. Shared so web and mobile can't disagree on who sees whose data.
+ */
+export function analyticsScopesFor(role: AuthRole): AnalyticsScope[] {
+  if (role === "admin") return ["athlete", "coach", "operator"];
+  if (role === "coach") return ["athlete", "coach"];
+  return ["athlete"];
+}
+
+/** Coerce a stored/held scope to one the role may actually view (else the
+ *  athlete scope) — so a demotion can never leave someone on a scope they've
+ *  lost access to. */
+export function resolveAnalyticsScope(role: AuthRole, wanted: AnalyticsScope): AnalyticsScope {
+  return analyticsScopesFor(role).includes(wanted) ? wanted : "athlete";
+}
+
+/** The i18n key for a scope's tab label. */
+export function analyticsScopeLabelKey(scope: AnalyticsScope): string {
+  return `analytics.scope.${scope}`;
+}
+
+/** The i18n key for a scope's PRIVACY note — the "what this scope can and
+ *  cannot see" line both clients show above the charts. */
+export function analyticsScopePrivacyKey(scope: AnalyticsScope): string {
+  return `analytics.privacy.${scope}`;
+}
+
+/**
  * Admin override of which persona each nav item is visible from — a sparse
  * `{ navId: minPersona }` map layered over the code `minPersona` defaults, so an
  * admin can (e.g.) drop Velocity/Analytics to `casual` to give a retail user the

@@ -1551,3 +1551,28 @@ export async function replyToCheckin(checkinId: string, coachReply: string): Pro
     return false;
   }
 }
+
+// ---- coach roster (analytics) ----
+// One row per ACTIVE, consented client with stats computed server-side. Same
+// shape + endpoint the web coach analytics reads (web lib/use-roster.ts), so the
+// two clients can't drift on what a roster row means.
+export type RosterRow = {
+  linkId: string;
+  name: string;
+  email: string;
+  sessions: number;
+  lastSession: string | null;
+  readiness: number | null;
+  adherence: number;
+  volume: number;
+};
+
+export async function fetchRoster(): Promise<RosterRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/roster`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { roster?: RosterRow[] }).roster ?? [];
+  } catch {
+    return [];
+  }
+}
