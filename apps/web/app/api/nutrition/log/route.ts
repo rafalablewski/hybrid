@@ -2,33 +2,63 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { derivedFoodEntries } from "@hybrid/core";
 
 // The editable food-log: one row per logged food/meal, plus the mirrored Signals
 // the engines read. The Diary lists these rows and edit/delete operate on them.
 //
 // SOFT-GUARDED: the Signals are always written (so totals + the engines are
 // unaffected), and the FoodLog row is best-effort — if reference/sql-nutrition-
-// log.sql hasn't been applied the POST still succeeds (log: null) and the Diary
-// simply has no entry list. GET returns [] until the table exists.
+// log.sql hasn't been applied the POST still succeeds (log: null).
+//
+// GET never returns an empty diary when intake exists: anything WITHOUT a
+// FoodLog row (logged before the table shipped, or on a database where the
+// migration hasn't run) is rebuilt from its Signals — the four rows one log
+// wrote share an exact ts + source, so they regroup into the same entry, with a
+// `sig:`-prefixed id the edit/delete route resolves back to those Signals. So
+// every logged item in history can be changed or removed, migrated or not.
 
 const num = (v: unknown): number => {
   const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) : NaN;
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
+const DERIVED_WINDOW_DAYS = 120; // how far back the Diary can edit individual entries
+const FOOD_KINDS = ["energyIntake", "protein", "carbs", "fat"];
+
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // Real entries first (may not exist at all — the table is a later migration).
+  let logs: unknown[] = [];
+  let ownedSignalIds: string[] = [];
   try {
-    const logs = await prisma.foodLog.findMany({
-      where: { userId: me.id },
-      orderBy: { ts: "desc" },
-      take: 200,
-    });
-    return NextResponse.json({ logs });
+    logs = await prisma.foodLog.findMany({ where: { userId: me.id }, orderBy: { ts: "desc" }, take: 200 });
+    // Every Signal any FoodLog row owns — including rows beyond the 200 above —
+    // so a migrated entry is never ALSO listed as a derived one.
+    const owners = await prisma.foodLog.findMany({ where: { userId: me.id }, select: { signalIds: true }, take: 2000 });
+    ownedSignalIds = owners.flatMap((o) => (Array.isArray(o.signalIds) ? o.signalIds.filter((x): x is string => typeof x === "string") : []));
   } catch {
-    return NextResponse.json({ logs: [] }); // table not migrated yet
+    /* table not migrated yet — the derived entries below carry the whole diary */
   }
+
+  // Rebuild the rest from the Signals the engines already read.
+  let derived: ReturnType<typeof derivedFoodEntries> = [];
+  try {
+    const since = new Date(Date.now() - DERIVED_WINDOW_DAYS * 86_400_000);
+    const signals = await prisma.signal.findMany({
+      where: { userId: me.id, kind: { in: FOOD_KINDS }, ts: { gte: since } },
+      select: { id: true, kind: true, value: true, source: true, ts: true },
+      orderBy: { ts: "desc" },
+      take: 4000,
+    });
+    derived = derivedFoodEntries(signals, { exclude: ownedSignalIds });
+  } catch {
+    /* signals unavailable — fall through with whatever FoodLog gave us */
+  }
+
+  return NextResponse.json({ logs: [...logs, ...derived] });
 }
 
 export async function POST(request: Request) {

@@ -456,3 +456,110 @@ export function sumMealComponents(items: MealComponent[]): { kcal: number; prote
     fat: Math.round(total.fat),
   };
 }
+
+// ── Diary entries reconstructed from raw Signals ─────────────────────────────
+// Every food log writes up to four Signals (energyIntake + protein/carbs/fat)
+// that share ONE exact `ts` and `source` — enough to rebuild the individual
+// ENTRY even when no FoodLog row exists for it. That covers two real cases: a
+// database where the FoodLog migration hasn't run yet, and everything logged
+// BEFORE the editable food-log shipped. Rebuilding from the Signals is what
+// makes edit/delete work on ALL of a user's history rather than only the rows
+// the newer table happens to own. Pure + unit-tested; the server groups, both
+// clients render the result identically.
+
+/** Marks an entry id that addresses Signal rows instead of a FoodLog row. */
+export const DERIVED_ENTRY_PREFIX = "sig:";
+
+/** The Signal columns the grouping needs (a Prisma row satisfies this). */
+export interface FoodSignalRow {
+  id: string;
+  kind: string;
+  value: number;
+  source: string;
+  ts: string | Date;
+}
+
+/** A diary entry rebuilt from Signals — same shape a FoodLog row renders as. */
+export interface DerivedFoodEntry {
+  /** `sig:<signalId>.<signalId>…` — the ids edit/delete operate on. */
+  id: string;
+  /** Signals carry no name; the clients label a derived entry themselves. */
+  name: string;
+  subname: string | null;
+  source: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  /** Always 1 — a derived entry has no per-serving base to multiply. */
+  qty: number;
+  ts: string;
+  derived: true;
+}
+
+const DERIVED_FIELD: Record<string, "kcal" | "protein" | "carbs" | "fat"> = {
+  energyIntake: "kcal",
+  protein: "protein",
+  carbs: "carbs",
+  fat: "fat",
+};
+
+/**
+ * Group nutrition Signals into diary entries, newest first. One entry per
+ * (exact instant, source) pair — the four Signals a single log wrote. Pass the
+ * Signal ids already owned by FoodLog rows as `exclude` so a migrated entry is
+ * never listed twice.
+ */
+export function derivedFoodEntries(
+  signals: FoodSignalRow[],
+  opts?: { exclude?: Iterable<string> },
+): DerivedFoodEntry[] {
+  const skip = new Set(opts?.exclude ?? []);
+  type Group = { ids: string[]; source: string; ts: string; kcal: number; protein: number; carbs: number; fat: number };
+  const groups = new Map<string, Group>();
+  for (const s of signals) {
+    const field = DERIVED_FIELD[s.kind];
+    if (!field || !s.id || skip.has(s.id)) continue;
+    const ts = typeof s.ts === "string" ? s.ts : s.ts.toISOString();
+    const key = `${ts}|${s.source}`;
+    let g = groups.get(key);
+    if (!g) { g = { ids: [], source: s.source, ts, kcal: 0, protein: 0, carbs: 0, fat: 0 }; groups.set(key, g); }
+    g.ids.push(s.id);
+    g[field] += Number.isFinite(s.value) ? s.value : 0;
+  }
+  const out: DerivedFoodEntry[] = [];
+  for (const g of groups.values()) {
+    if (g.kcal <= 0 && g.protein <= 0 && g.carbs <= 0 && g.fat <= 0) continue;
+    out.push({
+      id: DERIVED_ENTRY_PREFIX + g.ids.slice().sort().join("."),
+      name: "",
+      subname: null,
+      source: g.source,
+      kcal: g.kcal,
+      protein: g.protein,
+      carbs: g.carbs,
+      fat: g.fat,
+      qty: 1,
+      ts: g.ts,
+      derived: true,
+    });
+  }
+  return out.sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
+}
+
+/** How many Signals one derived entry may address (kcal + the three macros). */
+const MAX_DERIVED_SIGNALS = 8;
+
+/**
+ * The Signal ids behind a derived entry id, or null when the id addresses a
+ * real FoodLog row. The server uses this to route edit/delete to the Signals.
+ */
+export function parseDerivedEntryId(id: string): string[] | null {
+  if (typeof id !== "string" || !id.startsWith(DERIVED_ENTRY_PREFIX)) return null;
+  const ids = id
+    .slice(DERIVED_ENTRY_PREFIX.length)
+    .split(".")
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0 && /^[A-Za-z0-9_-]+$/.test(x));
+  return ids.length > 0 && ids.length <= MAX_DERIVED_SIGNALS ? ids : null;
+}

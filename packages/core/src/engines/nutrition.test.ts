@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -265,5 +265,62 @@ describe("meal parts (custom parts of the day)", () => {
   it("slugs a typed label into a stable key", () => {
     expect(mealPartKey("  Pre-Workout!  ")).toBe("pre-workout");
     expect(mealPartKey("Second Breakfast")).toBe("second-breakfast");
+  });
+});
+
+describe("derived diary entries (rebuilt from Signals)", () => {
+  const sig = (id: string, kind: string, value: number, source: string, ts: string) =>
+    ({ id, kind, value, source, ts });
+
+  it("groups the four Signals of one log into a single editable entry", () => {
+    const ts = at(0, 8);
+    const entries = derivedFoodEntries([
+      sig("a", "energyIntake", 520, "breakfast", ts),
+      sig("b", "protein", 32, "breakfast", ts),
+      sig("c", "carbs", 55, "breakfast", ts),
+      sig("d", "fat", 18, "breakfast", ts),
+    ]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ source: "breakfast", kcal: 520, protein: 32, carbs: 55, fat: 18, qty: 1, derived: true });
+    expect(parseDerivedEntryId(entries[0]!.id)).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("keeps logs at different instants or parts apart, newest first", () => {
+    const entries = derivedFoodEntries([
+      sig("a", "energyIntake", 300, "breakfast", at(0, 8)),
+      sig("b", "energyIntake", 700, "lunch", at(0, 13)),
+      sig("c", "energyIntake", 250, "breakfast", at(0, 9)),
+    ]);
+    expect(entries.map((e) => e.kcal)).toEqual([700, 250, 300]);
+  });
+
+  it("skips Signals a FoodLog row already owns, and empty groups", () => {
+    const ts = at(0, 8);
+    const entries = derivedFoodEntries(
+      [
+        sig("a", "energyIntake", 520, "breakfast", ts),
+        sig("b", "energyIntake", 400, "lunch", at(0, 13)),
+        sig("z", "bodyMass", 82, "manual", ts),
+      ],
+      { exclude: ["a"] },
+    );
+    expect(entries.map((e) => e.kcal)).toEqual([400]);
+  });
+
+  it("accepts Date timestamps and non-part sources (manual, off, preset)", () => {
+    const d = new Date(NOW);
+    const entries = derivedFoodEntries([
+      { id: "a", kind: "energyIntake", value: 210, source: "off", ts: d },
+      { id: "b", kind: "protein", value: 20, source: "off", ts: d },
+    ]);
+    expect(entries[0]).toMatchObject({ source: "off", kcal: 210, protein: 20, ts: d.toISOString() });
+  });
+
+  it("only treats sig: ids as derived, and rejects malformed ones", () => {
+    expect(parseDerivedEntryId("clx123abc")).toBeNull();
+    expect(parseDerivedEntryId("sig:")).toBeNull();
+    expect(parseDerivedEntryId("sig:a.b")).toEqual(["a", "b"]);
+    expect(parseDerivedEntryId("sig:a/../b")).toBeNull();
+    expect(parseDerivedEntryId(`sig:${["a", "b", "c", "d", "e", "f", "g", "h", "i"].join(".")}`)).toBeNull();
   });
 });

@@ -42,7 +42,10 @@ const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunris
 type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 // One editable logged entry (per-serving macros + qty) the Diary lists.
-type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string };
+// `derived` marks an entry the server rebuilt from its Signals because no
+// FoodLog row exists for it (logged before the table shipped, or the migration
+// hasn't run) — it edits by a relative scale instead of an absolute quantity.
+type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean };
 type SavedMeal = { id: string; name: string; subname?: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
 type FoodProduct = { id: string; name: string; subname?: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
 
@@ -326,12 +329,26 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Change an entry's quantity (rescales its Signals) or delete it (removes them).
   const editLogQty = async (id: string, qty: number) => {
     setLogs((xs) => xs.map((x) => x.id === id ? { ...x, qty } : x)); // optimistic
-    try { await fetch(`/api/nutrition/log/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty }) }); } catch { /* revert on reload */ }
+    try { await fetch(`/api/nutrition/log/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty }) }); } catch { /* revert on reload */ }
     await load(); await loadLogs(); revalidate.recovery();
   };
   const deleteLog = async (id: string) => {
     setLogs((xs) => xs.filter((x) => x.id !== id)); // optimistic
-    try { await fetch(`/api/nutrition/log/${id}`, { method: "DELETE" }); } catch { /* revert on reload */ }
+    try { await fetch(`/api/nutrition/log/${encodeURIComponent(id)}`, { method: "DELETE" }); } catch { /* revert on reload */ }
+    await load(); await loadLogs(); revalidate.recovery();
+  };
+  // A DERIVED entry (Signals only, no FoodLog row) has no per-serving base, so
+  // its stepper is a relative multiplier: each press rescales the stored
+  // readings by the ratio between the new multiplier and the previous one. The
+  // multiplier is per-visit UI state — the amounts on screen are always the
+  // server's own numbers.
+  const [derivedScale, setDerivedScale] = useState<Record<string, number>>({});
+  const stepEntry = async (l: FoodLogRow, next: number) => {
+    if (!l.derived) { await editLogQty(l.id, next); return; }
+    const prev = derivedScale[l.id] ?? 1;
+    if (next === prev) return;
+    setDerivedScale((m) => ({ ...m, [l.id]: next }));
+    try { await fetch(`/api/nutrition/log/${encodeURIComponent(l.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scale: next / prev }) }); } catch { /* revert on reload */ }
     await load(); await loadLogs(); revalidate.recovery();
   };
 
@@ -1753,7 +1770,35 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           editable (quantity) and deletable. Defaults to today; pick a past day in
           the record below. Then the week strip + recent days.
           A streak is a number, not a trophy. */}
-      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, "blue"], ["C", daySummary.carbs, targets.carbs ?? 0, "amber"], ["F", daySummary.fat, targets.fat ?? 0, "violet"]]; return (
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, "blue"], ["C", daySummary.carbs, targets.carbs ?? 0, "amber"], ["F", daySummary.fat, targets.fat ?? 0, "violet"]];
+      // One logged item: what it was, what it cost, a stepper to rescale it and
+      // a bin to remove it. A derived entry (no FoodLog row) has no name of its
+      // own, so it's labelled by its time of day and scales by a multiplier.
+      const entryRow = (l: FoodLogRow) => {
+        const mult = derivedScale[l.id] ?? 1;
+        const shown = l.derived ? mult : l.qty;
+        const time = new Date(l.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+        return (
+        <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px 9px 31px" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
+          </div>
+          {/* Quantity stepper — rescales the entry (and its mirror). */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button onClick={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
+            <span style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.derived ? `×${shown}` : shown}</span>
+            <button onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
+          </div>
+          <button onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
+        </div>
+        );
+      };
+      // Entries whose source isn't one of the parts (a quick log, a food-search
+      // hit, a preset) still belong to the day — they get their own group so
+      // nothing logged is ever unreachable.
+      const otherEntries = dayLogs.filter((l) => !partList.some((p) => p.key === l.source));
+      return (
       <>
       {/* DAY SUMMARY — pick any date with ‹ ›, see the whole day's totals vs
           target. Read from Signals so it works for every day, migrated or not. */}
@@ -1802,24 +1847,20 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: kcal > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</span>
                 {isToday && <span style={{ width: 26, height: 26, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={13} color="var(--lime-text)" strokeWidth={2.4} /></span>}
               </button>
-              {entries.map((l) => (
-                <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px 9px 31px" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
-                  </div>
-                  {/* Quantity stepper — rescales the entry (and its mirror). */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <button onClick={() => editLogQty(l.id, Math.max(0.5, Math.round((l.qty - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
-                    <span style={{ minWidth: 22, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.qty}</span>
-                    <button onClick={() => editLogQty(l.id, Math.min(50, Math.round((l.qty + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
-                  </div>
-                  <button onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
-                </div>
-              ))}
+              {entries.map(entryRow)}
             </div>
             );
           })}
+          {otherEntries.length > 0 && (
+            <div style={{ borderTop: `1px solid ${C("line")}`, paddingTop: 12, paddingBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 2px" }}>
+                <Glyph name={mealGlyph("snack")} size={19} color={C("ash")} />
+                <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.otherEntries")}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{Math.round(otherEntries.reduce((s, l) => s + l.kcal * l.qty, 0))} kcal</span>
+              </div>
+              {otherEntries.map(entryRow)}
+            </div>
+          )}
         </div>
         {dayLogs.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.5 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</div>}
       </div>

@@ -40,7 +40,7 @@ import {
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
   fetchFoodProducts, createFoodProduct, deleteFoodProduct, searchFoods,
   getNutritionPrefs, saveNutritionPrefs as apiSaveNutritionPrefs,
-  fetchFoodLogs, createFoodLog, updateFoodLogQty, deleteFoodLog,
+  fetchFoodLogs, createFoodLog, updateFoodLogQty, scaleFoodLog, deleteFoodLog,
   type SavedMealRow, type FoodProductRow, type FoodLogRow,
 } from "../../lib/api";
 import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
@@ -328,6 +328,20 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const deleteLogEntry = async (id: string) => {
     setLogs((xs) => xs.filter((x) => x.id !== id)); // optimistic
     await deleteFoodLog(id);
+    loadLogs(); refetch(); revalidate.recovery();
+  };
+  // A DERIVED entry (Signals only, no FoodLog row) has no per-serving base, so
+  // its stepper is a relative multiplier: each press rescales the stored
+  // readings by the ratio between the new multiplier and the previous one. The
+  // multiplier is per-visit UI state — the amounts on screen are always the
+  // server's own numbers.
+  const [derivedScale, setDerivedScale] = useState<Record<string, number>>({});
+  const stepEntry = async (l: FoodLogRow, next: number) => {
+    if (!l.derived) { await editLogQty(l.id, next); return; }
+    const prev = derivedScale[l.id] ?? 1;
+    if (next === prev) return;
+    setDerivedScale((m) => ({ ...m, [l.id]: next }));
+    await scaleFoodLog(l.id, next / prev);
     loadLogs(); refetch(); revalidate.recovery();
   };
 
@@ -1591,7 +1605,35 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {/* DIARY — the selected day's individual entries, grouped by part, each
           editable (quantity) and deletable. Defaults to today; pick a past day
           in the record below. Then the week strip + recent days. */}
-      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, C.blue], ["C", daySummary.carbs, targets.carbs ?? 0, C.amber], ["F", daySummary.fat, targets.fat ?? 0, C.violet]]; return (
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, C.blue], ["C", daySummary.carbs, targets.carbs ?? 0, C.amber], ["F", daySummary.fat, targets.fat ?? 0, C.violet]];
+      // One logged item: what it was, what it cost, a stepper to rescale it and
+      // a bin to remove it. A derived entry (no FoodLog row) has no name of its
+      // own, so it's labelled by its time of day and scales by a multiplier.
+      const entryRow = (l: FoodLogRow) => {
+        const mult = derivedScale[l.id] ?? 1;
+        const shown = l.derived ? mult : l.qty;
+        const d = new Date(l.ts);
+        const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        return (
+        <View key={l.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, paddingLeft: 31, paddingRight: 2 }}>
+          <View style={{ flex: 1 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Pressable onPress={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
+            <Text style={{ minWidth: 26, textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l.derived ? `×${shown}` : shown}</Text>
+            <Pressable onPress={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
+          </View>
+          <Pressable onPress={() => deleteLogEntry(l.id)} accessibilityLabel={t("w.recovery.nutrition.deleteEntry")} hitSlop={6} style={{ padding: 4 }}><ITrash size={17} color={C.ash} /></Pressable>
+        </View>
+        );
+      };
+      // Entries whose source isn't one of the parts (a quick log, a food-search
+      // hit, a preset) still belong to the day — they get their own group so
+      // nothing logged is ever unreachable.
+      const otherEntries = dayLogs.filter((l) => !partList.some((p) => p.key === l.source));
+      return (
       <>
       {/* DAY SUMMARY — pick any date with ‹ ›, see the whole day's totals vs
           target. Read from Signals so it works for every day, migrated or not. */}
@@ -1638,23 +1680,20 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: kcal > 0 ? C.chalk : C.ash }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</Text>
                 {isToday ? <View style={{ width: 26, height: 26, borderRadius: 999, borderWidth: 1.4, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={13} color={txt(C, C.lime)} strokeWidth={2.4} /></View> : null}
               </Pressable>
-              {entries.map((l) => (
-                <View key={l.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, paddingLeft: 31, paddingRight: 2 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{l.name}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Pressable onPress={() => editLogQty(l.id, Math.max(0.5, Math.round((l.qty - 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
-                    <Text style={{ minWidth: 22, textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l.qty}</Text>
-                    <Pressable onPress={() => editLogQty(l.id, Math.min(50, Math.round((l.qty + 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
-                  </View>
-                  <Pressable onPress={() => deleteLogEntry(l.id)} accessibilityLabel={t("w.recovery.nutrition.deleteEntry")} hitSlop={6} style={{ padding: 4 }}><ITrash size={17} color={C.ash} /></Pressable>
-                </View>
-              ))}
+              {entries.map(entryRow)}
             </View>
             );
           })}
+          {otherEntries.length > 0 ? (
+            <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, paddingBottom: 6 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 2 }}>
+                <Glyph name={mealGlyph("snack")} size={19} color={C.ash} strokeWidth={5} />
+                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.otherEntries")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{Math.round(otherEntries.reduce((s, l) => s + l.kcal * l.qty, 0))} kcal</Text>
+              </View>
+              {otherEntries.map(entryRow)}
+            </View>
+          ) : null}
         </View>
         {dayLogs.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 16 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
       </ACard>
