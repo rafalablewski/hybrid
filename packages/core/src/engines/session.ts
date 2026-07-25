@@ -3,6 +3,7 @@ import { MOVEMENTS, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
+import { fmtWeight, type WeightUnit } from "../units";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -353,6 +354,30 @@ export function formatCardioPr(
   const per = sportPacePerMeters(p.move) / 1000;
   const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
   return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
+}
+
+/**
+ * One-line summary of a STRENGTH PR, headlining the weight actually moved (#231)
+ * — never the estimated 1RM. One source of truth for the web + mobile PR lines
+ * so the wording and delta math can't drift between them.
+ *
+ * Three shapes, because a record isn't always a heavier bar:
+ *   first ever      → "Barbell Deadlift 100 kg (first!)"
+ *   heavier than before → "Barbell Bench Press 82 kg (+6 kg)"
+ *   same bar, more reps → "Pull-up 88 kg (more reps)"
+ * The last case is why e1RM still DETECTS records — 100 kg × 5 → 100 kg × 8 is
+ * a genuine PR that no weight comparison would ever catch.
+ */
+export function formatStrengthPr(
+  p: { lift: string; topLoad: number; previousTopLoad: number | null },
+  labels: { first: string; moreReps: string },
+  units: WeightUnit = "kg",
+): string {
+  const load = fmtWeight(p.topLoad, units);
+  if (p.previousTopLoad == null) return `${p.lift} ${load} (${labels.first})`;
+  if (p.topLoad > p.previousTopLoad)
+    return `${p.lift} ${load} (+${fmtWeight(p.topLoad - p.previousTopLoad, units)})`;
+  return `${p.lift} ${load} (${labels.moreReps})`;
 }
 
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */

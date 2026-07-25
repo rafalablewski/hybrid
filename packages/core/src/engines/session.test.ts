@@ -18,6 +18,7 @@ import {
   paceSeries,
   headlineRunMove,
   paceClock,
+  formatStrengthPr,
   migrateBlocks,
   canonicalizeBlockNames,
   inferBlockKind,
@@ -368,5 +369,29 @@ describe("set roles (warm-up / cool-down)", () => {
     expect(moveItemTo(arr, 1, 1)).toBe(arr); // same index — no-op
     expect(moveItemTo(arr, 0, 9)).toBe(arr); // out of range — no-op
     expect(arr).toEqual(["a", "b", "c", "d"]); // original untouched
+  });
+});
+
+describe("formatStrengthPr", () => {
+  const labels = { first: "first!", moreReps: "more reps" };
+
+  it("headlines the weight lifted, not the estimated 1RM (#231)", () => {
+    expect(formatStrengthPr({ lift: "Barbell Deadlift", topLoad: 100, previousTopLoad: null }, labels))
+      .toBe("Barbell Deadlift 100 kg (first!)");
+  });
+
+  it("shows the weight gained when the bar got heavier", () => {
+    expect(formatStrengthPr({ lift: "Barbell Bench Press", topLoad: 82, previousTopLoad: 76 }, labels))
+      .toBe("Barbell Bench Press 82 kg (+6 kg)");
+  });
+
+  it("says 'more reps' instead of +0 kg when the record came at the same load", () => {
+    expect(formatStrengthPr({ lift: "Pull-up", topLoad: 88, previousTopLoad: 88 }, labels))
+      .toBe("Pull-up 88 kg (more reps)");
+  });
+
+  it("converts to the athlete's unit", () => {
+    expect(formatStrengthPr({ lift: "Squat", topLoad: 100, previousTopLoad: null }, labels, "lb"))
+      .toBe("Squat 220 lb (first!)");
   });
 });

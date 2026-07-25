@@ -11,10 +11,22 @@ import type { MuscleGroup } from "./types";
 
 export interface PrHit {
   lift: string;
-  /** the new best estimated 1RM (kg, rounded) */
+  /**
+   * The new best estimated 1RM (kg, rounded). This is how a record is DETECTED
+   * — a rep PR (100 kg × 5 → 100 kg × 8) is a real record even though the bar
+   * never got heavier. It is NOT the number to headline: see `topLoad`.
+   */
   e1rm: number;
-  /** the prior best for this lift, or null if it's the first time trained */
+  /** the prior best e1RM for this lift, or null if it's the first time trained */
   previous: number | null;
+  /**
+   * Heaviest ACTUAL working load moved on this lift in this session (kg,
+   * bodyweight-aware). This is the number to SHOW — an athlete reads "your
+   * best" as the weight they actually lifted, not a derived estimate (#231).
+   */
+  topLoad: number;
+  /** the prior heaviest actual load, or null if it's the first time trained */
+  previousTopLoad: number | null;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";
@@ -67,10 +79,21 @@ function bestE1rmInSession(session: LoggedSession, bw?: BodyweightInput): Map<st
 export function newPrsInSession(session: LoggedSession, prior: LoggedSession[], bw?: BodyweightInput): PrHit[] {
   const before = bestE1rmMap(prior, bw);
   const here = bestE1rmInSession(session, bw);
+  // The actual weight on the bar, carried alongside the e1RM that detects the
+  // record — so the clients can headline what was really lifted (#231).
+  const loadBefore = topLoadMap(prior, bw);
+  const loadHere = topLoadMap([session], bw);
   const hits: PrHit[] = [];
   for (const [lift, e1rm] of here) {
     const prev = before.get(lift) ?? null;
-    if (prev == null || e1rm > prev) hits.push({ lift, e1rm, previous: prev });
+    if (prev == null || e1rm > prev)
+      hits.push({
+        lift,
+        e1rm,
+        previous: prev,
+        topLoad: loadHere.get(lift) ?? 0,
+        previousTopLoad: prev == null ? null : (loadBefore.get(lift) ?? null),
+      });
   }
   return hits.sort((a, b) => e1rm_gain(b) - e1rm_gain(a));
 }

@@ -5,7 +5,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   sessionClockTime,
   sessionVolume,
-  blockBestE1rm,
+  blockTopLoad,
+  formatStrengthPr,
   prsForSession,
   e1rmSeries,
   volumeByMuscle,
@@ -173,9 +174,11 @@ export default function SessionDetail() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
-              {b.kind === "strength" && blockBestE1rm(b, bwHere) > 0 && (
+              {/* The heaviest weight actually moved — an athlete reads this as
+                  "what I lifted", so it can't be an estimate (#231). */}
+              {b.kind === "strength" && blockTopLoad(b, bwHere) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>
-                  {fmtWeight(blockBestE1rm(b, bwHere), units)} e1RM
+                  {fmtWeight(blockTopLoad(b, bwHere), units)}
                 </Text>
               )}
             </View>
@@ -225,9 +228,7 @@ export default function SessionDetail() {
 }
 
 const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
-  p.previous == null
-    ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
-    : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
+  formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
 // Renders in the sport's natural unit (metres for swimming/rowing, km
 // otherwise) — one shared core formatter, see formatCardioPr.

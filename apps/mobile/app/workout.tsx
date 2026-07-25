@@ -14,7 +14,8 @@ import {
   velocityProfiles,
   planProgramToday,
   sessionVolume,
-  blockBestE1rm,
+  blockTopLoad,
+  formatStrengthPr,
   newPrsInSession,
   newCardioPrsInSession,
   liveSessionStats,
@@ -872,15 +873,16 @@ export default function Workout() {
     const prs = newPrsInSession(finished, prior.current, bw);
     const cardioPrs = newCardioPrsInSession(finished, prior.current);
     const prSet = new Set(prs.map((p) => p.lift));
+    // Per-lift bests = the HEAVIEST weight actually moved (#231), never an e1RM.
     const bestMap = new Map<string, number>();
     for (const b of blocks)
       if (b.kind === "strength") {
-        const e = Math.round(blockBestE1rm(b, bodyweightKg));
-        if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+        const w = blockTopLoad(b, bodyweightKg);
+        if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
       }
     const bests: ShareBest[] = [...bestMap.entries()]
-      .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
-      .sort((a, b) => b.e1rm - a.e1rm);
+      .map(([name, weight]) => ({ name, weight, pr: prSet.has(name) }))
+      .sort((a, b) => b.weight - a.weight);
 
     setSummary({
       sessionId,
@@ -1650,9 +1652,15 @@ function Summary({
       : t("summary.share");
 
   const prLine = (p: PrHit) =>
-    p.previous == null
-      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
-      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
+    formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
+  // What a PR row says on the right: the weight gained, or "more reps" when the
+  // record came at the same load (a "+0 kg" would read as no progress at all).
+  const prDelta = (p: PrHit) =>
+    p.previousTopLoad == null
+      ? t("summary.firstTime")
+      : p.topLoad > p.previousTopLoad
+        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
+        : t("summary.morePrReps");
 
   const shareText = [
     firstEver ? t("share.firstWorkout") : null,
@@ -1663,7 +1671,7 @@ function Summary({
       : cardioPrs[0]
         ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
         : bests[0]
-          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}`
+          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
           : null,
     t("share.tracked"),
   ]
@@ -1675,9 +1683,9 @@ function Summary({
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(summary.blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
+    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
   const prHeadline = prs.length > 0
     ? `🏆 ${prs.length} ${t("summary.newPrs")}`

@@ -17,7 +17,9 @@ const MUSCLE_LABEL: Record<string, string> = {
 };
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
-export type ShareBest = { name: string; e1rm: number; pr?: boolean };
+/** A lift's best in the session — the HEAVIEST weight actually moved (#231),
+ *  not an estimated 1RM. */
+export type ShareBest = { name: string; weight: number; pr?: boolean };
 export type ShareStats = {
   title: string;
   minutes: number;
@@ -56,7 +58,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
               <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>
                 {b.pr ? "🏆 " : ""}{b.name}
               </Text>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.e1rm, units)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
             </View>
           ))}
         </View>
@@ -104,7 +106,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
             {stats.bests.slice(0, 5).map((b) => (
               <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.pr ? "🏆 " : ""}{b.name}</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: width * 0.042, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.e1rm, units)}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: width * 0.042, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
               </View>
             ))}
           </View>
@@ -389,7 +391,7 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
   return [
     `\u{1F4C8} ${t("recap.title")} — HYBRID`,
     `${recap.sessions} ${t("recap.sessions")} – ${fmtTonnage(recap.volume, units)} – ${recap.prs.length} ${t("recap.prs")}`,
-    recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].e1rm, units)}` : null,
+    recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].topLoad, units)}` : null,
     t("share.tracked"),
   ]
     .filter(Boolean)

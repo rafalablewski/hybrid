@@ -269,8 +269,10 @@ function Full() {
               <View style={{ marginTop: 14 }}>
                 {recap.prs.slice(0, 4).map((p) => (
                   <View key={p.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.lift} e1RM</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{p.e1rm}kg{p.previous == null ? "" : ` – +${p.e1rm - p.previous}`}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.lift}</Text>
+                    {/* The weight actually lifted (#231) — this row and the session
+                        summary describe the same PR, so they must agree. */}
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{p.topLoad}kg{p.previousTopLoad == null || p.topLoad <= p.previousTopLoad ? "" : ` – +${p.topLoad - p.previousTopLoad}`}</Text>
                   </View>
                 ))}
               </View>

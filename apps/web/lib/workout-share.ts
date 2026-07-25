@@ -6,7 +6,9 @@
 // PNG, and where canvas/share is unavailable at all, to a plain text share.
 import { brand, fmtTonnage, fmtWeight, storyStyle, type StoryStyle, type StoryStyleId, type WeightUnit } from "@hybrid/core";
 
-export type ShareBest = { name: string; e1rm: number; pr?: boolean };
+/** A lift's best in the session — the HEAVIEST weight actually moved (#231),
+ *  not an estimated 1RM. */
+export type ShareBest = { name: string; weight: number; pr?: boolean };
 export type ShareStats = {
   title: string;
   minutes: number;
@@ -38,7 +40,7 @@ export function shareText(stats: ShareStats, units: WeightUnit, t: (k: string) =
   return [
     stats.firstEver ? "My first HYBRID workout 💪" : `💪 ${stats.title || "Workout"} — done.`,
     `${stats.minutes} min – ${stats.sets} ${t("w.train.logger.sets")} – ${fmtTonnage(stats.volume, units)}`,
-    top ? `🏆 ${top.name} ${fmtWeight(top.e1rm, units)}` : null,
+    top ? `🏆 ${top.name} ${fmtWeight(top.weight, units)}` : null,
     "Tracked with HYBRID.",
   ]
     .filter(Boolean)
@@ -104,7 +106,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
   });
   ctx.textAlign = "left";
 
-  // "Today's bests" list (est. 1RM), PR-marked.
+  // "Today's bests" list (heaviest actual lift), PR-marked.
   let y = 1010;
   if (stats.bests.length) {
     ctx.strokeStyle = COL.line;
@@ -124,7 +126,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
       ctx.fillText(`${b.pr ? "🏆 " : ""}${b.name}`, PAD, y);
       ctx.textAlign = "right";
       ctx.fillStyle = b.pr ? COL.lime : COL.chalk;
-      ctx.fillText(fmtWeight(b.e1rm, units), W - PAD, y);
+      ctx.fillText(fmtWeight(b.weight, units), W - PAD, y);
       ctx.textAlign = "left";
       y += 78;
     });

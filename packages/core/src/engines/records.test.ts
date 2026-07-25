@@ -50,6 +50,28 @@ describe("personal records", () => {
     expect(newPrsInSession(s3, [s1, s2])).toEqual([]);
   });
 
+  it("a PR carries the ACTUAL weight lifted alongside the e1RM that found it", () => {
+    // #231 — the number to SHOW is the weight on the bar, not the estimate.
+    const first = newPrsInSession(s1, [])[0]!;
+    expect(first.topLoad).toBe(100);
+    expect(first.previousTopLoad).toBeNull();
+    expect(first.e1rm).toBe(Math.round(e1rm(100, 5))); // ~117, deliberately NOT the headline
+
+    const beat = newPrsInSession(s2, [s1])[0]!;
+    expect(beat.topLoad).toBe(120);
+    expect(beat.previousTopLoad).toBe(100);
+  });
+
+  it("a rep PR at the same weight reports an unchanged topLoad", () => {
+    // 100 kg × 5 → 100 kg × 8: a genuine record no weight comparison would find,
+    // so the e1RM rises while the actual load stays put.
+    const more = session("4", "2026-05-24T10:00:00.000Z", [squat("100", "8")]);
+    const hit = newPrsInSession(more, [s1])[0]!;
+    expect(hit.e1rm).toBeGreaterThan(Math.round(e1rm(100, 5)));
+    expect(hit.topLoad).toBe(100);
+    expect(hit.previousTopLoad).toBe(100);
+  });
+
   it("prsForSession only compares against earlier-dated sessions", () => {
     const all = [s1, s2, s3];
     expect(prsForSession(all, "2")).toHaveLength(1); // beat s1

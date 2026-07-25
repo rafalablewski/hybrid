@@ -18,7 +18,7 @@ import { fs, space,
   storyStyle,
   type StoryStyle,
   type StoryStyleId,
-  blockBestE1rm,
+  blockTopLoad,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
@@ -399,17 +399,18 @@ export default function AuroraLogger({
       };
       const prs = newPrsInSession(finished, sessions, bw);
       const cardioPrs = newCardioPrsInSession(finished, sessions);
-      // Per-lift est-1RM bests (PR-marked) for the share card — same shape mobile uses.
+      // Per-lift bests (PR-marked) for the share card — the HEAVIEST weight
+      // actually moved (#231), never an e1RM. Same shape mobile uses.
       const prSet = new Set(prs.map((p) => p.lift));
       const bestMap = new Map<string, number>();
       for (const b of cleanBlocks)
         if (b.kind === "strength") {
-          const e = Math.round(blockBestE1rm(b, bodyweightKg));
-          if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+          const w = blockTopLoad(b, bodyweightKg);
+          if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
         }
       const bests: ShareBest[] = [...bestMap.entries()]
-        .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
-        .sort((a, b) => b.e1rm - a.e1rm);
+        .map(([name, weight]) => ({ name, weight, pr: prSet.has(name) }))
+        .sort((a, b) => b.weight - a.weight);
       const minutes = Math.max(1, Math.round((Date.parse(payload.completedAt) - Date.parse(payload.startedAt)) / 60000));
       setSaving(false);
       stop(); // freeze the clock — the workout's done, the celebration is next
@@ -673,8 +674,14 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
     }
   }, [milestone]);
 
+  // The weight gained, or "more reps" when the record came at the same load —
+  // a "+0 kg" would read as no progress at all.
   const prLine = (p: PrHit) =>
-    p.previous == null ? t("w.train.logger.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`;
+    p.previousTopLoad == null
+      ? t("w.train.logger.firstTime")
+      : p.topLoad > p.previousTopLoad
+        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
+        : t("summary.morePrReps");
   const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
@@ -684,7 +691,7 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prLine(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioLine(p), right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
   const prHeadline = prs.length > 0
     ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`

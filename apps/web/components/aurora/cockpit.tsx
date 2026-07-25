@@ -264,8 +264,10 @@ export default function AuroraCockpit({
               <div style={{ marginTop: 14, paddingTop: 4 }}>
                 {recap.prs.slice(0, 4).map((p) => (
                   <div key={p.lift} style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 0", borderTop: `1px solid ${C("line")}` }}>
-                    <span>{p.lift} e1RM</span>
-                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.e1rm}kg{p.previous == null ? "" : ` – +${p.e1rm - p.previous}`}</span>
+                    <span>{p.lift}</span>
+                    {/* The weight actually lifted (#231) — this row and the session
+                        summary describe the same PR, so they must agree. */}
+                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.topLoad}kg{p.previousTopLoad == null || p.topLoad <= p.previousTopLoad ? "" : ` – +${p.topLoad - p.previousTopLoad}`}</span>
                   </div>
                 ))}
               </div>

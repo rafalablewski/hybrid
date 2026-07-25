@@ -18,6 +18,7 @@ import {
   funFactText,
   sessionVolume,
   blockBestE1rm,
+  blockTopLoad,
   fmtWeight,
   fmtTonnage,
   paceClock,
@@ -129,31 +130,46 @@ export function WorkoutWrapped({
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const signature = sessionSignature(session);
 
+  // Per-lift bests = the HEAVIEST weight actually moved (#231), never an e1RM.
   const bestMap = new Map<string, number>();
   for (const b of session.blocks)
     if (b.kind === "strength") {
-      const e = Math.round(blockBestE1rm(b, bwHere));
-      if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+      const w = blockTopLoad(b, bwHere);
+      if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
     }
   const prSet = new Set(prs.map((p) => p.lift));
-  const bests: ShareBest[] = [...bestMap.entries()].map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) })).sort((a, b) => b.e1rm - a.e1rm);
-  const standing = cohort && bests[0] && bwHere ? liftStanding(bests[0].e1rm, bwHere, cohort) : null;
+  const bests: ShareBest[] = [...bestMap.entries()].map(([name, weight]) => ({ name, weight, pr: prSet.has(name) })).sort((a, b) => b.weight - a.weight);
+  // "Where you stand" is a RELATIVE-STRENGTH percentile — the benchmark norms
+  // are built on estimated 1RM, so this one keeps e1RM on purpose.
+  const topE1rm = session.blocks.reduce((m, b) => (b.kind === "strength" ? Math.max(m, Math.round(blockBestE1rm(b, bwHere))) : m), 0);
+  const standing = cohort && topE1rm > 0 && bwHere ? liftStanding(topE1rm, bwHere, cohort) : null;
 
   const heroBig = cel
-    ? cel.kind === "strength" ? fmtWeight(cel.e1rm, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
+    ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
     : fmtTonnage(volume, units);
+  // A record isn't always a heavier bar — more reps at the same load is a real
+  // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
-    ? cel.kind === "strength" ? `${cel.lift} — ${cel.firstEver ? t("summary.firstEver") : `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`}` : cel.move
+    ? cel.kind === "strength" ? `${cel.lift} — ${cel.firstEver ? t("summary.firstEver") : cel.repPr ? t("summary.morePrReps") : `+${fmtWeight(cel.topLoad - (cel.previousTopLoad ?? 0), units)}`}` : cel.move
     : session.title;
+
+  // What a PR row says on the right: the weight gained, or "more reps" when the
+  // record came at the same load (a "+0 kg" would read as no progress at all).
+  const prDelta = (p: { topLoad: number; previousTopLoad: number | null }) =>
+    p.previousTopLoad == null
+      ? t("summary.firstTime")
+      : p.topLoad > p.previousTopLoad
+        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
+        : t("summary.morePrReps");
 
   // ── story slides for the share sheet (trophy + signature lead) ──
   const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(session.blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
+    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: p.kind === "distance" ? `${p.move} ${p.value} km` : p.move, right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
   const prHeadline = prs.length > 0 ? `🏆 ${prs.length} ${t("summary.newPrs")}` : cardioPrs.length > 0 ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}` : t("summary.todaysBests");
   const bespoke: StorySlide[] = [
