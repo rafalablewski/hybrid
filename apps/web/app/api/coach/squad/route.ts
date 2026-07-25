@@ -11,6 +11,7 @@ import {
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
+import { publishExerciseCatalog } from "@/lib/cache";
 
 // The squad monitor — one row per ACTIVE client with the numbers a coach scans
 // every morning: readiness (RAG), training-load ACWR + band, injury-risk band,
@@ -55,6 +56,11 @@ export async function GET(request: Request) {
   };
   const sessionsByUser = groupBy(allRows);
   const signalsByUser = groupBy(allSigRows);
+
+  // Engines resolve exercise names against the movement catalog — publish the
+  // admin library once for the whole roster, or library-named lifts contribute
+  // zero tissue load and every athlete reads as untrained.
+  await publishExerciseCatalog();
 
   const squad = links.map((l) => {
       const rows = (sessionsByUser.get(l.clientId) ?? []).slice(0, 120); // already desc

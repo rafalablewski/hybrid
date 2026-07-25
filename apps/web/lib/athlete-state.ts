@@ -9,6 +9,7 @@ import {
   type Signal,
 } from "@hybrid/core";
 import { activeCalibration } from "@/lib/calibration";
+import { publishExerciseCatalog } from "@/lib/cache";
 
 /**
  * Compute an athlete's Performance State + injury risk from their stored
@@ -16,6 +17,10 @@ import { activeCalibration } from "@/lib/calibration";
  * this reads raw rows, so only call it after a relationship/role check.
  */
 export async function athleteState(userId: string) {
+  // The engines resolve logged exercise names against the movement catalog —
+  // publish the admin library first or every library-named lift attributes to no
+  // tissue at all (zero fatigue / injury load).
+  await publishExerciseCatalog();
   const [rows, sigRows] = await Promise.all([
     // Archived sessions are excluded from analytics (the athlete hid them).
     prisma.session.findMany({ where: { userId, archivedAt: null }, orderBy: { startedAt: "desc" }, take: 30 }),

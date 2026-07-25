@@ -2,7 +2,7 @@ import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
 import { blockBestE1rm, blockTopLoad, setsForVolume, effectiveSetLoadKg } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { gymExercise, loadUnitCount } from "../exercise-db";
-import { MOVEMENTS } from "./movements";
+import { musclesFor } from "./movements";
 import type { MuscleGroup } from "./types";
 
 // Personal-record detection. Pure helpers shared by the post-workout summary
@@ -236,8 +236,8 @@ export function volumeByMuscle(
   const map = new Map<MuscleGroup, number>();
   for (const b of blocks) {
     if (b.kind !== "strength") continue;
-    const muscles = MOVEMENTS[b.name]?.muscles;
-    if (!muscles || muscles.length === 0) continue;
+    const muscles = musclesFor(b.name);
+    if (muscles.length === 0) continue;
     // A hold or carry's "reps" are seconds/metres — never tonnage (mirrors
     // sessionVolume), so a plank can't gain bodyweight × seconds of "work".
     if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") continue;

@@ -53,11 +53,24 @@ describe("exerciseBucket", () => {
     expect(exerciseBucket("Mixed Metcon", "conditioning")).toBe("engine");
   });
 
-  it("resolves free-typed names by keyword, Olympic family first", () => {
-    expect(exerciseBucket("Clean Extension")).toBe("olympic");
-    expect(exerciseBucket("Eccentric Snatch Deadlift")).toBe("olympic"); // snatch beats deadlift
-    expect(exerciseBucket("Press")).toBe("push");
+  it("prefers a RESOLVED movement over the keyword guess", () => {
+    // These names used to fall through to the keyword heuristic because nothing
+    // in the catalog matched them — which also meant they logged zero load. They
+    // now resolve (see the prescribed-name bridges in GYM_ALIASES), so they
+    // bucket like the lift they actually ARE, agreeing with their canonical
+    // entry instead of with a regex.
+    expect(exerciseBucket("Clean Extension")).toBe("olympic"); // -> Clean Pull
+    expect(exerciseBucket("Press")).toBe("push"); // -> Overhead Press
+    // A snatch-grip pull from the floor is a hinge, and its canonical entry
+    // buckets as posterior — so the eccentric/slow variants agree with it rather
+    // than being pulled into "olympic" by the word "snatch".
+    expect(exerciseBucket("Snatch-Grip Deadlift")).toBe("posterior");
+    expect(exerciseBucket("Eccentric Snatch Deadlift")).toBe("posterior");
+  });
+
+  it("still falls back to keywords for a genuinely unknown name", () => {
     expect(exerciseBucket("Paused Competition Deadlift")).toBe("posterior");
+    expect(exerciseBucket("Zercher Snatch Complex")).toBe("olympic"); // snatch beats nothing else
     expect(exerciseBucket("Some Obscure Movement")).toBe("other");
   });
 });

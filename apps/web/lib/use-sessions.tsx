@@ -2,12 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { LoggedSession } from "@hybrid/core";
+import { ensureExerciseCatalog } from "./exercise-catalog";
 
 /** Query key for the signed-in user's (non-archived) sessions. Mutations that
  *  change sessions should invalidate this key to revalidate every consumer. */
 export const sessionsKey = ["sessions"] as const;
 
 async function fetchSessions(): Promise<LoggedSession[]> {
+  // Publish the exercise library to the engines BEFORE the sessions land, so
+  // every muscle-attribution engine (fatigue, injury risk, volume, landmarks,
+  // records) can resolve a lift logged under a library name. Awaited here rather
+  // than fired-and-forgotten: it makes the ordering a guarantee, not a race.
+  await ensureExerciseCatalog();
   const res = await fetch("/api/sessions");
   if (res.ok) {
     const data = (await res.json()) as { sessions?: LoggedSession[] };

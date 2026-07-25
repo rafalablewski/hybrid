@@ -1,11 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "jsx": "react-jsx",
     "noEmit": true,
-    // the e1rm-headline guard reads apps/ off disk, so it needs node builtins
-    "types": ["node"]
+    // The architecture guards (catalog attribution, e1rm-headline) read source
+    // files off disk, so the test build needs Node builtins.
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

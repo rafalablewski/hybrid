@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart } from "@hybrid/core";
-import { sanitizePersonaAccess } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -42,6 +42,7 @@ async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /** Sessions for React Query — THROWS on failure (see ApiError). */
 export async function querySessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
+  await ensureExerciseCatalog();
   const qs = opts?.archived ? "?archived=1" : "";
   const data = await fetchJson<{ sessions?: LoggedSession[] }>(`/api/sessions${qs}`);
   return data.sessions ?? [];
@@ -82,6 +83,30 @@ export async function fetchCustomExercises(): Promise<LibraryMovement[]> {
   }
 }
 
+// Publishes the admin-managed exercise library to the ENGINES (core's movement
+// registry) — the mobile twin of web's lib/exercise-catalog.ts. Distinct from
+// `useExercises()`, which feeds the PICKER: without this, a lift logged under a
+// library name ("Barbell Deadlift", "Pull-up", "Dumbbell Bulgarian Split Squat")
+// resolved to no Movement and added NOTHING to fatigue, ACWR, injury risk,
+// volume-by-muscle, landmarks or muscle records — the tissue read as untrained.
+//
+// Ordering matters: the engines run on SESSION data, so both session fetchers
+// await this before resolving. By the time a screen recomputes, the catalog is
+// already published — no render race, no per-screen memo-dependency churn.
+let catalogPending: Promise<void> | null = null;
+
+/** Ensure the engine catalog is published. Idempotent; safe to await anywhere. */
+export function ensureExerciseCatalog(): Promise<void> {
+  if (!catalogPending) {
+    // fetchCustomExercises swallows its own errors and degrades to [] — an empty
+    // list simply leaves the engines on the built-in catalog.
+    catalogPending = fetchCustomExercises()
+      .then((custom) => { if (custom.length) setExerciseCatalog(custom); })
+      .catch(() => {});
+  }
+  return catalogPending;
+}
+
 // Admin localization overrides, layered over the shipped strings. Empty when
 // signed-out / none authored, so the app always falls back to the baseline.
 export async function fetchTranslationOverrides(): Promise<TranslationOverrides> {
@@ -97,6 +122,7 @@ export async function fetchTranslationOverrides(): Promise<TranslationOverrides>
 
 export async function fetchSessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
   try {
+    await ensureExerciseCatalog();
     const qs = opts?.archived ? "?archived=1" : "";
     const res = await fetchWithTimeout(`${API_URL}/api/sessions${qs}`, { headers: await authHeaders() });
     if (!res.ok) return [];
@@ -1549,5 +1575,30 @@ export async function replyToCheckin(checkinId: string, coachReply: string): Pro
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// ---- coach roster (analytics) ----
+// One row per ACTIVE, consented client with stats computed server-side. Same
+// shape + endpoint the web coach analytics reads (web lib/use-roster.ts), so the
+// two clients can't drift on what a roster row means.
+export type RosterRow = {
+  linkId: string;
+  name: string;
+  email: string;
+  sessions: number;
+  lastSession: string | null;
+  readiness: number | null;
+  adherence: number;
+  volume: number;
+};
+
+export async function fetchRoster(): Promise<RosterRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/coach/roster`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { roster?: RosterRow[] }).roster ?? [];
+  } catch {
+    return [];
   }
 }

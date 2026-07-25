@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { makeT, makeTWithOverrides, allTranslationKeys, baselineString } from "./i18n";
+import { analyticsScopesFor, analyticsScopeLabelKey, analyticsScopePrivacyKey } from "./nav";
 
 describe("makeTWithOverrides", () => {
   it("is identical to makeT when no overrides are given", () => {
@@ -31,5 +32,30 @@ describe("makeTWithOverrides", () => {
     expect(keys).toContain("nav.today");
     expect(keys.length).toBe(new Set(keys).size);
     expect([...keys]).toEqual([...keys].sort());
+  });
+});
+
+describe("Analytics strings are localized on every client", () => {
+  // Analytics ships on BOTH web and mobile (parity rule), off the SAME keys —
+  // a key that only resolves in English would leave one client half-translated.
+  it("resolves every scope label + privacy note in EN/PL/DE", () => {
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const scope of analyticsScopesFor("admin")) {
+        for (const key of [analyticsScopeLabelKey(scope), analyticsScopePrivacyKey(scope)]) {
+          expect(t(key), `${lang}: ${key}`).not.toBe(key);
+        }
+      }
+      expect(t("analytics.subtitle"), `${lang}: analytics.subtitle`).not.toBe("analytics.subtitle");
+    }
+  });
+
+  it("keeps the dashboard body strings resolvable too (shared w.home.analytics.* bundle)", () => {
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const key of ["w.home.analytics.sessions", "w.home.analytics.clients", "w.home.analytics.totalUsers"]) {
+        expect(t(key), `${lang}: ${key}`).not.toBe(key);
+      }
+    }
   });
 });

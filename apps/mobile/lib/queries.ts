@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName } from "@hybrid/core";
+import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog } from "@hybrid/core";
 import { querySessions, querySignals, fetchCustomExercises } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
@@ -54,6 +54,10 @@ export function useExercises() {
   );
   const aliases = useMemo(() => aliasNames(custom ?? []), [custom]);
   const categoryByName = useMemo(() => categoriesByName(custom ?? []), [custom]);
+  // Keep the ENGINE catalog in step with the picker's — mirrors web's
+  // useExercises(). The engines' first load is guaranteed by the session fetchers
+  // (they await ensureExerciseCatalog); this tops it up on a later refetch.
+  useEffect(() => { if (custom) setExerciseCatalog(custom); }, [custom]);
   return { movements, catalog, aliases, categoryByName };
 }
 
