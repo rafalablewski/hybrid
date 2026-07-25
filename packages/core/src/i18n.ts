@@ -550,6 +550,13 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.weekLbl": "Week",
     "histview.ofLbl": "of",
     "running.paceTrendHint": "Log this run a few times to see a pace trend.",
+    // Analytics dashboard (MOBILE-ONLY — see MOBILE_ONLY_NAV in nav.ts). The
+    // body strings live in the w.home.analytics.* bundle, shared with the
+    // dashboard's original web build; these are the screen chrome.
+    "analytics.subtitle": "Your training, your roster and the platform — charted from real logs.",
+    "analytics.scope.athlete": "You",
+    "analytics.scope.coach": "Roster",
+    "analytics.scope.operator": "Platform",
   },
   pl: {
     "nav.today": "Dziś",
@@ -1067,6 +1074,10 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.weekLbl": "Tydzień",
     "histview.ofLbl": "z",
     "running.paceTrendHint": "Zapisz ten bieg kilka razy, aby zobaczyć trend tempa.",
+    "analytics.subtitle": "Twoje treningi, Twoi podopieczni i platforma — na wykresach z prawdziwych zapisów.",
+    "analytics.scope.athlete": "Ty",
+    "analytics.scope.coach": "Podopieczni",
+    "analytics.scope.operator": "Platforma",
   },
   de: {
     "nav.today": "Heute",
@@ -1584,6 +1595,10 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.weekLbl": "Woche",
     "histview.ofLbl": "von",
     "running.paceTrendHint": "Protokolliere diesen Lauf ein paar Mal, um einen Tempo-Trend zu sehen.",
+    "analytics.subtitle": "Dein Training, dein Kader und die Plattform — aus echten Protokollen gezeichnet.",
+    "analytics.scope.athlete": "Du",
+    "analytics.scope.coach": "Kader",
+    "analytics.scope.operator": "Plattform",
   },
 };
 

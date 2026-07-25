@@ -143,6 +143,30 @@ export const NAV_ITEMS: NavItem[] = [
 const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2, admin: 3 };
 const ALL_PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 
+/** Which client is asking for the nav. Only used to drop surfaces a client
+ *  deliberately doesn't host (see {@link MOBILE_ONLY_NAV}); omitted = no filter. */
+export type NavClient = "web" | "mobile";
+
+/**
+ * Nav ids that are MOBILE-ONLY by product decision — analytics is mobile-first.
+ *
+ * The web must render NEITHER a nav entry NOR a screen for these. Not even a
+ * "get the app" pointer: a pointer is still a page opening on the web, and it
+ * left mobile→web→mobile round-trips (the mobile springboard treats an id with
+ * no route as web-only and opens the web app, which then told you to go back to
+ * the phone). Mobile owns these surfaces outright.
+ *
+ * This is the one sanctioned exception to the web↔mobile parity rule, so it
+ * lives HERE — shared — and the exception is recorded in `capabilities.ts`
+ * rather than being an accident of each client's routing table.
+ */
+export const MOBILE_ONLY_NAV: readonly string[] = ["analytics", "endurance"];
+
+/** Whether a nav id is a mobile-only surface the web must not host. */
+export function isMobileOnlyNav(id: string): boolean {
+  return MOBILE_ONLY_NAV.includes(id);
+}
+
 /**
  * Admin override of which persona each nav item is visible from — a sparse
  * `{ navId: minPersona }` map layered over the code `minPersona` defaults, so an
@@ -206,10 +230,12 @@ export function navForPersonaWithLocks(
   persona: Persona,
   items: NavItem[] = NAV_ITEMS,
   access?: PersonaAccess,
+  client?: NavClient,
 ): NavItemLocked[] {
   const rank = PERSONA_RANK[persona];
   const athleteRank = PERSONA_RANK.athlete;
-  return items.flatMap((it): NavItemLocked[] => {
+  const hosted = client === "web" ? items.filter((i) => !isMobileOnlyNav(i.id)) : items;
+  return hosted.flatMap((it): NavItemLocked[] => {
     const minRank = PERSONA_RANK[effectiveMinPersona(it, access)];
     if (minRank <= rank) return [{ item: it, locked: false }]; // accessible
     // Above the persona's rank: show it LOCKED only if it's a Full (athlete-tier)
@@ -224,8 +250,9 @@ export function navForPersonaWithLocks(
 export function groupedNavWithLocks(
   persona: Persona,
   access?: PersonaAccess,
+  client?: NavClient,
 ): { group: NavGroup; items: NavItemLocked[] }[] {
-  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access);
+  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access, client);
   return NAV_GROUP_ORDER.map((group) => ({ group, items: withLocks.filter((x) => x.item.group === group) })).filter(
     (g) => g.items.length > 0,
   );

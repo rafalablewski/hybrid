@@ -167,7 +167,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
   // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒) here rather
   // than hidden, so the whole toolkit is visible; a locked tile upsells.
-  const groups = groupedNavWithLocks(persona, access)
+  const groups = groupedNavWithLocks(persona, access, "web")
     .map((g) => ({ ...g, items: g.items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
     .filter((g) => g.items.length > 0);
 

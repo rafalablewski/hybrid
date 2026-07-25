@@ -284,7 +284,7 @@ export default function AuroraCockpit({
           </span>
           <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
           <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
-          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} last />
+          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono last />
         </div>
 
         {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
@@ -391,7 +391,6 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </div>
-              <button onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.tab.endurance")} →</button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>
         )}
@@ -472,13 +471,17 @@ function Watch({ label, value, color }: { label: string; value: string; color?: 
   );
 }
 
-function Mod({ dot, label, value, onClick, mono, last }: { dot: string; label: string; value: string; onClick: () => void; mono?: boolean; last?: boolean }) {
+function Mod({ dot, label, value, onClick, mono, last }: { dot: string; label: string; value: string; onClick?: () => void; mono?: boolean; last?: boolean }) {
+  // No `onClick` = this module has no destination on this client (e.g. Endurance,
+  // whose screen is mobile-only). Render the value as plain text — a static row,
+  // not a button with an arrow that goes nowhere.
+  const Tag = onClick ? "button" : "div";
   return (
-    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
+    <Tag onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: onClick ? "pointer" : "default", color: C("chalk"), textAlign: "left" }}>
       <span style={{ width: 7, height: 7, borderRadius: 5, background: dot, flex: "none" }} />
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</span>
-      <span style={{ marginLeft: "auto", fontWeight: mono ? 500 : 700, fontSize: mono ? fs.caption : fs.body, fontFamily: mono ? "var(--font-mono)" : "var(--font-display)", color: mono ? C("ash") : C("chalk") }}>{value} →</span>
-    </button>
+      <span style={{ marginLeft: "auto", fontWeight: mono ? 500 : 700, fontSize: mono ? fs.caption : fs.body, fontFamily: mono ? "var(--font-mono)" : "var(--font-display)", color: mono ? C("ash") : C("chalk") }}>{onClick ? `${value} →` : value}</span>
+    </Tag>
   );
 }
 
