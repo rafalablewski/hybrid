@@ -86,9 +86,19 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
     expect(loadUnitCount("Goblet Squat")).toBe(2); // documented heuristic edge
   });
 
-  it("single-arm (unilateral) dumbbell work logs one bell", () => {
-    expect(loadUnitCount("DB Row")).toBe(1); // unilateral
-    expect(loadUnitCount("Concentration Curl")).toBe(1); // unilateral
+  it("single-ARM (upper-body unilateral) dumbbell work logs one bell", () => {
+    expect(loadUnitCount("DB Row")).toBe(1); // one-arm row
+    expect(loadUnitCount("Concentration Curl")).toBe(1); // one-arm curl
+  });
+
+  it("single-LEG (lower-body unilateral) dumbbell work still counts two bells", () => {
+    // The leg is what works one side at a time; both hands still hold a bell,
+    // so 100 kg × 1 rep is 200 kg of tonnage, not 100.
+    expect(loadUnitCount("Bulgarian Split Squat")).toBe(2);
+    expect(loadUnitCount("Walking Lunge")).toBe(2);
+    expect(loadUnitCount("Reverse Lunge")).toBe(2);
+    expect(loadUnitCount("Step-Up")).toBe(2);
+    expect(loadUnitCount("Single-Leg RDL")).toBe(2);
   });
 
   it("a single kettlebell and an unknown non-dumbbell lift both count one", () => {
@@ -103,6 +113,8 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
     expect(loadUnitCount("Dumbbell Thruster")).toBe(2);
     expect(loadUnitCount("DB Snatch")).toBe(2);
     expect(loadUnitCount("Dumbbell Devil Press")).toBe(2);
+    // A custom single-LEG dumbbell lift is two bells too (both hands loaded).
+    expect(loadUnitCount("Dumbbell Bulgarian Split Squat")).toBe(2);
   });
 
   it("a CUSTOM single-arm / concentration dumbbell lift stays one bell", () => {

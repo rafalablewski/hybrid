@@ -431,9 +431,17 @@ export function gymExercise(name: string): GymExercise | undefined {
  * How many loaded implements a single rep moves — for VOLUME/tonnage only. A
  * bilateral dumbbell lift is performed with TWO dumbbells, one per hand, each
  * carrying the entered (per-bell) load, so a rep moves twice the number on the
- * bell: 24 kg dumbbells × 10 reps = 480 kg of tonnage, not 240. Single-arm
- * (unilateral) dumbbell work logs one bell per set, and every other implement
- * (barbell, machine, cable, a single kettlebell…) moves one unit.
+ * bell: 24 kg dumbbells × 10 reps = 480 kg of tonnage, not 240. Every other
+ * implement (barbell, machine, cable, a single kettlebell…) moves one unit.
+ *
+ * The subtlety is UNILATERAL dumbbell work. What matters for tonnage is how
+ * many HANDS hold a bell, not which limb works one side at a time:
+ *  - Single-ARM upper-body work (a one-arm DB row, a concentration curl) holds
+ *    one bell per set → 1.
+ *  - Single-LEG lower-body work (a Bulgarian split squat, a walking lunge, a
+ *    single-leg RDL) is unilateral at the LEG but still holds a dumbbell in
+ *    EACH hand → 2. Marking these 1 halved their tonnage (100 kg × 1 read 100,
+ *    not 200). The movement PATTERN tells the two apart.
  *
  * This scales tonnage ONLY. e1RM, rep-maxes and PRs deliberately stay
  * per-implement (a dumbbell 1RM is quoted per bell, and a cross-lift 1RM board
@@ -442,16 +450,24 @@ export function gymExercise(name: string): GymExercise | undefined {
  *
  * A CUSTOM / free-text lift the catalog doesn't know (the picker's "+ …" add)
  * falls back to its NAME: anything that reads as a bilateral dumbbell move —
- * "Dumbbell Thruster", "DB Snatch" — is done with two bells, so its tonnage
- * counts both. Single-arm phrasing ("Single-Arm DB Row", a concentration curl)
- * stays one bell, matching how the catalogued unilateral lifts behave.
+ * "Dumbbell Thruster", "DB Snatch", a "Dumbbell Bulgarian Split Squat" — is
+ * done with two bells, so its tonnage counts both. Only single-ARM phrasing
+ * ("Single-Arm DB Row", a concentration curl) stays one bell.
  */
+// Lower-body patterns: the working limb is a LEG, so even a single-leg variant
+// keeps a dumbbell in each hand (two bells). Upper-body single-arm work is the
+// only unilateral case that moves one bell.
+const LOWER_BODY_PATTERNS = new Set<GymPattern>(["squat", "hinge", "lunge"]);
 const DUMBBELL_IN_NAME = /\bdumbbells?\b|\bdb\b/i;
-const UNILATERAL_IN_NAME = /\b(?:single|one|1)[\s-]?arm(?:ed)?\b|\bunilateral\b|\bconcentration\b/i;
+const UNILATERAL_IN_NAME = /\b(?:single|one|1)[\s-]?arm(?:ed)?\b|\bconcentration\b/i;
 
 export function loadUnitCount(name: string): number {
   const e = gymExercise(name);
-  if (e) return e.equipment === "dumbbell" && !e.unilateral ? 2 : 1;
+  if (e) {
+    if (e.equipment !== "dumbbell") return 1;
+    // Bilateral, or unilateral at the leg (both hands loaded) → two bells.
+    return !e.unilateral || LOWER_BODY_PATTERNS.has(e.pattern) ? 2 : 1;
+  }
   return DUMBBELL_IN_NAME.test(name) && !UNILATERAL_IN_NAME.test(name) ? 2 : 1;
 }
 
