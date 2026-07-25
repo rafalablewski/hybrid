@@ -66,7 +66,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
       <View style={{ marginTop: 20 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.muscles")}</Text>
         {/* the front/back body-map — the visual, then the ranked bars below */}
-        <AuroraBodyMap activation={a.activation} t={t} />
+        <AuroraBodyMap name={name} t={t} />
         <Group C={C} label={t("w.analyze.exp.anatomy.primary")} rows={a.primary} t={t} />
         <Group C={C} label={t("w.analyze.exp.anatomy.secondary")} rows={a.secondary} t={t} />
       </View>

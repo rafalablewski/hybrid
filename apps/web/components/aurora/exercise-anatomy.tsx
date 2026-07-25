@@ -63,7 +63,7 @@ function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string;
       <div style={{ marginTop: 20 }}>
         <div style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1.4, textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.analyze.exp.anatomy.muscles")}</div>
         {/* the front/back body-map — the visual, then the ranked bars below */}
-        <AuroraBodyMap activation={a.activation} t={t} />
+        <AuroraBodyMap name={name} t={t} />
         <Group label={t("w.analyze.exp.anatomy.primary")} rows={a.primary} t={t} />
         <Group label={t("w.analyze.exp.anatomy.secondary")} rows={a.secondary} t={t} />
       </div>

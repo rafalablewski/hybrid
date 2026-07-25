@@ -6,6 +6,7 @@ import {
   MUSCLE_SIDE,
   muscleRegion,
   exerciseBodyMap,
+  SKETCH_BODY_ART,
 } from "./body-map";
 
 const ALL_MUSCLES = Object.keys(MUSCLE_SHORT) as Muscle[];
@@ -80,5 +81,30 @@ describe("body-map activation glow", () => {
 
   it("returns null for a name the DB doesn't know", () => {
     expect(exerciseBodyMap("Interpretive Dance")).toBeNull();
+  });
+});
+
+describe("body-map swap seam (schematic → sketch)", () => {
+  it("defaults to the schematic mannequin with figures and no sketch", () => {
+    const map = exerciseBodyMap("Bench Press")!;
+    expect(map.kind).toBe("schematic");
+    expect(map.figures).toBe(BODY_FIGURES);
+    expect(map.figures.length).toBe(2);
+    expect(map.sketch).toBeNull();
+  });
+
+  it("flips every lift to kind:sketch once SKETCH_BODY_ART is populated", () => {
+    const art = { front: "front.png", back: "back.png", overlays: {} };
+    SKETCH_BODY_ART.art = art;
+    try {
+      const map = exerciseBodyMap("Bench Press")!;
+      expect(map.kind).toBe("sketch");
+      expect(map.sketch).toBe(art);
+      // the glow data (the muscle bars' source) is unchanged by the swap
+      expect(map.glow.length).toBeGreaterThan(0);
+      expect(map.glow[0]!.intensity).toBeCloseTo(1);
+    } finally {
+      SKETCH_BODY_ART.art = null;
+    }
   });
 });

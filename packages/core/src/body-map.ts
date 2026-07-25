@@ -123,6 +123,38 @@ const REGION_OF: Record<Muscle, Pt[][]> = Object.fromEntries(
 
 export const muscleRegion = (m: Muscle): Pt[][] => REGION_OF[m] ?? [];
 
+// ── the swap seam: schematic today, professional sketch later ────────────────
+//
+// Mirrors exercise-animation's SketchAnimation seam. The schematic mannequin is
+// the zero-asset default; when commissioned ANATOMICAL ILLUSTRATION exists,
+// populate SKETCH_BODY_ART and exerciseBodyMap() flips every lift to the sketch
+// renderer — the muscle-activation / cues section never changes, and the SAME
+// intensity data (muscleGlows) drives the highlight opacities. Unlike the
+// per-exercise animation registry, the body ART IS GLOBAL: the illustration
+// doesn't change per lift — only WHICH muscles glow — so this is one art set,
+// not a name→asset map.
+
+export interface SketchBodyArt {
+  /** base anatomical illustration per side (asset refs the client resolves —
+   *  bundled require ids, remote URLs, or data URIs). */
+  front: string;
+  back: string;
+  /** per-muscle highlight overlays, composited over the base at that muscle's
+   *  glow intensity. A muscle with no overlay simply doesn't highlight. */
+  overlays: Partial<Record<Muscle, { front?: string; back?: string }>>;
+  /** optional credit for the illustrator/source. */
+  credit?: string;
+}
+
+/**
+ * The commissioned art, or null. EMPTY today — every lift renders the procedural
+ * schematic mannequin. Set `.art` (e.g. hydrated from an asset manifest) and
+ * exerciseBodyMap() returns kind:"sketch" for ALL lifts; the clients' sketch
+ * renderer branch (wired but dormant) then composites base + overlays. This is
+ * the single data swap point — nothing else changes to ship the pro art.
+ */
+export const SKETCH_BODY_ART: { art: SketchBodyArt | null } = { art: null };
+
 // ── activation → glow ───────────────────────────────────────────────────────
 
 export interface MuscleGlow {
@@ -140,10 +172,17 @@ export interface MuscleGlow {
 
 export interface ExerciseBodyMap {
   name: string;
+  /** how the body is DRAWN — the swap seam: the schematic mannequin today, the
+   *  commissioned anatomical sketch once SKETCH_BODY_ART is populated. */
+  kind: "schematic" | "sketch";
   /** every targeted muscle with its glow, ranked (brightest first). */
   glow: MuscleGlow[];
   /** muscle → glow intensity in [0, 1]; 0 for muscles this lift doesn't target. */
   intensityOf: Record<Muscle, number>;
+  /** the schematic figures — always present (the fallback the sketch replaces). */
+  figures: BodyFigure[];
+  /** commissioned art, present iff kind === "sketch". */
+  sketch: SketchBodyArt | null;
 }
 
 /** Turn ranked muscle activation into per-muscle glow intensities — the top
@@ -173,5 +212,6 @@ export function exerciseBodyMap(name: string): ExerciseBodyMap | null {
     (Object.keys(MUSCLE_SHORT) as Muscle[]).map((m) => [m, 0]),
   ) as Record<Muscle, number>;
   for (const g of glow) intensityOf[g.muscle] = g.intensity;
-  return { name: e.name, glow, intensityOf };
+  const sketch = SKETCH_BODY_ART.art;
+  return { name: e.name, kind: sketch ? "sketch" : "schematic", glow, intensityOf, figures: BODY_FIGURES, sketch };
 }
