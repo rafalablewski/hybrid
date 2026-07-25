@@ -525,6 +525,32 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // today; the recent-days list can select a past day to edit/delete its records).
   const [diaryDay, setDiaryDay] = useState<string>(() => localTodayKey());
   const dayLogs = useMemo(() => logs.filter((l) => localDayKey(l.ts) === diaryDay).sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts)), [logs, diaryDay]);
+  // Step a whole calendar day back/forward (never past today) — a proper date
+  // picker so any day can be reviewed, not only the ones in the recent list.
+  const shiftDiaryDay = useCallback((delta: number) => {
+    setDiaryDay((cur) => {
+      const [y, m, d] = cur.split("-").map(Number);
+      const nd = new Date(y!, (m! - 1), d! + delta);
+      const key = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, "0")}-${String(nd.getDate()).padStart(2, "0")}`;
+      return key > localTodayKey() ? cur : key;
+    });
+  }, []);
+  // The selected day's TOTALS — read from the always-on Signals (dailyNutrition),
+  // so the summary + per-part breakdown work for any past day even before the
+  // FoodLog table exists (the per-entry edit/delete list still needs FoodLog).
+  const daySummary = useMemo(() => dailyNutrition(sig).find((d) => d.date === diaryDay) ?? { date: diaryDay, kcal: 0, protein: 0, carbs: 0, fat: 0 }, [signals, diaryDay]);
+  const dayPartKcal = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const s of signals) {
+      if (s.kind !== "energyIntake" || localDayKey(s.ts) !== diaryDay) continue;
+      totals[s.source] = (totals[s.source] ?? 0) + s.value;
+    }
+    return totals;
+  }, [signals, diaryDay]);
+  const diaryDayLabel = useMemo(() => {
+    const [y, m, d] = diaryDay.split("-").map(Number);
+    return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  }, [diaryDay]);
   const targets = useMemo(() => adaptiveTargets(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
@@ -1562,16 +1588,45 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {/* DIARY — the selected day's individual entries, grouped by part, each
           editable (quantity) and deletable. Defaults to today; pick a past day
           in the record below. Then the week strip + recent days. */}
-      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); return (
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, C.blue], ["C", daySummary.carbs, targets.carbs ?? 0, C.amber], ["F", daySummary.fat, targets.fat ?? 0, C.violet]]; return (
+      <>
+      {/* DAY SUMMARY — pick any date with ‹ ›, see the whole day's totals vs
+          target. Read from Signals so it works for every day, migrated or not. */}
       <ACard style={{ marginTop: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDay.slice(5)}</Text>
-          {!isToday ? <Pressable onPress={() => setDiaryDay(localTodayKey())}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.backToToday")} →</Text></Pressable> : null}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <Pressable onPress={() => shiftDiaryDay(-1)} accessibilityLabel={t("w.recovery.nutrition.prevDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><View style={{ transform: [{ rotate: "180deg" }] }}><IChevRight size={16} color={C.chalk} /></View></Pressable>
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}</Text>
+            {!isToday ? <Pressable onPress={() => setDiaryDay(localTodayKey())}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: txt(C, C.lime), marginTop: 2 }}>{t("w.recovery.nutrition.backToToday")} →</Text></Pressable> : null}
+          </View>
+          <Pressable onPress={() => shiftDiaryDay(1)} disabled={isToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={isToday ? C.line : C.chalk} /></Pressable>
         </View>
-        <View style={{ marginTop: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 34, fontWeight: "700", color: C.chalk }}>{Math.round(daySummary.kcal)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>kcal{targets.kcal ? ` / ${Math.round(targets.kcal)}` : ""}</Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+          {macros.map(([lab, val, tgt, tint]) => (
+            <View key={lab} style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, tint) }}>{lab}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{Math.round(val)}{tgt ? `/${Math.round(tgt)}` : ""}g</Text>
+              </View>
+              <View style={{ height: 4, borderRadius: 999, backgroundColor: C.line, overflow: "hidden" }}>
+                <View style={{ width: `${tgt ? Math.min(100, (val / tgt) * 100) : 0}%`, height: "100%", backgroundColor: tint, borderRadius: 999 }} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </ACard>
+
+      {/* PER-PART BREAKDOWN — each part's total, then its individual editable
+          entries (from FoodLog when present). */}
+      <ACard style={{ marginTop: 12 }}>
+        <View style={{ marginTop: 0 }}>
           {partList.map((p, i) => {
             const entries = dayLogs.filter((l) => l.source === p.key);
-            const kcal = entries.reduce((s, l) => s + l.kcal * l.qty, 0);
+            const kcal = entries.length ? entries.reduce((s, l) => s + l.kcal * l.qty, 0) : (dayPartKcal[p.key] ?? 0);
             return (
             <View key={p.key} style={{ borderTopWidth: i ? 1 : 0, borderTopColor: C.line, paddingTop: 12, paddingBottom: entries.length ? 6 : 12 }}>
               <Pressable onPress={() => isToday && openAdd(p.key)} disabled={!isToday} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 2 }}>
@@ -1598,8 +1653,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             );
           })}
         </View>
-        {logs.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 16 }}>{t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
+        {dayLogs.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 16 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
       </ACard>
+      </>
       ); })()}
 
       {view === "diary" && (
