@@ -3,6 +3,7 @@
 import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import { screenTransition } from "@hybrid/core";
+import { hasArmedSharedElement, releaseSharedElements } from "./shared-element";
 
 /**
  * Wraps the app-shell's `setScreen` so every navigation runs as a real
@@ -47,19 +48,31 @@ export function useScreenTransition(
 
       if (!doc || typeof start !== "function") {
         apply(to);
+        releaseSharedElements();
         return;
       }
 
-      const t = screenTransition(from, to);
+      // A shared element in flight OWNS the motion: the screen behind it
+      // cross-dissolves rather than sliding or pushing, so the eye follows the
+      // one thing that persists. Two competing movements at once is the "don't
+      // stack effects" rule, and it reads as chaos.
+      const t = hasArmedSharedElement()
+        ? ({ kind: "replace", dir: 0 } as const)
+        : screenTransition(from, to);
       doc.dataset.navKind = t.kind;
       doc.dataset.navDir = t.dir === 1 ? "fwd" : t.dir === -1 ? "back" : "none";
 
       // The callback must apply the DOM change SYNCHRONOUSLY — the browser
       // snapshots before it runs and captures the result after, so a batched
       // React update would be missed and the transition would animate nothing.
-      start.call(document, () => {
+      const transition = start.call(document, () => {
         flushSync(() => apply(to));
-      });
+      }) as { finished?: Promise<unknown> } | undefined;
+
+      // Always drop armed shared-element names, including when the transition is
+      // skipped or rejected. A name left behind on an unmounted-then-remounted
+      // node collides on the NEXT navigation and silently kills that transition.
+      void Promise.resolve(transition?.finished).catch(() => {}).finally(releaseSharedElements);
     },
     [apply],
   );

@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, Animated, type NativeSyntheticEvent,
 import Svg, { G, Path, Polyline, Rect, Circle, Defs, LinearGradient, Stop, Line as SvgLine, Text as SvgText } from "react-native-svg";
 import { useLocalSearchParams } from "expo-router";
 import {
+  SHARED_ELEMENTS,
   exercisePageModel,
   fmtWeight,
   fmtTonnage,
@@ -17,6 +18,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
+import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, ABack } from "./kit";
@@ -517,6 +519,13 @@ export default function AuroraExercisePage() {
   const stroke = kindStroke(C, model.kind);
   const active = Math.min(page, slides.length - 1);
   const hero = slideHero(slides[showAll ? 0 : active]!, units, t);
+  // SHARED ELEMENT (destination). The figure the tapped card was showing flies
+  // here and scales up instead of being re-rendered — one continuous truth
+  // rather than a page that re-fetches. `hidden` masks the real text only while
+  // the clone is inbound; every degraded path (no provider, failed measurement,
+  // Reduce Motion) returns false and shows it immediately.
+  const heroStyle = { fontFamily: F.black, fontSize: 48, letterSpacing: -1, lineHeight: 52, color: C.chalk } as const;
+  const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {
     setPage(0);
@@ -588,7 +597,7 @@ export default function AuroraExercisePage() {
       {/* HERO — one number, paired with the visible chart */}
       <Animated.View style={{ marginTop: 18, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: -1, lineHeight: 52, color: C.chalk }}>{hero.v}</Text>
+          <Text ref={heroShared.ref} style={[heroStyle, heroShared.hidden ? { opacity: 0 } : null]}>{hero.v}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{hero.u}</Text>
           <View style={{ marginLeft: "auto" }}>
             <TickerDelta deltaPct={hero.deltaPct ?? null} improving={hero.improving ?? null} size={fs.caption} />

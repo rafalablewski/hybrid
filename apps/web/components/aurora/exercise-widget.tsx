@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRef } from "react";
 import {
+  SHARED_ELEMENTS,
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
@@ -15,6 +17,7 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/use-theme";
+import { armSharedElement } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -134,7 +137,18 @@ export default function ExerciseWidgetRail({
           return (
             <button
               key={card.name}
-              onClick={() => onOpen(card.name)}
+              // SHARED ELEMENT: the headline figure travels into the exercise
+              // page's hero rather than the page re-rendering it. Only the
+              // TAPPED card may claim the name — a rail of cards all declaring
+              // it would collide and silently kill the transition — so it is
+              // armed here, imperatively, before the navigation starts.
+              onClick={(e) => {
+                armSharedElement(
+                  e.currentTarget.querySelector<HTMLElement>("[data-shared-hero]"),
+                  SHARED_ELEMENTS.exerciseHero,
+                );
+                onOpen(card.name);
+              }}
               aria-label={`${card.name} — ${h.v} ${h.u}`}
               style={{
                 flex: "0 0 min(86%, 340px)", scrollSnapAlign: "center", cursor: "pointer", textAlign: "left",
@@ -148,7 +162,7 @@ export default function ExerciseWidgetRail({
                   <span style={{ fontSize: fs.bodyLg, fontWeight: 600 }}>{card.name}</span>
                   <TickerDelta deltaPct={card.deltaPct} improving={card.improving} />
                 </div>
-                <div style={{ marginTop: 8, fontSize: 34, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1 }}>
+                <div data-shared-hero style={{ marginTop: 8, fontSize: 34, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1, width: "fit-content" }}>
                   {h.v}
                   <span style={{ fontSize: fs.bodyLg, fontWeight: 500, color: C("ash"), marginLeft: 5 }}>{h.u}</span>
                 </div>

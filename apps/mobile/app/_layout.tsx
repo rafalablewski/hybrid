@@ -28,6 +28,7 @@ import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
 import { NavScrollProvider } from "../lib/nav-scroll";
 import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
+import { SharedElementProvider } from "../lib/shared-element";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
@@ -127,7 +128,11 @@ export default function RootLayout() {
                 <SessionProvider>
                   <LanguageProvider>
                     <SheetRecedeProvider>
-                      <Shell />
+                      {/* Above Shell so the flying clone renders over every
+                          screen — it must not be clipped by the navigator. */}
+                      <SharedElementProvider>
+                        <Shell />
+                      </SharedElementProvider>
                     </SheetRecedeProvider>
                   </LanguageProvider>
                 </SessionProvider>

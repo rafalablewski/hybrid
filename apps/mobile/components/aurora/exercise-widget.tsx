@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import {
+  SHARED_ELEMENTS,
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
@@ -13,6 +14,7 @@ import {
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
+import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
@@ -103,6 +105,9 @@ export default function ExerciseWidgetRail({
   const { units } = useLoggerPrefs();
   const { width } = useWindowDimensions();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
+  // One ref per card's headline figure — only the tapped card is ever measured.
+  const heroRefs = useRef<Record<string, Text | null>>({});
+  const armHero = useSharedElementSource();
   if (cards.length === 0) return null;
 
   const cardW = Math.min(340, Math.round(width * 0.78));
@@ -129,10 +134,18 @@ export default function ExerciseWidgetRail({
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = kindStroke(C, card.kind);
+          const heroStyle = { fontFamily: F.black, fontSize: 34, letterSpacing: -0.5, color: C.chalk } as const;
           return (
             <Pressable
               key={card.name}
-              onPress={() => onOpen(card.name)}
+              // SHARED ELEMENT: the headline figure flies into the exercise
+              // page's hero rather than the page re-rendering it. Measured at
+              // press time; if the destination never claims it the arm expires
+              // and the ordinary screen transition carries the change.
+              onPress={() => {
+                armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
+                onOpen(card.name);
+              }}
               accessibilityRole="button"
               accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
               style={{ width: cardW, height: 200, overflow: "hidden", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}
@@ -143,7 +156,7 @@ export default function ExerciseWidgetRail({
                   <TickerDelta deltaPct={card.deltaPct} improving={card.improving} />
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 8 }}>
-                  <Text style={{ fontFamily: F.black, fontSize: 34, letterSpacing: -0.5, color: C.chalk }}>{h.v}</Text>
+                  <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
                   <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>{h.u}</Text>
                 </View>
                 <Text style={{ marginTop: 6, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>

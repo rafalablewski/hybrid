@@ -196,6 +196,31 @@ export function cssSpringVar(name: string, s: Spring, fallback = easings.fade): 
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+   Shared elements
+   ──────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Names for elements that persist ACROSS a screen change — the thing you tapped
+ * travels into the screen it opens instead of being re-rendered there.
+ *
+ * Web uses these verbatim as `view-transition-name`; mobile uses them as the key
+ * for its FLIP overlay. Shared so a pair can't be half-renamed on one client.
+ *
+ * A name must be UNIQUE AT ANY ONE MOMENT — two elements carrying the same name
+ * in the same snapshot is an error, and the browser silently skips the
+ * transition. Arm exactly one source before navigating, and clear it after.
+ */
+export const SHARED_ELEMENTS = {
+  /** The headline figure on an exercise card ⇄ the hero on its stats page.
+   *  Chosen over morphing the whole card because a chart card is not the shape
+   *  of a stats page — but the NUMBER is the same fact in both places, and
+   *  numbers are what this app is about. */
+  exerciseHero: "hybrid-exercise-hero",
+} as const;
+
+export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];
+
+/* ────────────────────────────────────────────────────────────────────────
    Direction from hierarchy
    ──────────────────────────────────────────────────────────────────────── */
 

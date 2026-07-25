@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  SHARED_ELEMENTS,
   springs,
   easings,
   durations,
@@ -90,6 +91,18 @@ describe("springToRN", () => {
       const w = Math.sqrt(stiffness / mass);
       expect((2 * Math.PI) / w).toBeCloseTo(s.response, 3);
       expect(damping / (2 * Math.sqrt(stiffness * mass))).toBeCloseTo(s.dampingFraction, 3);
+    }
+  });
+});
+
+describe("SHARED_ELEMENTS", () => {
+  it("gives every pair a unique, namespaced name", () => {
+    const names = Object.values(SHARED_ELEMENTS);
+    // A view-transition-name must be unique at any one moment; colliding names
+    // make the browser silently skip the whole transition.
+    expect(new Set(names).size).toBe(names.length);
+    for (const n of names) {
+      expect(n).toMatch(/^hybrid-[a-z-]+$/);
     }
   });
 });

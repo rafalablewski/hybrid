@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { springs, springToCss, springDurationMs, durations, easings } from "@hybrid/core";
+import { SHARED_ELEMENTS, springs, springToCss, springDurationMs, durations, easings } from "@hybrid/core";
 
 /**
  * The spring curves in globals.css are GENERATED from packages/core/src/motion.ts
@@ -56,6 +56,13 @@ describe("globals.css motion tokens", () => {
     // cut — which removes the only signal that the screen changed.
     expect(css).toContain("::view-transition-old(*)");
     expect(css).toMatch(/animation-duration:\s*var\(--d-reduced\)\s*!important/);
+  });
+
+  it("times every shared-element pair on the zoom spring", () => {
+    for (const name of Object.values(SHARED_ELEMENTS)) {
+      expect(css, `no CSS for shared element ${name}`).toContain(`::view-transition-group(${name})`);
+    }
+    expect(css).toMatch(/::view-transition-group\(hybrid-exercise-hero\)[\s\S]{0,240}var\(--d-zoom\)/);
   });
 
   it("keeps the sidebar and header still — only the screen travels", () => {

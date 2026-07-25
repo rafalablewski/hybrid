@@ -572,6 +572,26 @@ html[data-nav-kind="pop"]::view-transition-new(hybrid-screen) { animation: motio
 html[data-nav-kind="replace"]::view-transition-old(hybrid-screen) { animation: motionDissolveOut var(--d-dissolve) var(--e-fade) both; }
 html[data-nav-kind="replace"]::view-transition-new(hybrid-screen) { animation: motionDissolveIn  var(--d-dissolve) var(--e-fade) both; }
 
+/* ── SHARED ELEMENTS ─────────────────────────────────────────────────
+   A named pair (SHARED_ELEMENTS in @hybrid/core) present in BOTH the outgoing
+   and incoming snapshot: the browser measures each end and interpolates
+   position, size and opacity between them. The element travels; it is not
+   re-rendered at the destination.
+
+   Timed on the zoom spring because this is the longest-travelling motion in the
+   system. The screen underneath is forced to a cross-dissolve while a pair is in
+   flight (see use-screen-transition), so only one thing is moving. */
+::view-transition-group(hybrid-exercise-hero),
+::view-transition-old(hybrid-exercise-hero),
+::view-transition-new(hybrid-exercise-hero) {
+  animation-duration: var(--d-zoom);
+  animation-timing-function: var(--e-zoom);
+}
+/* Keep the travelling figure legible the whole way: the default cross-fade
+   would ghost two numbers over each other mid-flight. */
+::view-transition-old(hybrid-exercise-hero) { animation-name: motionDissolveOut; animation-duration: var(--d-fast); }
+::view-transition-new(hybrid-exercise-hero) { animation-name: motionDissolveIn;  animation-duration: var(--d-fast); }
+
 /* ── SHEET PRESENTATION ──────────────────────────────────────────────
    The presenting screen recedes so the sheet sits on a real stack instead of
    floating over a static picture. Because the recede does the separation work,

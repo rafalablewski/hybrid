@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, ResponsiveContainer, XAxis, YAxis, ReferenceLine, Tooltip } from "recharts";
 import {
+  SHARED_ELEMENTS,
   exercisePageModel,
   fmtWeight,
   fmtTonnage,
@@ -22,6 +23,7 @@ import { tip, mono, ASH, VIOLET } from "@/lib/ui";
 import { kindStroke, TickerDelta, upHex, downHex } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 import { useTheme } from "@/lib/use-theme";
+import { sharedElementStyle } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
 const LINE_HEX = "#2a2d2a", INK_HEX = "#0c0d0c";
@@ -576,8 +578,13 @@ export default function AuroraExercisePage({
 
       {/* HERO — one number, paired with the visible chart */}
       <div style={{ margin: "18px 2px 4px", minHeight: 84, opacity: heroFade ? 0 : 1, transition: "opacity .15s ease" }}>
+        {/* SHARED ELEMENT (destination). The figure the tapped card was showing
+            travels here and scales up, instead of the page re-rendering it —
+            the app shows one continuous truth rather than re-fetching a page.
+            The destination is alone on its screen, so it can carry the name
+            statically; the source is armed at click time (exercise-widget). */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, fontSize: 50, fontWeight: 800, letterSpacing: "-.03em", lineHeight: 1 }}>
-          {hero.v}
+          <span style={{ ...sharedElementStyle(SHARED_ELEMENTS.exerciseHero), display: "inline-block" }}>{hero.v}</span>
           <span style={{ fontSize: fs.subtitle, fontWeight: 500, color: C("ash"), letterSpacing: 0 }}>{hero.u}</span>
           <span style={{ marginLeft: "auto" }}>
             <TickerDelta deltaPct={hero.deltaPct ?? null} improving={hero.improving ?? null} size={fs.caption} />
