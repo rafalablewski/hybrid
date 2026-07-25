@@ -27,14 +27,23 @@ const feelingColor = (C: Palette, feeling: ReadinessFeeling) => txt(C, C[ACCENT[
  *  1–4 walk Energy / Sleep / Soreness / Mood with a big reactive readiness face;
  *  the final card collects weight, adherence, a note + share-with-coach and
  *  submits. Same createCheckin flow as before. Mirrors the web wizard.
- *  `embedded` drops the screen chrome so the flow can live inside a sheet. */
-export default function AuroraCheckin({ embedded = false, onDone }: { embedded?: boolean; onDone?: () => void } = {}) {
+ *
+ *  `embedded` drops the screen chrome (header + card shell) so the SAME wizard
+ *  can run inline inside another card — Today's feeling card hosts it so the
+ *  full check-in never leaves the homepage. `startStep` opens on a later
+ *  question (Today's one-tap face already answers Energy, so it starts at
+ *  Sleep) and becomes the floor the Back button can't go under. `onDone` fires
+ *  on a successful submit so the host can collapse + refresh. */
+export default function AuroraCheckin({ embedded = false, startStep = 0, onDone }: { embedded?: boolean; startStep?: number; onDone?: () => void } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [saving, setSaving] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [step, setStep] = useState(0); // 0..3 metrics, 4 = details
+  // The first question this instance owns — also the Back floor, so an embedded
+  // flow can't reverse into a step its host already answered.
+  const minStep = Math.min(Math.max(Math.trunc(startStep) || 0, 0), CHECKIN_METRICS.length);
+  const [step, setStep] = useState(minStep); // 0..3 metrics, 4 = details
   const [done, setDone] = useState(false);
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
@@ -99,7 +108,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
   };
 
   const restart = () => {
-    setDone(false); setStep(0);
+    setDone(false); setStep(minStep);
     setRatings({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
     setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   };
@@ -111,8 +120,8 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
     </Pressable>
   );
 
-  const wizard = (
-    <ACard style={{ marginTop: embedded ? 0 : 18 }}>
+  const wizardBody = (
+    <>
       {/* progress */}
       <View style={{ flexDirection: "row", gap: 6 }}>
         {Array.from({ length: CHECKIN_STEP_COUNT }).map((_, i) => (
@@ -172,7 +181,7 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
           </Pressable>
 
           <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-            {backBtn}
+            {step > minStep ? backBtn : null}
             <APill label={saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")} onPress={submit} disabled={saving} style={{ flex: 1 }} />
           </View>
         </>
@@ -205,15 +214,19 @@ export default function AuroraCheckin({ embedded = false, onDone }: { embedded?:
               </View>
 
               <View style={{ flexDirection: "row", gap: space.ms, marginTop: 24, alignSelf: "stretch" }}>
-                {step > 0 && backBtn}
+                {step > minStep ? backBtn : null}
                 <APill label={t("w.recovery.checkins.next")} onPress={() => setStep((s) => s + 1)} style={{ flex: 1 }} />
               </View>
             </View>
           );
         })()
       )}
-    </ACard>
+    </>
   );
+
+  // Embedded, the wizard already sits inside a host card — render it bare so it
+  // reads as one surface, not a card boxed in a card.
+  const wizard = embedded ? <View>{wizardBody}</View> : <ACard style={{ marginTop: 18 }}>{wizardBody}</ACard>;
 
   const body = (
     <>

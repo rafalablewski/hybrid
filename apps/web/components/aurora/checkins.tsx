@@ -23,12 +23,22 @@ type Ratings = Record<CheckinMetricKey, number>;
  *  walk Energy / Sleep / Soreness / Mood with a big reactive readiness face; the
  *  final card collects weight, adherence, a note + share-with-coach and submits.
  *  Same /api/checkins POST as before — only the input UX changed.
- *  Mirrors the mobile AuroraCheckin wizard. */
-export default function AuroraCheckins() {
+ *  Mirrors the mobile AuroraCheckin wizard.
+ *
+ *  `embedded` drops the screen chrome (title + card shell) so the SAME wizard can
+ *  run inline inside another card — Today's feeling card hosts it so the full
+ *  check-in never leaves the homepage. `startStep` opens on a later question
+ *  (Today's one-tap face already answers Energy, so it starts at Sleep) and
+ *  becomes the floor the Back button can't go under. `onDone` fires on a
+ *  successful submit so the host can collapse + refresh. */
+export default function AuroraCheckins({ embedded = false, startStep = 0, onDone }: { embedded?: boolean; startStep?: number; onDone?: () => void } = {}) {
   const revalidate = useRevalidate();
   const { t } = useLang();
   const isPaid = useSession().entitlement === "paid";
-  const [step, setStep] = useState(0); // 0..3 metrics, 4 = details
+  // The first question this instance owns — also the Back floor, so an embedded
+  // flow can't reverse into a step its host already answered.
+  const minStep = Math.min(Math.max(Math.trunc(startStep) || 0, 0), CHECKIN_METRICS.length);
+  const [step, setStep] = useState(minStep); // 0..3 metrics, 4 = details
   const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -93,29 +103,36 @@ export default function AuroraCheckins() {
       if (!res.ok) { setError(`${t("w.recovery.checkins.errSubmit")} (HTTP ${res.status}).`); setSaving(false); return; }
       setDone(true);
       revalidate.recovery();
+      onDone?.();
     } catch { setError(t("w.recovery.checkins.errNetwork")); }
     setSaving(false);
   };
 
   const restart = () => {
-    setDone(false); setStep(0); setError("");
+    setDone(false); setStep(minStep); setError("");
     setRatings({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
     setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
+  // Embedded, the wizard is already inside a host card — drop the second shell
+  // so it reads as one surface, not a card boxed in a card.
+  const card = embedded
+    ? { background: "transparent", border: "none", borderRadius: 0, boxShadow: "none", padding: 0 } as const
+    : { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none" };
   const btnGhost = { flex: "0 0 auto", padding: "14px 22px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" } as const;
   const btnPrimary = { flex: 1, padding: 15, borderRadius: 999, border: "none", background: C("lime"), color: "var(--on-accent)", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, cursor: "pointer" } as const;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.checkins.title")}</h1>
-        <span style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={C("red")} /></span>
-      </div>
+      {!embedded && (
+        <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
+          <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.checkins.title")}</h1>
+          <span style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={C("red")} /></span>
+        </div>
+      )}
 
-      <div style={{ ...card, marginTop: 18 }}>
+      <div style={{ ...card, marginTop: embedded ? 0 : 18 }}>
         {/* progress */}
         <div style={{ display: "flex", gap: 6 }} aria-hidden>
           {Array.from({ length: CHECKIN_STEP_COUNT }).map((_, i) => (
@@ -164,7 +181,7 @@ export default function AuroraCheckins() {
 
             {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16 }}>
-              <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>
+              {step > minStep && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
               <button onClick={submit} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>{saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")}</button>
             </div>
           </>
@@ -196,7 +213,7 @@ export default function AuroraCheckins() {
                 </div>
 
                 <div style={{ display: "flex", gap: space.ms, width: "100%", marginTop: 24 }}>
-                  {step > 0 && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
+                  {step > minStep && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
                   <button onClick={() => setStep((s) => s + 1)} style={btnPrimary}>{t("w.recovery.checkins.next")}</button>
                 </div>
               </div>
