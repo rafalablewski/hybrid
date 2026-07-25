@@ -182,18 +182,21 @@ export function offPlanSessionsOnDay(
  *   a NON-today day via the week rail, a plain past-tense empty line — the
  *   "it lands here" invitation only makes sense for a day you can still log);
  * - anything done → no sub-line — the numeral, label and rows carry it.
- * The log row's label flips to "another" as soon as ANY workout is done today,
- * regardless of whether it was the plan's. (The log row itself only renders on
- * today — quick logs always save at "now", so they can't land on another day.)
+ * This row opens the QUICK SPORT log (a run, a swim, a match) — NOT the full
+ * block logger — so its label says "sport", never "workout" (which reads as the
+ * structured logger the Train hero / logbook CTA open). The label flips to
+ * "another" as soon as ANYTHING is done today, regardless of what it was. (The
+ * log row itself only renders on today — quick logs always save at "now", so
+ * they can't land on another day.)
  */
 export function alsoTodayCopy(opts: { doneCount: number; isToday?: boolean }): {
   subKey: "w.home.today.alsoTodaySubEmpty" | "w.home.today.alsoDayEmpty" | null;
-  logKey: "w.home.today.alsoTodayLog" | "w.home.today.alsoTodayLogFirst";
+  logKey: "w.home.today.alsoTodayLogSportMore" | "w.home.today.alsoTodayLogSport";
 } {
   const isToday = opts.isToday !== false;
   return {
     subKey: opts.doneCount === 0 ? (isToday ? "w.home.today.alsoTodaySubEmpty" : "w.home.today.alsoDayEmpty") : null,
-    logKey: opts.doneCount > 0 ? "w.home.today.alsoTodayLog" : "w.home.today.alsoTodayLogFirst",
+    logKey: opts.doneCount > 0 ? "w.home.today.alsoTodayLogSportMore" : "w.home.today.alsoTodayLogSport",
   };
 }
 

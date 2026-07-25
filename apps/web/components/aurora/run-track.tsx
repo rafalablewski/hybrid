@@ -46,6 +46,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
     const block = {
       kind: "cardio" as const,
       name: "Run",
+      discipline: "running" as const,
       ...(Number.isFinite(km) && km > 0 ? { distance: km } : {}),
       ...(minutes > 0 ? { minutes: Math.round(minutes) } : {}),
     };

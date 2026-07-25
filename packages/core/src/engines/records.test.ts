@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory, newCardioPrsInSession } from "./records";
+import { bestE1rmMap, topLoadMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory, newCardioPrsInSession } from "./records";
 import type { LoggedSession } from "./session";
 
 const squat = (load: string, reps: string): LoggedSession["blocks"][number] => ({
@@ -24,6 +24,11 @@ describe("personal records", () => {
   it("bestE1rmMap keeps the all-time best per lift", () => {
     const map = bestE1rmMap([s1, s2, s3]);
     expect(map.get("Back Squat")).toBe(Math.round(e1rm(120, 3)));
+  });
+
+  it("topLoadMap keeps the heaviest ACTUAL load per lift (not e1RM)", () => {
+    const map = topLoadMap([s1, s2, s3]);
+    expect(map.get("Back Squat")).toBe(120); // heaviest weight lifted, not the ~132 e1RM
   });
 
   it("first time training a lift is a record (previous = null)", () => {

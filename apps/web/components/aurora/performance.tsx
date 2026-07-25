@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { fs, space, LINE, LINE_HEX, ASH, LIME, LIME_HEX, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
-  ROLE_COLOR, hpiRole, riskRole,
+  ROLE_COLOR, hpiRole, riskRole, RISK_DRIVER_LABEL_KEY,
   type Biometrics, type LoggedSession, type MuscleGroup, type TissueRisk, colors,
 } from "@hybrid/core";
 import RtpPanel from "../rtp-panel";
@@ -127,17 +127,20 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
                 ))}</tr>
               </thead>
               <tbody>
-                {risk.tissues.map((t) => (
-                  <tr key={t.tissue}>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(t.tissue)}</td>
-                    <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}>{chip(t.risk > 0 ? C(ROLE_COLOR[riskRole(t.band)]) : C("ash"), String(t.risk))}</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: t.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(t.prob * 100).toFixed(1)}%</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: t.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.drivers[0]?.label ?? "—"}</td>
+                {risk.tissues.map((ti) => (
+                  <tr key={ti.tissue}>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(ti.tissue)}</td>
+                    <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}>{chip(ti.risk > 0 ? C(ROLE_COLOR[riskRole(ti.band)]) : C("ash"), String(ti.risk))}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: ti.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(ti.prob * 100).toFixed(1)}%</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: ti.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{ti.enoughHistory ? ti.acwr.toFixed(2) : "—"}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {/* Plain-language gloss on the ACWR column — the ratio the "workload
+                spike" driver is built on — so the table reads without a glossary. */}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.5, marginTop: 10 }}>{t("w.injury.acwrNote")}</div>
           </div>
         </div>
       </div>

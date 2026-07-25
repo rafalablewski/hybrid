@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -230,6 +230,10 @@ export type Routine = {
   description?: string | null;
   blocks: SessionBlock[];
   createdAt: string;
+  /** Starred → floated to the Quick-start sheet's Favourites rail. Defaults
+   *  false (the GET reads false for everyone until the favourite column is
+   *  migrated — see reference/sql-routine-favourite.sql). */
+  favourite?: boolean;
 };
 
 export async function fetchRoutines(): Promise<Routine[]> {
@@ -264,6 +268,22 @@ export async function createRoutine(
 export async function deleteRoutine(id: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/templates/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Toggle a routine's favourite star. Soft-degrades to false if the favourite
+// column isn't migrated yet (the server returns 503) or on a network error, so
+// the caller can optimistically flip and quietly revert on failure.
+export async function favouriteRoutine(id: string, favourite: boolean): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/templates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ favourite }),
+    });
     return res.ok;
   } catch {
     return false;
@@ -310,6 +330,30 @@ export async function deleteSavedMeal(id: string): Promise<boolean> {
   }
 }
 
+// ── Nutrition prefs — the small cross-device state the Nutrition hub remembers:
+// onboarding completion, the chosen goal, and any custom parts of the day.
+export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[] };
+export async function getNutritionPrefs(): Promise<NutritionPrefs> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    return ((await res.json()) as { prefs?: NutritionPrefs }).prefs ?? {};
+  } catch {
+    return {};
+  }
+}
+export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+  } catch {
+    /* best-effort — the client keeps its local cache */
+  }
+}
+
 export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, { headers: await authHeaders() });
@@ -338,6 +382,54 @@ export async function createFoodProduct(
 export async function deleteFoodProduct(id: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── Editable food log — the per-entry records the Diary lists + edit/delete.
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string };
+export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { logs?: FoodLogRow[] }).logs ?? [];
+  } catch {
+    return [];
+  }
+}
+// Log one food/meal → creates the editable entry AND the mirrored Signals the
+// engines read. Macros are PER SERVING; qty scales them.
+export async function createFoodLog(
+  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number },
+): Promise<{ ok: boolean; status: number | null }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(entry),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+export async function updateFoodLogQty(id: string, qty: number): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ qty }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+export async function deleteFoodLog(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
@@ -524,12 +616,12 @@ export async function fetchSignals(): Promise<CoreSignal[]> {
   }
 }
 
-export async function createSignal(kind: string, value: number, unit?: string): Promise<boolean> {
+export async function createSignal(kind: string, value: number, unit?: string, source = "manual"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ kind, value, unit, source: "manual" }),
+      body: JSON.stringify({ kind, value, unit, source }),
     });
     return res.ok;
   } catch {

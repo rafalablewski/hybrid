@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves } from "./running";
-import type { LoggedSession } from "./session";
+import { runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, isRunMove, runningSessions, enduranceSessions } from "./running";
+import { cardioDiscipline, type LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z").getTime();
 const daysAgo = (n: number) => new Date(NOW - n * 86_400_000).toISOString();
@@ -58,6 +58,91 @@ describe("running analytics", () => {
     expect(e.hard).toBe(40);
     expect(e.easy).toBe(50);
     expect(e.moderate).toBe(0);
+  });
+
+  it("isRunMove: foot-races are runs; swims, rackets, rides, rows are not", () => {
+    // Logged Olympic sports resolve through the catalog.
+    expect(isRunMove("Running")).toBe(true);
+    expect(isRunMove("Marathon")).toBe(true);
+    expect(isRunMove("Swimming")).toBe(false);
+    expect(isRunMove("Tennis")).toBe(false);
+    expect(isRunMove("Road Cycling")).toBe(false);
+    expect(isRunMove("Rowing")).toBe(false);
+    // Generic / custom cardio names use the keyword test.
+    expect(isRunMove("Easy Run")).toBe(true);
+    expect(isRunMove("Tempo Run")).toBe(true);
+    expect(isRunMove("Treadmill")).toBe(true);
+    // A shared word must not leak a non-running modality through.
+    expect(isRunMove("Row Intervals")).toBe(false);
+    expect(isRunMove("Assault Bike")).toBe(false);
+    expect(isRunMove("Canoe Sprint")).toBe(false);
+  });
+
+  it("cardioDiscipline classifies modality, keeping shared words from cross-leaking", () => {
+    expect(cardioDiscipline("Easy Run")).toBe("running");
+    expect(cardioDiscipline("Treadmill")).toBe("running");
+    expect(cardioDiscipline("Swimming")).toBe("swimming");
+    expect(cardioDiscipline("Road Cycling")).toBe("cycling");
+    expect(cardioDiscipline("Row Intervals")).toBe("rowing");
+    expect(cardioDiscipline("Canoe Sprint")).toBe("rowing"); // not running via "sprint"
+    expect(cardioDiscipline("Ski Erg")).toBe("skiing"); // not rowing via "erg"
+    expect(cardioDiscipline("Race Walking")).toBe("walking"); // a foot sport, not a run
+    expect(cardioDiscipline("Tennis")).toBe("sport"); // timed Olympic sport
+    expect(cardioDiscipline("Football")).toBe("sport");
+    expect(cardioDiscipline("Cardio")).toBe("other"); // generic, endurance but unlabelled
+  });
+
+  it("a stamped discipline tag wins over the name", () => {
+    // Named ambiguously but tagged: the tag decides, no name-guessing.
+    const tagged: LoggedSession[] = [
+      { id: "a", title: "am", startedAt: daysAgo(1), blocks: [{ kind: "cardio", name: "Recovery", discipline: "running", distance: 5, minutes: 30 }] },
+      { id: "b", title: "run club", startedAt: daysAgo(2), blocks: [{ kind: "cardio", name: "Run Club Social", discipline: "sport", minutes: 45 }] },
+    ];
+    expect(runTotals(runningSessions(tagged)).efforts).toBe(1); // only the tagged run
+    expect(runStats(runningSessions(tagged))[0]!.move).toBe("Recovery");
+    // The "sport"-tagged one is excluded from endurance too; the run stays.
+    expect(runTotals(enduranceSessions(tagged)).efforts).toBe(1);
+  });
+
+  it("enduranceSessions keeps swims/rides but drops non-endurance sports (tennis)", () => {
+    const mixed: LoggedSession[] = [
+      run("sw", daysAgo(1), "Swimming", 1.5, 40),
+      run("bk", daysAgo(2), "Road Cycling", 30, 60),
+      run("tn", daysAgo(3), "Tennis", undefined, 60),
+      run("rn", daysAgo(4), "Easy Run", 8, 48),
+    ];
+    // Endurance = swim + bike + run (3 efforts); tennis excluded.
+    expect(runTotals(enduranceSessions(mixed)).efforts).toBe(3);
+    // Running screen still sees only the run.
+    expect(runTotals(runningSessions(mixed)).efforts).toBe(1);
+  });
+
+  it("runningSessions strips non-running cardio so swims/tennis never count as runs", () => {
+    // Two pool sessions + one tennis session — zero actual runs.
+    const notRuns: LoggedSession[] = [
+      run("s1", daysAgo(1), "Swimming", 1.5, 40),
+      run("s2", daysAgo(3), "Swimming", 1.2, 35),
+      run("t1", daysAgo(5), "Tennis", undefined, 60),
+    ];
+    expect(runTotals(runningSessions(notRuns)).efforts).toBe(0);
+
+    // A mixed history keeps the runs, drops the rest.
+    const mixed: LoggedSession[] = [...notRuns, run("r1", daysAgo(2), "Easy Run", 8, 48)];
+    const filtered = runningSessions(mixed);
+    const t = runTotals(filtered);
+    expect(t.efforts).toBe(1);
+    expect(t.distanceKm).toBe(8);
+    expect(runStats(filtered).map((r) => r.move)).toEqual(["Easy Run"]);
+    expect(pacedRunMoves(filtered)).toEqual(["Easy Run"]);
+    // Strength blocks in the same session survive the filter untouched.
+    const withLift = runningSessions([
+      { id: "m", title: "Brick", startedAt: daysAgo(1), blocks: [
+        { kind: "cardio", name: "Swimming", distance: 1, minutes: 30 },
+        { kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }] },
+      ] },
+    ]);
+    expect(withLift[0]!.blocks).toHaveLength(1);
+    expect(withLift[0]!.blocks[0]!.name).toBe("Back Squat");
   });
 
   it("paceEffortSplit calls a tightly-clustered move steady (no false hard)", () => {

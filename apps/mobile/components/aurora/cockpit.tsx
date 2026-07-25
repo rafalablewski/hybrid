@@ -4,9 +4,10 @@ import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, toTrainingLog, toBiometrics,
+  runTotals, enduranceSessions, toTrainingLog, toBiometrics,
   velocityProfiles, hpiRole, riskRole, readinessRole, SPORTS, LEVELS,
-  type LoggedSession, type Macrocycle, type AcwrBand,
+  RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
+  type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -48,6 +49,9 @@ function Full() {
   const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Injury-risk "what's raising this?" panel — collapsed by default so the card
+  // stays a glance; opening it explains each driver in plain language.
+  const [injuryExplainOpen, setInjuryExplainOpen] = useState(false);
 
   const load = () => {
     setRefreshing(true);
@@ -76,25 +80,38 @@ function Full() {
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
   const bw = useBodyweightLookup();
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
+  // racket/team/combat sports so a tennis session doesn't inflate the summary.
+  const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
   // Exception-driven: slim all-clear row when nothing's flagged, full maroon otherwise.
   const calm = risk.flagged.length === 0;
+  // The distinct risk DRIVERS across flagged tissues, heaviest first — what the
+  // "what's raising this?" panel explains in plain language.
+  const driverKinds = ((): RiskDriverKind[] => {
+    const weight = new Map<RiskDriverKind, number>();
+    for (const ti of risk.flagged) for (const d of ti.drivers) weight.set(d.kind, (weight.get(d.kind) ?? 0) + d.contribution);
+    return [...weight.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  })();
   // Season completion %, guarded against a 0 / malformed totalWeeks.
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      {/* 1 · CONTEXT RAIL — title + season + sliding pills (scrolls like Today) */}
+      {/* 1 · CONTEXT RAIL — a LIVING MASTHEAD in Today's idiom (mono season
+          caption, one oversized editorial headline, a warm sub) + sliding pills.
+          Deliberately the same masthead anatomy as the home tab so the two
+          screens read as siblings, not a dashboard vs a diary. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <ABack />
-        <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
+        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
+          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
+        </Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
-        {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
-      </Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 32, letterSpacing: -1, color: C.chalk, marginTop: 6 }}>{t("w.home.cockpit.commandCenter")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2 }}>{t("w.home.cockpit.commandSub")}</Text>
       {macro && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
@@ -161,10 +178,31 @@ function Full() {
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
                     </View>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1, textAlign: "right" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1, textAlign: "right" }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : `ACWR ${ti.acwr.toFixed(2)}`}</Text>
                   </View>
                 ))}
               </View>
+              {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
+                  (workload spike, high load, return-from-lull, recovery),
+                  collapsed by default so the card still reads at a glance. */}
+              {driverKinds.length > 0 && (
+                <View style={{ marginTop: 12 }}>
+                  <Pressable onPress={() => setInjuryExplainOpen((v) => !v)} hitSlop={6} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.8, color: txt(C, C.red) }}>{injuryExplainOpen ? t("w.injury.hide") : t("w.injury.whatsThis")}</Text>
+                    <Text style={{ fontSize: 8, color: txt(C, C.red) }}>{injuryExplainOpen ? "▲" : "▼"}</Text>
+                  </Pressable>
+                  {injuryExplainOpen && (
+                    <View style={{ marginTop: 10, gap: 10 }}>
+                      {driverKinds.map((k) => (
+                        <View key={k}>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
+                          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
             </>
           )}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.home.cockpit.toWatch")}</Text>
@@ -177,6 +215,11 @@ function Full() {
             </View>
           ) : (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>{t("w.home.cockpit.watchBuilding")}</Text>
+          )}
+          {/* A one-line plain-language gloss on ACWR — the ratio the "workload
+              spike" driver is built on — so the bare number reads for everyone. */}
+          {loadState.enoughHistory && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: 15, marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
           )}
         </ACard>
       )}
@@ -222,7 +265,7 @@ function Full() {
         </View>
         <Mod C={C} dot={C.amber} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/(tabs)/sport")} />
         <Mod C={C} dot={C.blue} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/(tabs)/velocity")} />
-        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onPress={() => router.push("/(tabs)/running")} last />
+        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/(tabs)/endurance")} last />
       </ACard>
 
       {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
@@ -326,7 +369,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
                 <Stat C={C} label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat C={C} label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </View>
-              <Pressable onPress={() => onOpen("/(tabs)/running")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.running")} →</Text></Pressable>
+              <Pressable onPress={() => onOpen("/(tabs)/endurance")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.tab.endurance")} →</Text></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
         )}

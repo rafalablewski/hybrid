@@ -39,11 +39,40 @@ export function calibrateRisk(score: number, coeffs: CalibrationCoeffs = PRIOR_C
   return 1 / (1 + Math.exp(-z));
 }
 
+/**
+ * The FOUR ways a tissue's risk can rise. A machine-readable discriminator so
+ * the clients can attach LOCALIZED copy and a plain-language explanation to each
+ * driver instead of rendering an opaque English template string. Map a kind to
+ * its i18n keys with RISK_DRIVER_LABEL_KEY / RISK_DRIVER_EXPLAIN_KEY.
+ */
+export type RiskDriverKind = "spike" | "load" | "detrain" | "recovery";
+
 export interface RiskDriver {
+  /** which of the four factors this is — drives the UI's label + guidance copy */
+  kind: RiskDriverKind;
+  /** plain-English fallback (non-i18n consumers, logs, tests) */
   label: string;
   /** points this factor contributed to the tissue's 0..100 risk */
   contribution: number;
+  /** the acute:chronic ratio behind a spike/detrain driver (absent for load/recovery) */
+  acwr?: number;
 }
+
+/** kind → i18n key for the SHORT driver label ("Workload spike"). */
+export const RISK_DRIVER_LABEL_KEY: Record<RiskDriverKind, string> = {
+  spike: "w.injury.driver.spike",
+  load: "w.injury.driver.load",
+  detrain: "w.injury.driver.detrain",
+  recovery: "w.injury.driver.recovery",
+};
+
+/** kind → i18n key for the plain-language "what this means / what to do" copy. */
+export const RISK_DRIVER_EXPLAIN_KEY: Record<RiskDriverKind, string> = {
+  spike: "w.injury.explain.spike",
+  load: "w.injury.explain.load",
+  detrain: "w.injury.explain.detrain",
+  recovery: "w.injury.explain.recovery",
+};
 
 export interface TissueRisk {
   tissue: MuscleGroup;
@@ -127,19 +156,19 @@ export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics, coeffs: Ca
 
     const spike = ramp(acwr, 1.3, 2.2) * 55;
     if (spike > 1)
-      drivers.push({ label: `Workload spike (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(spike) });
+      drivers.push({ kind: "spike", label: `Workload spike (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(spike), acwr });
 
     const tissueFatigue = fatigue.muscles[tissue];
     const absolute = (tissueFatigue / 100) * 28;
     if (absolute > 1)
-      drivers.push({ label: `High tissue load (${tissueFatigue}/100)`, contribution: Math.round(absolute) });
+      drivers.push({ kind: "load", label: `High tissue load (${tissueFatigue}/100)`, contribution: Math.round(absolute) });
 
     const detrain = enoughHistory ? ramp(0.8 - acwr, 0, 0.6) * 18 : 0;
     if (detrain > 1)
-      drivers.push({ label: `Return-from-low (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(detrain) });
+      drivers.push({ kind: "detrain", label: `Return-from-low (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(detrain), acwr });
 
     if (recoveryPenalty > 1)
-      drivers.push({ label: "Suppressed recovery (HRV/sleep)", contribution: Math.round(recoveryPenalty) });
+      drivers.push({ kind: "recovery", label: "Suppressed recovery (HRV/sleep)", contribution: Math.round(recoveryPenalty) });
 
     const risk = Math.max(
       0,

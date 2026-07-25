@@ -111,6 +111,46 @@ export function estimateMaintenance(
 
 export type NutritionGoal = "lose" | "maintain" | "gain";
 
+// ── Parts of the day ───────────────────────────────────────────────────────
+// A log is attributed to a "part of the day" via Signal.source. The four
+// built-ins are shared by every client; a Full user may append their OWN parts
+// (e.g. "Pre-workout"), persisted in the nutrition prefs. Kept here so web +
+// mobile render ONE list from one source of truth (parity rule).
+export const DEFAULT_MEAL_PART_KEYS = ["breakfast", "lunch", "dinner", "snack"] as const;
+export type DefaultMealPart = (typeof DEFAULT_MEAL_PART_KEYS)[number];
+/** A custom part a Full user added: a stable slug `key` + a display `label`. */
+export type NutritionMealPart = { key: string; label: string };
+/** How many custom parts a user may keep (mirrored client + server). */
+export const MAX_CUSTOM_MEAL_PARTS = 8;
+/** A resolved part for rendering: built-in key (label via t) or a custom part. */
+export type MealPartDef = { key: string; label: string; custom: boolean };
+
+/**
+ * The full ordered list of parts to render: the four built-ins (labels resolved
+ * by the caller's translator) followed by the user's custom parts. Custom parts
+ * that collide with a built-in key are dropped so a slot never appears twice.
+ */
+export function resolveMealParts(
+  custom: NutritionMealPart[] | undefined,
+  tMeal: (key: DefaultMealPart) => string,
+): MealPartDef[] {
+  const base: MealPartDef[] = DEFAULT_MEAL_PART_KEYS.map((k) => ({ key: k, label: tMeal(k), custom: false }));
+  const seen = new Set<string>(DEFAULT_MEAL_PART_KEYS);
+  const extra: MealPartDef[] = [];
+  for (const p of custom ?? []) {
+    if (!p || !p.key || !p.label || seen.has(p.key)) continue;
+    seen.add(p.key);
+    extra.push({ key: p.key, label: p.label, custom: true });
+    if (extra.length >= MAX_CUSTOM_MEAL_PARTS) break;
+  }
+  return [...base, ...extra];
+}
+
+/** Normalize a user-typed part name into a stable slug key. */
+export function mealPartKey(label: string): string {
+  return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+}
+
 export interface MacroTargets {
   kcal: number;
   protein: number; // g
@@ -249,6 +289,98 @@ export function nutritionNudge(today: NutritionDay, targets: MacroTargets): Nutr
   if (today.kcal > targets.kcal * 1.1) return { kind: "over", gap: Math.round(today.kcal - targets.kcal) };
   if (kcalLeft >= 150) return { kind: "calories-left", gap: kcalLeft };
   return { kind: "on-track", gap: Math.max(0, kcalLeft) };
+}
+
+/**
+ * FUEL — the Today-screen nutrition widget's state, in ONE place so web + mobile
+ * render the same surface (parity rule). Like the week rail, it's a single
+ * stateful object: the client reads meaning from the ring + a headline, not a
+ * different card per case. Composes todayNutrition + adaptiveTargets (pass the
+ * caller's trainingKcal from load.trainingEnergyOnDay so a trained day fuels the
+ * target and flips the state to "refuel"). Pure + testable.
+ */
+export type FuelStateKind =
+  | "empty" //     nothing logged today yet
+  | "refuel" //    trained today and still short — recovery emphasis
+  | "protein" //   rest day, but protein still ≥20 g short
+  | "on-track" //  logging in progress, within range, no urgent gap
+  | "over" //      over the calorie target by >10%
+  | "goal-hit"; // every macro essentially met
+
+export interface FuelMacro {
+  key: "protein" | "carbs" | "fat";
+  value: number; // logged grams
+  target: number; // target grams
+  pct: number; // value / target, 0–100 clamped
+  hit: boolean; // value ≥ 95% of target
+  over: boolean; // value strictly past 100% of target (surpassed)
+  overBy: number; // grams past target (0 unless over)
+}
+
+export interface FuelToday {
+  state: FuelStateKind;
+  /** did the athlete train today (trainingKcal > 0) — drives the refuel framing */
+  trained: boolean;
+  trainingKcal: number;
+  today: NutritionDay;
+  targets: MacroTargets;
+  /** targets.kcal − today.kcal (negative once over) */
+  kcalLeft: number;
+  /** eaten ÷ target as a 0–100 ring fill */
+  kcalPct: number;
+  /** grams of protein still to go (≥ 0) */
+  proteinGap: number;
+  macros: { protein: FuelMacro; carbs: FuelMacro; fat: FuelMacro };
+  allMacrosHit: boolean;
+}
+
+// A macro counts as "hit" at ≥95% of target; protein nudges from 20 g short;
+// calories read "left" from 150 kcal down; "over" past 110% of target. The
+// thresholds mirror nutritionNudge so the two never disagree.
+const MACRO_HIT = 0.95;
+const PROTEIN_NUDGE_G = 20;
+const KCAL_LEFT_MIN = 150;
+const OVER_FACTOR = 1.1;
+
+function fuelMacro(key: FuelMacro["key"], value: number, target: number): FuelMacro {
+  const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((value / target) * 100))) : 0;
+  const over = target > 0 && value > target;
+  return { key, value: Math.round(value), target, pct, hit: target > 0 && value >= target * MACRO_HIT, over, overBy: over ? Math.round(value - target) : 0 };
+}
+
+export function fuelToday(
+  signals: Signal[],
+  opts: { goal?: NutritionGoal; trainingKcal?: number; bodyMassKg?: number; now?: number } = {},
+): FuelToday {
+  const trainingKcal = Math.max(0, Math.round(opts.trainingKcal ?? 0));
+  const today = todayNutrition(signals, opts.now);
+  const targets = adaptiveTargets(signals, opts);
+
+  const protein = fuelMacro("protein", today.protein, targets.protein);
+  const carbs = fuelMacro("carbs", today.carbs, targets.carbs);
+  const fat = fuelMacro("fat", today.fat, targets.fat);
+  const macros = { protein, carbs, fat };
+  const allMacrosHit = protein.hit && carbs.hit && fat.hit;
+
+  const kcalLeft = Math.round(targets.kcal - today.kcal);
+  const kcalPct = targets.kcal > 0 ? Math.max(0, Math.min(100, Math.round((today.kcal / targets.kcal) * 100))) : 0;
+  const proteinGap = Math.max(0, Math.round(targets.protein - today.protein));
+  const trained = trainingKcal > 0;
+
+  const state: FuelStateKind =
+    today.kcal <= 0 && today.protein <= 0
+      ? "empty"
+      : allMacrosHit
+        ? "goal-hit"
+        : trained && (proteinGap >= PROTEIN_NUDGE_G || kcalLeft >= KCAL_LEFT_MIN)
+          ? "refuel"
+          : proteinGap >= PROTEIN_NUDGE_G
+            ? "protein"
+            : today.kcal > targets.kcal * OVER_FACTOR
+              ? "over"
+              : "on-track";
+
+  return { state, trained, trainingKcal, today, targets, kcalLeft, kcalPct, proteinGap, macros, allMacrosHit };
 }
 
 /**

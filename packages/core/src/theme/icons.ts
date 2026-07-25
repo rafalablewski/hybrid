@@ -214,6 +214,7 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   trends: "arrow-up",
   velocity: "arrow-up",
   running: "location",
+  endurance: "gps",
   forceplate: "download",
   video: "list-play",
   history: "copy",

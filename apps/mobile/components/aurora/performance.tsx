@@ -3,7 +3,7 @@ import { View, Text, Pressable, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog, toBiometrics,
-  hpiRole, riskRole, evaluateRtp, STAGE_LABEL,
+  hpiRole, riskRole, evaluateRtp, STAGE_LABEL, RISK_DRIVER_LABEL_KEY,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, fetchRtpProtocols, createRtpProtocol, mutateRtpProtocol, type CoreSignal, type RtpProtocol, type RtpAuditEntry } from "../../lib/api";
@@ -139,21 +139,24 @@ export default function AuroraPerformance() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 62, textAlign: "right" }}>{t("w.analyze.perf.colProb")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colRisk")}</Text>
           </View>
-          {risk.tissues.map((t) => (
-            <View key={t.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+          {risk.tissues.map((ti) => (
+            <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flex: 1, paddingRight: 6 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{cap(t.tissue)}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{t.drivers[0]?.label ?? "—"}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{cap(ti.tissue)}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</Text>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: t.enoughHistory ? C.chalk : C.ash, width: 46, textAlign: "right" }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: t.risk > 0 ? C.chalk : C.ash, width: 62, textAlign: "right" }}>{(t.prob * 100).toFixed(1)}%</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: ti.enoughHistory ? C.chalk : C.ash, width: 46, textAlign: "right" }}>{ti.enoughHistory ? ti.acwr.toFixed(2) : "—"}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: ti.risk > 0 ? C.chalk : C.ash, width: 62, textAlign: "right" }}>{(ti.prob * 100).toFixed(1)}%</Text>
               <View style={{ width: 46, alignItems: "flex-end" }}>
-                <View style={{ backgroundColor: `${(t.risk > 0 ? riskColor(t.band, C) : C.ash)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, t.risk > 0 ? riskColor(t.band, C) : C.ash) }}>{t.risk}</Text>
+                <View style={{ backgroundColor: `${(ti.risk > 0 ? riskColor(ti.band, C) : C.ash)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, ti.risk > 0 ? riskColor(ti.band, C) : C.ash) }}>{ti.risk}</Text>
                 </View>
               </View>
             </View>
           ))}
+          {/* Plain-language gloss on the ACWR column — the ratio the "workload
+              spike" driver is built on — so the table reads without a glossary. */}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: 15, marginTop: 10 }}>{t("w.injury.acwrNote")}</Text>
         </View>
       </ACard>
 

@@ -21,6 +21,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, ABack } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
+import AuroraExerciseAnatomy from "./exercise-anatomy";
 
 // Chart-only raw hexes (mirror web exercise-page): the CVD-validated deep
 // chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
@@ -50,9 +51,9 @@ interface Hero {
 
 function slideHero(s: ExercisePageSlide, units: WeightUnit, t: (k: string) => string): Hero {
   switch (s.kind) {
-    case "e1rmTrend": {
-      const { v, u } = splitVal(fmtWeight(s.bestE1rm, units));
-      return { v, u, deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.exp.e1rm") };
+    case "weightTrend": {
+      const { v, u } = splitVal(fmtWeight(s.bestWeight, units));
+      return { v, u, deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.exp.heaviest") };
     }
     case "tonnage": {
       const { v, u } = splitVal(fmtTonnage(s.avgWeekKg, units));
@@ -459,8 +460,8 @@ function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; fo
 
 function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: ExercisePageSlide; stroke: string; units: WeightUnit; t: (k: string) => string }) {
   switch (slide.kind) {
-    case "e1rmTrend":
-      return <TrendChart C={C} id="exp-e1rm" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.e1rm, units)), pr: p.pr }))} stroke={stroke} />;
+    case "weightTrend":
+      return <TrendChart C={C} id="exp-weight" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} />;
     case "paceTrend":
       return <TrendChart C={C} id="exp-pace" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed />;
     case "tonnage":
@@ -569,7 +570,11 @@ export default function AuroraExercisePage() {
         <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{name}</Text>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 18, marginTop: 14, paddingHorizontal: 2 }}>
+      {/* HOW IT'S DONE — looping animation + muscles worked + form cues (gym
+          lifts only; cardio/custom names render nothing). */}
+      <AuroraExerciseAnatomy name={name} />
+
+      <View style={{ flexDirection: "row", gap: 18, marginTop: 18, paddingHorizontal: 2 }}>
         {PERIODS.map((p) => {
           const on = period === p.id;
           return (

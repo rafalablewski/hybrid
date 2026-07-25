@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
 import LeavePlanSection from "./leave-plan";
 import ProgramDays from "../program-days";
+import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -20,6 +21,10 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
   const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
+  // Browse filter — narrows the goal grid by discipline and/or free-text so the
+  // library stays findable as it grows past a scroll-it-all list.
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<GoalCategory | "all">("all");
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
@@ -35,20 +40,57 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>{t("w.train.plans.title")}</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{t("w.train.plans.chooseGoal")}</p>
       <EnrolledCard />
-      {GOAL_GROUPS.map((group) => (
-        <div key={group.category} style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10, color: C("ash") }}>{group.category}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.lg }}>
-            {group.goals.map((g) => (
-              <div key={g.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => setGoalId(g.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGoalId(g.id); } }}>
-                <div style={{ display: "flex", alignItems: "center", gap: space.ms }}><span style={{ fontSize: 22, color: g.color }}>{g.icon}</span><div style={{ fontWeight: 800, fontSize: fs.title }}>{g.name}</div></div>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>{g.blurb}</p>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: g.color }}>{g.plans.length} {t("w.train.plans.plansCount")}</div>
-              </div>
-            ))}
+      <FilterBar query={query} setQuery={setQuery} cat={cat} setCat={setCat} />
+      {(() => {
+        const groups = filterGoalGroups(query, cat);
+        if (groups.length === 0) return <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), padding: "8px 2px" }}>{t("w.train.plans.noMatches")}</p>;
+        return groups.map((group) => (
+          <div key={group.category} style={{ marginBottom: 24 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10, color: C("ash") }}>{group.category}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.lg }}>
+              {group.goals.map((g) => (
+                <div key={g.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => setGoalId(g.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGoalId(g.id); } }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: space.ms }}><span style={{ fontSize: 22, color: g.color }}>{g.icon}</span><div style={{ fontWeight: 800, fontSize: fs.title }}>{g.name}</div></div>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>{g.blurb}</p>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: g.color }}>{g.plans.length} {t("w.train.plans.plansCount")}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ));
+      })()}
+    </div>
+  );
+}
+
+// Browse filter for the goal grid — a search field over a full-bleed row of
+// discipline chips (All + each category). Both levers feed the shared
+// filterGoalGroups() so web + mobile narrow the library identically.
+function FilterBar({ query, setQuery, cat, setCat }: { query: string; setQuery: (v: string) => void; cat: GoalCategory | "all"; setCat: (c: GoalCategory | "all") => void }) {
+  const { t } = useLang();
+  const cats: (GoalCategory | "all")[] = ["all", ...GOAL_CATEGORIES];
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("w.train.plans.searchGoals")}
+          aria-label={t("w.train.plans.searchGoals")}
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", marginLeft: "calc(-1 * var(--page-pad-x, 16px))", marginRight: "calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px)" }}>
+        {cats.map((c) => {
+          const on = c === cat;
+          return (
+            <button key={c} onClick={() => setCat(c)} aria-pressed={on} style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 600, letterSpacing: ".02em", padding: "8px 14px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: on ? C("lime") : C("ink2"), color: on ? C("ink") : C("ash"), border: `1px solid ${on ? C("lime") : C("line")}` }}>
+              {c === "all" ? t("w.train.plans.allCats") : c}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

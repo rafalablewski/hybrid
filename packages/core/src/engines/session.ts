@@ -2,7 +2,7 @@ import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { sportPacePerMeters, formatSportDistance, olympicSport } from "../olympic-sports";
+import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -185,9 +185,33 @@ export interface StrengthBlock {
   superset?: boolean;
 }
 
+/**
+ * Coarse cardio modality — what KIND of endurance/sport activity a cardio block
+ * is, independent of its display name. Endurance modalities are named
+ * specifically; a known non-distance sport (tennis, football, judo…) is
+ * `"sport"` (counts as neither running nor endurance mileage); anything else
+ * generic is `"other"`. Lets the Running screen stay runs-only and the endurance
+ * summaries exclude racket/team/combat sports without re-guessing from the name.
+ */
+export type CardioDiscipline =
+  | "running"
+  | "swimming"
+  | "cycling"
+  | "rowing"
+  | "skiing"
+  | "walking"
+  | "sport"
+  | "other";
+
 export interface CardioBlock {
   kind: "cardio";
   name: string;
+  /**
+   * The activity's coarse modality — stamped at log time when the sport is known
+   * (the sport/run loggers set it), else backfilled from the name on read by
+   * `migrateBlocks`. Consumers should prefer this over re-classifying the name.
+   */
+  discipline?: CardioDiscipline;
   /** distance covered, km — pace is derived from minutes. */
   distance?: number;
   minutes?: number;
@@ -261,6 +285,24 @@ export function blockBestE1rm(b: StrengthBlock, bodyweightKg?: number | null): n
     const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
     const reps = num(s.reps);
     if (load > 0 && !Number.isNaN(reps)) best = Math.max(best, e1rm(load, reps));
+  }
+  return best;
+}
+
+/**
+ * Heaviest EFFECTIVE working-set load in a strength block (kg) — the ACTUAL top
+ * weight lifted, not an estimated 1RM. Bodyweight-aware like `blockBestE1rm`
+ * (a +20 kg weighted pull-up at 70 kg BW counts as 90 kg). Holds/carries (time
+ * or distance measures) have no load and return 0. This is the headline
+ * strength number; e1RM stays a secondary, derived stat.
+ */
+export function blockTopLoad(b: StrengthBlock, bodyweightKg?: number | null): number {
+  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return 0;
+  let best = 0;
+  for (const s of workingSets(b)) {
+    const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
+    const reps = num(s.reps);
+    if (load > 0 && !Number.isNaN(reps) && reps > 0) best = Math.max(best, load);
   }
   return best;
 }
@@ -417,6 +459,32 @@ export function sessionShape(session: LoggedSession): "strength" | "cardio" | "m
   return "strength";
 }
 
+/**
+ * A one-line, HONEST summary of a saved routine (WorkoutTemplate) for the
+ * Quick-start picker — no fabricated numbers. `moves` is the block count; `kind`
+ * is the discipline (single kind, else "mixed"); `minutes` is summed ONLY from
+ * cardio/conditioning blocks that actually carry a minutes value (a pure gym
+ * routine has none → null, so the client shows just the move count). Shared so
+ * the web sheet + mobile sheet read identically.
+ */
+export function routineSummary(blocks: SessionBlock[]): {
+  moves: number;
+  minutes: number | null;
+  kind: BlockKind | "mixed";
+} {
+  const moves = blocks.length;
+  const kinds = [...new Set(blocks.map((b) => b.kind))];
+  const kind: BlockKind | "mixed" = kinds.length === 1 ? (kinds[0] ?? "mixed") : "mixed";
+  let minutes = 0;
+  let hasMinutes = false;
+  for (const b of blocks)
+    if ((b.kind === "cardio" || b.kind === "conditioning") && typeof b.minutes === "number" && b.minutes > 0) {
+      minutes += b.minutes;
+      hasMinutes = true;
+    }
+  return { moves, minutes: hasMinutes ? Math.round(minutes) : null, kind };
+}
+
 /** Local clock time a session was logged at — "21:05" (locale clock, no
  *  seconds). One formatter shared by both clients (session rows, detail). */
 export function sessionClockTime(iso: string): string {
@@ -478,6 +546,35 @@ export function lastStrengthByLift(sessions: LoggedSession[]): Map<string, Stren
 const CARDIO_RE = /\b(run|jog|walk|hike|ruck|sprint|swim|bike|cycl|ride|row(?!ing intervals)|erg|ski|elliptical|treadmill|cardio)\b/i;
 const CONDITIONING_RE = /\b(metcon|emom|amrap|wod|circuit|interval|conditioning|tabata|complex|finisher)s?\b/i;
 
+// Keyword → cardio modality, most-specific first so a shared word can't
+// cross-classify: "Canoe Sprint" is rowing (not running via "sprint"), "Ski
+// Erg" is skiing (not rowing via "erg"), "Bike Sprints" is cycling (not
+// running), "Race Walking" is walking (not running via a stray "run"-like word).
+// Leading word-boundary + stem (no trailing boundary) so "swim" matches
+// "Swimming", "cycl" matches "Cycling", "run" matches "Running", etc.
+const DISCIPLINE_PATTERNS: [CardioDiscipline, RegExp][] = [
+  ["swimming", /\b(swim|freestyle|breaststroke|backstroke|butterfly|pool)/i],
+  ["cycling", /\b(bike|biking|cycl|spin|peloton|bmx|ride|riding)/i],
+  ["skiing", /\b(skiing|ski\b|skate|skating|snowboard)/i],
+  ["walking", /\b(walk|hike|hiking|ruck|stair|step)/i],
+  ["rowing", /\b(row|erg|paddle|kayak|canoe|scull)/i],
+  ["running", /\b(run|jog|sprint|treadmill|fartlek|parkrun|marathon)/i],
+];
+
+/**
+ * Coarse cardio modality for an activity NAME. Endurance modalities are matched
+ * by keyword (running/swimming/cycling/rowing/skiing/walking — covering both the
+ * Olympic endurance sports and generic/custom names like "Easy Run" or
+ * "Treadmill"); a known Olympic sport that tracks no distance (tennis, football,
+ * judo…) is `"sport"`; anything else generic is `"other"`. This is the fallback
+ * when a block carries no stamped `discipline` — see `CardioDiscipline`.
+ */
+export function cardioDiscipline(name: string): CardioDiscipline {
+  for (const [d, re] of DISCIPLINE_PATTERNS) if (re.test(name)) return d;
+  if (timedSportOnly(name)) return "sport";
+  return "other";
+}
+
 /**
  * Best-guess block kind for an exercise name — checks the MOVEMENTS catalog
  * first (a movement with a system / a "cond" pattern is cardio or conditioning),
@@ -525,7 +622,13 @@ export function migrateBlocks(blocks: unknown, aliasMap: Record<string, string> 
     }
     return raw as SessionBlock;
   });
-  return canonicalizeBlockNames(migrated, aliasMap);
+  // Backfill each cardio block's modality from its (canonical) name unless it was
+  // already stamped at log time — so every consumer can read `discipline` as a
+  // stable tag rather than re-classifying the name. Derived AFTER canonicalizing
+  // so a renamed move classifies off its current name.
+  return canonicalizeBlockNames(migrated, aliasMap).map((b) =>
+    b.kind === "cardio" && !b.discipline ? { ...b, discipline: cardioDiscipline(b.name) } : b,
+  );
 }
 
 /**
@@ -750,10 +853,54 @@ export function e1rmSeries(sessions: LoggedSession[], lift: string, bw?: Bodywei
   return pts;
 }
 
+export interface TopLoadPoint {
+  date: string;
+  weightKg: number;
+}
+
+/** Heaviest working-set load per session for one lift, oldest → newest — the
+ *  ACTUAL top weight (not e1RM), bodyweight-aware when `bw` is passed. */
+export function topLoadSeries(sessions: LoggedSession[], lift: string, bw?: BodyweightInput): TopLoadPoint[] {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
+  const pts: TopLoadPoint[] = [];
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (isStrength(b) && b.name === lift) {
+        const best = blockTopLoad(b, bwAt(bw, s.startedAt));
+        if (best > 0) pts.push({ date: s.startedAt, weightKg: Math.round(best * 10) / 10 });
+      }
+  return pts;
+}
+
 export interface PrRow {
   lift: string;
   e1rm: number;
   when: string;
+}
+
+export interface TopLiftRow {
+  lift: string;
+  weightKg: number;
+  when: string;
+}
+
+/** Heaviest ACTUAL load per lift (all-time), heaviest first — the real top
+ *  weight, not an estimated 1RM. Bodyweight-aware when `bw` is passed (each
+ *  session resolves at its own date). */
+export function bestTopLoadByLift(sessions: LoggedSession[], bw?: BodyweightInput): TopLiftRow[] {
+  const map = new Map<string, { weightKg: number; when: string }>();
+  for (const s of sessions)
+    for (const b of s.blocks)
+      if (isStrength(b)) {
+        const best = Math.round(blockTopLoad(b, bwAt(bw, s.startedAt)) * 10) / 10;
+        const cur = map.get(b.name);
+        if (best > 0 && (!cur || best > cur.weightKg)) map.set(b.name, { weightKg: best, when: s.startedAt });
+      }
+  return [...map.entries()]
+    .map(([lift, v]) => ({ lift, ...v }))
+    .sort((a, b) => b.weightKg - a.weightKg);
 }
 
 /** Best e1RM per lift (all-time PRs), strongest first — bodyweight-aware when

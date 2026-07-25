@@ -9,6 +9,7 @@ import {
   sportDistanceUnit,
   parseSportDistance,
   cardioPace,
+  cardioDiscipline,
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
@@ -115,7 +116,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string; onClose: () => v
     const mins = parseFloat(minutes);
     if (!Number.isFinite(mins) && km == null) { setMsg(t("w.home.quickSport.needValue")); return; }
     setSaving(true); setMsg("");
-    const block: SessionBlock = { kind: "cardio", name: sport, ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) };
+    const block: SessionBlock = { kind: "cardio", name: sport, discipline: cardioDiscipline(sport), ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) };
     const now = new Date().toISOString();
     try {
       const res = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: sport, startedAt: now, completedAt: now, blocks: [block] }) });
