@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -237,5 +237,33 @@ describe("sumMealComponents (meal built from products)", () => {
   });
   it("is zero for an empty meal", () => {
     expect(sumMealComponents([])).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  });
+});
+
+describe("meal parts (custom parts of the day)", () => {
+  const tMeal = (k: string) => ({ breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snacks" }[k] ?? k);
+  it("returns the four built-ins (localized) when there are no custom parts", () => {
+    const parts = resolveMealParts([], tMeal);
+    expect(parts.map((p) => p.key)).toEqual(["breakfast", "lunch", "dinner", "snack"]);
+    expect(parts.every((p) => !p.custom)).toBe(true);
+    expect(parts[0]!.label).toBe("Breakfast");
+  });
+  it("appends custom parts after the built-ins", () => {
+    const parts = resolveMealParts([{ key: "pre-workout", label: "Pre-workout" }], tMeal);
+    expect(parts).toHaveLength(5);
+    expect(parts[4]).toEqual({ key: "pre-workout", label: "Pre-workout", custom: true });
+  });
+  it("drops a custom part that collides with a built-in key", () => {
+    const parts = resolveMealParts([{ key: "lunch", label: "Lunch again" }], tMeal);
+    expect(parts).toHaveLength(4);
+  });
+  it("caps the number of custom parts", () => {
+    const many = Array.from({ length: MAX_CUSTOM_MEAL_PARTS + 3 }, (_, i) => ({ key: `p${i}`, label: `P${i}` }));
+    const parts = resolveMealParts(many, tMeal);
+    expect(parts).toHaveLength(4 + MAX_CUSTOM_MEAL_PARTS);
+  });
+  it("slugs a typed label into a stable key", () => {
+    expect(mealPartKey("  Pre-Workout!  ")).toBe("pre-workout");
+    expect(mealPartKey("Second Breakfast")).toBe("second-breakfast");
   });
 });

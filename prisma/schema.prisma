@@ -88,6 +88,7 @@ model User {
   templates       WorkoutTemplate[]
   savedMeals      SavedMeal[]
   foodProducts    FoodProduct[]
+  foodLogs        FoodLog[]
   planDayOverrides PlanDayOverride[]
   assignments     Assignment[]     @relation("assignmentAthlete")
   assignmentsMade Assignment[]     @relation("assignmentCoach")
@@ -549,6 +550,32 @@ model FoodProduct {
   createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// One logged food/meal entry — the editable, deletable record behind a day's
+// intake. The engines still read the mirrored Signals (energyIntake + the three
+// macros); THIS row is what the Diary lists and what edit/delete operate on.
+// Macros are stored PER SINGLE SERVING with a separate `qty`, so a quantity edit
+// rescales the mirror cleanly. `signalIds` links the four mirrored Signals for
+// an atomic delete. Owner-scoped (same own-rows RLS as Signal); soft-guarded on
+// the server so logging still works before reference/sql-nutrition-log.sql runs.
+model FoodLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  subname   String? // brand / serving label, shown under the name
+  source    String // the part of the day (breakfast | lunch | dinner | snack | custom)
+  kcal      Float // per single serving
+  protein   Float // grams per serving
+  carbs     Float // grams per serving
+  fat       Float // grams per serving
+  qty       Float    @default(1) // number of servings logged
+  signalIds Json     @default("[]") // string[] of the mirrored Signal ids
+  ts        DateTime // the log instant — the client groups these into local days
+  createdAt DateTime @default(now())
+
+  @@index([userId, ts])
 }
 
 // A workout scheduled to an athlete on a date. Blocks are a SNAPSHOT of the

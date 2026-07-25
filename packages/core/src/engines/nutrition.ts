@@ -111,6 +111,46 @@ export function estimateMaintenance(
 
 export type NutritionGoal = "lose" | "maintain" | "gain";
 
+// ── Parts of the day ───────────────────────────────────────────────────────
+// A log is attributed to a "part of the day" via Signal.source. The four
+// built-ins are shared by every client; a Full user may append their OWN parts
+// (e.g. "Pre-workout"), persisted in the nutrition prefs. Kept here so web +
+// mobile render ONE list from one source of truth (parity rule).
+export const DEFAULT_MEAL_PART_KEYS = ["breakfast", "lunch", "dinner", "snack"] as const;
+export type DefaultMealPart = (typeof DEFAULT_MEAL_PART_KEYS)[number];
+/** A custom part a Full user added: a stable slug `key` + a display `label`. */
+export type NutritionMealPart = { key: string; label: string };
+/** How many custom parts a user may keep (mirrored client + server). */
+export const MAX_CUSTOM_MEAL_PARTS = 8;
+/** A resolved part for rendering: built-in key (label via t) or a custom part. */
+export type MealPartDef = { key: string; label: string; custom: boolean };
+
+/**
+ * The full ordered list of parts to render: the four built-ins (labels resolved
+ * by the caller's translator) followed by the user's custom parts. Custom parts
+ * that collide with a built-in key are dropped so a slot never appears twice.
+ */
+export function resolveMealParts(
+  custom: NutritionMealPart[] | undefined,
+  tMeal: (key: DefaultMealPart) => string,
+): MealPartDef[] {
+  const base: MealPartDef[] = DEFAULT_MEAL_PART_KEYS.map((k) => ({ key: k, label: tMeal(k), custom: false }));
+  const seen = new Set<string>(DEFAULT_MEAL_PART_KEYS);
+  const extra: MealPartDef[] = [];
+  for (const p of custom ?? []) {
+    if (!p || !p.key || !p.label || seen.has(p.key)) continue;
+    seen.add(p.key);
+    extra.push({ key: p.key, label: p.label, custom: true });
+    if (extra.length >= MAX_CUSTOM_MEAL_PARTS) break;
+  }
+  return [...base, ...extra];
+}
+
+/** Normalize a user-typed part name into a stable slug key. */
+export function mealPartKey(label: string): string {
+  return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+}
+
 export interface MacroTargets {
   kcal: number;
   protein: number; // g
