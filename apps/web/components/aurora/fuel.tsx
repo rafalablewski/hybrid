@@ -5,7 +5,6 @@ import {
   fuelToday,
   trainingEnergyOnDay,
   MEAL_PRESETS,
-  mealPresetSignals,
   isFullAccess,
   type FuelToday,
   type FuelMacro,
@@ -62,10 +61,12 @@ export default function AuroraFuel({
     setBusy(p.id);
     setDone(null);
     try {
-      for (const s of mealPresetSignals(p)) {
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "preset" }) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      }
+      // Route through the editable food-log (like the Nutrition screen) so the
+      // preset appears in the Diary as a named, editable/deletable entry AND the
+      // mirrored Signals the engines read. Attributed to its natural part of day.
+      const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
+      const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, source: p.id.split("-")[0] || "snack", kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 }) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await refresh();
       setDone(p.id);
       window.setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);

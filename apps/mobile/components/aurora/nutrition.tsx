@@ -14,7 +14,6 @@ import {
   isFullAccess,
   canUseRecipes,
   MEAL_PRESETS,
-  mealPresetSignals,
   FREE_MEAL_LIMIT,
   FREE_PRODUCT_LIMIT,
   nutritionSummary,
@@ -37,7 +36,7 @@ import {
   type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
-  createSignal, logBodyweight, getAssignedDiet, scanNutritionLabel,
+  logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
   fetchFoodProducts, createFoodProduct, deleteFoodProduct, searchFoods,
   getNutritionPrefs, saveNutritionPrefs as apiSaveNutritionPrefs,
@@ -598,16 +597,20 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     return ok;
   };
 
-  // Premade meal → one signal per macro (SAME kinds as the manual add). Free
-  // users can't log presets (Full-only, per access.canSaveMealsAndProducts) —
-  // a tap routes to the upgrade screen instead. Manual entry above stays free.
+  // Premade meal → a real, editable Diary entry (routes through /api/nutrition/log
+  // like every other log, so it appears in the Diary with a name + edit/delete)
+  // AND the mirrored Signals the engines read. Attributed to the preset's natural
+  // part of the day (its id prefix: breakfast|lunch|dinner|snack). Free users
+  // can't log presets (Full-only, per access.canSaveMealsAndProducts) — a tap
+  // routes to the upgrade screen instead. Manual entry above stays free.
   const logPreset = async (p: MealPreset) => {
     if (!full) { router.push("/upgrade"); return; }
     setMealMsg("");
-    const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit)));
-    if (ok.includes(false)) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setMealMsg(`${t(p.labelKey).split(/ [·–] /)[0]} +${p.kcal} kcal`);
-    revalidate.recovery();
+    const part = p.id.split("-")[0] || mealType;
+    const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
+    if (!(await logEntry({ name, source: part, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 }))) return;
+    setMealMsg(`${name} +${p.kcal} kcal`);
+    load(); loadLogs(); revalidate.recovery();
   };
 
   // Scan a nutrition label (Full) — pick a photo, send it to the AI vision

@@ -6,7 +6,6 @@ import {
   fuelToday,
   trainingEnergyOnDay,
   MEAL_PRESETS,
-  mealPresetSignals,
   isFullAccess,
   type FuelToday,
   type FuelMacro,
@@ -18,7 +17,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { usePersona } from "../../lib/persona";
-import { createSignal } from "../../lib/api";
+import { createFoodLog } from "../../lib/api";
 import { F, serifIf } from "../../lib/ui";
 import { Ring, withAlpha, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -51,9 +50,13 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
     if (busy) return;
     setBusy(p.id);
     setDone(null);
-    const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit, "preset")));
+    // Route through the editable food-log (like the Nutrition screen) so the
+    // preset appears in the Diary as a named, editable/deletable entry AND the
+    // mirrored Signals the engines read. Attributed to its natural part of day.
+    const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
+    const { ok } = await createFoodLog({ name, source: p.id.split("-")[0] || "snack", kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 });
     setBusy(null);
-    if (ok.includes(false)) return onOpen(); // failure — fall back to manual sheet
+    if (!ok) return onOpen(); // failure — fall back to manual sheet
     revalidate.recovery();
     setDone(p.id);
     setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);

@@ -6,7 +6,7 @@ import { useSessions } from "@/lib/use-sessions";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
-  isFullAccess, canUseRecipes, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
+  isFullAccess, canUseRecipes, MEAL_PRESETS, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
@@ -658,20 +658,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return false;
   };
 
-  // Premade meal → one POST per macro (the SAME signal kinds as the manual add).
-  // Free users can't log presets (canSaveMealsAndProducts === Full) — tapping a
-  // locked tile routes to the upgrade screen instead.
+  // Premade meal → a real, editable Diary entry (routes through /api/nutrition/log
+  // like every other log, so it appears in the Diary with a name + edit/delete)
+  // AND the mirrored Signals the engines read. Attributed to the preset's natural
+  // part of the day (its id prefix: breakfast|lunch|dinner|snack). Free users
+  // can't log presets (canSaveMealsAndProducts === Full) — a tap routes to upgrade.
   const logPreset = async (p: MealPreset) => {
     if (!full) { onNavigate?.("upgrade"); return; }
     setError(""); setMealMsg("");
+    const part = p.id.split("-")[0] || mealType;
+    const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
     try {
-      for (const s of mealPresetSignals(p)) {
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "preset" }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      }
-      setMealMsg(`${t(p.labelKey).split(/ [·–] /)[0]} +${p.kcal} kcal`);
-      await load(); revalidate.recovery();
+      const ok = await logEntry({ name, source: part, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 });
+      if (!ok) return;
+      setMealMsg(`${name} +${p.kcal} kcal`);
+      await load(); await loadLogs(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
