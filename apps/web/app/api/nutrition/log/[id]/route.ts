@@ -2,15 +2,34 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { parseDerivedEntryId } from "@hybrid/core";
 
 // Edit (quantity) or delete a single logged entry. Both keep the mirrored
 // Signals in lock-step: a quantity edit rescales them, a delete removes them.
 // Owner-scoped (explicit userId check + RLS).
+//
+// Two kinds of id arrive here. A plain id is a FoodLog row (per-serving macros
+// + a qty, so an edit sets an absolute quantity). A `sig:`-prefixed id is an
+// entry the Diary rebuilt from Signals alone — there is no per-serving base to
+// multiply, so an edit sends a relative `scale` and the Signal values are
+// rescaled by it. Delete is the same either way: the entry and its Signals go.
 
 const num = (v: unknown): number => {
   const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) : NaN;
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
+
+// Rescale the Signals behind a derived entry (a Diary entry with no FoodLog
+// row). A component that would round away to nothing is removed instead.
+async function scaleSignals(userId: string, ids: string[], scale: number) {
+  const rows = await prisma.signal.findMany({ where: { id: { in: ids }, userId }, select: { id: true, value: true } });
+  for (const r of rows) {
+    const next = Math.round(r.value * scale);
+    if (next > 0) await prisma.signal.update({ where: { id: r.id }, data: { value: next } });
+    else await prisma.signal.delete({ where: { id: r.id } }).catch(() => {});
+  }
+  return rows.length;
+}
 
 // Delete the Signals a FoodLog created (best-effort — a missing row is fine).
 async function deleteMirror(userId: string, ids: unknown) {
@@ -26,7 +45,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const parsed = await readJsonLimited<Record<string, unknown>>(request, 2 * 1024);
   if (parsed.error) return parsed.error;
-  const qty = num((parsed.data as { qty?: unknown }).qty);
+  const body = parsed.data as { qty?: unknown; scale?: unknown };
+
+  // Signal-backed entry — rescale its readings by the relative factor.
+  const derivedIds = parseDerivedEntryId(id);
+  if (derivedIds) {
+    const scale = num(body.scale);
+    if (scale <= 0 || scale > 50) return NextResponse.json({ error: "scale must be between 0 and 50" }, { status: 400 });
+    const touched = await scaleSignals(me.id, derivedIds, scale);
+    if (touched === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json({ ok: true, log: null });
+  }
+
+  const qty = num(body.qty);
   if (qty <= 0) return NextResponse.json({ error: "qty must be positive" }, { status: 400 });
 
   let existing;
@@ -64,6 +95,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
+
+  // Signal-backed entry — removing its Signals removes the entry.
+  const derivedIds = parseDerivedEntryId(id);
+  if (derivedIds) {
+    const { count } = await prisma.signal.deleteMany({ where: { id: { in: derivedIds }, userId: me.id } });
+    if (count === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  }
 
   let existing;
   try {

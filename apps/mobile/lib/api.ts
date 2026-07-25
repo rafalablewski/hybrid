@@ -415,7 +415,10 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
 }
 
 // ── Editable food log — the per-entry records the Diary lists + edit/delete.
-export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string };
+// `derived` marks an entry the server rebuilt from its Signals because no
+// FoodLog row exists for it (logged before the table shipped, or the migration
+// hasn't run) — it edits by a relative scale instead of an absolute quantity.
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean };
 export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
@@ -443,7 +446,7 @@ export async function createFoodLog(
 }
 export async function updateFoodLogQty(id: string, qty: number): Promise<boolean> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ qty }),
@@ -453,9 +456,23 @@ export async function updateFoodLogQty(id: string, qty: number): Promise<boolean
     return false;
   }
 }
+// Rescale a DERIVED entry (Signals only, no FoodLog row): it has no per-serving
+// base, so the edit is a relative factor applied to the stored readings.
+export async function scaleFoodLog(id: string, scale: number): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ scale }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 export async function deleteFoodLog(id: string): Promise<boolean> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${id}`, { method: "DELETE", headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/${encodeURIComponent(id)}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
