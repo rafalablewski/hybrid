@@ -1,0 +1,415 @@
+<title>HYBRID — Explore redesign concepts</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+  --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
+  --blue:#6cb6bd; --violet:#8ba0cc; --amber:#d0cd94; --red:#e58a5c; --gold:#e6c34e;
+  --font-display:"Archivo","Helvetica Neue","Segoe UI",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --shadow-card:0 6px 22px -12px rgba(0,0,0,.55);
+  --gutter:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-display);
+  background:
+    radial-gradient(70% 55% at 12% -5%, color-mix(in srgb,var(--lime) 9%,transparent), transparent 60%),
+    radial-gradient(60% 50% at 92% 8%, color-mix(in srgb,var(--violet) 10%,transparent), transparent 55%),
+    var(--ink);
+  background-attachment:fixed;
+  color:var(--chalk);
+  min-height:100vh;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 28px 80px}
+@media(max-width:720px){.wrap{padding:26px 16px 60px}}
+
+/* ---------- page header ---------- */
+.eyebrow{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--ash)}
+.masthead .eyebrow{color:var(--lime)}
+.masthead h1{
+  font-size:clamp(30px,5vw,46px);font-weight:900;letter-spacing:-.03em;line-height:1.02;
+  margin:14px 0 12px;max-width:16ch;text-wrap:balance;
+}
+.masthead p{color:var(--ash);max-width:60ch;font-size:15.5px}
+.masthead .brandrow{display:flex;align-items:center;gap:12px}
+.brandmark{width:30px;height:30px;border-radius:9px;background:var(--lime);color:var(--ink);
+  display:grid;place-items:center;font-weight:900;font-size:18px;letter-spacing:-.05em;flex:0 0 auto}
+.problem{
+  margin-top:22px;display:flex;gap:14px;align-items:flex-start;
+  border-left:2px solid color-mix(in srgb,var(--red) 60%,transparent);
+  padding:2px 0 2px 16px;max-width:64ch;color:#c9cdc4;font-size:14px}
+.problem b{color:var(--chalk);font-weight:700}
+
+/* ---------- tab strip ---------- */
+.tabs{
+  display:flex;gap:8px;margin:34px 0 4px;overflow-x:auto;padding-bottom:8px;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;display:flex;flex-direction:column;gap:3px;
+  background:var(--ink2);border:1px solid var(--line);border-radius:16px;
+  padding:11px 15px 12px;cursor:pointer;text-align:left;color:var(--ash);
+  transition:border-color .18s,transform .18s,background .18s;min-width:150px;
+}
+.tab:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--line) 40%,var(--ash))}
+.tab .n{font-family:var(--font-mono);font-size:10.5px;font-weight:700;letter-spacing:.14em}
+.tab .t{font-size:14.5px;font-weight:800;letter-spacing:-.01em;color:var(--chalk)}
+.tab.active{background:color-mix(in srgb,var(--lime) 14%,var(--ink2));border-color:color-mix(in srgb,var(--lime) 55%,transparent)}
+.tab.active .n{color:var(--lime)}
+
+/* ---------- concept panel layout ---------- */
+.stage{display:grid;grid-template-columns:340px 1fr;gap:44px;align-items:start;margin-top:30px}
+@media(max-width:860px){.stage{grid-template-columns:1fr;gap:30px;justify-items:center}}
+.panel{display:none}
+.panel.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* notes */
+.notes{position:sticky;top:26px}
+@media(max-width:860px){.notes{position:static;order:2;max-width:520px}}
+.notes .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}
+.notes h2{font-size:26px;font-weight:900;letter-spacing:-.02em;margin:8px 0 4px;text-wrap:balance}
+.notes .tag{color:var(--ash);font-size:14px;margin-bottom:20px}
+.note-block{margin-bottom:18px}
+.note-block h3{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-bottom:6px}
+.note-block p{font-size:14px;color:#cdd0c8}
+.scalepill{display:inline-flex;align-items:center;gap:7px;background:color-mix(in srgb,var(--lime) 13%,transparent);
+  color:var(--lime);border-radius:999px;padding:5px 13px;font-family:var(--font-mono);font-size:11px;font-weight:600;
+  letter-spacing:.03em;margin-top:2px}
+.scalepill::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--lime)}
+
+/* ---------- phone frame ---------- */
+.phone{
+  order:1;width:352px;max-width:100%;height:748px;border-radius:46px;
+  background:#000;padding:11px;box-shadow:0 40px 90px -30px rgba(0,0,0,.85), 0 0 0 1px #1c1e1c;
+  position:relative;flex:0 0 auto;
+}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:20}
+.screenwrap{width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--ink);position:relative}
+.statusbar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px;font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--chalk);z-index:15;pointer-events:none}
+.statusbar .dots{display:flex;gap:5px;align-items:center}
+.statusbar .dots span{width:15px;height:9px;border:1.4px solid var(--chalk);border-radius:2px;opacity:.9}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:44px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:62px;background:color-mix(in srgb,var(--ink) 86%,transparent);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;align-items:flex-start;
+  justify-content:space-around;padding-top:11px;z-index:14}
+.tabbar i{font-style:normal;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ash);display:flex;flex-direction:column;align-items:center;gap:5px}
+.tabbar i b{font-size:17px;line-height:1;font-weight:400}
+.tabbar i.on{color:var(--lime)}
+
+/* ---------- shared screen bits ---------- */
+.pad{padding-left:var(--gutter);padding-right:var(--gutter)}
+.scr-head{padding:6px 16px 2px}
+.scr-eye{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.scr-title{font-size:27px;font-weight:900;letter-spacing:-.025em;margin-top:6px}
+.search{display:flex;align-items:center;gap:10px;background:var(--ink2);border:1px solid var(--line);border-radius:16px;
+  padding:13px 15px;margin:14px 16px 4px;color:var(--ash);font-size:14px}
+.search .mag{width:15px;height:15px;border:1.6px solid var(--ash);border-radius:999px;position:relative;flex:0 0 auto}
+.search .mag::after{content:"";position:absolute;width:5px;height:1.6px;background:var(--ash);right:-3px;bottom:0;transform:rotate(45deg)}
+.sectionhead{display:flex;align-items:baseline;justify-content:space-between;margin:22px 18px 12px}
+.sectionhead .st{font-weight:800;font-size:18px;letter-spacing:-.01em}
+.sectionhead .sa{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+
+.metaline{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:11px;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--ash)}
+.metaline i{font-style:normal}
+.metaline .bar{width:1px;height:.82em;background:currentColor;opacity:.32}
+.chip{display:inline-block;border-radius:999px;padding:3px 11px;font-family:var(--font-mono);font-size:10.5px;font-weight:500;
+  background:color-mix(in srgb,var(--ash) 15%,transparent);color:var(--ash)}
+.chip.lime{background:color-mix(in srgb,var(--lime) 15%,transparent);color:var(--lime)}
+.chip.hot{background:color-mix(in srgb,var(--lime) 16%,transparent);color:var(--lime)}
+.icontile{width:46px;height:46px;border-radius:14px;background:var(--ink);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:20px;flex:0 0 auto}
+
+/* full-width hero card */
+.hero{
+  position:relative;overflow:hidden;background:var(--ink2);border:1px solid var(--line);border-radius:28px;
+  padding:18px;box-shadow:var(--shadow-card);
+}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 130% at 100% 0%, color-mix(in srgb,var(--accent) 17%,transparent), transparent 58%)}
+.hero>*{position:relative}
+.hero .top{display:flex;gap:13px;align-items:center}
+.hero .icontile{background:color-mix(in srgb,var(--accent) 12%,var(--ink));border-color:color-mix(in srgb,var(--accent) 35%,var(--line));color:var(--accent)}
+.hero h3{font-size:19px;font-weight:800;letter-spacing:-.015em}
+.hero .disc{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+.hero .chips{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap}
+.hero .go{margin-top:15px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hero .start{background:var(--lime);color:var(--ink);border-radius:999px;padding:10px 20px;font-weight:800;font-size:13px;
+  display:inline-flex;align-items:center;gap:7px}
+.hero .metaline{color:var(--ash)}
+.herostack{display:grid;gap:12px;padding:0 16px}
+
+/* full-bleed rail */
+.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+  padding:2px 16px 6px;margin:0 calc(-1 * var(--gutter));}
+.rail::-webkit-scrollbar{display:none}
+.rail::after{content:"";flex:0 0 4px}
+.mini{
+  flex:0 0 auto;width:190px;scroll-snap-align:start;background:var(--ink2);border:1px solid var(--line);
+  border-radius:20px;padding:14px;box-shadow:var(--shadow-card);position:relative;overflow:hidden;
+}
+.mini .icontile{width:38px;height:38px;border-radius:12px;font-size:17px;margin-bottom:11px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--ink));border-color:color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent)}
+.mini h4{font-size:14.5px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.mini .metaline{margin-top:8px;font-size:10px;gap:7px}
+
+.bottomspace{height:78px}
+
+/* ---------- concept 2: podium ---------- */
+.rank{display:flex;align-items:center;gap:16px;background:var(--ink2);border:1px solid var(--line);
+  border-radius:24px;padding:16px 18px;box-shadow:var(--shadow-card);position:relative;overflow:hidden}
+.rank::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(90% 120% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 55%)}
+.rank>*{position:relative}
+.rank .num{font-family:var(--font-mono);font-size:40px;font-weight:700;letter-spacing:-.04em;line-height:.8;
+  color:var(--accent);width:52px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.rank .body{flex:1;min-width:0}
+.rank h3{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.rank .disc{font-family:var(--font-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.rank .trend{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--lime);display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.tile{flex:0 0 auto;width:132px;scroll-snap-align:start;background:var(--ink2);border:1px solid var(--line);
+  border-radius:20px;padding:15px 14px;box-shadow:var(--shadow-card)}
+.tile .icontile{width:42px;height:42px;font-size:19px;margin-bottom:12px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--ink));border-color:color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent)}
+.tile h4{font-size:13.5px;font-weight:700;line-height:1.2;letter-spacing:-.01em;min-height:2.4em}
+.tile .wk{font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ash);margin-top:7px}
+
+/* ---------- concept 4: filter ---------- */
+.filterbar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:6px 16px 4px;margin:6px 0;
+  position:sticky;top:44px;background:color-mix(in srgb,var(--ink) 90%,transparent);backdrop-filter:blur(12px);z-index:8}
+.filterbar::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;border-radius:999px;padding:8px 15px;font-family:var(--font-mono);font-size:11px;font-weight:600;
+  letter-spacing:.03em;background:var(--ink2);border:1px solid var(--line);color:var(--ash)}
+.fchip.on{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+
+/* ---------- concept 5: cover flow ---------- */
+.cover{position:relative;height:210px;border-radius:28px;overflow:hidden;border:1px solid var(--line);
+  display:flex;flex-direction:column;justify-content:space-between;padding:18px}
+.cover::before{content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(200deg, color-mix(in srgb,var(--accent) 55%,var(--ink)) 0%, color-mix(in srgb,var(--accent) 12%,var(--ink)) 46%, var(--ink) 100%);}
+.cover::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(120% 90% at 85% 10%, color-mix(in srgb,var(--accent) 40%,transparent), transparent 55%),
+  linear-gradient(0deg, rgba(0,0,0,.55), transparent 55%);mix-blend-mode:normal}
+.cover>*{position:relative;z-index:2}
+.cover .cvtop{display:flex;justify-content:space-between;align-items:flex-start}
+.cover .cvdisc{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#0d0e0d;
+  background:color-mix(in srgb,#fff 82%,var(--accent));padding:5px 11px;border-radius:999px;font-weight:700}
+.cover .cvwk{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:#e9ece4;font-weight:600}
+.cover h3{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.4);max-width:12ch}
+.cover .cvmeta{margin-top:8px;font-family:var(--font-mono);font-size:11px;color:#e0e4da;letter-spacing:.04em}
+.micro{flex:0 0 auto;width:150px;scroll-snap-align:start;background:var(--ink2);border:1px solid var(--line);
+  border-radius:18px;padding:12px 13px;display:flex;align-items:center;gap:11px}
+.micro .mi{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:0 0 auto;
+  background:color-mix(in srgb,var(--accent) 14%,var(--ink));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line))}
+.micro h4{font-size:13px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.micro .mw{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ash);margin-top:2px}
+
+.footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--ash);font-size:13px;max-width:70ch}
+.footer code{font-family:var(--font-mono);font-size:12px;color:var(--lime);background:color-mix(in srgb,var(--lime) 10%,transparent);padding:1px 6px;border-radius:6px}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brandrow"><span class="brandmark">H</span><span class="eyebrow">HYBRID — Explore</span></div>
+    <h1>Explore, built to scale past 50 plans</h1>
+    <p>Five redesigns of the plan-browsing surface. Every one keeps your brief — <b>three full-width feature cards up top, everything else as smaller scrollable cards below</b> — but each answers the “what happens at 50+ plans” question a different way.</p>
+    <div class="problem"><span>Today the Explore list is a single stacked column. At a dozen plans it’s calm; at fifty it becomes an endless scroll with no hierarchy, no grouping, and no way to find “the running ones.” The fix isn’t a longer list — it’s <b>curation up top + horizontal density below</b>.</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <div id="stageHost"></div>
+
+  <footer class="footer">
+    Mockups render in HYBRID’s shipped <b>Aurora</b> dark theme using the real tokens — <code>--ink #0c0d0c</code>, <code>--lime #c6f84f</code>, Archivo + JetBrains Mono, 28px card radius, full-bleed rails. The phone screens scroll and the rails swipe horizontally — try them. Nothing here touches the codebase; it’s a preview to pick a direction from.
+  </footer>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const A={lime:'var(--lime)',blue:'var(--blue)',violet:'var(--violet)',amber:'var(--amber)',red:'var(--red)'};
+const PLANS=[
+  {n:"Soviet 8-Week Peaking",d:"Olympic Weightlifting",ic:"◢",c:"amber",w:8,s:6,tag:"% of 1RM",focus:["Power","Technique"],hot:1,cat:"Strength"},
+  {n:"6-Day Push Pull Legs",d:"Bodybuilding",ic:"▲",c:"violet",w:9,s:6,tag:"Hypertrophy",focus:["Volume","Size"],hot:1,cat:"Physique"},
+  {n:"Hansons 5K Method",d:"Running",ic:"▶",c:"blue",w:8,s:5,tag:"Pace-based",focus:["Speed","Base"],hot:1,cat:"Endurance"},
+  {n:"5/3/1 Forever",d:"Powerlifting",ic:"■",c:"lime",w:12,s:4,tag:"Percentage",focus:["Strength"],cat:"Strength"},
+  {n:"12-Week KB Cycle",d:"Kettlebell",ic:"⬢",c:"amber",w:12,s:4,tag:"EMOM",focus:["Conditioning"],cat:"Sport"},
+  {n:"Hybrid Hyrox Build",d:"Conditioning",ic:"✕",c:"red",w:8,s:5,tag:"Circuit",focus:["Engine"],hot:1,cat:"Sport"},
+  {n:"Sub-2 Half Marathon",d:"Running",ic:"➔",c:"blue",w:12,s:4,tag:"Threshold",focus:["Endurance"],cat:"Endurance"},
+  {n:"Upper / Lower Split",d:"Physique",ic:"◆",c:"violet",w:8,s:4,tag:"Volume",focus:["Balance"],cat:"Physique"},
+  {n:"Texas Method",d:"Barbell",ic:"▦",c:"lime",w:10,s:3,tag:"Linear",focus:["Strength"],cat:"Strength"},
+  {n:"Zone 2 Base Camp",d:"Aerobic",ic:"≈",c:"blue",w:6,s:5,tag:"HR zones",focus:["Aerobic"],cat:"Health"},
+  {n:"Murph Prep",d:"CrossFit",ic:"✦",c:"red",w:6,s:5,tag:"For time",focus:["Grit"],cat:"Sport"},
+  {n:"Mobility Reset",d:"Recovery",ic:"○",c:"blue",w:4,s:6,tag:"Daily flow",focus:["Mobility"],cat:"Health"},
+];
+const featured=[PLANS[0],PLANS[1],PLANS[2]];
+const rest=PLANS.slice(3);
+const byCat=c=>PLANS.filter(p=>p.cat===c);
+
+/* ---------- helpers ---------- */
+const meta=p=>`<div class="metaline"><i>${p.w} wks</i><span class="bar"></span><i>${p.s}×/wk</i><span class="bar"></span><i>${p.tag}</i></div>`;
+const statusbar=()=>`<div class="statusbar"><span>9:41</span><span class="dots"><span></span></span></div>`;
+const tabbar=()=>`<div class="tabbar">
+  <i><b>⌂</b>Today</i><i class="on"><b>◎</b>Explore</i><i><b>▤</b>Plan</i><i><b>◍</b>You</i></div>`;
+const scrhead=(t="Explore",s="Find your program")=>`<div class="scr-head"><div class="scr-eye">${t}</div><div class="scr-title">${s}</div></div>`;
+const searchbar=()=>`<div class="search"><span class="mag"></span>Search plans, disciplines, coaches</div>`;
+
+const heroCard=p=>`<div class="hero" style="--accent:${A[p.c]}">
+  <div class="top"><div class="icontile">${p.ic}</div>
+    <div style="min-width:0"><div class="disc">${p.d}</div><h3>${p.n}</h3></div></div>
+  <div class="chips">${p.hot?'<span class="chip hot">★ Popular</span>':''}${p.focus.map(f=>`<span class="chip">${f}</span>`).join('')}</div>
+  <div class="go">${meta(p)}<span class="start">Start ›</span></div>
+</div>`;
+
+const miniCard=p=>`<div class="mini" style="--accent:${A[p.c]}">
+  <div class="icontile">${p.ic}</div><h4>${p.n}</h4>${meta(p)}</div>`;
+
+/* ---------- concept builders ---------- */
+function c1(){ // Editorial Trio
+  return screenShell(`
+    ${scrhead()}
+    ${searchbar()}
+    <div class="sectionhead"><span class="st">Featured this week</span><span class="sa">See all →</span></div>
+    <div class="herostack">${featured.map(heroCard).join('')}</div>
+    <div class="sectionhead"><span class="st">More programs</span><span class="sa">See all →</span></div>
+    <div class="pad"><div class="rail">${rest.map(miniCard).join('')}</div></div>
+    <div class="bottomspace"></div>
+  `);
+}
+function c2(){ // Ranked Podium
+  const rank=(p,i)=>`<div class="rank" style="--accent:${A[p.c]}">
+    <div class="num">${String(i+1).padStart(2,'0')}</div>
+    <div class="body"><div class="disc">${p.d}</div><h3>${p.n}</h3>${meta(p)}</div>
+    <div class="trend">▲ ${[42,28,19][i]}%</div></div>`;
+  const tile=p=>`<div class="tile" style="--accent:${A[p.c]}"><div class="icontile">${p.ic}</div>
+    <h4>${p.n}</h4><div class="wk">${p.w} wks — ${p.tag}</div></div>`;
+  return screenShell(`
+    ${scrhead("Explore","Top programs")}
+    <div class="sectionhead"><span class="st">Trending now</span><span class="sa">Updated weekly</span></div>
+    <div class="herostack" style="gap:11px">${featured.map(rank).join('')}</div>
+    <div class="sectionhead"><span class="st">Browse the library</span><span class="sa">51 plans →</span></div>
+    <div class="pad"><div class="rail">${rest.map(tile).join('')}</div></div>
+    <div class="bottomspace"></div>
+  `);
+}
+function c3(){ // Category Shelves
+  const shelf=(cat)=>`
+    <div class="sectionhead"><span class="st">${cat}</span><span class="sa">See all →</span></div>
+    <div class="pad"><div class="rail">${byCat(cat).concat(byCat(cat)).slice(0,6).map(miniCard).join('')}</div></div>`;
+  return screenShell(`
+    ${scrhead()}
+    ${searchbar()}
+    <div class="sectionhead"><span class="st">Editor’s picks</span><span class="sa">See all →</span></div>
+    <div class="herostack">${featured.map(heroCard).join('')}</div>
+    ${['Strength','Endurance','Physique','Sport'].map(shelf).join('')}
+    <div class="bottomspace"></div>
+  `);
+}
+function c4(){ // Spotlight + Filter
+  const cats=['All','Strength','Endurance','Physique','Sport','Health'];
+  return screenShell(`
+    ${scrhead()}
+    <div class="filterbar">${cats.map((c,i)=>`<span class="fchip ${i===0?'on':''}">${c}</span>`).join('')}</div>
+    <div class="sectionhead" style="margin-top:8px"><span class="st">Spotlight</span><span class="sa">See all →</span></div>
+    <div class="herostack">${featured.map(heroCard).join('')}</div>
+    <div class="sectionhead"><span class="st">All programs</span><span class="sa">51 →</span></div>
+    <div class="pad"><div class="rail">${rest.map(miniCard).join('')}</div></div>
+    <div class="bottomspace"></div>
+  `);
+}
+function c5(){ // Cover Flow
+  const cover=p=>`<div class="cover" style="--accent:${A[p.c]}">
+    <div class="cvtop"><span class="cvdisc">${p.d}</span><span class="cvwk">${p.w} WEEKS</span></div>
+    <div><h3>${p.n}</h3><div class="cvmeta">${p.s}×/week — ${p.tag}${p.hot?'  ·  ★ Popular':''}</div></div></div>`;
+  const micro=p=>`<div class="micro" style="--accent:${A[p.c]}"><span class="mi">${p.ic}</span>
+    <div style="min-width:0"><h4>${p.n}</h4><div class="mw">${p.w}w — ${p.d}</div></div></div>`;
+  return screenShell(`
+    ${scrhead("Explore","Featured covers")}
+    <div class="herostack" style="gap:14px">${featured.map(cover).join('')}</div>
+    <div class="sectionhead"><span class="st">Keep exploring</span><span class="sa">See all →</span></div>
+    <div class="pad"><div class="rail">${rest.map(micro).join('')}</div></div>
+    <div class="bottomspace"></div>
+  `);
+}
+function screenShell(inner){
+  return `<div class="phone"><div class="notch"></div><div class="screenwrap">
+    ${statusbar()}<div class="screen">${inner}</div>${tabbar()}</div></div>`;
+}
+
+/* ---------- concepts meta ---------- */
+const CONCEPTS=[
+  {n:"01",t:"Editorial Trio",build:c1,
+   kicker:"The clean default",
+   tag:"Three curated heroes, one dense rail underneath.",
+   idea:"Three big feature cards carry the editorial weight — full accent wash, focus chips, a live Start button. Everything else collapses into a single horizontal rail of compact cards that swipes sideways instead of pushing the page down.",
+   scale:"One rail holds 50 plans in the space of two — swipe replaces scroll.",
+   struct:"Featured ×3 (stacked) → “More programs” rail. Closest to what ships today, lowest build risk."},
+  {n:"02",t:"Ranked Podium",build:c2,
+   kicker:"Social proof first",
+   tag:"A weekly Top-3 chart, then a browsable shelf.",
+   idea:"The three heroes become a ranked chart — 01/02/03 in big mono numerals with a real popularity trend. The numbering earns its place because it encodes true information (this week’s most-started plans), not decoration.",
+   scale:"Ranking gives newcomers an answer to “which one?” before they ever scroll the 50.",
+   struct:"Trending ×3 (ranked rows) → square-tile library rail. Needs a popularity signal from the backend."},
+  {n:"03",t:"Category Shelves",build:c3,
+   kicker:"The Netflix answer",
+   tag:"Heroes on top, one swipeable rail per discipline.",
+   idea:"Three editor’s picks, then the whole library broken into per-discipline shelves — Strength, Endurance, Physique, Sport — each its own full-bleed rail. This is the purpose-built answer to 50+ plans.",
+   scale:"Scales to hundreds: every new plan slots into a shelf, vertical height stays flat.",
+   struct:"Picks ×3 → N category rails. The most scalable, slightly more screen to design."},
+  {n:"04",t:"Spotlight + Filter",build:c4,
+   kicker:"Let them narrow it",
+   tag:"A sticky discipline filter over three spotlights.",
+   idea:"A sticky filter bar sits above three spotlight heroes; tapping a discipline re-scopes both the heroes and the rail below. Combines curation with control for people who already know what they want.",
+   scale:"Filtering is the direct lever against volume — 50 plans become 8 the moment you tap “Running”.",
+   struct:"Filter bar → Spotlight ×3 → filtered rail. Interaction-heavy; great once the catalogue is large."},
+  {n:"05",t:"Cover Flow",build:c5,
+   kicker:"The bold one",
+   tag:"Magazine covers up top, micro-cards below.",
+   idea:"Three immersive duotone covers — discipline-tinted gradients, oversized titles — give Explore a storefront feel. Underneath, a tight rail of micro-cards (icon + name only) keeps browsing fast and light.",
+   scale:"Covers sell the hero picks; the micro rail keeps the long tail glanceable, not heavy.",
+   struct:"Cover ×3 → micro rail. Highest visual payoff; benefits most from real plan artwork later."},
+];
+
+/* ---------- render ---------- */
+const tabsEl=document.getElementById('tabs');
+const host=document.getElementById('stageHost');
+CONCEPTS.forEach((c,i)=>{
+  const b=document.createElement('button');
+  b.className='tab'+(i===0?' active':'');
+  b.innerHTML=`<span class="n">${c.n}</span><span class="t">${c.t}</span>`;
+  b.onclick=()=>select(i);
+  tabsEl.appendChild(b);
+
+  const p=document.createElement('div');
+  p.className='panel'+(i===0?' active':'');
+  p.innerHTML=`<div class="stage">
+    <aside class="notes">
+      <div class="kicker">${c.kicker}</div>
+      <h2>${c.t}</h2>
+      <div class="tag">${c.tag}</div>
+      <div class="note-block"><h3>The idea</h3><p>${c.idea}</p></div>
+      <div class="note-block"><h3>Why it scales</h3><p>${c.scale}</p></div>
+      <div class="note-block"><h3>Structure</h3><p>${c.struct}</p></div>
+      <span class="scalepill">3 heroes + scrollable rail</span>
+    </aside>
+    ${c.build()}
+  </div>`;
+  host.appendChild(p);
+});
+function select(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',i===j));
+  window.scrollTo({top:document.querySelector('.tabs').offsetTop-20,behavior:'smooth'});
+}
+</script>

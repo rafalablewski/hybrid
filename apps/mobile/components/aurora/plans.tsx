@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, APill, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
@@ -19,6 +19,10 @@ export default function AuroraPlans() {
   const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
+  // Browse filter — narrows the goal grid by discipline and/or free-text so the
+  // library stays findable as it grows past a scroll-it-all list.
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<GoalCategory | "all">("all");
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
@@ -57,24 +61,53 @@ export default function AuroraPlans() {
       </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
       <EnrolledCard enrolled={enrolled} />
-      {GOAL_GROUPS.map((group) => (
-        <View key={group.category} style={{ marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
-          {group.goals.map((g) => (
-            <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
-              <ACard style={{ marginBottom: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                  <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{g.name}</Text>
-                </View>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 19 }}>{g.blurb}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, g.color), marginTop: 8 }}>{g.plans.length} {t("plans.plansCount")} →</Text>
-              </ACard>
-            </Pressable>
-          ))}
-        </View>
-      ))}
+      <FilterBar query={query} setQuery={setQuery} cat={cat} setCat={setCat} />
+      {(() => {
+        const groups = filterGoalGroups(query, cat);
+        if (groups.length === 0) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 4 }}>{t("plans.noMatches")}</Text>;
+        return groups.map((group) => (
+          <View key={group.category} style={{ marginBottom: 8 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
+            {group.goals.map((g) => (
+              <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
+                <ACard style={{ marginBottom: 12 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+                    <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{g.name}</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 19 }}>{g.blurb}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, g.color), marginTop: 8 }}>{g.plans.length} {t("plans.plansCount")} →</Text>
+                </ACard>
+              </Pressable>
+            ))}
+          </View>
+        ));
+      })()}
     </AuroraScreen>
+  );
+}
+
+// Browse filter for the goal grid — a search field over a full-bleed row of
+// discipline chips (All + each category). Both levers feed the shared
+// filterGoalGroups() so web + mobile narrow the library identically.
+function FilterBar({ query, setQuery, cat, setCat }: { query: string; setQuery: (v: string) => void; cat: GoalCategory | "all"; setCat: (c: GoalCategory | "all") => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const cats: (GoalCategory | "all")[] = ["all", ...GOAL_CATEGORIES];
+  return (
+    <View style={{ marginBottom: 8 }}>
+      <AField value={query} onChange={setQuery} placeholder={t("plans.searchGoals")} icon="search" />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 10 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {cats.map((c) => {
+          const on = c === cat;
+          return (
+            <Pressable key={c} onPress={() => setCat(c)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? C.lime : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "600", color: on ? C.onAccent : C.ash }}>{c === "all" ? t("plans.allCats") : c}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
