@@ -161,7 +161,6 @@ export default function AuroraHome() {
   }, []);
   useFocusEffect(useCallback(() => { load(); loadRoutines(); }, [load, loadRoutines]));
 
-  const hasRoutines = !!routines && routines.length > 0;
   // Optimistic favourite toggle — flip locally, then PATCH; revert on failure.
   const toggleFavourite = useCallback((r: QuickRoutine) => {
     const next = !r.favourite;
@@ -499,9 +498,10 @@ export default function AuroraHome() {
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <StructureCard C={C} width={structW} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-              {/* The fourth path — only once the user owns a routine to quick-start
-                  (a dead door helps nobody). Opens the favourites sheet. */}
-              {hasRoutines && <StructureCard C={C} width={structW} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />}
+              {/* The fourth path — always present (like the other three). With no
+                  saved routines the sheet shows its build-first empty state, so
+                  it's a prompt, not a dead door. */}
+              <StructureCard C={C} width={structW} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
             </ScrollView>
           </View>
         ) : firstRun ? (
@@ -520,7 +520,7 @@ export default function AuroraHome() {
               <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
               <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-              {hasRoutines && <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />}
+              <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
             </View>
           </View>
         ) : (
