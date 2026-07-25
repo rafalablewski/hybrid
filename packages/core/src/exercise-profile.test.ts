@@ -39,7 +39,7 @@ describe("exerciseProfile", () => {
   });
 
   it("cycling gets elevation", () => {
-    expect(hasField("Road Cycling", "elevation")).toBe(true);
+    expect(hasField("Cycling", "elevation")).toBe(true);
     expect(hasField("Mountain Biking", "elevation")).toBe(true);
   });
 

@@ -1,16 +1,24 @@
 /**
- * @hybrid/core — the Olympic sports catalog for MANUAL sport-session logging.
+ * @hybrid/core — THE single sport database for the whole app.
  *
- * Distinct from sports.ts (the S&C transfer ENGINE — "what strength work makes
- * me better at this sport"). THIS is the list of sports an athlete can log as a
- * session they actually did, even with no wearable connected: pick the sport,
- * fill the parameters it actually tracks (duration always; distance + derived
- * pace for the endurance sports), and it's saved as a normal activity (a cardio
- * block named after the sport — so pace, PRs, history and the training log all
- * read it with zero special-casing).
+ * ONE catalog, two jobs (unified July 2026 — there used to be two lists that
+ * drifted; a sport could be prescribable but not loggable, or vice versa):
+ *
+ *  1. MANUAL sport-session logging — every entry is a sport an athlete can log
+ *     as a session they actually did, even with no wearable: pick the sport,
+ *     fill the parameters it tracks (duration always; distance + derived pace
+ *     for the endurance sports), saved as a normal cardio activity named after
+ *     the sport (so pace, PRs, history and the log read it with zero
+ *     special-casing).
+ *  2. The S&C TRANSFER ENGINE — the subset of sports the app can prescribe
+ *     strength & conditioning for ("what gym work makes me better at this
+ *     sport") carry an optional `sc` block (family + performance marker +
+ *     ranked demands + a level-tagged exercise pool). sports.ts derives its
+ *     SPORTS/SPORT_NAMES + prescribeForSport view from exactly these entries,
+ *     so the engine and the logger can never again disagree on what a sport is.
  *
  * No React/JSX here — data + pure helpers only, consumed by BOTH clients so the
- * two loggers offer the same sports with the same parameters.
+ * two clients offer the same sports with the same parameters.
  */
 
 /**
@@ -35,6 +43,37 @@ export type SportCategory =
   | "Winter"
   | "Multisport";
 
+/** A sport's performance marker — the number the athlete tracks to gauge it. */
+export interface SportMarker {
+  label: string;
+  ph: string;
+}
+
+/** A transferable S&C exercise, tagged by the demand it trains + the min level. */
+export interface PoolExercise {
+  name: string;
+  demand: string;
+  /** min level index (0 = Beginner) this exercise is appropriate from. */
+  lvl: number;
+  why: string;
+}
+
+/**
+ * The S&C transfer-engine payload — present ONLY on sports the app can
+ * prescribe strength & conditioning for. When set, sports.ts surfaces the sport
+ * in SPORTS/SPORT_NAMES and prescribeForSport can dose a session for it.
+ */
+export interface SportSC {
+  /** Coarse S&C grouping shown on the Sport screen (Endurance, Combat, …). */
+  family: string;
+  /** The performance marker the athlete enters (e.g. "Current 5k time"). */
+  marker: SportMarker;
+  /** Physical demands, ranked by training priority. */
+  demands: string[];
+  /** The exercise pool, tagged by demand + level. */
+  pool: PoolExercise[];
+}
+
 export interface OlympicSport {
   name: string;
   icon: string;
@@ -43,7 +82,7 @@ export interface OlympicSport {
   metrics: SportMetric[];
   /**
    * The unit the sport's distance is naturally entered/shown in. Defaults to
-   * "km" (running, road cycling, …). Pool/ergometer sports use "m" (swimming,
+   * "km" (running, cycling, …). Pool/ergometer sports use "m" (swimming,
    * rowing). Storage is ALWAYS km — this only drives display + input, so the
    * shared pace/PR/recap math never sees a mixed unit.
    */
@@ -53,6 +92,12 @@ export interface OlympicSport {
    * 500 → "/500m" for rowing). Ignored for "km" sports (always "/km").
    */
   pacePer?: number;
+  /**
+   * S&C transfer-engine data — set only for the sports the app prescribes gym
+   * work for (sports.ts / prescribeForSport read it). Absent = loggable but not
+   * yet a prescribable S&C sport.
+   */
+  sc?: SportSC;
 }
 
 // Shorthand metric sets — most sports are timed only; endurance sports add
@@ -67,13 +112,42 @@ const PACED: SportMetric[] = ["duration", "distance", "pace"];
  */
 const CATALOG: OlympicSport[] = [
   // ---- Athletics ----
-  { name: "Running", icon: "🏃", category: "Athletics", metrics: PACED },
+  {
+    name: "Running", icon: "🏃", category: "Athletics", metrics: PACED,
+    sc: {
+      family: "Endurance",
+      marker: { label: "Current 5k time", ph: "e.g. 24:30" },
+      demands: ["Unilateral leg strength", "Posterior chain", "Ankle/tendon stiffness", "Running economy"],
+      pool: [
+        { name: "Bulgarian Split Squat", demand: "Unilateral leg strength", lvl: 0, why: "Fixes left-right imbalance — the #1 cause of running injury." },
+        { name: "Romanian Deadlift", demand: "Posterior chain", lvl: 0, why: "Stronger hamstrings/glutes drive a more powerful stride." },
+        { name: "Calf Raise (slow)", demand: "Ankle/tendon stiffness", lvl: 0, why: "Builds the Achilles resilience runners chronically lack." },
+        { name: "Pogo Hops", demand: "Ankle/tendon stiffness", lvl: 1, why: "Trains reactive stiffness — free speed via better energy return." },
+        { name: "Box Jumps", demand: "Running economy", lvl: 1, why: "Develops the explosive power that lowers ground-contact time." },
+        { name: "Depth Jumps", demand: "Running economy", lvl: 2, why: "Advanced plyometric for elastic, reactive running mechanics." },
+      ],
+    },
+  },
   { name: "Marathon", icon: "🏅", category: "Athletics", metrics: PACED },
   { name: "Race Walking", icon: "🚶", category: "Athletics", metrics: PACED },
   { name: "Track & Field", icon: "🏟️", category: "Athletics", metrics: TIME },
 
   // ---- Aquatics ----
-  { name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100 },
+  {
+    name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100,
+    sc: {
+      family: "Endurance",
+      marker: { label: "100m time", ph: "e.g. 1:25" },
+      demands: ["Lat / pulling strength", "Shoulder stability", "Core", "Posterior chain"],
+      pool: [
+        { name: "Lat Pulldown", demand: "Lat / pulling strength", lvl: 0, why: "The catch-and-pull is everything — build the lats behind it." },
+        { name: "Band Pull-apart", demand: "Shoulder stability", lvl: 0, why: "Bulletproofs the swimmer's most-injured joint." },
+        { name: "Hollow Body Hold", demand: "Core", lvl: 0, why: "Streamline body position lives in the core." },
+        { name: "Pull-up", demand: "Lat / pulling strength", lvl: 1, why: "Bodyweight pulling power that transfers to the stroke." },
+        { name: "Cable Straight-arm Pulldown", demand: "Lat / pulling strength", lvl: 2, why: "Mimics the exact freestyle pull path under load." },
+      ],
+    },
+  },
   { name: "Open Water Swimming", icon: "🌊", category: "Aquatics", metrics: PACED },
   { name: "Diving", icon: "🤿", category: "Aquatics", metrics: TIME },
   { name: "Artistic Swimming", icon: "🩰", category: "Aquatics", metrics: TIME },
@@ -85,13 +159,57 @@ const CATALOG: OlympicSport[] = [
   { name: "Surfing", icon: "🏄", category: "Aquatics", metrics: TIME },
 
   // ---- Cycling ----
-  { name: "Road Cycling", icon: "🚴", category: "Cycling", metrics: PACED },
+  {
+    name: "Cycling", icon: "🚴", category: "Cycling", metrics: PACED,
+    sc: {
+      family: "Endurance",
+      marker: { label: "FTP (watts)", ph: "e.g. 240" },
+      demands: ["Leg strength", "Posterior chain", "Single-leg power", "Core"],
+      pool: [
+        { name: "Back Squat", demand: "Leg strength", lvl: 0, why: "Raw leg strength raises your sustainable power floor." },
+        { name: "Romanian Deadlift", demand: "Posterior chain", lvl: 0, why: "Balances quad-dominant cyclists, protects the lower back." },
+        { name: "Step-up", demand: "Single-leg power", lvl: 0, why: "Mirrors the single-leg pedal drive directly." },
+        { name: "Plank Series", demand: "Core", lvl: 0, why: "A stable core transfers leg power to the pedals." },
+        { name: "Trap Bar Jump", demand: "Single-leg power", lvl: 2, why: "Explosive power for sprints and breakaways." },
+      ],
+    },
+  },
   { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED },
   { name: "Mountain Biking", icon: "🚵", category: "Cycling", metrics: PACED },
   { name: "BMX", icon: "🚲", category: "Cycling", metrics: TIME },
 
   // ---- Combat ----
-  { name: "Boxing", icon: "🥊", category: "Combat", metrics: TIME },
+  {
+    name: "Boxing", icon: "🥊", category: "Combat", metrics: TIME,
+    sc: {
+      family: "Combat",
+      marker: { label: "Bouts / experience", ph: "e.g. amateur, 10 bouts" },
+      demands: ["Rotational power", "Shoulder endurance", "Conditioning", "Leg drive"],
+      pool: [
+        { name: "Med Ball Rotational Throw", demand: "Rotational power", lvl: 0, why: "Hip-to-fist rotational power — where punch force comes from." },
+        { name: "Push-up Variations", demand: "Shoulder endurance", lvl: 0, why: "Shoulders that don't drop in the later rounds." },
+        { name: "Assault Bike Intervals", demand: "Conditioning", lvl: 0, why: "Round-specific anaerobic conditioning." },
+        { name: "Jump Squat", demand: "Leg drive", lvl: 1, why: "Explosive legs for footwork and punching off the back foot." },
+        { name: "Landmine Punch Press", demand: "Rotational power", lvl: 2, why: "Loaded punch-pattern power for advanced fighters." },
+      ],
+    },
+  },
+  {
+    name: "BJJ", icon: "🥋", category: "Combat", metrics: TIME,
+    sc: {
+      family: "Combat",
+      marker: { label: "Belt / years", ph: "e.g. Blue, 2 yrs" },
+      demands: ["Grip endurance", "Hip power", "Isometric strength", "Conditioning"],
+      pool: [
+        { name: "Deadlift", demand: "Hip power", lvl: 0, why: "Hip drive for sweeps, bridges, and takedowns." },
+        { name: "Towel Pull-up Hold", demand: "Grip endurance", lvl: 0, why: "Grip that survives the whole round — gi or no-gi." },
+        { name: "Farmer's Carry", demand: "Grip endurance", lvl: 0, why: "Crushing grip endurance plus full-body tension." },
+        { name: "Bear Crawl Intervals", demand: "Conditioning", lvl: 1, why: "Scramble-specific conditioning in grappling positions." },
+        { name: "Zercher Squat", demand: "Isometric strength", lvl: 1, why: "Trains the clinch-and-hold isometric demand of grappling." },
+        { name: "Power Clean", demand: "Hip power", lvl: 2, why: "Explosive triple extension for takedowns and throws." },
+      ],
+    },
+  },
   { name: "Judo", icon: "🥋", category: "Combat", metrics: TIME },
   { name: "Karate", icon: "🥋", category: "Combat", metrics: TIME },
   { name: "Taekwondo", icon: "🥋", category: "Combat", metrics: TIME },
@@ -102,7 +220,22 @@ const CATALOG: OlympicSport[] = [
   { name: "Tennis", icon: "🎾", category: "Racket", metrics: TIME },
   { name: "Table Tennis", icon: "🏓", category: "Racket", metrics: TIME },
   { name: "Badminton", icon: "🏸", category: "Racket", metrics: TIME },
-  { name: "Squash", icon: "🎾", category: "Racket", metrics: TIME },
+  {
+    name: "Squash", icon: "🎾", category: "Racket", metrics: TIME,
+    sc: {
+      family: "Racquet",
+      marker: { label: "Playing level", ph: "e.g. club league, div 3" },
+      demands: ["Lunge strength & stability", "Change-of-direction power", "Repeat-sprint conditioning", "Rotational power"],
+      pool: [
+        { name: "Bulgarian Split Squat", demand: "Lunge strength & stability", lvl: 0, why: "The deep front-corner lunge is squash's signature move — own it under load." },
+        { name: "Lateral Bound", demand: "Change-of-direction power", lvl: 0, why: "Trains the explosive side-push and single-leg landing that plant-and-redirect demands." },
+        { name: "Shuttle Sprints", demand: "Repeat-sprint conditioning", lvl: 0, why: "Court-length repeats build the anaerobic engine that outlasts long rallies." },
+        { name: "Med Ball Rotational Throw", demand: "Rotational power", lvl: 0, why: "Hip-to-racquet rotation — where a heavy, deceptive swing comes from." },
+        { name: "Reverse Lunge", demand: "Lunge strength & stability", lvl: 1, why: "Loaded stepping strength that carries your lunges deeper into a long match." },
+        { name: "Depth Jump", demand: "Change-of-direction power", lvl: 2, why: "Advanced reactive plyometric for elite first-step quickness off the T." },
+      ],
+    },
+  },
 
   // ---- Team ----
   { name: "Football", icon: "⚽", category: "Team", metrics: TIME },
@@ -127,7 +260,22 @@ const CATALOG: OlympicSport[] = [
   { name: "Golf", icon: "⛳", category: "Target", metrics: TIME },
 
   // ---- Outdoor ----
-  { name: "Sport Climbing", icon: "🧗", category: "Outdoor", metrics: TIME },
+  {
+    name: "Climbing", icon: "🧗", category: "Outdoor", metrics: TIME,
+    sc: {
+      family: "Outdoor",
+      marker: { label: "Hardest redpoint grade", ph: "e.g. 6c+ / V5" },
+      demands: ["Pulling strength", "Grip / finger strength", "Core tension", "Shoulder stability"],
+      pool: [
+        { name: "Pull-up", demand: "Pulling strength", lvl: 0, why: "Foundational pulling power for steeper terrain." },
+        { name: "Hollow Body Hold", demand: "Core tension", lvl: 0, why: "The body tension that keeps your feet on overhangs." },
+        { name: "Scapular Pull-up", demand: "Shoulder stability", lvl: 0, why: "Protects shoulders from the climber's chronic injuries." },
+        { name: "Hangboard Repeaters", demand: "Grip / finger strength", lvl: 1, why: "The single highest-return exercise above intermediate." },
+        { name: "Weighted Pull-up", demand: "Pulling strength", lvl: 2, why: "Max-strength pulling for hard, powerful moves." },
+        { name: "Front Lever Progression", demand: "Core tension", lvl: 2, why: "Elite tension for steep, cutting-loose climbing." },
+      ],
+    },
+  },
   { name: "Skateboarding", icon: "🛹", category: "Outdoor", metrics: TIME },
   { name: "Equestrian", icon: "🏇", category: "Outdoor", metrics: TIME },
 
@@ -244,7 +392,7 @@ import type { LoggedSession } from "./engines/session";
 
 // Shown to a brand-new athlete (or to top up a short history) so the quick-log
 // widget always offers a few one-tap chips before "More…".
-const DEFAULT_SUGGESTED = ["Running", "Road Cycling", "Swimming", "Tennis", "Football"];
+const DEFAULT_SUGGESTED = ["Running", "Cycling", "Swimming", "Tennis", "Football"];
 
 /**
  * The athlete's go-to sports for a quick-log shortlist — the Olympic sports they

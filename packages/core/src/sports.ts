@@ -1,29 +1,24 @@
 /**
- * @hybrid/core — sport-driven training data + pure logic.
+ * @hybrid/core — the S&C transfer ENGINE (sport + level → the gym work that
+ * transfers). Pure logic only.
  *
- * Ported verbatim from the React prototype (reference/HybridApp.jsx).
- * No React/JSX here — data and helpers only.
+ * The sport DATA is NOT here anymore — there is ONE sport database, the catalog
+ * in ./olympic-sports. This module derives its SPORTS / SPORT_NAMES view from
+ * exactly the catalog entries that carry an `sc` (S&C) block, so the engine and
+ * the logger can never disagree on what a sport is. Add or edit a sport in
+ * olympic-sports.ts (give it an `sc` block to make it prescribable); everything
+ * here follows automatically.
  */
 
 import { MOVEMENTS } from "./engines/movements";
 import { bestE1rmByLift, type LoggedSession } from "./engines/session";
+import { OLYMPIC_SPORTS, type SportMarker, type PoolExercise } from "./olympic-sports";
 
 // ============================================================
 //  Types
 // ============================================================
 
-export interface SportMarker {
-  label: string;
-  ph: string;
-}
-
-export interface PoolExercise {
-  name: string;
-  demand: string;
-  lvl: number;
-  why: string;
-}
-
+/** The engine's view of a sport — projected from a catalog entry's `sc` block. */
 export interface Sport {
   icon: string;
   family: string;
@@ -66,99 +61,19 @@ export interface SportPrescription {
 
 export const LEVELS: string[] = ["Beginner", "Intermediate", "Advanced", "Elite"];
 
-// Each sport: physical demands (ranked), a performance marker, and an
-// exercise pool tagged by which demand it trains + the level it suits.
-// lvl = min level index (0=Beginner) the exercise is appropriate from.
-export const SPORTS: Record<string, Sport> = {
-  Running: {
-    icon: "🏃", family: "Endurance",
-    marker: { label: "Current 5k time", ph: "e.g. 24:30" },
-    demands: ["Unilateral leg strength", "Posterior chain", "Ankle/tendon stiffness", "Running economy"],
-    pool: [
-      { name: "Bulgarian Split Squat", demand: "Unilateral leg strength", lvl: 0, why: "Fixes left-right imbalance — the #1 cause of running injury." },
-      { name: "Romanian Deadlift", demand: "Posterior chain", lvl: 0, why: "Stronger hamstrings/glutes drive a more powerful stride." },
-      { name: "Calf Raise (slow)", demand: "Ankle/tendon stiffness", lvl: 0, why: "Builds the Achilles resilience runners chronically lack." },
-      { name: "Pogo Hops", demand: "Ankle/tendon stiffness", lvl: 1, why: "Trains reactive stiffness — free speed via better energy return." },
-      { name: "Box Jumps", demand: "Running economy", lvl: 1, why: "Develops the explosive power that lowers ground-contact time." },
-      { name: "Depth Jumps", demand: "Running economy", lvl: 2, why: "Advanced plyometric for elastic, reactive running mechanics." },
-    ],
-  },
-  Climbing: {
-    icon: "🧗", family: "Outdoor",
-    marker: { label: "Hardest redpoint grade", ph: "e.g. 6c+ / V5" },
-    demands: ["Pulling strength", "Grip / finger strength", "Core tension", "Shoulder stability"],
-    pool: [
-      { name: "Pull-up", demand: "Pulling strength", lvl: 0, why: "Foundational pulling power for steeper terrain." },
-      { name: "Hollow Body Hold", demand: "Core tension", lvl: 0, why: "The body tension that keeps your feet on overhangs." },
-      { name: "Scapular Pull-up", demand: "Shoulder stability", lvl: 0, why: "Protects shoulders from the climber's chronic injuries." },
-      { name: "Hangboard Repeaters", demand: "Grip / finger strength", lvl: 1, why: "The single highest-return exercise above intermediate." },
-      { name: "Weighted Pull-up", demand: "Pulling strength", lvl: 2, why: "Max-strength pulling for hard, powerful moves." },
-      { name: "Front Lever Progression", demand: "Core tension", lvl: 2, why: "Elite tension for steep, cutting-loose climbing." },
-    ],
-  },
-  BJJ: {
-    icon: "🥋", family: "Combat",
-    marker: { label: "Belt / years", ph: "e.g. Blue, 2 yrs" },
-    demands: ["Grip endurance", "Hip power", "Isometric strength", "Conditioning"],
-    pool: [
-      { name: "Deadlift", demand: "Hip power", lvl: 0, why: "Hip drive for sweeps, bridges, and takedowns." },
-      { name: "Towel Pull-up Hold", demand: "Grip endurance", lvl: 0, why: "Grip that survives the whole round — gi or no-gi." },
-      { name: "Farmer's Carry", demand: "Grip endurance", lvl: 0, why: "Crushing grip endurance plus full-body tension." },
-      { name: "Bear Crawl Intervals", demand: "Conditioning", lvl: 1, why: "Scramble-specific conditioning in grappling positions." },
-      { name: "Zercher Squat", demand: "Isometric strength", lvl: 1, why: "Trains the clinch-and-hold isometric demand of grappling." },
-      { name: "Power Clean", demand: "Hip power", lvl: 2, why: "Explosive triple extension for takedowns and throws." },
-    ],
-  },
-  Cycling: {
-    icon: "🚴", family: "Endurance",
-    marker: { label: "FTP (watts)", ph: "e.g. 240" },
-    demands: ["Leg strength", "Posterior chain", "Single-leg power", "Core"],
-    pool: [
-      { name: "Back Squat", demand: "Leg strength", lvl: 0, why: "Raw leg strength raises your sustainable power floor." },
-      { name: "Romanian Deadlift", demand: "Posterior chain", lvl: 0, why: "Balances quad-dominant cyclists, protects the lower back." },
-      { name: "Step-up", demand: "Single-leg power", lvl: 0, why: "Mirrors the single-leg pedal drive directly." },
-      { name: "Plank Series", demand: "Core", lvl: 0, why: "A stable core transfers leg power to the pedals." },
-      { name: "Trap Bar Jump", demand: "Single-leg power", lvl: 2, why: "Explosive power for sprints and breakaways." },
-    ],
-  },
-  Boxing: {
-    icon: "🥊", family: "Combat",
-    marker: { label: "Bouts / experience", ph: "e.g. amateur, 10 bouts" },
-    demands: ["Rotational power", "Shoulder endurance", "Conditioning", "Leg drive"],
-    pool: [
-      { name: "Med Ball Rotational Throw", demand: "Rotational power", lvl: 0, why: "Hip-to-fist rotational power — where punch force comes from." },
-      { name: "Push-up Variations", demand: "Shoulder endurance", lvl: 0, why: "Shoulders that don't drop in the later rounds." },
-      { name: "Assault Bike Intervals", demand: "Conditioning", lvl: 0, why: "Round-specific anaerobic conditioning." },
-      { name: "Jump Squat", demand: "Leg drive", lvl: 1, why: "Explosive legs for footwork and punching off the back foot." },
-      { name: "Landmine Punch Press", demand: "Rotational power", lvl: 2, why: "Loaded punch-pattern power for advanced fighters." },
-    ],
-  },
-  Swimming: {
-    icon: "🏊", family: "Endurance",
-    marker: { label: "100m time", ph: "e.g. 1:25" },
-    demands: ["Lat / pulling strength", "Shoulder stability", "Core", "Posterior chain"],
-    pool: [
-      { name: "Lat Pulldown", demand: "Lat / pulling strength", lvl: 0, why: "The catch-and-pull is everything — build the lats behind it." },
-      { name: "Band Pull-apart", demand: "Shoulder stability", lvl: 0, why: "Bulletproofs the swimmer's most-injured joint." },
-      { name: "Hollow Body Hold", demand: "Core", lvl: 0, why: "Streamline body position lives in the core." },
-      { name: "Pull-up", demand: "Lat / pulling strength", lvl: 1, why: "Bodyweight pulling power that transfers to the stroke." },
-      { name: "Cable Straight-arm Pulldown", demand: "Lat / pulling strength", lvl: 2, why: "Mimics the exact freestyle pull path under load." },
-    ],
-  },
-  Squash: {
-    icon: "🎾", family: "Racquet",
-    marker: { label: "Playing level", ph: "e.g. club league, div 3" },
-    demands: ["Lunge strength & stability", "Change-of-direction power", "Repeat-sprint conditioning", "Rotational power"],
-    pool: [
-      { name: "Bulgarian Split Squat", demand: "Lunge strength & stability", lvl: 0, why: "The deep front-corner lunge is squash's signature move — own it under load." },
-      { name: "Lateral Bound", demand: "Change-of-direction power", lvl: 0, why: "Trains the explosive side-push and single-leg landing that plant-and-redirect demands." },
-      { name: "Shuttle Sprints", demand: "Repeat-sprint conditioning", lvl: 0, why: "Court-length repeats build the anaerobic engine that outlasts long rallies." },
-      { name: "Med Ball Rotational Throw", demand: "Rotational power", lvl: 0, why: "Hip-to-racquet rotation — where a heavy, deceptive swing comes from." },
-      { name: "Reverse Lunge", demand: "Lunge strength & stability", lvl: 1, why: "Loaded stepping strength that carries your lunges deeper into a long match." },
-      { name: "Depth Jump", demand: "Change-of-direction power", lvl: 2, why: "Advanced reactive plyometric for elite first-step quickness off the T." },
-    ],
-  },
-};
+// The prescribable sports, projected from the ONE sport catalog: every catalog
+// entry that carries an `sc` (S&C) block becomes an engine Sport, in catalog
+// order. Each sport declares its ranked demands + a level-tagged exercise pool
+// (lvl = min level index, 0 = Beginner) in its `sc` block. To add or edit a
+// prescribable sport, edit its `sc` block in olympic-sports.ts — never here.
+export const SPORTS: Record<string, Sport> = Object.fromEntries(
+  Object.values(OLYMPIC_SPORTS)
+    .filter((s) => s.sc)
+    .map((s) => [
+      s.name,
+      { icon: s.icon, family: s.sc!.family, marker: s.sc!.marker, demands: s.sc!.demands, pool: s.sc!.pool },
+    ]),
+);
 
 export const SPORT_NAMES: string[] = Object.keys(SPORTS);
 
