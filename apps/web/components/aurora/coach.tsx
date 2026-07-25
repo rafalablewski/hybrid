@@ -11,6 +11,7 @@ import { fs, space,
   toTrainingLog,
   type LoggedSession,
   localTodayKey,
+  formatStrengthPr,
 } from "@hybrid/core";
 import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
@@ -561,7 +562,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
             )}
             {r.prs.length > 0 && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
-                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.teams.coach.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" – ")}
+                🏆 {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
               </Mono>
             )}
           </>

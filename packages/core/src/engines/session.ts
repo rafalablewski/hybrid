@@ -3,6 +3,7 @@ import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
+import { fmtWeight, type WeightUnit } from "../units";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -353,6 +354,49 @@ export function formatCardioPr(
   const per = sportPacePerMeters(p.move) / 1000;
   const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
   return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
+}
+
+/**
+ * One-line summary of a STRENGTH PR, headlining the weight actually moved (#231)
+ * — never the estimated 1RM. One source of truth for the web + mobile PR lines
+ * so the wording and delta math can't drift between them.
+ *
+ * Three shapes, because a record isn't always a heavier bar:
+ *   first ever      → "Barbell Deadlift 100 kg (first!)"
+ *   heavier than before → "Barbell Bench Press 82 kg (+6 kg)"
+ *   same bar, more reps → "Pull-up 88 kg (more reps)"
+ * The last case is why e1RM still DETECTS records — 100 kg × 5 → 100 kg × 8 is
+ * a genuine PR that no weight comparison would ever catch.
+ */
+export function formatStrengthPr(
+  p: { lift: string; topLoad: number; previousTopLoad: number | null },
+  labels: { first: string; moreReps: string },
+  units: WeightUnit = "kg",
+): string {
+  return `${p.lift} ${fmtWeight(p.topLoad, units)} (${strengthPrDelta(p, labels, units)})`;
+}
+
+/**
+ * Just the "what changed" tag of a strength PR — the gain, the first-time label,
+ * or the more-reps label. Split out of formatStrengthPr because the PR ROWS and
+ * the Wrapped hero subtitle render the delta on its own, next to a lift name
+ * that's already on screen. Both clients share this so the three-way branch
+ * can't drift between them (it was hand-written in six places before).
+ *
+ * `first` differs by surface on purpose — a row says "first!", the hero says
+ * "first ever" — so the caller passes the label it wants.
+ *
+ * Formats through fmtWeight rather than raw subtraction: topLoad is rounded to
+ * 0.1 kg, so `100.1 - 95.3` is 4.799999999999997 in binary floating point.
+ */
+export function strengthPrDelta(
+  p: { topLoad: number; previousTopLoad: number | null },
+  labels: { first: string; moreReps: string },
+  units: WeightUnit = "kg",
+): string {
+  if (p.previousTopLoad == null) return labels.first;
+  if (p.topLoad > p.previousTopLoad) return `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`;
+  return labels.moreReps;
 }
 
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */

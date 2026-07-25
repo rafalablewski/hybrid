@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { bestE1rmMap, topLoadMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory, newCardioPrsInSession } from "./records";
+import { bestE1rmMap, topLoadMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory, newCardioPrsInSession, lifetimePrCount } from "./records";
 import type { LoggedSession } from "./session";
 
 const squat = (load: string, reps: string): LoggedSession["blocks"][number] => ({
@@ -48,6 +48,28 @@ describe("personal records", () => {
 
   it("not beating the prior best yields no PR", () => {
     expect(newPrsInSession(s3, [s1, s2])).toEqual([]);
+  });
+
+  it("a PR carries the ACTUAL weight lifted alongside the e1RM that found it", () => {
+    // #231 — the number to SHOW is the weight on the bar, not the estimate.
+    const first = newPrsInSession(s1, [])[0]!;
+    expect(first.topLoad).toBe(100);
+    expect(first.previousTopLoad).toBeNull();
+    expect(first.e1rm).toBe(Math.round(e1rm(100, 5))); // ~117, deliberately NOT the headline
+
+    const beat = newPrsInSession(s2, [s1])[0]!;
+    expect(beat.topLoad).toBe(120);
+    expect(beat.previousTopLoad).toBe(100);
+  });
+
+  it("a rep PR at the same weight reports an unchanged topLoad", () => {
+    // 100 kg × 5 → 100 kg × 8: a genuine record no weight comparison would find,
+    // so the e1RM rises while the actual load stays put.
+    const more = session("4", "2026-05-24T10:00:00.000Z", [squat("100", "8")]);
+    const hit = newPrsInSession(more, [s1])[0]!;
+    expect(hit.e1rm).toBeGreaterThan(Math.round(e1rm(100, 5)));
+    expect(hit.topLoad).toBe(100);
+    expect(hit.previousTopLoad).toBe(100);
   });
 
   it("prsForSession only compares against earlier-dated sessions", () => {
@@ -148,5 +170,70 @@ describe("cardio records", () => {
   it("the first run of a move is a distance first (previous = null)", () => {
     const hits = newCardioPrsInSession(r1, []);
     expect(hits[0]!).toMatchObject({ kind: "distance", previous: null });
+  });
+});
+
+describe("a record fires on EITHER basis (heaviest-ever, or a better estimate)", () => {
+  const lift = (id: string, day: string, load: string, reps: string): LoggedSession =>
+    ({
+      id,
+      title: "T",
+      startedAt: `2026-06-${day}T10:00:00.000Z`,
+      blocks: [{ kind: "strength", name: "Barbell Squat", sets: [{ load, reps }] }],
+    }) as unknown as LoggedSession;
+
+  it("a heaviest-ever lift records even when a high-rep block left a higher e1RM", () => {
+    // 80x15 → e1RM 120. 100x5 → e1RM 117, but it IS the heaviest ever pulled.
+    // This used to return [] — heaviest ever, no record, no trophy.
+    const volume = lift("v", "10", "80", "15");
+    const heavy = lift("h", "25", "100", "5");
+    const hits = newPrsInSession(heavy, [volume]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!).toMatchObject({ lift: "Barbell Squat", topLoad: 100, previousTopLoad: 80 });
+    // and it reads as the weight gained, not as a rep PR
+    expect(hits[0]!.e1rm).toBeLessThan(hits[0]!.previous!);
+  });
+
+  it("still fires a same-load rep PR (the e1RM basis)", () => {
+    const hits = newPrsInSession(lift("b", "25", "100", "8"), [lift("a", "10", "100", "5")]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!).toMatchObject({ topLoad: 100, previousTopLoad: 100 });
+  });
+
+  it("does not fire when neither the weight nor the estimate improves", () => {
+    expect(newPrsInSession(lift("b", "25", "100", "3"), [lift("a", "10", "100", "5")])).toEqual([]);
+    expect(newPrsInSession(lift("b", "25", "90", "5"), [lift("a", "10", "100", "5")])).toEqual([]);
+  });
+
+  it("a first-ever lift reports both previous fields as null", () => {
+    expect(newPrsInSession(lift("a", "25", "100", "5"), [])[0]!).toMatchObject({
+      previous: null,
+      previousTopLoad: null,
+    });
+  });
+
+  it("orders heaviest first, so prs[0] is the record the hero celebrates", () => {
+    const prior: LoggedSession = {
+      id: "p", title: "T", startedAt: "2026-06-01T10:00:00.000Z",
+      blocks: [
+        { kind: "strength", name: "Barbell Squat", sets: [{ load: "100", reps: "5" }] },
+        { kind: "strength", name: "Barbell Bench Press", sets: [{ load: "60", reps: "5" }] },
+      ],
+    } as unknown as LoggedSession;
+    const now: LoggedSession = {
+      id: "n", title: "T", startedAt: "2026-06-20T10:00:00.000Z",
+      blocks: [
+        { kind: "strength", name: "Barbell Bench Press", sets: [{ load: "70", reps: "5" }] }, // +10, lighter
+        { kind: "strength", name: "Barbell Squat", sets: [{ load: "105", reps: "5" }] }, // +5, heavier
+      ],
+    } as unknown as LoggedSession;
+    expect(newPrsInSession(now, [prior]).map((h) => h.lift)).toEqual([
+      "Barbell Squat",
+      "Barbell Bench Press",
+    ]);
+  });
+
+  it("counts a load-only record in the lifetime PR total", () => {
+    expect(lifetimePrCount([lift("v", "10", "80", "15"), lift("h", "25", "100", "5")])).toBe(1);
   });
 });

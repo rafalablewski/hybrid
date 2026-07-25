@@ -36,6 +36,8 @@ import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
   blockBestE1rm,
+  blockTopLoad,
+  formatStrengthPr,
   prsForSession,
   volumeByMuscle,
   e1rmSeries,
@@ -110,11 +112,11 @@ export function SessionDetail({
   const runMove = headlineRunMove(session.blocks);
   const paceData = runMove ? paceSeries(all, runMove).map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm })) : [];
 
-  const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
-    p.previous == null ? `${p.lift} ${fmtWeight(p.e1rm, units)} (first!)` : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
+  const prLine = (p: { lift: string; topLoad: number; previousTopLoad: number | null }) =>
+    formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
   // Distance + pace render in the sport's natural unit (metres for swimming /
   // rowing, km otherwise) — one shared core formatter, see formatCardioPr.
-  const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, "first!");
+  const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, t("summary.firstTime"));
 
   // The workout's charts + set breakdown + manage row — shown as the trailing
   // "details" section beneath the Wrapped panels (opening a session IS the
@@ -125,7 +127,7 @@ export function SessionDetail({
         <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{t("session.theSession")}</div>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
           {fmtDate(session.startedAt)}
-          {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
+          {typeof session.readiness === "number" ? ` – ${t("home.readiness")} ${session.readiness}` : ""}
         </Mono>
       </div>
 
@@ -221,8 +223,10 @@ export function SessionDetail({
                 )}
                 {ssLabels[i] && <span style={{ ...mono, fontSize: fs.micro, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
-              {b.kind === "strength" && blockBestE1rm(b, bwHere) > 0 && (
-                <Mono s={{ fontSize: fs.body }} c={LIME}>{fmtWeight(blockBestE1rm(b, bwHere), units)} e1RM</Mono>
+              {/* The heaviest weight actually moved — an athlete reads this as
+                  "what I lifted", so it can't be an estimate (#231). */}
+              {b.kind === "strength" && blockTopLoad(b, bwHere) > 0 && (
+                <Mono s={{ fontSize: fs.body }} c={LIME}>{fmtWeight(blockTopLoad(b, bwHere), units)}</Mono>
               )}
             </div>
             {b.kind === "strength" ? (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
+  fmtWeight, strengthPrDelta,
   ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
@@ -264,8 +265,12 @@ export default function AuroraCockpit({
               <div style={{ marginTop: 14, paddingTop: 4 }}>
                 {recap.prs.slice(0, 4).map((p) => (
                   <div key={p.lift} style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 0", borderTop: `1px solid ${C("line")}` }}>
-                    <span>{p.lift} e1RM</span>
-                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.e1rm}kg{p.previous == null ? "" : ` – +${p.e1rm - p.previous}`}</span>
+                    <span>{p.lift}</span>
+                    {/* The weight actually lifted (#231) — this row and the session
+                        summary describe the same PR, so they must agree. Formatted
+                        through the shared helper: topLoad is 0.1-rounded, so a raw
+                        subtraction would print +4.799999999999997. */}
+                    <span style={{ color: C("lime"), fontWeight: 700 }}>{fmtWeight(p.topLoad, "kg")}{p.previousTopLoad == null || p.topLoad <= p.previousTopLoad ? "" : ` – ${strengthPrDelta(p, { first: "", moreReps: "" })}`}</span>
                   </div>
                 ))}
               </div>

@@ -7,6 +7,7 @@ import {
   isFriend,
   canViewResults,
   buildSocialFeed,
+  prPostFigure,
   feedCardView,
   friendLeaderboard,
   compareAthletes,
@@ -273,5 +274,43 @@ describe("feedCardView", () => {
   it("falls back to @handle when there's no display name", () => {
     const v = feedCardView({ author: { handle: "tom", displayName: null }, body: null, chips: [], lead: null, when: "now" });
     expect(v.name).toBe("@tom");
+  });
+});
+
+describe("shared PR posts render both stored shapes (#231 migration)", () => {
+  const post = (data: Record<string, unknown>) =>
+    buildSocialFeed(
+      [{
+        author: { id: "a", handle: "a", displayName: "A" },
+        sessions: [],
+        posts: [{ id: "p", kind: "pr" as const, data, at: NOW - 1000 }],
+      }],
+      { now: NOW },
+    ).find((f) => f.subjectId === "p")!;
+
+  it("a NEW post headlines the weight actually lifted, unlabelled", () => {
+    const pr = post({ lift: "Barbell Deadlift", topLoad: 250, e1rm: 333 });
+    expect(pr.chips.join(" ")).toContain("250 kg");
+    expect(pr.chips.join(" ")).not.toContain("333");
+    expect(pr.chips.join(" ")).not.toContain("e1RM");
+    expect(pr.metric).toBe(250);
+  });
+
+  it("a LEGACY post still renders, and stays labelled as an estimate", () => {
+    // Written before #231 — there is no bar weight to recover, so it must not
+    // be passed off as one.
+    const pr = post({ lift: "Barbell Deadlift", e1rm: 333 });
+    expect(pr.chips.join(" ")).toContain("333 kg e1RM");
+    expect(pr.metric).toBe(333);
+  });
+
+  it("survives a post with neither figure", () => {
+    expect(post({ lift: "Barbell Deadlift" }).metric).toBeUndefined();
+  });
+
+  it("prPostFigure prefers topLoad over a stale e1rm on the same row", () => {
+    expect(prPostFigure({ topLoad: 250, e1rm: 333 })).toEqual({ text: "250 kg", value: 250 });
+    expect(prPostFigure({ e1rm: 333 })).toEqual({ text: "333 kg e1RM", value: 333 });
+    expect(prPostFigure({})).toEqual({ text: "? kg", value: undefined });
   });
 });

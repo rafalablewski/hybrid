@@ -14,7 +14,10 @@ import {
   velocityProfiles,
   planProgramToday,
   sessionVolume,
-  blockBestE1rm,
+  blockTopLoad,
+  formatStrengthPr,
+  strengthPrDelta,
+  workoutShareCaption,
   newPrsInSession,
   newCardioPrsInSession,
   liveSessionStats,
@@ -872,15 +875,16 @@ export default function Workout() {
     const prs = newPrsInSession(finished, prior.current, bw);
     const cardioPrs = newCardioPrsInSession(finished, prior.current);
     const prSet = new Set(prs.map((p) => p.lift));
+    // Per-lift bests = the HEAVIEST weight actually moved (#231), never an e1RM.
     const bestMap = new Map<string, number>();
     for (const b of blocks)
       if (b.kind === "strength") {
-        const e = Math.round(blockBestE1rm(b, bodyweightKg));
-        if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+        const w = blockTopLoad(b, bodyweightKg);
+        if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
       }
     const bests: ShareBest[] = [...bestMap.entries()]
-      .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
-      .sort((a, b) => b.e1rm - a.e1rm);
+      .map(([name, weight]) => ({ name, weight, pr: prSet.has(name) }))
+      .sort((a, b) => b.weight - a.weight);
 
     setSummary({
       sessionId,
@@ -1650,39 +1654,39 @@ function Summary({
       : t("summary.share");
 
   const prLine = (p: PrHit) =>
-    p.previous == null
-      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
-      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
+    formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
+  // What a PR row says on the right — shared with web so the three-way branch
+  // can't drift ("+0 kg" would read as no progress at all).
+  const prDelta = (p: PrHit) =>
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
-  const shareText = [
-    firstEver ? t("share.firstWorkout") : null,
-    `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
-    `${summary.minutes} min – ${summary.sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(summary.volume, units)}`,
-    prs[0]
-      ? `\u{1F3C6} ${prLine(prs[0])}`
-      : cardioPrs[0]
-        ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
-        : bests[0]
-          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}`
-          : null,
-    t("share.tracked"),
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const captionHeadline = prs[0]
+    ? `\u{1F3C6} ${prLine(prs[0])}`
+    : cardioPrs[0]
+      ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
+      : bests[0]
+        ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
+        : null;
+  const shareText = workoutShareCaption(
+    { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, firstEver, headline: captionHeadline },
+    units,
+    t,
+  );
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(summary.blocks, false, bodyweightKg);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(summary.blocks, bodyweightKg);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
+    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
+  // Pluralized, matching web — "1 new PR", not "1 new PRs".
   const prHeadline = prs.length > 0
-    ? `🏆 ${prs.length} ${t("summary.newPrs")}`
+    ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
     : cardioPrs.length > 0
-      ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}`
+      ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
       : t("summary.todaysBests");
   const slides: SlideData[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },

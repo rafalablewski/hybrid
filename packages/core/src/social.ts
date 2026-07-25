@@ -14,6 +14,7 @@ import {
   totalVolume,
   sessionVolume,
   bestE1rmByLift,
+  bestTopLoadByLift,
   newPrsInSession,
   migrateBlocks,
   type LoggedSession,
@@ -174,6 +175,21 @@ export function feedCardView(it: { author: { displayName?: string | null; handle
 
 const ms = (iso: string) => new Date(iso).getTime();
 
+/**
+ * The figure to show for a shared PR post, across both stored shapes.
+ *
+ * `topLoad` is what a PR post has carried since #231 — the weight actually
+ * lifted. Rows written before that only have `e1rm`, and nothing can backfill
+ * them (an estimate can't be reversed into a bar weight), so they render with
+ * an explicit "e1RM" label rather than being silently passed off as a weight
+ * the athlete lifted. Exported so tests can pin both shapes.
+ */
+export function prPostFigure(d: { topLoad?: unknown; e1rm?: unknown }): { text: string; value: number | undefined } {
+  if (typeof d.topLoad === "number") return { text: `${d.topLoad} kg`, value: d.topLoad };
+  if (typeof d.e1rm === "number") return { text: `${d.e1rm} kg e1RM`, value: d.e1rm };
+  return { text: "? kg", value: undefined };
+}
+
 /** Build the cross-athlete activity feed from followees' sessions. Emits a
  *  "completed session" item per session and a "PR" item when that session set a
  *  new best — both anchored by (subjectType, subjectId) for kudos/comments. */
@@ -221,7 +237,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       // PRs set in THIS session vs everything the athlete did before it.
       const prs = newPrsInSession(s, ordered.slice(0, idx));
       if (prs.length) {
-        const top = prs.reduce((a, b) => (b.e1rm > a.e1rm ? b : a));
+        // Heaviest actual lift, like every other PR surface (#231). Derived
+        // live from sessions, so unlike the stored PR posts there is no legacy
+        // { lift, e1rm } shape to keep reading here.
+        const top = prs.reduce((a, b) => (b.topLoad > a.topLoad ? b : a));
         items.push({
           id: `pr-${s.id}`,
           kind: "pr",
@@ -233,11 +252,11 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           lead: "PR",
           chips:
             prs.length === 1
-              ? [`${top.lift} — ${top.e1rm} kg e1RM`]
-              : [`${prs.length} PRs`, `top ${top.lift} — ${top.e1rm} kg`],
+              ? [`${top.lift} — ${top.topLoad} kg`]
+              : [`${prs.length} PRs`, `top ${top.lift} — ${top.topLoad} kg`],
           at: at + 1, // tie-break above the session card
           when: relativeTime(at, now),
-          metric: top.e1rm,
+          metric: top.topLoad,
           accent: "amber",
           _sort: sortAt + 1,
         });
@@ -258,9 +277,14 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       if (post.kind === "pr") {
         title = `${nm} shared a PR`;
         lead = "PR";
-        chips = [`${d.lift ?? "Lift"} — ${d.e1rm ?? "?"} kg e1RM`];
+        // Posts written before #231 stored only an e1RM. Read whichever shape
+        // is on the row and LABEL IT for what it is, so a legacy post stays
+        // honest ("133 kg e1RM") instead of being relabelled as a weight the
+        // athlete never actually lifted. New posts carry topLoad.
+        const shared = prPostFigure(d);
+        chips = [`${d.lift ?? "Lift"} — ${shared.text}`];
         accent = "amber";
-        metric = typeof d.e1rm === "number" ? d.e1rm : undefined;
+        metric = shared.value;
       } else if (post.kind === "workout") {
         title = `${nm} shared a workout`;
         lead = String(d.title ?? "Workout");
@@ -481,7 +505,8 @@ export interface ProfileStats {
   totalSessions: number;
   totalVolumeKg: number;
   currentStreak: number;
-  topLifts: { lift: string; e1rm: number }[];
+  /** heaviest ACTUAL load per lift (kg) — not an estimate (#231) */
+  topLifts: { lift: string; topLoad: number }[];
 }
 
 export function profileStats(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): ProfileStats {
@@ -489,7 +514,7 @@ export function profileStats(sessions: LoggedSession[], now = Date.now(), bw?: B
     totalSessions: sessions.length,
     totalVolumeKg: Math.round(totalVolume(sessions, bw)),
     currentStreak: streak(sessions, 1, now).current,
-    topLifts: bestE1rmByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, e1rm: r.e1rm })),
+    topLifts: bestTopLoadByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, topLoad: r.weightKg })),
   };
 }
 
