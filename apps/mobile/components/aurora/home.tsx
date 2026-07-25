@@ -604,6 +604,12 @@ export default function AuroraHome() {
                 <Pressable onPress={startPrescribed} style={({ pressed }) => ({ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
                   <CtaLabel label={t("w.home.today.start")} color={C.onAccent} fontSize={fs.bodyLg} />
                 </Pressable>
+                {/* Quiet secondary — reach the Quick-start sheet without leaving the
+                    plan: on a plan the four "Train your way" cards aren't shown, so
+                    this is the on-plan door to a saved routine (a session off-plan). */}
+                <Pressable onPress={() => setQuickStartOpen(true)} style={{ marginTop: 10, paddingVertical: 2, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
+                </Pressable>
               </>
             ) : initialLoad ? (
               /* Cold start — sessions AND enrollment are still loading, so we
