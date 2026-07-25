@@ -63,7 +63,7 @@ const HREF: Record<string, Href> = {
   talent: "/talent",
   forceplate: "/forceplate",
   velocity: "/(tabs)/velocity",
-  running: "/(tabs)/running",
+  endurance: "/(tabs)/endurance",
   progress: "/progress",
   nutrition: "/nutrition",
   checkin: "/checkin",

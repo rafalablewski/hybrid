@@ -51,7 +51,6 @@ const AuroraPerformance = dynamic(() => import("./aurora/performance"), { ssr: f
 const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
-const AuroraRunning = dynamic(() => import("./aurora/running"), { ssr: false });
 const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
 const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
@@ -754,8 +753,6 @@ export default function AppShell() {
         {screen === "performance" && <AuroraPerformance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
-
-        {screen === "running" && <AuroraRunning sessions={sessions} />}
 
         {screen === "endurance" && (
           <MobileOnlyScreen

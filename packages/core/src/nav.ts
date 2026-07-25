@@ -112,7 +112,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
   { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
   { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
-  { id: "running", label: "Running", group: "analyze", minPersona: "athlete" },
   { id: "endurance", label: "Endurance", group: "analyze", minPersona: "athlete" },
   { id: "forceplate", label: "Force plate", group: "analyze", minPersona: "athlete" },
   { id: "video", label: "Video", group: "analyze", minPersona: "athlete" },
