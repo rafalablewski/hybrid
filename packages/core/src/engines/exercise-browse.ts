@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock } from "./session";
-import { MOVEMENTS } from "./movements";
+import { movementFor } from "./movements";
 import { gymExercise } from "../exercise-db";
 
 /**
@@ -81,7 +81,7 @@ export function exerciseBucket(name: string, kind?: SessionBlock["kind"]): Exerc
       case "isolation": return CATEGORY_BUCKET[db.category] ?? "other";
     }
   }
-  const mv = MOVEMENTS[name];
+  const mv = movementFor(name);
   if (mv) {
     if (mv.pattern === "squat") return "legs";
     if (mv.pattern === "hinge") return "posterior";

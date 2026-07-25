@@ -10,7 +10,7 @@
  * here follows automatically.
  */
 
-import { MOVEMENTS } from "./engines/movements";
+import { movementFor } from "./engines/movements";
 import { bestE1rmByLift, type LoggedSession } from "./engines/session";
 import { OLYMPIC_SPORTS, type SportMarker, type PoolExercise } from "./olympic-sports";
 
@@ -117,7 +117,7 @@ export function prescribeForSport(
   let personalized = false;
   const blocks: SportBlock[] = picks.map((p) => {
     const logged = e1rmByLift.get(p.name);
-    const baseLoad = MOVEMENTS[p.name]?.baseLoad ?? null;
+    const baseLoad = movementFor(p.name)?.baseLoad ?? null;
     const loadable = logged != null || baseLoad != null;
     if (loadable) {
       const oneRm = logged ?? (baseLoad ?? 0) * 1.2;

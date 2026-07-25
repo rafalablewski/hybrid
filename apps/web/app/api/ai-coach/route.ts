@@ -23,6 +23,7 @@ import {
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { publishExerciseCatalog } from "@/lib/cache";
 
 // The AI coach. Builds context from the athlete's REAL sessions + the
 // prescription engine, then asks Claude (server-side only) for a coaching note.
@@ -72,6 +73,9 @@ export async function POST(request: Request) {
   }));
   const bio = toBiometrics(coreSignals);
 
+  // Engines resolve exercise names against the movement catalog — publish the
+  // admin library first, or library-named lifts contribute zero tissue load.
+  await publishExerciseCatalog();
   const log = toTrainingLog(sessions);
   const rx = prescribeSession(log, bio, { profiles: velocityProfiles(sessions) });
   const state = computePerformanceState(log, bio);

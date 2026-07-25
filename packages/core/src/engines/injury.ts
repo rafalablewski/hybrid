@@ -11,7 +11,7 @@
  */
 
 import type { Biometrics, MuscleGroup, TrainingLog } from "./types";
-import { ALL_MUSCLES, MOVEMENTS } from "./movements";
+import { ALL_MUSCLES, movementFor } from "./movements";
 import { computeFatigue } from "./fatigue";
 import { biometricAdjustment } from "./readiness";
 
@@ -107,7 +107,7 @@ function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, n
   for (const session of log) {
     if (session.daysAgo < 0 || session.daysAgo >= days) continue;
     for (const it of session.items) {
-      const meta = MOVEMENTS[it.move];
+      const meta = movementFor(it.move);
       if (!meta) continue;
       const intensity = it.topRpe ? it.topRpe / 10 : (it.rpe ?? 6) / 10;
       const dose = (it.hardSets ? it.hardSets * 4 : (it.minutes ?? 0) * 0.9) * intensity;

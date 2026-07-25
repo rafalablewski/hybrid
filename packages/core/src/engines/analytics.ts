@@ -3,7 +3,7 @@ import type { MuscleGroup } from "./types";
 import { setsForVolume, effectiveSetLoadKg, topLoadSeries } from "./session";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { MOVEMENTS } from "./movements";
+import { musclesFor } from "./movements";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, periodCutoff, type ExercisePeriod } from "./exercise";
 
@@ -84,8 +84,8 @@ export function weeklyMuscleSets(
       if (t < from || t >= to) continue;
       for (const b of s.blocks) {
         if (b.kind !== "strength") continue;
-        const muscles = MOVEMENTS[b.name]?.muscles;
-        if (!muscles || !muscles.includes(muscle)) continue;
+        const muscles = musclesFor(b.name);
+        if (!muscles.includes(muscle)) continue;
         const n = setsForVolume(b, includeWarmups).filter((set) => {
           const r = parseFloat(set.reps);
           return Number.isFinite(r) && r > 0;
