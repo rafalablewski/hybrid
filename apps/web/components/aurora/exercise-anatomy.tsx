@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { exerciseAnatomy, fs, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraBodyMap from "./body-map";
 
 const C = (v: string) => `var(--color-${v})`;
 const monoRow = (size: number, color: string) => ({
@@ -61,6 +62,8 @@ function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string;
       {/* muscles worked */}
       <div style={{ marginTop: 20 }}>
         <div style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1.4, textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.analyze.exp.anatomy.muscles")}</div>
+        {/* the front/back body-map — the visual, then the ranked bars below */}
+        <AuroraBodyMap name={name} t={t} />
         <Group label={t("w.analyze.exp.anatomy.primary")} rows={a.primary} t={t} />
         <Group label={t("w.analyze.exp.anatomy.secondary")} rows={a.secondary} t={t} />
       </div>
