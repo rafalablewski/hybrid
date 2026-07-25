@@ -562,20 +562,6 @@ button.ctrl[aria-pressed="true"] { border-color: var(--accent); color: var(--acc
   box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--a-lime) 60%, transparent);
   transform: translateY(-18px);
 }
-/* the specular sweep that crosses the glass while a transition runs */
-.nav .sheen {
-  position: absolute; inset: 0; border-radius: 999px; overflow: hidden; z-index: 2;
-  pointer-events: none; opacity: 0;
-}
-.nav .sheen::after {
-  content: ""; position: absolute; top: -50%; bottom: -50%; width: 42%;
-  background: linear-gradient(100deg, transparent, rgba(255,255,255,.42), transparent);
-  transform: translateX(-160%) skewX(-14deg);
-}
-.nav .sheen.run { opacity: 1; }
-.nav .sheen.run::after { animation: sheenGo .62s var(--e-zoom) both; }
-@keyframes sheenGo { to { transform: translateX(360%) skewX(-14deg); } }
-
 /* scrim + sheet */
 .scrim { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 24; pointer-events: none; }
 .sheet {
@@ -684,7 +670,17 @@ footer {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  /* PAGE CHROME — decorative motion is deleted outright. */
+  .wrap *:not(.dev-vp):not(.dev-vp *), .wrap *::before, .wrap *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+  /* THE DEVICE is deliberately exempt. Reduce Motion is a SUBSTITUTION, not a
+     deletion: the screens cross-dissolve over 150 ms (see anim() below) so the
+     user can still perceive that the screen changed. A blanket
+     transition-duration:.001ms here would turn every navigation into an
+     instant cut — which is the exact accessibility defect this page argues
+     against, and which this rule used to cause. */
 }
 </style>
 
@@ -1170,7 +1166,6 @@ footer {
           <!-- the nav pill -->
           <nav class="nav" id="nav">
             <span class="lens" id="lens"></span>
-            <span class="sheen" id="sheen"></span>
             <button class="slot" data-nav="today" aria-label="Today">
               <svg width="21" height="21" viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-village"/></svg>
               <span class="on"><svg width="21" height="21" viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-village"/></svg></span>
@@ -1293,15 +1288,17 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Staggered settle on arrival</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>The list arrives as one thing</h3><span class="chip gap">Cut on review</span></div>
           <p>
-            The screen assembles rather than appears: the first cards arrive 24&nbsp;ms apart,
-            capped at six so a long list never feels gated, and <b>skipped on back-navigation</b> —
-            you're returning to something you've already seen. Watch the History rows land.
+            The first draft of this document proposed a staggered card entrance, 24&nbsp;ms apart.
+            <b>That was wrong and it's been removed.</b> Staggered list entrance is a Material idiom;
+            on iOS a list arrives as a single unit and the navigation itself is the motion. Staggering
+            also delays content for no informational gain, which collides directly with the rule two
+            sections down that a transition may never gate input. The screen should be readable on
+            the frame it lands.
           </p>
           <div class="prop-foot">
-            <button class="play" data-play="stagger">Play</button>
-            <span class="spec-inline"><span>step <b>24ms</b></span><span>cap <b>6 items</b></span><span>rise <b>14px</b></span></span>
+            <span class="spec-inline"><span>See <b>Audited against Apple's bar</b> below</span></span>
           </div>
         </div>
 
@@ -1402,16 +1399,18 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Specular sweep on the glass</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>Glass reacts to content, not to itself</h3><span class="chip gap">Cut on review</span></div>
           <p>
-            Real Liquid Glass reacts to motion. When a transition runs, a narrow highlight sweeps
-            across the nav pill — one 620&nbsp;ms pass, tied to the transition, never idling. It's
-            the cheapest possible approximation of a refractive material and it costs one pseudo-element.
-            It's already firing on every transition you've played.
+            The first draft added a specular highlight that swept across the nav pill on every
+            transition. <b>Removed.</b> Real Liquid Glass refracts and brightens according to what
+            passes <em>behind</em> it — it doesn't emit a highlight on navigation. A flourish that
+            fires every single time you move is decoration announcing itself, and it's the exact
+            thing that separates a considered material from a themed one. What stays is the honest
+            version, already in the pill: a live <code>backdrop-filter</code> so the content
+            genuinely shows through and shifts as screens move underneath.
           </p>
           <div class="prop-foot">
-            <button class="play" data-play="sheen">Play</button>
-            <span class="spec-inline"><span>sweep <b>620ms / e-zoom</b></span><span>opacity <b>0.42 peak</b></span></span>
+            <span class="spec-inline"><span>blur <b>18px</b></span><span>saturate <b>1.2</b></span><span>no scripted highlight</span></span>
           </div>
         </div>
 
@@ -1447,9 +1446,11 @@ footer {
         <div class="prop">
           <div class="prop-hd"><h3>Haptics on commit, focus mode, celebration handoff</h3><span class="chip gap">Not started</span></div>
           <p>
-            Three that can't be shown in a browser. <b>Haptics</b> should fire on the frame a
-            transition commits, not when the finger lands — on an interruptible gesture that means at
-            the threshold crossing. <b>Focus mode</b>: entering the live logger already hides the nav
+            Two that can't be shown in a browser, and one correction. <b>Haptics: far less than the first
+            draft proposed.</b> iOS fires nothing on ordinary navigation — haptics are reserved for a
+            state change with consequence. So: the interruptible-back <em>threshold crossing</em>
+            (a real detent) and set completion in the logger, and nothing else. A buzz on every
+            drill-down would feel cheap within a day. <b>Focus mode</b>: entering the live logger already hides the nav
             pill, so make the entry a statement — the world desaturates and blurs out over 400&nbsp;ms
             and the logger rises through it. <b>Celebration handoff</b>: the PR keyframes already exist
             (<code>prTrophyPop</code>, <code>prSweep</code>, <code>prConfetti</code> in
@@ -1463,24 +1464,29 @@ footer {
         <p class="sec-kicker">The system</p>
         <h2>Motion tokens</h2>
         <p class="sec-intro">
-          The proposed contents of <code>packages/core/src/motion.ts</code>. Four durations and four
-          curves cover everything on this page; a fifth is usually a sign something's wrong. These are
-          the exact values the device is running.
+          The proposed contents of <code>packages/core/src/motion.ts</code> — and the biggest thing
+          the Apple-bar audit changed. <strong>Anything positional is a spring, not a duration and a
+          bezier.</strong> A bezier carries no velocity, so it cannot be interrupted or retargeted
+          mid-flight, which makes "every transition tracks the finger" impossible to actually honour.
+          Springs are also what the two clients can genuinely share: these are SwiftUI's own
+          <code>response</code> / <code>dampingFraction</code> parameters, integrated into a CSS
+          <code>linear()</code> easing on web so both platforms run the same curve rather than an
+          eyeballed approximation of each other. Beziers survive only for opacity. These are the exact
+          values the device is running.
         </p>
         <div class="tablewrap">
           <table>
             <thead><tr><th>Token</th><th>Value</th><th>Used by</th></tr></thead>
             <tbody>
-              <tr><td><code>duration.fast</code></td><td class="num">160 ms</td><td>Exits, dismissals, press states</td></tr>
-              <tr><td><code>duration.base</code></td><td class="num">260 ms</td><td>Sibling slides, entrances, crossfades</td></tr>
-              <tr><td><code>duration.zoom</code></td><td class="num">440 ms</td><td>Shared-element zoom, number travel</td></tr>
-              <tr><td><code>duration.sheet</code></td><td class="num">380 ms</td><td>Sheets, modals, parent recede</td></tr>
-              <tr><td><code>ease.standard</code></td><td class="num">cubic-bezier(.2,.7,.3,1)</td><td>The default. Already the app's curve.</td></tr>
-              <tr><td><code>ease.zoom</code></td><td class="num">cubic-bezier(.2,.85,.25,1)</td><td>Long decelerations that mustn't feel slow</td></tr>
-              <tr><td><code>ease.exit</code></td><td class="num">cubic-bezier(.4,0,.9,.4)</td><td>Accelerating — things leave faster than they arrive</td></tr>
-              <tr><td><code>ease.spring</code></td><td class="num">cubic-bezier(.34,1.4,.5,1)</td><td>Slight overshoot on arrival</td></tr>
-              <tr><td><code>spring.nav</code></td><td class="num">response .32 / damping .74</td><td>The shipped nav lens. Don't change it.</td></tr>
-              <tr><td><code>stagger.step</code></td><td class="num">24 ms</td><td>Per-item delay, capped at 6</td></tr>
+              <tr><td><code>spring.slide</code></td><td class="num">response .44 / damping 1.00</td><td>Sibling travel. Damping 1.0 = no overshoot on a full screen.</td></tr>
+              <tr><td><code>spring.zoom</code></td><td class="num">response .52 / damping .92</td><td>Shared-element zoom, number travel</td></tr>
+              <tr><td><code>spring.sheet</code></td><td class="num">response .46 / damping .86</td><td>Sheets, modals, parent recede</td></tr>
+              <tr><td><code>spring.nav</code></td><td class="num">response .32 / damping .74</td><td>The shipped nav lens (<code>global-nav.tsx:422</code>). Unchanged.</td></tr>
+              <tr><td><code>ease.fade</code></td><td class="num">cubic-bezier(.2,.7,.3,1)</td><td>Opacity only — nothing positional, nothing to interrupt</td></tr>
+              <tr><td><code>ease.exit</code></td><td class="num">cubic-bezier(.4,0,.9,.4)</td><td>Dismissals — accelerating, things leave faster than they arrive</td></tr>
+              <tr><td><code>duration.fast</code></td><td class="num">160 ms</td><td>Dismissals, press states</td></tr>
+              <tr><td><code>duration.dissolve</code></td><td class="num">200 ms</td><td>Content crossfade under a travelling shared element</td></tr>
+              <tr><td><code>duration.reduced</code></td><td class="num">150 ms</td><td>The Reduce Motion cross-dissolve substitution</td></tr>
               <tr><td><code>parallax.under</code></td><td class="num">0.33</td><td>How far the underlying screen moves</td></tr>
               <tr><td><code>recede.scale</code></td><td class="num">0.92</td><td>Parent scale when presenting a modal</td></tr>
             </tbody>
@@ -1510,11 +1516,59 @@ footer {
         </div>
       </section>
 
+      <section id="audit">
+        <p class="sec-kicker">Review</p>
+        <h2>Audited against Apple's bar</h2>
+        <p class="sec-intro">
+          This document was re-reviewed against Apple's own motion practice — the Human Interface
+          Guidelines on motion and accessibility, and how iOS 26 actually implements Liquid Glass and
+          zoom navigation. <strong>Five things failed and have been changed.</strong> They're listed
+          here rather than quietly fixed, because the reasoning is the useful part.
+        </p>
+        <div class="audit">
+          <div class="audit-row">
+            <div class="audit-what">Duration + bezier</div>
+            <div class="audit-detail"><b>Failed.</b> The first token table was four durations and four cubic-beziers, including one named <span class="path">ease.spring</span> that was a bezier imitating a spring. A bezier has no velocity state, so it can't be interrupted or retargeted — while the same document claimed interruptibility as a headline principle. Self-contradictory. Now: real springs (SwiftUI <span class="path">response</span> / <span class="path">dampingFraction</span>) integrated to a CSS <span class="path">linear()</span> curve. Telling detail — the one piece already shipping, the nav lens, was <em>already</em> a real spring. The new tokens had regressed from the code.</div>
+            <span class="chip gap">Rewritten</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">Reduce Motion</div>
+            <div class="audit-detail"><b>Failed, and it was an accessibility defect.</b> "Resolve to the end state instantly" and "zeroed durations" delete the change signal — the user can no longer tell the screen changed. Apple substitutes a cross-dissolve. Now a 150&nbsp;ms dissolve, applied throughout.</div>
+            <span class="chip gap">Rewritten</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">Specular sweep</div>
+            <div class="audit-detail"><b>Cut.</b> Added in the second draft and described as beautiful. It isn't: glass responds to what passes behind it, not to the fact that you navigated. A highlight that fires on every transition is a flourish about itself.</div>
+            <span class="chip gap">Removed</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">Staggered entrance</div>
+            <div class="audit-detail"><b>Cut.</b> A Material idiom, not an iOS one — iOS lists arrive as one unit. It also delayed content, contradicting this document's own rule that a transition may never gate input.</div>
+            <span class="chip gap">Removed</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">Haptics</div>
+            <div class="audit-detail"><b>Scoped down.</b> "Fire on every transition commit" is far more than iOS does — navigation gets no haptic at all. Kept only where there's a real detent: the interruptible-back threshold, and set completion in the logger.</div>
+            <span class="chip part">Narrowed</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">Zoom, honestly</div>
+            <div class="audit-detail">Held, with a caveat now stated plainly: iOS 26's <span class="path">.zoom</span> transition is gesture-driven and interruptible <em>from the first frame</em>. On the zoom specifically, the spring gets it most of the way but the gesture-from-frame-one behaviour needs the native transition, not a re-implementation. Web will be the approximation here; that's an accepted, named gap rather than a claim of parity.</div>
+            <span class="chip part">Caveated</span>
+          </div>
+          <div class="audit-row">
+            <div class="audit-what">The elevated centre FAB</div>
+            <div class="audit-detail">Noted, not changed. A raised centre action in the tab bar is a Material/Instagram idiom rather than an iOS one — Apple tab bars have no elevated slot. It's a deliberate brand decision that already ships, and it isn't this document's to overturn; but it's the reason the nav will never read as fully native, no matter how good the lens is.</div>
+            <span class="chip free">Flagged</span>
+          </div>
+        </div>
+      </section>
+
       <section id="rules">
         <p class="sec-kicker">Guardrails</p>
         <h2>Rules and risks</h2>
         <ul class="rules">
-          <li><b>Reduced motion is not negotiable.</b> Every item resolves to its end state instantly when Reduce Motion is on — toggle it at the top of this page and replay anything. The risk is a new transition bypassing the existing guard, so <code>motion.ts</code> should expose one <code>useMotion()</code> that already returns zeroed durations.</li>
+          <li><b>Reduce Motion means SUBSTITUTE, not delete.</b> The first draft said transitions should “resolve to their end state instantly” and that <code>useMotion()</code> should return zeroed durations. That's wrong, and it's now fixed on this page: Apple's guidance is to swap the positional animation for a <b>cross-dissolve</b>, because a Reduce Motion user still needs to perceive that the screen changed — an instant cut removes the change signal entirely. <code>motion.ts</code> should therefore return a <b>150&nbsp;ms cross-dissolve</b>, not zero. Toggle Reduce Motion at the top of this page and replay anything: nothing snaps, everything dissolves.</li>
           <li><b>Nothing over 450&nbsp;ms.</b> The zoom at 440 is the ceiling and earns it by moving a large distance. A 400&nbsp;ms fade is just slow.</li>
           <li><b>A transition may never gate input.</b> Taps during an animation queue to the destination. Stagger in particular must never delay a tappable row past ~150&nbsp;ms.</li>
           <li><b>Don't stack effects.</b> Zoom plus blur plus scale-back plus stagger, all at once, causes motion sickness in a real share of users. One primary motion per transition; everything else supports it quietly.</li>
@@ -1536,16 +1590,14 @@ footer {
           <table>
             <thead><tr><th>Wave</th><th>Item</th><th>Impact</th><th>Cost</th><th>Native build?</th></tr></thead>
             <tbody>
-              <tr><td class="num">1</td><td><code>motion.ts</code> token file</td><td>Enabling</td><td class="num">0.5 d</td><td>No</td></tr>
+              <tr><td class="num">1</td><td><code>motion.ts</code> spring tokens</td><td>Enabling</td><td class="num">1 d</td><td>No</td></tr>
               <tr><td class="num">1</td><td>Direction from hierarchy</td><td>High</td><td class="num">2 d</td><td>No</td></tr>
               <tr><td class="num">1</td><td>Paired exit on web</td><td>High</td><td class="num">1 d</td><td>No</td></tr>
-              <tr><td class="num">1</td><td>Staggered settle</td><td>Medium</td><td class="num">1 d</td><td>No</td></tr>
               <tr><td class="num">1</td><td>Sheet parent recede</td><td>Medium</td><td class="num">1.5 d</td><td>No</td></tr>
               <tr><td class="num">2</td><td>Zoom from source</td><td>Very high</td><td class="num">4–5 d</td><td>Yes, to verify</td></tr>
               <tr><td class="num">2</td><td>Hero number travel</td><td>High</td><td class="num">2 d</td><td>Yes, to verify</td></tr>
               <tr><td class="num">2</td><td>Interruptible back</td><td>High</td><td class="num">3 d</td><td>Yes</td></tr>
               <tr><td class="num">3</td><td>Nav lens morph + merge</td><td>Medium</td><td class="num">1.5 d</td><td>Yes</td></tr>
-              <tr><td class="num">3</td><td>Specular sweep</td><td>Low</td><td class="num">0.5 d</td><td>No</td></tr>
               <tr><td class="num">3</td><td>Masthead compression</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
               <tr><td class="num">3</td><td>Ambient field continuity</td><td>Low</td><td class="num">0.5 d</td><td>No</td></tr>
               <tr><td class="num">3</td><td>Focus mode + celebration handoff</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
@@ -1570,16 +1622,42 @@ footer {
   const $  = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
 
-  /* ── motion tokens (the proposed motion.ts, in JS) ───────────────── */
-  const E = {
-    standard: "cubic-bezier(.2,.7,.3,1)",
-    zoom:     "cubic-bezier(.2,.85,.25,1)",
-    exit:     "cubic-bezier(.4,0,.9,.4)",
-    spring:   "cubic-bezier(.34,1.4,.5,1)",
-    lens:     "cubic-bezier(.32,1.36,.44,1)",
+  /* ── motion tokens (the proposed motion.ts, in JS) ───────────────────
+     SPRINGS, not duration+bezier, for anything positional. A bezier has no
+     velocity state, so it can't be interrupted or retargeted mid-flight —
+     which is precisely what an interruptible transition needs. These are
+     SwiftUI's own parameters (response / dampingFraction), integrated here
+     into a CSS linear() easing so web and native run the SAME curve.
+     Beziers survive only for opacity, where there's nothing to interrupt. */
+  function spring(response, dampingFraction, samples) {
+    const n = samples || 64;
+    const w = (2 * Math.PI) / response;          // undamped angular frequency
+    const z = dampingFraction;
+    const settle = -Math.log(0.0008) / (z * w);  // envelope decays below 0.08%
+    const wd = w * Math.sqrt(Math.max(1e-6, 1 - z * z));
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = (i / n) * settle;
+      const env = Math.exp(-z * w * t);
+      const x = z < 1
+        ? 1 - env * (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t))
+        : 1 - env * (1 + w * t);
+      pts.push(x.toFixed(5));
+    }
+    return { css: "linear(" + pts.join(",") + ")", ms: Math.round(settle * 1000) };
+  }
+
+  const S = {
+    // response, dampingFraction — 1.0 damping = no overshoot at all.
+    slide: spring(0.44, 1.00),   // sibling travel: crisp, no bounce on a full screen
+    zoom:  spring(0.52, 0.92),   // a large surface needs a longer response
+    sheet: spring(0.46, 0.86),   // a touch of arrival energy, as iOS sheets have
+    nav:   spring(0.32, 0.74),   // THE SHIPPED VALUE — global-nav.tsx:422. Unchanged.
   };
-  const T = { fast: 160, base: 260, zoom: 440, sheet: 380 };
-  const STAGGER = 24, STAGGER_CAP = 6, PARALLAX = 0.33, RECEDE = 0.92;
+  // Opacity-only curves. Nothing here is positional, so nothing needs a spring.
+  const E = { fade: "cubic-bezier(.2,.7,.3,1)", exit: "cubic-bezier(.4,0,.9,.4)" };
+  const T = { fast: 160, dissolve: 200, reduced: 150 };
+  const PARALLAX = 0.33, RECEDE = 0.92;
 
   /* ── reduced motion + mode ───────────────────────────────────────── */
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1618,16 +1696,27 @@ footer {
   }
 
   /* ── tiny animation helper ───────────────────────────────────────── */
-  const PROPS = ["transform","opacity","border-radius","filter","box-shadow","width","height","backdrop-filter","letter-spacing","font-size"];
+  const PROPS = ["transform","opacity","border-radius","filter","box-shadow","width","height","top","backdrop-filter","letter-spacing","font-size"];
   function anim(el, from, to, ms, ease, done) {
     if (!el) return;
+    if (REDUCED) {
+      // Apple's Reduce Motion guidance is to SUBSTITUTE a cross-dissolve, not
+      // to delete the animation: the user still needs to perceive that the
+      // screen changed. Positional properties snap; opacity dissolves.
+      el.style.transition = "none";
+      if (from) Object.assign(el.style, from);
+      void el.offsetWidth;
+      el.style.transition = "opacity " + T.reduced + "ms linear";
+      Object.assign(el.style, to);
+      if (done) window.setTimeout(done, T.reduced + 24);
+      return;
+    }
     el.style.transition = "none";
     if (from) Object.assign(el.style, from);
     void el.offsetWidth;
-    const dur = D(ms);
-    el.style.transition = PROPS.map((p) => p + " " + dur + "ms " + ease).join(", ");
+    el.style.transition = PROPS.map((p) => p + " " + ms + "ms " + ease).join(", ");
     Object.assign(el.style, to);
-    if (done) window.setTimeout(done, dur + 24);
+    if (done) window.setTimeout(done, ms + 24);
   }
   const clearT = (el) => { if (el) { el.style.transition = "none"; } };
 
@@ -1723,7 +1812,7 @@ footer {
   paintPlanHero(PLANS[0]);
 
   /* ═══════════════ THE ROUTER ═══════════════ */
-  const vp = $("#vp"), nav = $("#nav"), lens = $("#lens"), sheen = $("#sheen"), scrim = $("#scrim"), field = $("#field");
+  const vp = $("#vp"), nav = $("#nav"), lens = $("#lens"), scrim = $("#scrim"), field = $("#field");
   const scr = {};
   $$(".scr").forEach((s) => { scr[s.dataset.scr] = s; });
   const sheets = {};
@@ -1750,45 +1839,32 @@ footer {
     el.style.zIndex = String(z || 1);
   }
 
-  /** The specular sweep — one pass, tied to a transition, never idling. */
-  function sweep() {
-    if (REDUCED) return;
-    sheen.classList.remove("run");
-    void sheen.offsetWidth;
-    sheen.classList.add("run");
-    window.setTimeout(() => sheen.classList.remove("run"), 700);
-  }
+  /** REMOVED after the Apple-bar audit: real Liquid Glass refracts what is
+      BEHIND it — it does not emit a highlight sweep on every navigation. A
+      flourish that fires on every transition is decoration announcing itself.
+      No-op, kept so the call sites record the decision. */
+  function sweep() {}
 
   /** The ambient field counter-drifts, then settles — the world stays put. */
   function driftField(dir) {
     if (REDUCED) return;
-    anim(field, null, { transform: "translateX(" + (-dir * 14) + "px)" }, T.base, E.standard, () => {
-      anim(field, null, { transform: "translateX(0)" }, 900, E.standard);
+    anim(field, null, { transform: "translateX(" + (-dir * 14) + "px)" }, S.slide.ms, S.slide.css, () => {
+      anim(field, null, { transform: "translateX(0)" }, 900, E.fade);
     });
   }
 
-  /* ── stagger, per the proposal (skipped on back) ─────────────────── */
-  function stagger(screenEl, skip) {
-    const rows = $$("[data-stagger]", screenEl);
-    if (!rows.length) return;
-    rows.forEach((r, i) => {
-      if (skip || MODE === "now" || REDUCED) { r.style.cssText = r.style.cssText.replace(/opacity[^;]*;?/, ""); r.style.opacity = ""; r.style.transform = ""; r.style.transition = ""; return; }
-      const delay = Math.min(i, STAGGER_CAP - 1) * STAGGER;
-      r.style.transition = "none";
-      r.style.opacity = "0";
-      r.style.transform = "translateY(14px)";
-      void r.offsetWidth;
-      r.style.transition = "opacity " + D(300) + "ms " + E.standard + " " + D(delay) + "ms, transform " + D(300) + "ms " + E.standard + " " + D(delay) + "ms";
-      r.style.opacity = "1";
-      r.style.transform = "translateY(0)";
-    });
-  }
+  /* ── stagger: REMOVED after the Apple-bar audit ──────────────────
+     A staggered list entrance is a Material idiom. On iOS a list arrives as
+     one unit and the NAVIGATION is the motion; staggering also delays content
+     for no informational gain, which collides with "a transition may never
+     gate input". Kept as a no-op so the call sites document the decision. */
+  function stagger() { /* intentionally empty — see the audit section */ }
 
   /* ── the "Now" transition: one fade+rise, no exit, no direction ──── */
   function fadeSwap(from, to, cb) {
     resetScreen(from);
     showScreen(to, 2);
-    anim(to, { opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }, 260, E.standard, cb);
+    anim(to, { opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }, 260, E.fade, cb);
   }
 
   /* ── sibling slide ───────────────────────────────────────────────── */
@@ -1797,9 +1873,9 @@ footer {
     sweep(); driftField(dir);
     anim(from, { transform: "translateX(0)", opacity: 1 },
                { transform: "translateX(" + (-dir * PARALLAX * 100) + "%)", opacity: .45 },
-               T.base, E.standard, () => resetScreen(from));
+               S.slide.ms, S.slide.css, () => resetScreen(from));
     anim(to, { transform: "translateX(" + (dir * 100) + "%)", opacity: 1 },
-             { transform: "translateX(0)", opacity: 1 }, T.base, E.standard, cb);
+             { transform: "translateX(0)", opacity: 1 }, S.slide.ms, S.slide.css, cb);
   }
 
   /* ── push (drill-down): parent recedes, child rises ──────────────── */
@@ -1807,18 +1883,18 @@ footer {
     showScreen(to, 3); showScreen(from, 1);
     sweep();
     anim(from, { transform: "scale(1)", opacity: 1, filter: "brightness(1)", borderRadius: "0px" },
-               { transform: "scale(.94)", opacity: .4, filter: "brightness(.72)", borderRadius: "26px" }, T.sheet, E.standard);
+               { transform: "scale(.94)", opacity: .4, filter: "brightness(.72)", borderRadius: "26px" }, S.sheet.ms, S.sheet.css);
     anim(to, { transform: "translateY(16%)", opacity: 0, boxShadow: "0 -18px 40px -20px rgba(0,0,0,.6)" },
-             { transform: "translateY(0)", opacity: 1, boxShadow: "0 -18px 40px -20px rgba(0,0,0,0)" }, T.sheet, E.standard, cb);
+             { transform: "translateY(0)", opacity: 1, boxShadow: "0 -18px 40px -20px rgba(0,0,0,0)" }, S.sheet.ms, S.sheet.css, cb);
     stagger(to);
   }
   function pop(from, to, cb) {
     showScreen(to, 1); showScreen(from, 3);
     sweep();
     anim(from, { transform: "translateY(0)", opacity: 1 },
-               { transform: "translateY(16%)", opacity: 0 }, 300, E.exit, () => resetScreen(from));
+               { transform: "translateY(16%)", opacity: 0 }, T.fast, E.exit, () => resetScreen(from));
     anim(to, { transform: "scale(.94)", opacity: .4, filter: "brightness(.72)", borderRadius: "26px" },
-             { transform: "scale(1)", opacity: 1, filter: "brightness(1)", borderRadius: "0px" }, T.sheet, E.standard, cb);
+             { transform: "scale(1)", opacity: 1, filter: "brightness(1)", borderRadius: "0px" }, S.sheet.ms, S.sheet.css, cb);
   }
 
   /* ── ZOOM from source: the card BECOMES the screen ───────────────── */
@@ -1836,7 +1912,7 @@ footer {
     to.style.overflow = "hidden";
     sweep();
 
-    sourceEl.style.transition = "opacity " + D(110) + "ms linear";
+    sourceEl.style.transition = "opacity " + (REDUCED ? T.reduced : 110) + "ms linear";
     sourceEl.style.opacity = "0";
 
     // the destination's own oversized art counter-parallaxes as the card grows
@@ -1845,15 +1921,15 @@ footer {
       art.style.transition = "none";
       art.style.transform = "translate(26px, 18px) scale(.72)";
       void art.offsetWidth;
-      art.style.transition = "transform " + D(T.zoom + 120) + "ms " + E.zoom;
+      art.style.transition = "transform " + (S.zoom.ms + 90) + "ms " + S.zoom.css;
       art.style.transform = "translate(0,0) scale(1)";
     }
 
-    anim(from, { transform: "scale(1)", opacity: 1 }, { transform: "scale(1.06)", opacity: .3 }, T.zoom, E.zoom);
+    anim(from, { transform: "scale(1)", opacity: 1 }, { transform: "scale(1.06)", opacity: .3 }, S.zoom.ms, S.zoom.css);
     anim(to,
       { transform: "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")", opacity: 0, borderRadius: radius + "px" },
       { transform: "translate(0,0) scale(1,1)", opacity: 1, borderRadius: "0px" },
-      T.zoom, E.zoom, cb);
+      S.zoom.ms, S.zoom.css, cb);
     stagger(to);
   }
 
@@ -1861,9 +1937,9 @@ footer {
     const src = zoomSource;
     showScreen(to, 1); showScreen(from, 6);
     sweep();
-    const done = () => { resetScreen(from); if (src) { src.style.transition = "opacity " + D(180) + "ms linear"; src.style.opacity = "1"; } zoomSource = null; if (cb) cb(); };
-    anim(to, { transform: "scale(1.06)", opacity: .3 }, { transform: "scale(1)", opacity: 1 }, 400, E.zoom);
-    if (!src) { anim(from, null, { opacity: 0, transform: "scale(.96)" }, 300, E.exit, done); return; }
+    const done = () => { resetScreen(from); if (src) { src.style.transition = "opacity " + (REDUCED ? T.reduced : 180) + "ms linear"; src.style.opacity = "1"; } zoomSource = null; if (cb) cb(); };
+    anim(to, { transform: "scale(1.06)", opacity: .3 }, { transform: "scale(1)", opacity: 1 }, S.zoom.ms, S.zoom.css);
+    if (!src) { anim(from, null, { opacity: 0, transform: "scale(.96)" }, T.fast, E.exit, done); return; }
     const pr = vp.getBoundingClientRect(), cr = src.getBoundingClientRect();
     const sx = cr.width / pr.width, sy = cr.height / pr.height;
     const dx = cr.left - pr.left, dy = cr.top - pr.top;
@@ -1871,7 +1947,7 @@ footer {
     anim(from,
       { transform: "translate(0,0) scale(1,1)", opacity: 1, borderRadius: "0px" },
       { transform: "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")", opacity: 0, borderRadius: radius + "px" },
-      400, E.zoom, done);
+      S.zoom.ms, S.zoom.css, done);
   }
 
   /* ── the NUMBER travels (FLIP on one text node) ──────────────────── */
@@ -1886,14 +1962,14 @@ footer {
     const dx = sr.left - dr.left, dy = sr.top - dr.top;
     sweep();
 
-    src.style.transition = "opacity " + D(90) + "ms linear";
+    src.style.transition = "opacity " + (REDUCED ? T.reduced : 90) + "ms linear";
     src.style.opacity = "0";
-    to.style.transition = "opacity " + D(200) + "ms " + E.standard;
+    to.style.transition = "opacity " + (REDUCED ? T.reduced : T.dissolve) + "ms " + E.fade;
     to.style.opacity = "1";
-    anim(from, { opacity: 1 }, { opacity: 0 }, 220, E.standard, () => resetScreen(from));
+    anim(from, { opacity: 1 }, { opacity: 0 }, T.dissolve, E.fade, () => resetScreen(from));
     dst.style.transformOrigin = "left top";
     anim(dst, { transform: "translate(" + dx + "px," + dy + "px) scale(" + scale + ")" },
-              { transform: "translate(0,0) scale(1)" }, T.zoom, E.zoom, cb);
+              { transform: "translate(0,0) scale(1)" }, S.zoom.ms, S.zoom.css, cb);
     stagger(to);
   }
   function numberOut(from, to, cb) {
@@ -1901,23 +1977,23 @@ footer {
     showScreen(to, 1); showScreen(from, 5);
     to.style.opacity = "0";
     void to.offsetWidth;
-    to.style.transition = "opacity " + D(260) + "ms " + E.standard;
+    to.style.transition = "opacity " + (REDUCED ? T.reduced : T.dissolve) + "ms " + E.fade;
     to.style.opacity = "1";
     const sr = src.getBoundingClientRect(), dr = dst.getBoundingClientRect();
     const scale = sr.height / dr.height;
     const dx = sr.left - dr.left, dy = sr.top - dr.top;
     sweep();
     anim(dst, { transform: "translate(0,0) scale(1)" },
-              { transform: "translate(" + dx + "px," + dy + "px) scale(" + scale + ")" }, 400, E.zoom);
-    from.style.transition = "opacity " + D(240) + "ms " + E.exit;
+              { transform: "translate(" + dx + "px," + dy + "px) scale(" + scale + ")" }, S.zoom.ms, S.zoom.css);
+    from.style.transition = "opacity " + (REDUCED ? T.reduced : T.dissolve) + "ms " + E.exit;
     from.style.opacity = "0";
     window.setTimeout(() => {
       resetScreen(from);
       clearT(dst); dst.style.transform = "";
-      src.style.transition = "opacity " + D(160) + "ms linear";
+      src.style.transition = "opacity " + (REDUCED ? T.reduced : 160) + "ms linear";
       src.style.opacity = "1";
       if (cb) cb();
-    }, D(320) + 24);
+    }, (REDUCED ? T.reduced : S.zoom.ms) + 24);
   }
 
   /* ── navigate ────────────────────────────────────────────────────── */
@@ -1973,10 +2049,9 @@ footer {
     const dist = Math.abs(to - cur);
     const stretch = Math.min(base + dist * 0.3, base * 1.9);
 
-    lens.style.transition = REDUCED ? "none" :
-      "left " + D(320) + "ms " + E.lens + ", width " + D(320) + "ms " + E.lens +
-      ", height " + D(320) + "ms " + E.lens + ", top " + D(320) + "ms " + E.lens +
-      ", opacity " + D(180) + "ms linear" + ", background-color " + D(320) + "ms " + E.lens;
+    lens.style.transition = REDUCED ? "opacity " + T.reduced + "ms linear" :
+      ["left","width","height","top","background-color"].map((p) => p + " " + S.nav.ms + "ms " + S.nav.css).join(", ") +
+      ", opacity 180ms linear";
     // Vertically centre in the bar for whatever size the lens currently is —
     // the FAB pose is larger than a flat slot, so this can't be a constant.
     lens.style.top = ((nr.height - base) / 2) + "px";
@@ -1990,9 +2065,9 @@ footer {
     lens.style.transform = "translateY(" + (isFab ? -18 : 0) + "px)";
 
     window.clearTimeout(settleTimer);
-    settleTimer = window.setTimeout(() => { lens.style.width = base + "px"; }, D(150));
+    settleTimer = window.setTimeout(() => { lens.style.width = base + "px"; }, REDUCED ? 0 : 150);
 
-    $$(".slot", nav).forEach((s) => { $(".on", s).style.opacity = s === target ? "1" : "0"; $(".on", s).style.transition = "opacity " + D(200) + "ms ease " + (s === target ? D(100) : 0) + "ms"; });
+    $$(".slot", nav).forEach((s) => { $(".on", s).style.opacity = s === target ? "1" : "0"; $(".on", s).style.transition = "opacity " + (REDUCED ? T.reduced : 200) + "ms ease " + (REDUCED ? 0 : (s === target ? 100 : 0)) + "ms"; });
   }
 
   /* ── chrome sync: which nav slot is lit, can we go back ──────────── */
@@ -2043,15 +2118,15 @@ footer {
     scrim.style.pointerEvents = "auto";
     sweep();
     if (MODE === "now") {
-      anim(scrim, { opacity: 0 }, { opacity: .6 }, 320, E.standard);
-      anim(panel, { transform: "translateY(102%)" }, { transform: "translateY(0)" }, 320, E.standard);
+      anim(scrim, { opacity: 0 }, { opacity: .6 }, 320, E.fade);
+      anim(panel, { transform: "translateY(102%)" }, { transform: "translateY(0)" }, 320, E.fade);
       return;
     }
     anim(parent, { transform: "scale(1)", borderRadius: "0px", filter: "brightness(1)", boxShadow: "0 0 0 0px transparent" },
-                 { transform: "scale(" + RECEDE + ")", borderRadius: "30px", filter: "brightness(.72)", boxShadow: "0 0 0 1px var(--a-line)" }, T.sheet, E.standard);
-    anim(scrim, { opacity: 0 }, { opacity: .28 }, T.sheet, E.standard);
-    anim(panel, { transform: "translateY(102%)" }, { transform: "translateY(0)" }, T.sheet, E.spring);
-    anim(nav, { transform: "translateY(0)", opacity: 1 }, { transform: "translateY(150%)", opacity: 0 }, 300, E.standard);
+                 { transform: "scale(" + RECEDE + ")", borderRadius: "30px", filter: "brightness(.72)", boxShadow: "0 0 0 1px var(--a-line)" }, S.sheet.ms, S.sheet.css);
+    anim(scrim, { opacity: 0 }, { opacity: .28 }, S.sheet.ms, E.fade);
+    anim(panel, { transform: "translateY(102%)" }, { transform: "translateY(0)" }, S.sheet.ms, S.sheet.css);
+    anim(nav, { transform: "translateY(0)", opacity: 1 }, { transform: "translateY(150%)", opacity: 0 }, S.sheet.ms, S.sheet.css);
   }
   function closeSheet() {
     if (!openSheetName) return;
@@ -2066,10 +2141,10 @@ footer {
       return;
     }
     anim(parent, { transform: "scale(" + RECEDE + ")", borderRadius: "30px", filter: "brightness(.72)", boxShadow: "0 0 0 1px var(--a-line)" },
-                 { transform: "scale(1)", borderRadius: "0px", filter: "brightness(1)", boxShadow: "0 0 0 0px transparent" }, T.sheet, E.standard);
-    anim(scrim, { opacity: .28 }, { opacity: 0 }, 260, E.standard);
-    anim(panel, { transform: "translateY(0)" }, { transform: "translateY(102%)" }, 260, E.exit);
-    anim(nav, { transform: "translateY(150%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }, 320, E.spring);
+                 { transform: "scale(1)", borderRadius: "0px", filter: "brightness(1)", boxShadow: "0 0 0 0px transparent" }, S.sheet.ms, S.sheet.css);
+    anim(scrim, { opacity: .28 }, { opacity: 0 }, T.dissolve, E.fade);
+    anim(panel, { transform: "translateY(0)" }, { transform: "translateY(102%)" }, T.fast, E.exit);
+    anim(nav, { transform: "translateY(150%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }, S.sheet.ms, S.sheet.css);
     syncChrome();
   }
   scrim.addEventListener("click", closeSheet);
@@ -2111,7 +2186,7 @@ footer {
     if (!dragPair) return;
     const w = vp.getBoundingClientRect().width;
     const f = Math.max(0, Math.min(1, px / w));
-    const tr = ms ? "transform " + D(ms) + "ms " + E.standard + ", opacity " + D(ms) + "ms " + E.standard : "none";
+    const tr = ms ? "transform " + ms + "ms " + S.slide.css + ", opacity " + ms + "ms " + S.slide.css : "none";
     dragPair.top.style.transition = tr;
     dragPair.under.style.transition = tr;
     dragPair.top.style.transform = "translateX(" + (f * 100) + "%)";
@@ -2160,7 +2235,7 @@ footer {
         dragPair.under.hidden = false;
         dragPair = null;
         syncChrome();
-      }, D(320) + 30);
+      }, (REDUCED ? T.reduced : S.slide.ms) + 30);
       note("Committed past <b>35%</b>. Under 35% it rubber-bands home — the position was your finger's, not a script's.");
     } else {
       paintDrag(0, 300);
@@ -2170,14 +2245,14 @@ footer {
         dragPair.top.style.transform = ""; dragPair.top.style.boxShadow = "";
         dragPair.under.style.cssText = ""; dragPair.under.hidden = true;
         dragPair = null;
-      }, D(320) + 30);
+      }, (REDUCED ? T.reduced : S.slide.ms) + 30);
     }
   }
   vp.addEventListener("pointerup", endDrag);
   vp.addEventListener("pointercancel", endDrag);
 
   /* ── "Play" scripts for each proposal ────────────────────────────── */
-  const wait = (ms) => new Promise((r) => window.setTimeout(r, D(ms) + 40));
+  const wait = (ms) => new Promise((r) => window.setTimeout(r, (REDUCED ? Math.min(ms, 200) : ms) + 40));
 
   async function reset(toScreen) {
     closeSheet();
@@ -2199,7 +2274,7 @@ footer {
       setMode("new");
       note("<b>Direction from hierarchy</b> — Today → Explore slides left, back slides right. Siblings move sideways; nothing else does.", true);
       await reset("today"); await wait(420);
-      go("explore"); await wait(T.base + 500);
+      go("explore"); await wait(S.slide.ms + 500);
       go("today");
     },
     async pairedAB() {
@@ -2211,13 +2286,6 @@ footer {
       setMode("new"); await wait(300);
       go("explore");
     },
-    async stagger() {
-      setMode("new");
-      note("<b>Staggered settle</b> — six rows, 24 ms apart. Watch them assemble rather than appear.", true);
-      await reset("today"); await wait(300);
-      openSheet("more"); await wait(700); closeSheet(); await wait(500);
-      go("history");
-    },
     async sheet() {
       setMode("new");
       note("<b>Sheet with parent recede</b> — the screen behind scales to 0.92 and grows a device-radius corner. The nav retreats with it.", true);
@@ -2228,13 +2296,13 @@ footer {
       setMode("new");
       note("<b>Zoom from source</b> — the cover becomes the screen, its glyph counter-parallaxing as it grows.", true);
       await reset("today"); await wait(200);
-      go("explore"); await wait(T.base + 420);
+      go("explore"); await wait(S.slide.ms + 420);
       const cover = $('.cover[data-plan="0"]');
       $(".scr-scroll", scr.explore).scrollTop = 250;
       await wait(320);
       paintPlanHero(PLANS[0]);
       go("plan", { zoomFrom: cover });
-      await wait(T.zoom + 1200);
+      await wait(S.zoom.ms + 1200);
       back();
     },
     async number() {
@@ -2244,7 +2312,7 @@ footer {
       $(".scr-scroll", scr.today).scrollTop = 300;
       await wait(420);
       go("exercise", { numberIn: true });
-      await wait(T.zoom + 1200);
+      await wait(S.zoom.ms + 1200);
       back();
     },
     async gesture() {
@@ -2252,7 +2320,7 @@ footer {
       await reset("today"); await wait(200);
       $(".scr-scroll", scr.today).scrollTop = 300; await wait(320);
       go("exercise", { numberIn: true });
-      await wait(T.zoom + 300);
+      await wait(S.zoom.ms + 300);
       note("Now <b>drag from the left edge of the device</b>. The screen behind is real and moves at one-third parallax.", true);
     },
     async lens() {
@@ -2264,19 +2332,12 @@ footer {
       moveLens($('[data-nav="train"]')); await wait(760);
       syncChrome();
     },
-    async sheen() {
-      setMode("new");
-      note("<b>Specular sweep</b> — one pass across the nav glass, tied to the transition. Never idles.", true);
-      await reset("today"); await wait(300);
-      go("explore"); await wait(900);
-      go("today");
-    },
     async masthead() {
       setMode("new");
       note("<b>Masthead compression</b> — continuous with scroll offset, not a stepped swap. The nav collapses off the same signal.", true);
       await reset("today"); await wait(300);
       const sc = $(".scr-scroll", scr.today);
-      const step = (y, ms) => new Promise((r) => { let s = sc.scrollTop; const t0 = performance.now(); const run = (t) => { const p = Math.min(1, (t - t0) / (D(ms) || 1)); sc.scrollTop = s + (y - s) * p; if (p < 1) requestAnimationFrame(run); else r(); }; requestAnimationFrame(run); });
+      const step = (y, ms) => new Promise((r) => { let s = sc.scrollTop; const t0 = performance.now(); const run = (t) => { const p = Math.min(1, (t - t0) / ((REDUCED ? T.reduced : ms) || 1)); sc.scrollTop = s + (y - s) * p; if (p < 1) requestAnimationFrame(run); else r(); }; requestAnimationFrame(run); });
       await step(120, 900); await wait(600); await step(0, 700);
     },
     async field() {
