@@ -64,6 +64,7 @@ import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
 import ReadinessFace from "./readiness-face";
 import AuroraNutrition from "./nutrition";
+import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
@@ -482,7 +483,7 @@ export default function AuroraHome() {
              and one stacked column. NO section head — the "How do you want to
              start?" question was retired with the masthead redesign (the page
              already opens with "Today" + the greeting, and three cards titled
-             Follow a plan / Build your own / Just train need no sentence
+             Follow a plan / Build your own / Log a workout need no sentence
              announcing that a choice is available); "Free" is said ONCE on the
              masthead's caption line. Each full-width card wears the Go-Full
              anatomy with its corner glow, the hue confined to glyph + CTA,
@@ -682,13 +683,18 @@ export default function AuroraHome() {
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
-            Explore-standard section head — no marker dot. ───── */}
+        {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
+            (coaches). Explore-standard section head — no marker dot. ───── */}
         <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
         </View>
-        <View style={{ gap: 10 }}>
-          <DeferRow C={C} icon="heart" tint={C.ash} title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onPress={() => setNutritionOpen(true)} />
+        {/* FUEL — the nutrition summary widget (one calendar-style stateful
+            surface: empty → refuel / on-track / over → goal-hit, with a
+            persistent quick-log rail). Real today only; nutrition targets are
+            always today's. State + macros come from @hybrid/core fuelToday() so
+            web matches. Tapping opens the same quick-add sheet the rows use. */}
+        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+        <View style={{ gap: 10, marginTop: 10 }}>
           <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 

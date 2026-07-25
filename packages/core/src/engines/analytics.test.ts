@@ -54,7 +54,7 @@ describe("training analytics hub", () => {
     expect(bench.kind).toBe("strength");
     expect(bench.sessions).toBe(2);
     expect(bench.volume).toBe(100 * 5 + 100 * 5 + 95 * 5); // tonnage across both
-    expect(bench.trend).toBe("up"); // 95 → 100 e1RM
+    expect(bench.trend).toBe("up"); // 95 → 100 kg heaviest lift
     expect(run.kind).toBe("cardio");
     expect(run.volume).toBe(5); // distance km
   });

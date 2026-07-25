@@ -41,7 +41,7 @@ describe("pctChange", () => {
 });
 
 describe("exerciseWidgetCard", () => {
-  it("builds a strength card: best e1RM this 8 weeks vs the previous 8", () => {
+  it("builds a strength card: heaviest lift this 8 weeks vs the previous 8", () => {
     const sessions = [
       lift(70, [{ load: "180", reps: "5" }]), // previous window
       lift(30, [{ load: "185", reps: "5" }]),
@@ -49,8 +49,8 @@ describe("exerciseWidgetCard", () => {
     ];
     const c = exerciseWidgetCard(sessions, "Deadlift", now)!;
     expect(c.kind).toBe("strength");
-    expect(c.metric).toBe("e1rm");
-    expect(c.value).toBe(Math.round(195 * (1 + 5 / 30)));
+    expect(c.metric).toBe("weight");
+    expect(c.value).toBe(195); // actual heaviest load, not e1RM
     expect(c.improving).toBe(true);
     expect(c.deltaPct).toBeGreaterThan(0);
     expect(c.spark).toHaveLength(2);
@@ -129,7 +129,7 @@ describe("weeklySessionCounts", () => {
 });
 
 describe("exercisePageModel", () => {
-  it("orders strength slides e1RM → tonnage → zones → deep-dive → consistency with heroes", () => {
+  it("orders strength slides heaviest → tonnage → zones → deep-dive → consistency with heroes", () => {
     const sessions = [
       lift(70, [{ load: "180", reps: "5", rpe: "8" }]),
       lift(30, [{ load: "185", reps: "5" }]),
@@ -138,10 +138,10 @@ describe("exercisePageModel", () => {
     const m = exercisePageModel(sessions, "Deadlift", "all", { now });
     expect(m.kind).toBe("strength");
     // loadReps needs ≥5 working sets, so it's absent with only 3
-    expect(m.slides.map((s) => s.kind)).toEqual(["e1rmTrend", "tonnage", "zones", "repMax", "surface", "compare", "consistency"]);
+    expect(m.slides.map((s) => s.kind)).toEqual(["weightTrend", "tonnage", "zones", "repMax", "surface", "compare", "consistency"]);
     const e1 = m.slides[0]!;
-    if (e1.kind !== "e1rmTrend") throw new Error("wrong slide");
-    expect(e1.bestE1rm).toBe(Math.round(195 * (1 + 5 / 30)));
+    if (e1.kind !== "weightTrend") throw new Error("wrong slide");
+    expect(e1.bestWeight).toBe(195); // actual heaviest load, not e1RM
     expect(e1.improving).toBe(true);
     const rm = m.slides[3]!;
     if (rm.kind !== "repMax") throw new Error("wrong slide");

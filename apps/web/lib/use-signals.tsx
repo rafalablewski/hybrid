@@ -44,5 +44,8 @@ async function fetchSignals(): Promise<Signal[]> {
 export function useSignals() {
   const q = useQuery({ queryKey: signalsKey, queryFn: fetchSignals });
   const signals = q.data ?? [];
-  return { signals, bio: toBiometrics(signals) ?? null, refresh: () => q.refetch() };
+  // `loading` is the FIRST fetch only (isLoading = pending && no cached data),
+  // so a consumer can hold a data-dependent view back until signals resolve
+  // rather than flashing a cold-start state at a returning athlete.
+  return { signals, bio: toBiometrics(signals) ?? null, loading: q.isLoading, refresh: () => q.refetch() };
 }

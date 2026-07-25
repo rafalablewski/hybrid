@@ -6,7 +6,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import {
   trainingHeatmap,
   computeAchievements,
-  bestE1rmMap,
+  topLoadMap,
   longestWeekStreak,
   streak,
   fmtWeight,
@@ -103,7 +103,7 @@ export default function AuroraProfile() {
   const bw = useBodyweightLookup();
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions, bw), [sessions, bw]);
-  const prMap = useMemo(() => bestE1rmMap(sessions, bw), [sessions, bw]);
+  const prMap = useMemo(() => topLoadMap(sessions, bw), [sessions, bw]);
   const topPrs = useMemo(
     () => [...prMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3),
     [prMap],
@@ -341,21 +341,21 @@ export default function AuroraProfile() {
       {tab === "prs" && (
         <View style={{ marginTop: 16 }}>
           {topPrs.length > 0 ? (
-            topPrs.map(([lift, e1rm]) => (
+            topPrs.map(([lift, wt]) => (
               <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
                     <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>{t("w.account.profile.pr-metric")}</Text>
                     </View>
                   </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(wt, prefs.units)}</Text>
                 </View>
                 {/* relative-strength bar — each PR against your heaviest lift. */}
                 <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 11, overflow: "hidden" }}>
-                  <View style={{ width: `${Math.max(8, Math.round((e1rm / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
+                  <View style={{ width: `${Math.max(8, Math.round((wt / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
                 </View>
               </View>
             ))

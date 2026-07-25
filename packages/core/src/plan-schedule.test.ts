@@ -288,17 +288,17 @@ describe("planSchedule", () => {
 });
 
 describe("alsoTodayCopy", () => {
-  it("invites the first log only when NOTHING is done today", () => {
+  it("invites the first sport log only when NOTHING is done today", () => {
     expect(alsoTodayCopy({ doneCount: 0 })).toEqual({
       subKey: "w.home.today.alsoTodaySubEmpty",
-      logKey: "w.home.today.alsoTodayLogFirst",
+      logKey: "w.home.today.alsoTodayLogSport",
     });
   });
 
-  it("anything done: no sub-line (the rows carry it), log label reads 'another'", () => {
+  it("anything done: no sub-line (the rows carry it), log label reads 'another sport'", () => {
     expect(alsoTodayCopy({ doneCount: 1 })).toEqual({
       subKey: null,
-      logKey: "w.home.today.alsoTodayLog",
+      logKey: "w.home.today.alsoTodayLogSportMore",
     });
     expect(alsoTodayCopy({ doneCount: 2 }).subKey).toBeNull();
   });
