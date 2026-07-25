@@ -3,6 +3,7 @@ import { View, Text, TextInput, Image, Pressable, AccessibilityInfo } from "reac
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
 import { Card, Loading, F, fs } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
 import { SButton, SPill } from "../social-kit";
@@ -20,6 +21,8 @@ const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, bord
 
 export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
+  const { t } = useLang();
+  const visLabel = (v: "public" | "followers" | "private") => v === "public" ? t("w.profile.visPublic") : v === "followers" ? t("w.profile.visFollowers") : t("w.profile.visPrivate");
   const acct = useAccountSettings();
   const [data, setData] = useState<any>(null);
   const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
@@ -57,7 +60,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     setErr(null);
     const next = { ...form, ...override };
     const h = normalizeHandle(next.handle);
-    if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); AccessibilityInfo.announceForAccessibility("Invalid handle"); return false; }
+    if (!isValidHandle(h)) { setErr(t("w.profile.handleRule")); AccessibilityInfo.announceForAccessibility(t("w.profile.invalidHandle")); return false; }
     const r: any = await putMyProfile({ ...next, handle: h });
     if (r.error) { setErr(r.error); AccessibilityInfo.announceForAccessibility(r.error); return false; }
     return true;
@@ -77,7 +80,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   // ── FOCUSED FIELD EDITOR ──────────────────────────────────────────────────
   if (editing) {
     const back = () => { setErr(null); setEditing(null); };
-    const titles: Record<FieldKey, string> = { name: "Your name", handle: "Username", displayName: "Display name", bio: "Bio", email: "Email", visibility: "Who can see your results" };
+    const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
     return (
       <Card>
         {/* Boxed ABack — the same back affordance the rest of the app uses, so the
@@ -88,49 +91,49 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
         </View>
 
         {editing === "name" && (<>
-          <TextInput value={acct.name} onChangeText={acct.setName} placeholder="Your name" placeholderTextColor={C.ash} style={inp} autoFocus />
-          <SButton label={acct.busy ? "Saving…" : "Save"} onPress={() => { acct.saveName(); back(); }} />
+          <TextInput value={acct.name} onChangeText={acct.setName} placeholder={t("w.profile.namePlaceholder")} placeholderTextColor={C.ash} style={inp} autoFocus />
+          <SButton label={acct.busy ? t("w.profile.saving") : t("common.save")} onPress={() => { acct.saveName(); back(); }} />
         </>)}
 
         {editing === "email" && (<>
           <TextInput value={acct.newEmail} onChangeText={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} placeholderTextColor={C.ash} autoCapitalize="none" keyboardType="email-address" style={inp} autoFocus />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 2 }}>We’ll email the new address to confirm the change.</Text>
-          <SButton label="Update email" onPress={() => { acct.changeEmail(); back(); }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 2 }}>{t("w.profile.emailConfirm")}</Text>
+          <SButton label={t("w.profile.updateEmail")} onPress={() => { acct.changeEmail(); back(); }} />
         </>)}
 
         {editing === "handle" && (<>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 15 }}>@</Text>
-            <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder="handle" placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
+            <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder={t("w.profile.handlePlaceholder")} placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
           </View>
           {form.handle.length > 0 && (
             <Text style={{ fontFamily: F.mono, fontSize: 12, color: feedbackColor, marginTop: 8 }}>
-              {!fmtValid ? "✕ 3–20 chars: a–z, 0–9, _" : avail === "taken" ? `✕ @${hNorm} is taken` : avail === "checking" ? "Checking availability…" : `✓ ${isMine ? "This is your handle" : "@" + hNorm + " is available"}`}
+              {!fmtValid ? `✕ ${t("w.profile.handleRule")}` : avail === "taken" ? `✕ ${t("w.profile.handleTaken").replace("{h}", hNorm)}` : avail === "checking" ? t("w.profile.checking") : `✓ ${isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}`}
             </Text>
           )}
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
-          <SButton label={claimed ? "Save" : "Claim handle"} onPress={async () => { if (await saveSocial()) back(); }} />
+          <SButton label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
         {editing === "displayName" && (<>
-          <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder="Optional" placeholderTextColor={C.ash} autoFocus style={inp} />
+          <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
-          <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
+          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
         {editing === "bio" && (<>
-          <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder="Hybrid athlete – runner – lifter…" placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
+          <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
           <Text style={{ fontFamily: F.mono, fontSize: 10, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
-          <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
+          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
 
         {editing === "visibility" && (<>
           <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
-            {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
+            {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={visLabel(v)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
           </View>
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
-          <SButton label="Save" onPress={async () => { if (await saveSocial()) back(); }} />
+          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
       </Card>
     );
@@ -158,7 +161,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   return (
     <>
       {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
-      <SectionLabel first>Photo</SectionLabel>
+      <SectionLabel first>{t("w.profile.secPhoto")}</SectionLabel>
       <Card>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
           <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
@@ -167,12 +170,12 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             </View>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Preset avatar</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.profile.presetAvatar")}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
               {AVATAR_PRESETS.map((p) => {
                 const on = form.avatarUrl === p.uri;
                 return (
-                  <Pressable key={p.id} onPress={() => setForm({ ...form, avatarUrl: p.uri })} accessibilityRole="button" accessibilityLabel={`Preset ${p.id}`} style={{ width: 30, height: 30, borderRadius: 15, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
+                  <Pressable key={p.id} onPress={() => setForm({ ...form, avatarUrl: p.uri })} accessibilityRole="button" accessibilityLabel={t("w.profile.presetAria").replace("{n}", String(p.id))} style={{ width: 30, height: 30, borderRadius: 15, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
                     <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%", borderRadius: 15 }} />
                   </Pressable>
                 );
@@ -181,42 +184,42 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
           </View>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
-          {form.avatarUrl ? <SButton label="Save photo" small onPress={() => saveSocial()} /> : null}
+          {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
           <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Upload photo (soon)</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
           </Pressable>
         </View>
       </Card>
 
       {/* ── IDENTITY ── name, handle, display name, bio. */}
-      <SectionLabel>Identity</SectionLabel>
+      <SectionLabel>{t("w.profile.secIdentity")}</SectionLabel>
       <Card>
-        {fieldRow({ rk: "name", label: "Name", value: acct.name || "Add your name", muted: !acct.name, first: true })}
-        {fieldRow({ rk: "handle", label: "Username", value: form.handle ? `@${form.handle}` : "Claim a handle", muted: !form.handle })}
-        {fieldRow({ rk: "displayName", label: "Display name", value: form.displayName || "Optional", muted: !form.displayName })}
-        {fieldRow({ rk: "bio", label: "Bio", value: form.bio || "Add a bio", muted: !form.bio })}
+        {fieldRow({ rk: "name", label: t("w.profile.name"), value: acct.name || t("w.profile.addName"), muted: !acct.name, first: true })}
+        {fieldRow({ rk: "handle", label: t("w.profile.username"), value: form.handle ? `@${form.handle}` : t("w.profile.claimAHandle"), muted: !form.handle })}
+        {fieldRow({ rk: "displayName", label: t("w.profile.displayName"), value: form.displayName || t("w.profile.optional"), muted: !form.displayName })}
+        {fieldRow({ rk: "bio", label: t("w.profile.bioLabel"), value: form.bio || t("w.profile.addBio"), muted: !form.bio })}
       </Card>
 
       {/* ── CONTACT ── account email. */}
-      <SectionLabel>Contact</SectionLabel>
+      <SectionLabel>{t("w.profile.secContact")}</SectionLabel>
       <Card>
-        {fieldRow({ rk: "email", label: "Email", value: acct.email || "Add an email", muted: !acct.email, first: true })}
+        {fieldRow({ rk: "email", label: t("w.profile.email"), value: acct.email || t("w.profile.addEmail"), muted: !acct.email, first: true })}
       </Card>
 
       {/* ── VISIBILITY ── inline segment, saves on tap. */}
-      <SectionLabel>Visibility</SectionLabel>
+      <SectionLabel>{t("w.profile.secVisibility")}</SectionLabel>
       <Card>
         <View style={{ flexDirection: "row", gap: 8 }}>
           {(["public", "followers", "private"] as const).map((v) => (
-            <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => pickVisibility(v)} />
+            <SPill key={v} label={visLabel(v)} active={form.visibility === v} onPress={() => pickVisibility(v)} />
           ))}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>Who can see your results and profile.</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("w.profile.visibilityNote")}</Text>
       </Card>
 
       {onDone && (
         <View style={{ marginTop: 18 }}>
-          <SButton label="Done" onPress={onDone} />
+          <SButton label={t("common.done")} onPress={onDone} />
         </View>
       )}
       {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}

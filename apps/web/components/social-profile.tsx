@@ -142,6 +142,7 @@ interface AccountBits {
 }
 
 export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }: { onDone?: () => void; embedded?: boolean; account?: AccountBits; onProfileUpdate?: (p: Pick<MyProfile, "handle" | "displayName" | "bio" | "avatarUrl">) => void }) {
+  const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<OwnProfileResponse | null>(null);
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
@@ -181,7 +182,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
     setErr(null);
     const next = { ...form, ...override };
     const h = normalizeHandle(next.handle);
-    if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return false; }
+    if (!isValidHandle(h)) { setErr(t("w.profile.handleRule")); return false; }
     const r = await jsend<MutationResult>("/api/social/profile", "PUT", { ...next, handle: h });
     if (r.error) { setErr(r.error); return false; }
     onProfileUpdate?.({ handle: h, displayName: next.displayName, bio: next.bio, avatarUrl: next.avatarUrl });
@@ -189,7 +190,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   };
   const fieldSaveSocial = async () => { setSaving(true); const ok = await saveSocial(); setSaving(false); if (ok) setEditing(null); };
 
-  if (!data) return <EmptyState title="Loading…" />;
+  if (!data) return <EmptyState title={t("common.loading")} />;
   const claimed = !!data.profile;
   const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 14 } as const;
   const hNorm = normalizeHandle(form.handle);
@@ -200,7 +201,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   // ── FOCUSED FIELD EDITOR ──────────────────────────────────────────────────
   if (editing) {
     const back = () => { setErr(null); setEditing(null); };
-    const titles: Record<FieldKey, string> = { name: "Your name", handle: "Username", displayName: "Display name", bio: "Bio", email: "Email", visibility: "Who can see your results" };
+    const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
     return (
       <div>
         <button onClick={back} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, marginBottom: 16, cursor: "pointer", color: C("chalk") }}>
@@ -208,46 +209,46 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20 }}>{titles[editing]}</span>
         </button>
         {editing === "name" && account && (<>
-          <input autoFocus style={inputStyle} value={account.name} onChange={(e) => account.setName(e.target.value)} placeholder="Your name" />
-          <div style={{ marginTop: 12 }}><Btn onClick={() => { account.saveName(); back(); }} disabled={account.busy}>Save</Btn></div>
+          <input autoFocus style={inputStyle} value={account.name} onChange={(e) => account.setName(e.target.value)} placeholder={t("w.profile.namePlaceholder")} />
+          <div style={{ marginTop: 12 }}><Btn onClick={() => { account.saveName(); back(); }} disabled={account.busy}>{t("common.save")}</Btn></div>
         </>)}
         {editing === "email" && account && (<>
           <input autoFocus type="email" style={inputStyle} value={account.newEmail} onChange={(e) => account.setNewEmail(e.target.value)} placeholder={account.email ?? "new@email.com"} />
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 8 }}>We’ll email the new address to confirm the change.</div>
-          <div style={{ marginTop: 12 }}><Btn onClick={() => { account.changeEmail(); back(); }} disabled={account.busy || !account.newEmail.trim()}>Update email</Btn></div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 8 }}>{t("w.profile.emailConfirm")}</div>
+          <div style={{ marginTop: 12 }}><Btn onClick={() => { account.changeEmail(); back(); }} disabled={account.busy || !account.newEmail.trim()}>{t("w.profile.updateEmail")}</Btn></div>
         </>)}
         {editing === "handle" && (<>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input autoFocus style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input autoFocus style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder={t("w.profile.handlePlaceholder")} /></div>
           {form.handle.length > 0 && (
             <div aria-live="polite" style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11 }}>
-              {!fmtValid ? <span style={{ color: C("red") }}>✕ Handle must be 3–20 chars: a–z, 0–9, _</span>
-                : avail === "taken" ? <span style={{ color: C("red") }}>✕ @{hNorm} is taken</span>
-                : avail === "checking" ? <span style={{ color: C("ash") }}>Checking availability…</span>
-                : <span style={{ color: "var(--lime-text)" }}>✓ {isMine ? "This is your handle" : `@${hNorm} is available`}</span>}
+              {!fmtValid ? <span style={{ color: C("red") }}>✕ {t("w.profile.handleRule")}</span>
+                : avail === "taken" ? <span style={{ color: C("red") }}>✕ {t("w.profile.handleTaken").replace("{h}", hNorm)}</span>
+                : avail === "checking" ? <span style={{ color: C("ash") }}>{t("w.profile.checking")}</span>
+                : <span style={{ color: "var(--lime-text)" }}>✓ {isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}</span>}
             </div>
           )}
           {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
-          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : claimed ? "Save" : "Claim handle"}</Btn></div>
+          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : claimed ? t("common.save") : t("w.profile.claimHandle")}</Btn></div>
         </>)}
         {editing === "displayName" && (<>
-          <input autoFocus style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />
+          <input autoFocus style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder={t("w.profile.optional")} />
           {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
-          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn></div>
+          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
         {editing === "bio" && (<>
-          <textarea autoFocus style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete – runner – lifter…" />
+          <textarea autoFocus style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder={t("w.profile.bioPlaceholder")} />
           <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 10, color: bioLen >= 280 ? C("red") : C("ash"), marginTop: 6 }}>{bioLen}/280</div>
           {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 4 }}>{err}</div>}
-          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn></div>
+          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
         {editing === "visibility" && (<>
           <div style={{ display: "flex", gap: 8 }}>
             {(["public", "followers", "private"] as const).map((v) => (
-              <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
+              <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? t("w.profile.visPublic") : v === "followers" ? t("w.profile.visFollowers") : t("w.profile.visPrivate")}</Pill>
             ))}
           </div>
           {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
-          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn></div>
+          <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
       </div>
     );
@@ -258,13 +259,13 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   // Contact · Visibility) — the app-wide settings pattern. Text fields open the
   // focused editor; Visibility is an inline segment that saves on change.
   const identityRows: { key: FieldKey; label: string; value: string; muted: boolean }[] = [
-    ...(account ? [{ key: "name" as const, label: "Name", value: account.name || "Add your name", muted: !account.name }] : []),
-    { key: "handle", label: "Username", value: form.handle ? `@${form.handle}` : "Claim a handle", muted: !form.handle },
-    { key: "displayName", label: "Display name", value: form.displayName || "Optional", muted: !form.displayName },
-    { key: "bio", label: "Bio", value: form.bio || "Add a bio", muted: !form.bio },
+    ...(account ? [{ key: "name" as const, label: t("w.profile.name"), value: account.name || t("w.profile.addName"), muted: !account.name }] : []),
+    { key: "handle", label: t("w.profile.username"), value: form.handle ? `@${form.handle}` : t("w.profile.claimAHandle"), muted: !form.handle },
+    { key: "displayName", label: t("w.profile.displayName"), value: form.displayName || t("w.profile.optional"), muted: !form.displayName },
+    { key: "bio", label: t("w.profile.bioLabel"), value: form.bio || t("w.profile.addBio"), muted: !form.bio },
   ];
   const contactRows: { key: FieldKey; label: string; value: string; muted: boolean }[] =
-    account ? [{ key: "email", label: "Email", value: account.email || "Add an email", muted: !account.email }] : [];
+    account ? [{ key: "email", label: t("w.profile.email"), value: account.email || t("w.profile.addEmail"), muted: !account.email }] : [];
 
   const pickVisibility = (v: "public" | "followers" | "private") => {
     setForm({ ...form, visibility: v });
@@ -289,14 +290,14 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   const body = (
     <>
       {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
-      {secLabel("Photo", true)}
+      {secLabel(t("w.profile.secPhoto"), true)}
       <div style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, padding: 14 }}>
         <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={58} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk") }}>Preset avatar</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk") }}>{t("w.profile.presetAvatar")}</div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>
             {AVATAR_PRESETS.map((p) => (
-              <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={`Preset ${p.id}`} aria-pressed={form.avatarUrl === p.uri}
+              <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={t("w.profile.presetAria").replace("{n}", String(p.id))} aria-pressed={form.avatarUrl === p.uri}
                 style={{ width: 30, height: 30, borderRadius: "50%", padding: 0, cursor: "pointer", overflow: "hidden", background: "none", border: `2px solid ${form.avatarUrl === p.uri ? C("lime") : "transparent"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -306,29 +307,29 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-        {form.avatarUrl && <Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? "Saving…" : "Save photo"}</Btn>}
-        <button disabled title="Photo upload is coming soon" style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>Upload photo (soon)</button>
+        {form.avatarUrl && <Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("w.profile.savePhoto")}</Btn>}
+        <button disabled title={t("w.profile.uploadSoonTitle")} style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>{t("w.profile.uploadSoon")}</button>
       </div>
 
       {/* ── IDENTITY ── name, handle, display name, bio. */}
-      {secLabel("Identity")}
+      {secLabel(t("w.profile.secIdentity"))}
       {rowList(identityRows)}
 
       {/* ── CONTACT ── account email. */}
-      {contactRows.length > 0 && (<>{secLabel("Contact")}{rowList(contactRows)}</>)}
+      {contactRows.length > 0 && (<>{secLabel(t("w.profile.secContact"))}{rowList(contactRows)}</>)}
 
       {/* ── VISIBILITY ── inline segment, saves on change. */}
-      {secLabel("Visibility")}
+      {secLabel(t("w.profile.secVisibility"))}
       <div style={{ border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, padding: 14 }}>
         <div style={{ display: "flex", gap: 8 }}>
           {(["public", "followers", "private"] as const).map((v) => (
-            <Pill key={v} active={form.visibility === v} onClick={() => pickVisibility(v)}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
+            <Pill key={v} active={form.visibility === v} onClick={() => pickVisibility(v)}>{v === "public" ? t("w.profile.visPublic") : v === "followers" ? t("w.profile.visFollowers") : t("w.profile.visPrivate")}</Pill>
           ))}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10 }}>Who can see your results and profile.</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10 }}>{t("w.profile.visibilityNote")}</div>
       </div>
 
-      {onDone && <div style={{ marginTop: 18 }}><Btn ghost onClick={onDone}>Done</Btn></div>}
+      {onDone && <div style={{ marginTop: 18 }}><Btn ghost onClick={onDone}>{t("common.done")}</Btn></div>}
       {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: C("red") }}>{err}</div>}
       {account?.msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: account.msg.startsWith("✓") ? "var(--lime-text)" : C("ash") }}>{account.msg}</div>}
     </>
@@ -337,7 +338,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   if (embedded) return body;
   return (
     <div style={{ maxWidth: 460 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>Edit profile</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>{t("w.profile.editProfile")}</div>
       <div style={card(aurora)}>{body}</div>
     </div>
   );
