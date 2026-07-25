@@ -4,7 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName, type Persona, type LoggedSession } from "@hybrid/core";
-import { AuroraAthleteAnalytics, AuroraCoachAnalytics, AuroraOperatorAnalytics } from "./aurora/analytics";
+// Analytics + the AI coach load on demand, like every other screen here.
+const AuroraAthleteAnalytics = dynamic(() => import("./aurora/analytics").then((m) => m.AuroraAthleteAnalytics), { ssr: false });
+const AuroraCoachAnalytics = dynamic(() => import("./aurora/analytics").then((m) => m.AuroraCoachAnalytics), { ssr: false });
+const AuroraOperatorAnalytics = dynamic(() => import("./aurora/analytics").then((m) => m.AuroraOperatorAnalytics), { ssr: false });
+const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { useRoster } from "@/lib/use-roster";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
@@ -745,6 +749,11 @@ export default function AppShell() {
             parity-audit-2026-07 capability). Web serves it again; mobile-analytics
             stays the declared open gap, and mobile's "WEB" tag is now truthful. */}
         {screen === "analytics" && <AnalyticsScreen persona={persona} sessions={sessions} />}
+
+        {/* AI COACH — reached from the Cockpit module list (mirroring mobile's
+            /ai-coach route). Not a NAV_ITEMS destination on either client, so it
+            stays out of the sidebar and the More hub, exactly like mobile. */}
+        {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
           <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />
