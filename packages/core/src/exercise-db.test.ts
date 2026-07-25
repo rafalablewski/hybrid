@@ -83,7 +83,15 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
     expect(loadUnitCount("DB Bench Press")).toBe(2);
     expect(loadUnitCount("DB Curl")).toBe(2);
     expect(loadUnitCount("Bench Press")).toBe(1); // barbell
-    expect(loadUnitCount("Goblet Squat")).toBe(2); // documented heuristic edge
+  });
+
+  it("a two-hands-ONE-bell hold counts one implement (explicit override)", () => {
+    // A Goblet Squat / overhead dumbbell extension is gripped bilaterally on a
+    // SINGLE bell, so 100 kg × 10 is 1 000 kg, not 2 000. The catalog entry
+    // carries implements:1, which wins over the equipment/pattern heuristic.
+    expect(loadUnitCount("Goblet Squat")).toBe(1);
+    expect(loadUnitCount("Overhead Triceps Extension")).toBe(1);
+    expect(gymExercise("Goblet Squat")?.implements).toBe(1);
   });
 
   it("single-ARM (upper-body unilateral) dumbbell work logs one bell", () => {
@@ -121,6 +129,12 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
     expect(loadUnitCount("Single-Arm Dumbbell Row")).toBe(1);
     expect(loadUnitCount("One-Arm DB Press")).toBe(1);
     expect(loadUnitCount("Dumbbell Concentration Curl")).toBe(1);
+  });
+
+  it("a CUSTOM two-hands-one-bell hold (goblet / pullover) stays one bell", () => {
+    expect(loadUnitCount("Dumbbell Goblet Squat")).toBe(1);
+    expect(loadUnitCount("Heavy DB Goblet Squat")).toBe(1);
+    expect(loadUnitCount("DB Pullover")).toBe(1);
   });
 
   it("a custom non-dumbbell lift is unaffected by the name fallback", () => {
