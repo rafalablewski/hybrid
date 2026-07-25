@@ -3,7 +3,9 @@
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    // the e1rm-headline guard reads apps/ off disk, so it needs node builtins
+    "types": ["node"]
   },
   "include": ["src"]
 }
