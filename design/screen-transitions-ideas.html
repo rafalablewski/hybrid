@@ -1,0 +1,1989 @@
+<title>HYBRID — Screen transitions</title>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   HYBRID motion spec sheet.
+   Palette is the app's own: Aurora (dark) and Kyoto Hour (light),
+   lifted straight from packages/core/src/theme/tokens.ts + palette.ts.
+   Type: heavy grotesque for display (Archivo's role — Archivo itself
+   can't be loaded here), true monospace as a co-lead for every
+   duration, curve and file path. That mono-kicker pairing is how the
+   app already reads.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── KYOTO HOUR (light) ─────────────────────────────── */
+  --bg:        #ece7d9;
+  --surface:   #f8f5ec;
+  --surface-2: #f2eee2;
+  --line:      #dbd5c3;
+  --chalk:     #2b2a26;
+  --ash:       #6f6b5e;
+  --accent:    #44584c;   /* pine */
+  --on-accent: #f2f5ef;
+  --accent-soft: #44584c1f;
+
+  --app-ink:   #f6f3ea;
+  --app-card:  #fcfaf3;
+  --app-line:  #e6e1d2;
+  --app-glass: #fcfaf3d9;
+
+  --teal:  #4f5c3a;
+  --steel: #4c5a78;
+  --sand:  #875427;
+  --terra: #a3442f;
+
+  --shadow-card: 0 1px 2px #2b2a260a, 0 12px 32px -18px #2b2a2633;
+  --shadow-phone: 0 2px 6px #2b2a2614, 0 30px 60px -30px #2b2a2640;
+
+  /* Motion tokens — the ones this document proposes shipping. */
+  --e-standard: cubic-bezier(.2,.7,.3,1);
+  --e-zoom:     cubic-bezier(.2,.85,.25,1);
+  --e-exit:     cubic-bezier(.4,0,.9,.4);
+  --e-spring:   cubic-bezier(.34,1.4,.5,1);
+
+  --d-fast:  160ms;
+  --d-base:  260ms;
+  --d-zoom:  440ms;
+  --d-sheet: 380ms;
+
+  --fd: 'Helvetica Neue', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --fm: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, 'JetBrains Mono', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* ── AURORA (dark) ────────────────────────────────── */
+    --bg:        #131513;
+    --surface:   #191b19;
+    --surface-2: #1e211e;
+    --line:      #2b2e2b;
+    --chalk:     #f3f4ef;
+    --ash:       #8b8f86;
+    --accent:    #c6f84f;
+    --on-accent: #0c0d0c;
+    --accent-soft: #c6f84f1c;
+
+    --app-ink:   #0c0d0c;
+    --app-card:  #161816;
+    --app-line:  #242724;
+    --app-glass: #1d201db8;
+
+    --teal:  #6cb6bd;
+    --steel: #8ba0cc;
+    --sand:  #d0cd94;
+    --terra: #e58a5c;
+
+    --shadow-card: 0 1px 0 #ffffff05 inset, 0 14px 34px -22px #000;
+    --shadow-phone: 0 0 0 1px #ffffff08 inset, 0 34px 70px -34px #000;
+  }
+}
+
+/* The viewer's own toggle stamps data-theme on the root — it must win
+   over the media query in both directions, so both are restated. */
+:root[data-theme="light"] {
+  --bg:#ece7d9; --surface:#f8f5ec; --surface-2:#f2eee2; --line:#dbd5c3;
+  --chalk:#2b2a26; --ash:#6f6b5e; --accent:#44584c; --on-accent:#f2f5ef;
+  --accent-soft:#44584c1f;
+  --app-ink:#f6f3ea; --app-card:#fcfaf3; --app-line:#e6e1d2; --app-glass:#fcfaf3d9;
+  --teal:#4f5c3a; --steel:#4c5a78; --sand:#875427; --terra:#a3442f;
+  --shadow-card:0 1px 2px #2b2a260a, 0 12px 32px -18px #2b2a2633;
+  --shadow-phone:0 2px 6px #2b2a2614, 0 30px 60px -30px #2b2a2640;
+}
+:root[data-theme="dark"] {
+  --bg:#131513; --surface:#191b19; --surface-2:#1e211e; --line:#2b2e2b;
+  --chalk:#f3f4ef; --ash:#8b8f86; --accent:#c6f84f; --on-accent:#0c0d0c;
+  --accent-soft:#c6f84f1c;
+  --app-ink:#0c0d0c; --app-card:#161816; --app-line:#242724; --app-glass:#1d201db8;
+  --teal:#6cb6bd; --steel:#8ba0cc; --sand:#d0cd94; --terra:#e58a5c;
+  --shadow-card:0 1px 0 #ffffff05 inset, 0 14px 34px -22px #000;
+  --shadow-phone:0 0 0 1px #ffffff08 inset, 0 34px 70px -34px #000;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--chalk);
+  font-family: var(--fd);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shell ───────────────────────────────────────────── */
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px 120px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+@media (min-width: 1040px) {
+  .wrap { grid-template-columns: 176px minmax(0,1fr); column-gap: 56px; }
+  .masthead { grid-column: 1 / -1; }
+}
+
+/* ── Masthead ────────────────────────────────────────── */
+.masthead { padding: 76px 0 48px; border-bottom: 1px solid var(--line); margin-bottom: 56px; }
+.eyebrow {
+  font-family: var(--fm);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin: 0 0 20px;
+}
+h1 {
+  font-size: clamp(40px, 8vw, 82px);
+  line-height: .92;
+  letter-spacing: -.035em;
+  font-weight: 800;
+  margin: 0 0 24px;
+  text-wrap: balance;
+  max-width: 15ch;
+}
+h1 em { font-style: normal; color: var(--accent); }
+.deck {
+  font-size: clamp(17px, 2.2vw, 21px);
+  line-height: 1.5;
+  color: var(--ash);
+  max-width: 58ch;
+  margin: 0 0 32px;
+  text-wrap: pretty;
+}
+.deck strong { color: var(--chalk); font-weight: 600; }
+
+.mastfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; }
+.factline {
+  font-family: var(--fm);
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  color: var(--ash);
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.factline b { color: var(--chalk); font-weight: 500; }
+
+/* ── Spine index ─────────────────────────────────────── */
+.spine { display: none; }
+@media (min-width: 1040px) {
+  .spine {
+    display: block;
+    position: sticky;
+    top: 32px;
+    align-self: start;
+    padding-top: 6px;
+  }
+  .spine ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .spine a {
+    display: block;
+    font-family: var(--fm);
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ash);
+    text-decoration: none;
+    padding: 5px 0 5px 12px;
+    border-left: 2px solid var(--line);
+    transition: color .2s var(--e-standard), border-color .2s var(--e-standard);
+  }
+  .spine a:hover, .spine a:focus-visible { color: var(--chalk); border-left-color: var(--accent); }
+  .spine .sp-gap { height: 14px; }
+}
+
+/* ── Sections ────────────────────────────────────────── */
+main { min-width: 0; }
+section { margin: 0 0 84px; scroll-margin-top: 28px; }
+h2 {
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.06;
+  letter-spacing: -.028em;
+  font-weight: 800;
+  margin: 0 0 10px;
+  text-wrap: balance;
+}
+.sec-kicker {
+  font-family: var(--fm);
+  font-size: 10.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+.sec-intro { color: var(--ash); max-width: 64ch; margin: 0 0 34px; text-wrap: pretty; }
+.sec-intro strong { color: var(--chalk); font-weight: 600; }
+
+h3 {
+  font-size: 20px;
+  letter-spacing: -.014em;
+  font-weight: 700;
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+p { margin: 0 0 16px; max-width: 66ch; text-wrap: pretty; }
+a { color: var(--accent); }
+
+code, .path {
+  font-family: var(--fm);
+  font-size: .855em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+  color: var(--chalk);
+  white-space: nowrap;
+}
+
+/* ── Status chips ────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--fm);
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.chip.have  { color: var(--teal); }
+.chip.gap   { color: var(--terra); }
+.chip.part  { color: var(--sand); }
+.chip.free  { color: var(--steel); }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+
+/* ── Audit list ──────────────────────────────────────── */
+.audit { display: flex; flex-direction: column; gap: 0; margin: 0 0 8px; border-top: 1px solid var(--line); }
+.audit-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 720px) {
+  .audit-row { grid-template-columns: 190px 1fr 96px; align-items: baseline; }
+}
+.audit-what { font-weight: 600; font-size: 15px; }
+.audit-detail { color: var(--ash); font-size: 14.5px; line-height: 1.55; }
+.audit-detail .path { background: none; border: none; padding: 0; color: var(--ash); white-space: normal; }
+.audit-row .chip { justify-self: start; }
+@media (min-width: 720px) { .audit-row .chip { justify-self: end; } }
+
+/* ── Demo block ──────────────────────────────────────── */
+.demo {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 26px;
+  margin: 0 0 26px;
+  box-shadow: var(--shadow-card);
+}
+.demo-head { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: baseline; margin: 0 0 6px; }
+.demo-title { font-size: 19px; font-weight: 700; letter-spacing: -.012em; margin: 0; }
+.demo-note { color: var(--ash); font-size: 14.5px; margin: 0 0 22px; max-width: 62ch; text-wrap: pretty; }
+.demo-body { display: flex; flex-wrap: wrap; gap: 28px 34px; align-items: flex-start; }
+.demo-stage { display: flex; flex-wrap: wrap; gap: 22px; }
+.demo-side { flex: 1 1 250px; min-width: 0; }
+
+.stagelabel {
+  font-family: var(--fm);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin: 0 0 9px;
+  text-align: center;
+}
+.stagelabel.warn { color: var(--terra); }
+.stagelabel.good { color: var(--teal); }
+
+/* ── Phone ───────────────────────────────────────────── */
+.phone {
+  position: relative;
+  width: 232px;
+  height: 452px;
+  border-radius: 36px;
+  background: var(--app-ink);
+  border: 1px solid var(--app-line);
+  box-shadow: var(--shadow-phone);
+  overflow: hidden;
+  flex: 0 0 auto;
+  user-select: none;
+}
+.ph-vp { position: absolute; inset: 0; overflow: hidden; border-radius: 35px; }
+.ph-screen {
+  position: absolute; inset: 0;
+  background: var(--app-ink);
+  padding: 26px 13px 66px;
+  display: flex; flex-direction: column; gap: 9px;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+.ph-screen[data-hidden] { display: none; }
+
+.ph-title { font-size: 21px; font-weight: 800; letter-spacing: -.028em; margin: 0; line-height: 1.1; }
+.ph-kick {
+  font-family: var(--fm); font-size: 8.5px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ash); margin: 0;
+}
+.ph-back { font-family: var(--fm); font-size: 9px; letter-spacing: .1em; color: var(--accent); margin: 0; text-transform: uppercase; }
+
+.ph-card {
+  background: var(--app-card);
+  border: 1px solid var(--app-line);
+  border-radius: 15px;
+  padding: 11px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 0;
+}
+.ph-card .n { font-size: 12.5px; font-weight: 650; letter-spacing: -.01em; }
+.ph-card .v { font-family: var(--fm); font-size: 10px; color: var(--ash); white-space: nowrap; }
+.ph-card.tap { cursor: pointer; transition: transform .16s var(--e-standard); }
+.ph-card.tap:active { transform: scale(.975); }
+
+.ph-hero {
+  background: var(--app-card);
+  border: 1px solid var(--app-line);
+  border-radius: 17px;
+  padding: 13px 14px;
+}
+.ph-num { font-family: var(--fm); font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1; color: var(--accent); }
+.ph-num.sm { font-size: 20px; }
+
+/* plan cover, used by the zoom demo */
+.ph-cover {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  background: linear-gradient(150deg, #1c2b2c, #0e1516 68%);
+  border: 1px solid var(--app-line);
+  padding: 11px 12px;
+  min-height: 84px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  cursor: pointer;
+  transition: transform .16s var(--e-standard);
+}
+.ph-cover:active { transform: scale(.975); }
+.ph-cover .cv-t { font-size: 14px; font-weight: 800; letter-spacing: -.02em; color: #f3f4ef; }
+.ph-cover .cv-m { font-family: var(--fm); font-size: 8.5px; letter-spacing: .1em; color: #b9c4bd; text-transform: uppercase; }
+.ph-cover .cv-g {
+  position: absolute; right: -6px; top: -14px;
+  font-size: 62px; font-weight: 900; color: #ffffff14; line-height: 1; letter-spacing: -.05em;
+}
+
+/* floating nav pill */
+.ph-nav {
+  position: absolute; left: 13px; right: 13px; bottom: 12px; height: 46px;
+  border-radius: 23px;
+  background: var(--app-glass);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--app-line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 10px;
+  z-index: 4;
+  transition: transform .3s var(--e-standard), border-radius .3s var(--e-standard);
+}
+.ph-nav .slot {
+  position: relative; z-index: 2;
+  width: 34px; height: 30px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  color: var(--ash);
+  transition: color .24s var(--e-standard);
+}
+.ph-nav .slot.on { color: var(--chalk); }
+.ph-nav .slot svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ph-nav .fab {
+  width: 38px; height: 38px; border-radius: 19px;
+  background: var(--accent); color: var(--on-accent);
+  display: grid; place-items: center; font-size: 19px; font-weight: 700;
+  z-index: 3; cursor: pointer; line-height: 1;
+  box-shadow: 0 4px 14px -4px var(--accent);
+}
+.ph-lens {
+  position: absolute; top: 8px; left: 0;
+  width: 40px; height: 30px; border-radius: 15px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  z-index: 1;
+  opacity: 0;
+}
+
+/* scrim + sheet */
+.ph-scrim { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 5; pointer-events: none; }
+.ph-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--app-card);
+  border: 1px solid var(--app-line);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 15px 22px;
+  z-index: 6;
+  transform: translateY(102%);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.ph-grab { width: 34px; height: 4px; border-radius: 999px; background: var(--app-line); align-self: center; margin-bottom: 6px; }
+
+/* ── Controls ────────────────────────────────────────── */
+.ctrls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+button.ctrl {
+  font-family: var(--fm);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--chalk);
+  cursor: pointer;
+  transition: border-color .2s var(--e-standard), color .2s var(--e-standard), background .2s var(--e-standard);
+}
+button.ctrl:hover { border-color: var(--accent); color: var(--accent); }
+button.ctrl.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+button.ctrl.primary:hover { color: var(--on-accent); filter: brightness(1.06); }
+button.ctrl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+:where(button, a, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* ── Spec block ──────────────────────────────────────── */
+.spec { border-top: 1px solid var(--line); margin: 4px 0 0; }
+.spec dl { margin: 0; display: grid; grid-template-columns: 76px 1fr; gap: 0; }
+.spec dt {
+  font-family: var(--fm); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ash);
+  padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line);
+}
+.spec dd {
+  margin: 0; padding: 10px 0; border-bottom: 1px solid var(--line);
+  font-size: 13.5px; line-height: 1.5;
+}
+.spec dd code { font-size: 12px; white-space: normal; }
+.spec dd b { font-weight: 600; }
+
+/* ── Mechanic cards (iOS section) ────────────────────── */
+.mech { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .mech { grid-template-columns: 1fr 1fr; } }
+.mech article {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 21px;
+}
+.mech h3 { font-size: 16.5px; margin-bottom: 7px; }
+.mech p { font-size: 14.5px; color: var(--ash); margin: 0; }
+.mech .os {
+  font-family: var(--fm); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 9px;
+}
+
+/* ── Tables ──────────────────────────────────────────── */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { text-align: left; padding: 11px 15px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th {
+  font-family: var(--fm); font-size: 9.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ash); font-weight: 400;
+  background: var(--surface-2);
+}
+tbody tr:last-child td { border-bottom: none; }
+td.num { font-family: var(--fm); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td code { background: none; border: none; padding: 0; }
+
+/* ── Rules list ──────────────────────────────────────── */
+.rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 15px; }
+.rules li { padding-left: 19px; position: relative; max-width: 66ch; }
+.rules li::before {
+  content: ""; position: absolute; left: 0; top: .68em;
+  width: 9px; height: 1.5px; background: var(--accent);
+}
+.rules b { font-weight: 650; }
+
+/* ── Callout ─────────────────────────────────────────── */
+.callout {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 12px 12px 0;
+  padding: 16px 20px;
+  margin: 0 0 26px;
+}
+.callout p { margin: 0; font-size: 14.5px; max-width: 62ch; }
+.callout p + p { margin-top: 10px; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 26px;
+  color: var(--ash);
+  font-family: var(--fm);
+  font-size: 11px;
+  letter-spacing: .05em;
+  line-height: 1.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">HYBRID – Motion – Ideas, not yet built</p>
+    <h1>Screens should <em>move</em>, not blink.</h1>
+    <p class="deck">
+      Today every navigation in HYBRID is the same 240–260&nbsp;ms fade-and-rise, on both clients.
+      It's clean, it's reduced-motion-safe, and it tells you <strong>nothing</strong> — a tab switch,
+      a drill-down and a modal all look identical, and on web the outgoing screen simply vanishes.
+      This is the case for a real transition system: motion that encodes hierarchy, carries the thing
+      you tapped into the screen it opens, and can be grabbed mid-flight.
+    </p>
+    <div class="mastfoot">
+      <span class="factline"><b>13</b> proposals</span>
+      <span class="factline"><b>8</b> live demos below</span>
+      <span class="factline">Reanimated <b>4.4.0</b> + <b>@expo/ui</b> already installed</span>
+      <button class="ctrl" id="rm-toggle" aria-pressed="false">Reduce motion: off</button>
+    </div>
+  </header>
+
+  <nav class="spine" aria-label="Contents">
+    <ol>
+      <li><a href="#today">What ships today</a></li>
+      <li><a href="#ios">The iOS 26 grammar</a></li>
+      <div class="sp-gap"></div>
+      <li><a href="#w1">Wave 1 – Foundation</a></li>
+      <li><a href="#w2">Wave 2 – Continuity</a></li>
+      <li><a href="#w3">Wave 3 – Material</a></li>
+      <div class="sp-gap"></div>
+      <li><a href="#tokens">Motion tokens</a></li>
+      <li><a href="#box">Already in the box</a></li>
+      <li><a href="#rules">Rules &amp; risks</a></li>
+      <li><a href="#order">Shipping order</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <!-- ══════════════ 1. TODAY ══════════════ -->
+  <section id="today">
+    <p class="sec-kicker">Where we are</p>
+    <h2>What ships today</h2>
+    <p class="sec-intro">
+      An honest inventory. The foundations are genuinely good — reduced-motion is respected
+      everywhere, the nav lens is already native SwiftUI Liquid Glass — but there is no
+      <strong>screen transition system</strong>. There is one entrance animation, reused for everything.
+    </p>
+
+    <div class="audit">
+      <div class="audit-row">
+        <div class="audit-what">Web screen switch</div>
+        <div class="audit-detail">A keyed <span class="path">&lt;div key={screen} class="aurora-enter"&gt;</span> in <span class="path">app-shell.tsx:726</span> — 260&nbsp;ms fade + 10&nbsp;px rise. The outgoing screen is unmounted instantly; there is no exit half.</div>
+        <span class="chip part">Partial</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Mobile screen entrance</div>
+        <div class="audit-detail"><span class="path">useEntrance()</span> in <span class="path">lib/ui.tsx:87</span> — 240&nbsp;ms fade + rise, deliberately on the JS driver to dodge a Fabric race that stranded screens at opacity&nbsp;0. Runs on top of expo-router's default iOS push.</div>
+        <span class="chip part">Partial</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Nav selection lens</div>
+        <div class="audit-detail">Mobile: a single persistent native <span class="path">glassEffect</span> lens that travels and <em>stretches</em> by travel distance, spring <span class="path">response .32 / damping .74</span>. Web: the same idea in CSS. Genuinely excellent already.</div>
+        <span class="chip have">Shipped</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Bottom sheets</div>
+        <div class="audit-detail">320&nbsp;ms up, 240&nbsp;ms down, <span class="path">Easing.out(cubic)</span>, scrim to 0.6 — <span class="path">aurora/sheet.tsx</span>, mirrored on web. The parent screen does not react.</div>
+        <span class="chip part">Partial</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Scroll-collapse nav</div>
+        <div class="audit-detail">One shared <span class="path">Animated.Value</span> published by every scroll surface; the pill shrinks to 0.82 across 48&nbsp;px — <span class="path">lib/nav-scroll.tsx</span>.</div>
+        <span class="chip have">Shipped</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Reduced motion</div>
+        <div class="audit-detail">A global <span class="path">!important</span> backstop in <span class="path">globals.css:628</span> plus <span class="path">useReducedMotion()</span> on mobile, threaded down to the native spring. Nothing below may regress this.</div>
+        <span class="chip have">Shipped</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Shared elements</div>
+        <div class="audit-detail">Nothing. Tapping a plan cover, an exercise card or a session row re-renders a brand-new screen; the thing you touched has no continuity.</div>
+        <span class="chip gap">Missing</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Interruptible gestures</div>
+        <div class="audit-detail">Nothing beyond the OS edge-swipe on native stack routes — and on the tab shell that gesture is deliberately disabled. Web has no back gesture at all.</div>
+        <span class="chip gap">Missing</span>
+      </div>
+      <div class="audit-row">
+        <div class="audit-what">Directionality</div>
+        <div class="audit-detail">Nothing. Forward and back are the same animation, so nothing tells you whether you went deeper or sideways.</div>
+        <span class="chip gap">Missing</span>
+      </div>
+    </div>
+
+    <div class="demo" style="margin-top:34px">
+      <div class="demo-head"><p class="demo-title">The problem, side by side</p></div>
+      <p class="demo-note">
+        Both phones go from Today to History. Left is what ships now. Right is the same
+        navigation with a paired exit, a direction, and the outgoing screen pushing back
+        instead of disappearing. Same duration, entirely different read.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div>
+            <p class="stagelabel warn">Now – fade only</p>
+            <div class="phone" id="ab-old">
+              <div class="ph-vp">
+                <div class="ph-screen" data-s="a">
+                  <p class="ph-kick">Thursday</p>
+                  <p class="ph-title">Today</p>
+                  <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                  <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                  <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+                  <div class="ph-card"><span class="n">Row 2 km</span><span class="v">7:40</span></div>
+                </div>
+                <div class="ph-screen" data-s="b" data-hidden>
+                  <p class="ph-kick">Last 30 days</p>
+                  <p class="ph-title">History</p>
+                  <div class="ph-card"><span class="n">Push A</span><span class="v">Tue – 52 min</span></div>
+                  <div class="ph-card"><span class="n">Long run</span><span class="v">Sun – 14 km</span></div>
+                  <div class="ph-card"><span class="n">Pull B</span><span class="v">Sat – 47 min</span></div>
+                  <div class="ph-card"><span class="n">Threshold</span><span class="v">Thu – 6 × 800</span></div>
+                </div>
+              </div>
+              <div class="ph-nav">
+                <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+                <div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+                <div class="fab">+</div>
+                <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+                <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="stagelabel good">Proposed – paired + directional</p>
+            <div class="phone" id="ab-new">
+              <div class="ph-vp">
+                <div class="ph-screen" data-s="a">
+                  <p class="ph-kick">Thursday</p>
+                  <p class="ph-title">Today</p>
+                  <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                  <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                  <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+                  <div class="ph-card"><span class="n">Row 2 km</span><span class="v">7:40</span></div>
+                </div>
+                <div class="ph-screen" data-s="b" data-hidden>
+                  <p class="ph-kick">Last 30 days</p>
+                  <p class="ph-title">History</p>
+                  <div class="ph-card"><span class="n">Push A</span><span class="v">Tue – 52 min</span></div>
+                  <div class="ph-card"><span class="n">Long run</span><span class="v">Sun – 14 km</span></div>
+                  <div class="ph-card"><span class="n">Pull B</span><span class="v">Sat – 47 min</span></div>
+                  <div class="ph-card"><span class="n">Threshold</span><span class="v">Thu – 6 × 800</span></div>
+                </div>
+              </div>
+              <div class="ph-nav">
+                <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+                <div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+                <div class="fab">+</div>
+                <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+                <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl primary" data-act="ab-go">Navigate</button>
+            <button class="ctrl" data-act="ab-back">Back</button>
+          </div>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Now</dt><dd>Enter only. <code>opacity 0→1, translateY 10→0</code>, 260&nbsp;ms. No exit — the old screen is gone on the same frame.</dd>
+              <dt>Proposed</dt><dd>Exit <code>−22px, opacity→0, 160ms</code> on an accelerating curve, enter <code>+26px→0</code> 260&nbsp;ms decelerating, overlapping by 100&nbsp;ms.</dd>
+              <dt>Cost</dt><dd><b>Low.</b> Two keyframes and a direction flag in the existing keyed wrapper.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ 2. iOS GRAMMAR ══════════════ -->
+  <section id="ios">
+    <p class="sec-kicker">The reference</p>
+    <h2>What "iOS 26" actually means</h2>
+    <p class="sec-intro">
+      Stripped of the marketing, Apple's current transition language is five concrete mechanics.
+      Each one is buildable on both of our clients — they're not magic, and three of them we're
+      already half-way to.
+    </p>
+
+    <div class="mech">
+      <article>
+        <span class="os">Zoom navigation</span>
+        <h3>The thing you tapped becomes the screen</h3>
+        <p>A tapped card expands into the destination, corner radius unwinding to the screen edge, while the list behind scales back and dims. Going back reverses it into the same card. This is the single biggest perceived-quality win available.</p>
+      </article>
+      <article>
+        <span class="os">Glass morph</span>
+        <h3>Controls merge and split as fluid</h3>
+        <p>Glass elements in a shared container flow into one another rather than cross-fading. Our nav lens already does the persisting-view version of this, including the stretch-on-travel.</p>
+      </article>
+      <article>
+        <span class="os">Interruptible</span>
+        <h3>Every transition tracks the finger</h3>
+        <p>Nothing is a fire-and-forget animation. You can grab a transition mid-flight, reverse it, and release; springs resolve from wherever they are. This is what makes iOS feel alive rather than scripted.</p>
+      </article>
+      <article>
+        <span class="os">Depth semantics</span>
+        <h3>Direction encodes hierarchy</h3>
+        <p>Sideways means sibling. Zoom-forward means deeper. Up-from-bottom with the parent receding means modal. You learn the app's shape without reading a single label.</p>
+      </article>
+      <article>
+        <span class="os">Continuous chrome</span>
+        <h3>Titles compress, they don't swap</h3>
+        <p>Large titles shrink into the header as a function of scroll offset, not as a stepped state change. Same principle as our nav's scroll-collapse, applied to the masthead.</p>
+      </article>
+      <article>
+        <span class="os">Material response</span>
+        <h3>Glass reacts to movement</h3>
+        <p>Specular highlights shift and blur radius modulates as content moves behind glass. A cheap approximation — modulating blur and rim opacity during a transition — gets most of the effect.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══════════════ WAVE 1 ══════════════ -->
+  <section id="w1">
+    <p class="sec-kicker">Wave 1 – cheap, high leverage</p>
+    <h2>Foundation</h2>
+    <p class="sec-intro">
+      Four changes that need no new dependency on either client and land the majority of the
+      perceived improvement. All four are shared-token changes, so web and mobile stay in lockstep
+      by construction.
+    </p>
+
+    <!-- 1.1 direction -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Direction from hierarchy</p>
+        <span class="chip free">No new deps</span>
+      </div>
+      <p class="demo-note">
+        The nav map in <code>packages/core/src/nav.ts</code> already knows the app's shape. Derive the
+        transition from it: moving between the five bottom-nav destinations slides horizontally in
+        nav order; opening a sub-screen zooms forward; a sheet comes up with the parent receding.
+        Tap the three buttons and watch how differently each one reads.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="dir">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Thursday</p>
+                <p class="ph-title">Today</p>
+                <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+              </div>
+              <div class="ph-screen" data-s="sib" data-hidden>
+                <p class="ph-kick">Community</p>
+                <p class="ph-title">Explore</p>
+                <div class="ph-cover"><span class="cv-g">◇</span><span class="cv-m">Strength – 8 weeks</span><span class="cv-t">Soviet OWL</span></div>
+                <div class="ph-card"><span class="n">Hansons 5K</span><span class="v">Endurance</span></div>
+              </div>
+              <div class="ph-screen" data-s="deep" data-hidden>
+                <p class="ph-back">← Today</p>
+                <p class="ph-title">Bench Press</p>
+                <div class="ph-hero"><div class="ph-num">102<span style="font-size:14px"> kg</span></div><p class="ph-kick" style="margin-top:4px">Estimated 1RM</p></div>
+                <div class="ph-card"><span class="n">Best set</span><span class="v">92.5 × 6</span></div>
+                <div class="ph-card"><span class="n">Volume, 4 wk</span><span class="v">18.4 t</span></div>
+              </div>
+              <div class="ph-scrim"></div>
+              <div class="ph-sheet">
+                <div class="ph-grab"></div>
+                <p class="ph-title" style="font-size:17px">Quick log</p>
+                <div class="ph-card"><span class="n">Repeat last</span><span class="v">Push A</span></div>
+                <div class="ph-card"><span class="n">Empty session</span><span class="v">Start</span></div>
+              </div>
+            </div>
+            <div class="ph-nav">
+              <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+              <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl" data-act="dir-sib">Sibling – Explore</button>
+            <button class="ctrl" data-act="dir-deep">Deeper – Bench Press</button>
+            <button class="ctrl" data-act="dir-modal">Modal – Quick log</button>
+            <button class="ctrl" data-act="dir-back">Back</button>
+          </div>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Sibling</dt><dd>Both screens translate <code>±100%</code> at <code>260ms / e-standard</code>, outgoing at 0.35 parallax. Direction from index order in <code>nav.ts</code>.</dd>
+              <dt>Deeper</dt><dd>Parent scales to <code>0.94</code> and dims; child rises from <code>+18%</code> over <code>380ms</code>. Back is the exact inverse.</dd>
+              <dt>Modal</dt><dd>Parent scales to <code>0.92</code>, corner radius grows to the device radius; sheet springs up <code>380ms / e-spring</code>.</dd>
+              <dt>Web</dt><dd>Direction flag on the keyed wrapper in <code>app-shell.tsx</code>; four keyframe pairs in <code>globals.css</code>.</dd>
+              <dt>Mobile</dt><dd>Per-route <code>animation</code> in the expo-router <code>Stack</code>, which react-native-screens 4.25 renders natively.</dd>
+              <dt>Cost</dt><dd><b>Low.</b> Roughly a day per client.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.2 stagger -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Staggered settle on arrival</p>
+        <span class="chip free">No new deps</span>
+      </div>
+      <p class="demo-note">
+        Instead of the whole screen fading as one plane, the first few cards arrive in sequence,
+        24&nbsp;ms apart. It reads as the screen assembling rather than appearing, and it costs
+        one CSS custom property. Capped at six items so long lists never feel slow, and skipped
+        entirely on a back-navigation — you're returning to something you've already seen.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="stag">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Last 30 days</p>
+                <p class="ph-title">History</p>
+                <div class="ph-card sg"><span class="n">Push A</span><span class="v">Tue – 52 min</span></div>
+                <div class="ph-card sg"><span class="n">Long run</span><span class="v">Sun – 14 km</span></div>
+                <div class="ph-card sg"><span class="n">Pull B</span><span class="v">Sat – 47 min</span></div>
+                <div class="ph-card sg"><span class="n">Threshold</span><span class="v">Thu – 6 × 800</span></div>
+                <div class="ph-card sg"><span class="n">Legs</span><span class="v">Wed – 61 min</span></div>
+                <div class="ph-card sg"><span class="n">Recovery ride</span><span class="v">Mon – 40 min</span></div>
+              </div>
+            </div>
+            <div class="ph-nav">
+              <div class="slot" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot on" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+              <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl primary" data-act="stag-go">Arrive</button>
+            <button class="ctrl" data-act="stag-flat">Compare: flat fade</button>
+          </div>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Motion</dt><dd><code>translateY 14→0</code>, <code>opacity 0→1</code>, <code>300ms / e-standard</code>, delay <code>index × 24ms</code>.</dd>
+              <dt>Cap</dt><dd>Six items. Item seven onward arrives with the sixth — a long list must never gate on the animation.</dd>
+              <dt>Skip</dt><dd>On back-navigation and on any list that was already mounted. Re-staggering a screen you're returning to feels broken.</dd>
+              <dt>Web</dt><dd><code>--i</code> custom property on the row plus <code>animation-delay: calc(var(--i) * 24ms)</code>. The pattern already exists in <code>globals.css:589</code>.</dd>
+              <dt>Mobile</dt><dd><code>Animated.stagger</code> over the first six, or a per-row <code>entering</code> prop with Reanimated's <code>FadeInDown.delay()</code>.</dd>
+              <dt>Cost</dt><dd><b>Very low.</b> Half a day per client.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.3 sheet recede -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Sheets that push the world back</p>
+        <span class="chip free">No new deps</span>
+      </div>
+      <p class="demo-note">
+        Our sheet already slides correctly. What's missing is the other half: the presenting screen
+        should scale back to 0.92 and grow its corner radius to match the device, so the sheet reads
+        as sitting <em>on top of</em> a real stack instead of floating over a static picture. The
+        scrim then does far less work and can be much lighter.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div>
+            <p class="stagelabel warn">Now</p>
+            <div class="phone" id="sh-old">
+              <div class="ph-vp">
+                <div class="ph-screen" data-s="a">
+                  <p class="ph-kick">Thursday</p>
+                  <p class="ph-title">Today</p>
+                  <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                  <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                  <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+                </div>
+                <div class="ph-scrim"></div>
+                <div class="ph-sheet">
+                  <div class="ph-grab"></div>
+                  <p class="ph-title" style="font-size:17px">How do you feel?</p>
+                  <div class="ph-card"><span class="n">Sleep</span><span class="v">7 h 20</span></div>
+                  <div class="ph-card"><span class="n">Soreness</span><span class="v">Low</span></div>
+                </div>
+              </div>
+              <div class="ph-nav">
+                <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div><div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+                <div class="fab">+</div>
+                <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div><div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="stagelabel good">Proposed</p>
+            <div class="phone" id="sh-new">
+              <div class="ph-vp">
+                <div class="ph-screen" data-s="a">
+                  <p class="ph-kick">Thursday</p>
+                  <p class="ph-title">Today</p>
+                  <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                  <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                  <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+                </div>
+                <div class="ph-scrim"></div>
+                <div class="ph-sheet">
+                  <div class="ph-grab"></div>
+                  <p class="ph-title" style="font-size:17px">How do you feel?</p>
+                  <div class="ph-card"><span class="n">Sleep</span><span class="v">7 h 20</span></div>
+                  <div class="ph-card"><span class="n">Soreness</span><span class="v">Low</span></div>
+                </div>
+              </div>
+              <div class="ph-nav">
+                <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div><div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+                <div class="fab">+</div>
+                <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div><div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl primary" data-act="sh-open">Open sheet</button>
+            <button class="ctrl" data-act="sh-close">Dismiss</button>
+          </div>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Parent</dt><dd><code>scale 1 → 0.92</code>, <code>border-radius 0 → 30px</code>, brightness <code>1 → 0.72</code>, over <code>380ms / e-standard</code>.</dd>
+              <dt>Scrim</dt><dd>Drops from <b>0.6 to 0.28</b> — the recede is doing the separation work now, so heavy dimming is no longer needed.</dd>
+              <dt>Where</dt><dd><code>aurora/sheet.tsx</code> on both clients. The presenting screen needs a wrapper the sheet can drive, which is the only structural change.</dd>
+              <dt>Cost</dt><dd><b>Low–medium.</b> The wrapper is the work, not the animation.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.4 tokens callout -->
+    <div class="callout">
+      <p><b>The fourth Wave 1 item has no demo, because it's a file.</b> Every number above should
+      live in one place — <code>packages/core/src/motion.ts</code> — and be consumed by both clients,
+      exactly as <code>theme/tokens.ts</code> is today. Without it the two clients drift within a
+      release, and the parity rule gets enforced by memory instead of by the compiler.</p>
+      <p>The proposed contents are in <a href="#tokens">Motion tokens</a> below.</p>
+    </div>
+  </section>
+
+  <!-- ══════════════ WAVE 2 ══════════════ -->
+  <section id="w2">
+    <p class="sec-kicker">Wave 2 – the headline feature</p>
+    <h2>Continuity</h2>
+    <p class="sec-intro">
+      This is the wave that makes the app feel like iOS 26 rather than like a well-animated website.
+      It's also where the real engineering sits: continuity requires measuring an element in one
+      screen and re-projecting it in the next.
+    </p>
+
+    <!-- 2.1 zoom -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Zoom from source</p>
+        <span class="chip part">Needs plumbing</span>
+      </div>
+      <p class="demo-note">
+        Tap a plan cover. Instead of a new screen fading in over it, the cover itself expands to fill
+        the display, its corner radius unwinding, while the list behind scales back and dims. Back
+        collapses it into the same cover. Try it on both — the plan covers in Explore and the exercise
+        cards on Today are the two highest-value places for this.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="zoom">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Community</p>
+                <p class="ph-title">Explore</p>
+                <div class="ph-cover" data-plan="0"><span class="cv-g">◇</span><span class="cv-m">Strength – 8 weeks</span><span class="cv-t">Soviet OWL</span></div>
+                <div class="ph-cover" data-plan="1" style="background:linear-gradient(150deg,#2a2318,#141009 68%)"><span class="cv-g">△</span><span class="cv-m">Endurance – 12 weeks</span><span class="cv-t">Hansons 5K</span></div>
+                <div class="ph-cover" data-plan="2" style="background:linear-gradient(150deg,#2b1c16,#150d09 68%)"><span class="cv-g">▽</span><span class="cv-m">Physique – 6 days</span><span class="cv-t">Push Pull Legs</span></div>
+              </div>
+              <div class="ph-screen" data-s="detail" data-hidden style="padding:0">
+                <div class="zd-hero">
+                  <span class="cv-g" style="position:absolute;right:-10px;top:-20px;font-size:110px;font-weight:900;color:#ffffff14;line-height:1">◇</span>
+                  <span class="cv-m" style="font-family:var(--fm);font-size:9px;letter-spacing:.14em;color:#b9c4bd;text-transform:uppercase">Strength – 8 weeks</span>
+                  <span class="cv-t" style="font-size:26px;font-weight:800;letter-spacing:-.03em;color:#f3f4ef;line-height:1.05">Soviet OWL</span>
+                </div>
+                <div style="padding:13px;display:flex;flex-direction:column;gap:9px">
+                  <div class="ph-card"><span class="n">Week 1 – Snatch</span><span class="v">5 × 3</span></div>
+                  <div class="ph-card"><span class="n">Clean &amp; Jerk</span><span class="v">6 × 2</span></div>
+                  <div class="ph-card"><span class="n">Back Squat</span><span class="v">4 × 5</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ph-nav">
+              <div class="slot" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="slot on" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+              <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl" data-act="zoom-back">Back</button>
+          </div>
+          <p style="font-size:13.5px;color:var(--ash);margin:14px 0 0;max-width:none">Tap any cover in the phone.</p>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Motion</dt><dd>FLIP: measure the source rect, start the destination at that transform, animate to identity over <code>440ms / e-zoom</code>. Radius <code>15px → 0</code> on the same curve.</dd>
+              <dt>Parent</dt><dd><code>scale → 1.06</code>, <code>opacity → 0.35</code> — it recedes <em>away</em> from you, which is what sells the depth.</dd>
+              <dt>Web</dt><dd>The <b>View Transitions API</b>. Give the cover and the detail hero the same <code>view-transition-name</code> and the browser does the FLIP. Next 16 + React 19.2 also expose <code>&lt;ViewTransition&gt;</code>.</dd>
+              <dt>Mobile</dt><dd>Reanimated <b>4.4.0</b> shared-element transitions, already resolvable in the tree — see <a href="#box">Already in the box</a>.</dd>
+              <dt>Apply to</dt><dd>Explore plan covers, Today's exercise-widget cards, History session rows, Coach cards in the rail.</dd>
+              <dt>Cost</dt><dd><b>Medium.</b> The animation is cheap; naming pairs across ~4 screen pairs on 2 clients is the work.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.2 hero number -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">The number travels</p>
+        <span class="chip part">Needs plumbing</span>
+      </div>
+      <p class="demo-note">
+        A narrower, cheaper version of the same idea, and arguably better suited to a training app.
+        Rather than morphing whole cards, keep continuity on the <em>datum</em>: the estimated 1RM on
+        the card is the same element as the big number on the detail screen. It scales and travels
+        into place while everything else crossfades. It makes the app feel like it's showing you one
+        continuous truth instead of re-fetching a page.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="hero">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Strength</p>
+                <p class="ph-title">Exercises</p>
+                <div class="ph-card tap" data-open="1" style="align-items:center">
+                  <span class="n">Bench Press</span>
+                  <span class="ph-num sm" data-flip="src">102</span>
+                </div>
+                <div class="ph-card"><span class="n">Back Squat</span><span class="v">148 kg</span></div>
+                <div class="ph-card"><span class="n">Deadlift</span><span class="v">191 kg</span></div>
+              </div>
+              <div class="ph-screen" data-s="detail" data-hidden>
+                <p class="ph-back">← Exercises</p>
+                <p class="ph-title">Bench Press</p>
+                <div class="ph-hero" style="position:relative">
+                  <div class="ph-num" data-flip="dst">102</div>
+                  <p class="ph-kick" style="margin-top:4px">Estimated 1RM</p>
+                </div>
+                <div class="ph-card"><span class="n">Best set</span><span class="v">92.5 × 6</span></div>
+                <div class="ph-card"><span class="n">Volume, 4 wk</span><span class="v">18.4 t</span></div>
+              </div>
+            </div>
+            <div class="ph-nav">
+              <div class="slot" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div><div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot on" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div><div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl" data-act="hero-back">Back</button>
+          </div>
+          <p style="font-size:13.5px;color:var(--ash);margin:14px 0 0;max-width:none">Tap the Bench Press row.</p>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Motion</dt><dd>FLIP on a single text node, <code>440ms / e-zoom</code>. Everything else crossfades under it at <code>200ms</code>.</dd>
+              <dt>Why here</dt><dd>Numbers are what this app is about. Continuity on the datum reads as data integrity, not decoration.</dd>
+              <dt>Apply to</dt><dd>e1RM, session volume, readiness score, streak count, plan week number.</dd>
+              <dt>Cost</dt><dd><b>Low–medium.</b> Same machinery as zoom, far fewer pairs to name.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.3 interruptible -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Interruptible back, with a live preview</p>
+        <span class="chip gap">Not started</span>
+      </div>
+      <p class="demo-note">
+        Drag from the left edge of the phone. The previous screen is real and already there, moving at
+        one-third parallax behind your finger. Release past 35&nbsp;% and it commits; release short and
+        it springs back. Nothing here is a canned animation — the position is a function of the gesture.
+        Note that the app shell currently disables this gesture outright, for a good reason documented
+        in <code>_layout.tsx:56</code>, so this needs a scoped fix rather than flipping the flag.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="swipe">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Community</p>
+                <p class="ph-title">Explore</p>
+                <div class="ph-cover"><span class="cv-g">◇</span><span class="cv-m">Strength – 8 weeks</span><span class="cv-t">Soviet OWL</span></div>
+                <div class="ph-card"><span class="n">Hansons 5K</span><span class="v">Endurance</span></div>
+                <div class="ph-card"><span class="n">Push Pull Legs</span><span class="v">Physique</span></div>
+              </div>
+              <div class="ph-screen" data-s="detail">
+                <p class="ph-back">← Explore</p>
+                <p class="ph-title">Soviet OWL</p>
+                <div class="ph-card"><span class="n">Week 1 – Snatch</span><span class="v">5 × 3</span></div>
+                <div class="ph-card"><span class="n">Clean &amp; Jerk</span><span class="v">6 × 2</span></div>
+                <div class="ph-card"><span class="n">Back Squat</span><span class="v">4 × 5</span></div>
+              </div>
+              <div class="sw-hint">Drag from the left edge</div>
+            </div>
+            <div class="ph-nav">
+              <div class="slot" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="slot on" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div><div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl" data-act="sw-reset">Reset</button>
+          </div>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Mechanic</dt><dd>Gesture position drives the transform directly. Commit threshold <b>35&nbsp;%</b> of width, or any release velocity over <code>0.4 px/ms</code>.</dd>
+              <dt>Parallax</dt><dd>Underlying screen at <code>0.33×</code> the drag, so the two planes separate in depth.</dd>
+              <dt>Mobile</dt><dd>Re-enable the native stack gesture per-route rather than globally — the current blanket disable exists to stop the Today pager escaping to the auth screens.</dd>
+              <dt>Web</dt><dd>Pointer events on the shell plus the browser back entry. Lower value on desktop; worth it for mobile Safari.</dd>
+              <dt>Cost</dt><dd><b>Medium.</b> Mostly care around the existing gesture conflict.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ WAVE 3 ══════════════ -->
+  <section id="w3">
+    <p class="sec-kicker">Wave 3 – material and polish</p>
+    <h2>Material</h2>
+    <p class="sec-intro">
+      Effects that live in the chrome rather than the page swap. Individually small; collectively
+      they're the difference between "animated" and "physical".
+    </p>
+
+    <!-- 3.1 nav morph -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Nav lens morph and merge</p>
+        <span class="chip have">Half shipped</span>
+      </div>
+      <p class="demo-note">
+        The travelling, stretching lens already ships and is the best motion in the app. Two extensions:
+        when you activate <strong>Train</strong>, the lens should flow into the centre FAB rather than
+        fading out in place; and once you scroll, the pill should <strong>merge</strong> into a single
+        compact capsule instead of only scaling down. Both are glass-container behaviours rather than
+        opacity tricks.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="lens">
+            <div class="ph-vp">
+              <div class="ph-screen" data-s="a">
+                <p class="ph-kick">Thursday</p>
+                <p class="ph-title">Today</p>
+                <div class="ph-hero"><div class="ph-num">82</div><p class="ph-kick" style="margin-top:4px">Readiness</p></div>
+                <div class="ph-card"><span class="n">Bench Press</span><span class="v">4 × 8</span></div>
+                <div class="ph-card"><span class="n">KB Swing</span><span class="v">3 × 20</span></div>
+                <div class="ph-card"><span class="n">Row 2 km</span><span class="v">7:40</span></div>
+              </div>
+            </div>
+            <div class="ph-nav" id="lens-nav">
+              <div class="ph-lens" id="lens-el"></div>
+              <div class="slot on" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab" data-i="fab">+</div>
+              <div class="slot" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div>
+              <div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <div class="ctrls" style="margin-top:0">
+            <button class="ctrl" data-act="lens-merge" aria-pressed="false">Toggle scrolled state</button>
+          </div>
+          <p style="font-size:13.5px;color:var(--ash);margin:14px 0 0;max-width:none">Tap the nav slots and the centre button in the phone.</p>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Shipped</dt><dd>Persisting native <code>glassEffect</code> lens, animated <code>offset</code>, stretch scaled by travel distance, spring <code>.32 / .74</code> — <code>global-nav.tsx:334</code>.</dd>
+              <dt>Add</dt><dd>Lens flows into the FAB on Train instead of fading; pill contracts to a merged capsule when scrolled.</dd>
+              <dt>Mobile</dt><dd><code>GlassEffectContainer</code> + <code>glassEffectID</code> once <code>@expo/ui</code> exposes them; until then, the same persisting-view trick already documented in that file.</dd>
+              <dt>Web</dt><dd>Width and radius interpolation on the existing indicator; visually equivalent.</dd>
+              <dt>Cost</dt><dd><b>Low.</b> Extends code that already exists.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.2 masthead -->
+    <div class="demo">
+      <div class="demo-head">
+        <p class="demo-title">Continuous masthead compression</p>
+        <span class="chip free">No new deps</span>
+      </div>
+      <p class="demo-note">
+        Scroll inside the phone. The large screen title shrinks continuously into a compact header
+        with a hairline and a blur, as a function of scroll offset — not a stepped swap at a threshold.
+        The plumbing for this already exists: <code>nav-scroll.tsx</code> publishes exactly this signal
+        for the nav pill. It just needs a second subscriber.
+      </p>
+      <div class="demo-body">
+        <div class="demo-stage">
+          <div class="phone" id="mast">
+            <div class="ph-vp">
+              <div class="mast-bar" id="mast-bar">
+                <span class="mast-t" id="mast-t">History</span>
+              </div>
+              <div class="mast-scroll" id="mast-scroll">
+                <div class="mast-spacer"></div>
+                <div style="display:flex;flex-direction:column;gap:9px;padding:0 13px 78px">
+                  <div class="ph-card"><span class="n">Push A</span><span class="v">Tue – 52 min</span></div>
+                  <div class="ph-card"><span class="n">Long run</span><span class="v">Sun – 14 km</span></div>
+                  <div class="ph-card"><span class="n">Pull B</span><span class="v">Sat – 47 min</span></div>
+                  <div class="ph-card"><span class="n">Threshold</span><span class="v">Thu – 6 × 800</span></div>
+                  <div class="ph-card"><span class="n">Legs</span><span class="v">Wed – 61 min</span></div>
+                  <div class="ph-card"><span class="n">Recovery ride</span><span class="v">Mon – 40 min</span></div>
+                  <div class="ph-card"><span class="n">Push B</span><span class="v">Sun – 49 min</span></div>
+                  <div class="ph-card"><span class="n">Tempo run</span><span class="v">Fri – 10 km</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ph-nav" id="mast-nav">
+              <div class="slot" data-i="0"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></div><div class="slot" data-i="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13 0 16-2.5-3-2.5-13.5 0-16z"/></svg></div>
+              <div class="fab">+</div>
+              <div class="slot on" data-i="2"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></div><div class="slot" data-i="3"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-side">
+          <p style="font-size:13.5px;color:var(--ash);margin:0;max-width:none">The nav pill collapses off the same signal, exactly as it does in the app today — one scroll value, two subscribers.</p>
+          <div class="spec" style="margin-top:20px">
+            <dl>
+              <dt>Signal</dt><dd>The existing <code>collapse</code> value from <code>lib/nav-scroll.tsx</code>, <code>0 → 1</code> across the first <code>48px</code>.</dd>
+              <dt>Maps to</dt><dd>Title <code>21px → 13px</code>, header height <code>60 → 38</code>, hairline opacity <code>0 → 1</code>, backdrop blur <code>0 → 18px</code>.</dd>
+              <dt>Web</dt><dd>Needs the equivalent provider; web currently has no shared scroll signal, which is the only real work here.</dd>
+              <dt>Cost</dt><dd><b>Low</b> on mobile, <b>medium</b> on web.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mech" style="margin-top:8px">
+      <article>
+        <span class="os">Wave 3 – no demo needed</span>
+        <h3>Ambient field continuity</h3>
+        <p>The gradient blob field (<code>lg-field</code> on web, <code>AuroraField</code> on mobile) already renders <em>outside</em> the screen wrapper — so it survives a screen change untouched. Give it a slow counter-drift during transitions and it becomes the fixed world the screens move through. Nearly free, and it's the detail that makes a transition feel spatial.</p>
+      </article>
+      <article>
+        <span class="os">Wave 3 – no demo needed</span>
+        <h3>Haptics on commit, not on touch</h3>
+        <p>The nav already fires <code>expo-haptics</code>. The rule worth adopting everywhere: fire on the frame the transition <em>commits</em>, not when the finger lands. On an interruptible gesture that means at the threshold crossing, so the phone confirms the decision you just made.</p>
+      </article>
+      <article>
+        <span class="os">Wave 3 – no demo needed</span>
+        <h3>Focus mode for the live workout</h3>
+        <p>Entering the logger already hides the nav pill (<code>HIDE_ON</code> in <code>global-nav.tsx</code>). Make the entry itself a statement: the world desaturates and blurs out over 400&nbsp;ms, the logger rises through it. Leaving reverses. It marks "you are in a session" better than any banner.</p>
+      </article>
+      <article>
+        <span class="os">Wave 3 – no demo needed</span>
+        <h3>Celebration handoff</h3>
+        <p>The PR celebration keyframes already exist — <code>prTrophyPop</code>, <code>prSweep</code>, <code>prConfetti</code> in <code>globals.css:472</code>. Wire them to the <em>transition</em> into the Done screen so the badge flies from the set row into the summary, instead of the summary playing its own animation after arriving.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══════════════ TOKENS ══════════════ -->
+  <section id="tokens">
+    <p class="sec-kicker">The system</p>
+    <h2>Motion tokens</h2>
+    <p class="sec-intro">
+      The proposed contents of <code>packages/core/src/motion.ts</code>, consumed by
+      <code>globals.css</code> as custom properties and by mobile as <code>Easing</code> /
+      spring configs. Four durations and four curves cover everything in this document; anything
+      that needs a fifth is probably wrong.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Token</th><th>Value</th><th>Curve</th><th>Used by</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>duration.fast</code></td><td class="num">160 ms</td><td class="num">e-exit</td><td>Exits, dismissals, press states</td></tr>
+          <tr><td><code>duration.base</code></td><td class="num">260 ms</td><td class="num">e-standard</td><td>Sibling slides, entrances, crossfades</td></tr>
+          <tr><td><code>duration.zoom</code></td><td class="num">440 ms</td><td class="num">e-zoom</td><td>Shared-element zoom, hero number travel</td></tr>
+          <tr><td><code>duration.sheet</code></td><td class="num">380 ms</td><td class="num">e-spring</td><td>Sheets, modals, the parent recede</td></tr>
+          <tr><td><code>ease.standard</code></td><td class="num">cubic-bezier(.2,.7,.3,1)</td><td>—</td><td>The default. Already the app's curve.</td></tr>
+          <tr><td><code>ease.zoom</code></td><td class="num">cubic-bezier(.2,.85,.25,1)</td><td>—</td><td>Long decelerations that must not feel slow</td></tr>
+          <tr><td><code>ease.exit</code></td><td class="num">cubic-bezier(.4,0,.9,.4)</td><td>—</td><td>Accelerating — things leave faster than they arrive</td></tr>
+          <tr><td><code>ease.spring</code></td><td class="num">cubic-bezier(.34,1.4,.5,1)</td><td>—</td><td>Slight overshoot on arrival</td></tr>
+          <tr><td><code>spring.nav</code></td><td class="num">response .32 / damping .74</td><td>—</td><td>The shipped nav lens. Do not change it.</td></tr>
+          <tr><td><code>stagger.step</code></td><td class="num">24 ms</td><td>—</td><td>Per-item delay, capped at 6 items</td></tr>
+          <tr><td><code>parallax.under</code></td><td class="num">0.33</td><td>—</td><td>How far the underlying screen moves</td></tr>
+          <tr><td><code>recede.scale</code></td><td class="num">0.92</td><td>—</td><td>Parent scale when presenting a modal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════ BOX ══════════════ -->
+  <section id="box">
+    <p class="sec-kicker">Feasibility</p>
+    <h2>What's already in the box</h2>
+    <p class="sec-intro">
+      Encouraging news: nothing in this document requires a dependency the repo doesn't already have,
+      and the two heaviest items are unlocked by packages that are <strong>already installed</strong>.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Need</th><th>Status</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Mobile shared elements</td>
+            <td><span class="chip have">Present</span></td>
+            <td><code>react-native-reanimated 4.4.0</code> and <code>react-native-worklets</code> are already resolvable at the workspace root, and <code>babel-preset-expo</code> wires the plugin automatically. One catch: they are transitive, not declared in <code>apps/mobile/package.json</code> — <b>add them as explicit dependencies before relying on them</b>, or a hoisting change silently breaks the build.</td>
+          </tr>
+          <tr>
+            <td>Native stack animations</td>
+            <td><span class="chip have">Present</span></td>
+            <td><code>react-native-screens 4.25.2</code> renders per-route <code>animation</code> options natively. Today only two <code>Stack.Screen</code> entries set any options at all.</td>
+          </tr>
+          <tr>
+            <td>Native Liquid Glass</td>
+            <td><span class="chip have">Present</span></td>
+            <td><code>@expo/ui 56.0.18</code> already gives real SwiftUI <code>glassEffect</code>, <code>Animation.spring</code> and <code>.animation(value:)</code> — and the nav already uses all three.</td>
+          </tr>
+          <tr>
+            <td>Web shared elements</td>
+            <td><span class="chip free">Native platform</span></td>
+            <td>The View Transitions API needs no library. <code>next 16.2.7</code> + <code>react 19.2</code> additionally expose <code>&lt;ViewTransition&gt;</code>. No animation library needs adding to web.</td>
+          </tr>
+          <tr>
+            <td>Web exit animations</td>
+            <td><span class="chip gap">Blocked by structure</span></td>
+            <td>The shell renders one keyed <code>&lt;div&gt;</code>, so the outgoing tree unmounts before it can animate. Either keep both trees alive for one frame, or let View Transitions snapshot the old one — the latter is much less invasive.</td>
+          </tr>
+          <tr>
+            <td>Verification</td>
+            <td><span class="chip part">Sandbox limit</span></td>
+            <td>Native motion can't be verified here — no Xcode or simulator. Anything native needs a TestFlight build to sign off, the same constraint already recorded against <code>swiftui-kit</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════ RULES ══════════════ -->
+  <section id="rules">
+    <p class="sec-kicker">Guardrails</p>
+    <h2>Rules and risks</h2>
+    <ul class="rules">
+      <li><b>Reduced motion is not negotiable.</b> Every item above must resolve to its end state instantly when Reduce Motion is on. The app already does this correctly on both clients — the risk is a new transition bypassing the existing guard, so the tokens file should expose a single <code>useMotion()</code> hook that already returns zeroed durations.</li>
+      <li><b>Nothing over 450&nbsp;ms.</b> The zoom at 440&nbsp;ms is the ceiling and it earns it by moving a large distance. A 400&nbsp;ms fade is just slow.</li>
+      <li><b>A transition may never gate input.</b> Taps during an animation queue to the destination; they don't get swallowed. Stagger in particular must never delay a tappable row past ~150&nbsp;ms.</li>
+      <li><b>Don't stack effects.</b> Zoom plus blur plus a scale-back plus a stagger, all at once, causes motion sickness in a meaningful share of users. One primary motion per transition, everything else supporting it quietly.</li>
+      <li><b>Back is the exact inverse of forward.</b> If back doesn't reverse the transition it came from, the spatial model breaks and the motion becomes noise.</li>
+      <li><b>Parity by construction.</b> Per the project rule, every item here ships on both clients in the same change — which is why the token file comes first, before any of the transitions that consume it.</li>
+      <li><b>Watch the JS-driver decision.</b> <code>useEntrance()</code> deliberately uses the JS driver to avoid a Fabric race that stranded screens invisible. Any rewrite onto Reanimated must be verified on a real device against that exact failure, not assumed fixed.</li>
+      <li><b>Web has a code-splitting interaction.</b> The shell lazy-loads nearly every screen. A screen that arrives mid-transition will pop unless the transition waits on the chunk — worth pairing with the already-planned <code>web-code-splitting</code> work.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════ ORDER ══════════════ -->
+  <section id="order">
+    <p class="sec-kicker">Recommendation</p>
+    <h2>Shipping order</h2>
+    <p class="sec-intro">
+      Ordered by impact per unit of risk. Wave 1 alone changes the feel of the app substantially and
+      touches no native code, so it can ship to web immediately and to mobile over the air.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Wave</th><th>Item</th><th>Impact</th><th>Cost</th><th>Native build?</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td><code>motion.ts</code> token file</td><td>Enabling</td><td class="num">0.5 d</td><td>No</td></tr>
+          <tr><td class="num">1</td><td>Direction from hierarchy</td><td>High</td><td class="num">2 d</td><td>No</td></tr>
+          <tr><td class="num">1</td><td>Paired exit + enter on web</td><td>High</td><td class="num">1 d</td><td>No</td></tr>
+          <tr><td class="num">1</td><td>Staggered settle</td><td>Medium</td><td class="num">1 d</td><td>No</td></tr>
+          <tr><td class="num">1</td><td>Sheet parent recede</td><td>Medium</td><td class="num">1.5 d</td><td>No</td></tr>
+          <tr><td class="num">2</td><td>Zoom from source</td><td>Very high</td><td class="num">4–5 d</td><td>Yes, to verify</td></tr>
+          <tr><td class="num">2</td><td>Hero number travel</td><td>High</td><td class="num">2 d</td><td>Yes, to verify</td></tr>
+          <tr><td class="num">2</td><td>Interruptible back</td><td>High</td><td class="num">3 d</td><td>Yes</td></tr>
+          <tr><td class="num">3</td><td>Nav lens morph and merge</td><td>Medium</td><td class="num">1.5 d</td><td>Yes</td></tr>
+          <tr><td class="num">3</td><td>Masthead compression</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
+          <tr><td class="num">3</td><td>Ambient field continuity</td><td>Low</td><td class="num">0.5 d</td><td>No</td></tr>
+          <tr><td class="num">3</td><td>Focus mode + celebration handoff</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    HYBRID – design/screen-transitions-ideas.html<br>
+    Proposals only. Nothing in this document is implemented yet.<br>
+    Audit references are live file paths in the repo at the time of writing.
+  </footer>
+
+  </main>
+</div>
+
+<style>
+/* Demo-specific styles kept next to the behaviour they belong to. */
+
+/* zoom detail hero */
+.zd-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, #1c2b2c, #0e1516 68%);
+  padding: 34px 14px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  min-height: 150px; justify-content: flex-end;
+}
+
+/* swipe demo */
+#swipe .ph-vp { touch-action: pan-y; cursor: grab; }
+#swipe .ph-vp:active { cursor: grabbing; }
+.sw-hint {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 26px; padding: 14px 0;
+  font-family: var(--fm); font-size: 8px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ash);
+  writing-mode: vertical-rl; text-align: center;
+  background: linear-gradient(90deg, var(--accent-soft), transparent);
+  z-index: 3; pointer-events: none;
+}
+
+/* masthead demo */
+#mast .ph-vp { display: block; }
+.mast-bar {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 3;
+  height: 62px; display: flex; align-items: flex-end;
+  padding: 0 13px 8px;
+  /* Near-opaque, like a real iOS header — the blur is the accent, not the
+     whole separation. A translucent bar leaves list text legible through it,
+     which reads as a bug rather than as material. */
+  background: color-mix(in srgb, var(--app-ink) 97%, transparent);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  border-bottom: 1px solid transparent;
+}
+.mast-t {
+  font-size: 21px; font-weight: 800; letter-spacing: -.028em;
+  transform-origin: left bottom; display: inline-block;
+}
+.mast-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.mast-scroll::-webkit-scrollbar { width: 0; }
+.mast-spacer { height: 78px; }
+
+/* stagger */
+#stag .ph-card.sg { opacity: 1; }
+</style>
+
+<script>
+(() => {
+  "use strict";
+
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+
+  /* ── Reduced motion ─────────────────────────────────────────────── */
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let REDUCED = mq.matches;
+  const rmBtn = $('#rm-toggle');
+  const paintRm = () => {
+    rmBtn.textContent = 'Reduce motion: ' + (REDUCED ? 'on' : 'off');
+    rmBtn.setAttribute('aria-pressed', String(REDUCED));
+  };
+  rmBtn.addEventListener('click', () => { REDUCED = !REDUCED; paintRm(); });
+  mq.addEventListener('change', (e) => { REDUCED = e.matches; paintRm(); });
+  paintRm();
+
+  const D = (ms) => (REDUCED ? 0 : ms);
+  const E = {
+    standard: 'cubic-bezier(.2,.7,.3,1)',
+    zoom:     'cubic-bezier(.2,.85,.25,1)',
+    exit:     'cubic-bezier(.4,0,.9,.4)',
+    spring:   'cubic-bezier(.34,1.4,.5,1)'
+  };
+
+  /** Apply a from → to transform/opacity pair to an element. */
+  function animate(el, from, to, ms, ease, done) {
+    if (!el) return;
+    Object.assign(el.style, { transition: 'none' }, from);
+    // force reflow so the "from" state is committed before the transition
+    void el.offsetWidth;
+    const dur = D(ms);
+    el.style.transition = ['transform', 'opacity', 'border-radius', 'filter', 'width', 'background-color', 'box-shadow']
+      .map((p) => p + ' ' + dur + 'ms ' + ease).join(', ');
+    Object.assign(el.style, to);
+    if (done) window.setTimeout(done, dur + 20);
+  }
+
+  const show = (el) => { if (el) el.removeAttribute('data-hidden'); };
+  const hide = (el) => { if (el) el.setAttribute('data-hidden', ''); };
+  const scr  = (phone, name) => $('[data-s="' + name + '"]', phone);
+
+  /* ═══════════ DEMO 1 — old vs new screen switch ═══════════ */
+  (() => {
+    const oldP = $('#ab-old'), newP = $('#ab-new');
+    if (!oldP || !newP) return;
+    let at = 'a';
+
+    function runOld(to) {
+      const from = scr(oldP, at === 'a' ? 'a' : 'b');
+      const dest = scr(oldP, to);
+      hide(from);                        // instant unmount — this is the point
+      show(dest);
+      animate(dest, { opacity: 0, transform: 'translateY(10px)' },
+                    { opacity: 1, transform: 'translateY(0)' }, 260, E.standard);
+    }
+
+    function runNew(to, forward) {
+      const from = scr(newP, at === 'a' ? 'a' : 'b');
+      const dest = scr(newP, to);
+      const sign = forward ? -1 : 1;
+      show(dest);
+      dest.style.zIndex = '2'; from.style.zIndex = '1';
+      animate(from, { opacity: 1, transform: 'translateY(0) scale(1)' },
+                    { opacity: 0, transform: 'translateY(' + (sign * 22) + 'px) scale(.97)' },
+                    160, E.exit, () => hide(from));
+      animate(dest, { opacity: 0, transform: 'translateY(' + (-sign * 26) + 'px)' },
+                    { opacity: 1, transform: 'translateY(0)' }, 260, E.standard);
+    }
+
+    function go(to, forward) {
+      if (to === at) return;
+      runOld(to); runNew(to, forward);
+      at = to;
+      [oldP, newP].forEach((p) => {
+        $$('.ph-nav .slot', p).forEach((s) => s.classList.toggle('on', s.dataset.i === (to === 'a' ? '0' : '2')));
+      });
+    }
+
+    $('[data-act="ab-go"]').addEventListener('click', () => go('b', true));
+    $('[data-act="ab-back"]').addEventListener('click', () => go('a', false));
+  })();
+
+  /* ═══════════ DEMO 2 — direction from hierarchy ═══════════ */
+  (() => {
+    const p = $('#dir');
+    if (!p) return;
+    const a = scr(p, 'a'), sib = scr(p, 'sib'), deep = scr(p, 'deep');
+    const sheet = $('.ph-sheet', p), scrim = $('.ph-scrim', p), nav = $('.ph-nav', p);
+    let state = 'a';
+
+    const resetHome = () => {
+      a.style.cssText = ''; a.removeAttribute('data-hidden');
+      a.style.transition = 'none';
+      a.style.transform = 'none'; a.style.opacity = '1'; a.style.filter = 'none'; a.style.borderRadius = '0';
+    };
+
+    function toSibling() {
+      if (state !== 'a') return backHome(() => toSibling());
+      show(sib); sib.style.zIndex = '2'; a.style.zIndex = '1';
+      animate(a,   { transform: 'translateX(0)', opacity: 1 },
+                   { transform: 'translateX(-33%)', opacity: .5 }, 260, E.standard, () => hide(a));
+      animate(sib, { transform: 'translateX(100%)', opacity: 1 },
+                   { transform: 'translateX(0)', opacity: 1 }, 260, E.standard);
+      state = 'sib';
+      setActive('1');
+    }
+
+    function toDeep() {
+      if (state !== 'a') return backHome(() => toDeep());
+      show(deep); deep.style.zIndex = '2'; a.style.zIndex = '1';
+      animate(a,    { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' },
+                    { transform: 'scale(.94)', opacity: .4, filter: 'brightness(.7)', boxShadow: '0 0 0 1px var(--app-line)' }, 380, E.standard);
+      animate(deep, { transform: 'translateY(18%)', opacity: 0 },
+                    { transform: 'translateY(0)', opacity: 1 }, 380, E.standard);
+      state = 'deep';
+    }
+
+    function toModal() {
+      if (state !== 'a') return backHome(() => toModal());
+      animate(a, { transform: 'scale(1)', borderRadius: '0px', filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' },
+                 { transform: 'scale(.92)', borderRadius: '30px', filter: 'brightness(.72)', boxShadow: '0 0 0 1px var(--app-line)' }, 380, E.standard);
+      animate(scrim, { opacity: 0 }, { opacity: .28 }, 380, E.standard);
+      animate(sheet, { transform: 'translateY(102%)' }, { transform: 'translateY(0)' }, 380, E.spring);
+      animate(nav,   { transform: 'translateY(0)' }, { transform: 'translateY(140%)' }, 300, E.standard);
+      state = 'modal';
+    }
+
+    function backHome(then) {
+      if (state === 'sib') {
+        show(a);
+        animate(sib, { transform: 'translateX(0)' }, { transform: 'translateX(100%)' }, 260, E.standard, () => hide(sib));
+        animate(a,   { transform: 'translateX(-33%)', opacity: .5 }, { transform: 'translateX(0)', opacity: 1 }, 260, E.standard);
+      } else if (state === 'deep') {
+        show(a);
+        animate(deep, { transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(18%)', opacity: 0 }, 300, E.exit, () => hide(deep));
+        animate(a,    { transform: 'scale(.94)', opacity: .4, filter: 'brightness(.7)', boxShadow: '0 0 0 1px var(--app-line)' },
+                      { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' }, 380, E.standard);
+      } else if (state === 'modal') {
+        animate(sheet, { transform: 'translateY(0)' }, { transform: 'translateY(102%)' }, 260, E.exit);
+        animate(scrim, { opacity: .28 }, { opacity: 0 }, 260, E.standard);
+        animate(nav,   { transform: 'translateY(140%)' }, { transform: 'translateY(0)' }, 300, E.standard);
+        animate(a, { transform: 'scale(.92)', borderRadius: '30px', filter: 'brightness(.72)', boxShadow: '0 0 0 1px var(--app-line)' },
+                   { transform: 'scale(1)', borderRadius: '0px', filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' }, 380, E.standard);
+      }
+      state = 'a';
+      setActive('0');
+      if (then) window.setTimeout(then, D(280) + 30);
+    }
+
+    function setActive(i) {
+      $$('.ph-nav .slot', p).forEach((s) => s.classList.toggle('on', s.dataset.i === i));
+    }
+
+    $('[data-act="dir-sib"]').addEventListener('click', toSibling);
+    $('[data-act="dir-deep"]').addEventListener('click', toDeep);
+    $('[data-act="dir-modal"]').addEventListener('click', toModal);
+    $('[data-act="dir-back"]').addEventListener('click', () => backHome());
+    resetHome();
+  })();
+
+  /* ═══════════ DEMO 3 — stagger ═══════════ */
+  (() => {
+    const p = $('#stag');
+    if (!p) return;
+    const rows = $$('.ph-card.sg', p);
+    const CAP = 6;
+
+    function play(stagger) {
+      rows.forEach((r, i) => {
+        const delay = stagger ? Math.min(i, CAP - 1) * 24 : 0;
+        r.style.transition = 'none';
+        r.style.opacity = '0';
+        r.style.transform = 'translateY(14px)';
+        void r.offsetWidth;
+        r.style.transition = 'opacity ' + D(300) + 'ms ' + E.standard + ' ' + D(delay) + 'ms, transform ' + D(300) + 'ms ' + E.standard + ' ' + D(delay) + 'ms';
+        r.style.opacity = '1';
+        r.style.transform = 'translateY(0)';
+      });
+    }
+
+    $('[data-act="stag-go"]').addEventListener('click', () => play(true));
+    $('[data-act="stag-flat"]').addEventListener('click', () => play(false));
+  })();
+
+  /* ═══════════ DEMO 4 — sheet, with and without recede ═══════════ */
+  (() => {
+    const oldP = $('#sh-old'), newP = $('#sh-new');
+    if (!oldP || !newP) return;
+
+    function openOld() {
+      animate($('.ph-scrim', oldP), { opacity: 0 }, { opacity: .6 }, 320, E.standard);
+      animate($('.ph-sheet', oldP), { transform: 'translateY(102%)' }, { transform: 'translateY(0)' }, 320, E.standard);
+    }
+    function closeOld() {
+      animate($('.ph-scrim', oldP), { opacity: .6 }, { opacity: 0 }, 240, E.exit);
+      animate($('.ph-sheet', oldP), { transform: 'translateY(0)' }, { transform: 'translateY(102%)' }, 240, E.exit);
+    }
+    function openNew() {
+      animate(scr(newP, 'a'), { transform: 'scale(1)', borderRadius: '0px', filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' },
+                              { transform: 'scale(.92)', borderRadius: '30px', filter: 'brightness(.72)', boxShadow: '0 0 0 1px var(--app-line)' }, 380, E.standard);
+      animate($('.ph-scrim', newP), { opacity: 0 }, { opacity: .28 }, 380, E.standard);
+      animate($('.ph-sheet', newP), { transform: 'translateY(102%)' }, { transform: 'translateY(0)' }, 380, E.spring);
+      animate($('.ph-nav', newP),   { transform: 'translateY(0)' }, { transform: 'translateY(140%)' }, 300, E.standard);
+    }
+    function closeNew() {
+      animate(scr(newP, 'a'), { transform: 'scale(.92)', borderRadius: '30px', filter: 'brightness(.72)', boxShadow: '0 0 0 1px var(--app-line)' },
+                              { transform: 'scale(1)', borderRadius: '0px', filter: 'brightness(1)', boxShadow: '0 0 0 0px transparent' }, 380, E.standard);
+      animate($('.ph-scrim', newP), { opacity: .28 }, { opacity: 0 }, 260, E.standard);
+      animate($('.ph-sheet', newP), { transform: 'translateY(0)' }, { transform: 'translateY(102%)' }, 260, E.exit);
+      animate($('.ph-nav', newP),   { transform: 'translateY(140%)' }, { transform: 'translateY(0)' }, 300, E.standard);
+    }
+
+    $('[data-act="sh-open"]').addEventListener('click', () => { openOld(); openNew(); });
+    $('[data-act="sh-close"]').addEventListener('click', () => { closeOld(); closeNew(); });
+  })();
+
+  /* ═══════════ DEMO 5 — zoom from source (FLIP) ═══════════ */
+  (() => {
+    const p = $('#zoom');
+    if (!p) return;
+    const vp = $('.ph-vp', p), list = scr(p, 'a'), detail = scr(p, 'detail');
+    const hero = $('.zd-hero', detail);
+    let source = null, open = false;
+
+    const COPY = [
+      { g: '◇', m: 'Strength – 8 weeks',   t: 'Soviet OWL',    bg: 'linear-gradient(150deg,#1c2b2c,#0e1516 68%)' },
+      { g: '△', m: 'Endurance – 12 weeks', t: 'Hansons 5K',    bg: 'linear-gradient(150deg,#2a2318,#141009 68%)' },
+      { g: '▽', m: 'Physique – 6 days',    t: 'Push Pull Legs', bg: 'linear-gradient(150deg,#2b1c16,#150d09 68%)' }
+    ];
+
+    function openFrom(card) {
+      if (open) return;
+      open = true; source = card;
+      const meta = COPY[Number(card.dataset.plan) || 0];
+      hero.style.background = meta.bg;
+      $('.cv-g', hero).textContent = meta.g;
+      $('.cv-m', hero).textContent = meta.m;
+      $('.cv-t', hero).textContent = meta.t;
+
+      const pr = vp.getBoundingClientRect(), cr = card.getBoundingClientRect();
+      const sx = cr.width / pr.width, sy = cr.height / pr.height;
+      const dx = cr.left - pr.left, dy = cr.top - pr.top;
+
+      show(detail);
+      detail.style.zIndex = '3';
+      detail.style.transformOrigin = '0 0';
+      detail.style.overflow = 'hidden';
+
+      card.style.transition = 'opacity ' + D(120) + 'ms linear';
+      card.style.opacity = '0';
+
+      animate(list, { transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.06)', opacity: .35 }, 440, E.zoom);
+      animate(detail,
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')', opacity: 0, borderRadius: '15px' },
+        { transform: 'translate(0,0) scale(1,1)', opacity: 1, borderRadius: '0px' },
+        440, E.zoom);
+    }
+
+    function close() {
+      if (!open || !source) return;
+      const pr = vp.getBoundingClientRect(), cr = source.getBoundingClientRect();
+      const sx = cr.width / pr.width, sy = cr.height / pr.height;
+      const dx = cr.left - pr.left, dy = cr.top - pr.top;
+
+      animate(list, { transform: 'scale(1.06)', opacity: .35 }, { transform: 'scale(1)', opacity: 1 }, 400, E.zoom);
+      animate(detail,
+        { transform: 'translate(0,0) scale(1,1)', opacity: 1, borderRadius: '0px' },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')', opacity: 0, borderRadius: '15px' },
+        400, E.zoom,
+        () => { hide(detail); });
+
+      window.setTimeout(() => {
+        source.style.transition = 'opacity ' + D(160) + 'ms linear';
+        source.style.opacity = '1';
+        open = false;
+      }, D(240));
+    }
+
+    $$('.ph-cover[data-plan]', p).forEach((c) => c.addEventListener('click', () => openFrom(c)));
+    $('[data-act="zoom-back"]').addEventListener('click', close);
+  })();
+
+  /* ═══════════ DEMO 6 — hero number travel (FLIP on one node) ═══════════ */
+  (() => {
+    const p = $('#hero');
+    if (!p) return;
+    const vp = $('.ph-vp', p), list = scr(p, 'a'), detail = scr(p, 'detail');
+    const src = $('[data-flip="src"]', p), dst = $('[data-flip="dst"]', p);
+    let open = false;
+
+    function openIt() {
+      if (open) return;
+      open = true;
+      const sr = src.getBoundingClientRect();
+      show(detail);
+      detail.style.zIndex = '3';
+      detail.style.transition = 'none';
+      detail.style.opacity = '0';
+      void detail.offsetWidth;
+
+      const dr = dst.getBoundingClientRect();
+      const scale = sr.height / dr.height;
+      const dx = sr.left - dr.left, dy = sr.top - dr.top;
+
+      src.style.opacity = '0';
+      detail.style.transition = 'opacity ' + D(200) + 'ms ' + E.standard;
+      detail.style.opacity = '1';
+      animate(list, { opacity: 1 }, { opacity: 0 }, 200, E.standard, () => hide(list));
+      animate(dst,
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')', transformOrigin: 'left top' },
+        { transform: 'translate(0,0) scale(1)' }, 440, E.zoom);
+    }
+
+    function close() {
+      if (!open) return;
+      show(list);
+      const sr = src.getBoundingClientRect(), dr = dst.getBoundingClientRect();
+      const scale = sr.height / dr.height;
+      const dx = sr.left - dr.left, dy = sr.top - dr.top;
+      animate(list, { opacity: 0 }, { opacity: 1 }, 260, E.standard);
+      animate(dst, { transform: 'translate(0,0) scale(1)', transformOrigin: 'left top' },
+                   { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')' }, 400, E.zoom);
+      detail.style.transition = 'opacity ' + D(240) + 'ms ' + E.exit;
+      detail.style.opacity = '0';
+      window.setTimeout(() => {
+        hide(detail);
+        src.style.transition = 'opacity ' + D(160) + 'ms linear';
+        src.style.opacity = '1';
+        open = false;
+      }, D(300) + 20);
+    }
+
+    $('[data-open]', p).addEventListener('click', openIt);
+    $('[data-act="hero-back"]').addEventListener('click', close);
+  })();
+
+  /* ═══════════ DEMO 7 — interruptible back gesture ═══════════ */
+  (() => {
+    const p = $('#swipe');
+    if (!p) return;
+    const vp = $('.ph-vp', p), under = scr(p, 'a'), top = scr(p, 'detail');
+    const W = () => vp.getBoundingClientRect().width;
+    let dragging = false, startX = 0, x = 0, lastX = 0, lastT = 0, v = 0;
+
+    const paint = (px, animMs) => {
+      const w = W(), f = Math.max(0, Math.min(1, px / w));
+      const t = animMs ? 'transform ' + D(animMs) + 'ms ' + E.standard + ', opacity ' + D(animMs) + 'ms ' + E.standard : 'none';
+      top.style.transition = t; under.style.transition = t;
+      top.style.transform = 'translateX(' + (f * 100) + '%)';
+      top.style.boxShadow = '-14px 0 34px -14px rgba(0,0,0,.55)';
+      under.style.transform = 'translateX(' + (-33 + f * 33) + '%)';
+      under.style.opacity = String(.5 + f * .5);
+    };
+
+    const reset = (animMs) => { x = 0; paint(0, animMs); };
+
+    vp.addEventListener('pointerdown', (e) => {
+      const r = vp.getBoundingClientRect();
+      if (e.clientX - r.left > 46) return;          // edge zone only
+      dragging = true; startX = e.clientX; lastX = e.clientX; lastT = e.timeStamp; v = 0;
+      vp.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    vp.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      x = Math.max(0, e.clientX - startX);
+      const dt = e.timeStamp - lastT;
+      if (dt > 0) v = (e.clientX - lastX) / dt;
+      lastX = e.clientX; lastT = e.timeStamp;
+      paint(x, 0);
+    });
+
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      const commit = x > W() * 0.35 || v > 0.4;
+      if (commit) {
+        paint(W(), 300);
+        window.setTimeout(() => reset(0), D(340) + 40);   // demo loops back
+      } else {
+        reset(300);                                        // rubber-band
+      }
+    };
+    vp.addEventListener('pointerup', end);
+    vp.addEventListener('pointercancel', end);
+
+    $('[data-act="sw-reset"]').addEventListener('click', () => reset(260));
+    reset(0);
+  })();
+
+  /* ═══════════ DEMO 8 — nav lens morph ═══════════ */
+  (() => {
+    const p = $('#lens');
+    if (!p) return;
+    const nav = $('#lens-nav'), lens = $('#lens-el'), fab = $('.fab', nav);
+    const slots = $$('.slot', nav);
+    let merged = false, settle = null;
+
+    function moveTo(el, isFab) {
+      const nr = nav.getBoundingClientRect(), tr = el.getBoundingClientRect();
+      const from = parseFloat(lens.style.left || '0');
+      const to = tr.left - nr.left + (tr.width - (isFab ? 38 : 40)) / 2;
+      const dist = Math.abs(to - from);
+      const stretch = Math.min(40 + dist * 0.3, 80);
+
+      lens.style.opacity = '1';
+      lens.style.transition = 'left ' + D(320) + 'ms ' + E.spring + ', width ' + D(320) + 'ms ' + E.spring +
+                              ', height ' + D(320) + 'ms ' + E.spring + ', border-radius ' + D(320) + 'ms ' + E.spring +
+                              ', opacity ' + D(200) + 'ms linear';
+      lens.style.left = to + 'px';
+      lens.style.width = (isFab ? 38 : stretch) + 'px';
+      lens.style.height = (isFab ? 38 : 30) + 'px';
+      lens.style.borderRadius = '19px';
+
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => {
+        lens.style.width = (isFab ? 38 : 40) + 'px';
+      }, D(150));
+
+      // The lens FLOWS INTO the FAB rather than fading out in place — it comes
+      // to rest behind it (z-index 1 vs the FAB's 3), which is the merge this
+      // proposal is asking for.
+      slots.forEach((s) => s.classList.toggle('on', s === el));
+    }
+
+    slots.forEach((s) => s.addEventListener('click', () => moveTo(s, false)));
+    fab.addEventListener('click', () => moveTo(fab, true));
+
+    $('[data-act="lens-merge"]').addEventListener('click', (e) => {
+      merged = !merged;
+      e.currentTarget.setAttribute('aria-pressed', String(merged));
+      nav.style.transition = 'transform ' + D(320) + 'ms ' + E.spring + ', border-radius ' + D(320) + 'ms ' + E.spring;
+      nav.style.transform = merged ? 'scale(.82) translateY(6px)' : 'none';
+      nav.style.borderRadius = merged ? '26px' : '23px';
+    });
+
+    // initial placement, after layout settles
+    requestAnimationFrame(() => {
+      const nr = nav.getBoundingClientRect(), tr = slots[0].getBoundingClientRect();
+      lens.style.left = (tr.left - nr.left + (tr.width - 40) / 2) + 'px';
+      lens.style.width = '40px';
+      lens.style.opacity = '1';
+    });
+  })();
+
+  /* ═══════════ DEMO 9 — masthead compression ═══════════ */
+  (() => {
+    const p = $('#mast');
+    if (!p) return;
+    const sc = $('#mast-scroll'), bar = $('#mast-bar'), title = $('#mast-t'), nav = $('#mast-nav');
+    const RANGE = 48;
+
+    sc.addEventListener('scroll', () => {
+      const y = sc.scrollTop;
+      const f = REDUCED ? (y > 8 ? 1 : 0) : Math.max(0, Math.min(1, y / RANGE));
+      bar.style.height = (62 - f * 24) + 'px';
+      bar.style.backdropFilter = 'blur(' + (f * 18) + 'px) saturate(' + (1 + f * .5) + ')';
+      bar.style.webkitBackdropFilter = bar.style.backdropFilter;
+      bar.style.borderBottomColor = f > .05 ? 'var(--app-line)' : 'transparent';
+      title.style.transform = 'scale(' + (1 - f * 0.38) + ')';
+      nav.style.transform = 'scale(' + (1 - f * 0.18) + ') translateY(' + (f * 6) + 'px)';
+    }, { passive: true });
+  })();
+
+})();
+</script>
