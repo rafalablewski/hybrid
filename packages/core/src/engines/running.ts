@@ -18,7 +18,17 @@ const ms = (iso: string) => new Date(iso).getTime();
 
 /** A cardio block's modality — the stamped tag if present, else classified from
  *  the name (the same fallback migrateBlocks uses to backfill it). */
-const disciplineOf = (b: CardioBlock): CardioDiscipline => b.discipline ?? cardioDiscipline(b.name);
+export const blockDiscipline = (b: CardioBlock): CardioDiscipline => b.discipline ?? cardioDiscipline(b.name);
+
+/** Sessions with each cardio block kept only when `keep(discipline)` is true;
+ *  strength/other blocks pass through untouched (the aggregates ignore them).
+ *  Pure — one shallow copy per session. The building block for the filters below. */
+function filterCardio(sessions: LoggedSession[], keep: (d: CardioDiscipline) => boolean): LoggedSession[] {
+  return sessions.map((s) => ({
+    ...s,
+    blocks: s.blocks.filter((b) => !isCardio(b) || keep(blockDiscipline(b))),
+  }));
+}
 
 /**
  * True when a cardio move is running on foot — a swim, ride, row, or any logged
@@ -31,28 +41,30 @@ export function isRunMove(name: string): boolean {
 
 /**
  * The sessions with every NON-running cardio block dropped — feed this to the
- * running aggregates so the Running screen shows runs only. Strength and other
- * blocks pass through untouched (the aggregates ignore them anyway); only a
- * cardio block that isn't a run is removed. Pure — a shallow copy per session.
+ * running aggregates so the Running screen shows runs only. A swim or tennis
+ * session never counts as a run.
  */
 export function runningSessions(sessions: LoggedSession[]): LoggedSession[] {
-  return sessions.map((s) => ({
-    ...s,
-    blocks: s.blocks.filter((b) => !isCardio(b) || disciplineOf(b) === "running"),
-  }));
+  return filterCardio(sessions, (d) => d === "running");
 }
 
 /**
  * The sessions with only NON-endurance SPORTS dropped from their cardio — feed
  * this to the "Endurance" summaries so a tennis/football session doesn't count
  * as endurance while swims, rides, rows and generic cardio still do. (Contrast
- * `runningSessions`, which keeps runs alone.) Pure — a shallow copy per session.
+ * `runningSessions`, which keeps runs alone.)
  */
 export function enduranceSessions(sessions: LoggedSession[]): LoggedSession[] {
-  return sessions.map((s) => ({
-    ...s,
-    blocks: s.blocks.filter((b) => !isCardio(b) || disciplineOf(b) !== "sport"),
-  }));
+  return filterCardio(sessions, (d) => d !== "sport");
+}
+
+/**
+ * The sessions narrowed to ONE discipline's cardio — the per-discipline building
+ * block for the Endurance hub (feed the result to runTotals/runStats/weeklyMileage/
+ * paceEffortSplit/paceSeries to get that discipline's analytics).
+ */
+export function disciplineSessions(sessions: LoggedSession[], discipline: CardioDiscipline): LoggedSession[] {
+  return filterCardio(sessions, (d) => d === discipline);
 }
 
 export interface RunTotals {

@@ -67,6 +67,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="sport" options={{ href: null }} />
         <Tabs.Screen name="velocity" options={{ href: null }} />
         <Tabs.Screen name="running" options={{ href: null }} />
+        <Tabs.Screen name="endurance" options={{ href: null }} />
         <Tabs.Screen name="coach" options={{ href: null }} />
       </Tabs>
       {/* The floating "jump to" command orb is a classic-only flourish; Aurora's

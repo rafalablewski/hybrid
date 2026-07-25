@@ -49,6 +49,7 @@ const HREF: Record<string, Href> = {
   trends: "/trends",
   velocity: "/(tabs)/velocity",
   running: "/(tabs)/running",
+  endurance: "/(tabs)/endurance",
   forceplate: "/forceplate",
   video: "/video",
   history: "/(tabs)/history",

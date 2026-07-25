@@ -26,6 +26,7 @@ export * from "./logbook-week";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
+export * from "./endurance";
 export * from "./bodyweight";
 export * from "./body-progress";
 export * from "./nutrition-off";

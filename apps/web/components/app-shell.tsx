@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -94,6 +94,24 @@ import { useSignals } from "@/lib/use-signals";
 // flag; a group with no enabled items is hidden entirely. Group labels are i18n
 // keys (nav.group.*); item labels are i18n (nav.<id>) with the core fallback.
 // Operator-only tools (Capabilities, Data network) live in the /admin console.
+
+/** A "this lives in the mobile app" pointer — the web treatment for surfaces
+ *  that are mobile-only (mobile-first). Analytics and the Endurance hub both use
+ *  it; see the web-dashboards / endurance-hub capabilities. */
+function MobileOnlyScreen({ aurora, icon, title, body }: { aurora: boolean; icon: AuroraIconName; title: string; body: React.ReactNode }) {
+  return (
+    <div style={{ maxWidth: 560, margin: "24px auto 0", textAlign: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.md, padding: "40px 28px", borderRadius: aurora ? 28 : 12, background: INK2, border: `1px solid ${LINE}`, boxShadow: "var(--shadow-card)" }}>
+        <span style={{ display: "inline-flex", padding: 16, borderRadius: 999, background: `${BLUE}14`, border: `1px solid ${BLUE}33` }}>
+          <AuroraIcon name={icon} size={30} color={BLUE} />
+        </span>
+        <h1 style={{ ...disp, fontWeight: 900, fontSize: fs.display, color: CHALK, margin: 0 }}>{title}</h1>
+        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, maxWidth: 420 }} c={ASH}>{body}</Mono>
+        <Mono s={{ fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase" }} c={BLUE}>iOS – on the HYBRID mobile app</Mono>
+      </div>
+    </div>
+  );
+}
 
 export default function AppShell() {
   const router = useRouter();
@@ -703,47 +721,12 @@ export default function AppShell() {
             changes (Aurora only). The banners/header above stay put. */}
         <div key={screen} className={aurora ? "aurora-enter" : undefined}>
         {screen === "analytics" && (
-          // Analytics is a MOBILE-ONLY surface (mobile-first) — no dashboard opens
-          // on web for any scope. The full Analytics experience lives in the app;
-          // web shows a pointer to it. (See capabilities: mobile-analytics.)
-          <div style={{ maxWidth: 560, margin: "24px auto 0", textAlign: "center" }}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: space.md,
-                padding: "40px 28px",
-                borderRadius: aurora ? 28 : 12,
-                background: INK2,
-                border: `1px solid ${LINE}`,
-                boxShadow: "var(--shadow-card)",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-flex",
-                  padding: 16,
-                  borderRadius: 999,
-                  background: `${BLUE}14`,
-                  border: `1px solid ${BLUE}33`,
-                }}
-              >
-                <AuroraIcon name="grid" size={30} color={BLUE} />
-              </span>
-              <h1 style={{ ...disp, fontWeight: 900, fontSize: fs.display, color: CHALK, margin: 0 }}>
-                Analytics lives in the app
-              </h1>
-              <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, maxWidth: 420 }} c={ASH}>
-                Your training analytics — trends, weekly mileage, effort balance and the
-                coach &amp; admin dashboards — are built mobile-first. Open HYBRID on your
-                phone to explore them.
-              </Mono>
-              <Mono s={{ fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase" }} c={BLUE}>
-                iOS – on the HYBRID mobile app
-              </Mono>
-            </div>
-          </div>
+          <MobileOnlyScreen
+            aurora={aurora}
+            icon="grid"
+            title="Analytics lives in the app"
+            body={<>Your training analytics — trends, weekly mileage, effort balance and the coach &amp; admin dashboards — are built mobile-first. Open HYBRID on your phone to explore them.</>}
+          />
         )}
 
         {screen === "today" && (
@@ -773,6 +756,15 @@ export default function AppShell() {
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
         {screen === "running" && <AuroraRunning sessions={sessions} />}
+
+        {screen === "endurance" && (
+          <MobileOnlyScreen
+            aurora={aurora}
+            icon="gps"
+            title="Endurance lives in the app"
+            body={<>Your per-discipline endurance analytics — runs, swims, rides and rows, each in its own pace units — are built mobile-first. Open HYBRID on your phone to explore them.</>}
+          />
+        )}
 
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 
