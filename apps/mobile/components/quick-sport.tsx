@@ -8,6 +8,7 @@ import {
   sportDistanceUnit,
   parseSportDistance,
   cardioPace,
+  cardioDiscipline,
   type LoggedSession,
 } from "@hybrid/core";
 import { createSession } from "../lib/api";
@@ -142,7 +143,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
     if (!Number.isFinite(mins) && km == null) { setMsg(t("quickSport.needValue")); return; }
     setSaving(true); setMsg("");
     const now = new Date().toISOString();
-    const payload = { title: name, startedAt: now, completedAt: now, blocks: [{ kind: "cardio" as const, name, ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
+    const payload = { title: name, startedAt: now, completedAt: now, blocks: [{ kind: "cardio" as const, name, discipline: cardioDiscipline(name), ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
     const ok = guest ? (await saveGuestSession(payload), true) : await createSession(payload);
     if (!ok) await saveGuestSession(payload);
     setSaving(false);

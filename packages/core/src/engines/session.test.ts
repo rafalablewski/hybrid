@@ -143,7 +143,7 @@ describe("cardio/conditioning split", () => {
       { kind: "conditioning", name: "Metcon", format: "AMRAP", work: 40, rest: 20, rounds: 8 },
       { kind: "strength", name: "Squat", sets: [{ load: "100", reps: "5" }] },
     ]);
-    expect(out[0]).toEqual({ kind: "cardio", name: "Easy Run", distance: 8, minutes: 50, rpe: 6 });
+    expect(out[0]).toEqual({ kind: "cardio", name: "Easy Run", distance: 8, minutes: 50, rpe: 6, discipline: "running" });
     expect(out[1]!.kind).toBe("conditioning"); // intervals stay conditioning
     expect(out[2]!.kind).toBe("strength");
   });

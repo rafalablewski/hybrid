@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, toTrainingLog, toBiometrics,
+  runTotals, enduranceSessions, toTrainingLog, toBiometrics,
   velocityProfiles, hpiRole, riskRole, readinessRole, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
@@ -80,7 +80,9 @@ function Full() {
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
   const bw = useBodyweightLookup();
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
+  // racket/team/combat sports so a tennis session doesn't inflate the summary.
+  const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
@@ -263,7 +265,7 @@ function Full() {
         </View>
         <Mod C={C} dot={C.amber} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/(tabs)/sport")} />
         <Mod C={C} dot={C.blue} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/(tabs)/velocity")} />
-        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onPress={() => router.push("/(tabs)/running")} last />
+        <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/(tabs)/endurance")} last />
       </ACard>
 
       {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
@@ -367,7 +369,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
                 <Stat C={C} label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat C={C} label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </View>
-              <Pressable onPress={() => onOpen("/(tabs)/running")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.running")} →</Text></Pressable>
+              <Pressable onPress={() => onOpen("/(tabs)/endurance")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.tab.endurance")} →</Text></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
         )}

@@ -9,6 +9,8 @@ import {
   velocityProfiles,
   sessionVolume,
   runTotals,
+  runningSessions,
+  enduranceSessions,
   weeklyMileage,
   paceEffortSplit,
   pacedRunMoves,
@@ -103,22 +105,31 @@ export async function POST(request: Request) {
     )
     .join("; ");
 
-  // Cardio context — mileage, recent pace, and the easy/hard balance.
-  const cardio = runTotals(sessions);
-  const km4 = weeklyMileage(sessions, 4).map((w) => w.km);
-  const split = paceEffortSplit(sessions);
+  // Cardio context — keep the mileage/pace/easy-hard math RUN-coherent (mixing
+  // swim metres, ride km and run km into one "mileage" number, or reading a swim
+  // as the top "run" pace, would mislead the coach), and report other endurance
+  // (swim/ride/row) as a separate cross-training count. Non-endurance sports
+  // (tennis, football…) are excluded from both.
+  const runs = runningSessions(sessions);
+  const run = runTotals(runs);
+  const km4 = weeklyMileage(runs, 4).map((w) => w.km);
+  const split = paceEffortSplit(runs);
   const splitTotal = split.easy + split.moderate + split.hard;
   const easyPct = splitTotal ? Math.round((split.easy / splitTotal) * 100) : null;
-  const topRun = pacedRunMoves(sessions)[0];
-  const runPace = topRun ? paceSeries(sessions, topRun) : [];
+  const topRun = pacedRunMoves(runs)[0];
+  const runPace = topRun ? paceSeries(runs, topRun) : [];
   const recentPace = runPace.length ? paceClock(runPace[runPace.length - 1]!.secPerKm) : null;
+  const otherEndurance = runTotals(enduranceSessions(sessions)).efforts - run.efforts;
+  const crossTrain = otherEndurance > 0 ? ` Plus ${otherEndurance} other endurance session(s) (swim/ride/row).` : "";
   const cardioLine =
-    cardio.efforts > 0
-      ? `Cardio: ${cardio.distanceKm}km over ${cardio.efforts} efforts; last 4 weeks (km) ${km4.join("/")}` +
-        (easyPct != null ? `; ${easyPct}% of cardio minutes at an easy pace (vs harder)` : "") +
+    run.efforts > 0
+      ? `Running: ${run.distanceKm}km over ${run.efforts} runs; last 4 weeks (km) ${km4.join("/")}` +
+        (easyPct != null ? `; ${easyPct}% of run minutes at an easy pace (vs harder)` : "") +
         (recentPace ? `; recent ${topRun} pace ${recentPace}/km` : "") +
-        "."
-      : "Cardio: none logged.";
+        "." + crossTrain
+      : otherEndurance > 0
+        ? `Running: none logged.${crossTrain}`
+        : "Cardio: none logged.";
 
   // RPE / effort trend across recent efforts (strength set RPE + cardio RPE).
   const rpeVals: number[] = [];

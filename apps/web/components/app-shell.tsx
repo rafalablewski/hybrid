@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
-import { useSession, type Role } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
 import { fs, space,
@@ -16,7 +16,6 @@ import { fs, space,
   CHALK,
   ASH,
   BLUE,
-  VIOLET,
   AMBER,
   RED,
   LIME_T,
@@ -43,9 +42,6 @@ const AuroraRunTrack = dynamic(() => import("./aurora/run-track"), { ssr: false 
 const AuroraCoach = dynamic(() => import("./aurora/coach"), { ssr: false });
 const AuroraUpgrade = dynamic(() => import("./aurora/upgrade"), { ssr: false });
 const AuroraOrg = dynamic(() => import("./aurora/org"), { ssr: false });
-const AuroraAthleteAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraAthleteAnalytics })), { ssr: false });
-const AuroraCoachAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraCoachAnalytics })), { ssr: false });
-const AuroraOperatorAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraOperatorAnalytics })), { ssr: false });
 const AuroraTalent = dynamic(() => import("./aurora/talent"), { ssr: false });
 const AuroraTactical = dynamic(() => import("./aurora/tactical"), { ssr: false });
 const AuroraTeamCompare = dynamic(() => import("./aurora/team-compare"), { ssr: false });
@@ -55,7 +51,6 @@ const AuroraPerformance = dynamic(() => import("./aurora/performance"), { ssr: f
 const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
-const AuroraRunning = dynamic(() => import("./aurora/running"), { ssr: false });
 const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
 const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
@@ -89,7 +84,6 @@ import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
-import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
@@ -100,22 +94,29 @@ import { useSignals } from "@/lib/use-signals";
 // keys (nav.group.*); item labels are i18n (nav.<id>) with the core fallback.
 // Operator-only tools (Capabilities, Data network) live in the /admin console.
 
-type Scope = "athlete" | "coach" | "operator";
-
-// A role only sees the dashboards it's authorized for. Admin is the god view —
-// it can toggle all three. Client and Coach are locked to their own.
-const SCOPES_FOR: Record<Role, Scope[]> = {
-  client: ["athlete"],
-  coach: ["coach"],
-  admin: ["athlete", "coach", "operator"],
-};
+/** A "this lives in the mobile app" pointer — the web treatment for surfaces
+ *  that are mobile-only (mobile-first). Analytics and the Endurance hub both use
+ *  it; see the web-dashboards / endurance-hub capabilities. */
+function MobileOnlyScreen({ aurora, icon, title, body }: { aurora: boolean; icon: AuroraIconName; title: string; body: React.ReactNode }) {
+  return (
+    <div style={{ maxWidth: 560, margin: "24px auto 0", textAlign: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.md, padding: "40px 28px", borderRadius: aurora ? 28 : 12, background: INK2, border: `1px solid ${LINE}`, boxShadow: "var(--shadow-card)" }}>
+        <span style={{ display: "inline-flex", padding: 16, borderRadius: 999, background: `${BLUE}14`, border: `1px solid ${BLUE}33` }}>
+          <AuroraIcon name={icon} size={30} color={BLUE} />
+        </span>
+        <h1 style={{ ...disp, fontWeight: 900, fontSize: fs.display, color: CHALK, margin: 0 }}>{title}</h1>
+        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, maxWidth: 420 }} c={ASH}>{body}</Mono>
+        <Mono s={{ fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase" }} c={BLUE}>iOS – on the HYBRID mobile app</Mono>
+      </div>
+    </div>
+  );
+}
 
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, loading: sessionsLoading, refresh } = useSessions();
   const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
-  const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
   const { bio: bioFromSignals } = useSignals();
@@ -217,17 +218,6 @@ export default function AppShell() {
   useEffect(() => {
     if (screen === "periodize" && persona === "casual") { setScreen("today"); setUpgradeOpen(true); }
   }, [screen, persona]);
-
-  const allowedScopes = useMemo<Scope[]>(
-    () => (session ? SCOPES_FOR[session.role] : ["athlete"]),
-    [session],
-  );
-  const [scope, setScope] = useState<Scope>("athlete");
-
-  // Land an admin straight on the operator (admin) dashboard.
-  useEffect(() => {
-    if (session) setScope(allowedScopes[allowedScopes.length - 1]!);
-  }, [session, allowedScopes]);
 
   // Auth guard — bounce to /login when there's no session.
   useEffect(() => {
@@ -730,74 +720,12 @@ export default function AppShell() {
             changes (Aurora only). The banners/header above stay put. */}
         <div key={screen} className={aurora ? "aurora-enter" : undefined}>
         {screen === "analytics" && (
-          <>
-            {allowedScopes.length > 1 && (
-              <div style={{ display: "flex", gap: space.sm, marginBottom: 12 }}>
-              {(
-                [
-                  ["athlete", "Client", LIME],
-                  ["coach", "Coach", VIOLET],
-                  ["operator", "Admin", AMBER],
-                ] as const
-              )
-                .filter(([id]) => allowedScopes.includes(id))
-                .map(([id, l, c]) => (
-                  <button
-                    key={id}
-                    onClick={() => setScope(id)}
-                    style={{
-                      ...cond,
-                      fontSize: fs.bodyLg,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: ".04em",
-                      padding: "9px 18px",
-                      borderRadius: aurora ? 999 : 10,
-                      cursor: "pointer",
-                      border: `1px solid ${scope === id ? c : LINE}`,
-                      background: scope === id ? c : "transparent",
-                      color: scope === id ? ON_ACCENT : ASH,
-                    }}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
-            {(() => {
-              const acc = scope === "operator" ? AMBER : scope === "coach" ? VIOLET : LIME;
-              const txt =
-                scope === "operator"
-                  ? "Operator scope – platform aggregates only — MAU, retention, content. No access to any individual's private training data."
-                  : scope === "coach"
-                    ? "Coach scope – only athletes who accepted you (mutual consent). Aggregate roster view; private athlete notes excluded."
-                    : "Client scope – your own training data only. Nothing here is visible to other athletes.";
-              return (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: space.ms,
-                    padding: "10px 14px",
-                    borderRadius: aurora ? 18 : 10,
-                    background: `${acc}12`,
-                    border: `1px solid ${acc}40`,
-                    marginBottom: 20,
-                  }}
-                >
-                  <span style={{ color: acc, fontSize: fs.bodyLg }}>
-                    {scope === "operator" ? "⚙" : scope === "coach" ? "◆" : "●"}
-                  </span>
-                  <Mono s={{ fontSize: fs.caption, lineHeight: 1.3 }} c={CHALK}>
-                    {txt}
-                  </Mono>
-                </div>
-              );
-            })()}
-            {scope === "athlete" && <AuroraAthleteAnalytics sessions={sessions} />}
-            {scope === "coach" && <AuroraCoachAnalytics roster={roster} />}
-            {scope === "operator" && <AuroraOperatorAnalytics />}
-          </>
+          <MobileOnlyScreen
+            aurora={aurora}
+            icon="grid"
+            title="Analytics lives in the app"
+            body={<>Your training analytics — trends, weekly mileage, effort balance and the coach &amp; admin dashboards — are built mobile-first. Open HYBRID on your phone to explore them.</>}
+          />
         )}
 
         {screen === "today" && (
@@ -826,7 +754,14 @@ export default function AppShell() {
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
-        {screen === "running" && <AuroraRunning sessions={sessions} />}
+        {screen === "endurance" && (
+          <MobileOnlyScreen
+            aurora={aurora}
+            icon="gps"
+            title="Endurance lives in the app"
+            body={<>Your per-discipline endurance analytics — runs, swims, rides and rows, each in its own pace units — are built mobile-first. Open HYBRID on your phone to explore them.</>}
+          />
+        )}
 
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 

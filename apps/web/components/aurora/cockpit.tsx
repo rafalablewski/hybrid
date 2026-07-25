@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, toTrainingLog, velocityProfiles, LEVELS,
+  runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
   ROLE_COLOR, hpiRole, riskRole, readinessRole,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
@@ -61,7 +61,9 @@ export default function AuroraCockpit({
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
-  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
+  // racket/team/combat sports so a tennis session doesn't inflate the summary.
+  const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
 
   if (persona === "casual") {
@@ -245,7 +247,7 @@ export default function AuroraCockpit({
           </span>
           <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
           <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
-          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
+          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} last />
         </div>
 
         {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
@@ -352,7 +354,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </div>
-              <button onClick={() => setScreen("running")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.running")} →</button>
+              <button onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.tab.endurance")} →</button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>
         )}

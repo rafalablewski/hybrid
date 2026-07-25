@@ -54,6 +54,7 @@ export default function AuroraRunTrack() {
       blocks: [{
         kind: "cardio",
         name: "Run",
+        discipline: "running",
         ...(Number.isFinite(km) && km > 0 ? { distance: km } : {}),
         ...(minutes > 0 ? { minutes: Math.round(minutes) } : {}),
       }],
@@ -118,7 +119,7 @@ export default function AuroraRunTrack() {
 
       <APill label={saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")} onPress={save} disabled={saving} />
 
-      <Pressable onPress={() => router.push("/(tabs)/running")} style={{ paddingVertical: 16, alignItems: "center" }}>
+      <Pressable onPress={() => router.push("/(tabs)/endurance")} style={{ paddingVertical: 16, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.seeAnalytics")}</Text>
       </Pressable>
       <View style={{ height: 16 }} />
