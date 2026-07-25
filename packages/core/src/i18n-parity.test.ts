@@ -49,7 +49,9 @@ function scan(app: string): { literal: Set<string>; dynamicPrefixes: string[] } 
       if (!/\.(tsx?|jsx?)$/.test(name)) continue;
       const src = readFileSync(p, "utf8");
       // `t("key")` but not `get("…")` / `fmt("…")` / `obj.t("…")`
-      for (const m of src.matchAll(/(?<![A-Za-z0-9_$.])t\(\s*"([a-zA-Z0-9_.:-]+)"/g)) literal.add(m[1]);
+      for (const m of src.matchAll(/(?<![A-Za-z0-9_$.])t\(\s*"([a-zA-Z0-9_.:-]+)"/g)) {
+        if (m[1]) literal.add(m[1]);
+      }
       for (const m of src.matchAll(/(?<![A-Za-z0-9_$.])t\(\s*`([^`]*)\$\{/g)) {
         if (m[1]) dynamicPrefixes.add(m[1]);
       }
