@@ -1,5 +1,5 @@
 import type { MuscleGroup, Movement } from "./types";
-import { GYM_MOVEMENTS, GYM_CATEGORY_BY_NAME, GYM_ALIASES } from "../exercise-db";
+import { GYM_MOVEMENTS, GYM_CATEGORY_BY_NAME, GYM_ALIASES, GYM_LIBRARY_ALIASES } from "../exercise-db";
 
 /** All trackable muscle groups, in display order. */
 export const ALL_MUSCLES: MuscleGroup[] = [
@@ -39,6 +39,84 @@ export const MOVEMENTS: Record<string, Movement> = {
   "Easy Run": { pattern: "cond", muscles: ["quads"], baseLoad: null, system: "aerobic" },
   "Mixed Metcon": { pattern: "cond", muscles: ["posterior", "shoulders"], baseLoad: null, system: "anaerobic" },
 };
+
+// ---- Name resolution ---------------------------------------------------------
+// A logged block stores the exercise NAME the athlete saw, and the DB-backed
+// exercise library names lifts differently from the built-in catalog ("Barbell
+// Deadlift" vs "Deadlift", "Pull-up" vs "Pull-Up"). Every muscle-attribution
+// engine used to index MOVEMENTS by exact key and silently `continue` on a miss,
+// so a lift picked from the library added NOTHING to fatigue, ACWR, injury risk,
+// volume-by-muscle, landmarks or muscle records — the tissue simply read as
+// untrained. `movementFor` is the one resolver they all share now.
+
+/** The active catalog the engines resolve names against — the built-ins, with
+ *  the admin-managed exercise library folded over them once a client/server has
+ *  loaded it (see `setExerciseCatalog`). */
+let CATALOG: Record<string, Movement> = MOVEMENTS;
+/** lowercased key → catalog key, rebuilt whenever CATALOG changes. */
+let CATALOG_LOWER: Map<string, string> = lowerIndex(MOVEMENTS);
+
+function lowerIndex(movements: Record<string, Movement>): Map<string, string> {
+  const out = new Map<string, string>();
+  // First key wins, so an exact-case entry is never shadowed by a later variant.
+  for (const k of Object.keys(movements)) if (!out.has(k.toLowerCase())) out.set(k.toLowerCase(), k);
+  return out;
+}
+
+/**
+ * Publish the admin-managed exercise library to the engines. The catalog is
+ * GLOBAL, admin-authored data (identical for every athlete), not per-request
+ * state, so a module-level registry is safe on both clients AND in a server
+ * route — and it keeps every engine signature unchanged. Call it wherever the
+ * library is already fetched; call `resetExerciseCatalog` to go back to the
+ * built-ins alone (tests, sign-out, a failed fetch).
+ */
+export function setExerciseCatalog(custom: LibraryMovement[] | null | undefined): void {
+  CATALOG = custom && custom.length ? mergeMovements(MOVEMENTS, custom) : MOVEMENTS;
+  CATALOG_LOWER = lowerIndex(CATALOG);
+}
+
+/** Drop back to the built-in catalog. */
+export function resetExerciseCatalog(): void {
+  CATALOG = MOVEMENTS;
+  CATALOG_LOWER = lowerIndex(MOVEMENTS);
+}
+
+/** The catalog the engines currently resolve against (read-only view). */
+export function exerciseCatalog(): Record<string, Movement> {
+  return CATALOG;
+}
+
+/**
+ * Resolve a logged exercise NAME to its engine Movement — the single lookup every
+ * muscle-attribution engine uses. Tries, in order: the exact key, the trimmed
+ * key, the built-in rename breadcrumbs (GYM_ALIASES), the shipped library's
+ * equipment-qualified display names (GYM_LIBRARY_ALIASES — "Barbell Deadlift" →
+ * "Deadlift"), then a case-insensitive match ("Pull-up" → "Pull-Up"). Returns
+ * undefined for a genuinely unknown name. Mirrors `gymExercise`'s resolution
+ * order so the property sheet and the engines can never disagree about whether a
+ * lift is known. Pass `movements` to resolve against an explicit map instead of
+ * the registry (pure call sites, tests).
+ */
+export function movementFor(name: string, movements?: Record<string, Movement>): Movement | undefined {
+  if (!name) return undefined;
+  const map = movements ?? CATALOG;
+  const direct = map[name];
+  if (direct) return direct;
+  const trimmed = name.trim();
+  if (trimmed !== name && map[trimmed]) return map[trimmed];
+  const renamed = GYM_ALIASES[trimmed] ?? GYM_LIBRARY_ALIASES[trimmed];
+  if (renamed && map[renamed]) return map[renamed];
+  const lower = movements ? lowerIndex(movements) : CATALOG_LOWER;
+  const key = lower.get(trimmed.toLowerCase());
+  return key ? map[key] : undefined;
+}
+
+/** The engine muscle groups a logged exercise attributes to — [] when the name
+ *  doesn't resolve. The shape every volume/fatigue caller wants. */
+export function musclesFor(name: string, movements?: Record<string, Movement>): MuscleGroup[] {
+  return movementFor(name, movements)?.muscles ?? [];
+}
 
 /** The exercise picker's category buckets, by movement pattern (+ a catch-all
  *  for free-typed / library lifts with no pattern data). Mirrors the sport

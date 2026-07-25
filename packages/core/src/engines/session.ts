@@ -1,5 +1,5 @@
 import type { TrainingLog, EnergySystem } from "./types";
-import { MOVEMENTS, canonicalExerciseName } from "./movements";
+import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
@@ -581,7 +581,7 @@ export function cardioDiscipline(name: string): CardioDiscipline {
  * then a keyword heuristic, defaulting to strength.
  */
 export function inferBlockKind(name: string): BlockKind {
-  const m = MOVEMENTS[name];
+  const m = movementFor(name);
   if (m) {
     if (m.system == null && m.pattern !== "cond") return "strength";
     // A known engine move: aerobic steady → cardio; intervals/metcon → conditioning.
@@ -943,10 +943,10 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
         };
       }
       if (b.kind === "cardio") {
-        const system = (MOVEMENTS[b.name]?.system ?? "aerobic") as EnergySystem;
+        const system = (movementFor(b.name)?.system ?? "aerobic") as EnergySystem;
         return { move: b.name, system, minutes: b.minutes ?? 30, rpe: b.rpe ?? 6, ...(b.distance ? { distance: b.distance } : {}) };
       }
-      const system = (MOVEMENTS[b.name]?.system ?? "anaerobic") as EnergySystem;
+      const system = (movementFor(b.name)?.system ?? "anaerobic") as EnergySystem;
       const minutes =
         b.minutes ??
         (b.work && b.rest && b.rounds ? Math.round(((b.work + b.rest) * b.rounds) / 60) : 12);

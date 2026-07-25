@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "./db";
+import { setExerciseCatalog, type Movement, type MuscleGroup } from "@hybrid/core";
 
 // Short-TTL cache for GLOBAL, rarely-changing config that every client fetches
 // on (almost) every app load — flags, translations, the published exercise
@@ -67,3 +68,29 @@ export const getCachedPublishedExercises = unstable_cache(
   ["published-exercises"],
   { revalidate: TTL, tags: ["exercises"] },
 );
+
+/**
+ * Publish the admin-managed exercise library to the ENGINES (core's movement
+ * registry) for a server-side computation. The catalog is global, admin-authored
+ * data — identical for every athlete — so a module-level registry is correct here
+ * too, and it keeps every engine signature unchanged.
+ *
+ * Call this before running any muscle-attribution engine on the server
+ * (fatigue / injury risk / volume-by-muscle / landmarks / records). Without it a
+ * lift logged under a library name ("Barbell Deadlift", "Pull-up") resolves to no
+ * Movement and contributes ZERO load — the tissue reads as untrained.
+ */
+export async function publishExerciseCatalog(): Promise<void> {
+  const rows = await getCachedPublishedExercises();
+  setExerciseCatalog(
+    rows.map((e) => ({
+      name: e.name,
+      pattern: e.pattern,
+      muscles: e.muscles as MuscleGroup[],
+      baseLoad: e.baseLoad,
+      system: (e.system ?? null) as Movement["system"],
+      aliases: e.aliases,
+      category: e.category ?? null,
+    })),
+  );
+}
