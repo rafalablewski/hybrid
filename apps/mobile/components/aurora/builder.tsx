@@ -94,7 +94,7 @@ export default function AuroraBuilder() {
       <TextInput
         value={b.name}
         onChangeText={b.setName}
-        placeholder={t("w.train.builder.routineNamePh")}
+        placeholder={t("w.train.logger.routineNamePh")}
         placeholderTextColor={C.ash}
         style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 }}
       />
@@ -168,13 +168,13 @@ export default function AuroraBuilder() {
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
         <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: pa.text }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
             style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: pa.ink }}>{t("summary.routineUnlock")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: pa.ink }}>{t("w.train.logger.routineUnlock")}</Text>
           </Pressable>
         </View>
       )}
@@ -426,7 +426,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             onLayout={setDrag.onRowLayout("", i)}
             style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
           >
-          <SwipeRow label={t("workout.deleteSet")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
+          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
             <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
               <Pressable
                 onPress={() => builder.cycleType(b.uid, i)}
@@ -466,7 +466,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
         <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("workout.special")} {special ? "▴" : "▾"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.special")} {special ? "▴" : "▾"}</Text>
         </Pressable>
       </View>
       {special && (

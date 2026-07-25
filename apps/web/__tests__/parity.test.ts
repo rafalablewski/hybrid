@@ -46,11 +46,11 @@ const mobileRoutes = new Set(
  * a surface from one client without building it on the other means adding an
  * entry here AND a planned/blocked capability, not silently deleting code.
  */
-const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {
-  squad: { missing: "mobile", capability: "mobile-team-surfaces" },
-  teamcompare: { missing: "mobile", capability: "mobile-team-surfaces" },
-  org: { missing: "mobile", capability: "mobile-team-surfaces" },
-};
+// Empty on purpose: every canonical nav id now resolves on BOTH clients. squad,
+// teamcompare and org used to sit here under `mobile-team-surfaces`; they are
+// built on mobile now, and this test's own "listed as an accepted gap but now
+// ships on both" assertion is what required removing them.
+const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {};
 
 describe("web ↔ mobile parity", () => {
   it("found both clients' surface maps (the scan itself isn't silently empty)", () => {

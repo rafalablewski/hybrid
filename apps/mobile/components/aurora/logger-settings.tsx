@@ -86,7 +86,7 @@ export default function AuroraLoggerSettings() {
       )}
 
       <Group
-        title={t("loggerPrefs.units")}
+        title={t("w.account.settings.units")}
         options={[{ id: "kg", label: "KG" }, { id: "lb", label: "LB" }]}
         value={prefs.units}
         onPick={(v) => setLoggerPref("units", v as "kg" | "lb")}

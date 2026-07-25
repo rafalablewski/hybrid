@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+// The AI coach screen, reached from the Cockpit module tile (see below).
+const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -759,6 +761,11 @@ export default function AppShell() {
             {activeScope === "operator" && <AuroraOperatorAnalytics />}
           </>
         )}
+
+        {/* AI COACH — reached from the Cockpit module tile, mirroring mobile's
+            /ai-coach route. Deliberately NOT a NAV_ITEMS destination on either
+            client, so it stays out of the sidebar and the More hub alike. */}
+        {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
           <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />

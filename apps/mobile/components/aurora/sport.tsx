@@ -129,11 +129,11 @@ export default function AuroraSport() {
         onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
         style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.train.sport.logSession").replace("{sport}", sport)}</Text>
       </Pressable>
 
       <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("sport.prescribed")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.sport.todaysSC")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
           {rx.personalized ? t("sport.loadsFromLogs") : t("sport.loadsLogPrompt")}
         </Text>

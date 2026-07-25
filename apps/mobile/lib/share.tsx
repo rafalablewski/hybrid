@@ -354,10 +354,10 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
             {brand.name}
             <Text style={{ color: C.lime }}>.</Text>
           </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("recap.title").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("w.teams.coach.thisWeek").toUpperCase()}</Text>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
-          <Stat label={t("recap.sessions")} value={String(recap.sessions)} />
+          <Stat label={t("w.teams.coach.sessionsWord")} value={String(recap.sessions)} />
           <Stat label={t("summary.volumeMoved")} value={fmtTonnage(recap.volume, units)} />
           <Stat label={t("recap.prs")} value={String(recap.prs.length)} />
         </View>
@@ -378,7 +378,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         </View>
         {hasPrev && (
           <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
-            {signed(recap.sessionsDelta)} {t("recap.sessions")} – {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
+            {signed(recap.sessionsDelta)} {t("w.teams.coach.sessionsWord")} – {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
           </Text>
         )}
       </View>
@@ -389,8 +389,8 @@ RecapShareCard.displayName = "RecapShareCard";
 
 export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg"): string {
   return [
-    `\u{1F4C8} ${t("recap.title")} — HYBRID`,
-    `${recap.sessions} ${t("recap.sessions")} – ${fmtTonnage(recap.volume, units)} – ${recap.prs.length} ${t("recap.prs")}`,
+    `\u{1F4C8} ${t("w.teams.coach.thisWeek")} — HYBRID`,
+    `${recap.sessions} ${t("w.teams.coach.sessionsWord")} – ${fmtTonnage(recap.volume, units)} – ${recap.prs.length} ${t("recap.prs")}`,
     recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].topLoad, units)}` : null,
     t("share.tracked"),
   ]

@@ -65,7 +65,7 @@ export default function AuroraTalent() {
       {/* Eyebrow cut — "Talent graph" just named the screen; the heading leads. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
         <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.teams.talent.headerKicker")}</AHeading>
       </View>
 
       <ACard style={{ marginTop: 16 }}>

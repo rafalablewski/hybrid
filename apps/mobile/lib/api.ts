@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -1600,5 +1600,199 @@ export async function fetchRoster(): Promise<RosterRow[]> {
     return ((await res.json()) as { roster?: RosterRow[] }).roster ?? [];
   } catch {
     return [];
+  }
+}
+
+/** Operator-scope platform stats — mirrors the web `AdminStats`. */
+export type AdminStats = {
+  totalUsers: number;
+  sessions: number;
+  coaches: number;
+  mau: number;
+  newUsers30: number;
+  planPopularity: { goal: string; n: number }[];
+  langSplit: { lang: string; n: number }[];
+};
+
+/** Platform stats for the operator scope. null when not an admin / on failure. */
+export async function fetchAdminStats(): Promise<AdminStats | null> {
+  try {
+    return await fetchJson<AdminStats>("/api/admin/stats");
+  } catch {
+    return null;
+  }
+}
+
+// ---- team surfaces (compare / squad monitor / org) ----
+// Same endpoints the web team screens call, so the two clients can't disagree.
+
+/** One athlete's comparable numbers on a lift — mirrors the web `Athlete`. */
+export type TeamCompareAthlete = {
+  linkId: string;
+  name: string;
+  e1rm: number;
+  bestVel: number;
+  volume: number;
+  reps: number;
+  sessions: number;
+  estVel1rm: number;
+};
+
+export type TeamCompareResponse = { lift: string | null; lifts: string[]; athletes: TeamCompareAthlete[] };
+
+/** Team comparison on a lift (empty lift = the server's default pick). */
+export async function fetchTeamCompare(lift?: string): Promise<TeamCompareResponse> {
+  const qs = lift ? `?lift=${encodeURIComponent(lift)}` : "";
+  try {
+    return await fetchJson<TeamCompareResponse>(`/api/coach/compare${qs}`);
+  } catch {
+    return { lift: null, lifts: [], athletes: [] };
+  }
+}
+
+/** One athlete's morning-monitor row — mirrors the web `SquadRow`. */
+export type SquadRow = {
+  linkId: string;
+  name: string;
+  tags?: string[];
+  sessions: number;
+  lastSession: string | null;
+  readiness: number;
+  hpi: number;
+  hpiBand: string;
+  acwr: number;
+  acwrBand: string;
+  acute: number;
+  strain: number;
+  riskOverall: number;
+  riskBand: string;
+  flagged: string | null;
+};
+
+export type SquadSummary = { athletes: number; redReadiness: number; acwrFlags: number; injuryFlags: number };
+
+/** The coach's squad + its summary strip. Empty on any failure. */
+export async function fetchSquad(): Promise<{ squad: SquadRow[]; summary: SquadSummary | null }> {
+  try {
+    const d = await fetchJson<{ squad?: SquadRow[]; summary?: SquadSummary }>("/api/coach/squad");
+    return { squad: d.squad ?? [], summary: d.summary ?? null };
+  } catch {
+    return { squad: [], summary: null };
+  }
+}
+
+// ---- org graph ----
+// The mobile Org screen calls the SAME /api/org endpoints as the web console.
+
+export type OrgSummary = { id: string; name: string; role: OrgRole };
+export type OrgMember = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
+export type OrgInvite = { id: string; email: string; role: OrgRole; teamId: string | null };
+export type OrgDetail = {
+  org: { id: string; name: string };
+  myRole: OrgRole;
+  myTeamId: string | null;
+  teams: TeamNode[];
+  members: OrgMember[];
+  invites: OrgInvite[];
+};
+export type OrgAthleteView = {
+  hpi: { score: number; band: string; limiter: string };
+  readiness: { score: number };
+  summary: string;
+  sessionCount: number;
+  injury: { overall: number; band: string; flaggedCount: number; tissues?: { tissue: string; risk: number; band: string }[] };
+};
+
+/** Orgs the signed-in user belongs to. Empty on any failure. */
+export async function fetchOrgs(): Promise<OrgSummary[]> {
+  try {
+    const d = await fetchJson<{ orgs?: OrgSummary[] }>("/api/org");
+    return d.orgs ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** One org's teams, members and pending invites. null on any failure. */
+export async function fetchOrgDetail(id: string): Promise<OrgDetail | null> {
+  try {
+    return await fetchJson<OrgDetail>(`/api/org/${id}`);
+  } catch {
+    return null;
+  }
+}
+
+/** Create an org. Returns the new org's id, or null on failure. */
+export async function createOrg(name: string): Promise<string | null> {
+  try {
+    const d = await fetchJson<{ org?: { id: string } }>("/api/org", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    return d.org?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Add a team (optionally nested under `parentId`). */
+export async function createOrgTeam(orgId: string, name: string, parentId?: string): Promise<boolean> {
+  try {
+    await fetchJson(`/api/org/${orgId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, parentId: parentId || undefined }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Invite/add a member by email. `pending` means an invite was created. */
+export async function addOrgMember(orgId: string, email: string, role: OrgRole): Promise<{ ok: boolean; pending?: boolean; error?: string }> {
+  try {
+    const d = await fetchJson<{ pending?: boolean }>(`/api/org/${orgId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    });
+    return { ok: true, pending: d.pending };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiError ? e.message : undefined };
+  }
+}
+
+/** Change a member's role and/or team. */
+export async function patchOrgMember(orgId: string, memberId: string, patch: { role?: OrgRole; teamId?: string | null }): Promise<boolean> {
+  try {
+    await fetchJson(`/api/org/${orgId}/members/${memberId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Revoke a pending invite. */
+export async function revokeOrgInvite(orgId: string, inviteId: string): Promise<boolean> {
+  try {
+    await fetchJson(`/api/org/${orgId}/invites/${inviteId}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The Performance-State readout for one athlete in the org. */
+export async function fetchOrgAthlete(orgId: string, userId: string): Promise<OrgAthleteView | null> {
+  try {
+    return await fetchJson<OrgAthleteView>(`/api/org/${orgId}/athlete/${userId}`);
+  } catch {
+    return null;
   }
 }

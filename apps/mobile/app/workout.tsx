@@ -921,7 +921,7 @@ export default function Workout() {
       {aurora && <AuroraField />}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ width: 64 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.cancel")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.teams.coach.cancel")}</Text>
         </Pressable>
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? txt(C, C.amber) : C.chalk, letterSpacing: 1 }}>{mmss(elapsed)}</Text>
@@ -961,16 +961,16 @@ export default function Workout() {
             </Text>
           </Pressable>
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("w.train.blocks.whatsRpe")}</Text>
           </Pressable>
         </View>
 
         {/* Live in-session scoreboard — appears once the first set is logged. */}
         {live.sets > 0 && (
           <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 14 }}>
-            <LiveStat C={C} label={t("live.exercises")} value={String(live.exercises)} />
+            <LiveStat C={C} label={t("w.train.logger.liveExercises")} value={String(live.exercises)} />
             <LiveStat C={C} label={t("live.sets")} value={String(live.sets)} />
-            <LiveStat C={C} label={t("live.volume")} value={fmtTonnage(live.volume, prefs.units)} />
+            <LiveStat C={C} label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
             {live.prs + live.cardioPrs > 0 && (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: R.field, paddingVertical: 8, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime }}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>🏆 {live.prs + live.cardioPrs}</Text>
@@ -1078,7 +1078,7 @@ export default function Workout() {
                     hitSlop={6}
                     style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("w.train.blocks.joined") : t("workout.superset")}</Text>
                   </Pressable>
                 );
               })()}
@@ -1133,7 +1133,7 @@ export default function Workout() {
                         onLayout={setDrag.onRowLayout(x.uid, i)}
                         style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
                       >
-                      <SwipeRow label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
+                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)}>
                         {focus === "active" ? (
                           <View
                             style={{
@@ -1162,7 +1162,7 @@ export default function Workout() {
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
                                 {prefs.restTimer && (
                                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
-                                    {t("workout.restShort")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
+                                    {t("w.train.blocks.rest")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
                                   </Text>
                                 )}
                                 {/* RPE — a quiet chip, not a permanent field. Tap to
@@ -1285,7 +1285,7 @@ export default function Workout() {
                           </View>
                           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
                         </Pressable>
-                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("workout.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
+                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 1 }}>⋯</Text>
                         </Pressable>
                       </View>
@@ -1295,7 +1295,7 @@ export default function Workout() {
                   <Pressable
                     onPress={() => { setSpecialUid((u) => (u === x.uid ? null : x.uid)); setPlanUid(null); }}
                     accessibilityRole="button"
-                    accessibilityLabel={t("workout.special")}
+                    accessibilityLabel={t("w.train.blocks.special")}
                     style={{ width: 48, alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>⚡</Text>
@@ -1308,7 +1308,7 @@ export default function Workout() {
                     edge, matching the exercise-widget idiom. */}
                 {planUid === x.uid && (
                   <View style={{ marginTop: 10 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("workout.presetsTitle")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.train.blocks.presetsTitle")}</Text>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
@@ -1329,7 +1329,7 @@ export default function Workout() {
                         >
                           <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -1, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 19, color: C.ash }}>×</Text>{p.reps}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 8 }}>{t(p.k)}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime), marginTop: 10 }}>{p.sets * p.reps} {t("workout.presetReps")}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</Text>
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -1521,7 +1521,7 @@ export default function Workout() {
               disabled={saving}
               style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
             >
-              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.finishWorkout")}</Text>}
+              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.train.logger.finishWorkout")}</Text>}
             </Pressable>
           </View>
         )}
@@ -1553,7 +1553,7 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
         <Pressable onPress={() => {}} style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 36 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("rpe.title")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.blocks.rpeHelpTitle")}</Text>
             <Pressable onPress={onClose} hitSlop={10}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("rpe.close")}</Text>
             </Pressable>
@@ -1999,20 +1999,20 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   const allowed = canSaveRoutine(persona, savedCount);
 
   if (state === "saved")
-    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("summary.routineSaved")}</Mono>;
+    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("w.train.logger.savedRoutine")}</Mono>;
 
   // Free user at the routine limit → upsell card (a stale count that lets a
   // save through still lands here when it fails); logging/building stays free.
   if (!allowed || state === "upsell")
     return (
       <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
-        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 1 }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Mono>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
+        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 1 }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
           style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("summary.routineUnlock")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
         </Pressable>
       </View>
     );
@@ -2257,19 +2257,19 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
   return (
     <View style={{ backgroundColor: `${a}12`, borderWidth: 1, borderColor: `${a}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("live.bwNudgeTitle")}</Text>
-        <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("live.bwNudgeDismiss")}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</Text>
+        <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("w.train.logger.bwNudgeDismiss")}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.ash }}>✕</Text>
         </Pressable>
       </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 10 }}>{t("live.bwNudgeBody")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 10 }}>{t("w.train.logger.bwNudgeBody")}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: state === "error" ? C.red : C.line, borderRadius: 10, paddingHorizontal: 12 }}>
           <TextInput
             value={val}
             onChangeText={(v) => { setVal(v); if (state === "error") setState("idle"); }}
             keyboardType="numeric"
-            placeholder={t("live.bwNudgeTitle")}
+            placeholder={t("w.train.logger.bwNudgeTitle")}
             placeholderTextColor={C.ash}
             onSubmitEditing={save}
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, paddingVertical: 10 }}
@@ -2278,11 +2278,11 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
         </View>
         <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: R.cta, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>
-            {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("live.bwNudgeSaved") : t("live.bwNudgeSave")}
+            {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
           </Text>
         </Pressable>
       </View>
-      {state === "error" && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 8 }}>{t("live.bwNudgeError")}</Text>}
+      {state === "error" && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 8 }}>{t("w.train.logger.bwNudgeError")}</Text>}
     </View>
   );
 }

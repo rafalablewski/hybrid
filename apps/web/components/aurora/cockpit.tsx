@@ -289,7 +289,12 @@ export default function AuroraCockpit({
           </span>
           <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
           <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
-          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} last />
+          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} />
+          {/* The AI coach had no door on EITHER client — the web component had zero
+              importers and nothing on mobile navigated to /ai-coach, while
+              /api/ai-coach was live the whole time. The Cockpit is where the
+              prescription already lives, so both clients open it from here. */}
+          <Mod dot={C("violet")} label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onClick={() => setScreen("aicoach")} last />
         </div>
 
         {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);

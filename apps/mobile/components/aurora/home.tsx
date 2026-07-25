@@ -65,6 +65,9 @@ import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
+// The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
+// so the full ritual runs on Today — the /checkin screen is the same component.
+import AuroraCheckin from "./checkin";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -693,7 +696,6 @@ export default function AuroraHome() {
           dayTs={railDay?.ts ?? null}
           dayLabel={dayLabel}
           onPicked={loadFeeling}
-          onLogMore={() => router.push("/checkin")}
         />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
@@ -958,7 +960,7 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked, onLogMore }: {
+function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
@@ -968,11 +970,14 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   dayTs: number | null;
   dayLabel: string | null;
   onPicked: () => void;
-  onLogMore?: () => void;
 }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
+  // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
+  // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
+  // details without ever leaving Today.
+  const [logMoreOpen, setLogMoreOpen] = useState(false);
   // The 6h re-log window: while open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -998,7 +1003,14 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
       adherencePct: null, note: null, sharedWithCoach: false,
     });
     setBusy(false);
-    if (r.ok) { revalidate.recovery(); onPicked(); }
+    if (r.ok) {
+      // Re-answering the headline question invalidates an open guided flow — its
+      // prefill was read from the PREVIOUS row, so submitting it would write the
+      // old values back. Collapse; re-opening re-reads the row.
+      setLogMoreOpen(false);
+      revalidate.recovery();
+      onPicked();
+    }
   };
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
@@ -1038,21 +1050,36 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
         </View>
       ) : null}
       {/* Once today's readiness is set, nudge the athlete to log the fuller
-          picture — the guided check-in refines TODAY's row (sleep, soreness,
-          mood, weight, a note), no second entry, no cooldown block. */}
-      {isToday && feeling && onLogMore ? (
-        <Pressable
-          onPress={onLogMore}
-          accessibilityRole="button"
-          accessibilityLabel={t("w.recovery.readiness.logMore")}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{t("w.recovery.readiness.logMoreSub")}</Text>
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime) }}>→</Text>
-        </Pressable>
+          picture — and run that guided check-in RIGHT HERE. The one-tap face is
+          step 1 (Energy); the expansion walks the remaining four cards (Sleep,
+          Soreness, Mood, then weight/adherence/note) and refines TODAY's row, so
+          the whole ritual lives on Today — no trip to the More tab, no second
+          entry, no cooldown block. */}
+      {isToday && feeling ? (
+        <>
+          <Pressable
+            onPress={() => setLogMoreOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: logMoreOpen }}
+            accessibilityLabel={t("w.recovery.readiness.logMore")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{logMoreOpen ? t("w.recovery.readiness.logMoreOpenSub") : t("w.recovery.readiness.logMoreSub")}</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime), transform: [{ rotate: logMoreOpen ? "90deg" : "0deg" }] }}>→</Text>
+          </Pressable>
+          {logMoreOpen ? (
+            <View style={{ marginTop: 14, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+              <AuroraCheckin
+                embedded
+                startStep={1}
+                onDone={() => { setLogMoreOpen(false); onPicked(); }}
+              />
+            </View>
+          ) : null}
+        </>
       ) : null}
     </View>
   );

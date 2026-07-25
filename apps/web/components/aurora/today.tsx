@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { fs, space,
   prescribeSession,
   computeAccountability,
@@ -57,6 +58,9 @@ import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
+// The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
+// Lazy so the wizard's weight only lands when an athlete actually expands it.
+const AuroraCheckins = dynamic(() => import("./checkins"), { ssr: false });
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -648,7 +652,6 @@ export default function AuroraToday({
         dayTs={railDay?.ts ?? null}
         dayLabel={dayLabel}
         onPicked={loadFeeling}
-        onLogMore={() => onNavigate?.("checkin")}
       />
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
@@ -930,7 +933,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked, onLogMore }: {
+function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
   cooldownFrom: number | null;
@@ -939,10 +942,13 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
   dayTs: number | null;
   dayLabel: string | null;
   onPicked: () => void;
-  onLogMore?: () => void;
 }) {
   const { t } = useLang();
   const [busy, setBusy] = useState(false);
+  // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
+  // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
+  // details without ever leaving Today.
+  const [logMoreOpen, setLogMoreOpen] = useState(false);
   // The 6h re-log window: while it's open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -967,7 +973,13 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekOf, energy: rating, sleep: rating, soreness: rating, mood: rating }),
       });
-      if (res.ok) onPicked();
+      if (res.ok) {
+        // Re-answering the headline question invalidates an open guided flow —
+        // its prefill was read from the PREVIOUS row, so submitting it would
+        // write the old values back. Collapse; re-opening re-reads the row.
+        setLogMoreOpen(false);
+        onPicked();
+      }
     } catch {
       // a failed tap simply doesn't set — the athlete can tap again
     } finally {
@@ -1012,19 +1024,34 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
         </div>
       )}
       {/* Once today's readiness is set, nudge the athlete to log the fuller
-          picture — the guided check-in refines TODAY's row (sleep, soreness,
-          mood, weight, a note), no second entry, no cooldown block. */}
-      {isToday && feeling && onLogMore && (
-        <button
-          onClick={onLogMore}
-          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 26%, transparent)`, cursor: "pointer", color: C("chalk") }}
-        >
-          <span style={{ flex: 1 }}>
-            <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>{t("w.recovery.readiness.logMore")}</span>
-            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{t("w.recovery.readiness.logMoreSub")}</span>
-          </span>
-          <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: "var(--lime-text)" }}>→</span>
-        </button>
+          picture — and run that guided check-in RIGHT HERE. The one-tap face is
+          step 1 (Energy); the expansion walks the remaining four cards (Sleep,
+          Soreness, Mood, then weight/adherence/note) and refines TODAY's row, so
+          the whole ritual lives on Today — no trip to the More tab, no second
+          entry, no cooldown block. */}
+      {isToday && feeling && (
+        <>
+          <button
+            onClick={() => setLogMoreOpen((v) => !v)}
+            aria-expanded={logMoreOpen}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 26%, transparent)`, cursor: "pointer", color: C("chalk") }}
+          >
+            <span style={{ flex: 1 }}>
+              <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>{t("w.recovery.readiness.logMore")}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{logMoreOpen ? t("w.recovery.readiness.logMoreOpenSub") : t("w.recovery.readiness.logMoreSub")}</span>
+            </span>
+            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: "var(--lime-text)", transform: logMoreOpen ? "rotate(90deg)" : "none", transition: "transform .18s" }}>→</span>
+          </button>
+          {logMoreOpen && (
+            <div style={{ marginTop: 14, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
+              <AuroraCheckins
+                embedded
+                startStep={1}
+                onDone={() => { setLogMoreOpen(false); onPicked(); }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

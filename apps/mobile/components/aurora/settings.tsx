@@ -296,7 +296,7 @@ export default function AuroraSettings() {
         <Section label={t("common.signout")}>
           <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 13 }} />
         </Section>
-        <Section label={t("settings.resetTitle")} tone={C.red}>
+        <Section label={t("w.account.settings.erase-all")} tone={C.red}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
           <TextInput
@@ -306,7 +306,7 @@ export default function AuroraSettings() {
           />
           {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
           <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("w.account.settings.erase-everything")}</Text>}
           </Pressable>
         </Section>
         <Section label={t("settings.deleteTitle")} tone={C.red}>
