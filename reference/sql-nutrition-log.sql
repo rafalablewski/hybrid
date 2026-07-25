@@ -10,10 +10,13 @@
 -- atomically. `ts` is the log instant — the client groups rows into its own
 -- LOCAL calendar days (the server never reasons about the athlete's timezone).
 --
--- Until this runs, logging still works: POST /api/nutrition/log degrades to
--- writing ONLY the Signals (so totals + engines are unaffected), the Diary's
--- entry list is simply empty, and edit/delete are unavailable. After it runs,
--- entries appear and sync across the athlete's devices.
+-- This is a QUALITY upgrade, not a gate. Without it, logging still works (POST
+-- /api/nutrition/log writes ONLY the Signals) and the Diary still lists every
+-- logged item with edit + delete — the server rebuilds entries from the Signals
+-- themselves (derivedFoodEntries), so they carry a time of day instead of a
+-- name and rescale by a ×multiplier. After this runs, newly logged items also
+-- keep their NAME and an absolute serving count. Items logged BEFORE it runs
+-- stay Signal-derived (their names were never stored anywhere).
 
 create table if not exists "FoodLog" (
   "id"        text primary key default gen_random_uuid()::text,
@@ -35,6 +38,14 @@ create index if not exists "FoodLog_userId_ts_idx" on "FoodLog" ("userId", "ts")
 
 -- Owner-only access (same pattern as Signal/Session): a user reads/writes only
 -- their own rows. The server's service-role Prisma connection bypasses RLS.
+-- The helper is re-declared here (identical to reference/rls-policies.sql) so
+-- this script stands alone even if that one hasn't been run yet.
+create or replace function public.app_user_id() returns text
+  language sql stable security definer set search_path = public as $$
+  select id from "User" where "authId" = auth.uid()::text
+$$;
+
+
 alter table "FoodLog" enable row level security;
 drop policy if exists foodlog_own on "FoodLog";
 create policy foodlog_own on "FoodLog" for all
