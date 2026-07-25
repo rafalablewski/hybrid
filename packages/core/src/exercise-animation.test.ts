@@ -18,8 +18,8 @@ describe("exercise animation", () => {
     for (const e of GYM_EXERCISES) {
       const anim = exerciseAnimation(e.name);
       expect(anim, e.name).not.toBeNull();
-      expect(anim!.kind, e.name).toBe("skeleton");
-      if (anim!.kind === "skeleton") {
+      expect(anim?.kind, e.name).toBe("skeleton");
+      if (anim?.kind === "skeleton") {
         expect(anim.frames.length, e.name).toBeGreaterThanOrEqual(1);
         expect(anim.cycleMs, e.name).toBeGreaterThan(0);
         for (const f of anim.frames) expect(skeletonOk(f), e.name).toBe(true);
