@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useTemplate } from "@/lib/use-template";
+import { useLang } from "@/lib/i18n";
 
 // Shared primitives for the social + marketplace screens — kept here so the
 // feed, discover, leaderboard, profile and coaches screens stay consistent and
@@ -46,9 +47,10 @@ export function Avatar({
   handle?: string;
   size?: number;
 }) {
+  const { t } = useLang();
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name || handle || "avatar"} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2") }} />;
+    return <img src={url} alt={name || handle || t("w.social.avatarAlt")} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2") }} />;
   }
   return (
     <div
@@ -74,7 +76,8 @@ export function Avatar({
 }
 
 export function Stars({ rating, size = 14 }: { rating: number | null; size?: number }) {
-  if (rating == null) return <span style={{ color: C("ash"), fontSize: size }}>No reviews yet</span>;
+  const { t } = useLang();
+  if (rating == null) return <span style={{ color: C("ash"), fontSize: size }}>{t("w.social.noReviews")}</span>;
   const full = Math.round(rating);
   return (
     <span style={{ color: C("gold"), fontSize: size, letterSpacing: 1 }} aria-label={`${rating} of 5`}>
@@ -156,8 +159,9 @@ export function Btn({
 }
 
 export function VerifiedTick() {
+  const { t } = useLang();
   return (
-    <span title="Verified coach" style={{ color: "var(--lime-text)", fontSize: 13 }}>
+    <span title={t("w.social.verifiedCoach")} style={{ color: "var(--lime-text)", fontSize: 13 }}>
       ✓
     </span>
   );
@@ -197,16 +201,17 @@ export function FollowButton({
   onUnfollow: () => void;
   busy?: boolean;
 }) {
+  const { t } = useLang();
   if (relation === "self") return null;
   const following = relation === "following" || relation === "friend" || relation === "close";
-  if (relation === "requested") return <Btn ghost small disabled>Requested</Btn>;
+  if (relation === "requested") return <Btn ghost small disabled>{t("w.social.requested")}</Btn>;
   return following ? (
     <Btn ghost small onClick={onUnfollow} disabled={busy}>
-      {relation === "friend" || relation === "close" ? "Friends ✓" : "Following"}
+      {relation === "friend" || relation === "close" ? `${t("w.social.friends")} ✓` : t("w.social.following")}
     </Btn>
   ) : (
     <Btn small onClick={onFollow} disabled={busy}>
-      {relation === "follower" ? "Follow back" : "Follow"}
+      {relation === "follower" ? t("w.social.followBack") : t("w.social.follow")}
     </Btn>
   );
 }

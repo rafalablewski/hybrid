@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
 import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
 import { useDialog } from "../lib/use-dialog";
+import { useLang } from "@/lib/i18n";
 import {
   C, useSocialTheme, card, Avatar, Btn, Pill, FollowButton, EmptyState, ScreenHead, Stars,
   VerifiedTick, jget, jsend, useBusy,
@@ -13,11 +14,12 @@ interface Stats { totalSessions: number; totalVolumeKg: number; currentStreak: n
 interface MyProfile { handle: string; displayName: string | null; bio: string | null; visibility: string; avatarUrl: string | null }
 
 function StatRow({ stats }: { stats: Stats | null }) {
+  const { t } = useLang();
   if (!stats) return null;
   const items = [
-    { label: "Sessions", value: stats.totalSessions.toLocaleString() },
-    { label: "Volume", value: `${Math.round(stats.totalVolumeKg / 1000)}t` },
-    { label: "Streak", value: `${stats.currentStreak}d` },
+    { label: t("w.social.statSessions"), value: stats.totalSessions.toLocaleString() },
+    { label: t("w.social.statVolume"), value: `${Math.round(stats.totalVolumeKg / 1000)}t` },
+    { label: t("w.social.statStreak"), value: `${stats.currentStreak}d` },
   ];
   return (
     <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
@@ -33,6 +35,7 @@ function StatRow({ stats }: { stats: Stats | null }) {
 
 // ----- A slide-over for viewing ANY user's public profile (reused by feed / discover / leaderboard).
 export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { t } = useLang();
   const [data, setData] = useState<PublicProfileResponse | null>(null);
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const busy = useBusy();
@@ -50,17 +53,17 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   const doFollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { handle }); await load(); });
   const doUnfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { handle }); await load(); });
   const runCompare = () => busy.run("c", async () => { const r = await jget<CompareResponse>(`/api/social/compare?handle=${handle}`); setCompare(r.compare ?? null); });
-  const doBlock = () => { if (!window.confirm(`Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`)) return; busy.run("b", async () => { await jsend("/api/social/block", "POST", { handle }); onClose(); }); };
-  const doReport = () => { if (!p?.userId) return; if (!window.confirm(`Report @${handle} to the moderators?`)) return; busy.run("r", async () => { await jsend("/api/reports", "POST", { targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); alert("Thanks — reported to the moderators."); }); };
+  const doBlock = () => { if (!window.confirm(t("w.social.blockConfirm").replace("{h}", handle))) return; busy.run("b", async () => { await jsend("/api/social/block", "POST", { handle }); onClose(); }); };
+  const doReport = () => { if (!p?.userId) return; if (!window.confirm(t("w.social.reportConfirm").replace("{h}", handle))) return; busy.run("r", async () => { await jsend("/api/reports", "POST", { targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); alert(t("w.social.reportThanks")); }); };
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(460px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
+          <button aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
         {!data || !p ? (
-          <EmptyState title="Loading…" />
+          <EmptyState title={t("common.loading")} />
         ) : (
           <>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
@@ -76,21 +79,21 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
             {p.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.5, marginTop: 12 }}>{p.bio}</p>}
             <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
               <FollowButton relation={relation} onFollow={doFollow} onUnfollow={doUnfollow} busy={busy.is("f")} />
-              {data?.canViewResults && relation !== "self" && <Btn ghost small onClick={runCompare} disabled={busy.is("c")}>Compare</Btn>}
-              {p.isCoach && <Btn ghost small onClick={() => { window.location.hash = `coaches`; }}>View coaching →</Btn>}
+              {data?.canViewResults && relation !== "self" && <Btn ghost small onClick={runCompare} disabled={busy.is("c")}>{t("w.social.compare")}</Btn>}
+              {p.isCoach && <Btn ghost small onClick={() => { window.location.hash = `coaches`; }}>{t("w.social.viewCoaching")} →</Btn>}
             </div>
 
             {data?.canViewResults ? (
               <StatRow stats={data.stats} />
             ) : (
               <div style={{ marginTop: 14, padding: 14, background: C("ink2"), borderRadius: 12, color: C("ash"), fontSize: 13 }}>
-                🔒 This athlete's results are private. {relation === "requested" ? "Your follow request is pending." : "Follow them to see their training."}
+                🔒 {t("w.social.privateResults")} {relation === "requested" ? t("w.social.followPending") : t("w.social.followToSee")}
               </div>
             )}
 
             {data.canViewResults && data.stats && data.stats.topLifts.length > 0 && (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 12, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Top lifts</div>
+                <div style={{ fontSize: 12, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t("w.social.topLifts")}</div>
                 {data.stats.topLifts.map((l) => (
                   <div key={l.lift} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <span style={{ color: C("chalk") }}>{l.lift}</span>
@@ -102,15 +105,15 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
 
             {relation !== "self" && (
               <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-                <button onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ Report</button>
-                <button onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ Block</button>
+                <button onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ {t("w.social.report")}</button>
+                <button onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
               </div>
             )}
 
             {compare && (
               <div style={{ marginTop: 18 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>
-                  You {compare.score.a} — {compare.score.b} {p.displayName || "@" + p.handle}
+                  {t("w.social.you")} {compare.score.a} — {compare.score.b} {p.displayName || "@" + p.handle}
                 </div>
                 {[...compare.lines, ...compare.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
                   <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>

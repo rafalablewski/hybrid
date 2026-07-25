@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F, useScreenBottomPad } from "../lib/ui";
 import { ABack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
+import { useLang } from "../lib/i18n";
 import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
@@ -11,6 +12,7 @@ import { useNavScrollProps } from "../lib/nav-scroll";
 
 function Comments({ item }: { item: FeedItemView }) {
   const C = useTheme().palette;
+  const { t } = useLang();
   const [list, setList] = useState<CommentView[]>([]);
   const [text, setText] = useState("");
   const load = () => getComments(item.subjectType, item.subjectId).then((r) => setList(r.comments ?? []));
@@ -18,7 +20,7 @@ function Comments({ item }: { item: FeedItemView }) {
   const send = async () => {
     if (!text.trim()) return;
     const r = await postComment({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
-    if (r.error) { Alert.alert("Error", r.error); return; } // don't clear the box on a failed post
+    if (r.error) { Alert.alert(t("common.error"), r.error); return; } // don't clear the box on a failed post
     setText(""); load();
   };
   return (
@@ -30,8 +32,8 @@ function Comments({ item }: { item: FeedItemView }) {
         </View>
       ))}
       <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-        <TextInput value={text} onChangeText={setText} placeholder="Add a comment…" placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 13 }} />
-        <SButton label="Post" small onPress={send} />
+        <TextInput value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 13 }} />
+        <SButton label={t("w.social.post")} small onPress={send} />
       </View>
     </View>
   );
@@ -39,6 +41,7 @@ function Comments({ item }: { item: FeedItemView }) {
 
 export default function FeedScreen() {
   const C = useTheme().palette;
+  const { t } = useLang();
   const router = useRouter();
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function FeedScreen() {
     setPosting(true);
     const r = await createPost({ text, attachPr });
     setPosting(false);
-    if (r.error) { Alert.alert("Error", r.error); return; }
+    if (r.error) { Alert.alert(t("common.error"), r.error); return; }
     setText(""); setAttachPr(false); load();
   };
   const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };
@@ -73,17 +76,17 @@ export default function FeedScreen() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <ABack />
         <View>
-          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>Feed</Text>
-          <Text style={{ color: C.ash, fontSize: 13 }}>What your friends are training.</Text>
+          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
+          <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
       </View>
 
       {/* COMPOSER — share a status or your latest PR card. */}
       <Card>
-        <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder="Share an update with your followers…" placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: 15, fontFamily: F.reg }} />
+        <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder={t("w.social.sharePlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: 15, fontFamily: F.reg }} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.lime : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 Attach my latest PR</Text></Pressable>
-          <SButton label={posting ? "Sharing…" : "Share"} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.lime : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 {t("w.social.attachPr")}</Text></Pressable>
+          <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
         </View>
       </Card>
     </>
@@ -115,8 +118,8 @@ export default function FeedScreen() {
         </View>
       )}
       <View style={{ flexDirection: "row", gap: 18, marginTop: 12 }}>
-        <Pressable onPress={() => cheer(item)}><Text style={{ color: item.kudosedByMe ? C.lime : C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>👏 {item.kudos > 0 ? item.kudos : ""} Cheer</Text></Pressable>
-        <Pressable onPress={() => setOpen(open === item.id ? null : item.id)}><Text style={{ color: C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>💬 {item.comments > 0 ? item.comments : ""} Comment</Text></Pressable>
+        <Pressable onPress={() => cheer(item)}><Text style={{ color: item.kudosedByMe ? C.lime : C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>👏 {item.kudos > 0 ? item.kudos : ""} {t("w.social.cheer")}</Text></Pressable>
+        <Pressable onPress={() => setOpen(open === item.id ? null : item.id)}><Text style={{ color: C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}</Text></Pressable>
       </View>
       {open === item.id && <Comments item={item} />}
     </Card>
@@ -131,7 +134,7 @@ export default function FeedScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={header}
-        ListEmptyComponent={feed === null ? <Loading /> : <Empty title="Your feed is quiet" sub="Follow friends from Find friends — their workouts and PRs show up here." />}
+        ListEmptyComponent={feed === null ? <Loading /> : <Empty title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />}
         {...navScroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
