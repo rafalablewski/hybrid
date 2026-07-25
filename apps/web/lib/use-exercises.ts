@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
+import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
 
 type ApiExercise = {
   name: string;
@@ -62,5 +62,9 @@ export function useExercises() {
   );
   const aliases = useMemo(() => aliasNames(custom ?? []), [custom]);
   const categoryByName = useMemo(() => categoriesByName(custom ?? []), [custom]);
+  // Keep the ENGINE catalog in step with the picker's. The engines' first load is
+  // guaranteed by useSessions (it awaits ensureExerciseCatalog before the sessions
+  // land); this only tops it up when a long-lived session refetches the library.
+  useEffect(() => { if (custom) setExerciseCatalog(custom); }, [custom]);
   return { movements: merged, catalog, aliases, categoryByName };
 }

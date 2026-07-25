@@ -1,7 +1,7 @@
 import type { MuscleGroup } from "./types";
 import type { LoggedSession } from "./session";
 import { setsForVolume } from "./session";
-import { MOVEMENTS, ALL_MUSCLES } from "./movements";
+import { musclesFor, ALL_MUSCLES } from "./movements";
 
 // Volume landmarks (Renaissance-Periodization model): the weekly working-set
 // counts that bound productive training for each muscle.
@@ -83,8 +83,8 @@ export function weeklySetsByMuscle(
     if (!(t > cutoff && t <= now)) continue;
     for (const b of s.blocks) {
       if (b.kind !== "strength") continue;
-      const muscles = MOVEMENTS[b.name]?.muscles;
-      if (!muscles || muscles.length === 0) continue;
+      const muscles = musclesFor(b.name);
+      if (muscles.length === 0) continue;
       const n = setsForVolume(b, opts.includeWarmups).filter((set) => hasReps(set.reps)).length;
       if (n === 0) continue;
       muscles.forEach((m, idx) => {

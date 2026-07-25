@@ -1,223 +1,263 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
 import {
   totalVolume, sessionVolume, bestTopLoadByLift, topLoadSeries, liftNames,
-  kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
+  kgToUnit, fmtTonnage, fmtWeight, normalizeAuthRole,
+  analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey,
+  type LoggedSession, type AnalyticsScope,
 } from "@hybrid/core";
-import { fetchRoster, fetchAdminStats, type RosterRow, type AdminStats } from "../../lib/api";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
+import { fetchRoster, type RosterRow } from "../../lib/api";
+import { adminGet } from "../../lib/admin-api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { usePersona } from "../../lib/persona";
+import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt, type Palette } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS, Spark } from "./kit";
-import FetchError from "./fetch-error";
+import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
 /**
- * AURORA Analytics (mobile) — the twin of the web dashboard
- * (apps/web/components/aurora/analytics.tsx), rendering the SAME three scopes
- * off the SAME engines and the SAME endpoints, so the two clients can never
- * report different numbers:
- *   - CLIENT   — every athlete: sessions, tonnage, heaviest lift, readiness,
- *                a top-lift progression sparkline, per-session volume bars and
- *                the personal-records list.
- *   - COACH    — additionally, for a coach/admin: roster size, average
- *                adherence + readiness, roster tonnage, an adherence bar per
- *                athlete and the roster list.
- *   - OPERATOR — additionally, for an admin: platform totals, plan popularity
- *                and the language split.
+ * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
+ * MOBILE-ONLY (analytics is mobile-first; the web nav no longer offers it — see
+ * MOBILE_ONLY_NAV in @hybrid/core and the web-dashboards capability).
  *
- * Charts are the house mobile idiom rather than a charting library: the shared
- * `Spark` for the trend line and plain measured bars for the rest — the same
- * data, drawn the way the rest of the app draws it.
+ * Same engines and the same `/api/coach/roster` + `/api/admin/stats` endpoints
+ * the web dashboard read, and the same `w.home.analytics.*` strings, so the
+ * numbers can't drift from what web used to show. Charts are dependency-free
+ * bars/sparks (the idiom every other mobile analytics screen uses — trends,
+ * endurance, volume), not a charting library.
  *
- * This screen closes the `mobile-analytics` gap: the destination previously
- * resolved on web only, and mobile's More hub tagged it "WEB".
+ * Which scopes appear comes from the SHARED resolver in core
+ * (analyticsScopesFor) — role-derived, never persona-derived — the same one the
+ * web shell uses, so the clients can't disagree about who may see whose data.
+ * With one scope the switcher is hidden entirely.
  */
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-/** A stat tile — mono kicker, oversized number, optional sub. No leading dot:
- *  a decorative marker before a label is house-banned. */
-function AStat({ C, label, value, sub, accent }: { C: Palette; label: string; value: ReactNode; sub?: string; accent?: string }) {
+/** A big stat tile — accent kicker, oversized number, optional sub. Mirrors the
+ *  web AStat (which used a coloured dot); here the ACCENT IS THE NUMBER, since a
+ *  dot before a label reads as decoration on mobile. */
+function AStat({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
+  const C = useTheme().palette;
   return (
-    <ACard style={{ flex: 1, minWidth: 150, padding: 18 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 30, lineHeight: 34, color: accent ?? C.chalk, marginTop: 6 }}>{value}</Text>
-      {sub ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{sub}</Text> : null}
-    </ACard>
+    <View style={{ width: "50%", padding: 5 }}>
+      <ACard style={{ padding: 16 }}>
+        <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
+        {!!sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{sub}</Text>}
+      </ACard>
+    </View>
   );
 }
 
-/** A titled section card. The meta sits on the RIGHT of the title row (Explore's
- *  SectionHead idiom) — never a marker on the left. */
-function AFrame({ C, title, kicker, accent, children }: { C: Palette; title: string; kicker?: string; accent?: string; children: ReactNode }) {
+/** A section card — display-face title with an optional mono kicker on the RIGHT
+ *  of the same row (the Explore SectionHead idiom; no marker on the left). */
+function AFrame({ title, kicker, children }: { title: string; kicker?: string; children: React.ReactNode }) {
+  const C = useTheme().palette;
   return (
-    <ACard style={{ marginTop: space.md }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.ms }}>
-        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-        {kicker ? <Text style={{ fontFamily: F.mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: 1.2, color: accent ?? C.ash }}>{kicker}</Text> : null}
+    <ACard style={{ marginTop: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
+        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{kicker}</Text>}
       </View>
       <View style={{ marginTop: 12 }}>{children}</View>
     </ACard>
   );
 }
 
-function AEmpty({ C, title, body }: { C: Palette; title: string; body: string }) {
+/** The "what this scope can and cannot see" note, shown above every dashboard.
+ *  Same copy as web (analytics.privacy.*) — a left accent rule rather than a
+ *  glyph, since a marker before a label reads as decoration. */
+function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string }) {
+  const C = useTheme().palette;
+  const { t } = useLang();
   return (
-    <ACard style={{ marginTop: space.md, alignItems: "center", paddingVertical: 36 }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, textAlign: "center" }}>{title}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10, textAlign: "center", lineHeight: 20, maxWidth: 320 }}>{body}</Text>
+    <View style={{ marginTop: 14, paddingVertical: 10, paddingHorizontal: 13, borderRadius: 14, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
+    </View>
+  );
+}
+
+function AEmpty({ title, body }: { title: string; body: string }) {
+  const C = useTheme().palette;
+  return (
+    <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, textAlign: "center" }}>{title}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", lineHeight: 20, marginTop: 8 }}>{body}</Text>
     </ACard>
   );
 }
 
-/** A labelled horizontal bar — the mobile stand-in for the web's bar charts. */
-function BarRow({ C, label, value, max, suffix = "", color }: { C: Palette; label: string; value: number; max: number; suffix?: string; color: string }) {
-  const pct = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0;
+/** A column-bar chart with an axis floor, so a flat series still reads as bars.
+ *  `highlightLast` lights the most recent column (the trends.tsx idiom). */
+function Bars({ data, color, highlightLast }: { data: { label: string; v: number }[]; color: string; highlightLast?: boolean }) {
+  const C = useTheme().palette;
+  const max = Math.max(...data.map((d) => d.v), 1);
+  return (
+    <>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 96, gap: 5 }}>
+        {data.map((d, i) => (
+          <View key={i} style={{ flex: 1, height: 6 + (d.v / max) * 84, borderRadius: 3, backgroundColor: highlightLast && i === data.length - 1 ? color : `${color}66` }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[0]?.label ?? ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[data.length - 1]?.label ?? ""}</Text>
+      </View>
+    </>
+  );
+}
+
+/** A labelled horizontal meter — the mobile stand-in for the web's vertical
+ *  category bar chart (adherence by client, language split). */
+function MeterRow({ label, value, display, max, color }: { label: string; value: number; display: string; max: number; color: string }) {
+  const C = useTheme().palette;
   return (
     <View style={{ marginTop: 10 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.ms }}>
-        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{value}{suffix}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, gap: space.sm }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{display}</Text>
       </View>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: C.ink, overflow: "hidden", marginTop: 5 }}>
-        <View style={{ width: `${pct}%`, height: "100%", backgroundColor: color }} />
+      <View style={{ height: 7, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
+        <View style={{ width: `${Math.min(100, (value / (max || 1)) * 100)}%`, height: "100%", borderRadius: 4, backgroundColor: color }} />
       </View>
     </View>
   );
 }
 
-/** A compact key/value list — the mobile stand-in for the web's tables (a real
- *  table doesn't survive a phone's width). */
-function Rows({ C, rows }: { C: Palette; rows: { key: string; label: string; right: ReactNode; sub?: string }[] }) {
+/** Shared table — horizontally scrollable so a wide roster never squeezes. */
+function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[][]; widths: number[] }) {
+  const C = useTheme().palette;
+  const cell = (w: number) => ({ width: w, paddingVertical: 11, paddingRight: 10 });
   return (
-    <View>
-      {rows.map((r, i) => (
-        <View key={r.key} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-          <View style={{ flex: 1 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{r.label}</Text>
-            {r.sub ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.sub}</Text> : null}
-          </View>
-          {r.right}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View>
+        <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
+          {head.map((h, i) => (
+            <Text key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{h}</Text>
+          ))}
         </View>
-      ))}
-    </View>
+        {rows.map((r, i) => (
+          <View key={i} style={{ flexDirection: "row", borderBottomWidth: i === rows.length - 1 ? 0 : 1, borderBottomColor: C.line }}>
+            {r.map((c, j) => (
+              <View key={j} style={cell(widths[j] ?? 80)}>
+                {typeof c === "string" || typeof c === "number"
+                  ? <Text numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
+                  : c}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
-/* ---------- CLIENT ---------- */
-function AthleteAnalytics({ C, sessions }: { C: Palette; sessions: LoggedSession[] }) {
+/* ---------- ATHLETE ---------- */
+function AthleteAnalytics({ sessions }: { sessions: LoggedSession[] }) {
+  const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
 
-  const model = useMemo(() => {
+  const view = useMemo(() => {
     if (sessions.length === 0) return null;
+    const vol = totalVolume(sessions, bw);
     const prs = bestTopLoadByLift(sessions, bw).slice(0, 6);
     const topLift = liftNames(sessions)[0];
-    return {
-      vol: totalVolume(sessions, bw),
-      prs,
-      topLift,
-      series: topLift ? topLoadSeries(sessions, topLift, bw).map((p) => Math.round(kgToUnit(p.weightKg, units))) : [],
-      volSeries: [...sessions].slice(0, 8).reverse().map((s) => ({
-        label: fmtDate(s.startedAt),
-        vol: Math.round(kgToUnit(sessionVolume(s.blocks, false, bw(s.startedAt)), units)),
-      })),
-      lastReadiness: sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null,
-      best: prs[0],
-    };
+    const series = topLift
+      ? topLoadSeries(sessions, topLift, bw).map((p) => ({ label: fmtDate(p.date), v: Math.round(kgToUnit(p.weightKg, units)) }))
+      : [];
+    // Newest-first from the API; reverse so the chart reads left→right in time.
+    const volSeries = [...sessions].slice(0, 8).reverse().map((s) => ({ label: fmtDate(s.startedAt), v: Math.round(kgToUnit(sessionVolume(s.blocks, false, bw(s.startedAt)), units)) }));
+    return { vol, prs, topLift, series, volSeries, lastReadiness: sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null };
   }, [sessions, bw, units]);
 
-  if (!model) return <AEmpty C={C} title={t("w.home.analytics.noAnalytics")} body={t("w.home.analytics.noAnalyticsBody")} />;
-  const maxVol = Math.max(...model.volSeries.map((v) => v.vol), 1);
+  if (!view) return <AEmpty title={t("w.home.analytics.noAnalytics")} body={t("w.home.analytics.noAnalyticsBody")} />;
+  const best = view.prs[0];
 
   return (
     <>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.md }}>
-        <AStat C={C} label={t("w.home.analytics.sessions")} value={sessions.length} accent={txt(C, C.lime)} />
-        <AStat C={C} label={t("w.home.analytics.totalVolume")} value={fmtTonnage(model.vol, units)} />
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.ms }}>
-        <AStat C={C} label={model.best ? `${model.best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={model.best ? fmtWeight(model.best.weightKg, units) : "—"} accent={txt(C, C.lime)} />
-        <AStat C={C} label={t("w.home.analytics.lastReadiness")} value={model.lastReadiness ?? "—"} accent={txt(C, C.blue)} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
+        <AStat label={t("w.home.analytics.sessions")} value={sessions.length} accent={C.lime} />
+        <AStat label={t("w.home.analytics.totalVolume")} value={fmtTonnage(view.vol, units)} />
+        <AStat label={best ? `${best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={best ? fmtWeight(best.weightKg, units) : "—"} accent={C.lime} />
+        <AStat label={t("w.home.analytics.lastReadiness")} value={view.lastReadiness ?? "—"} accent={C.blue} />
       </View>
 
-      {model.series.length > 1 && model.topLift ? (
-        <AFrame C={C} title={`${model.topLift} – ${t("w.home.analytics.col.heaviest")}`} kicker={t("w.home.analytics.fromLogs")} accent={txt(C, C.lime)}>
-          <Spark series={model.series} color={txt(C, C.lime)} height={80} />
+      {view.series.length > 0 && (
+        <AFrame title={`${view.topLift} – ${t("w.home.analytics.col.heaviest")}`} kicker={t("w.home.analytics.fromLogs")}>
+          <Bars data={view.series} color={C.lime} highlightLast />
         </AFrame>
-      ) : null}
+      )}
 
-      <AFrame C={C} title={t("w.home.analytics.volPerSession")} kicker={t("w.home.analytics.tonnage")} accent={txt(C, C.blue)}>
-        {model.volSeries.map((v, i) => (
-          <BarRow key={`${v.label}-${i}`} C={C} label={v.label} value={v.vol} max={maxVol} color={txt(C, C.blue)} />
-        ))}
+      <AFrame title={t("w.home.analytics.volPerSession")} kicker={t("w.home.analytics.tonnage")}>
+        <Bars data={view.volSeries} color={C.blue} highlightLast />
       </AFrame>
 
-      {model.prs.length > 0 ? (
-        <AFrame C={C} title={t("w.home.analytics.personalRecords")} kicker={t("w.home.analytics.heaviestPerLift")}>
-          <Rows
-            C={C}
-            rows={model.prs.map((p) => ({
-              key: p.lift,
-              label: p.lift,
-              sub: fmtDate(p.when),
-              right: <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{fmtWeight(p.weightKg, units)}</Text>,
-            }))}
+      {view.prs.length > 0 && (
+        <AFrame title={t("w.home.analytics.personalRecords")} kicker={t("w.home.analytics.heaviestPerLift")}>
+          <Table
+            head={[t("w.home.analytics.col.lift"), t("w.home.analytics.col.heaviest"), t("w.home.analytics.col.when")]}
+            widths={[150, 100, 90]}
+            rows={view.prs.map((p) => [p.lift, fmtWeight(p.weightKg, units), fmtDate(p.when)])}
           />
         </AFrame>
-      ) : null}
+      )}
     </>
   );
 }
 
 /* ---------- COACH ---------- */
-function CoachAnalytics({ C, roster }: { C: Palette; roster: RosterRow[] }) {
+function CoachAnalytics() {
+  const C = useTheme().palette;
   const { t } = useLang();
-  if (roster.length === 0) return <AEmpty C={C} title={t("w.home.analytics.noClients")} body={t("w.home.analytics.noClientsBody")} />;
+  const [roster, setRoster] = useState<RosterRow[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchRoster().then((r) => { if (alive) setRoster(r); });
+    return () => { alive = false; };
+  }, []);
+
+  if (roster === null) return <AEmpty title={t("w.home.analytics.loading")} body={t("w.home.analytics.loadingBody")} />;
+  if (roster.length === 0) return <AEmpty title={t("w.home.analytics.noClients")} body={t("w.home.analytics.noClientsBody")} />;
 
   const avgAdh = Math.round(roster.reduce((s, c) => s + c.adherence, 0) / roster.length);
   const reads = roster.filter((c) => typeof c.readiness === "number");
   const avgRead = reads.length ? Math.round(reads.reduce((s, c) => s + (c.readiness ?? 0), 0) / reads.length) : null;
   const totalVol = roster.reduce((s, c) => s + c.volume, 0);
-  const readColor = (r: number | null | undefined) => (r == null ? C.ash : r > 70 ? txt(C, C.lime) : r > 50 ? txt(C, C.amber) : txt(C, C.red));
+  const readColor = (r: number | null | undefined) => (r == null ? C.ash : r > 70 ? C.lime : r > 50 ? C.amber : C.red);
 
   return (
     <>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.lg }}>
-        <AStat C={C} label={t("w.home.analytics.clients")} value={roster.length} accent={txt(C, C.violet)} />
-        <AStat C={C} label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent={txt(C, C.lime)} />
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.ms }}>
-        <AStat C={C} label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent={txt(C, C.blue)} />
-        <AStat C={C} label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
+        <AStat label={t("w.home.analytics.clients")} value={roster.length} accent={C.violet} />
+        <AStat label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent={C.lime} />
+        <AStat label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent={C.blue} />
+        <AStat label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
       </View>
 
-      <AFrame C={C} title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")} accent={txt(C, C.lime)}>
+      <AFrame title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")}>
         {roster.map((c) => (
-          <BarRow key={c.linkId} C={C} label={c.name} value={c.adherence} max={100} suffix="%" color={txt(C, C.lime)} />
+          <MeterRow key={c.linkId} label={c.name} value={c.adherence} display={`${c.adherence}%`} max={100} color={C.lime} />
         ))}
       </AFrame>
 
-      <AFrame C={C} title={t("w.home.analytics.clientRoster")} kicker={t("w.home.analytics.consentedAthletes")} accent={txt(C, C.violet)}>
-        <Rows
-          C={C}
-          rows={roster.map((c) => ({
-            key: c.linkId,
-            label: c.name,
-            sub: `${c.sessions} ${t("w.home.analytics.col.sessions")} – ${c.lastSession ? fmtDate(c.lastSession) : "—"}`,
-            right: (
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: readColor(c.readiness) }}>{c.readiness ?? "—"}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{c.adherence}%</Text>
-              </View>
-            ),
-          }))}
+      <AFrame title={t("w.home.analytics.clientRoster")} kicker={t("w.home.analytics.consentedAthletes")}>
+        <Table
+          head={[t("w.home.analytics.col.athlete"), t("w.home.analytics.col.readiness"), t("w.home.analytics.col.adherence"), t("w.home.analytics.col.sessions"), t("w.home.analytics.col.last")]}
+          widths={[130, 90, 90, 80, 90]}
+          rows={roster.map((c) => [
+            c.name,
+            <Text key="r" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, readColor(c.readiness)) }}>{c.readiness ?? "—"}</Text>,
+            `${c.adherence}%`,
+            String(c.sessions),
+            c.lastSession ? fmtDate(c.lastSession) : "—",
+          ])}
         />
       </AFrame>
     </>
@@ -225,101 +265,104 @@ function CoachAnalytics({ C, roster }: { C: Palette; roster: RosterRow[] }) {
 }
 
 /* ---------- OPERATOR ---------- */
-function OperatorAnalytics({ C, stats }: { C: Palette; stats: AdminStats }) {
+type AdminStats = {
+  totalUsers: number; sessions: number; coaches: number; mau: number; newUsers30: number;
+  planPopularity: { goal: string; n: number }[]; langSplit: { lang: string; n: number }[];
+};
+
+function OperatorAnalytics() {
+  const C = useTheme().palette;
   const { t } = useLang();
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    adminGet<AdminStats>("/api/admin/stats").then((r) => {
+      if (!alive) return;
+      if (r.ok && r.data) setStats(r.data); else setErr(true);
+    });
+    return () => { alive = false; };
+  }, []);
+
+  if (err) return <AEmpty title={t("w.home.analytics.adminOnly")} body={t("w.home.analytics.adminOnlyBody")} />;
+  if (!stats) return <AEmpty title={t("w.home.analytics.loading")} body={t("w.home.analytics.loadingBody")} />;
+
   const maxPlan = Math.max(...stats.planPopularity.map((p) => p.n), 1);
   const maxLang = Math.max(...stats.langSplit.map((l) => l.n), 1);
 
   return (
     <>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.lg }}>
-        <AStat C={C} label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent={txt(C, C.lime)} />
-        <AStat C={C} label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent={txt(C, C.lime)} />
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.ms }}>
-        <AStat C={C} label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
-        <AStat C={C} label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={txt(C, C.violet)} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
+        <AStat label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent={C.lime} />
+        <AStat label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent={C.lime} />
+        <AStat label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
+        <AStat label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={C.violet} />
       </View>
 
-      {stats.planPopularity.length > 0 ? (
-        <AFrame C={C} title={t("w.home.analytics.plansEnrolled")} kicker={t("w.home.analytics.byGoal")} accent={txt(C, C.lime)}>
+      {stats.planPopularity.length > 0 && (
+        <AFrame title={t("w.home.analytics.plansEnrolled")} kicker={t("w.home.analytics.byGoal")}>
           {stats.planPopularity.map((p) => (
-            <BarRow key={p.goal} C={C} label={p.goal} value={p.n} max={maxPlan} color={txt(C, C.lime)} />
+            <MeterRow key={p.goal} label={p.goal} value={p.n} display={String(p.n)} max={maxPlan} color={C.lime} />
           ))}
         </AFrame>
-      ) : null}
+      )}
 
-      {stats.langSplit.length > 0 ? (
-        <AFrame C={C} title={t("w.home.analytics.languageSplit")} kicker={t("w.home.analytics.usersByLanguage")} accent={txt(C, C.blue)}>
+      {stats.langSplit.length > 0 && (
+        <AFrame title={t("w.home.analytics.languageSplit")} kicker={t("w.home.analytics.usersByLanguage")}>
           {stats.langSplit.map((l) => (
-            <BarRow key={l.lang} C={C} label={l.lang} value={l.n} max={maxLang} color={txt(C, C.blue)} />
+            <MeterRow key={l.lang} label={l.lang} value={l.n} display={String(l.n)} max={maxLang} color={C.blue} />
           ))}
         </AFrame>
-      ) : null}
+      )}
 
-      {stats.totalUsers === 0 ? (
-        <ACard style={{ marginTop: space.md, alignItems: "center" }}>
+      {stats.totalUsers === 0 && (
+        <ACard style={{ marginTop: 14, alignItems: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
         </ACard>
-      ) : null}
+      )}
     </>
   );
 }
 
+/* ---------- SCREEN ---------- */
 export default function AuroraAnalytics() {
-  const { palette: C } = useTheme();
+  const C = useTheme().palette;
   const { t } = useLang();
-  const persona = usePersona();
-  const { data: sessions = [], isError, refetch } = useSessionsQuery();
+  const { role } = useSession();
+  const { data: sessions = [], isFetching, refetch } = useSessionsQuery();
   useRefreshOnFocus(refetch);
 
-  const isCoach = persona === "coach" || persona === "admin";
-  const isAdmin = persona === "admin";
+  const authRole = normalizeAuthRole(role);
+  const allowed = useMemo(() => analyticsScopesFor(authRole), [authRole]);
+  const options = useMemo(() => allowed.map((id) => ({ id, label: t(analyticsScopeLabelKey(id)) })), [allowed, t]);
 
-  const [roster, setRoster] = useState<RosterRow[] | null>(null);
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [scopesLoading, setScopesLoading] = useState(false);
-
-  // Only the personas that RENDER a scope pay for its fetch.
-  useEffect(() => {
-    if (!isCoach) return;
-    let alive = true;
-    setScopesLoading(true);
-    Promise.all([fetchRoster(), isAdmin ? fetchAdminStats() : Promise.resolve(null)])
-      .then(([r, s]) => {
-        if (!alive) return;
-        setRoster(r);
-        setStats(s);
-      })
-      .finally(() => { if (alive) setScopesLoading(false); });
-    return () => { alive = false; };
-  }, [isCoach, isAdmin]);
+  // Land on the highest scope the role holds (an admin opens on the platform
+  // view), matching the web shell.
+  const [scope, setScope] = useState<AnalyticsScope>("athlete");
+  useEffect(() => { setScope(allowed[allowed.length - 1]!); }, [allowed]);
+  // A demotion mid-session must not leave the user on a scope they've lost.
+  const active = resolveAnalyticsScope(authRole, scope);
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.analytics")}</AHeading>
+    <AuroraScreen refreshing={isFetching} onRefresh={refetch}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <ABack />
+        <AHeading style={{ fontSize: fs.display }}>{t("nav.analytics")}</AHeading>
+      </View>
+      <ASub style={{ marginTop: 10 }}>{t("analytics.subtitle")}</ASub>
 
-      {isError ? (
-        <FetchError onRetry={refetch} />
-      ) : (
-        <AthleteAnalytics C={C} sessions={sessions} />
+      {options.length > 1 && (
+        <View style={{ marginTop: 16 }}>
+          <ASegment options={options} value={active} onPick={setScope} />
+        </View>
       )}
 
-      {isCoach ? (
-        scopesLoading ? (
-          <View style={{ paddingVertical: 30, alignItems: "center" }}>
-            <ActivityIndicator color={C.lime} />
-          </View>
-        ) : (
-          <>
-            <CoachAnalytics C={C} roster={roster ?? []} />
-            {isAdmin && stats ? <OperatorAnalytics C={C} stats={stats} /> : null}
-          </>
-        )
-      ) : null}
+      <PrivacyNote scope={active} accent={active === "operator" ? C.amber : active === "coach" ? C.violet : C.lime} />
 
-      <View style={{ height: RADIUS.card }} />
+      {active === "athlete" && <AthleteAnalytics sessions={sessions} />}
+      {active === "coach" && <CoachAnalytics />}
+      {active === "operator" && <OperatorAnalytics />}
     </AuroraScreen>
   );
 }

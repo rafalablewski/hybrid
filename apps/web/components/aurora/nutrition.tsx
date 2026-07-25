@@ -6,7 +6,7 @@ import { useSessions } from "@/lib/use-sessions";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
-  isFullAccess, canUseRecipes, MEAL_PRESETS, mealPresetSignals, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
+  isFullAccess, canUseRecipes, MEAL_PRESETS, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
@@ -574,6 +574,33 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // today; the recent-days list can select a past day to edit/delete its records).
   const [diaryDay, setDiaryDay] = useState<string>(() => localTodayKey());
   const dayLogs = useMemo(() => logs.filter((l) => localDayKey(l.ts) === diaryDay).sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts)), [logs, diaryDay]);
+  // Step a whole calendar day back/forward (never past today) — a proper date
+  // picker so any day can be reviewed, not only the ones in the recent list.
+  const shiftDiaryDay = useCallback((delta: number) => {
+    setDiaryDay((cur) => {
+      const [y, m, d] = cur.split("-").map(Number);
+      const nd = new Date(y!, (m! - 1), d! + delta);
+      const key = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, "0")}-${String(nd.getDate()).padStart(2, "0")}`;
+      return key > localTodayKey() ? cur : key;
+    });
+  }, []);
+  // The selected day's TOTALS — read from the always-on Signals (dailyNutrition),
+  // so the summary + per-part breakdown work for any past day even before the
+  // FoodLog table exists (the per-entry edit/delete list still needs FoodLog).
+  const daySummary = useMemo(() => dailyNutrition(signals).find((d) => d.date === diaryDay) ?? { date: diaryDay, kcal: 0, protein: 0, carbs: 0, fat: 0 }, [signals, diaryDay]);
+  const dayPartKcal = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const s of signals) {
+      if (s.kind !== "energyIntake" || localDayKey(s.ts) !== diaryDay) continue;
+      totals[s.source] = (totals[s.source] ?? 0) + s.value;
+    }
+    return totals;
+  }, [signals, diaryDay]);
+  // A readable weekday + date for the summary header (browser locale).
+  const diaryDayLabel = useMemo(() => {
+    const [y, m, d] = diaryDay.split("-").map(Number);
+    return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  }, [diaryDay]);
   const targets = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
@@ -631,20 +658,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return false;
   };
 
-  // Premade meal → one POST per macro (the SAME signal kinds as the manual add).
-  // Free users can't log presets (canSaveMealsAndProducts === Full) — tapping a
-  // locked tile routes to the upgrade screen instead.
+  // Premade meal → a real, editable Diary entry (routes through /api/nutrition/log
+  // like every other log, so it appears in the Diary with a name + edit/delete)
+  // AND the mirrored Signals the engines read. Attributed to the preset's natural
+  // part of the day (its id prefix: breakfast|lunch|dinner|snack). Free users
+  // can't log presets (canSaveMealsAndProducts === Full) — a tap routes to upgrade.
   const logPreset = async (p: MealPreset) => {
     if (!full) { onNavigate?.("upgrade"); return; }
     setError(""); setMealMsg("");
+    const part = p.id.split("-")[0] || mealType;
+    const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
     try {
-      for (const s of mealPresetSignals(p)) {
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "preset" }) });
-        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
-        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      }
-      setMealMsg(`${t(p.labelKey).split(/ [·–] /)[0]} +${p.kcal} kcal`);
-      await load(); revalidate.recovery();
+      const ok = await logEntry({ name, source: part, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 });
+      if (!ok) return;
+      setMealMsg(`${name} +${p.kcal} kcal`);
+      await load(); await loadLogs(); revalidate.recovery();
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
@@ -1725,16 +1753,47 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           editable (quantity) and deletable. Defaults to today; pick a past day in
           the record below. Then the week strip + recent days.
           A streak is a number, not a trophy. */}
-      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); return (
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, "blue"], ["C", daySummary.carbs, targets.carbs ?? 0, "amber"], ["F", daySummary.fat, targets.fat ?? 0, "violet"]]; return (
+      <>
+      {/* DAY SUMMARY — pick any date with ‹ ›, see the whole day's totals vs
+          target. Read from Signals so it works for every day, migrated or not. */}
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDay.slice(5)}</div>
-          {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.backToToday")} →</button>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <button onClick={() => shiftDiaryDay(-1)} aria-label={t("w.recovery.nutrition.prevDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={C("chalk")} style={{ transform: "rotate(180deg)" }} /></button>
+          <div style={{ textAlign: "center", minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}</div>
+            {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--lime-text)", marginTop: 2 }}>{t("w.recovery.nutrition.backToToday")} →</button>}
+          </div>
+          <button onClick={() => shiftDiaryDay(1)} disabled={isToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isToday ? C("line") : C("chalk"), cursor: isToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={isToday ? C("line") : C("chalk")} /></button>
         </div>
-        <div style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 34, fontWeight: 700, color: C("chalk"), fontVariantNumeric: "tabular-nums", letterSpacing: "-.02em" }}>{Math.round(daySummary.kcal)}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>kcal{targets.kcal ? ` / ${Math.round(targets.kcal)}` : ""}</span>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+          {macros.map(([lab, val, tgt, tint]) => (
+            <div key={lab} style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: `var(--${tint}-text)` }}>{lab}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{Math.round(val)}{tgt ? `/${Math.round(tgt)}` : ""}g</span>
+              </div>
+              <div style={{ height: 4, borderRadius: 999, background: C("line"), overflow: "hidden" }}>
+                <div style={{ width: `${tgt ? Math.min(100, (val / tgt) * 100) : 0}%`, height: "100%", background: `var(--color-${tint})`, borderRadius: 999 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* PER-PART BREAKDOWN — each part's total, then its individual editable
+          entries (from FoodLog when present). */}
+      <div style={{ ...card, marginTop: 12, padding: 20 }}>
+        <div style={{ marginTop: 0 }}>
           {partList.map((p, i) => {
             const entries = dayLogs.filter((l) => l.source === p.key);
-            const kcal = entries.reduce((s, l) => s + l.kcal * l.qty, 0);
+            // Prefer the sum of editable entries; otherwise fall back to the
+            // day's Signal total for the part (so past days always show numbers).
+            const kcal = entries.length ? entries.reduce((s, l) => s + l.kcal * l.qty, 0) : (dayPartKcal[p.key] ?? 0);
             return (
             <div key={p.key} style={{ borderTop: i ? `1px solid ${C("line")}` : "none", paddingTop: 12, paddingBottom: entries.length ? 6 : 12 }}>
               <button onClick={() => isToday && openAdd(p.key)} disabled={!isToday} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", padding: "0 2px", cursor: isToday ? "pointer" : "default", color: C("chalk") }}>
@@ -1762,8 +1821,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             );
           })}
         </div>
-        {logs.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.5 }}>{t("w.recovery.nutrition.diaryEntriesHint")}</div>}
+        {dayLogs.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.5 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</div>}
       </div>
+      </>
       ); })()}
 
       {view === "diary" && (

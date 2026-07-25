@@ -1,5 +1,5 @@
 import AuroraAnalytics from "../components/aurora/analytics";
 
-export default function AnalyticsScreen() {
+export default function Analytics() {
   return <AuroraAnalytics />;
 }

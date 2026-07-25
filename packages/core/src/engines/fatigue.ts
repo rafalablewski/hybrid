@@ -1,5 +1,5 @@
 import type { Fatigue, MuscleGroup, TrainingLog } from "./types";
-import { ALL_MUSCLES, MOVEMENTS } from "./movements";
+import { ALL_MUSCLES, movementFor } from "./movements";
 
 /**
  * Fatigue engine. Each hard set / conditioning minute adds load to the muscles
@@ -20,7 +20,7 @@ export function computeFatigue(log: TrainingLog): Fatigue {
   for (const session of log) {
     const decay = Math.pow(0.5, session.daysAgo / 2); // half-life 2 days
     for (const it of session.items) {
-      const meta = MOVEMENTS[it.move] ?? {
+      const meta = movementFor(it.move) ?? {
         pattern: "",
         muscles: [] as MuscleGroup[],
         baseLoad: null,

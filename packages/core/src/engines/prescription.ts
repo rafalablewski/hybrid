@@ -5,7 +5,7 @@ import type {
   PrescribedBlock,
   TrainingLog,
 } from "./types";
-import { MOVEMENTS } from "./movements";
+import { MOVEMENTS, movementFor } from "./movements";
 import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { progressionSignal } from "./progression";
@@ -152,7 +152,7 @@ export function prescribeSession(
   // calibrate" rather than presenting a guess as if it were measured).
   const lastE1rm = loggedE1rm.length
     ? loggedE1rm[0]!.e1rm!
-    : (MOVEMENTS[primary.move]?.baseLoad ?? 100) * 1.2;
+    : (movementFor(primary.move)?.baseLoad ?? 100) * 1.2;
   // Base dose from the progression signal, then nudge by experience: beginners
   // train a touch lighter with more reps and one fewer set (groove the pattern);
   // advanced athletes get slightly more intensity + volume.
