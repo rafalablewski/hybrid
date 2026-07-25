@@ -91,9 +91,29 @@ describe("loadUnitCount (dumbbell tonnage counts both bells)", () => {
     expect(loadUnitCount("Concentration Curl")).toBe(1); // unilateral
   });
 
-  it("a single kettlebell and an unknown custom lift both count one", () => {
+  it("a single kettlebell and an unknown non-dumbbell lift both count one", () => {
     expect(loadUnitCount("KB Swing")).toBe(1);
     expect(loadUnitCount("Bench Pressing Machine 3000")).toBe(1);
+  });
+
+  it("a CUSTOM dumbbell lift the catalog doesn't know still counts two bells (name fallback)", () => {
+    // Free-text names from the picker's "+ …" custom add never reach the DB, so
+    // the doubling is read from the NAME — otherwise a bespoke DB lift silently
+    // under-counts its tonnage by half.
+    expect(loadUnitCount("Dumbbell Thruster")).toBe(2);
+    expect(loadUnitCount("DB Snatch")).toBe(2);
+    expect(loadUnitCount("Dumbbell Devil Press")).toBe(2);
+  });
+
+  it("a CUSTOM single-arm / concentration dumbbell lift stays one bell", () => {
+    expect(loadUnitCount("Single-Arm Dumbbell Row")).toBe(1);
+    expect(loadUnitCount("One-Arm DB Press")).toBe(1);
+    expect(loadUnitCount("Dumbbell Concentration Curl")).toBe(1);
+  });
+
+  it("a custom non-dumbbell lift is unaffected by the name fallback", () => {
+    expect(loadUnitCount("Sandbag Carry")).toBe(1);
+    expect(loadUnitCount("Cable Woodchopper")).toBe(1);
   });
 });
 

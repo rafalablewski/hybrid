@@ -439,10 +439,20 @@ export function gymExercise(name: string): GymExercise | undefined {
  * per-implement (a dumbbell 1RM is quoted per bell, and a cross-lift 1RM board
  * must not rank dumbbell work on a doubled number), so this lives apart from
  * `effectiveSetLoadKg` and is applied at each tonnage site, never inside it.
+ *
+ * A CUSTOM / free-text lift the catalog doesn't know (the picker's "+ …" add)
+ * falls back to its NAME: anything that reads as a bilateral dumbbell move —
+ * "Dumbbell Thruster", "DB Snatch" — is done with two bells, so its tonnage
+ * counts both. Single-arm phrasing ("Single-Arm DB Row", a concentration curl)
+ * stays one bell, matching how the catalogued unilateral lifts behave.
  */
+const DUMBBELL_IN_NAME = /\bdumbbells?\b|\bdb\b/i;
+const UNILATERAL_IN_NAME = /\b(?:single|one|1)[\s-]?arm(?:ed)?\b|\bunilateral\b|\bconcentration\b/i;
+
 export function loadUnitCount(name: string): number {
   const e = gymExercise(name);
-  return e && e.equipment === "dumbbell" && !e.unilateral ? 2 : 1;
+  if (e) return e.equipment === "dumbbell" && !e.unilateral ? 2 : 1;
+  return DUMBBELL_IN_NAME.test(name) && !UNILATERAL_IN_NAME.test(name) ? 2 : 1;
 }
 
 /** Every exercise of a category, in authored order. */
