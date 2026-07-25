@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { bestE1rmByLift } from "@hybrid/core";
+import { bestE1rmByLift, bestTopLoadByLift } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -23,8 +23,16 @@ export async function POST(request: Request) {
     let kind = "status";
     let data: object = {};
     if (b.attachPr === true) {
-      const best = bestE1rmByLift(await allSessionsFor(me.id))[0];
-      if (best) { kind = "pr"; data = { lift: best.lift, e1rm: best.e1rm }; }
+      // The weight actually lifted is what the post headlines (#231). e1rm is
+      // still written so the estimate isn't lost and any older reader keeps
+      // working; prPostFigure prefers topLoad and falls back for legacy rows.
+      const all = await allSessionsFor(me.id);
+      const best = bestTopLoadByLift(all)[0];
+      if (best) {
+        const est = bestE1rmByLift(all).find((r) => r.lift === best.lift);
+        kind = "pr";
+        data = { lift: best.lift, topLoad: best.weightKg, ...(est ? { e1rm: est.e1rm } : {}) };
+      }
     }
     if (kind === "status" && !text) return NextResponse.json({ error: "Write something to share." }, { status: 400 });
 

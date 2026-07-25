@@ -48,15 +48,12 @@ const REVIEWED: Record<string, string> = {
   "apps/web/components/session-detail.tsx":
     "picks the lift for the explicitly-labelled e1RM trend chart",
 
-  // ---- KNOWN GAP — same class of bug as #231, not yet converted ----
-  // Publishes an athlete's "top lift" as an e1RM, so a 250 kg x 10 deadlift
-  // reads as 333 kg, contradicting the Profile PRs grid (which uses topLoadMap).
-  // Not a drop-in swap: it writes a PERSISTED `{ lift, e1rm }` shape (Post.data,
-  // mirrored by ProfileStats.topLifts), so converting needs a read path that
-  // still renders already-stored posts. Tracked in capabilities.ts. The DERIVED
-  // feed path in social.ts was converted — only the persisted one is left.
+  // The post now headlines topLoad; e1rm is still written ALONGSIDE it so the
+  // estimate isn't lost and rows stay readable by anything expecting the old
+  // shape. prPostFigure prefers topLoad and falls back to a labelled e1RM for
+  // rows written before #231 — see the migration tests in social.test.ts.
   "apps/web/app/api/social/posts/route.ts":
-    "KNOWN GAP — social PR post persists { lift, e1rm }; needs a migration plan",
+    "writes topLoad as the headline; e1rm retained as the labelled estimate",
 };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
