@@ -129,10 +129,11 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
     const prior = sessions.filter((x) => ms(x.startedAt) < ms(s.startedAt));
     for (const h of newPrsInSession(s, prior)) {
       const cur = prMap.get(h.lift);
-      if (!cur || h.e1rm > cur.e1rm) prMap.set(h.lift, h);
+      if (!cur || h.topLoad > cur.topLoad) prMap.set(h.lift, h);
     }
   }
-  const prs = [...prMap.values()].sort((a, b) => b.e1rm - (b.previous ?? 0) - (a.e1rm - (a.previous ?? 0)));
+  // Heaviest first, matching newPrsInSession and the Cockpit rows that render these.
+  const prs = [...prMap.values()].sort((a, b) => b.topLoad - a.topLoad);
 
   // Cardio PRs across the week, best per move+kind.
   const cardioMap = new Map<string, CardioPrHit>();

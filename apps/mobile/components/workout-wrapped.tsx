@@ -15,6 +15,10 @@ import {
   sessionSignature,
   SIGNATURE_MIN_BARS,
   blockBestE1rm,
+  blockTopLoad,
+  strengthPrDelta,
+  formatCardioPr,
+  workoutShareCaption,
   fmtWeight,
   fmtTonnage,
   paceClock,
@@ -135,35 +139,49 @@ export function WorkoutWrapped({
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const signature = sessionSignature(session);
 
+  // Per-lift bests = the HEAVIEST weight actually moved (#231), never an e1RM.
   const bestMap = new Map<string, number>();
   for (const b of session.blocks)
     if (b.kind === "strength") {
-      const e = Math.round(blockBestE1rm(b, bwHere));
-      if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+      const w = blockTopLoad(b, bwHere);
+      if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
     }
   const prSet = new Set(prs.map((p) => p.lift));
-  const bests: ShareBest[] = [...bestMap.entries()].map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) })).sort((a, b) => b.e1rm - a.e1rm);
-  const standing = cohort && bests[0] && bwHere ? liftStanding(bests[0].e1rm, bwHere, cohort) : null;
+  const bests: ShareBest[] = [...bestMap.entries()].map(([name, weight]) => ({ name, weight, pr: prSet.has(name) })).sort((a, b) => b.weight - a.weight);
+  // "Where you stand" is a RELATIVE-STRENGTH percentile — the benchmark norms
+  // are built on estimated 1RM, so this one keeps e1RM on purpose.
+  const topE1rm = session.blocks.reduce((m, b) => (b.kind === "strength" ? Math.max(m, Math.round(blockBestE1rm(b, bwHere))) : m), 0);
+  const standing = cohort && topE1rm > 0 && bwHere ? liftStanding(topE1rm, bwHere, cohort) : null;
 
   const heroBig = cel
-    ? cel.kind === "strength" ? fmtWeight(cel.e1rm, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
+    ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
     : fmtTonnage(volume, units);
+  // A record isn't always a heavier bar — more reps at the same load is a real
+  // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
     ? cel.kind === "strength"
-      ? `${cel.lift} — ${cel.firstEver ? t("summary.firstEver") : `+${fmtWeight(cel.e1rm - (cel.previous ?? 0), units)}`}`
+      ? `${cel.lift} — ${strengthPrDelta(cel, { first: t("summary.firstEver"), moreReps: t("summary.morePrReps") }, units)}`
       : cel.move
     : session.title;
+
+  // What a PR row says on the right — shared with the other client so the
+  // three-way branch can't drift ("+0 kg" would read as no progress at all).
+  const prDelta = (p: { topLoad: number; previousTopLoad: number | null }) =>
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
   // ── story slides for the share sheet (trophy + signature lead) ──
   const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscleVol[0]?.volume ?? 0;
   const funFact = sessionFunFact(session.blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
-    ...cardioPrs.map((p) => ({ left: p.kind === "distance" ? `${p.move} ${p.value} km` : p.move, right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
+    // The shared cardio formatter, same as the post-workout PR slide — raw km
+    // would read a 400 m swim PR as "Swimming 0.4 km" and drop the delta.
+    ...cardioPrs.map((p) => ({ left: formatCardioPr(p, t("summary.firstTime")), right: "", hot: true })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
-  const prHeadline = prs.length > 0 ? `🏆 ${prs.length} ${t("summary.newPrs")}` : cardioPrs.length > 0 ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}` : t("summary.todaysBests");
+  // Pluralized — "1 new PR", not "1 new PRs"; identical on both clients.
+  const prHeadline = prs.length > 0 ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}` : cardioPrs.length > 0 ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}` : t("summary.todaysBests");
   const bespoke: SlideData[] = [
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
@@ -179,12 +197,15 @@ export function WorkoutWrapped({
   const activeIdx = Math.min(active, slides.length - 1);
   const st = storyStyle(styleId);
   const cycleStyle = () => setStyleId((cur) => STORY_STYLES[(STORY_STYLES.findIndex((s) => s.id === cur) + 1) % STORY_STYLES.length]!.id);
-  const shareText = [
-    `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min – ` : ""}${sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(volume, units)}`,
-    prs[0] ? `\u{1F3C6} ${prs[0].lift} ${fmtWeight(prs[0].e1rm, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
-    t("share.tracked"),
-  ].filter(Boolean).join("\n");
+  // The caption headlines the SAME record the reveal hero showed — `cel`, not
+  // prs[0] (which is ordered by e1RM gain and can be a different lift).
+  const captionHeadline =
+    cel && cel.kind === "strength"
+      ? `\u{1F3C6} ${cel.lift} ${fmtWeight(cel.topLoad, units)}`
+      : bests[0]
+        ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
+        : null;
+  const shareText = workoutShareCaption({ title: session.title, minutes, sets, volume, headline: captionHeadline }, units, t);
   const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
 
   // ── reveal animation ──

@@ -18,7 +18,10 @@ import { fs, space,
   storyStyle,
   type StoryStyle,
   type StoryStyleId,
-  blockBestE1rm,
+  blockTopLoad,
+  strengthPrDelta,
+  formatStrengthPr,
+  formatCardioPr,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
@@ -399,17 +402,18 @@ export default function AuroraLogger({
       };
       const prs = newPrsInSession(finished, sessions, bw);
       const cardioPrs = newCardioPrsInSession(finished, sessions);
-      // Per-lift est-1RM bests (PR-marked) for the share card — same shape mobile uses.
+      // Per-lift bests (PR-marked) for the share card — the HEAVIEST weight
+      // actually moved (#231), never an e1RM. Same shape mobile uses.
       const prSet = new Set(prs.map((p) => p.lift));
       const bestMap = new Map<string, number>();
       for (const b of cleanBlocks)
         if (b.kind === "strength") {
-          const e = Math.round(blockBestE1rm(b, bodyweightKg));
-          if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+          const w = blockTopLoad(b, bodyweightKg);
+          if (w > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, w));
         }
       const bests: ShareBest[] = [...bestMap.entries()]
-        .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
-        .sort((a, b) => b.e1rm - a.e1rm);
+        .map(([name, weight]) => ({ name, weight, pr: prSet.has(name) }))
+        .sort((a, b) => b.weight - a.weight);
       const minutes = Math.max(1, Math.round((Date.parse(payload.completedAt) - Date.parse(payload.startedAt)) / 60000));
       setSaving(false);
       stop(); // freeze the clock — the workout's done, the celebration is next
@@ -673,9 +677,13 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
     }
   }, [milestone]);
 
+  // Shared with mobile so the three-way branch can't drift; summary.firstTime
+  // (not w.train.logger.firstTime) is what every other PR row on both clients uses.
   const prLine = (p: PrHit) =>
-    p.previous == null ? t("w.train.logger.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`;
-  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
+  // The shared cardio formatter — renders in the move's natural unit (metres for
+  // swimming/rowing) with a delta, matching mobile.
+  const cardioLine = (p: CardioPrHit) => formatCardioPr(p, t("summary.firstTime"));
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(blocks, false, bodyweightKg);
@@ -684,7 +692,7 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prLine(p), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioLine(p), right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
   const prHeadline = prs.length > 0
     ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
@@ -704,7 +712,14 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const share = async () => {
     setSharing(true);
     setShareMsg("");
-    const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t);
+    // Same headline shape as mobile: the PR that was set, else the cardio PR,
+    // else the top lift (the fallback lives in buildShareText).
+    const captionHeadline = prs[0]
+      ? `\u{1F3C6} ${formatStrengthPr(prs[0], { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units)}`
+      : cardioPrs[0]
+        ? `\u{1F3C3} ${cardioLine(cardioPrs[0])}`
+        : null;
+    const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t, captionHeadline);
     const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
     setSharing(false);
     if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));

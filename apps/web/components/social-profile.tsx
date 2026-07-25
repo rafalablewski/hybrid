@@ -10,7 +10,7 @@ import {
   VerifiedTick, jget, jsend, useBusy,
 } from "./social-ui";
 
-interface Stats { totalSessions: number; totalVolumeKg: number; currentStreak: number; topLifts: { lift: string; e1rm: number }[] }
+interface Stats { totalSessions: number; totalVolumeKg: number; currentStreak: number; topLifts: { lift: string; topLoad: number }[] }
 interface MyProfile { handle: string; displayName: string | null; bio: string | null; visibility: string; avatarUrl: string | null }
 
 function StatRow({ stats }: { stats: Stats | null }) {
@@ -97,7 +97,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
                 {data.stats.topLifts.map((l) => (
                   <div key={l.lift} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <span style={{ color: C("chalk") }}>{l.lift}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", color: C("lime") }}>{l.e1rm} kg</span>
+                    <span style={{ fontFamily: "var(--font-mono)", color: C("lime") }}>{l.topLoad} kg</span>
                   </div>
                 ))}
               </div>

@@ -11,6 +11,7 @@
 export * from "./theme";
 export * from "./story-styles";
 export * from "./count-up";
+export * from "./workout-caption";
 export * from "./semantic";
 export * from "./readiness-feeling";
 export * from "./checkin-flow";

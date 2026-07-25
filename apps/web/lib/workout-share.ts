@@ -4,9 +4,11 @@
 // Share API (navigator.share with files — supported on iOS Safari + Android
 // Chrome). Where file-share isn't available we fall back to downloading the
 // PNG, and where canvas/share is unavailable at all, to a plain text share.
-import { brand, fmtTonnage, fmtWeight, storyStyle, type StoryStyle, type StoryStyleId, type WeightUnit } from "@hybrid/core";
+import { brand, fmtTonnage, fmtWeight, storyStyle, workoutShareCaption, type StoryStyle, type StoryStyleId, type WeightUnit } from "@hybrid/core";
 
-export type ShareBest = { name: string; e1rm: number; pr?: boolean };
+/** A lift's best in the session — the HEAVIEST weight actually moved (#231),
+ *  not an estimated 1RM. */
+export type ShareBest = { name: string; weight: number; pr?: boolean };
 export type ShareStats = {
   title: string;
   minutes: number;
@@ -32,17 +34,27 @@ const MONO = "//px 'Geist Mono','SFMono-Regular',ui-monospace,Menlo,monospace";
 // string, which canvas silently ignores, leaving every label at the default 10px.
 const font = (spec: string, px: number) => spec.replace("//px", `${px}px`);
 
-/** Build the plain-text caption used as the share fallback and body text. */
-export function shareText(stats: ShareStats, units: WeightUnit, t: (k: string) => string): string {
+/**
+ * Build the plain-text caption used as the share fallback and body text.
+ * Delegates to the shared core builder so web and mobile emit the SAME caption
+ * (this was hardcoded English, and headlined the heaviest lift rather than the
+ * record actually set). `headline` carries the already-formatted PR line.
+ */
+export function shareText(
+  stats: ShareStats,
+  units: WeightUnit,
+  t: (k: string) => string,
+  headline?: string | null,
+): string {
   const top = stats.bests[0];
-  return [
-    stats.firstEver ? "My first HYBRID workout 💪" : `💪 ${stats.title || "Workout"} — done.`,
-    `${stats.minutes} min – ${stats.sets} ${t("w.train.logger.sets")} – ${fmtTonnage(stats.volume, units)}`,
-    top ? `🏆 ${top.name} ${fmtWeight(top.e1rm, units)}` : null,
-    "Tracked with HYBRID.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return workoutShareCaption(
+    {
+      ...stats,
+      headline: headline ?? (top ? `${t("share.topLift")}: ${top.name} ${fmtWeight(top.weight, units)}` : null),
+    },
+    units,
+    t,
+  );
 }
 
 /** Draw the branded 9:16 (1080×1920) story card and return it as a PNG blob. */
@@ -104,7 +116,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
   });
   ctx.textAlign = "left";
 
-  // "Today's bests" list (est. 1RM), PR-marked.
+  // "Today's bests" list (heaviest actual lift), PR-marked.
   let y = 1010;
   if (stats.bests.length) {
     ctx.strokeStyle = COL.line;
@@ -116,7 +128,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
     y += 70;
     ctx.font = font(MONO, 30);
     ctx.fillStyle = COL.lime;
-    ctx.fillText("TODAY'S BESTS", PAD, y);
+    ctx.fillText(t("summary.todaysBests").toUpperCase(), PAD, y);
     y += 70;
     stats.bests.slice(0, 5).forEach((b) => {
       ctx.font = font(DISPLAY, 46);
@@ -124,7 +136,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
       ctx.fillText(`${b.pr ? "🏆 " : ""}${b.name}`, PAD, y);
       ctx.textAlign = "right";
       ctx.fillStyle = b.pr ? COL.lime : COL.chalk;
-      ctx.fillText(fmtWeight(b.e1rm, units), W - PAD, y);
+      ctx.fillText(fmtWeight(b.weight, units), W - PAD, y);
       ctx.textAlign = "left";
       y += 78;
     });
@@ -243,10 +255,13 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
     ctx.font = font(DISPLAY, 96);
     ctx.fillStyle = st.text;
     wrapText(ctx, s.firstEver ? "First workout 🎉" : s.title || "Workout", SPAD, 470, SW - SPAD * 2, 104);
+    // Same keys as the DOM preview (story-card.tsx) and mobile's card — this
+    // painter produces the PNG that actually gets shared, so a label that only
+    // matched on screen would ship a different image than the preview promised.
     const stat = [
-      { label: "MIN", value: String(s.minutes) },
-      { label: t("w.train.logger.liveSets"), value: String(s.sets) },
-      { label: t("w.train.logger.liveVolume"), value: fmtTonnage(s.volume, units) },
+      { label: t("summary.minutes"), value: String(s.minutes) },
+      { label: t("summary.sets"), value: String(s.sets) },
+      { label: t("summary.volumeMoved"), value: fmtTonnage(s.volume, units) },
     ];
     const colW = (SW - SPAD * 2) / 3;
     stat.forEach((c, i) => {
@@ -279,7 +294,7 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
     ctx.fillStyle = st.barFill;
     ctx.fillText(slide.headline, SPAD, 520);
     let y = 660;
-    slide.rows.slice(0, 7).forEach((r) => {
+    slide.rows.slice(0, 6).forEach((r) => {
       ctx.font = font(DISPLAY, 46);
       ctx.fillStyle = st.text;
       ctx.fillText(`${r.hot ? "🏆 " : ""}${r.left}`, SPAD, y);

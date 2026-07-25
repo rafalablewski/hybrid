@@ -8,6 +8,7 @@ import {
   trainingDaysPerWeek,
   toTrainingLog,
   localTodayKey,
+  formatStrengthPr,
 } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
@@ -575,7 +576,7 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
             )}
             {r.prs.length > 0 && (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 10, lineHeight: 18 }}>
-                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" – ")}
+                🏆 {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
               </Text>
             )}
           </>
