@@ -21,6 +21,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, ABack } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
+import AuroraExerciseAnatomy from "./exercise-anatomy";
 
 // Chart-only raw hexes (mirror web exercise-page): the CVD-validated deep
 // chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
@@ -569,7 +570,11 @@ export default function AuroraExercisePage() {
         <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{name}</Text>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 18, marginTop: 14, paddingHorizontal: 2 }}>
+      {/* HOW IT'S DONE — looping animation + muscles worked + form cues (gym
+          lifts only; cardio/custom names render nothing). */}
+      <AuroraExerciseAnatomy name={name} />
+
+      <View style={{ flexDirection: "row", gap: 18, marginTop: 18, paddingHorizontal: 2 }}>
         {PERIODS.map((p) => {
           const on = period === p.id;
           return (
