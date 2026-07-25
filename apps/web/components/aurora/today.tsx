@@ -6,7 +6,6 @@ import { fs, space,
   prescribeSession,
   computeAccountability,
   buildActivityFeed,
-  currentPhase,
   planProgramToday,
   toTrainingLog,
   velocityProfiles,
@@ -50,10 +49,11 @@ import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import Sheet from "./sheet";
+import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraNutrition from "./nutrition";
+import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
-import { MetaLine } from "./meta";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 
@@ -128,6 +128,38 @@ export default function AuroraToday({
   // feeling card, so it no longer opens a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
+  // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
+  // routine (favourites rail + shuffle-able rest). `routines` stays null until the
+  // first fetch resolves so the Quick-start card doesn't flash before we know
+  // whether the user has any saved routines.
+  const [quickStartOpen, setQuickStartOpen] = useState(false);
+  const [routines, setRoutines] = useState<QuickRoutine[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/templates")
+      .then((r) => (r.ok ? r.json() : { templates: [] }))
+      .then((d: { templates?: QuickRoutine[] }) => { if (alive) setRoutines(d.templates ?? []); })
+      .catch(() => { if (alive) setRoutines([]); });
+    return () => { alive = false; };
+  }, []);
+  // Optimistic favourite toggle — flip locally, then PATCH; revert on failure.
+  const toggleFavourite = useCallback((r: QuickRoutine) => {
+    const next = !r.favourite;
+    setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: next } : x)) ?? cur);
+    fetch(`/api/templates/${r.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ favourite: next }),
+    })
+      .then((res) => {
+        if (!res.ok) setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: r.favourite } : x)) ?? cur);
+      })
+      .catch(() => setRoutines((cur) => cur?.map((x) => (x.id === r.id ? { ...x, favourite: r.favourite } : x)) ?? cur));
+  }, []);
+  const launchRoutine = useCallback((r: QuickRoutine) => {
+    setQuickStartOpen(false);
+    onStart(r.blocks, r.name);
+  }, [onStart]);
   // Plan hero: lead with the first lift; the rest collapse behind a toggle.
   const [liftsOpen, setLiftsOpen] = useState(false);
   // Keep keyboard focus with the lift toggle across open/close: the "Show all"
@@ -150,7 +182,6 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   // When enrolled in a discipline-shaped program with a start-date anchor, the
@@ -161,8 +192,11 @@ export default function AuroraToday({
   // history: the SAME week-rail object mounts in logbook mode, so the calendar
   // exists from the first logged session instead of the chooser repeating
   // forever; the chooser demotes to slim "Add structure" rows below the rail.
-  // Premium athletes with history keep their AI-prescription hero instead.
-  const logbookMode = !plan && !loading && !(isAthlete && hasData) && hasData;
+  // This holds for EVERYONE with history and no plan — premium included: Today's
+  // hero is your plan/calendar (or a path to one), never a fabricated AI session
+  // presented as "yours". The readiness-driven daily prescription lives on the
+  // Cockpit (the analytical layer), not spliced into Today as a hardcoded lift.
+  const logbookMode = !plan && !loading && hasData;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
@@ -396,6 +430,10 @@ export default function AuroraToday({
             <StructureCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
             <StructureCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
             <StructureCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+            {/* The fourth path — always present (like the other three). With no
+                saved routines the sheet shows its build-first empty state, so
+                it's a prompt, not a dead door. */}
+            <StructureCard glyph="⚡" accent="violet" title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onClick={() => setQuickStartOpen(true)} />
           </div>
         </div>
       ) : firstRun ? (
@@ -405,7 +443,7 @@ export default function AuroraToday({
            third card at phone widths). NO section head — the "How do you want
            to start?" question was retired with the masthead redesign (the page
            already opens with "Today" + the greeting, and three cards titled
-           Follow a plan / Build your own / Just train need no sentence
+           Follow a plan / Build your own / Log a workout need no sentence
            announcing that a choice is available); "Free" is said ONCE on the
            masthead's caption line. Each full-width card wears the Go-Full
            anatomy with its corner glow, the hue confined to glyph + CTA, and
@@ -415,40 +453,22 @@ export default function AuroraToday({
             <ChooserCard glyph="▤" accent="lime" title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
             <ChooserCard glyph="⌗" accent="blue" title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
             <ChooserCard glyph="↯" accent="amber" title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onClick={() => onStart()} />
+            <ChooserCard glyph="⚡" accent="violet" title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onClick={() => setQuickStartOpen(true)} />
           </div>
         </div>
       ) : (
       <div data-tour="today-plan" style={{ ...card }}>
-          {(() => {
-            // On a plan, Start becomes the full-width action BELOW the note; the
-            // top row then carries only the readiness ring (athlete). Other
-            // states keep the compact top-right Start. The ring only shows when
-            // there's logged history — a bare macrocycle phase (auto-created at
-            // onboarding) must never surface a fabricated readiness score.
-            const showRing = isAthlete && hasData;
-            // While the first sessions/enrollment fetch is in flight we don't
-            // yet know if they're on a plan — hold the top Start back so it
-            // doesn't flash in and vanish once the plan (or rail) resolves.
-            // The chooser state gets NO top Start: its three cards ARE the
-            // start (a floating pill above them would be a competing CTA), so
-            // the pill only serves the athlete AI-prescription state.
-            const showTopStart = !plan && !loading && isAthlete && hasData;
-            if (!showRing && !showTopStart) return null;
-            return (
-              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: space.ms }}>
-                {showRing ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
-                {showTopStart && (
-                  <button
-                    onClick={() => onStart(isAthlete && hasData ? (rx.blocks as SessionBlock[]) : undefined)}
-                    className="start-glow"
-                    style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
-                  >
-                    <CtaLabel>{t("w.home.today.start")}</CtaLabel>
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+          {/* On a plan, Start is the full-width action anchored BELOW the lifts;
+              the only thing riding the top row is the readiness ring, and only
+              once there's logged history — a bare onboarding macrocycle must
+              never surface a fabricated readiness score. (Plan-less athletes
+              with history land in logbook mode, so this card only ever renders
+              the plan hero or the cold-start skeleton.) */}
+          {isAthlete && hasData && plan ? (
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+              <Ring value={rx.readiness} color={readyColor(rx.readiness)} />
+            </div>
+          ) : null}
           {plan ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
@@ -526,6 +546,15 @@ export default function AuroraToday({
               >
                 <CtaLabel>{t("w.home.today.start")}</CtaLabel>
               </button>
+              {/* Quiet secondary — reach the Quick-start sheet without leaving the
+                  plan: on a plan the four "Train your way" cards aren't shown, so
+                  this is the on-plan door to a saved routine (a session off-plan). */}
+              <button
+                onClick={() => setQuickStartOpen(true)}
+                style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--violet-text)" }}
+              >
+                ⚡ {t("w.home.today.quickStartLink")}
+              </button>
             </>
           ) : loading ? (
             // Cold start — sessions AND enrollment are still loading, so we
@@ -537,25 +566,9 @@ export default function AuroraToday({
               <div style={{ height: 24, width: "60%", borderRadius: 8, background: C("line"), opacity: 0.5, margin: "8px 0 10px" }} />
               <div style={{ height: 12, width: "90%", borderRadius: 6, background: C("line"), opacity: 0.35 }} />
             </>
-          ) : isAthlete && hasData ? (
-            // PREMIUM only — the real readiness-driven AI prescription, and ONLY
-            // when grounded in logged history. Casual users and no-data accounts
-            // (even with an onboarding-created macrocycle phase) fall through to
-            // the encouraging chooser — no fabricated session presented as theirs.
-            <>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
-                {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
-              </div>
-              {phase && (
-                <MetaLine
-                  parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
-                  style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}
-                />
-              )}
-              <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
-            </>
-          ) : // The first-run chooser renders OUTSIDE this card (directly on
-          //  the page, above) — this branch is unreachable in that state.
+          ) : // Every other state renders OUTSIDE this card: the first-run chooser
+          //  and logbook mode (plan-less history, premium included) sit directly
+          //  on the page above. This card only carries the plan hero + skeleton.
           null}
         </div>
       )}
@@ -632,13 +645,19 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── RECOVER & MORE — deferred rows (nutrition, coaches).
-          Explore-standard section head — no marker dot. ───── */}
+      {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
+          (coaches). Explore-standard section head — no marker dot. ───── */}
       <div style={{ margin: "26px 2px 12px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.recoverMore")}</span>
       </div>
-      <div style={{ display: "grid", gap: 10 }}>
-        <DeferRow glyph="◍" tint="ash" title={t("w.home.today.w.nutrition")} sub={t("w.home.today.rowNutritionSub")} onClick={() => setNutritionOpen(true)} />
+      {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
+          empty → refuel / on-track / over → goal-hit, with a persistent quick-log
+          rail). Shows on the real today only; a scrubbed past/future day scopes
+          the cards above but nutrition targets are always today's. State + macros
+          come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
+          same quick-add sheet the coach/nutrition rows use. */}
+      {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
         <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
 
@@ -656,6 +675,16 @@ export default function AuroraToday({
       <Sheet open={coachOpen} onClose={() => setCoachOpen(false)} label={t("w.home.today.rowCoach")}>
         <CoachRail onOpen={() => { setCoachOpen(false); if (onNavigate) onNavigate("coaches"); else router.push("/coaches"); }} />
       </Sheet>
+
+      {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
+      <QuickStartSheet
+        open={quickStartOpen}
+        onClose={() => setQuickStartOpen(false)}
+        routines={routines ?? []}
+        onLaunch={launchRoutine}
+        onToggleFavourite={toggleFavourite}
+        onBuildNew={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))}
+      />
 
       {/* DONE TODAY sheet — everything logged on the viewed day + the calendar. */}
       <Sheet
@@ -692,7 +721,7 @@ export default function AuroraToday({
  *  beginner, tinted by the path's accent. Full-width in a stacked column at
  *  natural height; the hue lives in the small glyph + CTA only — title and
  *  body stay neutral. Mirrored on mobile (aurora/home.tsx ChooserCard). */
-function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber" | "violet"; title: string; sub: string; cta: string; onClick: () => void }) {
   const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (
@@ -715,7 +744,7 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
  *  glow, glyph, title, sub, mono CTA) at rail width, so the options stay
  *  reachable without re-onboarding a regular every day.
  *  Mirrored on mobile (aurora/home.tsx StructureCard). */
-function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber"; title: string; sub: string; cta: string; onClick: () => void }) {
+function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: string; accent: "lime" | "blue" | "amber" | "violet"; title: string; sub: string; cta: string; onClick: () => void }) {
   const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (

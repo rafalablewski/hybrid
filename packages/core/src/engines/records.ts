@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
-import { blockBestE1rm, setsForVolume, effectiveSetLoadKg } from "./session";
+import { blockBestE1rm, blockTopLoad, setsForVolume, effectiveSetLoadKg } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { MOVEMENTS } from "./movements";
@@ -27,6 +27,19 @@ export function bestE1rmMap(sessions: LoggedSession[], bw?: BodyweightInput): Ma
     for (const b of s.blocks)
       if (isStrength(b)) {
         const best = Math.round(blockBestE1rm(b, bwAt(bw, s.startedAt)));
+        if (best > 0) map.set(b.name, Math.max(map.get(b.name) ?? 0, best));
+      }
+  return map;
+}
+
+/** Heaviest ACTUAL load per lift across a set of sessions (kg) — the real top
+ *  weight, not an estimated 1RM. Bodyweight-aware when `bw` is passed. */
+export function topLoadMap(sessions: LoggedSession[], bw?: BodyweightInput): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const s of sessions)
+    for (const b of s.blocks)
+      if (isStrength(b)) {
+        const best = Math.round(blockTopLoad(b, bwAt(bw, s.startedAt)) * 10) / 10;
         if (best > 0) map.set(b.name, Math.max(map.get(b.name) ?? 0, best));
       }
   return map;

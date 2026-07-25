@@ -153,6 +153,24 @@ export const PLANS: (GoalPlan & { color: string })[] = GOAL_TREE.flatMap((g) =>
 export const PLAN_PREVIEWS: { goalId: string; goalName: string; icon: string; color: string; plan: GoalPlan }[] =
   GOAL_TREE.flatMap((g) => (g.plans[0] ? [{ goalId: g.id, goalName: g.name, icon: g.icon, color: g.color, plan: g.plans[0] }] : []));
 
+/** Editor's-pick plan ids, in cover order — the curated hero slots for the
+ *  Explore Cover Flow. Chosen for spread across disciplines (strength, endurance,
+ *  physique), NOT tree order, so the featured trio is intentional rather than
+ *  "whatever's first in the goal tree". Ids that don't resolve are skipped. */
+export const FEATURED_PLAN_IDS = ["oly-soviet-8wk", "run-5k-beginner-9wk", "bb-ppl-6day"];
+
+/** PLAN_PREVIEWS reordered so the editor's picks lead (in FEATURED_PLAN_IDS
+ *  order), then every other preview in library order. Explore's Cover Flow takes
+ *  the first three as covers and the rest as the rail, so curation lives HERE —
+ *  never lost, never a raw slice of the tree. Always contains every preview. */
+export const FEATURED_PREVIEWS: typeof PLAN_PREVIEWS = (() => {
+  const picks = FEATURED_PLAN_IDS
+    .map((id) => PLAN_PREVIEWS.find((p) => p.plan.id === id))
+    .filter((p): p is (typeof PLAN_PREVIEWS)[number] => p !== undefined);
+  const rest = PLAN_PREVIEWS.filter((p) => !FEATURED_PLAN_IDS.includes(p.plan.id));
+  return [...picks, ...rest];
+})();
+
 /** The named library plans for a goal (matched by GoalNode name, e.g.
  *  "Bodybuilding"). Empty when that goal has no uploaded plans yet (most don't
  *  — see the `plans-lib` capability). Powers the coach's named-plan picker. */
@@ -170,6 +188,22 @@ export const GOAL_GROUPS: GoalGroup[] = GOAL_CATEGORIES.map((category) => ({
   category,
   goals: GOAL_TREE.filter((g) => g.category === category),
 })).filter((group) => group.goals.length > 0);
+
+/** Filter the goal groups for the Plans browse screen by a free-text `query`
+ *  (matched case-insensitively against each goal's name + blurb) and/or a
+ *  `category`. `""` + `"all"` returns GOAL_GROUPS unchanged; groups left with no
+ *  matching goals are dropped, so the result is always render-ready. Pure — both
+ *  clients call it so the browse filter can't drift as the library scales. */
+export function filterGoalGroups(query = "", category: GoalCategory | "all" = "all"): GoalGroup[] {
+  const q = query.trim().toLowerCase();
+  return GOAL_GROUPS
+    .filter((group) => category === "all" || group.category === category)
+    .map((group) => ({
+      category: group.category,
+      goals: q ? group.goals.filter((g) => g.name.toLowerCase().includes(q) || g.blurb.toLowerCase().includes(q)) : group.goals,
+    }))
+    .filter((group) => group.goals.length > 0);
+}
 
 // ============================================================
 //  PLAN DETAIL — every plan's full workout summary (level, who it's for,

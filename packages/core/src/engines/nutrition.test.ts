@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -163,6 +163,66 @@ describe("nutritionNudge", () => {
   });
 });
 
+describe("fuelToday (Today widget state)", () => {
+  // Pin targets: one bodyweight reading and no weight trend → the bw estimate
+  // (80 × 31 = 2480 kcal), goal maintain → protein 144 g, carbs 321, fat 69.
+  const bw = mass(80, 0);
+  const p = (v: number, daysAgo = 0): Signal => ({ athleteId: "u", kind: "protein", value: v, unit: "g", source: "manual", ts: at(daysAgo) });
+  const c = (v: number, daysAgo = 0): Signal => ({ athleteId: "u", kind: "carbs", value: v, unit: "g", source: "manual", ts: at(daysAgo) });
+  const f = (v: number, daysAgo = 0): Signal => ({ athleteId: "u", kind: "fat", value: v, unit: "g", source: "manual", ts: at(daysAgo) });
+
+  it("is empty when nothing is logged today", () => {
+    const fuel = fuelToday([bw], { now: NOW });
+    expect(fuel.state).toBe("empty");
+    expect(fuel.kcalPct).toBe(0);
+    expect(fuel.trained).toBe(false);
+  });
+
+  it("reads goal-hit once every macro is ≥95% of target", () => {
+    const fuel = fuelToday([bw, kcal(2480, 0), p(140, 0), c(315, 0), f(68, 0)], { now: NOW });
+    expect(fuel.allMacrosHit).toBe(true);
+    expect(fuel.state).toBe("goal-hit");
+  });
+
+  it("nudges protein on a rest day when ≥20 g short", () => {
+    const fuel = fuelToday([bw, kcal(1500, 0), p(100, 0), c(150, 0), f(40, 0)], { now: NOW });
+    expect(fuel.proteinGap).toBeGreaterThanOrEqual(20);
+    expect(fuel.state).toBe("protein");
+    expect(fuel.trained).toBe(false);
+  });
+
+  it("flips the SAME short day to refuel once trained, lifting the carb target", () => {
+    const base = [bw, kcal(1500, 0), p(100, 0), c(150, 0), f(40, 0)];
+    const rest = fuelToday(base, { now: NOW });
+    const trained = fuelToday(base, { now: NOW, trainingKcal: 600 });
+    expect(trained.state).toBe("refuel");
+    expect(trained.trained).toBe(true);
+    expect(trained.targets.carbs).toBeGreaterThan(rest.targets.carbs);
+  });
+
+  it("is on-track when within range with no urgent gap", () => {
+    const fuel = fuelToday([bw, kcal(2400, 0), p(130, 0), c(200, 0), f(40, 0)], { now: NOW });
+    expect(fuel.state).toBe("on-track");
+  });
+
+  it("flags over when past 110% of the calorie target", () => {
+    const fuel = fuelToday([bw, kcal(3000, 0), p(140, 0), c(200, 0), f(40, 0)], { now: NOW });
+    expect(fuel.state).toBe("over");
+    expect(fuel.kcalLeft).toBeLessThan(0);
+  });
+
+  it("marks a macro that surpasses its target with over + overBy", () => {
+    // protein target is 144 g (80 kg × 1.8); log 170 → over by 26.
+    const fuel = fuelToday([bw, kcal(2000, 0), p(170, 0), c(150, 0), f(40, 0)], { now: NOW });
+    expect(fuel.macros.protein.over).toBe(true);
+    expect(fuel.macros.protein.overBy).toBe(26);
+    expect(fuel.macros.protein.pct).toBe(100); // still clamped for the bar
+    // a macro under target is not over
+    expect(fuel.macros.carbs.over).toBe(false);
+    expect(fuel.macros.carbs.overBy).toBe(0);
+  });
+});
+
 describe("sumMealComponents (meal built from products)", () => {
   it("sums each product's macros scaled by its serving count, rounded", () => {
     const total = sumMealComponents([
@@ -177,5 +237,33 @@ describe("sumMealComponents (meal built from products)", () => {
   });
   it("is zero for an empty meal", () => {
     expect(sumMealComponents([])).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  });
+});
+
+describe("meal parts (custom parts of the day)", () => {
+  const tMeal = (k: string) => ({ breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snacks" }[k] ?? k);
+  it("returns the four built-ins (localized) when there are no custom parts", () => {
+    const parts = resolveMealParts([], tMeal);
+    expect(parts.map((p) => p.key)).toEqual(["breakfast", "lunch", "dinner", "snack"]);
+    expect(parts.every((p) => !p.custom)).toBe(true);
+    expect(parts[0]!.label).toBe("Breakfast");
+  });
+  it("appends custom parts after the built-ins", () => {
+    const parts = resolveMealParts([{ key: "pre-workout", label: "Pre-workout" }], tMeal);
+    expect(parts).toHaveLength(5);
+    expect(parts[4]).toEqual({ key: "pre-workout", label: "Pre-workout", custom: true });
+  });
+  it("drops a custom part that collides with a built-in key", () => {
+    const parts = resolveMealParts([{ key: "lunch", label: "Lunch again" }], tMeal);
+    expect(parts).toHaveLength(4);
+  });
+  it("caps the number of custom parts", () => {
+    const many = Array.from({ length: MAX_CUSTOM_MEAL_PARTS + 3 }, (_, i) => ({ key: `p${i}`, label: `P${i}` }));
+    const parts = resolveMealParts(many, tMeal);
+    expect(parts).toHaveLength(4 + MAX_CUSTOM_MEAL_PARTS);
+  });
+  it("slugs a typed label into a stable key", () => {
+    expect(mealPartKey("  Pre-Workout!  ")).toBe("pre-workout");
+    expect(mealPartKey("Second Breakfast")).toBe("second-breakfast");
   });
 });

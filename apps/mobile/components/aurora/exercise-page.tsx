@@ -51,9 +51,9 @@ interface Hero {
 
 function slideHero(s: ExercisePageSlide, units: WeightUnit, t: (k: string) => string): Hero {
   switch (s.kind) {
-    case "e1rmTrend": {
-      const { v, u } = splitVal(fmtWeight(s.bestE1rm, units));
-      return { v, u, deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.exp.e1rm") };
+    case "weightTrend": {
+      const { v, u } = splitVal(fmtWeight(s.bestWeight, units));
+      return { v, u, deltaPct: s.deltaPct, improving: s.improving, label: t("w.analyze.exp.heaviest") };
     }
     case "tonnage": {
       const { v, u } = splitVal(fmtTonnage(s.avgWeekKg, units));
@@ -460,8 +460,8 @@ function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; fo
 
 function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: ExercisePageSlide; stroke: string; units: WeightUnit; t: (k: string) => string }) {
   switch (slide.kind) {
-    case "e1rmTrend":
-      return <TrendChart C={C} id="exp-e1rm" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.e1rm, units)), pr: p.pr }))} stroke={stroke} />;
+    case "weightTrend":
+      return <TrendChart C={C} id="exp-weight" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} />;
     case "paceTrend":
       return <TrendChart C={C} id="exp-pace" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed />;
     case "tonnage":

@@ -117,7 +117,7 @@ export default function AuroraTrends() {
               ); })}
             </View>
             <View style={{ flexDirection: "row", marginTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              {([["w.analyze.trends.colExercise", "name", 2, "left"], ["w.analyze.trends.colFreq", "sessions", 1, "center"], ["w.analyze.trends.colBestE1rm", "bestE1rm", 1, "center"]] as const).map(([h, k, fl, al]) => (
+              {([["w.analyze.trends.colExercise", "name", 2, "left"], ["w.analyze.trends.colFreq", "sessions", 1, "center"], ["w.analyze.trends.colHeaviest", "topWeight", 1, "center"]] as const).map(([h, k, fl, al]) => (
                 <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: 9, color: sort.k === k ? txt(C, C.lime) : C.ash, letterSpacing: 1 }}>{t(h)}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</Text>
               ))}
               <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: sort.k === "volume" ? txt(C, C.lime) : C.ash }}>↗</Text>
@@ -126,7 +126,7 @@ export default function AuroraTrends() {
               <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={{ flex: 2, fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{r.name}</Text>
                 <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{r.sessions}×</Text>
-                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : `${r.volume}km`}</Text>
+                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : `${r.volume}km`}</Text>
                 <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: txt(C, tr.c) }}>{tr.g}</Text>
               </Pressable>
             ); })}

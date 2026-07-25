@@ -116,6 +116,41 @@ export function e1rmTrendWithPRs(
   return pts;
 }
 
+export interface WeightPrPoint {
+  date: string;
+  weightKg: number;
+  /** true when this session set a new ALL-TIME heaviest lift (vs everything before it). */
+  pr: boolean;
+}
+
+/** Per-session heaviest working load in the window, each point flagged as a PR
+ *  when it beat every session before it (all history, not just the window) —
+ *  the actual top-weight trend, the strength headline (e1RM is secondary). */
+export function topLoadTrendWithPRs(
+  sessions: LoggedSession[],
+  name: string,
+  period: ExercisePeriod = "all",
+  now = Date.now(),
+  bw?: BodyweightInput,
+): WeightPrPoint[] {
+  const cutoff = periodCutoff(period, now);
+  const bySession = new Map<string, { t: number; best: number }>();
+  for (const s of liftSets(sessions, name, bw)) {
+    const row = bySession.get(s.date);
+    if (!row) bySession.set(s.date, { t: s.t, best: s.loadKg });
+    else row.best = Math.max(row.best, s.loadKg);
+  }
+  const rows = [...bySession.entries()].sort((a, b) => a[1].t - b[1].t);
+  const pts: WeightPrPoint[] = [];
+  let runningBest = 0;
+  for (const [date, { t, best }] of rows) {
+    const pr = best > runningBest + 1e-9 && runningBest > 0;
+    runningBest = Math.max(runningBest, best);
+    if (t > cutoff && t <= now) pts.push({ date, weightKg: Math.round(best * 10) / 10, pr });
+  }
+  return pts;
+}
+
 // ---------------------------------------------------------- 2. rep-max matrix
 
 export interface RepMax {
