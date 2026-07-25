@@ -602,6 +602,22 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
+                {/* READINESS NUDGE — the one-tap check-in visibly moved today's
+                    load (readinessLoadFactor in core). Was only narrated deep in
+                    `why`; this makes it glanceable, tinted in the feeling's own
+                    accent. Absent on a neutral ("good") day. Mirrors web. */}
+                {rx.readinessAdjust && (() => {
+                  const adj = rx.readinessAdjust!;
+                  const tint = C[READINESS_FACE[adj.feeling].accent];
+                  const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
+                  const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
+                  return (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 8, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
+                      <ReadinessFace feeling={adj.feeling} scale={0.5} />
+                      <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", color: txt(C, tint) }}>{label}</Text>
+                    </View>
+                  );
+                })()}
                 {phase && (
                   <View style={{ marginTop: 4 }}>
                     <MetaLine

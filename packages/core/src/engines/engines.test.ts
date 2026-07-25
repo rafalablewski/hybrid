@@ -257,6 +257,16 @@ describe("prescribeSession", () => {
     // a wrecked day also sheds a work set (a real deload) and explains itself.
     expect(setsOf(wrecked)).toBeLessThan(setsOf(good));
     expect(wrecked.why).toMatch(/wrecked/);
+    // readinessAdjust surfaces the move for the UI strip: present + structured
+    // when a feeling shifts the session, absent on the neutral "good" day.
+    expect(good.readinessAdjust).toBeUndefined();
+    expect(prescribeSession(full).readinessAdjust).toBeUndefined();
+    expect(primed.readinessAdjust).toMatchObject({ feeling: "primed", setAdj: 0 });
+    expect(primed.readinessAdjust!.loadPct).toBeGreaterThan(100);
+    expect(flat.readinessAdjust).toMatchObject({ feeling: "flat", setAdj: 0 });
+    expect(flat.readinessAdjust!.loadPct).toBeLessThan(100);
+    expect(wrecked.readinessAdjust).toMatchObject({ feeling: "wrecked", setAdj: -1 });
+    expect(wrecked.readinessAdjust!.loadPct).toBeLessThan(100);
   });
 });
 

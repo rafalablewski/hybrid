@@ -555,6 +555,23 @@ export default function AuroraToday({
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
+              {/* READINESS NUDGE — the one-tap check-in visibly moved today's
+                  load. The scaling is real (readinessLoadFactor in core) but was
+                  only narrated deep in the `why` prose; this makes it glanceable,
+                  tinted in the feeling's own semantic accent. Absent on a neutral
+                  ("good") day — nothing moved, so nothing to say. */}
+              {rx.readinessAdjust && (() => {
+                const adj = rx.readinessAdjust!;
+                const tint = C(READINESS_FACE[adj.feeling].accent);
+                const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
+                const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
+                return (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginBottom: 8, padding: "5px 11px", borderRadius: 999, background: `color-mix(in srgb, ${tint} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${tint} 34%, transparent)` }}>
+                    <ReadinessFace feeling={adj.feeling} size={15} />
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", color: `var(--${READINESS_FACE[adj.feeling].accent}-text)` }}>{label}</span>
+                  </div>
+                );
+              })()}
               {phase && (
                 <MetaLine
                   parts={[`${t("w.home.today.goal")} ${macro!.goalOrSport}`, phase.block.label, `${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}`]}
