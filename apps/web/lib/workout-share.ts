@@ -255,10 +255,13 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
     ctx.font = font(DISPLAY, 96);
     ctx.fillStyle = st.text;
     wrapText(ctx, s.firstEver ? "First workout 🎉" : s.title || "Workout", SPAD, 470, SW - SPAD * 2, 104);
+    // Same keys as the DOM preview (story-card.tsx) and mobile's card — this
+    // painter produces the PNG that actually gets shared, so a label that only
+    // matched on screen would ship a different image than the preview promised.
     const stat = [
-      { label: "MIN", value: String(s.minutes) },
-      { label: t("w.train.logger.liveSets"), value: String(s.sets) },
-      { label: t("w.train.logger.liveVolume"), value: fmtTonnage(s.volume, units) },
+      { label: t("summary.minutes"), value: String(s.minutes) },
+      { label: t("summary.sets"), value: String(s.sets) },
+      { label: t("summary.volumeMoved"), value: fmtTonnage(s.volume, units) },
     ];
     const colW = (SW - SPAD * 2) / 3;
     stat.forEach((c, i) => {

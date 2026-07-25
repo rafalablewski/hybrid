@@ -17,6 +17,7 @@ import {
   blockBestE1rm,
   blockTopLoad,
   strengthPrDelta,
+  formatCardioPr,
   workoutShareCaption,
   fmtWeight,
   fmtTonnage,
@@ -174,7 +175,9 @@ export function WorkoutWrapped({
   const funFact = sessionFunFact(session.blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
-    ...cardioPrs.map((p) => ({ left: p.kind === "distance" ? `${p.move} ${p.value} km` : p.move, right: "", hot: true })),
+    // The shared cardio formatter, same as the post-workout PR slide — raw km
+    // would read a 400 m swim PR as "Swimming 0.4 km" and drop the delta.
+    ...cardioPrs.map((p) => ({ left: formatCardioPr(p, t("summary.firstTime")), right: "", hot: true })),
     ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
   // Pluralized — "1 new PR", not "1 new PRs"; identical on both clients.
