@@ -102,6 +102,7 @@ const CATALOG: OlympicSport[] = [
   { name: "Tennis", icon: "🎾", category: "Racket", metrics: TIME },
   { name: "Table Tennis", icon: "🏓", category: "Racket", metrics: TIME },
   { name: "Badminton", icon: "🏸", category: "Racket", metrics: TIME },
+  { name: "Squash", icon: "🎾", category: "Racket", metrics: TIME },
 
   // ---- Team ----
   { name: "Football", icon: "⚽", category: "Team", metrics: TIME },
