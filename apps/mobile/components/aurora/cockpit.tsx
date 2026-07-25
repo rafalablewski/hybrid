@@ -5,19 +5,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, toBiometrics,
-  velocityProfiles, hpiRole, riskRole, readinessRole, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
-import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
+import { fetchSessions, fetchMacrocycle, fetchSignals, fetchCheckins, type CoreSignal, type Checkin } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
+import ReadinessFace from "./readiness-face";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
@@ -47,6 +48,7 @@ function Full() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   // Injury-risk "what's raising this?" panel — collapsed by default so the card
@@ -55,8 +57,8 @@ function Full() {
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchMacrocycle(), fetchSignals()])
-      .then(([s, m, sig]) => { setSessions(s); setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setSignals(sig); })
+    Promise.all([fetchSessions(), fetchMacrocycle(), fetchSignals(), fetchCheckins().catch(() => [])])
+      .then(([s, m, sig, ci]) => { setSessions(s); setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setSignals(sig); setCheckins(ci as Checkin[]); })
       .finally(() => setRefreshing(false));
   };
   useEffect(() => {
@@ -73,7 +75,15 @@ function Full() {
 
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
+  // TODAY's readiness FEELING (the one-tap check-in) → prescribeSession, so the
+  // Cockpit readiness block reflects + explains the load nudge the pick applies
+  // (the Today screen no longer previews it). Mirrors web cockpit.
+  const todayFeeling = useMemo(() => {
+    const today = new Date().toDateString();
+    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    return c ? checkinFeeling(c) : null;
+  }, [checkins]);
+  const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
@@ -145,6 +155,21 @@ function Full() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 16 }}>{rx.why}</Text>
+                {/* READINESS NUDGE — the one-tap check-in moved today's load;
+                    glanceable, tinted in the feeling's own accent. Absent on a
+                    neutral ("good") day. Mirrors web cockpit. */}
+                {rx.readinessAdjust && (() => {
+                  const adj = rx.readinessAdjust!;
+                  const tint = C[READINESS_FACE[adj.feeling].accent];
+                  const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
+                  const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
+                  return (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 8, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
+                      <ReadinessFace feeling={adj.feeling} scale={0.5} />
+                      <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", color: txt(C, tint) }}>{label}</Text>
+                    </View>
+                  );
+                })()}
               </View>
             </View>
           </>

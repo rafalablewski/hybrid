@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
-  ROLE_COLOR, hpiRole, riskRole, readinessRole,
+  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
@@ -15,6 +15,7 @@ import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import ReadinessFace from "./readiness-face";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
 const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
@@ -53,9 +54,30 @@ export default function AuroraCockpit({
     if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
   }, []);
 
+  // TODAY's readiness FEELING (the one-tap check-in) — fed into prescribeSession
+  // so the Cockpit's readiness block reflects, and explains, the load nudge the
+  // pick applies to the session (the Today screen no longer previews it; the
+  // readiness-driven prescription lives here now).
+  const [checkins, setCheckins] = useState<{ weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null; createdAt?: string }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/checkins");
+        if (!r.ok) return;
+        const d = (await r.json()) as { checkins?: typeof checkins } | null;
+        setCheckins(d?.checkins ?? []);
+      } catch { /* leave empty — the readiness score still renders */ }
+    })();
+  }, []);
+  const todayFeeling = useMemo(() => {
+    const today = new Date().toDateString();
+    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    return c ? checkinFeeling(c) : null;
+  }, [checkins]);
+
   const bw = useBodyweightLookup();
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
-  const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
+  const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
@@ -131,6 +153,21 @@ export default function AuroraCockpit({
                 <div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
                   <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "36ch" }}>{rx.why}</div>
+                  {/* READINESS NUDGE — the one-tap check-in moved today's load;
+                      glanceable, tinted in the feeling's own accent. Absent on a
+                      neutral ("good") day. Mirrors mobile cockpit. */}
+                  {rx.readinessAdjust && (() => {
+                    const adj = rx.readinessAdjust!;
+                    const tint = C(READINESS_FACE[adj.feeling].accent);
+                    const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
+                    const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
+                    return (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 8, padding: "5px 11px", borderRadius: 999, background: `color-mix(in srgb, ${tint} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${tint} 34%, transparent)` }}>
+                        <ReadinessFace feeling={adj.feeling} size={15} />
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", color: `var(--${READINESS_FACE[adj.feeling].accent}-text)` }}>{label}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </>
