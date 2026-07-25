@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AuroraIconName, type Persona, type LoggedSession } from "@hybrid/core";
+import { AuroraAthleteAnalytics, AuroraCoachAnalytics, AuroraOperatorAnalytics } from "./aurora/analytics";
+import { useRoster } from "@/lib/use-roster";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -94,9 +96,26 @@ import { useSignals } from "@/lib/use-signals";
 // keys (nav.group.*); item labels are i18n (nav.<id>) with the core fallback.
 // Operator-only tools (Capabilities, Data network) live in the /admin console.
 
+/** The Analytics destination, scoped to the viewer's persona: every athlete gets
+ *  their own dashboard, a coach additionally gets the roster view, and an admin
+ *  the operator view. Roster data is fetched only for the personas that render
+ *  it — useRoster is called unconditionally (rules of hooks) but the coach block
+ *  is the only consumer. */
+function AnalyticsScreen({ persona, sessions }: { persona: Persona; sessions: LoggedSession[] }) {
+  const { roster } = useRoster();
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
+      <AuroraAthleteAnalytics sessions={sessions} />
+      {(persona === "coach" || persona === "admin") && <AuroraCoachAnalytics roster={roster} />}
+      {persona === "admin" && <AuroraOperatorAnalytics />}
+    </div>
+  );
+}
+
 /** A "this lives in the mobile app" pointer — the web treatment for surfaces
- *  that are mobile-only (mobile-first). Analytics and the Endurance hub both use
- *  it; see the web-dashboards / endurance-hub capabilities. */
+ *  that are genuinely mobile-only (mobile-first) AND actually built there. Only
+ *  the Endurance hub uses it now; see the endurance-hub capability. Do NOT point
+ *  at mobile for a surface mobile hasn't built — that strands the athlete. */
 function MobileOnlyScreen({ aurora, icon, title, body }: { aurora: boolean; icon: AuroraIconName; title: string; body: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 560, margin: "24px auto 0", textAlign: "center" }}>
@@ -719,14 +738,13 @@ export default function AppShell() {
         {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
             changes (Aurora only). The banners/header above stay put. */}
         <div key={screen} className={aurora ? "aurora-enter" : undefined}>
-        {screen === "analytics" && (
-          <MobileOnlyScreen
-            aurora={aurora}
-            icon="grid"
-            title="Analytics lives in the app"
-            body={<>Your training analytics — trends, weekly mileage, effort balance and the coach &amp; admin dashboards — are built mobile-first. Open HYBRID on your phone to explore them.</>}
-          />
-        )}
+        {/* ANALYTICS — the real dashboard, scoped to the viewer's persona. This
+            used to render a "lives in the mobile app" pointer while the mobile
+            build never happened and this very component sat orphaned, so the
+            destination was a circular dead end on both clients (see the
+            parity-audit-2026-07 capability). Web serves it again; mobile-analytics
+            stays the declared open gap, and mobile's "WEB" tag is now truthful. */}
+        {screen === "analytics" && <AnalyticsScreen persona={persona} sessions={sessions} />}
 
         {screen === "today" && (
           <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />

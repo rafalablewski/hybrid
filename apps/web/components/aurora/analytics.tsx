@@ -26,12 +26,14 @@ const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, 
 const mono = { fontFamily: "var(--font-mono)" } as const;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-/** A big rounded stat tile — accent kicker, oversized number, optional sub. */
+/** A big rounded stat tile — accent kicker, oversized number, optional sub.
+ *  The kicker carries NO leading dot: a decorative marker before a label is
+ *  house-banned (see the no-decorative-dot rule). The accent still reads, on the
+ *  number itself. */
 function AStat({ label, value, sub, accent = "chalk" }: { label: string; value: ReactNode; sub?: string; accent?: string }) {
   return (
     <div style={{ ...card, padding: 20, display: "flex", flexDirection: "column", gap: space.xs }}>
       <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-        <span style={{ width: 8, height: 8, borderRadius: 4, background: C(accent) }} />
         <span style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
       </div>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 34, lineHeight: 1, color: C(accent === "chalk" ? "chalk" : accent) }}>{value}</div>
