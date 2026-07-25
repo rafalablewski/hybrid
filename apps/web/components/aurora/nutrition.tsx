@@ -16,6 +16,7 @@ import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
+import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
@@ -158,6 +159,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
   const recipesUnlocked = canUseRecipes(persona);
   const [signals, setSignals] = useState<Signal[]>([]);
+  // True when the day's intake fetch FAILED — so the hub can show a retry card
+  // instead of a "0 eaten" summary that reads as a fresh day (parity with mobile).
+  const [loadErr, setLoadErr] = useState(false);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   // The goal is changed through a deliberate Sheet (opened from a card), never a
   // live top-of-screen toggle — switching it recomputes every target, so an
@@ -461,10 +465,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/signals");
-      if (!res.ok) return setSignals([]);
+      // 401 (demo / no-auth) is an honest empty, not a load failure — mirror the
+      // useSessions convention so a signed-out view never shows the retry card.
+      if (res.status === 401) { setLoadErr(false); return setSignals([]); }
+      if (!res.ok) { setLoadErr(true); return setSignals([]); }
       const data = (await res.json()) as { signals?: Row[] };
       setSignals((data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind as Signal["kind"], value: s.value, unit: s.unit, source: s.source, ts: s.ts })));
-    } catch { setSignals([]); }
+      setLoadErr(false);
+    } catch { setLoadErr(true); setSignals([]); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -1179,6 +1187,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       )}
 
       {view === "home" && (
+      loadErr && signals.length === 0 ? (
+        /* INTAKE FAILED TO LOAD — with no cached signals the day summary would
+           read "0 eaten / full target remaining" as a fresh day, masking an
+           offline / 500. Show the honest retry card instead (parity with mobile). */
+        <FetchError onRetry={() => load()} style={{ marginTop: 18 }} />
+      ) : (
       <>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
@@ -1322,7 +1336,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </button>
           ))}
         </>
-      )}
+      ))}
 
       {view === "insights" && (
         <div style={{ marginTop: 16 }}>

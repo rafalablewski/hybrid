@@ -50,6 +50,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring } from "./kit";
+import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 
@@ -175,7 +176,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const full = isFullAccess(persona);
   // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
   const recipesUnlocked = canUseRecipes(persona);
-  const { data: signals = [], isFetching: refreshing, refetch } = useSignalsQuery();
+  const { data: signals = [], isFetching: refreshing, refetch, isError: signalsError } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   // The goal is changed through a deliberate Sheet (opened from a card), never a
@@ -1090,7 +1091,12 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         </View>
       )}
 
-      {view === "home" && (<>
+      {view === "home" && (signalsError && signals.length === 0 ? (
+        /* SIGNALS FAILED TO LOAD — with no cached intake the day summary would
+           read "0 eaten / full target remaining" as if nothing were logged yet,
+           masking an offline / 500. Show the honest retry card instead. */
+        <FetchError onRetry={() => refetch()} style={{ marginTop: 18 }} />
+      ) : (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
       <Pressable onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
@@ -1208,7 +1214,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </Pressable>
           ))}
       </>
-      )}
+      ))}
 
       {view === "insights" && (
         <View style={{ marginTop: 16 }}>

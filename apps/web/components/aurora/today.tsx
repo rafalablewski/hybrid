@@ -56,6 +56,7 @@ import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
+import FetchError from "./fetch-error";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -85,6 +86,8 @@ export default function AuroraToday({
   onOpenSession,
   onOpenExercise,
   onSaved,
+  fetchError = false,
+  onRetry,
   loading = false,
 }: {
   sessions: LoggedSession[];
@@ -106,6 +109,12 @@ export default function AuroraToday({
   onOpenExercise?: (name: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
+  /** True when the sessions fetch FAILED (offline / 500) — with no cached data
+   *  the daily-loop hero shows a retry card instead of the first-run chooser,
+   *  so a dropped network never masquerades as "looks like a new athlete". */
+  fetchError?: boolean;
+  /** Re-run the sessions fetch (wired to useSessions().refresh). */
+  onRetry?: () => void;
   /** True while the first sessions OR enrollment fetch is in flight —
    *  suppresses the cold-start chooser so an already-enrolled athlete never
    *  sees the first-run-chooser flash before their plan resolves. */
@@ -366,7 +375,15 @@ export default function AuroraToday({
           itself — the interface shouldn't narrate what the athlete can see.
           When enrolled in a program with a start date, the date-anchored week
           rail replaces this whole block (done/missed/skipped/today at a glance). */}
-      {useRail ? (
+      {fetchError && sessions.length === 0 ? (
+        /* SESSIONS FAILED TO LOAD — with no cached data we can't tell an
+           enrolled athlete from a first-run one, so the chooser here would read
+           as "new user" when really the network dropped. Show the honest retry
+           card instead of the empty-state chooser (parity with mobile home). */
+        <div style={{ marginTop: 16 }}>
+          <FetchError onRetry={() => onRetry?.()} />
+        </div>
+      ) : useRail ? (
         <AuroraWeekRail
           planId={planId!}
           planStartedAt={planStartedAt!}

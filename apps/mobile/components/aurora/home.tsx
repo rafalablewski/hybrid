@@ -63,6 +63,7 @@ import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
 import ReadinessFace from "./readiness-face";
+import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import AuroraWeekRail from "./week-rail";
@@ -97,7 +98,7 @@ export default function AuroraHome() {
   const navScroll = useNavScrollProps();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
-  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const { data: sessions = [], refetch: refetchSessions, isError: sessionsError } = useSessionsQuery();
   const { data: signals = [], refetch: refetchSignals } = useSignalsQuery();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
@@ -433,7 +434,15 @@ export default function AuroraHome() {
             itself — the interface shouldn't narrate what the athlete can see.
             When enrolled in a dated program the count-based hero gives way to the
             date-anchored WEEK RAIL (parity with web). */}
-        {useRail ? (
+        {sessionsError && sessions.length === 0 ? (
+          /* SESSIONS FAILED TO LOAD — with no cached data we can't tell an
+             enrolled athlete from a first-run one, so the chooser here would be
+             a lie ("looks like a new user" when really the network dropped).
+             Show the honest retry card instead of the empty-state chooser. */
+          <View style={{ marginTop: 14 }}>
+            <FetchError onRetry={load} />
+          </View>
+        ) : useRail ? (
           <View style={{ marginTop: 14 }}>
             <AuroraWeekRail
               planId={planId!}
