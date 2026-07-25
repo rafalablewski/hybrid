@@ -10,6 +10,9 @@ import {
   type LibraryMovement,
 } from "./movements";
 import { GYM_EXERCISES, gymExercise } from "../exercise-db";
+import { PLAN_PROGRAMS } from "../plan-programs";
+import { SPORTS } from "../sports";
+import type { PlanProgram } from "../plan-program";
 import type { MuscleGroup } from "./types";
 
 /**
@@ -122,6 +125,66 @@ describe("shipped exercise library", () => {
     setExerciseCatalog(library);
     const dropped = catalogNames(MOVEMENTS, library).filter((n) => musclesFor(n).length === 0);
     expect(dropped, `${dropped.length} pickable exercises would log zero load`).toEqual([]);
+  });
+});
+
+describe("PRESCRIBED movements — plan programs + sport S&C pools", () => {
+  // The third name source, and the one the picker guards above cannot see.
+  // Plan programs (plan-programs.ts) and the sport S&C pools (olympic-sports.ts)
+  // are authored free-hand in TypeScript: a coach writes "Squat", "Dips",
+  // "Single-arm KB Swing", and nothing checked those strings against the
+  // catalog. 154 of 214 prescribed plan movements and 22 of 34 sport movements
+  // used to resolve to nothing — follow the 12-week kettlebell plan exactly and
+  // 108 of its 121 movements logged zero load.
+  const rows = seedRows();
+
+  /** Every exercise NAME the shipped plans prescribe as gym work. Prose entries
+   *  (runs, "or cross-train") are workout types, not lifts, so they're excluded —
+   *  a structured entry is one carrying `sets` or a `scheme`. */
+  function prescribedPlanNames(): { plan: string; name: string }[] {
+    const out: { plan: string; name: string }[] = [];
+    for (const [plan, p] of Object.entries(PLAN_PROGRAMS as Record<string, PlanProgram>))
+      for (const w of p.weeks ?? [])
+        for (const d of w.days ?? [])
+          for (const s of d.sessions ?? []) {
+            for (const l of s.lifts ?? []) if (l?.name) out.push({ plan, name: l.name });
+            for (const e of s.entries ?? []) if (e.sets != null || e.scheme) out.push({ plan, name: e.label });
+          }
+    return out;
+  }
+
+  function prescribedSportNames(): { plan: string; name: string }[] {
+    const out: { plan: string; name: string }[] = [];
+    for (const [key, s] of Object.entries(SPORTS as Record<string, { pool?: { name: string }[] }>))
+      for (const x of s.pool ?? []) if (x?.name) out.push({ plan: `sport:${key}`, name: x.name });
+    return out;
+  }
+
+  it("every PLAN-prescribed movement attributes load", () => {
+    setExerciseCatalog(asLibrary(rows));
+    const dropped = prescribedPlanNames()
+      .filter((x) => musclesFor(x.name).length === 0)
+      .map((x) => `${x.plan}: ${x.name}`);
+    expect([...new Set(dropped)], `${dropped.length} prescribed plan movements would log zero load`).toEqual([]);
+  });
+
+  it("every SPORT S&C-prescribed movement attributes load", () => {
+    setExerciseCatalog(asLibrary(rows));
+    const dropped = prescribedSportNames()
+      .filter((x) => musclesFor(x.name).length === 0)
+      .map((x) => `${x.plan}: ${x.name}`);
+    expect([...new Set(dropped)], `${dropped.length} prescribed sport movements would log zero load`).toEqual([]);
+  });
+
+  it("resolves prescribed movements WITHOUT the library too", () => {
+    // A plan is followed offline / signed-out / before the library loads, and it
+    // still has to attribute. The plans and sport pools are code, so unlike the
+    // DB-backed library they have no excuse to depend on a fetch.
+    resetExerciseCatalog();
+    const dropped = [...prescribedPlanNames(), ...prescribedSportNames()]
+      .filter((x) => musclesFor(x.name).length === 0)
+      .map((x) => `${x.plan}: ${x.name}`);
+    expect([...new Set(dropped)], `${dropped.length} prescribed movements need the library to resolve`).toEqual([]);
   });
 });
 
