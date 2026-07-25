@@ -19,9 +19,11 @@ import type {
 } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
 import { useDialog } from "../lib/use-dialog";
+import { useLang } from "@/lib/i18n";
 
 // ---------------- Coach detail (storefront a client sees) ----------------
 function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { t } = useLang();
   const [data, setData] = useState<CoachStorefrontResponse | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [rating, setRating] = useState(5);
@@ -50,9 +52,9 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(520px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
+          <button aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
-        {!data || !c ? <EmptyState title="Loading…" /> : (
+        {!data || !c ? <EmptyState title={t("common.loading")} /> : (
           <>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
@@ -71,39 +73,39 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
               {c.specialties?.map((s: string) => <span key={s} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 999, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}` }}>{s}</span>)}
             </div>
             {c.priceNote && <div style={{ color: C("ash"), fontSize: 13, marginTop: 10 }}>💳 {c.priceNote}</div>}
-            {data.isMyCoach && <div style={{ marginTop: 10, color: C("lime"), fontSize: 13 }}>✓ This is your coach.</div>}
+            {data.isMyCoach && <div style={{ marginTop: 10, color: C("lime"), fontSize: 13 }}>✓ {t("w.coaches.isYourCoach")}</div>}
 
             {/* Programs */}
-            <div style={{ marginTop: 22, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>Online programs</div>
+            <div style={{ marginTop: 22, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{t("w.coaches.onlinePrograms")}</div>
             {data.programs.length === 0 ? (
-              <div style={{ color: C("ash"), fontSize: 13, marginTop: 8 }}>No published programs yet.</div>
+              <div style={{ color: C("ash"), fontSize: 13, marginTop: 8 }}>{t("w.coaches.noPublished")}</div>
             ) : data.programs.map((p: StorefrontProgram) => (
               <div key={p.id} style={{ ...card(true, { marginTop: 10, padding: 14 }) }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                   <div>
                     <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700 }}>{p.name}</div>
-                    <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" – ")}</div>
+                    <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</div>
                   </div>
                   {p.enrollmentStatus ? (
-                    <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("ash"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</span>
+                    <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("ash"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}</span>
                   ) : data.isMe ? null : (
-                    <Btn small onClick={() => enroll(p.id)} disabled={busy.is(p.id)}>Start program</Btn>
+                    <Btn small onClick={() => enroll(p.id)} disabled={busy.is(p.id)}>{t("w.coaches.startProgram")}</Btn>
                   )}
                 </div>
                 {p.summary && <p style={{ color: C("chalk"), fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{p.summary}</p>}
                 {Array.isArray(p.preview) && p.preview.length > 0 && (
                   <>
                     <button onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: C("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
-                      {preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}
+                      {preview === p.id ? `${t("w.coaches.hidePreview")} ▲` : `${t("w.coaches.previewPlan")} ▼`}
                     </button>
                     {preview === p.id && (
                       <div style={{ marginTop: 8 }}>
                         {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
                           <div key={wi} style={{ marginBottom: 8 }}>
-                            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>Week {wi + 1}</div>
+                            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>{t("w.coaches.week")} {wi + 1}</div>
                             {w.days.map((d: ProgramPreviewDay, di: number) => (
                               <div key={di} style={{ marginTop: 4 }}>
-                                <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `Day ${di + 1}`}</div>
+                                <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</div>
                                 <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</div>
                               </div>
                             ))}
@@ -118,16 +120,16 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
 
             {/* Reviews */}
             <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>Reviews ({data.reviews.length})</span>
-              {data.isMyCoach && !data.isMe && <Btn ghost small onClick={() => setReviewOpen((o) => !o)}>{reviewOpen ? "Cancel" : "Write a review"}</Btn>}
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{t("w.coaches.reviews")} ({data.reviews.length})</span>
+              {data.isMyCoach && !data.isMe && <Btn ghost small onClick={() => setReviewOpen((o) => !o)}>{reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")}</Btn>}
             </div>
             {reviewOpen && (
               <div style={card(true, { marginTop: 10, padding: 14 })}>
                 <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
                   {[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("gold") : C("line") }}>★</button>)}
                 </div>
-                <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="How was the coaching?" style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 12, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
-                <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>Submit review</Btn></div>
+                <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder={t("w.coaches.reviewPlaceholder")} style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 12, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
+                <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>{t("w.coaches.submitReview")}</Btn></div>
               </div>
             )}
             {data.reviews.map((rv: StorefrontReview) => (
@@ -149,6 +151,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
 
 // ---------------- Coach's own storefront editor ----------------
 function Storefront() {
+  const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<CoachProfileResponse | null>(null);
   const [form, setForm] = useState({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "", visibility: "public" });
@@ -175,36 +178,36 @@ function Storefront() {
   const togglePublish = (p: CoachProgramData) => busy.run(p.id, async () => { await jsend(`/api/coach/programs/${p.id}`, "PATCH", { published: !p.published }); await load(); });
   const respond = (id: string, action: string) => busy.run(id, async () => { await jsend("/api/coach/enrollments", "POST", { enrollmentId: id, action }); await load(); });
 
-  if (!data) return <EmptyState title="Loading…" />;
-  if (!data.isCoach) return <EmptyState title="Coaches only" sub="Apply to become a coach to publish programs and appear in the marketplace." />;
+  if (!data) return <EmptyState title={t("common.loading")} />;
+  if (!data.isCoach) return <EmptyState title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
 
   const inp = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 14 } as const;
   const fld = (label: string, node: React.ReactNode) => <label style={{ display: "block", marginBottom: 12 }}><span style={{ display: "block", fontSize: 12, color: C("ash"), marginBottom: 4 }}>{label}</span>{node}</label>;
 
   return (
     <div style={{ maxWidth: 600 }}>
-      {!data.handle && <div style={{ ...card(aurora, { marginBottom: 16, borderColor: C("amber") }) }}>⚠ Claim a @handle on <strong>My profile</strong> first — the marketplace lists you by handle.</div>}
+      {!data.handle && <div style={{ ...card(aurora, { marginBottom: 16, borderColor: C("amber") }) }}>⚠ {t("w.coaches.claimHandle")}</div>}
       <div style={card(aurora)}>
-        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 12 }}>Your storefront</div>
-        {fld("Headline", <input style={inp} value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder="Olympic weightlifting coach – 10y" />)}
-        {fld("Bio", <textarea style={{ ...inp, minHeight: 80 }} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />)}
-        {fld("Specialties (comma-separated)", <input style={inp} value={form.specialties} onChange={(e) => setForm({ ...form, specialties: e.target.value })} placeholder="Strength, Olympic lifting" />)}
-        {fld("Sports (comma-separated)", <input style={inp} value={form.sports} onChange={(e) => setForm({ ...form, sports: e.target.value })} placeholder="Weightlifting, CrossFit" />)}
-        {fld("Pricing note", <input style={inp} value={form.priceNote} onChange={(e) => setForm({ ...form, priceNote: e.target.value })} placeholder="Free for now – paid plans coming" />)}
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</div>
+        {fld(t("w.coaches.headline"), <input style={inp} value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder={t("w.coaches.headlinePlaceholder")} />)}
+        {fld(t("w.coaches.bio"), <textarea style={{ ...inp, minHeight: 80 }} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />)}
+        {fld(t("w.coaches.specialties"), <input style={inp} value={form.specialties} onChange={(e) => setForm({ ...form, specialties: e.target.value })} placeholder={t("w.coaches.specialtiesPlaceholder")} />)}
+        {fld(t("w.coaches.sports"), <input style={inp} value={form.sports} onChange={(e) => setForm({ ...form, sports: e.target.value })} placeholder={t("w.coaches.sportsPlaceholder")} />)}
+        {fld(t("w.coaches.pricingNote"), <input style={inp} value={form.priceNote} onChange={(e) => setForm({ ...form, priceNote: e.target.value })} placeholder={t("w.coaches.pricingPlaceholder")} />)}
         <div style={{ display: "flex", gap: 16, margin: "4px 0 12px", flexWrap: "wrap" }}>
-          <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.acceptingClients} onChange={(e) => setForm({ ...form, acceptingClients: e.target.checked })} /> Accepting clients</label>
-          <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.autoAccept} onChange={(e) => setForm({ ...form, autoAccept: e.target.checked })} /> Auto-accept enrolments</label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.acceptingClients} onChange={(e) => setForm({ ...form, acceptingClients: e.target.checked })} /> {t("w.coaches.acceptingClients")}</label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", color: C("chalk"), fontSize: 13 }}><input type="checkbox" checked={form.autoAccept} onChange={(e) => setForm({ ...form, autoAccept: e.target.checked })} /> {t("w.coaches.autoAccept")}</label>
         </div>
-        <Btn onClick={save} disabled={busy.is("save")}>{saved ? "Saved ✓" : busy.is("save") ? "Saving…" : "Save storefront"}</Btn>
+        <Btn onClick={save} disabled={busy.is("save")}>{saved ? `${t("w.coaches.saved")} ✓` : busy.is("save") ? t("w.coaches.saving") : t("w.coaches.saveStorefront")}</Btn>
       </div>
 
       {/* Programs publish */}
-      <div style={{ marginTop: 24, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>Programs ({programs.length})</div>
+      <div style={{ marginTop: 24, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</div>
       <div style={card(aurora)}>
-        {programs.length === 0 ? <EmptyState title="No programs yet" sub="Build a multi-week program in the Coach console, then publish it here." /> : programs.map((p) => (
+        {programs.length === 0 ? <EmptyState title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
           <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
             <div><div style={{ color: C("chalk"), fontWeight: 600 }}>{p.name}</div><div style={{ color: C("ash"), fontSize: 12 }}>{p.goal ?? "—"}</div></div>
-            <Btn small ghost={!p.published} tone="lime" onClick={() => togglePublish(p)} disabled={busy.is(p.id)}>{p.published ? "Published ✓" : "Publish"}</Btn>
+            <Btn small ghost={!p.published} tone="lime" onClick={() => togglePublish(p)} disabled={busy.is(p.id)}>{p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")}</Btn>
           </div>
         ))}
       </div>
@@ -212,7 +215,7 @@ function Storefront() {
       {/* Enrolment requests */}
       {enroll.incoming?.length > 0 && (
         <>
-          <div style={{ marginTop: 24, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>Enrolment requests</div>
+          <div style={{ marginTop: 24, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>{t("w.coaches.enrolmentRequests")}</div>
           <div style={card(aurora)}>
             {enroll.incoming.map((e: EnrollmentRow) => (
               <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
@@ -223,8 +226,8 @@ function Storefront() {
                 </div>
                 {e.status === "requested" && (
                   <div style={{ display: "flex", gap: 6 }}>
-                    <Btn small onClick={() => respond(e.id, "accept")} disabled={busy.is(e.id)}>Accept</Btn>
-                    <Btn small ghost onClick={() => respond(e.id, "decline")} disabled={busy.is(e.id)}>Decline</Btn>
+                    <Btn small onClick={() => respond(e.id, "accept")} disabled={busy.is(e.id)}>{t("w.coaches.accept")}</Btn>
+                    <Btn small ghost onClick={() => respond(e.id, "decline")} disabled={busy.is(e.id)}>{t("w.coaches.decline")}</Btn>
                   </div>
                 )}
               </div>
@@ -238,6 +241,7 @@ function Storefront() {
 
 // ---------------- Marketplace directory ----------------
 export default function Coaches() {
+  const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
   const [q, setQ] = useState("");
@@ -251,10 +255,10 @@ export default function Coaches() {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <ScreenHead title="Coaches" sub="Find a coach and start an online program." right={isCoach ? (
+      <ScreenHead title={t("w.coaches.title")} sub={t("w.coaches.sub")} right={isCoach ? (
         <div style={{ display: "flex", gap: 8 }}>
-          <Pill active={tab === "browse"} onClick={() => setTab("browse")}>Browse</Pill>
-          <Pill active={tab === "storefront"} onClick={() => setTab("storefront")}>My coaching</Pill>
+          <Pill active={tab === "browse"} onClick={() => setTab("browse")}>{t("w.coaches.browse")}</Pill>
+          <Pill active={tab === "storefront"} onClick={() => setTab("storefront")}>{t("w.coaches.myCoaching")}</Pill>
         </div>
       ) : undefined} />
 
@@ -262,9 +266,9 @@ export default function Coaches() {
         <Storefront />
       ) : (
         <>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coaches, sports, specialties…" style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }} />
-          {!coaches ? <EmptyState title="Loading…" /> : coaches.length === 0 ? (
-            <EmptyState title="No coaches yet" sub="When coaches publish their storefronts they'll appear here." />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("w.coaches.search")} style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }} />
+          {!coaches ? <EmptyState title={t("common.loading")} /> : coaches.length === 0 ? (
+            <EmptyState title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} />
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {coaches.map((c) => (
@@ -275,11 +279,11 @@ export default function Coaches() {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{c.name || `@${c.handle}`}</span>
                         {c.coachVerified && <VerifiedTick />}
-                        {!c.acceptingClients && <span style={{ fontSize: 11, color: C("ash") }}>– full</span>}
+                        {!c.acceptingClients && <span style={{ fontSize: 11, color: C("ash") }}>– {t("w.coaches.full")}</span>}
                       </div>
                       <div style={{ color: C("ash"), fontSize: 13 }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</div>
                       <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: C("ash"), fontFamily: "var(--font-mono)" }}>
-                        <span>{c.programs} program{c.programs === 1 ? "" : "s"}</span>
+                        <span>{c.programs} {c.programs === 1 ? t("w.coaches.program") : t("w.coaches.programsWord")}</span>
                         <Stars rating={c.rating} size={12} />
                       </div>
                     </div>
