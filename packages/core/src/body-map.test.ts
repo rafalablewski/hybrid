@@ -79,6 +79,15 @@ describe("body-map activation glow", () => {
     expect(map!.intensityOf.biceps).toBeGreaterThan(0);
   });
 
+  it("resolves the library's equipment-qualified compound names", () => {
+    // "Barbell Bench Press" is the library's display name for the built-in
+    // "Bench Press" — the body-map must light up, not silently no-op.
+    const map = exerciseBodyMap("Barbell Bench Press");
+    expect(map).not.toBeNull();
+    expect(map!.name).toBe("Bench Press");
+    expect(map!.intensityOf.chest).toBeGreaterThan(0);
+  });
+
   it("returns null for a name the DB doesn't know", () => {
     expect(exerciseBodyMap("Interpretive Dance")).toBeNull();
   });

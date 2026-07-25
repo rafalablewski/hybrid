@@ -414,14 +414,46 @@ export const GYM_ALIASES: Record<string, string> = {
   "Incline Bench Press": "Incline Dumbbell Bench Press",
 };
 
+/**
+ * The shipped exercise LIBRARY's display name → this DB's canonical name, for
+ * lifts the library presents under an equipment-qualified name that aliases a
+ * built-in (reference/sql-exercise-seed.sql — e.g. the library ships "Barbell
+ * Bench Press" with alias "Bench Press", "Barbell Deadlift" → "Deadlift"). Users
+ * see and log the library name, so without this bridge `gymExercise` misses on
+ * the app's most common compounds and everything keyed off it — the property
+ * sheet, the "How it's done" animation + muscle body-map, the set-grid shape —
+ * silently no-ops on exactly those pages.
+ *
+ * Kept SEPARATE from GYM_ALIASES on purpose: these must NOT flow into the
+ * engine's DISPLAY canonicalization (`exerciseNameAliasMap`), where the library
+ * declares the REVERSE (built-in name → library name) as the preferred display.
+ * Folding them together would form a rename cycle and rewrite the library's
+ * chosen names back to the bare DB ones. Only names whose target exists in
+ * GYM_EXERCISES belong here (a couple of library aliases point at lifts this DB
+ * doesn't carry — those stay unresolved by design).
+ */
+export const GYM_LIBRARY_ALIASES: Record<string, string> = {
+  "Barbell Bench Press": "Bench Press",
+  "Dumbbell Bench Press": "DB Bench Press",
+  "Barbell Deadlift": "Deadlift",
+  "Standing Overhead Press": "Overhead Press",
+  "Seated Dumbbell Press": "DB Overhead Press",
+  "Barbell Back Squat": "Back Squat",
+  "Barbell Front Squat": "Front Squat",
+  "Dumbbell Romanian Deadlift": "DB Romanian Deadlift",
+  "Dumbbell Single-Leg Romanian Deadlift": "Single-Leg RDL",
+};
+
 /** Look up a gym exercise by name (case-insensitive), following a built-in
- *  rename breadcrumb (GYM_ALIASES) so an old logged name still resolves to its
- *  current entry. Returns undefined for a genuinely unknown name. */
+ *  rename breadcrumb (GYM_ALIASES) and the shipped library's equipment-qualified
+ *  display names (GYM_LIBRARY_ALIASES) so a name the user actually sees still
+ *  resolves to its property sheet. Returns undefined for a genuinely unknown
+ *  name. */
 export function gymExercise(name: string): GymExercise | undefined {
   const direct = GYM_EXERCISE_MAP[name];
   if (direct) return direct;
   const trimmed = name.trim();
-  const renamed = GYM_ALIASES[trimmed];
+  const renamed = GYM_ALIASES[trimmed] ?? GYM_LIBRARY_ALIASES[trimmed];
   if (renamed && GYM_EXERCISE_MAP[renamed]) return GYM_EXERCISE_MAP[renamed];
   const lower = trimmed.toLowerCase();
   return GYM_EXERCISES.find((e) => e.name.toLowerCase() === lower);
