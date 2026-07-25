@@ -84,7 +84,7 @@ function Spark({ values, stroke, reversed, id }: { values: number[]; stroke: str
 
 function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) => string): { v: string; u: string; label: string } {
   if (card.metric === "pace") return { v: paceClock(card.value), u: "/km", label: t("w.home.exw.bestPace") };
-  if (card.metric === "e1rm") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.bestE1rm") };
+  if (card.metric === "weight") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.heaviest") };
   if (card.metric === "time") return { v: String(card.value), u: "min", label: t("w.home.exw.time") };
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
 }

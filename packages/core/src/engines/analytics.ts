@@ -1,11 +1,11 @@
 import type { LoggedSession, PacePoint } from "./session";
 import type { MuscleGroup } from "./types";
-import { setsForVolume, effectiveSetLoadKg } from "./session";
+import { setsForVolume, effectiveSetLoadKg, topLoadSeries } from "./session";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { MOVEMENTS } from "./movements";
 import { exerciseHistory } from "./records";
-import { exerciseDashboard, type ExercisePeriod } from "./exercise";
+import { exerciseDashboard, periodCutoff, type ExercisePeriod } from "./exercise";
 
 // Training-analytics hub: cross-exercise + over-time rollups that sit ABOVE the
 // per-exercise dashboards. Volume TRENDS (weekly working sets + tonnage) and a
@@ -105,11 +105,12 @@ export interface ExerciseTableRow {
   kind: "strength" | "cardio" | "conditioning";
   /** sessions trained in the period (frequency) */
   sessions: number;
-  /** strength: best e1RM (kg); cardio/other: 0 */
-  bestE1rm: number;
+  /** strength: heaviest working load lifted in the period (kg); cardio/other: 0.
+   *  The actual top weight — e1RM is a secondary, derived stat. */
+  topWeight: number;
   /** strength: tonnage (kg); cardio: distance (km) */
   volume: number;
-  /** improvement direction over the period (strength = stronger, cardio = faster) */
+  /** improvement direction over the period (strength = heavier, cardio = faster) */
   trend: TrendDir;
   lastPerformed?: string;
 }
@@ -123,9 +124,9 @@ function paceTrend(pace: PacePoint[]): TrendDir {
 
 /**
  * One row per movement trained in the period, each carrying headline stats
- * (frequency, best e1RM, volume, improvement trend) and drilling into its own
- * per-exercise dashboard. Sorted by volume (then strength) descending; movements
- * with no activity in the period are dropped.
+ * (frequency, heaviest lift, volume, improvement trend) and drilling into its
+ * own per-exercise dashboard. Sorted by volume (then heaviest lift) descending;
+ * movements with no activity in the period are dropped.
  */
 export function exerciseTable(
   sessions: LoggedSession[],
@@ -134,6 +135,7 @@ export function exerciseTable(
   includeWarmups = false,
   bw?: BodyweightInput,
 ): ExerciseTableRow[] {
+  const cutoff = periodCutoff(period, now);
   return exerciseHistory(sessions)
     .map((e) => {
       const d = exerciseDashboard(sessions, e.name, period, now, includeWarmups, bw);
@@ -142,25 +144,29 @@ export function exerciseTable(
           name: e.name,
           kind: "cardio" as const,
           sessions: d.efforts,
-          bestE1rm: 0,
+          topWeight: 0,
           volume: d.distanceKm,
           trend: paceTrend(d.pace),
           lastPerformed: d.lastPerformed,
         };
       }
-      const pts = d.e1rm;
+      // Trend off the actual top weight, first vs last session in the window.
+      const pts = topLoadSeries(sessions, e.name, bw).filter((p) => {
+        const t = ms(p.date);
+        return t > cutoff && t <= now;
+      });
       const trend: TrendDir =
-        pts.length < 2 ? "flat" : pts[pts.length - 1]!.e1rm > pts[0]!.e1rm ? "up" : pts[pts.length - 1]!.e1rm < pts[0]!.e1rm ? "down" : "flat";
+        pts.length < 2 ? "flat" : pts[pts.length - 1]!.weightKg > pts[0]!.weightKg ? "up" : pts[pts.length - 1]!.weightKg < pts[0]!.weightKg ? "down" : "flat";
       return {
         name: e.name,
         kind: d.kind,
         sessions: d.sessions,
-        bestE1rm: d.bestE1rm,
+        topWeight: d.heaviestLoad,
         volume: d.volume,
         trend,
         lastPerformed: d.lastPerformed,
       };
     })
     .filter((r) => r.sessions > 0)
-    .sort((a, b) => b.volume - a.volume || b.bestE1rm - a.bestE1rm);
+    .sort((a, b) => b.volume - a.volume || b.topWeight - a.topWeight);
 }
