@@ -36,9 +36,9 @@ describe("filterGoalGroups", () => {
   it("narrows to a single category", () => {
     for (const category of GOAL_CATEGORIES) {
       const groups = filterGoalGroups("", category);
-      // either the category has goals (one group, matching) or it drops out entirely
-      expect(groups.every((g) => g.category === category)).toBe(true);
-      if (groups.length) expect(groups[0].category).toBe(category);
+      // a category either yields exactly its own group, or drops out entirely
+      expect(groups.length).toBeLessThanOrEqual(1);
+      for (const group of groups) expect(group.category).toBe(category);
     }
   });
 
