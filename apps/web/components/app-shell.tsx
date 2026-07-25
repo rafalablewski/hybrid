@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, isMobileOnlyNav, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -16,6 +16,7 @@ import { fs, space,
   CHALK,
   ASH,
   BLUE,
+  VIOLET,
   AMBER,
   RED,
   LIME_T,
@@ -42,6 +43,10 @@ const AuroraRunTrack = dynamic(() => import("./aurora/run-track"), { ssr: false 
 const AuroraCoach = dynamic(() => import("./aurora/coach"), { ssr: false });
 const AuroraUpgrade = dynamic(() => import("./aurora/upgrade"), { ssr: false });
 const AuroraOrg = dynamic(() => import("./aurora/org"), { ssr: false });
+const AuroraAthleteAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraAthleteAnalytics })), { ssr: false });
+const AuroraCoachAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraCoachAnalytics })), { ssr: false });
+const AuroraOperatorAnalytics = dynamic(() => import("./aurora/analytics").then((m) => ({ default: m.AuroraOperatorAnalytics })), { ssr: false });
+const AuroraEndurance = dynamic(() => import("./aurora/endurance"), { ssr: false });
 const AuroraTalent = dynamic(() => import("./aurora/talent"), { ssr: false });
 const AuroraTactical = dynamic(() => import("./aurora/tactical"), { ssr: false });
 const AuroraTeamCompare = dynamic(() => import("./aurora/team-compare"), { ssr: false });
@@ -84,6 +89,7 @@ import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
+import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
@@ -99,6 +105,7 @@ export default function AppShell() {
   const { session, ready, logout } = useSession();
   const { sessions, loading: sessionsLoading, error: sessionsError, refresh } = useSessions();
   const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
+  const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
   const { bio: bioFromSignals } = useSignals();
@@ -201,13 +208,19 @@ export default function AppShell() {
     if (screen === "periodize" && persona === "casual") { setScreen("today"); setUpgradeOpen(true); }
   }, [screen, persona]);
 
-  // Mobile-only surfaces (Analytics, Endurance) render NOTHING on web — the nav
-  // no longer offers them, but an old bookmark, a stale in-app link or a restored
-  // screen id could still ask for one. Bounce to Today so the shell can never sit
-  // on a blank body. See MOBILE_ONLY_NAV in @hybrid/core.
+  // Analytics scope — which of the three dashboards is showing. Availability
+  // comes from the SHARED resolver in @hybrid/core (role-derived, never persona-
+  // derived), the same one the mobile screen uses, so the two clients can never
+  // disagree about who may see whose data. Land on the highest scope the role
+  // holds (an admin opens on the platform view).
+  const authRole = normalizeAuthRole(session?.role);
+  const allowedScopes = useMemo(() => analyticsScopesFor(authRole), [authRole]);
+  const [scope, setScope] = useState<AnalyticsScope>("athlete");
   useEffect(() => {
-    if (isMobileOnlyNav(screen)) setScreen("today");
-  }, [screen]);
+    setScope(allowedScopes[allowedScopes.length - 1]!);
+  }, [allowedScopes]);
+  // A demotion mid-session must not leave the user on a scope they've lost.
+  const activeScope = resolveAnalyticsScope(authRole, scope);
 
   // Auth guard — bounce to /login when there's no session.
   useEffect(() => {
@@ -341,7 +354,7 @@ export default function AppShell() {
             // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒)
             // in the sidebar rather than hidden, so the whole toolkit is visible;
             // a locked item routes to the upgrade screen.
-            const navGroups = groupedNavWithLocks(persona, navAccess, "web")
+            const navGroups = groupedNavWithLocks(persona, navAccess)
               .map(({ group, items }) => ({ group, items: items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
               .filter((g) => g.items.length > 0);
 
@@ -709,6 +722,44 @@ export default function AppShell() {
         {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
             changes (Aurora only). The banners/header above stay put. */}
         <div key={screen} className={aurora ? "aurora-enter" : undefined}>
+        {/* ANALYTICS — the 3-scope dashboard. Ships on BOTH clients (parity rule);
+            the mobile twin is components/aurora/analytics.tsx and reads the same
+            engines + endpoints. Scope tabs appear only when the role holds more
+            than one, and each scope states what it can and cannot see. */}
+        {screen === "analytics" && (
+          <>
+            {allowedScopes.length > 1 && (
+              <div style={{ display: "flex", gap: space.sm, marginBottom: 12, flexWrap: "wrap" }}>
+                {allowedScopes.map((id) => {
+                  const on = activeScope === id;
+                  const c = id === "operator" ? AMBER : id === "coach" ? VIOLET : LIME;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setScope(id)}
+                      aria-pressed={on}
+                      style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", padding: "9px 18px", borderRadius: aurora ? 999 : 10, cursor: "pointer", border: `1px solid ${on ? c : LINE}`, background: on ? c : "transparent", color: on ? ON_ACCENT : ASH }}
+                    >
+                      {t(analyticsScopeLabelKey(id))}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {(() => {
+              const acc = activeScope === "operator" ? AMBER : activeScope === "coach" ? VIOLET : LIME;
+              return (
+                <div style={{ padding: "10px 14px", borderRadius: aurora ? 18 : 10, background: `${acc}12`, borderLeft: `3px solid ${acc}`, marginBottom: 20 }}>
+                  <Mono s={{ fontSize: fs.caption, lineHeight: 1.4 }} c={CHALK}>{t(analyticsScopePrivacyKey(activeScope))}</Mono>
+                </div>
+              );
+            })()}
+            {activeScope === "athlete" && <AuroraAthleteAnalytics sessions={sessions} />}
+            {activeScope === "coach" && <AuroraCoachAnalytics roster={roster} />}
+            {activeScope === "operator" && <AuroraOperatorAnalytics />}
+          </>
+        )}
+
         {screen === "today" && (
           <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />
         )}
@@ -734,6 +785,8 @@ export default function AppShell() {
         {screen === "performance" && <AuroraPerformance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
+
+        {screen === "endurance" && <AuroraEndurance sessions={sessions} />}
 
         {screen === "volume" && <AuroraVolume sessions={sessions} />}
 

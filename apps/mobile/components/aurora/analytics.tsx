@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   totalVolume, sessionVolume, bestTopLoadByLift, topLoadSeries, liftNames,
-  kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
+  kgToUnit, fmtTonnage, fmtWeight, normalizeAuthRole,
+  analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey,
+  type LoggedSession, type AnalyticsScope,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -27,12 +29,11 @@ import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
  * bars/sparks (the idiom every other mobile analytics screen uses — trends,
  * endurance, volume), not a charting library.
  *
- * Which scopes appear follows the AUTH ROLE, not the persona: a client sees
- * Athlete, a coach also sees Coach, an admin sees all three. With one scope the
- * switcher is hidden entirely.
+ * Which scopes appear comes from the SHARED resolver in core
+ * (analyticsScopesFor) — role-derived, never persona-derived — the same one the
+ * web shell uses, so the clients can't disagree about who may see whose data.
+ * With one scope the switcher is hidden entirely.
  */
-
-type Scope = "athlete" | "coach" | "operator";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
@@ -64,6 +65,19 @@ function AFrame({ title, kicker, children }: { title: string; kicker?: string; c
       </View>
       <View style={{ marginTop: 12 }}>{children}</View>
     </ACard>
+  );
+}
+
+/** The "what this scope can and cannot see" note, shown above every dashboard.
+ *  Same copy as web (analytics.privacy.*) — a left accent rule rather than a
+ *  glyph, since a marker before a label reads as decoration. */
+function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string }) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  return (
+    <View style={{ marginTop: 14, paddingVertical: 10, paddingHorizontal: 13, borderRadius: 14, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
+    </View>
   );
 }
 
@@ -313,23 +327,22 @@ function OperatorAnalytics() {
 
 /* ---------- SCREEN ---------- */
 export default function AuroraAnalytics() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const { role } = useSession();
   const { data: sessions = [], isFetching, refetch } = useSessionsQuery();
   useRefreshOnFocus(refetch);
 
-  // Scope availability follows the AUTH ROLE (a self-serve persona choice must
-  // never hand someone the roster or the operator aggregates).
-  const scopes = useMemo<{ id: Scope; label: string }[]>(() => {
-    const out: { id: Scope; label: string }[] = [{ id: "athlete", label: t("analytics.scope.athlete") }];
-    if (role === "coach" || role === "admin") out.push({ id: "coach", label: t("analytics.scope.coach") });
-    if (role === "admin") out.push({ id: "operator", label: t("analytics.scope.operator") });
-    return out;
-  }, [role, t]);
+  const authRole = normalizeAuthRole(role);
+  const allowed = useMemo(() => analyticsScopesFor(authRole), [authRole]);
+  const options = useMemo(() => allowed.map((id) => ({ id, label: t(analyticsScopeLabelKey(id)) })), [allowed, t]);
 
-  const [scope, setScope] = useState<Scope>("athlete");
-  // A demoted coach/admin could hold a scope they no longer qualify for.
-  const active: Scope = scopes.some((s) => s.id === scope) ? scope : "athlete";
+  // Land on the highest scope the role holds (an admin opens on the platform
+  // view), matching the web shell.
+  const [scope, setScope] = useState<AnalyticsScope>("athlete");
+  useEffect(() => { setScope(allowed[allowed.length - 1]!); }, [allowed]);
+  // A demotion mid-session must not leave the user on a scope they've lost.
+  const active = resolveAnalyticsScope(authRole, scope);
 
   return (
     <AuroraScreen refreshing={isFetching} onRefresh={refetch}>
@@ -339,11 +352,13 @@ export default function AuroraAnalytics() {
       </View>
       <ASub style={{ marginTop: 10 }}>{t("analytics.subtitle")}</ASub>
 
-      {scopes.length > 1 && (
+      {options.length > 1 && (
         <View style={{ marginTop: 16 }}>
-          <ASegment options={scopes} value={active} onPick={setScope} />
+          <ASegment options={options} value={active} onPick={setScope} />
         </View>
       )}
+
+      <PrivacyNote scope={active} accent={active === "operator" ? C.amber : active === "coach" ? C.violet : C.lime} />
 
       {active === "athlete" && <AthleteAnalytics sessions={sessions} />}
       {active === "coach" && <CoachAnalytics />}

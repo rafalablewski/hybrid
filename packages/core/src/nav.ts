@@ -143,28 +143,44 @@ export const NAV_ITEMS: NavItem[] = [
 const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2, admin: 3 };
 const ALL_PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 
-/** Which client is asking for the nav. Only used to drop surfaces a client
- *  deliberately doesn't host (see {@link MOBILE_ONLY_NAV}); omitted = no filter. */
-export type NavClient = "web" | "mobile";
+/**
+ * The three scopes of the Analytics dashboard. Both clients render all three —
+ * web↔mobile parity is absolute, so neither client owns a surface the other
+ * lacks.
+ */
+export type AnalyticsScope = "athlete" | "coach" | "operator";
 
 /**
- * Nav ids that are MOBILE-ONLY by product decision — analytics is mobile-first.
+ * Which Analytics scopes an auth ROLE may view. Derived from the role, never
+ * from the self-serve persona — choosing "athlete" mode must not hand anyone a
+ * coach roster or the platform aggregates.
  *
- * The web must render NEITHER a nav entry NOR a screen for these. Not even a
- * "get the app" pointer: a pointer is still a page opening on the web, and it
- * left mobile→web→mobile round-trips (the mobile springboard treats an id with
- * no route as web-only and opens the web app, which then told you to go back to
- * the phone). Mobile owns these surfaces outright.
- *
- * This is the one sanctioned exception to the web↔mobile parity rule, so it
- * lives HERE — shared — and the exception is recorded in `capabilities.ts`
- * rather than being an accident of each client's routing table.
+ * The scopes NEST the same way personas do (see {@link Persona}): a coach keeps
+ * their own athlete dashboard because a coach trains too, and an admin sees
+ * everything. Shared so web and mobile can't disagree on who sees whose data.
  */
-export const MOBILE_ONLY_NAV: readonly string[] = ["analytics", "endurance"];
+export function analyticsScopesFor(role: AuthRole): AnalyticsScope[] {
+  if (role === "admin") return ["athlete", "coach", "operator"];
+  if (role === "coach") return ["athlete", "coach"];
+  return ["athlete"];
+}
 
-/** Whether a nav id is a mobile-only surface the web must not host. */
-export function isMobileOnlyNav(id: string): boolean {
-  return MOBILE_ONLY_NAV.includes(id);
+/** Coerce a stored/held scope to one the role may actually view (else the
+ *  athlete scope) — so a demotion can never leave someone on a scope they've
+ *  lost access to. */
+export function resolveAnalyticsScope(role: AuthRole, wanted: AnalyticsScope): AnalyticsScope {
+  return analyticsScopesFor(role).includes(wanted) ? wanted : "athlete";
+}
+
+/** The i18n key for a scope's tab label. */
+export function analyticsScopeLabelKey(scope: AnalyticsScope): string {
+  return `analytics.scope.${scope}`;
+}
+
+/** The i18n key for a scope's PRIVACY note — the "what this scope can and
+ *  cannot see" line both clients show above the charts. */
+export function analyticsScopePrivacyKey(scope: AnalyticsScope): string {
+  return `analytics.privacy.${scope}`;
 }
 
 /**
@@ -230,12 +246,10 @@ export function navForPersonaWithLocks(
   persona: Persona,
   items: NavItem[] = NAV_ITEMS,
   access?: PersonaAccess,
-  client?: NavClient,
 ): NavItemLocked[] {
   const rank = PERSONA_RANK[persona];
   const athleteRank = PERSONA_RANK.athlete;
-  const hosted = client === "web" ? items.filter((i) => !isMobileOnlyNav(i.id)) : items;
-  return hosted.flatMap((it): NavItemLocked[] => {
+  return items.flatMap((it): NavItemLocked[] => {
     const minRank = PERSONA_RANK[effectiveMinPersona(it, access)];
     if (minRank <= rank) return [{ item: it, locked: false }]; // accessible
     // Above the persona's rank: show it LOCKED only if it's a Full (athlete-tier)
@@ -250,9 +264,8 @@ export function navForPersonaWithLocks(
 export function groupedNavWithLocks(
   persona: Persona,
   access?: PersonaAccess,
-  client?: NavClient,
 ): { group: NavGroup; items: NavItemLocked[] }[] {
-  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access, client);
+  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access);
   return NAV_GROUP_ORDER.map((group) => ({ group, items: withLocks.filter((x) => x.item.group === group) })).filter(
     (g) => g.items.length > 0,
   );

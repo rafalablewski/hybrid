@@ -6,9 +6,10 @@ import {
   navVisibleTo,
   resolvePersona,
   sanitizePersonaAccess,
-  groupedNavWithLocks,
-  isMobileOnlyNav,
-  MOBILE_ONLY_NAV,
+  analyticsScopesFor,
+  resolveAnalyticsScope,
+  analyticsScopeLabelKey,
+  analyticsScopePrivacyKey,
 } from "./nav";
 
 describe("navForPersonaWithLocks", () => {
@@ -190,45 +191,39 @@ describe("navVisibleTo", () => {
   });
 });
 
-describe("mobile-only nav surfaces", () => {
-  const ids = (rows: ReturnType<typeof navForPersonaWithLocks>) => rows.map((r) => r.item.id);
+describe("analytics scopes", () => {
+  it("gives a client only their own dashboard", () => {
+    expect(analyticsScopesFor("client")).toEqual(["athlete"]);
+  });
 
-  it("drops mobile-only ids for the web client, at every persona", () => {
-    for (const persona of ["casual", "athlete", "coach", "admin"] as const) {
-      const web = ids(navForPersonaWithLocks(persona, NAV_ITEMS, undefined, "web"));
-      for (const id of MOBILE_ONLY_NAV) expect(web).not.toContain(id);
+  it("gives a coach their roster AND their own training (a coach trains too)", () => {
+    expect(analyticsScopesFor("coach")).toEqual(["athlete", "coach"]);
+  });
+
+  it("gives an admin all three", () => {
+    expect(analyticsScopesFor("admin")).toEqual(["athlete", "coach", "operator"]);
+  });
+
+  it("never lets a lower role reach a higher scope", () => {
+    expect(analyticsScopesFor("client")).not.toContain("coach");
+    expect(analyticsScopesFor("client")).not.toContain("operator");
+    expect(analyticsScopesFor("coach")).not.toContain("operator");
+  });
+
+  it("resolves a held scope the role has lost back to athlete", () => {
+    // A coach demoted to client must not stay on the roster dashboard.
+    expect(resolveAnalyticsScope("client", "coach")).toBe("athlete");
+    expect(resolveAnalyticsScope("client", "operator")).toBe("athlete");
+    expect(resolveAnalyticsScope("coach", "operator")).toBe("athlete");
+    // A scope the role still holds is kept as-is.
+    expect(resolveAnalyticsScope("coach", "coach")).toBe("coach");
+    expect(resolveAnalyticsScope("admin", "operator")).toBe("operator");
+  });
+
+  it("every scope has a label + privacy string key", () => {
+    for (const scope of analyticsScopesFor("admin")) {
+      expect(analyticsScopeLabelKey(scope)).toBe(`analytics.scope.${scope}`);
+      expect(analyticsScopePrivacyKey(scope)).toBe(`analytics.privacy.${scope}`);
     }
-  });
-
-  it("keeps them for mobile (and when no client is given)", () => {
-    const mobile = ids(navForPersonaWithLocks("athlete", NAV_ITEMS, undefined, "mobile"));
-    const unfiltered = ids(navForPersonaWithLocks("athlete"));
-    for (const id of MOBILE_ONLY_NAV) {
-      expect(mobile).toContain(id);
-      expect(unfiltered).toContain(id);
-    }
-  });
-
-  it("does not leak a mobile-only id as a LOCKED upsell to a free web user", () => {
-    // A casual user sees athlete-tier tools locked rather than hidden — a
-    // mobile-only surface must not sneak back in through that path on web.
-    const web = navForPersonaWithLocks("casual", NAV_ITEMS, undefined, "web");
-    expect(web.some((r) => isMobileOnlyNav(r.item.id))).toBe(false);
-  });
-
-  it("drops a group that mobile-only ids emptied, and never empties Analyze", () => {
-    const groups = groupedNavWithLocks("athlete", undefined, "web");
-    expect(groups.every((g) => g.items.length > 0)).toBe(true);
-    // Analyze keeps its web-hosted tools (statistics, volume, trends, ...).
-    expect(groups.find((g) => g.group === "analyze")!.items.length).toBeGreaterThan(0);
-  });
-
-  it("respects an admin persona override without re-admitting a mobile-only id", () => {
-    const web = navForPersonaWithLocks("casual", NAV_ITEMS, { analytics: "casual" }, "web");
-    expect(web.map((r) => r.item.id)).not.toContain("analytics");
-  });
-
-  it("every mobile-only id is a real nav id", () => {
-    for (const id of MOBILE_ONLY_NAV) expect(NAV_ITEMS.some((i) => i.id === id)).toBe(true);
   });
 });

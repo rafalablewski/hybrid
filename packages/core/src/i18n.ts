@@ -557,6 +557,9 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.scope.athlete": "You",
     "analytics.scope.coach": "Roster",
     "analytics.scope.operator": "Platform",
+    "analytics.privacy.athlete": "Your own training data only. Nothing here is visible to other athletes.",
+    "analytics.privacy.coach": "Only athletes who accepted you (mutual consent). Aggregate roster view — private athlete notes excluded.",
+    "analytics.privacy.operator": "Platform aggregates only — no access to any individual's private training data.",
   },
   pl: {
     "nav.today": "Dziś",
@@ -1078,6 +1081,9 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.scope.athlete": "Ty",
     "analytics.scope.coach": "Podopieczni",
     "analytics.scope.operator": "Platforma",
+    "analytics.privacy.athlete": "Wyłącznie Twoje dane treningowe. Nic tutaj nie jest widoczne dla innych sportowców.",
+    "analytics.privacy.coach": "Tylko sportowcy, którzy Cię zaakceptowali (obustronna zgoda). Widok zbiorczy — prywatne notatki są wyłączone.",
+    "analytics.privacy.operator": "Wyłącznie dane zbiorcze platformy — bez dostępu do prywatnych danych treningowych kogokolwiek.",
   },
   de: {
     "nav.today": "Heute",
@@ -1599,6 +1605,9 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.scope.athlete": "Du",
     "analytics.scope.coach": "Kader",
     "analytics.scope.operator": "Plattform",
+    "analytics.privacy.athlete": "Nur deine eigenen Trainingsdaten. Nichts davon ist für andere Sportler sichtbar.",
+    "analytics.privacy.coach": "Nur Sportler, die dich akzeptiert haben (beidseitige Zustimmung). Aggregierte Kaderansicht — private Notizen ausgenommen.",
+    "analytics.privacy.operator": "Nur Plattform-Aggregate — kein Zugriff auf private Trainingsdaten einzelner Personen.",
   },
 };
 
