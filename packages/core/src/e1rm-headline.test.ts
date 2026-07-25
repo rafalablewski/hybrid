@@ -48,12 +48,13 @@ const REVIEWED: Record<string, string> = {
   "apps/web/components/session-detail.tsx":
     "picks the lift for the explicitly-labelled e1RM trend chart",
 
-  // ---- KNOWN GAPS — same class of bug as #231, not yet converted ----
-  // These publish an athlete's "top lift" as an e1RM, so a 250 kg x 10 deadlift
+  // ---- KNOWN GAP — same class of bug as #231, not yet converted ----
+  // Publishes an athlete's "top lift" as an e1RM, so a 250 kg x 10 deadlift
   // reads as 333 kg, contradicting the Profile PRs grid (which uses topLoadMap).
-  // Not a drop-in swap: both write a PERSISTED `{ lift, e1rm }` shape (Post.data
-  // and ProfileStats.topLifts), so converting needs a read path that still
-  // renders already-stored posts. Tracked in capabilities.ts.
+  // Not a drop-in swap: it writes a PERSISTED `{ lift, e1rm }` shape (Post.data,
+  // mirrored by ProfileStats.topLifts), so converting needs a read path that
+  // still renders already-stored posts. Tracked in capabilities.ts. The DERIVED
+  // feed path in social.ts was converted — only the persisted one is left.
   "apps/web/app/api/social/posts/route.ts":
     "KNOWN GAP — social PR post persists { lift, e1rm }; needs a migration plan",
 };

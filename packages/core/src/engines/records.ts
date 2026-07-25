@@ -12,9 +12,13 @@ import type { MuscleGroup } from "./types";
 export interface PrHit {
   lift: string;
   /**
-   * The new best estimated 1RM (kg, rounded). This is how a record is DETECTED
-   * — a rep PR (100 kg × 5 → 100 kg × 8) is a real record even though the bar
-   * never got heavier. It is NOT the number to headline: see `topLoad`.
+   * This session's best estimated 1RM for the lift (kg, rounded) — one of the
+   * two bases a record is detected on: a rep PR (100 kg × 5 → 100 kg × 8) is a
+   * real record even though the bar never got heavier.
+   *
+   * NOT necessarily greater than `previous`: a hit that qualified on LOAD alone
+   * (a heaviest-ever lift after a high-rep block) can carry a lower e1RM than
+   * the athlete's prior best. Never headline this — see `topLoad`.
    */
   e1rm: number;
   /** the prior best e1RM for this lift, or null if it's the first time trained */
@@ -70,32 +74,49 @@ function bestE1rmInSession(session: LoggedSession, bw?: BodyweightInput): Map<st
 }
 
 /**
- * New e1RM personal records set in `session`, compared with everything done
- * BEFORE it (`prior`). A lift never trained before counts as a "first"
- * (previous = null). Ordered by improvement, biggest first. Pass a dated
- * bodyweight lookup so bodyweight lifts PR on their effective load — with the
- * SAME basis on both sides of the comparison.
+ * New personal records set in `session`, compared with everything done BEFORE
+ * it (`prior`). A lift records on EITHER basis — a heavier top load than ever,
+ * or a better estimated 1RM (which is how a same-load rep PR qualifies). A lift
+ * never trained before counts as a "first" (both previous fields null). Ordered
+ * heaviest-first. Pass a dated bodyweight lookup so bodyweight lifts PR on their
+ * effective load — with the SAME basis on both sides of the comparison.
  */
 export function newPrsInSession(session: LoggedSession, prior: LoggedSession[], bw?: BodyweightInput): PrHit[] {
   const before = bestE1rmMap(prior, bw);
   const here = bestE1rmInSession(session, bw);
-  // The actual weight on the bar, carried alongside the e1RM that detects the
-  // record — so the clients can headline what was really lifted (#231).
   const loadBefore = topLoadMap(prior, bw);
   const loadHere = topLoadMap([session], bw);
   const hits: PrHit[] = [];
-  for (const [lift, e1rm] of here) {
-    const prev = before.get(lift) ?? null;
-    if (prev == null || e1rm > prev)
-      hits.push({
-        lift,
-        e1rm,
-        previous: prev,
-        topLoad: loadHere.get(lift) ?? 0,
-        previousTopLoad: prev == null ? null : (loadBefore.get(lift) ?? null),
-      });
+  // Union of both measures: a lift qualifies on either basis, and the two maps
+  // can disagree at the edges (a 0-rep entry has an e1RM of 0 but no top load).
+  for (const lift of new Set([...here.keys(), ...loadHere.keys()])) {
+    const e1rm = here.get(lift) ?? 0;
+    const topLoad = loadHere.get(lift) ?? 0;
+    const prevE1rm = before.get(lift) ?? null;
+    const prevTopLoad = loadBefore.get(lift) ?? null;
+    const firstEver = prevE1rm == null && prevTopLoad == null;
+
+    // EITHER basis makes it a record. e1RM alone misses a heaviest-ever lift
+    // that follows a high-rep block — 80 kg × 15 (e1RM 120) then 100 kg × 5
+    // (e1RM 117) is the heaviest that athlete has ever pulled, and it used to
+    // set no record and show no trophy at all. Load alone would miss the rep
+    // PR (100 kg × 5 → 100 kg × 8), which is just as real a record.
+    const beatsE1rm = prevE1rm != null && e1rm > prevE1rm;
+    const beatsLoad = prevTopLoad != null && topLoad > prevTopLoad;
+    if (!firstEver && !beatsE1rm && !beatsLoad) continue;
+
+    hits.push({
+      lift,
+      e1rm,
+      previous: firstEver ? null : prevE1rm,
+      topLoad,
+      previousTopLoad: firstEver ? null : prevTopLoad,
+    });
   }
-  return hits.sort((a, b) => e1rm_gain(b) - e1rm_gain(a));
+  // Heaviest first — the same basis the reveal hero picks by, so prs[0] is the
+  // record the athlete sees celebrated (they used to disagree, which is how a
+  // share caption ended up naming a different lift than the trophy above it).
+  return hits.sort((a, b) => b.topLoad - a.topLoad || e1rm_gain(b) - e1rm_gain(a));
 }
 
 const e1rm_gain = (h: PrHit) => h.e1rm - (h.previous ?? 0);

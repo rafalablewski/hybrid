@@ -221,7 +221,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       // PRs set in THIS session vs everything the athlete did before it.
       const prs = newPrsInSession(s, ordered.slice(0, idx));
       if (prs.length) {
-        const top = prs.reduce((a, b) => (b.e1rm > a.e1rm ? b : a));
+        // Heaviest actual lift, like every other PR surface (#231). Derived
+        // live from sessions, so unlike the stored PR posts there is no legacy
+        // { lift, e1rm } shape to keep reading here.
+        const top = prs.reduce((a, b) => (b.topLoad > a.topLoad ? b : a));
         items.push({
           id: `pr-${s.id}`,
           kind: "pr",
@@ -233,11 +236,11 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           lead: "PR",
           chips:
             prs.length === 1
-              ? [`${top.lift} — ${top.e1rm} kg e1RM`]
-              : [`${prs.length} PRs`, `top ${top.lift} — ${top.e1rm} kg`],
+              ? [`${top.lift} — ${top.topLoad} kg`]
+              : [`${prs.length} PRs`, `top ${top.lift} — ${top.topLoad} kg`],
           at: at + 1, // tie-break above the session card
           when: relativeTime(at, now),
-          metric: top.e1rm,
+          metric: top.topLoad,
           accent: "amber",
           _sort: sortAt + 1,
         });
