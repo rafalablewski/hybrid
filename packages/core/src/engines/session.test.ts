@@ -19,6 +19,7 @@ import {
   headlineRunMove,
   paceClock,
   formatStrengthPr,
+  strengthPrDelta,
   migrateBlocks,
   canonicalizeBlockNames,
   inferBlockKind,
@@ -393,5 +394,25 @@ describe("formatStrengthPr", () => {
   it("converts to the athlete's unit", () => {
     expect(formatStrengthPr({ lift: "Squat", topLoad: 100, previousTopLoad: null }, labels, "lb"))
       .toBe("Squat 220 lb (first!)");
+  });
+});
+
+describe("strengthPrDelta", () => {
+  const labels = { first: "first!", moreReps: "more reps" };
+
+  it("is the tag formatStrengthPr puts in brackets — one shared branch", () => {
+    const pr = { lift: "Squat", topLoad: 120, previousTopLoad: 110 };
+    expect(formatStrengthPr(pr, labels)).toBe(`Squat 120 kg (${strengthPrDelta(pr, labels)})`);
+  });
+
+  it("rounds the gain instead of leaking binary float noise", () => {
+    // topLoad is 0.1-rounded, so a raw subtraction gives 4.799999999999997.
+    expect(strengthPrDelta({ topLoad: 100.1, previousTopLoad: 95.3 }, labels)).toBe("+4.8 kg");
+  });
+
+  it("covers the three branches", () => {
+    expect(strengthPrDelta({ topLoad: 90, previousTopLoad: null }, labels)).toBe("first!");
+    expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 80 }, labels)).toBe("+10 kg");
+    expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 90 }, labels)).toBe("more reps");
   });
 });

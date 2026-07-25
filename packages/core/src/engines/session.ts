@@ -373,11 +373,30 @@ export function formatStrengthPr(
   labels: { first: string; moreReps: string },
   units: WeightUnit = "kg",
 ): string {
-  const load = fmtWeight(p.topLoad, units);
-  if (p.previousTopLoad == null) return `${p.lift} ${load} (${labels.first})`;
-  if (p.topLoad > p.previousTopLoad)
-    return `${p.lift} ${load} (+${fmtWeight(p.topLoad - p.previousTopLoad, units)})`;
-  return `${p.lift} ${load} (${labels.moreReps})`;
+  return `${p.lift} ${fmtWeight(p.topLoad, units)} (${strengthPrDelta(p, labels, units)})`;
+}
+
+/**
+ * Just the "what changed" tag of a strength PR — the gain, the first-time label,
+ * or the more-reps label. Split out of formatStrengthPr because the PR ROWS and
+ * the Wrapped hero subtitle render the delta on its own, next to a lift name
+ * that's already on screen. Both clients share this so the three-way branch
+ * can't drift between them (it was hand-written in six places before).
+ *
+ * `first` differs by surface on purpose — a row says "first!", the hero says
+ * "first ever" — so the caller passes the label it wants.
+ *
+ * Formats through fmtWeight rather than raw subtraction: topLoad is rounded to
+ * 0.1 kg, so `100.1 - 95.3` is 4.799999999999997 in binary floating point.
+ */
+export function strengthPrDelta(
+  p: { topLoad: number; previousTopLoad: number | null },
+  labels: { first: string; moreReps: string },
+  units: WeightUnit = "kg",
+): string {
+  if (p.previousTopLoad == null) return labels.first;
+  if (p.topLoad > p.previousTopLoad) return `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`;
+  return labels.moreReps;
 }
 
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */

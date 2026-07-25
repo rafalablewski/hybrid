@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, toBiometrics,
+  fmtWeight, strengthPrDelta,
   velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
@@ -271,8 +272,10 @@ function Full() {
                   <View key={p.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.lift}</Text>
                     {/* The weight actually lifted (#231) — this row and the session
-                        summary describe the same PR, so they must agree. */}
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{p.topLoad}kg{p.previousTopLoad == null || p.topLoad <= p.previousTopLoad ? "" : ` – +${p.topLoad - p.previousTopLoad}`}</Text>
+                        summary describe the same PR, so they must agree. Formatted
+                        through the shared helper: topLoad is 0.1-rounded, so a raw
+                        subtraction would print +4.799999999999997. */}
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>{fmtWeight(p.topLoad, "kg")}{p.previousTopLoad == null || p.topLoad <= p.previousTopLoad ? "" : ` – ${strengthPrDelta(p, { first: "", moreReps: "" })}`}</Text>
                   </View>
                 ))}
               </View>

@@ -19,6 +19,7 @@ import {
   sessionVolume,
   blockBestE1rm,
   blockTopLoad,
+  strengthPrDelta,
   fmtWeight,
   fmtTonnage,
   paceClock,
@@ -150,17 +151,13 @@ export function WorkoutWrapped({
   // A record isn't always a heavier bar — more reps at the same load is a real
   // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
-    ? cel.kind === "strength" ? `${cel.lift} — ${cel.firstEver ? t("summary.firstEver") : cel.repPr ? t("summary.morePrReps") : `+${fmtWeight(cel.topLoad - (cel.previousTopLoad ?? 0), units)}`}` : cel.move
+    ? cel.kind === "strength" ? `${cel.lift} — ${strengthPrDelta(cel, { first: t("summary.firstEver"), moreReps: t("summary.morePrReps") }, units)}` : cel.move
     : session.title;
 
-  // What a PR row says on the right: the weight gained, or "more reps" when the
-  // record came at the same load (a "+0 kg" would read as no progress at all).
+  // What a PR row says on the right — shared with the other client so the
+  // three-way branch can't drift ("+0 kg" would read as no progress at all).
   const prDelta = (p: { topLoad: number; previousTopLoad: number | null }) =>
-    p.previousTopLoad == null
-      ? t("summary.firstTime")
-      : p.topLoad > p.previousTopLoad
-        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
-        : t("summary.morePrReps");
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
   // ── story slides for the share sheet (trophy + signature lead) ──
   const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
@@ -171,7 +168,8 @@ export function WorkoutWrapped({
     ...cardioPrs.map((p) => ({ left: p.kind === "distance" ? `${p.move} ${p.value} km` : p.move, right: "", hot: true })),
     ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
-  const prHeadline = prs.length > 0 ? `🏆 ${prs.length} ${t("summary.newPrs")}` : cardioPrs.length > 0 ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}` : t("summary.todaysBests");
+  // Pluralized — "1 new PR", not "1 new PRs"; identical on both clients.
+  const prHeadline = prs.length > 0 ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}` : cardioPrs.length > 0 ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}` : t("summary.todaysBests");
   const bespoke: StorySlide[] = [
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as StorySlide] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as StorySlide] : []),
@@ -192,7 +190,9 @@ export function WorkoutWrapped({
     setSharing(true);
     setShareMsg("");
     try {
-      const caption = shareText({ title: session.title, minutes, sets, volume, bests, firstEver: false }, units, t);
+      // Headline the SAME record the reveal hero showed (see mobile parity).
+      const captionHeadline = cel && cel.kind === "strength" ? `\u{1F3C6} ${cel.lift} ${fmtWeight(cel.topLoad, units)}` : null;
+      const caption = shareText({ title: session.title, minutes, sets, volume, bests, firstEver: false }, units, t, captionHeadline);
       const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
       if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
       else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));

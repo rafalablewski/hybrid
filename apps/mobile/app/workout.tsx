@@ -16,6 +16,8 @@ import {
   sessionVolume,
   blockTopLoad,
   formatStrengthPr,
+  strengthPrDelta,
+  workoutShareCaption,
   newPrsInSession,
   newCardioPrsInSession,
   liveSessionStats,
@@ -1653,30 +1655,23 @@ function Summary({
 
   const prLine = (p: PrHit) =>
     formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
-  // What a PR row says on the right: the weight gained, or "more reps" when the
-  // record came at the same load (a "+0 kg" would read as no progress at all).
+  // What a PR row says on the right — shared with web so the three-way branch
+  // can't drift ("+0 kg" would read as no progress at all).
   const prDelta = (p: PrHit) =>
-    p.previousTopLoad == null
-      ? t("summary.firstTime")
-      : p.topLoad > p.previousTopLoad
-        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
-        : t("summary.morePrReps");
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
-  const shareText = [
-    firstEver ? t("share.firstWorkout") : null,
-    `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
-    `${summary.minutes} min – ${summary.sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(summary.volume, units)}`,
-    prs[0]
-      ? `\u{1F3C6} ${prLine(prs[0])}`
-      : cardioPrs[0]
-        ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
-        : bests[0]
-          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
-          : null,
-    t("share.tracked"),
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const captionHeadline = prs[0]
+    ? `\u{1F3C6} ${prLine(prs[0])}`
+    : cardioPrs[0]
+      ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
+      : bests[0]
+        ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
+        : null;
+  const shareText = workoutShareCaption(
+    { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, firstEver, headline: captionHeadline },
+    units,
+    t,
+  );
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(summary.blocks, false, bodyweightKg);
@@ -1687,10 +1682,11 @@ function Summary({
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
     ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
+  // Pluralized, matching web — "1 new PR", not "1 new PRs".
   const prHeadline = prs.length > 0
-    ? `🏆 ${prs.length} ${t("summary.newPrs")}`
+    ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
     : cardioPrs.length > 0
-      ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}`
+      ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
       : t("summary.todaysBests");
   const slides: SlideData[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },

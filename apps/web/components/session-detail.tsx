@@ -116,7 +116,7 @@ export function SessionDetail({
     formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
   // Distance + pace render in the sport's natural unit (metres for swimming /
   // rowing, km otherwise) — one shared core formatter, see formatCardioPr.
-  const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, "first!");
+  const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, t("summary.firstTime"));
 
   // The workout's charts + set breakdown + manage row — shown as the trailing
   // "details" section beneath the Wrapped panels (opening a session IS the
@@ -127,7 +127,7 @@ export function SessionDetail({
         <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{t("session.theSession")}</div>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
           {fmtDate(session.startedAt)}
-          {typeof session.readiness === "number" ? ` – readiness ${session.readiness}` : ""}
+          {typeof session.readiness === "number" ? ` – ${t("home.readiness")} ${session.readiness}` : ""}
         </Mono>
       </div>
 

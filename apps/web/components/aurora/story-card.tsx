@@ -54,9 +54,9 @@ export function StoryCard({ slide, st, w, t, units, active = false }: { slide: S
     if (slide.kind === "overview") {
       const s = slide.stats;
       const stat = [
-        { label: "MIN", value: String(s.minutes) },
-        { label: t("w.train.logger.liveSets"), value: String(s.sets) },
-        { label: t("w.train.logger.liveVolume"), value: fmtTonnage(s.volume, units) },
+        { label: t("summary.minutes"), value: String(s.minutes) },
+        { label: t("summary.sets"), value: String(s.sets) },
+        { label: t("summary.volumeMoved"), value: fmtTonnage(s.volume, units) },
       ];
       return (
         <>
@@ -85,7 +85,7 @@ export function StoryCard({ slide, st, w, t, units, active = false }: { slide: S
         <>
           <div style={{ fontFamily: D, fontWeight: 800, fontSize: px(64), color: st.barFill }}>{slide.headline}</div>
           <div style={{ marginTop: px(40) }}>
-            {slide.rows.slice(0, 7).map((r, i) => (
+            {slide.rows.slice(0, 6).map((r, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: px(36) }}>
                 <span style={{ fontFamily: D, fontWeight: 600, fontSize: px(46), color: st.text }}>{r.hot ? "🏆 " : ""}{r.left}</span>
                 {r.right && <span style={{ fontFamily: D, fontWeight: 800, fontSize: px(46), color: r.hot ? st.barFill : st.text }}>{r.right}</span>}

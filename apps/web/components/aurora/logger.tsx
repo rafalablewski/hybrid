@@ -19,6 +19,9 @@ import { fs, space,
   type StoryStyle,
   type StoryStyleId,
   blockTopLoad,
+  strengthPrDelta,
+  formatStrengthPr,
+  formatCardioPr,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
@@ -674,15 +677,13 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
     }
   }, [milestone]);
 
-  // The weight gained, or "more reps" when the record came at the same load —
-  // a "+0 kg" would read as no progress at all.
+  // Shared with mobile so the three-way branch can't drift; summary.firstTime
+  // (not w.train.logger.firstTime) is what every other PR row on both clients uses.
   const prLine = (p: PrHit) =>
-    p.previousTopLoad == null
-      ? t("w.train.logger.firstTime")
-      : p.topLoad > p.previousTopLoad
-        ? `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`
-        : t("summary.morePrReps");
-  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
+    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
+  // The shared cardio formatter — renders in the move's natural unit (metres for
+  // swimming/rowing) with a delta, matching mobile.
+  const cardioLine = (p: CardioPrHit) => formatCardioPr(p, t("summary.firstTime"));
 
   // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
   const muscleVol = volumeByMuscle(blocks, false, bodyweightKg);
@@ -711,7 +712,14 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
   const share = async () => {
     setSharing(true);
     setShareMsg("");
-    const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t);
+    // Same headline shape as mobile: the PR that was set, else the cardio PR,
+    // else the top lift (the fallback lives in buildShareText).
+    const captionHeadline = prs[0]
+      ? `\u{1F3C6} ${formatStrengthPr(prs[0], { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units)}`
+      : cardioPrs[0]
+        ? `\u{1F3C3} ${cardioLine(cardioPrs[0])}`
+        : null;
+    const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t, captionHeadline);
     const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
     setSharing(false);
     if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
