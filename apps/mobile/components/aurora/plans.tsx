@@ -64,7 +64,7 @@ export default function AuroraPlans() {
       <FilterBar query={query} setQuery={setQuery} cat={cat} setCat={setCat} />
       {(() => {
         const groups = filterGoalGroups(query, cat);
-        if (groups.length === 0) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 4 }}>{t("plans.noMatches")}</Text>;
+        if (groups.length === 0) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 4 }}>{t("w.train.plans.noMatches")}</Text>;
         return groups.map((group) => (
           <View key={group.category} style={{ marginBottom: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
@@ -96,13 +96,13 @@ function FilterBar({ query, setQuery, cat, setCat }: { query: string; setQuery: 
   const cats: (GoalCategory | "all")[] = ["all", ...GOAL_CATEGORIES];
   return (
     <View style={{ marginBottom: 8 }}>
-      <AField value={query} onChange={setQuery} placeholder={t("plans.searchGoals")} icon="search" />
+      <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 10 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {cats.map((c) => {
           const on = c === cat;
           return (
             <Pressable key={c} onPress={() => setCat(c)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? C.lime : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "600", color: on ? C.onAccent : C.ash }}>{c === "all" ? t("plans.allCats") : c}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "600", color: on ? C.onAccent : C.ash }}>{c === "all" ? t("w.train.plans.allCats") : c}</Text>
             </Pressable>
           );
         })}
@@ -135,18 +135,18 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   const { t } = useLang();
   return (
     <AuroraScreen>
-      <Back onPress={back} label={t("plans.allGoals")} />
+      <Back onPress={back} label={t("w.train.plans.allGoals")} />
       <AHeading style={{ fontSize: fs.display, marginTop: 8 }}>{goal.icon} {goal.name}</AHeading>
-      {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("plans.noPlansYet")}</Text>}
+      {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
       <View style={{ marginTop: 12 }}>
         {goal.plans.map((p) => (
           <Pressable key={p.id} onPress={() => pick(p.id)}>
             <ACard style={{ marginBottom: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{p.name}</Text>
-                {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("plans.popular")}</Text></View>}
+                {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
               </View>
-              <View style={{ marginVertical: 6 }}><MetaLine parts={[`${p.weeks} ${t("plans.weeks")}`, `${p.sessions}${t("plans.perWk")}`, p.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
+              <View style={{ marginVertical: 6 }}><MetaLine parts={[`${p.weeks} ${t("w.train.plans.weeks")}`, `${p.sessions}${t("w.train.plans.perWk")}`, p.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
               <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
             </ACard>
           </Pressable>
@@ -171,15 +171,15 @@ function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode
     <AuroraScreen>
       <Back onPress={back} label={goal.name} />
       <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{plan.name}</AHeading>
-      <View style={{ marginBottom: 14, marginTop: 4 }}><MetaLine parts={[`${plan.weeks} ${t("plans.weeks")}`, `${plan.sessions}${t("plans.perWk")}`, d.level]} textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }} /></View>
+      <View style={{ marginBottom: 14, marginTop: 4 }}><MetaLine parts={[`${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWk")}`, d.level]} textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }} /></View>
 
-      <Field label={t("plan.forWho")} value={d.forWho} />
-      <Field label={t("plan.outcome")} value={d.outcome} />
-      <Field label={t("plan.sessionLength")} value={d.sessionLength} />
-      <Field label={t("plan.equipment")} value={d.equipment} />
+      <Field label={t("w.train.plans.forWho")} value={d.forWho} />
+      <Field label={t("w.train.plans.outcome")} value={d.outcome} />
+      <Field label={t("w.train.plans.sessionLength")} value={d.sessionLength} />
+      <Field label={t("w.train.plans.equipment")} value={d.equipment} />
 
       <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("plan.split")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
           {d.split.map((day, i) => (
             <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 11, paddingVertical: 8 }}>
@@ -201,10 +201,10 @@ function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode
         </ACard>
       ))}
 
-      <Field label={t("plan.progression")} value={d.progression} />
+      <Field label={t("w.train.plans.progression")} value={d.progression} />
 
       <APill
-        label={enrolled === "done" ? t("common.enrolled") : enrolled === "busy" ? t("common.enrolling") : `${t("common.enroll")} ${plan.name}`}
+        label={enrolled === "done" ? t("common.enrolled") : enrolled === "busy" ? t("w.train.plans.enrolling") : `${t("w.train.plans.enrollIn")} ${plan.name}`}
         onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
       />
       {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}

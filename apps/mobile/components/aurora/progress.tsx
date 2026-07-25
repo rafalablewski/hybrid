@@ -78,7 +78,7 @@ export default function AuroraProgress() {
   const remove = (path: string) =>
     Alert.alert(t("w.recovery.progress.deletePhotoTitle"), t("w.recovery.progress.deletePhotoBody"), [
       { text: t("common.cancel"), style: "cancel" },
-      { text: t("workout.deleteSet"), style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
+      { text: t("w.analyze.hist.delete"), style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
     ]);
 
   return (

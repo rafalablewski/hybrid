@@ -190,7 +190,7 @@ export default function SessionDetail() {
                   <View key={j} style={{ flexDirection: "row", gap: space.md, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
                     <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
                     <Mono color={C.chalk} style={{ flex: 1 }}>{s.load ? `${displayLoad(s.load, units)} ${units}` : "–"} × {s.reps || "–"}{stTag}</Mono>
-                    {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("workout.restShort")}</Mono> : null}
+                    {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("w.train.blocks.rest")}</Mono> : null}
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
@@ -211,7 +211,7 @@ export default function SessionDetail() {
       </View>
 
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 24 }}>
-        <Button label={t("common.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
+        <Button label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
         <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
     </>

@@ -34,7 +34,7 @@ export default function AuroraForcePlate() {
     const results = await Promise.all(parsed.signals.map((s) => importSignal({ kind: s.kind, value: s.value, unit: s.unit, source: "forceplate", ts: s.ts })));
     const ok = results.filter(Boolean).length;
     setImporting(false);
-    setMsg(`${t("w.analyze.fp.imported")} ${ok}/${parsed.signals.length} ${t("w.analyze.fp.signalsWord")}`);
+    setMsg(`${t("w.analyze.fp.importedPre")} ${ok}/${parsed.signals.length} ${t("w.analyze.fp.signalsWord")}`);
     setParsed(null); setText(""); loadSignals();
   };
 

@@ -155,10 +155,10 @@ export default function AuroraHistory() {
                 const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
                 if (parts.length) return chip(C.blue, parts.join(" – "));
                 const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
-                return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`);
+                return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`);
               })()
             : chip(C.ash, `${sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg`)}
-          {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
+          {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`)}
           {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
         </View>
         <View style={{ marginTop: 14 }}>
@@ -191,7 +191,7 @@ export default function AuroraHistory() {
       </View>
       {!showArchived && view !== null && <ViewSwitcher view={view} onChange={pickView} />}
       {/* Swipe hint, once at the top of the archived list. */}
-      {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("history.swipeHint")}</Text>}
+      {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("w.analyze.hist.swipeHint")}</Text>}
       {/* The merged History × Calendar layouts render inside the list header, so
           the FlatList stays the screen's sole scroller (nav-scroll + refresh).
           Trade-off (known): unlike the archived-list rows, these aggregate
@@ -212,8 +212,8 @@ export default function AuroraHistory() {
     <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
   ) : (
     <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("history.noArchived") : t("history.none")}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("history.archivedHint") : t("history.emptyHint")}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
     </ACard>
   );
 

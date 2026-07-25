@@ -94,7 +94,7 @@ export default function PercentProgram({
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
       <View style={{ marginBottom: 14 }}>
         <MetaLine
-          parts={[plan.weeks === 1 ? t("plans.week1") : `${plan.weeks} ${t("plans.weeks")}`, `${plan.sessions}${t("plans.perWk")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]}
+          parts={[plan.weeks === 1 ? t("w.train.plans.week1") : `${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWk")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]}
           textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}
         />
       </View>
@@ -126,7 +126,7 @@ export default function PercentProgram({
             view.weeks.map((w) => (
               <Pressable key={w} onPress={() => setWeek(w)}>
                 <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.onAccent : C.chalk }}>{t("plans.wkShort")} {w}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.onAccent : C.chalk }}>{t("w.train.plans.wkShort")} {w}</Text>
                 </View>
               </Pressable>
             ))}

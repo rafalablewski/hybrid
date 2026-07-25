@@ -179,11 +179,11 @@ export default function More() {
           style={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: pa.fill, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
         >
           <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${pa.fill}24` }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: pa.text }}>{t("more.upgradeKicker")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
-          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>{t("more.upgradeBlurb")}</Mono>
+          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>{t("w.home.pillnav.upgradeBlurb")}</Mono>
           <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>{t("more.goFull")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: pa.ink }}>{t("w.home.pillnav.goFull")}</Text>
           </View>
         </Pressable>
       )}

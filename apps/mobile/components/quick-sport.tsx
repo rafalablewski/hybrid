@@ -140,7 +140,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
 
   const save = async () => {
     const mins = parseFloat(minutes);
-    if (!Number.isFinite(mins) && km == null) { setMsg(t("quickSport.needValue")); return; }
+    if (!Number.isFinite(mins) && km == null) { setMsg(t("w.home.quickSport.needValue")); return; }
     setSaving(true); setMsg("");
     const now = new Date().toISOString();
     const payload = { title: name, startedAt: now, completedAt: now, blocks: [{ kind: "cardio" as const, name, discipline: cardioDiscipline(name), ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
@@ -175,7 +175,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
             <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("quickSport.log")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("w.home.quickSport.log")}</Text>
             </Pressable>
           </View>
           {(pace || msg) && (

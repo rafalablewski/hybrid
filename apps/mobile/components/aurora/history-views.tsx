@@ -69,7 +69,7 @@ function keyMetric(s: LoggedSession, ctx: ViewCtx, t: (k: string) => string): { 
     const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
     if (parts.length) return { color: "blue", label: parts.join(" – ") };
     const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
-    return { color: "blue", label: minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}` };
+    return { color: "blue", label: minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}` };
   }
   return { color: "ash", label: fmtTonnage(sessionVolumeOf(s, ctx), ctx.units) };
 }
@@ -277,7 +277,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{s.title}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
-                    {km.label} – {s.blocks.length} {s.blocks.length === 1 ? t("history.block") : t("history.blocks")}
+                    {km.label} – {s.blocks.length} {s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}
                   </Text>
                 </View>
                 <Text style={{ fontFamily: F.mono, color: C.ash }}>›</Text>
