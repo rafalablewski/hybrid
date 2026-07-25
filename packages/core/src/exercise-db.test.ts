@@ -6,6 +6,8 @@ import {
   gymExercisesByMuscle,
   gymExercisesByEquipment,
   GYM_CATEGORY_BY_NAME,
+  GYM_LIBRARY_ALIASES,
+  GYM_EXERCISE_MAP,
   loadUnitCount,
   builtinExerciseRefs,
   LIBRARY_PATTERNS,
@@ -207,6 +209,26 @@ describe("strength profiles (per-exercise editor behaviour)", () => {
       measure: "reps",
       loadMode: "external",
       equipment: null,
+    });
+  });
+
+  describe("library display-name aliases (GYM_LIBRARY_ALIASES)", () => {
+    it("every alias points at a real built-in and is not itself one", () => {
+      for (const [display, canonical] of Object.entries(GYM_LIBRARY_ALIASES)) {
+        expect(GYM_EXERCISE_MAP[canonical], `${display} → ${canonical}`).toBeTruthy();
+        // the display name must NOT already be a built-in (that'd be a needless entry)
+        expect(GYM_EXERCISE_MAP[display], display).toBeUndefined();
+      }
+    });
+
+    it("resolves the library's equipment-qualified names to their built-in entry", () => {
+      // the marquee compounds users see under a library name still resolve
+      expect(gymExercise("Barbell Bench Press")?.name).toBe("Bench Press");
+      expect(gymExercise("Barbell Deadlift")?.name).toBe("Deadlift");
+      expect(gymExercise("Barbell Back Squat")?.name).toBe("Back Squat");
+      expect(gymExercise("Standing Overhead Press")?.name).toBe("Overhead Press");
+      // and the property sheet comes through, so the anatomy/animation section renders
+      expect(exerciseProfile("Barbell Bench Press").strength?.equipment).toBe("barbell");
     });
   });
 });
