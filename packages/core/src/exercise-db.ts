@@ -133,6 +133,12 @@ export interface GymExercise {
   mechanics: Mechanics;
   /** One side at a time (lunges, single-arm rows, suitcase carries…). */
   unilateral?: boolean;
+  /** Loaded implements moved per rep — for VOLUME/tonnage only (see
+   *  loadUnitCount). Left unset for the common case, where it's inferred from
+   *  equipment + unilateral + pattern. Set it ONLY to override a hold the
+   *  heuristic can't read: a two-hands-ONE-implement lift (a Goblet Squat, an
+   *  overhead dumbbell extension) that would otherwise count as two bells. */
+  implements?: 1 | 2;
   loadMode: LoadMode;
   measure: Measure;
   /** Typical intermediate working load, kg (null for bodyweight/holds) — feeds
@@ -150,7 +156,7 @@ const E = (
   secondary: Muscle[],
   equipment: GymEquipment,
   baseLoad: number | null,
-  opts: Partial<Pick<GymExercise, "mechanics" | "unilateral" | "loadMode" | "measure">> = {},
+  opts: Partial<Pick<GymExercise, "mechanics" | "unilateral" | "loadMode" | "measure" | "implements">> = {},
 ): GymExercise => ({
   name,
   category,
@@ -163,10 +169,15 @@ const E = (
   loadMode: opts.loadMode ?? (equipment === "bodyweight" ? "bodyweight" : "external"),
   measure: opts.measure ?? "reps",
   ...(opts.unilateral ? { unilateral: true } : {}),
+  ...(opts.implements ? { implements: opts.implements } : {}),
 });
 
 const ISO = { mechanics: "isolation" as const };
 const UNI = { unilateral: true };
+// A lift held with both hands on a SINGLE implement (a Goblet Squat, an
+// overhead dumbbell extension) — one bell for tonnage, not the two a bilateral
+// dumbbell lift would imply.
+const ONE_BELL = { implements: 1 as const };
 const BWPLUS = { loadMode: "bodyweight-plus" as const };
 const TIME = { measure: "time" as const };
 const DIST = { measure: "distance" as const };
@@ -261,7 +272,7 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Pause Squat", "Quads & Glutes", "squat", ["quads", "glutes"], ["abs"], "barbell", 85),
   E("Overhead Squat", "Quads & Glutes", "squat", ["quads", "glutes"], ["side-delts", "abs", "upper-back"], "barbell", 50),
   E("Zercher Squat", "Quads & Glutes", "squat", ["quads", "glutes"], ["abs", "biceps"], "barbell", 70),
-  E("Goblet Squat", "Quads & Glutes", "squat", ["quads", "glutes"], ["abs"], "dumbbell", 40),
+  E("Goblet Squat", "Quads & Glutes", "squat", ["quads", "glutes"], ["abs"], "dumbbell", 40, ONE_BELL),
   E("Smith Squat", "Quads & Glutes", "squat", ["quads", "glutes"], [], "smith", 90),
   E("Hack Squat", "Quads & Glutes", "squat", ["quads"], ["glutes"], "machine", 100),
   E("Leg Press", "Quads & Glutes", "squat", ["quads", "glutes"], ["hamstrings"], "machine", 160),
@@ -318,7 +329,7 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Skull Crusher", "Triceps", "isolation", ["triceps"], [], "ez-bar", 25, ISO),
   E("Triceps Pushdown", "Triceps", "isolation", ["triceps"], [], "cable", 25, ISO),
   E("Rope Pushdown", "Triceps", "isolation", ["triceps"], [], "cable", 22, ISO),
-  E("Overhead Triceps Extension", "Triceps", "isolation", ["triceps"], [], "dumbbell", 20, ISO),
+  E("Overhead Triceps Extension", "Triceps", "isolation", ["triceps"], [], "dumbbell", 20, { ...ISO, ...ONE_BELL }),
   E("Cable Kickback", "Triceps", "isolation", ["triceps"], [], "cable", 8, { ...ISO, ...UNI }),
   E("JM Press", "Triceps", "push-h", ["triceps"], ["chest", "front-delts"], "barbell", 50),
   E("Close-Grip Push-Up", "Triceps", "push-h", ["triceps", "chest"], ["front-delts"], "bodyweight", null),
@@ -463,18 +474,55 @@ export function gymExercise(name: string): GymExercise | undefined {
  * How many loaded implements a single rep moves — for VOLUME/tonnage only. A
  * bilateral dumbbell lift is performed with TWO dumbbells, one per hand, each
  * carrying the entered (per-bell) load, so a rep moves twice the number on the
- * bell: 24 kg dumbbells × 10 reps = 480 kg of tonnage, not 240. Single-arm
- * (unilateral) dumbbell work logs one bell per set, and every other implement
- * (barbell, machine, cable, a single kettlebell…) moves one unit.
+ * bell: 24 kg dumbbells × 10 reps = 480 kg of tonnage, not 240. Every other
+ * implement (barbell, machine, cable, a single kettlebell…) moves one unit.
+ *
+ * The subtlety is UNILATERAL dumbbell work. What matters for tonnage is how
+ * many HANDS hold a bell, not which limb works one side at a time:
+ *  - Single-ARM upper-body work (a one-arm DB row, a concentration curl) holds
+ *    one bell per set → 1.
+ *  - Single-LEG lower-body work (a Bulgarian split squat, a walking lunge, a
+ *    single-leg RDL) is unilateral at the LEG but still holds a dumbbell in
+ *    EACH hand → 2. Marking these 1 halved their tonnage (100 kg × 1 read 100,
+ *    not 200). The movement PATTERN tells the two apart.
+ *
+ * The one shape the equipment/unilateral/pattern signals CAN'T read is a
+ * two-hands-ONE-implement hold — a Goblet Squat or an overhead dumbbell
+ * extension, gripped bilaterally on a SINGLE bell (100 kg × 10 = 1 000 kg, not
+ * 2 000). Those carry an explicit `implements: 1` on their catalog entry, which
+ * wins over the heuristic.
  *
  * This scales tonnage ONLY. e1RM, rep-maxes and PRs deliberately stay
  * per-implement (a dumbbell 1RM is quoted per bell, and a cross-lift 1RM board
  * must not rank dumbbell work on a doubled number), so this lives apart from
  * `effectiveSetLoadKg` and is applied at each tonnage site, never inside it.
+ *
+ * A CUSTOM / free-text lift the catalog doesn't know (the picker's "+ …" add)
+ * falls back to its NAME: anything that reads as a bilateral dumbbell move —
+ * "Dumbbell Thruster", "DB Snatch", a "Dumbbell Bulgarian Split Squat" — is
+ * done with two bells, so its tonnage counts both. Single-ARM phrasing
+ * ("Single-Arm DB Row", a concentration curl) and single-bell holds ("Dumbbell
+ * Goblet Squat", a DB pullover) stay one bell.
  */
+// Lower-body patterns: the working limb is a LEG, so even a single-leg variant
+// keeps a dumbbell in each hand (two bells). Upper-body single-arm work is the
+// only unilateral case that moves one bell.
+const LOWER_BODY_PATTERNS = new Set<GymPattern>(["squat", "hinge", "lunge"]);
+const DUMBBELL_IN_NAME = /\bdumbbells?\b|\bdb\b/i;
+const UNILATERAL_IN_NAME = /\b(?:single|one|1)[\s-]?arm(?:ed)?\b|\bconcentration\b/i;
+// Bilateral grip on a SINGLE implement — one bell despite two hands.
+const ONE_BELL_IN_NAME = /\bgoblet\b|\bpull-?over\b/i;
+
 export function loadUnitCount(name: string): number {
   const e = gymExercise(name);
-  return e && e.equipment === "dumbbell" && !e.unilateral ? 2 : 1;
+  if (e) {
+    if (e.implements) return e.implements;
+    if (e.equipment !== "dumbbell") return 1;
+    // Bilateral, or unilateral at the leg (both hands loaded) → two bells.
+    return !e.unilateral || LOWER_BODY_PATTERNS.has(e.pattern) ? 2 : 1;
+  }
+  if (!DUMBBELL_IN_NAME.test(name)) return 1;
+  return UNILATERAL_IN_NAME.test(name) || ONE_BELL_IN_NAME.test(name) ? 1 : 2;
 }
 
 /** Every exercise of a category, in authored order. */
