@@ -85,6 +85,20 @@ function Shell() {
             sign-out. Disable the back gesture on the shell so swiping inside the
             app (e.g. the Today pager) never escapes to the auth screens. */}
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false, animation: "none" }} />
+        {/* Routes where a back-swipe would be WRONG, not merely unhelpful. These
+            are the same routes the floating nav hides on (global-nav HIDE_ON) —
+            for the same reason: they are focused states you should leave
+            deliberately, not by brushing the edge of the screen.
+              • workout  — swiping out mid-set loses the live session's context.
+              • login / welcome / onboarding — funnel steps; swiping back up the
+                funnel lands the user somewhere the flow didn't intend.
+            Everything else inherits the interactive pop, which on iOS is the
+            OS's own gesture: genuinely finger-tracked, interruptible, and
+            parallaxed — better than anything hand-rolled. */}
+        <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="login" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         {/* Upgrade is a slide-up BOTTOM SHEET — a transparent modal so the screen
             behind stays visible through the scrim (the component animates the
             panel up itself). */}
