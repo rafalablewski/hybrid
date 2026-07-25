@@ -564,6 +564,15 @@ export default function AuroraToday({
               >
                 <CtaLabel>{t("w.home.today.start")}</CtaLabel>
               </button>
+              {/* Quiet secondary — reach the Quick-start sheet without leaving the
+                  plan: on a plan the four "Train your way" cards aren't shown, so
+                  this is the on-plan door to a saved routine (a session off-plan). */}
+              <button
+                onClick={() => setQuickStartOpen(true)}
+                style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--violet-text)" }}
+              >
+                ⚡ {t("w.home.today.quickStartLink")}
+              </button>
             </>
           ) : loading ? (
             // Cold start — sessions AND enrollment are still loading, so we
