@@ -36,6 +36,7 @@ export * from "./exercise-db";
 export * from "./exercise-profile";
 export * from "./exercise-animation";
 export * from "./exercise-anatomy";
+export * from "./body-map";
 export * from "./exercise-widget";
 export * from "./capabilities";
 export * from "./rpe";
