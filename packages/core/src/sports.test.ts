@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { prescribeForSport } from "./sports";
+import { prescribeForSport, SPORTS, SPORT_NAMES } from "./sports";
+import { olympicSport } from "./olympic-sports";
 import type { LoggedSession } from "./engines/session";
 
 const session = (lift: string, load: string, reps: string): LoggedSession => ({
@@ -61,5 +62,19 @@ describe("prescribeForSport", () => {
     const bound = rx.blocks.find((b) => b.name === "Lateral Bound")!;
     expect(bound.bodyweight).toBe(true);
     expect(bound.load).toBeUndefined();
+  });
+
+  it("is one database with the loggable catalog — every engine sport is a catalog sport carrying the SAME pool", () => {
+    // The S&C engine is a projection of the single catalog: no sport can be
+    // prescribable without being loggable, and the pool has one source.
+    for (const name of SPORT_NAMES) {
+      const cat = olympicSport(name);
+      expect(cat, `${name} must exist in the sport catalog`).toBeDefined();
+      expect(cat!.sc, `${name} must carry an sc block`).toBeDefined();
+      expect(SPORTS[name]!.pool).toBe(cat!.sc!.pool); // same array reference — one source of truth
+      expect(SPORTS[name]!.family).toBe(cat!.sc!.family);
+    }
+    // The seven prescribable sports, in catalog order.
+    expect(SPORT_NAMES).toEqual(["Running", "Swimming", "Cycling", "Boxing", "BJJ", "Squash", "Climbing"]);
   });
 });
