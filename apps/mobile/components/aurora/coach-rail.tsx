@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, serifIf } from "../../lib/ui";
+import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
@@ -49,8 +50,12 @@ const SCREEN_PAD = 16;
 // slide under the bezel instead of vanishing at the content column. Only for
 // rails sitting directly on a Screen (Explore) — inside a sheet the rail must
 // respect the sheet's own padding.
-export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
+// `seeMore` appends a trailing "See more" button at the end of the rail (the
+// unified Explore affordance — the community rail carries the twin), so the rest
+// of the marketplace is one tap away without an "All →" link up in the header.
+export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
   const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
   // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
   // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
   const cardShadow = scheme === "light"
@@ -71,10 +76,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
       {!headerless && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <View>
-            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>Follow a coach</Text>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>Swipe to find a coach for your goal</Text>
+            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
           </View>
-          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>Browse all →</Text></Pressable>
+          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</Text></Pressable>
         </View>
       )}
 
@@ -85,12 +90,12 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
           const accent = C[c.accent];
           const accentText = txt(C, accent);
           const stats: Array<{ value: string; label: string; star?: boolean }> = [
-            { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
-            ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
-            ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+            { value: c.rating != null ? c.rating.toFixed(1) : t("w.explore.coachNew"), label: t("w.explore.coachRating"), star: c.rating != null },
+            ...(c.reviews ? [{ value: String(c.reviews), label: t("w.explore.coachReviews") }] : []),
+            ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
           ];
           return (
-            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
               <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
@@ -118,7 +123,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                 {c.quote ? (
                   <>
                     <Text numberOfLines={2} style={{ fontSize: 13, lineHeight: 19.5, color: C.chalk }}>“{c.quote}”</Text>
-                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— athlete review</Text>
+                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— {t("w.explore.coachReview")}</Text>
                   </>
                 ) : (
                   <Text numberOfLines={3} style={{ fontSize: 13, lineHeight: 19.5, color: C.ash }}>{c.headline}</Text>
@@ -131,6 +136,21 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
             </Pressable>
           );
         })}
+        {/* Trailing "See more" button — the same treatment as the community
+            rail, so the two Explore rails share one end-of-rail affordance. */}
+        {seeMore && (
+          <Pressable
+            onPress={onOpen}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.explore.seeMore")}
+            style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
+            </View>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );

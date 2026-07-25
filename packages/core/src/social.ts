@@ -166,7 +166,9 @@ export interface FeedCardView {
   chips: string[];
 }
 export function feedCardView(it: { author: { displayName?: string | null; handle: string }; body?: string | null; chips?: string[]; lead?: string | null; when: string }): FeedCardView {
-  const name = it.author.displayName || `@${it.author.handle}`;
+  // Prefer the real name; fall back to a handle only when it's a genuine one
+  // (an empty handle means "no profile" — never render a bare "@").
+  const name = it.author.displayName || (it.author.handle ? `@${it.author.handle}` : "Someone");
   return { name, when: it.when, lead: it.lead ?? null, body: it.body ?? null, chips: it.chips ?? [] };
 }
 

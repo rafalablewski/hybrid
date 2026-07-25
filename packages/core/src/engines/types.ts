@@ -1,5 +1,7 @@
 /** Shared engine types. Pure data shapes — no UI, no I/O. */
 
+import type { ReadinessFeeling } from "../readiness-feeling";
+
 export type MuscleGroup =
   | "quads"
   | "glutes"
@@ -174,4 +176,19 @@ export interface Prescription {
   loadEstimated: boolean;
   /** When autoregulated off bar speed: the mean concentric velocity to hit on the work sets (m/s). */
   velocityTarget?: number;
+  /**
+   * How today's one-tap check-in FEELING moved the session, when it moved
+   * anything — present only when a subjective readiness was supplied AND it
+   * changed the load (or shed a set). Lets the UI show a glanceable "eased to
+   * 94% because you checked in flat" strip instead of burying it in `why`.
+   * Absent when no feeling was logged, or the feeling was neutral ("good").
+   */
+  readinessAdjust?: {
+    feeling: ReadinessFeeling;
+    /** Working load as a % of the progression dose (100 = unchanged). Omitted
+     *  for bodyweight tiers, which carry no external load to scale. */
+    loadPct?: number;
+    /** Sets the check-in shed (wrecked → −1), else 0. */
+    setAdj: number;
+  };
 }

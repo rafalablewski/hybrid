@@ -115,7 +115,7 @@ function MobileOnlyScreen({ aurora, icon, title, body }: { aurora: boolean; icon
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
-  const { sessions, loading: sessionsLoading, refresh } = useSessions();
+  const { sessions, loading: sessionsLoading, error: sessionsError, refresh } = useSessions();
   const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
@@ -729,7 +729,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />
         )}
 
         {screen === "profile" && (
@@ -847,7 +847,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} initialOpenId={pendingSessionId} onOpenExercise={openExercisePage} onChanged={refresh} />}
+        {screen === "history" && <AuroraHistory sessions={sessions} planId={planId} planStartedAt={planStartedAt} initialOpenId={pendingSessionId} onOpenExercise={openExercisePage} onChanged={refresh} fetchError={!!sessionsError} onRetry={refresh} />}
 
         {screen === "coach" && <AuroraCoach />}
 

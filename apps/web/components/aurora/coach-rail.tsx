@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 // "Follow a coach" — a horizontally swipeable rail on Today. Pulls the live
 // marketplace (/api/coaches); until coaches publish storefronts it shows the
@@ -40,12 +41,13 @@ function Stat({ value, label, first, star }: { value: string; label: string; fir
 }
 
 function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
+  const { t } = useLang();
   const accent = C(c.accent);
   const accentText = `var(--${c.accent}-text)`;
   const stats: Array<{ value: string; label: string; star?: boolean }> = [
-    { value: c.rating != null ? c.rating.toFixed(1) : "New", label: "rating", star: c.rating != null },
-    ...(c.reviews ? [{ value: String(c.reviews), label: "reviews" }] : []),
-    ...(c.years ? [{ value: `${c.years}y`, label: "coaching" }] : []),
+    { value: c.rating != null ? c.rating.toFixed(1) : t("w.explore.coachNew"), label: t("w.explore.coachRating"), star: c.rating != null },
+    ...(c.reviews ? [{ value: String(c.reviews), label: t("w.explore.coachReviews") }] : []),
+    ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
   ];
   return (
     <div
@@ -53,7 +55,7 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      aria-label={`Open ${c.name}`}
+      aria-label={`${t("w.explore.coachOpen")} ${c.name}`}
       style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 16px 14px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
     >
       {/* accent wash — the coach's colour bleeding in from the top corner */}
@@ -82,7 +84,7 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
         {c.quote ? (
           <>
             <div style={{ fontSize: 13, lineHeight: 1.5, color: C("chalk"), display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>“{c.quote}”</div>
-            <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>— athlete review</div>
+            <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, color: `color-mix(in srgb, ${C("ash")} 70%, transparent)` }}>— {t("w.explore.coachReview")}</div>
           </>
         ) : (
           <div style={{ fontSize: 13, lineHeight: 1.5, color: C("ash"), display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.headline}</div>
@@ -105,7 +107,11 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
 // cards slide under the bezel instead of vanishing at the content column. Only
 // for rails sitting directly on the page (Explore) — inside a Sheet the rail
 // must respect the sheet's own padding.
-export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
+// `seeMore` appends a trailing "See more" button at the end of the rail (the
+// unified Explore affordance — the community rail carries the twin), so the rest
+// of the marketplace is one tap away without an "All →" link up in the header.
+export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
+  const { t } = useLang();
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
 
   useEffect(() => {
@@ -124,10 +130,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
       {!headerless && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>Follow a coach</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Swipe to find a coach for your goal</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>Browse all →</button>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</button>
         </div>
       )}
 
@@ -139,6 +145,18 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
           card to the scrollport start — glued to the bezel on a bleed rail. */}
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 16px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => <MarqueeCard key={c.userId ?? c.handle ?? i} c={c} onOpen={onOpen} />)}
+        {/* Trailing "See more" button — the same treatment as the community
+            rail, so the two Explore rails share one end-of-rail affordance. */}
+        {seeMore && (
+          <button
+            onClick={onOpen}
+            aria-label={t("w.explore.seeMore")}
+            style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
+          >
+            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
+          </button>
+        )}
       </div>
     </div>
   );

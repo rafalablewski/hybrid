@@ -222,6 +222,52 @@ describe("prescribeSession", () => {
       expect(Number(beginStr.sets[0]!.load)).toBeLessThan(Number(advStr.sets[0]!.load));
     }
   });
+
+  it("scales the working load by subjective readiness (primed > good > flat > wrecked)", () => {
+    // Every candidate lift has real history, so the load is measured (not an
+    // estimate) and the only thing varying across calls is the readiness feeling.
+    const full: TrainingLog = [
+      {
+        daysAgo: 3,
+        items: [
+          { move: "Back Squat", e1rm: 150, topRpe: 8, hardSets: 3 },
+          { move: "Deadlift", e1rm: 180, topRpe: 8, hardSets: 3 },
+          { move: "Bench Press", e1rm: 120, topRpe: 8, hardSets: 3 },
+          { move: "Overhead Press", e1rm: 80, topRpe: 8, hardSets: 3 },
+        ],
+      },
+    ];
+    const loadOf = (rx: ReturnType<typeof prescribeSession>) => {
+      const s = rx.blocks[0]!;
+      return s.kind === "strength" ? Number(s.sets[0]!.load) : 0;
+    };
+    const setsOf = (rx: ReturnType<typeof prescribeSession>) => {
+      const s = rx.blocks[0]!;
+      return s.kind === "strength" ? s.sets.length : 0;
+    };
+    const primed = prescribeSession(full, undefined, { subjectiveReadiness: "primed" });
+    const good = prescribeSession(full, undefined, { subjectiveReadiness: "good" });
+    const flat = prescribeSession(full, undefined, { subjectiveReadiness: "flat" });
+    const wrecked = prescribeSession(full, undefined, { subjectiveReadiness: "wrecked" });
+    expect(loadOf(primed)).toBeGreaterThan(loadOf(good));
+    expect(loadOf(good)).toBeGreaterThan(loadOf(flat));
+    expect(loadOf(flat)).toBeGreaterThan(loadOf(wrecked));
+    // "good" is the neutral point — identical to omitting the feeling entirely.
+    expect(loadOf(good)).toBe(loadOf(prescribeSession(full)));
+    // a wrecked day also sheds a work set (a real deload) and explains itself.
+    expect(setsOf(wrecked)).toBeLessThan(setsOf(good));
+    expect(wrecked.why).toMatch(/wrecked/);
+    // readinessAdjust surfaces the move for the UI strip: present + structured
+    // when a feeling shifts the session, absent on the neutral "good" day.
+    expect(good.readinessAdjust).toBeUndefined();
+    expect(prescribeSession(full).readinessAdjust).toBeUndefined();
+    expect(primed.readinessAdjust).toMatchObject({ feeling: "primed", setAdj: 0 });
+    expect(primed.readinessAdjust!.loadPct).toBeGreaterThan(100);
+    expect(flat.readinessAdjust).toMatchObject({ feeling: "flat", setAdj: 0 });
+    expect(flat.readinessAdjust!.loadPct).toBeLessThan(100);
+    expect(wrecked.readinessAdjust).toMatchObject({ feeling: "wrecked", setAdj: -1 });
+    expect(wrecked.readinessAdjust!.loadPct).toBeLessThan(100);
+  });
 });
 
 describe("easyRunTarget", () => {

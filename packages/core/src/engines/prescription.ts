@@ -10,6 +10,7 @@ import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { progressionSignal } from "./progression";
 import { velocityAtLoad, type LoadVelocityProfile } from "./velocity";
+import { readinessLoadFactor, type ReadinessFeeling } from "../readiness-feeling";
 
 export interface RunTarget {
   /** km */
@@ -91,6 +92,13 @@ export interface PrescribeOptions {
   /** Available equipment — picks barbell/dumbbell/bodyweight movements and
    *  swaps machine conditioning for bodyweight work (default "full"). */
   equipment?: PrescribeEquipment;
+  /**
+   * Today's SUBJECTIVE readiness (the athlete's one-tap check-in feeling). When
+   * set it scales the working load on top of the progression dose — primed adds
+   * a little, flat eases back, wrecked deloads (load AND a set) — so the pick's
+   * guidance is mechanical, not just copy. Absent → neutral (no adjustment).
+   */
+  subjectiveReadiness?: ReadinessFeeling;
 }
 
 /**
@@ -163,14 +171,29 @@ export function prescribeSession(
   // The working load rests on a generic default only when we have neither a
   // velocity profile nor any logged e1RM for this lift (never flagged for BW).
   const loadEstimated = !bodyweight && !useVel && loggedE1rm.length === 0;
+  // Subjective readiness (the one-tap check-in feeling) scales the load on top
+  // of the progression dose, and a wrecked day also sheds a set — a real
+  // deload, not just lighter bars. Neutral (×1, no set change) when unset.
+  const readinessFactor = readinessLoadFactor(opts?.subjectiveReadiness);
+  const readinessSetAdj = opts?.subjectiveReadiness === "wrecked" ? -1 : 0;
   const baseSets =
     primary.sig.action === "progress" ? 5 : primary.sig.action === "deload" ? 3 : 4;
-  const sets = clampN(baseSets + expSetAdj, 2, 6);
+  const sets = clampN(baseSets + expSetAdj + readinessSetAdj, 2, 6);
   // Bodyweight is rep-driven (no kg); loaded tiers keep the heavy 3–5 scheme.
   const reps =
     (bodyweight ? (primary.sig.action === "deload" ? 8 : 12) : primary.sig.action === "deload" ? 3 : 5) +
     expRepAdj;
-  const workLoad = bodyweight ? 0 : Math.round((oneRm * pct) / 2.5) * 2.5;
+  // Glanceable summary of what the one-tap check-in did to today's session —
+  // present only when a feeling was supplied AND it actually moved the load or
+  // shed a set (a neutral "good" changes nothing, so it stays absent). The load
+  // % is meaningless on a bodyweight tier (no external load), so it's omitted
+  // there; a wrecked bodyweight day still surfaces via its shed set.
+  const rxLoadPct = bodyweight ? undefined : Math.round(readinessFactor * 100);
+  const readinessAdjust =
+    opts?.subjectiveReadiness && ((rxLoadPct !== undefined && rxLoadPct !== 100) || readinessSetAdj !== 0)
+      ? { feeling: opts.subjectiveReadiness, loadPct: rxLoadPct, setAdj: readinessSetAdj }
+      : undefined;
+  const workLoad = bodyweight ? 0 : Math.round((oneRm * pct * readinessFactor) / 2.5) * 2.5;
   const loadDisplay = bodyweight ? "BW" : String(workLoad);
   const velocityTarget = useVel ? velocityAtLoad(profile!, workLoad) : undefined;
 
@@ -262,6 +285,15 @@ export function prescribeSession(
     setupNote +
     (bio && bioAdj !== 0
       ? ` Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${bioAdj > 0 ? "HRV is above baseline and sleep was solid, so you're cleared to push." : "HRV dipped and sleep ran short, so I held the load back."}`
+      : "") +
+    (opts?.subjectiveReadiness && opts.subjectiveReadiness !== "good"
+      ? ` You checked in feeling ${opts.subjectiveReadiness}, so I ${
+          opts.subjectiveReadiness === "primed"
+            ? "added a little load"
+            : opts.subjectiveReadiness === "flat"
+              ? "eased the load back"
+              : "cut the load and a set to protect recovery"
+        }.`
       : "");
 
   return {
@@ -277,5 +309,6 @@ export function prescribeSession(
     oneRmSource: useVel ? "velocity" : "e1rm",
     loadEstimated,
     velocityTarget,
+    readinessAdjust,
   };
 }

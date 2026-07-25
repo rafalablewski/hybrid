@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useTheme, txt } from "../lib/theme";
+import { useLang } from "../lib/i18n";
 import { F } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
@@ -24,7 +25,8 @@ export function Avatar({ url, name, handle, size = 44 }: { url?: string | null; 
 
 export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {
   const C = useTheme().palette;
-  if (rating == null) return <Text style={{ color: C.ash, fontSize: size }}>No reviews</Text>;
+  const { t } = useLang();
+  if (rating == null) return <Text style={{ color: C.ash, fontSize: size }}>{t("w.social.noReviews")}</Text>;
   const full = Math.round(rating);
   return (
     <Text style={{ fontSize: size }}>
@@ -67,6 +69,7 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
 // A modal showing any user's public profile (reused by feed / discover / leaderboard).
 export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
   const C = useTheme().palette;
+  const { t } = useLang();
   const [data, setData] = useState<PublicProfileResponse | null>(null);
   const [cmp, setCmp] = useState<CompareResult | null>(null);
   const load = () => getProfile(handle).then(setData);
@@ -77,13 +80,13 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   const rel: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
   const following = rel === "following" || rel === "friend" || rel === "close";
 
-  const doBlock = () => Alert.alert("Block", `Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Block", style: "destructive", onPress: async () => { await blockUser({ handle }); onClose(); } },
+  const doBlock = () => Alert.alert(t("w.social.block"), t("w.social.blockConfirm").replace("{h}", handle), [
+    { text: t("common.cancel"), style: "cancel" },
+    { text: t("w.social.block"), style: "destructive", onPress: async () => { await blockUser({ handle }); onClose(); } },
   ]);
-  const doReport = () => { if (!p?.userId) return; Alert.alert("Report", `Report @${handle} to the moderators?`, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Report", style: "destructive", onPress: async () => { await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); Alert.alert("Thanks", "Reported to the moderators."); } },
+  const doReport = () => { if (!p?.userId) return; Alert.alert(t("w.social.report"), t("w.social.reportConfirm").replace("{h}", handle), [
+    { text: t("common.cancel"), style: "cancel" },
+    { text: t("w.social.report"), style: "destructive", onPress: async () => { await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); Alert.alert(t("w.social.reportThanks")); } },
   ]); };
 
   return (
@@ -104,16 +107,16 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                   {rel !== "self" && (rel === "requested"
-                    ? <SButton label="Requested" ghost small disabled />
+                    ? <SButton label={t("w.social.requested")} ghost small disabled />
                     : following
-                      ? <SButton label={rel === "friend" || rel === "close" ? "Friends ✓" : "Following"} ghost small onPress={async () => { await unfollow({ handle }); load(); }} />
-                      : <SButton label={rel === "follower" ? "Follow back" : "Follow"} small onPress={async () => { await follow({ handle }); load(); }} />)}
-                  {data?.canViewResults && rel !== "self" && <SButton label="Compare" ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />}
+                      ? <SButton label={rel === "friend" || rel === "close" ? `${t("w.social.friends")} ✓` : t("w.social.following")} ghost small onPress={async () => { await unfollow({ handle }); load(); }} />
+                      : <SButton label={rel === "follower" ? t("w.social.followBack") : t("w.social.follow")} small onPress={async () => { await follow({ handle }); load(); }} />)}
+                  {data?.canViewResults && rel !== "self" && <SButton label={t("w.social.compare")} ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />}
                 </View>
                 {data?.canViewResults ? (
                   data?.stats && (
                     <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-                      {[{ l: "Sessions", v: data.stats.totalSessions }, { l: "Volume", v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: "Streak", v: `${data.stats.currentStreak}d` }].map((s) => (
+                      {[{ l: t("w.social.statSessions"), v: data.stats.totalSessions }, { l: t("w.social.statVolume"), v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: t("w.social.statStreak"), v: `${data.stats.currentStreak}d` }].map((s) => (
                         <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
                           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
                           <Text style={{ color: C.ash, fontSize: 11 }}>{s.l}</Text>
@@ -123,18 +126,18 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                   )
                 ) : (
                   <View style={{ marginTop: 14, backgroundColor: C.ink2, borderRadius: 12, padding: 14 }}>
-                    <Text style={{ color: C.ash, fontSize: 13 }}>🔒 Their results are private. {rel === "requested" ? "Request pending." : "Follow to see their training."}</Text>
+                    <Text style={{ color: C.ash, fontSize: 13 }}>🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : t("w.social.followToSee")}</Text>
                   </View>
                 )}
                 {rel !== "self" && (
                   <View style={{ flexDirection: "row", gap: 18, marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-                    <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ Report</Text></Pressable>
-                    <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: 12, fontFamily: F.bold }}>⊘ Block</Text></Pressable>
+                    <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
+                    <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: 12, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
                   </View>
                 )}
                 {cmp && (
                   <View style={{ marginTop: 18 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 8 }}>You {cmp.score.a} — {cmp.score.b} {p.displayName || "@" + p.handle}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 8 }}>{t("w.social.you")} {cmp.score.a} — {cmp.score.b} {p.displayName || "@" + p.handle}</Text>
                     {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
                       <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
                         <Text style={{ flex: 1, textAlign: "right", fontFamily: F.mono, color: l.leader === "a" ? C.lime : C.chalk }}>{l.a}{l.unit}</Text>

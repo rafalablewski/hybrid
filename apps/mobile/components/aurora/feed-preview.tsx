@@ -127,19 +127,20 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           </Pressable>
         );
       })}
-      {/* Threads-style trailing "See all" card — the slider caps at 6, so this
-          nudges people into the full feed instead of scrolling an endless rail. */}
+      {/* Threads-style trailing "See more" button — the slider caps at 6, so
+          this nudges people into the full feed instead of scrolling an endless
+          rail (unified with the coach rail's end-of-rail affordance). */}
       {horizontal && (
         <Pressable
           onPress={onOpen}
           accessibilityRole="button"
-          accessibilityLabel={t("w.explore.seeAll")}
+          accessibilityLabel={t("w.explore.seeMore")}
           style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
         >
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
           </View>
-          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeAll")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
         </Pressable>
       )}
     </Wrap>

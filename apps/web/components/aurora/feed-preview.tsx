@@ -123,16 +123,17 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           </button>
         );
       })}
-      {/* Threads-style trailing "See all" card — the slider caps at 6, so this
-          nudges people into the full feed instead of scrolling an endless rail. */}
+      {/* Threads-style trailing "See more" button — the slider caps at 6, so
+          this nudges people into the full feed instead of scrolling an endless
+          rail (unified with the coach rail's end-of-rail affordance). */}
       {horizontal && (
         <button
           onClick={onOpen}
-          aria-label={t("w.explore.seeAll")}
+          aria-label={t("w.explore.seeMore")}
           style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
         >
           <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeAll")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
         </button>
       )}
     </div>

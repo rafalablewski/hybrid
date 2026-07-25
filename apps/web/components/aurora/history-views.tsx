@@ -11,10 +11,7 @@ import {
   sessionsByDay,
   historyStream,
   upcomingPlanDays,
-  journalMonth,
-  latestTrainingDayKey,
   weekChapters,
-  blockChapters,
   blockSummary,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
@@ -31,11 +28,11 @@ import {
 import { useLang } from "@/lib/i18n";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
-// The five merged History × Calendar layouts (agenda / journal / weeks /
-// timeline / blocks) behind the History screen's view switcher. All grouping
-// math lives in @hybrid/core (engines/history-views.ts); these components only
-// render. Chartreuse = lifting, teal = sport/cardio, shading = sRPE load — the
-// same encoding as the month calendar. Mirrored on mobile
+// The three merged History × Calendar layouts (agenda / weeks / timeline)
+// behind the History screen's view switcher. All grouping math lives in
+// @hybrid/core (engines/history-views.ts); these components only render.
+// Chartreuse = lifting, teal = sport/cardio, shading = sRPE load — the same
+// encoding as the month calendar. Mirrored on mobile
 // (apps/mobile/components/aurora/history-views.tsx).
 
 const C = (v: string) => `var(--color-${v})`;
@@ -45,7 +42,6 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const fmtDayShort = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-const fmtMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 
 export interface ViewCtx {
   sessions: LoggedSession[];
@@ -83,7 +79,7 @@ const keyChip = (s: LoggedSession, ctx: ViewCtx, t: (k: string) => string) => {
 };
 const sessionVolumeOf = (s: LoggedSession, ctx: ViewCtx) => sessionVolume(s.blocks, false, ctx.bw(s.startedAt));
 
-/** Compact tappable session card shared by agenda / timeline / journal. */
+/** Compact tappable session card shared by agenda / timeline. */
 function SessionCard({ s, ctx, ghost, lines = 3 }: { s: LoggedSession; ctx: ViewCtx; ghost?: boolean; lines?: number }) {
   const { t } = useLang();
   const prs = ctx.prs(s.id);
@@ -236,73 +232,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  2 — Month journal
-// ============================================================
-
-export function JournalView({ ctx }: { ctx: ViewCtx }) {
-  const { t } = useLang();
-  const now = new Date();
-  // Open on the latest training day's month so the default selection is
-  // actually visible (last session may be in an earlier month than today).
-  const [initKey] = useState(() => latestTrainingDayKey(ctx.sessions));
-  const [year, setYear] = useState(() => Number(initKey.slice(0, 4)));
-  const [month, setMonth] = useState(() => Number(initKey.slice(5, 7)) - 1);
-  const [selected, setSelected] = useState(initKey);
-  const j = useMemo(() => journalMonth(ctx.sessions, year, month, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, year, month, ctx.bw, ctx.prs]);
-  const today = localTodayKey();
-  const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
-  const selSessions = ctx.sessions.filter((s) => localDayKey(s.startedAt) === selected);
-  const shade = ["transparent", `color-mix(in srgb, ${C("lime")} 7%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 11%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 16%, ${C("ink2")})`, `color-mix(in srgb, ${C("lime")} 24%, ${C("ink2")})`];
-  const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, minWidth: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontWeight: 900, fontSize: fs.title }}>{fmtMonth(year, month)}</span>
-          <span style={{ display: "flex", gap: 6 }}>
-            <button aria-label={t("common.previous")} onClick={() => go(-1)} style={navBtn}>‹</button>
-            <button onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(today); }} style={navBtn}>{t("w.analyze.cal.today")}</button>
-            <button aria-label={t("common.next")} onClick={() => go(1)} style={navBtn}>›</button>
-          </span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 4 }}>
-          {WEEKDAY_LABEL_KEYS.map((k) => <span key={k} style={{ fontFamily: MONO, fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{t(k).slice(0, 1)}</span>)}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 }}>
-          {j.matrix.flat().map((cell) => {
-            const d = j.days[cell.date];
-            const isSel = cell.date === selected;
-            const isToday = cell.date === today;
-            return (
-              <button key={cell.date} onClick={() => setSelected(cell.date)} style={{ aspectRatio: ".84", borderRadius: 12, padding: "5px 4px 4px", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: d ? shade[d.level] : C("ink2"), boxShadow: isSel ? `0 0 14px color-mix(in srgb, ${C("lime")} 22%, transparent)` : "none" }}>
-                {d?.pr && <span style={{ position: "absolute", top: 2, right: 4, fontSize: 8, color: "var(--lime-text)" }}>★</span>}
-                <span style={{ fontFamily: MONO, fontSize: fs.micro, fontWeight: 600, color: isSel || isToday ? "var(--lime-text)" : C("chalk") }}>{Number(cell.date.slice(8, 10))}</span>
-                <span style={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", padding: "0 4px", marginTop: "auto", marginBottom: 2 }}>
-                  {(d?.ticks ?? []).slice(0, 3).map((tk, i) => (
-                    <span key={i} style={{ height: 3.5, borderRadius: 2, background: tk === "cardio" ? C("blue") : C("lime") }} />
-                  ))}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <DayLabel text={fmtDayLong(selected)} today={selected === today} />
-        {selSessions.length === 0 ? (
-          <div style={{ fontFamily: MONO, fontSize: fs.caption, color: C("ash") }}>{t("w.analyze.cal.nothing")}</div>
-        ) : (
-          selSessions.map((s) => <SessionCard key={s.id} s={s} ctx={ctx} lines={6} />)
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============================================================
-//  3 — Week chapters
+//  2 — Week chapters
 // ============================================================
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
@@ -357,7 +287,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
 }
 
 // ============================================================
-//  4 — Timeline rail
+//  3 — Timeline rail
 // ============================================================
 
 export function TimelineView({ ctx }: { ctx: ViewCtx }) {
@@ -389,67 +319,6 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
           </div>
         ),
       )}
-    </div>
-  );
-}
-
-// ============================================================
-//  5 — Block chapters
-// ============================================================
-
-export function BlocksView({ ctx }: { ctx: ViewCtx }) {
-  const { t } = useLang();
-  const chapters = useMemo(() => blockChapters(ctx.sessions, { schedule: ctx.schedule }), [ctx.sessions, ctx.schedule]);
-
-  const statusLabel: Record<string, string> = {
-    done: t("w.home.rail.done"),
-    missed: t("w.home.rail.missed"),
-    skipped: t("w.home.rail.skipped"),
-    postponed: t("w.home.rail.postponed"),
-    today: t("w.analyze.cal.today"),
-    upcoming: t("w.home.rail.upcoming"),
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {chapters.map((ch, ci) => {
-        const accent = ch.kind === "free" ? C("blue") : C("lime");
-        const frac = ch.total > 0 ? ch.done / ch.total : 0;
-        return (
-          <div key={ci} style={{ ...card, position: "relative", overflow: "hidden", padding: 18 }}>
-            <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: accent }} />
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <span style={{ width: 54, height: 54, flex: "none", borderRadius: "50%", display: "grid", placeItems: "center", position: "relative", background: `conic-gradient(${accent} 0 ${Math.round(frac * 360)}deg, ${C("line")} ${Math.round(frac * 360)}deg 360deg)` }}>
-                <span style={{ position: "absolute", inset: 5, borderRadius: "50%", background: C("ink2") }} />
-                <span style={{ position: "relative", fontFamily: MONO, fontSize: fs.caption, fontWeight: 700, color: ch.kind === "free" ? "var(--blue-text)" : "var(--lime-text)" }}>{ch.kind === "free" ? ch.done : `${ch.done}/${ch.total}`}</span>
-              </span>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 900, fontSize: fs.note, lineHeight: 1.25 }}>{ch.planName ?? t("histview.freestyle")}</span>
-                <span style={{ display: "block", fontFamily: MONO, fontSize: fs.nano, color: C("ash"), marginTop: 3, letterSpacing: ".06em", textTransform: "uppercase" }}>
-                  {ch.kind === "free"
-                    ? t("histview.outsidePlan")
-                    : `${t("histview.weekLbl")} ${ch.week}${ch.complete ? ` — ${t("histview.completeLbl")}` : ""}`}
-                </span>
-              </span>
-            </div>
-            <div style={{ marginTop: 10 }}>
-              {ch.rows.map((r) => {
-                const done = r.status === "done";
-                const openable = !!r.sessionId;
-                return (
-                  <div key={r.key} onClick={openable ? () => ctx.onOpen(r.sessionId!) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", borderTop: `1px solid ${C("line")}`, cursor: openable ? "pointer" : "default" }}>
-                    <span style={{ width: 19, height: 19, flex: "none", borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 10, background: done ? `color-mix(in srgb, ${accent} 18%, transparent)` : "transparent", color: done ? (ch.kind === "free" ? "var(--blue-text)" : "var(--lime-text)") : "transparent", border: done ? "none" : `1.5px dashed color-mix(in srgb, ${C("ash")} 50%, transparent)` }}>✓</span>
-                    <span style={{ flex: 1, minWidth: 0, fontWeight: done ? 600 : 500, fontSize: fs.body, color: done ? C("chalk") : C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</span>
-                    <span style={{ fontFamily: MONO, fontSize: fs.nano, color: r.status === "missed" ? "var(--red-text)" : C("ash"), textTransform: "uppercase", flex: "none" }}>
-                      {r.dateKey ? fmtDayShort(r.dateKey) : ""}{!done ? ` – ${statusLabel[r.status] ?? r.status}` : ""}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }

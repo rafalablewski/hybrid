@@ -74,8 +74,18 @@ import {
   type PrHit,
   type CardioPrHit,
   type ExerciseUse,
+  checkinFeeling,
+  type ReadinessFeeling,
 } from "@hybrid/core";
-import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
+import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
+
+// Today's one-tap readiness feeling from the check-in list → scales the AI
+// session's load so a Started session matches the readout on Home.
+function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[]): ReadinessFeeling | null {
+  const today = new Date().toDateString();
+  const c = list.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
+  return c ? checkinFeeling(c) : null;
+}
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import SwipeRow from "../components/swipe-row";
@@ -436,7 +446,8 @@ export default function Workout() {
         // instead of fabricating a session for them.
         if (!gateAI("workout-ai")) return;
         const log = toTrainingLog(sessions);
-        const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
+        const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
+        const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: feeling ?? undefined });
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
@@ -522,10 +533,11 @@ export default function Workout() {
   // Empty-state quick-starts (parity with the web logger): pull today's
   // AI-prescribed session, or load one of your saved routines, without leaving
   // the live screen.
-  const loadPrescribed = () => {
+  const loadPrescribed = async () => {
     if (!gateAI("workout-ai")) return;
     const log = toTrainingLog(prior.current);
-    const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current) });
+    const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
+    const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current), subjectiveReadiness: feeling ?? undefined });
     setReadiness(rx.readiness);
     setTitle("AI session");
     setExercises(blocksToExercises(rx.blocks as SessionBlock[]));

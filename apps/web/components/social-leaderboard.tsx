@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { LEADERBOARD_METRICS, type LeaderboardMetric, type LeaderRow, type LeaderboardResponse } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Pill, EmptyState, ScreenHead, jget } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
+import { useLang } from "@/lib/i18n";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function SocialLeaderboard() {
+  const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [metric, setMetric] = useState<LeaderboardMetric>("volume");
   const [board, setBoard] = useState<LeaderRow[] | null>(null);
@@ -20,16 +22,16 @@ export default function SocialLeaderboard() {
 
   return (
     <div style={{ maxWidth: 560 }}>
-      <ScreenHead title="Leaderboard" sub="This week, across your friends (mutual follows)." />
+      <ScreenHead title={t("w.social.leaderboard")} sub={t("w.social.leaderboardSub")} />
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {LEADERBOARD_METRICS.map((m) => (
           <Pill key={m.key} active={metric === m.key} onClick={() => setMetric(m.key)}>{m.label}</Pill>
         ))}
       </div>
       {!board ? (
-        <EmptyState title="Loading…" />
+        <EmptyState title={t("common.loading")} />
       ) : board.length <= 1 ? (
-        <EmptyState title="No friends yet" sub="Become friends (a mutual follow) to race the weekly leaderboard together." />
+        <EmptyState title={t("w.social.noFriends")} sub={t("w.social.noFriendsSub")} />
       ) : (
         <div style={card(aurora)}>
           {board.map((r) => (
@@ -37,7 +39,7 @@ export default function SocialLeaderboard() {
               <span style={{ width: 28, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, color: r.rank <= 3 ? C("amber") : C("ash"), fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</span>
               <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 600 }}>{r.isMe ? "You" : r.displayName || `@${r.handle}`}</div>
+                <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 600 }}>{r.isMe ? t("w.social.you") : r.displayName || `@${r.handle}`}</div>
                 <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>@{r.handle}</div>
               </div>
               <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: r.value > 0 ? C("lime") : C("ash") }}>{r.label}</span>

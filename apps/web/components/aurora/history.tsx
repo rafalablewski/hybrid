@@ -7,17 +7,16 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
-import { ViewSwitcher, AgendaView, JournalView, WeeksView, TimelineView, BlocksView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, WeeksView, TimelineView, type ViewCtx } from "./history-views";
+import FetchError from "./fetch-error";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
 // its component here is a type error, not a silent fall-back.
 const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = {
   agenda: AgendaView,
-  journal: JournalView,
   weeks: WeeksView,
   timeline: TimelineView,
-  blocks: BlocksView,
 };
 
 const VIEW_KEY = "hybrid.historyView";
@@ -63,7 +62,7 @@ type SwipeAction = { key: string; label: string; color: string; onPress: () => v
  *  view switcher. Live sessions are managed (archive/delete) from the full
  *  breakdown (SessionDetail); the archived screen keeps the classic swipe list
  *  — drag a card left (pointer or touch) to reveal restore/delete. */
-export default function AuroraHistory({ sessions, planId, planStartedAt, initialOpenId, onOpenExercise, onChanged }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; initialOpenId?: string | null; onOpenExercise?: (name: string) => void; onChanged?: () => void }) {
+export default function AuroraHistory({ sessions, planId, planStartedAt, initialOpenId, onOpenExercise, onChanged, fetchError = false, onRetry }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; initialOpenId?: string | null; onOpenExercise?: (name: string) => void; onChanged?: () => void; fetchError?: boolean; onRetry?: () => void }) {
   const { t } = useLang();
   // Seeded when Today deep-links one session's breakdown (the "Also today"
   // card — parity with mobile's /session/{id}); the screen remounts per shell
@@ -152,7 +151,12 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {archivedToggle}
       {!showArchived && <ViewSwitcher view={view} onChange={pickView} />}
-      {list.length === 0 ? (
+      {!showArchived && fetchError && sessions.length === 0 ? (
+        /* A real fetch failure — distinct from a genuine empty history, so an
+           offline / 500 load never masquerades as "no workouts yet" (parity
+           with mobile history). */
+        <FetchError onRetry={() => onRetry?.()} />
+      ) : list.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 50 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("w.analyze.hist.sessionsEmpty")}</p>

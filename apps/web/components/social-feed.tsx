@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, ScreenHead, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
+import { useLang } from "@/lib/i18n";
 
 type FeedItem = FeedItemView;
 
 function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
+  const { t } = useLang();
   const [list, setList] = useState<CommentView[] | null>(null);
   const [text, setText] = useState("");
   const load = () => jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`).then((r) => setList(r.comments ?? []));
@@ -33,14 +35,15 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
         </div>
       ))}
       <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Add a comment…" style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
-        <Btn small onClick={send}>Post</Btn>
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
+        <Btn small onClick={send}>{t("w.social.post")}</Btn>
       </div>
     </div>
   );
 }
 
 export default function SocialFeed() {
+  const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -65,30 +68,30 @@ export default function SocialFeed() {
     setText(""); setAttachPr(false); load();
   };
   const del = async (item: FeedItem) => {
-    if (!window.confirm("Delete this post?")) return;
+    if (!window.confirm(t("w.social.deletePostConfirm"))) return;
     await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
     load();
   };
 
-  if (!feed) return <EmptyState title="Loading…" />;
+  if (!feed) return <EmptyState title={t("common.loading")} />;
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <ScreenHead title="Feed" sub="What your friends are training." />
+      <ScreenHead title={t("w.social.feedTitle")} sub={t("w.social.feedSub")} />
 
       {/* COMPOSER — share a status or your latest PR card with your followers. */}
       <div style={card(aurora, { marginBottom: 16 })}>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder="Share an update with your followers…" style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
-            <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> 🏆 Attach my latest PR
+            <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> 🏆 {t("w.social.attachPr")}
           </label>
-          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? "Sharing…" : "Share"}</Btn>
+          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
         </div>
       </div>
 
       {feed.length === 0 ? (
-        <EmptyState title="Your feed is quiet" sub="Follow some friends on the Find friends tab — their workouts and PRs show up here." />
+        <EmptyState title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />
       ) : (
         feed.map((item) => (
           <div key={item.id} style={card(aurora, { marginBottom: 14 })}>
@@ -104,7 +107,7 @@ export default function SocialFeed() {
                 <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>{item.when}</div>
               </div>
               {item.subjectType === "post" && item.mine && (
-                <button onClick={() => del(item)} aria-label="Delete post" style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+                <button onClick={() => del(item)} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
               )}
             </div>
             {item.body && <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.body}</p>}
@@ -120,10 +123,10 @@ export default function SocialFeed() {
             )}
             <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
               <button onClick={() => cheer(item)} style={{ background: "none", border: "none", cursor: "pointer", color: item.kudosedByMe ? C("lime") : C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
-                {item.kudosedByMe ? "👏" : "👏"} {item.kudos > 0 ? item.kudos : ""} Cheer
+                {item.kudosedByMe ? "👏" : "👏"} {item.kudos > 0 ? item.kudos : ""} {t("w.social.cheer")}
               </button>
               <button onClick={() => setOpen(open === item.id ? null : item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13 }}>
-                💬 {item.comments > 0 ? item.comments : ""} Comment
+                💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}
               </button>
             </div>
             {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}

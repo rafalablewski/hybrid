@@ -539,10 +539,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.deleteError": "Couldn't delete the workout.",
     // History view switcher (the merged History × Calendar layouts, both clients)
     "histview.agenda": "Agenda",
-    "histview.journal": "Journal",
     "histview.weeks": "Weeks",
     "histview.timeline": "Timeline",
-    "histview.blocks": "Blocks",
     "histview.planned": "planned",
     "histview.tomorrow": "Tomorrow",
     "histview.restDay": "rest day",
@@ -551,9 +549,6 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.thisWeek": "This week",
     "histview.weekLbl": "Week",
     "histview.ofLbl": "of",
-    "histview.freestyle": "Freestyle",
-    "histview.outsidePlan": "Outside any plan",
-    "histview.completeLbl": "complete",
     "running.paceTrendHint": "Log this run a few times to see a pace trend.",
   },
   pl: {
@@ -1061,10 +1056,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.deleteError": "Nie udało się usunąć treningu.",
     // Przełącznik widoków historii (scalone układy Historia × Kalendarz)
     "histview.agenda": "Agenda",
-    "histview.journal": "Dziennik",
     "histview.weeks": "Tygodnie",
     "histview.timeline": "Oś czasu",
-    "histview.blocks": "Bloki",
     "histview.planned": "w planie",
     "histview.tomorrow": "Jutro",
     "histview.restDay": "dzień przerwy",
@@ -1073,9 +1066,6 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.thisWeek": "Ten tydzień",
     "histview.weekLbl": "Tydzień",
     "histview.ofLbl": "z",
-    "histview.freestyle": "Poza planem",
-    "histview.outsidePlan": "Poza jakimkolwiek planem",
-    "histview.completeLbl": "ukończony",
     "running.paceTrendHint": "Zapisz ten bieg kilka razy, aby zobaczyć trend tempa.",
   },
   de: {
@@ -1583,10 +1573,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.deleteError": "Workout konnte nicht gelöscht werden.",
     // History-Ansichten (die zusammengeführten Verlauf × Kalender Layouts)
     "histview.agenda": "Agenda",
-    "histview.journal": "Journal",
     "histview.weeks": "Wochen",
     "histview.timeline": "Zeitachse",
-    "histview.blocks": "Blöcke",
     "histview.planned": "geplant",
     "histview.tomorrow": "Morgen",
     "histview.restDay": "Ruhetag",
@@ -1595,9 +1583,6 @@ const BASE: Record<Lang, Record<string, string>> = {
     "histview.thisWeek": "Diese Woche",
     "histview.weekLbl": "Woche",
     "histview.ofLbl": "von",
-    "histview.freestyle": "Freestyle",
-    "histview.outsidePlan": "Außerhalb jedes Plans",
-    "histview.completeLbl": "abgeschlossen",
     "running.paceTrendHint": "Protokolliere diesen Lauf ein paar Mal, um einen Tempo-Trend zu sehen.",
   },
 };

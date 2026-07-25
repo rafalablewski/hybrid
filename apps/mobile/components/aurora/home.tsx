@@ -61,6 +61,7 @@ import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
+import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import CoachRail from "./coach-rail";
@@ -96,7 +97,7 @@ export default function AuroraHome() {
   const navScroll = useNavScrollProps();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
-  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const { data: sessions = [], refetch: refetchSessions, isError: sessionsError } = useSessionsQuery();
   const { data: signals = [], refetch: refetchSignals } = useSignalsQuery();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -182,9 +183,16 @@ export default function AuroraHome() {
 
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  // TODAY's readiness feeling (independent of the rail's selected day) → feeds
+  // the prescription so the one-tap check-in mechanically scales today's load.
+  const todayFeeling = useMemo(() => {
+    const today = new Date().toDateString();
+    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    return c ? checkinFeeling(c) : null;
+  }, [checkins]);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
-    [log, sessions, bio, prefExp, prefEquip],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
@@ -447,7 +455,15 @@ export default function AuroraHome() {
             itself — the interface shouldn't narrate what the athlete can see.
             When enrolled in a dated program the count-based hero gives way to the
             date-anchored WEEK RAIL (parity with web). */}
-        {useRail ? (
+        {sessionsError && sessions.length === 0 ? (
+          /* SESSIONS FAILED TO LOAD — with no cached data we can't tell an
+             enrolled athlete from a first-run one, so the chooser here would be
+             a lie ("looks like a new user" when really the network dropped).
+             Show the honest retry card instead of the empty-state chooser. */
+          <View style={{ marginTop: 14 }}>
+            <FetchError onRetry={load} />
+          </View>
+        ) : useRail ? (
           <View style={{ marginTop: 14 }}>
             <AuroraWeekRail
               planId={planId!}
@@ -677,6 +693,7 @@ export default function AuroraHome() {
           dayTs={railDay?.ts ?? null}
           dayLabel={dayLabel}
           onPicked={loadFeeling}
+          onLogMore={() => router.push("/checkin")}
         />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
@@ -941,7 +958,7 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked, onLogMore }: {
   C: P;
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
@@ -951,6 +968,7 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   dayTs: number | null;
   dayLabel: string | null;
   onPicked: () => void;
+  onLogMore?: () => void;
 }) {
   const { t } = useLang();
   const revalidate = useRevalidate();
@@ -959,7 +977,11 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
   const cooling = coolMs > 0;
-  const locked = busy || cooling || isFuture;
+  // A day that ALREADY has a check-in can be re-tapped to adjust it — the server
+  // upserts the same day (cooldown-exempt). The 6h cooldown only locks STARTING
+  // a fresh check-in on a day that has none yet (a new-day create would 429).
+  const blockingCooldown = cooling && !feeling;
+  const locked = busy || isFuture || blockingCooldown;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
@@ -1001,19 +1023,36 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
       {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
           alone while cooling (it explains why the faces are locked on a day
           without its own check-in). */}
-      {(feeling && loggedAt != null) || cooling ? (
+      {(feeling && loggedAt != null) || blockingCooldown ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
           {feeling && loggedAt != null ? (
             <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
               {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${feeling}`)}</Text>, {relativeTime(loggedAt)}
             </Text>
           ) : null}
-          {cooling ? (
+          {blockingCooldown ? (
             <View style={{ marginLeft: "auto", borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
             </View>
           ) : null}
         </View>
+      ) : null}
+      {/* Once today's readiness is set, nudge the athlete to log the fuller
+          picture — the guided check-in refines TODAY's row (sleep, soreness,
+          mood, weight, a note), no second entry, no cooldown block. */}
+      {isToday && feeling && onLogMore ? (
+        <Pressable
+          onPress={onLogMore}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.recovery.readiness.logMore")}
+          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{t("w.recovery.readiness.logMoreSub")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
       ) : null}
     </View>
   );
