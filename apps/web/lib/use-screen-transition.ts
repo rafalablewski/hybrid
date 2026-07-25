@@ -1,0 +1,66 @@
+"use client";
+
+import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
+import { flushSync } from "react-dom";
+import { screenTransition } from "@hybrid/core";
+
+/**
+ * Wraps the app-shell's `setScreen` so every navigation runs as a real
+ * transition instead of a hard cut.
+ *
+ * WHY THE VIEW TRANSITIONS API. The shell renders ONE keyed wrapper and
+ * lazy-loads nearly every screen, so the outgoing tree unmounts on the same
+ * frame the new one mounts — there is nothing left to animate out. Keeping both
+ * trees alive for a frame would mean mounting two lazy screens at once (double
+ * the chunks, double the data fetches). `startViewTransition()` instead lets the
+ * browser snapshot the old tree itself, so we get a genuine paired exit with no
+ * structural change to the shell. Where it isn't supported the state update just
+ * applies directly — the old behaviour, no worse.
+ *
+ * DIRECTION comes from the shared hierarchy in @hybrid/core (`screenTransition`),
+ * so web and mobile can't disagree about which way a given move travels. It is
+ * published as data attributes on <html>; globals.css picks the keyframes.
+ *
+ * Reduce Motion is NOT special-cased here. The transition still runs — the CSS
+ * substitutes a short cross-dissolve for the positional keyframes, because a
+ * user with Reduce Motion on still needs to perceive that the screen changed.
+ */
+export function useScreenTransition(
+  current: string,
+  apply: Dispatch<SetStateAction<string>>,
+): Dispatch<SetStateAction<string>> {
+  // The setter is handed to children and used inside callbacks, so it must be
+  // stable; read the live screen from a ref rather than closing over it.
+  const currentRef = useRef(current);
+  currentRef.current = current;
+
+  return useCallback<Dispatch<SetStateAction<string>>>(
+    (next) => {
+      const from = currentRef.current;
+      const to = typeof next === "function" ? (next as (p: string) => string)(from) : next;
+      if (to === from) return;
+
+      const doc = typeof document !== "undefined" ? document.documentElement : null;
+      const start = (
+        document as Document & { startViewTransition?: (cb: () => void) => unknown }
+      ).startViewTransition;
+
+      if (!doc || typeof start !== "function") {
+        apply(to);
+        return;
+      }
+
+      const t = screenTransition(from, to);
+      doc.dataset.navKind = t.kind;
+      doc.dataset.navDir = t.dir === 1 ? "fwd" : t.dir === -1 ? "back" : "none";
+
+      // The callback must apply the DOM change SYNCHRONOUSLY — the browser
+      // snapshots before it runs and captures the result after, so a batched
+      // React update would be missed and the transition would animate nothing.
+      start.call(document, () => {
+        flushSync(() => apply(to));
+      });
+    },
+    [apply],
+  );
+}

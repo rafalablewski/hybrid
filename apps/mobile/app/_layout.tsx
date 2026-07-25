@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, Animated, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   useFonts,
@@ -15,6 +15,7 @@ import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fo
 // (parity with web's --font-heading); Aurora keeps Archivo. Loaded here,
 // applied via serifIf().
 import { ShipporiMincho_500Medium, ShipporiMincho_600SemiBold, ShipporiMincho_700Bold, ShipporiMincho_800ExtraBold } from "@expo-google-fonts/shippori-mincho";
+import { springs, springDurationMs } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
@@ -26,6 +27,7 @@ import { startIap } from "../lib/iap";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
 import { NavScrollProvider } from "../lib/nav-scroll";
+import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
@@ -34,6 +36,11 @@ import AuroraGlobalNav from "../components/aurora/global-nav";
 // renders the global floating pill nav over every screen (self-gating).
 function Shell() {
   const { scheme, palette } = useTheme();
+  // The presenting surface that scales back while a sheet is up. Everything the
+  // sheet covers lives inside it — navigator AND the floating nav pill — so the
+  // whole app recedes as one plane, the way iOS presents a sheet.
+  const recede = useRecedeStyle();
+  const dim = useRecedeDim();
   // Launch-time IAP listener: verify + grant + finish any transaction that
   // completes while no purchase UI is open (interrupted / Ask-to-Buy / renewal /
   // another-device purchase), and refresh the session so Full unlocks at once.
@@ -46,20 +53,50 @@ function Shell() {
   return (
     <NavScrollProvider>
       <StatusBar style={scheme === "light" ? "dark" : "light"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }}>
+      {/* Black ground so the receded card's rounded corners actually read —
+          the same reason iOS darkens the window behind a presented sheet. */}
+      <Animated.View style={[{ flex: 1, backgroundColor: palette.ink, overflow: "hidden" }, recede]}>
+      {/* SCREEN TRANSITIONS. Direction encodes hierarchy — the shared rule in
+          @hybrid/core (motion.ts `screenTransition`), which the web shell reads
+          too, so the two clients can't disagree about what a given move means.
+          These options are rendered NATIVELY by react-native-screens (4.25), so
+          the travel runs off the JS thread; only the content entrance
+          (useEntrance) stays on the JS driver, deliberately — see lib/ui.tsx.
+
+          `slide_from_right` IS the drill-down: everything under the Stack that
+          isn't a tab route is a detail screen pushed on top of the shell, and
+          the iOS back-swipe reverses it exactly. Reduce Motion is handled by
+          the OS for native stack animations (iOS substitutes a cross-dissolve),
+          which is why there is no flag threaded through here. */}
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: palette.ink },
+          animation: "slide_from_right",
+          animationDuration: springDurationMs(springs.slide),
+          gestureEnabled: true,
+        }}
+      >
         {/* The signed-in app shell. Auth/funnel screens (welcome/login) can sit
             BELOW it in the stack after a sign-in (welcome → login → replace to
             tabs leaves welcome underneath), so the iOS edge swipe-back used to
             pop the whole app back to "Start your journey" — looking like a
             sign-out. Disable the back gesture on the shell so swiping inside the
             app (e.g. the Today pager) never escapes to the auth screens. */}
-        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false, animation: "none" }} />
         {/* Upgrade is a slide-up BOTTOM SHEET — a transparent modal so the screen
             behind stays visible through the scrim (the component animates the
             panel up itself). */}
         <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
       <AuroraGlobalNav />
+      {/* The brightness drop, drawn as a wash rather than a `filter` — RN's
+          filter support is uneven across platforms. pointerEvents none so it
+          never eats a tap while animating. */}
+      {dim ? (
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: dim }]} />
+      ) : null}
+      </Animated.View>
     </NavScrollProvider>
   );
 }
@@ -89,7 +126,9 @@ export default function RootLayout() {
               <LiquidGlassProvider>
                 <SessionProvider>
                   <LanguageProvider>
-                    <Shell />
+                    <SheetRecedeProvider>
+                      <Shell />
+                    </SheetRecedeProvider>
                   </LanguageProvider>
                 </SessionProvider>
               </LiquidGlassProvider>

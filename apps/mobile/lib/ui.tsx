@@ -17,7 +17,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { BlurView } from "expo-blur";
-import { colors, fs, space } from "@hybrid/core";
+import { colors, fs, space, springs, springDurationMs, durations } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -82,21 +82,22 @@ export function startGlow(accent: string, pressed = false): ViewStyle {
 // the standard renderer, so it always reaches the resting (visible) end state.
 // This is a one-shot 240ms entrance, so the JS-thread cost is negligible.
 //
-// Honours Reduce Motion: shows the screen at rest (no fade/rise) when it's on.
+// Honours Reduce Motion by SUBSTITUTING a cross-dissolve (durations.reduced),
+// not by snapping to the end state: the rise is dropped, the fade is kept, so
+// the screen change is still perceptible. Snapping removes that signal entirely.
 export function useEntrance() {
   const enter = useRef(new Animated.Value(0)).current;
   const reducedMotion = useReducedMotion();
   useFocusEffect(
     useCallback(() => {
-      if (reducedMotion) {
-        enter.setValue(1);
-        return;
-      }
       enter.setValue(0);
       const anim = Animated.timing(enter, {
         toValue: 1,
-        duration: 240,
-        easing: Easing.out(Easing.cubic),
+        // The entrance is the tail of the stack transition, so it rides the
+        // shared `sheet` spring's settle time rather than a hand-picked 240ms —
+        // one source of truth with the web (@hybrid/core motion.ts).
+        duration: reducedMotion ? durations.reduced : springDurationMs(springs.sheet),
+        easing: reducedMotion ? Easing.linear : Easing.out(Easing.cubic),
         useNativeDriver: false,
       });
       anim.start();
@@ -106,12 +107,19 @@ export function useEntrance() {
   // Memoised on the stable `enter` value: interpolate() registers a new node on
   // its parent Animated.Value every call, so recreating the style each render
   // would leak nodes. `enter` never changes, so this builds exactly once.
+  // Under Reduce Motion the RISE is dropped and only the fade survives — that
+  // is the cross-dissolve substitution. `reducedMotion` is in the deps because
+  // the user can toggle it live; it changes at most once a session, so the
+  // interpolate node it rebuilds is not a leak concern.
   return useMemo(
-    () => ({
-      opacity: enter,
-      transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-    }),
-    [enter],
+    () =>
+      reducedMotion
+        ? { opacity: enter }
+        : {
+            opacity: enter,
+            transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+          },
+    [enter, reducedMotion],
   );
 }
 

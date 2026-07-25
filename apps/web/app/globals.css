@@ -486,11 +486,138 @@ html {
   .pr-sweep, .pr-confetti, .pr-rays { display: none; }
 }
 
-/* Screen entrance — content fades + rises when you change screens, so Aurora
-   navigation feels like motion, not a hard cut (matches the mobile transition). */
+/* Screen entrance — the CLASSIC template's transition (Aurora now runs the full
+   paired system below). Content fades + rises when you change screens. */
 @keyframes auroraEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .aurora-enter { animation: auroraEnter .26s cubic-bezier(.2,.7,.3,1) both; }
 @media (prefers-reduced-motion: reduce) { .aurora-enter { animation: none; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   SCREEN TRANSITIONS — the paired, directional system.
+
+   Curves and durations are GENERATED from packages/core/src/motion.ts and
+   pasted here; apps/web/lib/motion-tokens.test.ts regenerates them and fails
+   if this block drifts from core, so the two clients can't fall out of step.
+
+   Each spring is declared TWICE: a bezier approximation first, then the exact
+   spring as a linear() easing. An engine without linear() keeps the first
+   declaration and still gets a sensible curve.
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+  /* spring.slide — response .34 / damping 1.00, settles in 403ms */
+  --e-slide: cubic-bezier(.2,.7,.3,1);
+  --e-slide: linear(0,0.01866,0.06528,0.12874,0.20112,0.27688,0.35222,0.42466,0.49265,0.55531,0.61228,0.66348,0.70909,0.7494,0.78481,0.81573,0.84261,0.86588,0.88595,0.9032,0.91799,0.93063,0.94141,0.95058,0.95837,0.96498,0.97057,0.97529,0.97928,0.98264,0.98547,0.98784,0.98984,0.99151,0.99292,0.99409,0.99508);
+  --d-slide: 403ms;
+  /* spring.zoom — response .46 / damping .92, settles in 429ms */
+  --e-zoom: cubic-bezier(.2,.7,.3,1);
+  --e-zoom: linear(0,0.01199,0.04345,0.08862,0.14292,0.20274,0.2653,0.32845,0.3906,0.45058,0.50759,0.56109,0.61078,0.6565,0.69823,0.73605,0.77012,0.80062,0.82778,0.85185,0.87307,0.8917,0.90798,0.92215,0.93443,0.94503,0.95414,0.96195,0.9686,0.97425,0.97902,0.98304,0.9864,0.98921,0.99153,0.99345,0.99502);
+  --d-zoom: 429ms;
+  /* spring.sheet — response .38 / damping .86, settles in 378ms */
+  --e-sheet: cubic-bezier(.2,.7,.3,1);
+  --e-sheet: linear(0,0.01364,0.0494,0.10064,0.16202,0.22934,0.29932,0.36944,0.43785,0.50321,0.56461,0.62147,0.6735,0.72058,0.76277,0.80023,0.83322,0.86202,0.88698,0.90843,0.92672,0.9422,0.95518,0.96598,0.97487,0.98212,0.98796,0.99261,0.99625,0.99905,1.00115,1.00268,1.00374,1.00443,1.00483,1.005,1.005);
+  --d-sheet: 378ms;
+  /* spring.nav — response .32 / damping .74, settles in 365ms (the SHIPPED lens) */
+  --e-nav: cubic-bezier(.2,.7,.3,1);
+  --e-nav: linear(0,0.01795,0.06491,0.13189,0.21147,0.29772,0.38599,0.47274,0.55539,0.63216,0.70193,0.76409,0.81845,0.86516,0.90456,0.93717,0.96361,0.98454,1.00066,1.01265,1.02114,1.02675,1.03,1.0314,1.03137,1.03028,1.02842,1.02607,1.02343,1.02066,1.01788,1.01521,1.0127,1.01039,1.00832,1.00649,1.0049);
+  --d-nav: 365ms;
+  /* opacity-only — nothing positional, so nothing to interrupt */
+  --e-fade: cubic-bezier(.2,.7,.3,1);
+  --e-exit: cubic-bezier(.4,0,.9,.4);
+  --d-fast: 160ms;
+  --d-dissolve: 200ms;
+  /* the Reduce Motion cross-dissolve SUBSTITUTION — never zero */
+  --d-reduced: 150ms;
+}
+
+/* motion.parallaxUnder = 0.33, motion.pushOffset = 0.16, recede = 0.92 / 30px / 0.72 */
+@keyframes motionSlideInRight  { from { transform: translateX(100%); }  to { transform: none; } }
+@keyframes motionSlideInLeft   { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes motionSlideOutLeft  { from { transform: none; opacity: 1; } to { transform: translateX(-33%); opacity: .45; } }
+@keyframes motionSlideOutRight { from { transform: none; opacity: 1; } to { transform: translateX(33%);  opacity: .45; } }
+@keyframes motionPushIn  { from { transform: translateY(16%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes motionPushOut { from { transform: scale(1); opacity: 1; filter: brightness(1); } to { transform: scale(.94); opacity: .4; filter: brightness(.72); } }
+@keyframes motionPopIn   { from { transform: scale(.94); opacity: .4; filter: brightness(.72); } to { transform: none; opacity: 1; filter: brightness(1); } }
+@keyframes motionPopOut  { from { transform: none; opacity: 1; } to { transform: translateY(16%); opacity: 0; } }
+@keyframes motionDissolveIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes motionDissolveOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* The shell's screen wrapper is the ONLY thing that travels — the sidebar,
+   header and banners stay put, so navigation moves the content, not the app. */
+.motion-screen { view-transition-name: hybrid-screen; }
+
+/* Suppress the default root cross-fade: without this the whole document
+   (sidebar and header included) dissolves under the named element. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(hybrid-screen),
+::view-transition-new(hybrid-screen) { mix-blend-mode: normal; }
+
+/* SIBLING — travel horizontally in bottom-nav order. */
+html[data-nav-kind="sibling"][data-nav-dir="fwd"]::view-transition-old(hybrid-screen)  { animation: motionSlideOutLeft  var(--d-slide) var(--e-slide) both; }
+html[data-nav-kind="sibling"][data-nav-dir="fwd"]::view-transition-new(hybrid-screen)  { animation: motionSlideInRight  var(--d-slide) var(--e-slide) both; }
+html[data-nav-kind="sibling"][data-nav-dir="back"]::view-transition-old(hybrid-screen) { animation: motionSlideOutRight var(--d-slide) var(--e-slide) both; }
+html[data-nav-kind="sibling"][data-nav-dir="back"]::view-transition-new(hybrid-screen) { animation: motionSlideInLeft   var(--d-slide) var(--e-slide) both; }
+
+/* PUSH — the parent recedes, the child rises through it. */
+html[data-nav-kind="push"]::view-transition-old(hybrid-screen) { animation: motionPushOut var(--d-fast)  var(--e-exit)  both; }
+html[data-nav-kind="push"]::view-transition-new(hybrid-screen) { animation: motionPushIn  var(--d-sheet) var(--e-sheet) both; }
+
+/* POP — the exact inverse. If back doesn't reverse forward, the spatial model
+   breaks and the motion becomes noise. */
+html[data-nav-kind="pop"]::view-transition-old(hybrid-screen) { animation: motionPopOut var(--d-fast)  var(--e-exit)  both; }
+html[data-nav-kind="pop"]::view-transition-new(hybrid-screen) { animation: motionPopIn  var(--d-sheet) var(--e-sheet) both; }
+
+/* REPLACE — two unrelated leaves. There is no defensible direction between
+   them, and inventing one is worse than a crossfade. */
+html[data-nav-kind="replace"]::view-transition-old(hybrid-screen) { animation: motionDissolveOut var(--d-dissolve) var(--e-fade) both; }
+html[data-nav-kind="replace"]::view-transition-new(hybrid-screen) { animation: motionDissolveIn  var(--d-dissolve) var(--e-fade) both; }
+
+/* ── SHEET PRESENTATION ──────────────────────────────────────────────
+   The presenting screen recedes so the sheet sits on a real stack instead of
+   floating over a static picture. Because the recede does the separation work,
+   the scrim drops from motion.scrimFlat (0.6) to motion.scrimWithRecede (0.28)
+   — a heavy dim over an un-receded page is what made the old sheet feel flat.
+
+   The host is TRANSFORMED, which would trap any position:fixed descendant, so
+   Sheet portals itself to <body>. Do not render a modal inside the host. */
+.motion-recede-host {
+  transform-origin: 50% 0;
+  transition:
+    transform var(--d-sheet) var(--e-sheet),
+    border-radius var(--d-sheet) var(--e-sheet),
+    filter var(--d-sheet) var(--e-sheet);
+}
+html[data-sheet-open] .motion-recede-host {
+  transform: scale(0.92);
+  border-radius: 30px;
+  filter: brightness(0.72);
+}
+/* Black behind the receded card, so its corners actually read — the same reason
+   iOS darkens the window behind a presented sheet. */
+html[data-sheet-open] body { background: #000; }
+
+.motion-sheet-panel {
+  transition: transform var(--d-sheet) var(--e-sheet), opacity var(--d-fast) var(--e-fade);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Substitute: the panel cross-dissolves in place instead of travelling, and
+     the host stops receding. Not an instant cut — the dissolve is the signal. */
+  .motion-sheet-panel {
+    transform: none !important;
+    transition: opacity var(--d-reduced) linear !important;
+  }
+  html[data-sheet-open] .motion-recede-host { transform: none; border-radius: 0; }
+}
+
+/* REDUCE MOTION — a SUBSTITUTION, not a deletion. Positional keyframes are
+   replaced by a short cross-dissolve for every kind, because a user with Reduce
+   Motion on still needs to perceive that the screen changed; an instant cut
+   removes that signal entirely. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-nav-kind]::view-transition-old(hybrid-screen) { animation: motionDissolveOut var(--d-reduced) linear both !important; }
+  html[data-nav-kind]::view-transition-new(hybrid-screen) { animation: motionDissolveIn  var(--d-reduced) linear both !important; }
+}
 
 /* Loading-skeleton pulse — a placeholder block gently breathes while its data
    is in flight, so a section reserves its space and fills in rather than
@@ -631,6 +758,20 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+  /* EXEMPT the screen-transition pseudo-elements. Reduce Motion is a
+     SUBSTITUTION, not a deletion: the block above would collapse the
+     cross-dissolve to 0.001ms, turning every navigation into an instant cut and
+     removing the user's only signal that the screen changed. The substituted
+     dissolve is defined in the screen-transition section above; this keeps the
+     universal selector from clobbering it. (`*` cannot match a view-transition
+     pseudo-element in the tree, but its `animation-duration` is inherited
+     through the ::view-transition root, which is what used to zero it.) */
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: var(--d-reduced) !important;
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

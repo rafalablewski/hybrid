@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { motion } from "@hybrid/core";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -15,7 +17,22 @@ const C = (v: string) => `var(--color-${v})`;
  * `open` mounts it; the component keeps itself in the DOM through the exit
  * animation, so callers just flip a boolean. An optional `title`/`sub` renders
  * the standard sheet header under the grab handle.
+ *
+ * PRESENTATION. While a sheet is up, the presenting screen RECEDES — scales to
+ * motion.recedeScale with its corner radius growing to a device radius and its
+ * brightness dropping — so the sheet reads as sitting on a real stack rather
+ * than floating over a static picture. That is driven by a `data-sheet-open`
+ * flag on <html> (globals.css `.motion-recede-host`), because the sheet has no
+ * reference to the shell. Because the host is transformed, a position:fixed
+ * descendant of it would be trapped by the transform — so the sheet PORTALS to
+ * <body>, outside the receding subtree. Sheets are reference-counted: nested or
+ * stacked sheets only un-recede once the last one closes.
  */
+
+// How many sheets are currently up. The recede flag belongs to the document,
+// not to any one sheet, so closing an inner sheet must not un-recede the shell
+// while an outer one is still open.
+let openSheets = 0;
 export default function Sheet({
   open,
   onClose,
@@ -60,6 +77,19 @@ export default function Sheet({
     return () => { document.body.style.overflow = prev; };
   }, [mounted]);
 
+  // Drive the shell's recede. Keyed on `open` (not `mounted`) so the shell
+  // starts coming back as the sheet starts leaving, rather than snapping after
+  // the exit finishes.
+  useEffect(() => {
+    if (!open) return;
+    openSheets += 1;
+    document.documentElement.dataset.sheetOpen = "";
+    return () => {
+      openSheets = Math.max(0, openSheets - 1);
+      if (openSheets === 0) delete document.documentElement.dataset.sheetOpen;
+    };
+  }, [open]);
+
   // Esc dismisses, like any modal.
   useEffect(() => {
     if (!mounted) return;
@@ -70,16 +100,17 @@ export default function Sheet({
 
   if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={label ?? title}
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "flex-end", justifyContent: "center", background: shown ? "rgba(0,0,0,.55)" : "rgba(0,0,0,0)", transition: "background .3s ease" }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "flex-end", justifyContent: "center", background: `rgba(0,0,0,${shown ? motion.scrimWithRecede : 0})`, transition: "background var(--d-sheet) var(--e-fade)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="motion-sheet-panel"
         style={{
           width: "100%",
           maxWidth,
@@ -93,7 +124,7 @@ export default function Sheet({
           maxHeight: "90vh",
           overflowY: "auto",
           transform: shown ? "translateY(0)" : "translateY(100%)",
-          transition: "transform .34s cubic-bezier(.22,1,.36,1)",
+          opacity: shown ? 1 : 0,
         }}
       >
         <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
@@ -101,6 +132,7 @@ export default function Sheet({
         {sub && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 0" }}>{sub}</div>}
         <div style={{ marginTop: title || sub ? 14 : 0 }}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

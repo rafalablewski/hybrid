@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { motion, springs, springDurationMs, durations } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
+import { useSheetRecede } from "../../lib/sheet-recede";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { F } from "../../lib/ui";
 
 /**
@@ -15,6 +18,14 @@ import { F } from "../../lib/ui";
  * `visible` mounts it; the entrance/exit animation is driven internally and the
  * node is kept alive through the exit so callers just flip a boolean. Pass
  * `scroll={false}` when the child owns its own scroll container.
+ *
+ * PRESENTATION. While the sheet is up the presenting screen RECEDES (scales
+ * back, corners round, dims) — see lib/sheet-recede.tsx. A Modal renders in its
+ * own native window, so the sheet can't transform the shell directly; it
+ * publishes to a root-mounted provider instead, the same shape as
+ * NavScrollProvider. Because the recede now does the separating, the scrim
+ * drops from motion.scrimFlat (0.6) to motion.scrimWithRecede (0.28) — a heavy
+ * dim over an un-receded screen is what made the old sheet feel flat.
  */
 export default function Sheet({
   visible,
@@ -38,21 +49,43 @@ export default function Sheet({
   const [render, setRender] = useState(visible);
   const [panelH, setPanelH] = useState(0);
   const slide = useRef(new Animated.Value(0)).current;
+  const recede = useSheetRecede();
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (visible) {
       setRender(true);
-      Animated.timing(slide, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-    } else if (render) {
-      Animated.timing(slide, { toValue: 0, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => { if (finished) setRender(false); });
+      recede.open();
+      Animated.timing(slide, {
+        toValue: 1,
+        duration: reduced ? durations.reduced : springDurationMs(springs.sheet),
+        easing: reduced ? Easing.linear : Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+      return () => recede.close();
     }
+    if (render) {
+      Animated.timing(slide, {
+        toValue: 0,
+        duration: reduced ? durations.reduced : durations.fast,
+        easing: reduced ? Easing.linear : Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => { if (finished) setRender(false); });
+    }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, reduced]);
 
   if (!render) return null;
 
-  const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [panelH || 900, 0] });
-  const scrimOpacity = slide.interpolate({ inputRange: [0, 1], outputRange: [0, 0.6] });
+  // Reduce Motion SUBSTITUTES a cross-dissolve: the panel fades in place rather
+  // than travelling. It is never removed — the user still needs to perceive
+  // that a sheet appeared.
+  const translateY = reduced
+    ? 0
+    : slide.interpolate({ inputRange: [0, 1], outputRange: [panelH || 900, 0] });
+  const panelOpacity = reduced ? slide : 1;
+  const scrimOpacity = slide.interpolate({ inputRange: [0, 1], outputRange: [0, motion.scrimWithRecede] });
 
   const header = (
     <>
@@ -87,6 +120,7 @@ export default function Sheet({
             paddingTop: 12,
             paddingBottom: insets.bottom + 20,
             transform: [{ translateY }],
+            opacity: panelOpacity,
             shadowColor: "#000",
             shadowOpacity: 0.4,
             shadowRadius: 24,

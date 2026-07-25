@@ -32,6 +32,7 @@ import { fs, space,
   GlassField,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
+import { useScreenTransition } from "@/lib/use-screen-transition";
 import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
 const AuroraPlans = dynamic(() => import("./aurora/plans"), { ssr: false });
@@ -160,7 +161,12 @@ export default function AppShell() {
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Performance State.
   const bio = bioFromSignals ?? bioFromBiometrics;
-  const [screen, setScreen] = useState("today");
+  // Screen state. `setScreen` is the TRANSITIONING setter — every call site
+  // (including the ones handed to children) runs the paired, directional
+  // transition rather than a hard cut. Direction comes from the shared
+  // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
+  const [screen, setScreenRaw] = useState("today");
+  const setScreen = useScreenTransition(screen, setScreenRaw);
   // First-run guided tour (#2): shown once, right after a fresh account finishes
   // onboarding. (Web has no guest mode, so there's no guest-workout to save
   // first — that ordering only applies on mobile.)
@@ -272,7 +278,11 @@ export default function AppShell() {
   return (
     <>
     <PremiumAccentStyle />
+    {/* motion-recede-host — the surface that scales back while a sheet is up
+        (globals.css). NOTE: it is transformed, so anything position:fixed
+        inside it would be trapped; modals must portal to <body>. */}
     <div
+      className="motion-recede-host"
       style={{
         ...disp,
         background: INK,
@@ -721,9 +731,13 @@ export default function AppShell() {
         </header>
         )}
 
-        {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
-            changes (Aurora only). The banners/header above stay put. */}
-        <div key={screen} className={aurora ? "aurora-enter" : undefined}>
+        {/* The screen surface. `view-transition-name: hybrid-screen` (globals.css
+            .motion-screen) makes this the ONLY thing that travels, so the
+            sidebar, header and banners stay put while the content moves. The
+            paired exit + direction are driven by setScreen — see
+            lib/use-screen-transition.ts. Aurora only; Classic keeps its
+            one-sided entrance. */}
+        <div key={screen} className={aurora ? "motion-screen" : undefined}>
         {/* ANALYTICS — the 3-scope dashboard. Ships on BOTH clients (parity rule);
             the mobile twin is components/aurora/analytics.tsx and reads the same
             engines + endpoints. Scope tabs appear only when the role holds more
