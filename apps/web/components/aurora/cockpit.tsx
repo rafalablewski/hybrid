@@ -5,7 +5,8 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, toTrainingLog, velocityProfiles, LEVELS,
   ROLE_COLOR, hpiRole, riskRole, readinessRole,
-  type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand,
+  RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
+  type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -41,6 +42,9 @@ export default function AuroraCockpit({
   const { t } = useLang();
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
+  // Injury-risk "what's raising this?" panel — collapsed by default so the card
+  // stays a glance; opening it explains each driver in plain language.
+  const [injuryExplainOpen, setInjuryExplainOpen] = useState(false);
   const persona = usePersona();
   const { entitlement } = useSession();
 
@@ -69,17 +73,28 @@ export default function AuroraCockpit({
   // Injury risk is exception-driven: a slim all-clear row when nothing's flagged,
   // the full maroon alert only when a tissue needs attention.
   const calm = risk.flagged.length === 0;
+  // The distinct risk DRIVERS across flagged tissues, heaviest first — what the
+  // "what's raising this?" panel explains in plain language.
+  const driverKinds = ((): RiskDriverKind[] => {
+    const weight = new Map<RiskDriverKind, number>();
+    for (const ti of risk.flagged) for (const d of ti.drivers) weight.set(d.kind, (weight.get(d.kind) ?? 0) + d.contribution);
+    return [...weight.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  })();
   // Season completion %, guarded against a 0 / malformed totalWeeks.
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* 1 · CONTEXT RAIL — title + season + sliding pills (scrolls with the page, like Today) */}
-      <div>
-        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-.02em" }}>{t("w.home.cockpit.commandCenter")}</h1>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
-          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
-        </p>
+      {/* 1 · CONTEXT RAIL — a LIVING MASTHEAD in Today's idiom (mono season
+          caption, one oversized editorial headline, a warm sub) + sliding pills
+          that scroll with the page. Deliberately the same masthead anatomy as
+          Today so the two screens read as siblings, not a dashboard vs a diary. */}
+      <div style={{ margin: "0 2px" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
+        </div>
+        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), margin: "2px 0 0" }}>{t("w.home.cockpit.commandCenter")}</h1>
+        <p style={{ fontSize: fs.body, color: C("ash"), margin: "2px 0 0" }}>{t("w.home.cockpit.commandSub")}</p>
         {macro && (
           // Full-bleed chip rail — clips at the screen edge, rests on the column.
           <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "10px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px)" }}>
@@ -145,10 +160,30 @@ export default function AuroraCockpit({
                     <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
                       <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : `ACWR ${ti.acwr.toFixed(2)}`}</span>
                     </div>
                   ))}
                 </div>
+                {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
+                    at play (workload spike, high load, return-from-lull, recovery),
+                    collapsed by default so the card still reads at a glance. */}
+                {driverKinds.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <button onClick={() => setInjuryExplainOpen((v) => !v)} aria-expanded={injuryExplainOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--red-text)" }}>
+                      {injuryExplainOpen ? t("w.injury.hide") : t("w.injury.whatsThis")} <span aria-hidden style={{ fontSize: 8 }}>{injuryExplainOpen ? "▲" : "▼"}</span>
+                    </button>
+                    {injuryExplainOpen && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                        {driverKinds.map((k) => (
+                          <div key={k}>
+                            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
+                            <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
             {/* THINGS TO WATCH — ACWR · s-RPE · monotony · strain (always available) */}
@@ -162,6 +197,11 @@ export default function AuroraCockpit({
               </div>
             ) : (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), lineHeight: 1.6 }}>{t("w.home.cockpit.watchBuilding")}</div>
+            )}
+            {/* A one-line plain-language gloss on ACWR — the ratio the "workload
+                spike" driver is built on — so the bare number reads for everyone. */}
+            {load.enoughHistory && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.5, marginTop: 8 }}>{t("w.injury.acwrNote")}</div>
             )}
           </div>
         )}
