@@ -85,17 +85,17 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 //     on top of all the athlete depth (a coach trains too).
 //   • ADMIN — everything.
 //
-// The home group is two tabs: Today (the live daily home — "what do I do?") +
-// Performance (the athlete depth hub — "how am I doing?"; the former Cockpit
-// merged with the analyze-group Performance screen, so the state, trajectory,
-// injury depth and return-to-play all live on one page). The old Dashboard is
-// retired — its unique surfaces (the season phase timeline +
-// injury-risk-by-tissue) live on Today now. Onboarding ("Get started") is no
-// longer a standalone tab either: it's a reachable flow (first run, and
-// Performance's "Set up / change plan"), not a persistent nav item.
+// The home group is Today (the live daily home — "what do I do?"). Performance
+// (the athlete depth hub — "how am I doing?"; the former Cockpit merged with
+// the old standalone Performance screen, so the state, trajectory, injury
+// depth and return-to-play all live on one page) lives in the ANALYZE group —
+// it's the analysis front door. The old Dashboard is retired — its unique
+// surfaces (the season phase timeline + injury-risk-by-tissue) live on Today
+// now. Onboarding ("Get started") is no longer a standalone tab either: it's a
+// reachable flow (first run, and Performance's "Set up / change plan"), not a
+// persistent nav item.
 export const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", group: "home" },
-  { id: "performance", label: "Performance", group: "home", minPersona: "athlete" },
   { id: "notifications", label: "Notifications", group: "home" },
 
   { id: "log", label: "Log session", group: "train" },
@@ -109,6 +109,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "competition", label: "Competition", group: "train", minPersona: "athlete" },
 
   { id: "statistics", label: "Statistics", group: "analyze" },
+  { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete" },
   { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
   { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth

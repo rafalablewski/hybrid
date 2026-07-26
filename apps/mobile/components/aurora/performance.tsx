@@ -17,7 +17,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, withAlpha } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 
@@ -32,9 +32,10 @@ const acwrColor = (b: AcwrBand, C: Palette): string =>
 
 /** AURORA Performance — the merged athlete hub (ex-Cockpit + the standalone
  *  Performance State screen, one page — mirrors web): living masthead →
- *  Performance State (HPI + component bars) → 14-day trajectory → injury risk
- *  (summary card with the per-tissue probability table as a disclosure) → this
- *  week → breakdown → horizon → goal + season → return-to-play. */
+ *  Performance State (the classic card: big HPI + sparkline, STR/END/REC
+ *  columns, readiness + nudge) → the 14-day trajectory → injury risk (summary
+ *  card with the per-tissue probability table as a disclosure) → this week →
+ *  breakdown → horizon → goal + season → return-to-play. */
 export default function AuroraPerformance() {
   const persona = usePersona();
   const { entitlement } = useSession();
@@ -93,9 +94,10 @@ function Full() {
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
-  // The real 14-day trajectory (both series) — replaces the sparkline that used
-  // to duplicate it from the standalone Performance screen.
+  // The real 14-day trajectory (both series, from the standalone Performance
+  // screen) — its own card right under the state card.
   const traj = useMemo(() => performanceTrajectory(log, 14), [log]);
+  const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const bw = useBodyweightLookup();
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
@@ -115,9 +117,6 @@ function Full() {
   })();
   // Season completion %, guarded against a 0 / malformed totalWeeks.
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
-  // HPI component bars (the standalone screen's read of the same numbers) —
-  // recovery is a ±15 delta mapped onto the same 0..100 track.
-  const recoveryPct = Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15))));
   const maxBar = 96;
 
   return (
@@ -140,42 +139,35 @@ function Full() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
           {phaseBlock && <Pill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</Pill>}
           {macro?.eventInWeeks != null && <Pill C={C}>🏁 <Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</Pill>}
-          {macro && <Pill C={C}>📈 {loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+          {/* ACWR rides on training data, not on having a season — a planless
+              athlete still gets their workload ratio at a glance. */}
+          {hasData && <Pill C={C}>📈 {loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
           {/* The headline number is visible before any scroll. */}
           {hasData && <Pill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</Pill>}
         </ScrollView>
       )}
 
-      {/* 2 · PERFORMANCE STATE — one HPI, rendered once: the headline number +
-          component bars, with today's readiness (and its load nudge) below. */}
+      {/* 2 · PERFORMANCE STATE — the headline read (the classic anatomy):
+          big HPI + band/limiter caption + sparkline, STR/END/REC in three
+          columns, the top driver, and today's readiness (with the check-in
+          nudge) below. */}
       <ACard style={{ marginTop: 14 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} meta={hasData ? `${t("w.home.cockpit.limiter")} – ${state.hpi.limiter}` : undefined} />
+        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} />
         {hasData ? (
           <>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.md }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <View style={{ backgroundColor: withAlpha(hpiColor(state.hpi.band, C), 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.band}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI – {state.hpi.band} – {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
+                <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
               </View>
             </View>
-            <View style={{ marginTop: 12, gap: space.ms }}>
-              {([
-                [t("w.analyze.perf.strength"), state.hpi.components.strength, C.lime] as const,
-                [t("w.analyze.perf.endurance"), state.hpi.components.endurance, C.blue] as const,
-                [t("w.analyze.perf.recovery"), recoveryPct, C.violet] as const,
-              ]).map(([l, v, col]) => (
-                <View key={l}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{l}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, col) }}>{v}</Text>
-                  </View>
-                  <View style={{ height: 6, borderRadius: 3, backgroundColor: C.ink, marginTop: 3, overflow: "hidden" }}>
-                    <View style={{ width: `${v}%`, height: "100%", backgroundColor: col }} />
-                  </View>
-                </View>
-              ))}
+            <View style={{ flexDirection: "row", marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
             </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.summary}</Text>
+            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
               <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
@@ -542,6 +534,15 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
     <View>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
+    </View>
+  );
+}
+
+function Comp({ C, scheme, label, value }: { C: Palette; scheme: Scheme; label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 6 }}>{label}</Text>
     </View>
   );
 }

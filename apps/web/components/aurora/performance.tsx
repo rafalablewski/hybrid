@@ -65,11 +65,11 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 }
 
 /** AURORA Performance (web) — the merged athlete hub (ex-Cockpit + the analyze
- *  Performance screen, one page): living masthead → Performance State hero
- *  (HPI + component bars beside the real 14-day trajectory) → today's readiness
- *  → injury risk (summary card with the tissue body-map + probability table as a
- *  disclosure) → this week → breakdown → horizon → goal + season → return-to-play.
- *  Same live engines as before; nothing is computed twice anymore. */
+ *  Performance screen, one page): living masthead → Performance State (the
+ *  classic card: big HPI + sparkline, STR/END/REC columns, readiness + nudge) →
+ *  the 14-day trajectory → injury risk (summary card with the tissue body-map +
+ *  probability table as a disclosure) → this week → breakdown → horizon →
+ *  goal + season → return-to-play. Same live engines as before. */
 export default function AuroraPerformance({
   sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled,
 }: {
@@ -127,8 +127,9 @@ export default function AuroraPerformance({
   // racket/team/combat sports so a tennis session doesn't inflate the summary.
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
-  // The real 14-day trajectory (both series) — replaces the sparkline that used
-  // to duplicate it from the old analyze Performance screen.
+  const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
+  // The real 14-day trajectory (both series, from the old analyze Performance
+  // screen) — its own card right under the state card.
   const traj = useMemo(() =>
     performanceTrajectory(log, 14).map((p) => ({ day: p.daysAgo === 0 ? t("w.analyze.perf.today") : `-${p.daysAgo}d`, HPI: p.hpi, Readiness: p.readiness })),
   [log, t]);
@@ -152,9 +153,6 @@ export default function AuroraPerformance({
   })();
   // Season completion %, guarded against a 0 / malformed totalWeeks.
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
-  // HPI component bars (the analyze screen's read of the same numbers) —
-  // recovery is a ±15 delta mapped onto the same 0..100 track.
-  const recoveryPct = Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15))));
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -174,7 +172,9 @@ export default function AuroraPerformance({
           <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "10px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px)" }}>
             {phaseBlock && <Pill dot={C("lime")}><b>{phaseBlock.label}</b> {t("w.home.today.phase")}</Pill>}
             {macro?.eventInWeeks != null && <Pill>🏁 <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
-            {macro && <Pill>📈 {load.enoughHistory ? `ACWR ${load.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+            {/* ACWR rides on training data, not on having a season — a planless
+                athlete still gets their workload ratio at a glance. */}
+            {hasData && <Pill>📈 {load.enoughHistory ? `ACWR ${load.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
             {/* The headline number is visible before any scroll. */}
             {hasData && <Pill dot={C(hpiVar(state.hpi.band))}>HPI <b>{state.hpi.score}</b> – {state.hpi.band}</Pill>}
           </div>
@@ -182,64 +182,33 @@ export default function AuroraPerformance({
       </div>
 
       <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
-        {hasData ? (
-          <>
-            {/* 2 · PERFORMANCE STATE HERO — one HPI, rendered once: the headline
-                number + component bars beside the real 14-day trajectory. */}
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(250px, 1fr) minmax(0, 1.45fr)", gap: 14 }}>
-              <div style={CARD}>
-                <SHead title={t("w.home.cockpit.perfTwin")} meta={`${t("w.home.cockpit.limiter")} – ${state.hpi.limiter}`} />
-                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 52, lineHeight: 1, letterSpacing: "-.02em", color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</div>
-                <div style={{ marginTop: 8 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C(hpiVar(state.hpi.band)), background: `color-mix(in srgb, ${C(hpiVar(state.hpi.band))} 14%, transparent)`, borderRadius: 999, padding: "3px 11px" }}>{state.hpi.band}</span>
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  {([["w.analyze.perf.strength", state.hpi.components.strength, "lime"], ["w.analyze.perf.endurance", state.hpi.components.endurance, "blue"], ["w.analyze.perf.recovery", recoveryPct, "violet"]] as const).map(([l, v, c]) => (
-                    <div key={l} style={{ marginBottom: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.micro }}><span style={{ color: C("ash") }}>{t(l)}</span><span style={{ color: C(c) }}>{v}</span></div>
-                      <div style={{ height: 6, borderRadius: 3, background: C("ink"), marginTop: 3, overflow: "hidden" }}><div style={{ width: `${v}%`, height: "100%", background: C(c) }} /></div>
-                    </div>
-                  ))}
-                </div>
-                <p style={{ fontSize: fs.caption, lineHeight: 1.55, margin: "10px 0 0" }}>{state.summary}</p>
-              </div>
-
-              <div style={CARD}>
-                <SHead
-                  title={t("w.analyze.perf.trajectory")}
-                  meta={
-                    <span style={{ display: "inline-flex", gap: 14, alignItems: "center" }}>
-                      <Swatch color={LIME_HEX} label="HPI" />
-                      <Swatch color={BLUE} label="Readiness" dashed />
-                    </span>
-                  }
-                />
-                <div style={{ height: 220, marginTop: 6 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={traj}>
-                      <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
-                      <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
-                      <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
-                      <Tooltip contentStyle={tip} />
-                      <Line type="monotone" dataKey="HPI" stroke={LIME_HEX} strokeWidth={2.5} dot={false} />
-                      {/* Readiness is DASH-encoded, not hue-encoded — Kyoto Hour's
-                          muted ramp can't separate two solid hues, so line style
-                          carries the identity on both themes. */}
-                      <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} strokeDasharray="5 4" dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+        {/* 2 · PERFORMANCE STATE — the headline read (the classic anatomy):
+            big HPI + band/limiter caption + sparkline, STR/END/REC in three
+            columns, the top driver, and today's readiness (with the check-in
+            nudge) below. */}
+        <div style={CARD}>
+          <SHead title={t("w.home.cockpit.perfTwin")} />
+          {hasData ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+                <div style={{ minWidth: 120, flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI – {state.hpi.band} – {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
+                  <div style={{ marginTop: 6, maxWidth: 220 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
                 </div>
               </div>
-            </div>
-
-            {/* 3 · TODAY'S READINESS — the check-in ring + the load nudge the
-                prescription applied, right under the readiness line it explains. */}
-            <div style={CARD}>
-              <SHead title={t("w.home.cockpit.todayReadiness")} />
-              <div style={{ display: "flex", alignItems: "center", gap: space.md }}>
+              {/* three columns — strength · endurance · recovery (big numbers, full words) */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+                <Comp label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
+                <Comp label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
+                <Comp label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
+              </div>
+              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 12 }}>{state.drivers[0].detail}</div>}
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 <div>
-                  <div style={{ fontSize: fs.caption, color: C("ash"), lineHeight: 1.5, maxWidth: "44ch" }}>{rx.why}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
+                  <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "36ch" }}>{rx.why}</div>
                   {/* READINESS NUDGE — the one-tap check-in moved today's load;
                       glanceable, tinted in the feeling's own accent. Absent on a
                       neutral ("good") day. Mirrors mobile. */}
@@ -257,12 +226,38 @@ export default function AuroraPerformance({
                   })()}
                 </div>
               </div>
-            </div>
-          </>
-        ) : (
+            </>
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
+        </div>
+
+        {/* 3 · TRAJECTORY — the real 14-day chart (HPI + Readiness) from the old
+            analyze screen, right under the state card that summarizes it. */}
+        {hasData && (
           <div style={CARD}>
-            <SHead title={t("w.home.cockpit.perfTwin")} />
-            <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>
+            <SHead
+              title={t("w.analyze.perf.trajectory")}
+              meta={
+                <span style={{ display: "inline-flex", gap: 14, alignItems: "center" }}>
+                  <Swatch color={LIME_HEX} label="HPI" />
+                  <Swatch color={BLUE} label="Readiness" dashed />
+                </span>
+              }
+            />
+            <div style={{ height: 220, marginTop: 6 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={traj}>
+                  <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
+                  <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
+                  <Tooltip contentStyle={tip} />
+                  <Line type="monotone" dataKey="HPI" stroke={LIME_HEX} strokeWidth={2.5} dot={false} />
+                  {/* Readiness is DASH-encoded, not hue-encoded — Kyoto Hour's
+                      muted ramp can't separate two solid hues, so line style
+                      carries the identity on both themes. */}
+                  <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} strokeDasharray="5 4" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -572,6 +567,31 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+    </div>
+  );
+}
+
+function Comp({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, color: C("chalk"), letterSpacing: "-.02em" }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginTop: 6 }}>{label}</div>
+    </div>
+  );
+}
+
+/** Dependency-free sparkline — scaled bars, latest highlighted. The state card's
+ *  at-a-glance pulse; the full two-series chart lives in the Trajectory card. */
+function Spark({ series, color, height = 24 }: { series: number[]; color: string; height?: number }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height }}>
+      {series.map((v, i) => (
+        <div key={i} style={{ flex: 1, height: 4 + ((v - min) / range) * (height - 4), borderRadius: 2, background: i === series.length - 1 ? color : `color-mix(in srgb, ${color} 40%, transparent)` }} />
+      ))}
     </div>
   );
 }
