@@ -23,6 +23,14 @@ import {
   goalCoverView,
   splitInputsTitle,
   inputEcho,
+  percentMatrixView,
+  outlierPrescription,
+  loadTier,
+  dayMaxPct,
+  dayPulse,
+  dayLeadWords,
+  stepWords,
+  rpeMeaning,
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
@@ -684,5 +692,147 @@ describe("inputEcho — the ledger's live working-weight echo", () => {
     expect(inputEcho(SOVIET_OWL_8WK, "nope", 100)).toBeNull();
     expect(inputEcho(SOVIET_OWL_8WK, "snatch", 0)).toBeNull();
     expect(inputEcho(SOVIET_OWL_8WK, "snatch", NaN)).toBeNull();
+  });
+});
+
+// ============================================================
+//  Schedule table — the quiet-matrix view
+// ============================================================
+
+// A view-shaped lift for matrix tests: name + % steps only.
+function vLift(name: string, steps: Array<[number | null, number, number]>): import("./plan-program").ProgramLiftView {
+  const l: PlanLift = { name, steps: steps.map(([pct, reps, sets]) => ({ pct, reps, sets })) };
+  const day = planProgramView(
+    { id: "t", discipline: "strength-percent", inputs: [], inputsTitle: "t", weeks: [{ index: 1, days: [{ index: 1, kind: "train", title: "Day 1", sessions: [{ lifts: [l] }] }] }], progression: "t" },
+  ).days[0]!;
+  return day.sessions[0]!.lifts[0]!;
+}
+
+describe("percentMatrixView — phantom-column removal", () => {
+  it("pulls a lift whose loads nobody shares out of the grid", () => {
+    const press = vLift("Press", [[60, 4, 3], [70, 4, 2]]);
+    const snatch = vLift("Snatch", [[60, 3, 2], [70, 3, 3], [75, 2, 3]]);
+    const gm = vLift("Good Morning", [[null, 8, 4]]);
+    const m = percentMatrixView([press, snatch, gm]);
+    expect(m.rows.map((l) => l.name)).toEqual(["Press", "Snatch"]);
+    expect(m.after.map((l) => l.name)).toEqual(["Good Morning"]);
+    expect(m.before).toEqual([]);
+    expect(m.cols.map((c) => c.load)).toEqual(["60%", "70%", "75%"]); // no BW lane
+  });
+
+  it("keeps everyone in the grid when loads are shared, and when everything would be an outlier", () => {
+    const a = vLift("A", [[60, 4, 3]]);
+    const b = vLift("B", [[60, 5, 2], [70, 3, 3]]);
+    expect(percentMatrixView([a, b]).rows.length).toBe(2);
+    // fully disjoint → pulling everyone out helps nobody; the grid stays
+    const c = vLift("C", [[80, 2, 2]]);
+    const d = vLift("D", [[90, 1, 3]]);
+    const m = percentMatrixView([c, d]);
+    expect(m.rows.length).toBe(2);
+    expect(m.before).toEqual([]);
+    expect(m.after).toEqual([]);
+  });
+
+  it("preserves authored order around the grid (before/after split)", () => {
+    const solo = vLift("Solo", [[null, 10, 2]]);
+    const a = vLift("A", [[60, 4, 3]]);
+    const b = vLift("B", [[60, 5, 2]]);
+    const m = percentMatrixView([solo, a, b]);
+    expect(m.before.map((l) => l.name)).toEqual(["Solo"]);
+    expect(m.rows.map((l) => l.name)).toEqual(["A", "B"]);
+  });
+
+  it("a single lift is never an outlier", () => {
+    const m = percentMatrixView([vLift("Only", [[null, 8, 4]])]);
+    expect(m.rows.length).toBe(1);
+    expect(m.cols.map((c) => c.load)).toEqual(["BW"]);
+  });
+});
+
+describe("outlierPrescription — the full-width row's words", () => {
+  it("writes bodyweight in words and joins ramp steps", () => {
+    expect(outlierPrescription(vLift("GM", [[null, 8, 4]]))).toBe("bodyweight 8 ×4");
+    expect(outlierPrescription(vLift("X", [[90, 1, 3], [95, 1, 1]]))).toBe("90% 1 ×3, 95% 1");
+  });
+});
+
+describe("loadTier — the monochrome ink ramp", () => {
+  it("accents exactly the day max and steps down by distance", () => {
+    expect(loadTier(75, 75)).toBe("top");
+    expect(loadTier(70, 75)).toBe("high");
+    expect(loadTier(60, 75)).toBe("mid");
+    expect(loadTier(50, 75)).toBe("low");
+    expect(loadTier(null, 75)).toBe("low");
+    expect(loadTier(60, null)).toBe("mid"); // no % context → neutral
+  });
+});
+
+describe("dayMaxPct + dayPulse — the day's load shape", () => {
+  const day = planProgramView(SOVIET_OWL_8WK).days[0]!;
+  it("finds the heaviest % of the day", () => {
+    const max = dayMaxPct(day);
+    expect(max).not.toBeNull();
+    for (const s of day.sessions) for (const l of s.lifts) for (const st of l.steps ?? []) if (st.pct != null) expect(st.pct).toBeLessThanOrEqual(max!);
+  });
+  it("draws one normalised bar per prescription with the top load hot", () => {
+    const bars = dayPulse(day);
+    expect(bars.length).toBeGreaterThan(0);
+    expect(bars.length).toBeLessThanOrEqual(14);
+    expect(Math.max(...bars.map((b) => b.h))).toBe(1);
+    expect(bars.every((b) => b.h >= 0.15 && b.h <= 1)).toBe(true);
+    expect(bars.some((b) => b.hot)).toBe(true);
+  });
+  it("is empty for a rest day", () => {
+    expect(dayPulse({ title: "Rest", kindLabel: "Rest", nl: 0, volume: null, sessions: [] })).toEqual([]);
+  });
+});
+
+describe("dayLeadWords — the accordion row's summary", () => {
+  it("names the day's first three lifts", () => {
+    const day = planProgramView(SOVIET_OWL_8WK).days[0]!;
+    const words = dayLeadWords(day);
+    expect(words).toBeTruthy();
+    expect(words!.split(" + ").length).toBeLessThanOrEqual(3);
+  });
+  it("falls back to prose labels for endurance days and null for rest", () => {
+    const runDay = planProgramView(RUN_5K_BEGINNER_9WK).days.find((d) => d.sessions.some((s) => s.lifts.some((l) => !/rest/i.test(l.name))))!;
+    expect(dayLeadWords(runDay)).toBeTruthy();
+    expect(dayLeadWords({ title: "Day 7", kindLabel: "Rest", nl: 0, volume: null, sessions: [] })).toBeNull();
+  });
+});
+
+describe("stepWords + rpeMeaning — the exercise sheet's wording", () => {
+  it("writes a step's volume in words, complexes kept", () => {
+    const [a] = vLift("A", [[60, 3, 2]]).steps!;
+    expect(stepWords(a!)).toBe("3 reps × 2 sets");
+    const [b] = vLift("B", [[70, 1, 1]]).steps!;
+    expect(stepWords(b!)).toBe("1 rep × 1 set");
+  });
+  it("explains RPE as reps in reserve", () => {
+    expect(rpeMeaning(8)).toBe("2 reps in reserve");
+    expect(rpeMeaning(9)).toBe("1 rep in reserve");
+    expect(rpeMeaning(10)).toBe("nothing in reserve");
+  });
+});
+
+describe("quiet-notation step fields", () => {
+  it("exposes reps / sets / nl per step alongside the legacy detail", () => {
+    const l = vLift("C&J", [[60, 4, 4]]);
+    const st = l.steps![0]!;
+    expect(st.reps).toBe("4");
+    expect(st.sets).toBe(4);
+    expect(st.nl).toBe(16);
+    expect(st.detail).toBe("×4×4");
+  });
+  it("carries the complex add-on in the reps token and the NL", () => {
+    const view = planProgramView(SOVIET_OWL_8WK);
+    const steps = view.days.flatMap((d) => d.sessions).flatMap((s) => s.lifts).flatMap((l) => l.steps ?? []);
+    const complex = steps.find((st) => st.reps.includes("+"));
+    expect(complex).toBeTruthy();
+  });
+  it("exposes the lift's 1RM reference when a max is supplied", () => {
+    const view = planProgramView(SOVIET_OWL_8WK, { maxes: { snatch: 100 } });
+    const lifts = view.days.flatMap((d) => d.sessions).flatMap((s) => s.lifts);
+    expect(lifts.some((l) => l.oneRm === "100 kg")).toBe(true);
   });
 });
