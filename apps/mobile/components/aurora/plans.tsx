@@ -6,12 +6,12 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AField, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, AHeading, ABack, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
-import PlanHero from "../plan-hero";
+import PlanCoverScreen, { PlanDockPill } from "../plan-hero";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
@@ -39,18 +39,16 @@ export default function AuroraPlans() {
   useEffect(() => { loadEnrolled(); }, [planId, loadEnrolled]);
 
   if (goal && plan) {
-    const leaveSection = enrolled && enrolled.planId === plan.id
+    const isEnrolled = !!enrolled && enrolled.planId === plan.id;
+    const leaveSection = isEnrolled && enrolled
       ? <LeavePlanSection enrolled={enrolled} onLeft={() => setEnrolled(null)} />
       : null;
     const program = programFor(plan.id);
+    // Both detail renderers ARE the screen now (PlanCoverScreen provides the
+    // full-bleed collapsing cover + scroll) — no AuroraScreen wrapper.
     if (program)
-      return (
-        <AuroraScreen>
-          <PercentProgram goal={goal} plan={plan} program={program} back={() => setPlanId(null)} />
-          {leaveSection}
-        </AuroraScreen>
-      );
-    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={loadEnrolled} leaveSection={leaveSection} />;
+      return <PercentProgram goal={goal} plan={plan} program={program} back={() => setPlanId(null)} alreadyEnrolled={isEnrolled} onEnrolled={loadEnrolled} leaveSection={leaveSection} />;
+    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} alreadyEnrolled={isEnrolled} onEnrolled={loadEnrolled} leaveSection={leaveSection} />;
   }
   if (goal) return <PlanList goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
@@ -157,11 +155,11 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   );
 }
 
-function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode; plan: GoalPlan; back: () => void; onEnrolled?: () => void; leaveSection?: ReactNode }) {
+function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }: { goal: GoalNode; plan: GoalPlan; back: () => void; alreadyEnrolled?: boolean; onEnrolled?: () => void; leaveSection?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
-  const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">(alreadyEnrolled ? "done" : "idle");
   const enroll = async () => {
     setEnrolled("busy");
     const ok = await enrollPlan(goal.name, plan.id);
@@ -169,47 +167,56 @@ function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode
     if (ok) onEnrolled?.();
   };
   return (
-    <AuroraScreen>
-      <PlanHero goal={goal} plan={plan} back={back} />
+    <PlanCoverScreen
+      goal={goal}
+      plan={plan}
+      back={back}
+      dock={
+        <PlanDockPill
+          state={enrolled}
+          idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`}
+          busyLabel={t("w.train.plans.enrolling")}
+          doneLabel={t("common.enrolled")}
+          onPress={enroll}
+        />
+      }
+    >
+      <View style={{ marginTop: 10 }}>
+        <Field label={t("w.train.plans.forWho")} value={d.forWho} />
+        <Field label={t("w.train.plans.outcome")} value={d.outcome} />
+        <Field label={t("w.train.plans.sessionLength")} value={d.sessionLength} />
+        <Field label={t("w.train.plans.equipment")} value={d.equipment} />
+        <Field label={t("w.train.plans.level")} value={d.level} />
 
-      <Field label={t("w.train.plans.forWho")} value={d.forWho} />
-      <Field label={t("w.train.plans.outcome")} value={d.outcome} />
-      <Field label={t("w.train.plans.sessionLength")} value={d.sessionLength} />
-      <Field label={t("w.train.plans.equipment")} value={d.equipment} />
-      <Field label={t("w.train.plans.level")} value={d.level} />
-
-      <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
-          {d.split.map((day, i) => (
-            <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 11, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>{day}</Text>
-            </View>
-          ))}
-        </View>
-      </ACard>
-
-      {d.days.map((session, di) => (
-        <ACard key={di} style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{session.day}</Text>
-          {session.items?.map((it, i) => (
-            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{srSingleReps(it.sr)}</Text>
-            </View>
-          ))}
+        <ACard style={{ marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
+            {d.split.map((day, i) => (
+              <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 11, paddingVertical: 8 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>{day}</Text>
+              </View>
+            ))}
+          </View>
         </ACard>
-      ))}
 
-      <Field label={t("w.train.plans.progression")} value={d.progression} />
+        {d.days.map((session, di) => (
+          <ACard key={di} style={{ marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{session.day}</Text>
+            {session.items?.map((it, i) => (
+              <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{srSingleReps(it.sr)}</Text>
+              </View>
+            ))}
+          </ACard>
+        ))}
 
-      <APill
-        label={enrolled === "done" ? t("common.enrolled") : enrolled === "busy" ? t("w.train.plans.enrolling") : `${t("w.train.plans.enrollIn")} ${plan.name}`}
-        onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
-      />
-      {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
-      {leaveSection}
-    </AuroraScreen>
+        <Field label={t("w.train.plans.progression")} value={d.progression} />
+
+        {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
+        {leaveSection}
+      </View>
+    </PlanCoverScreen>
   );
 }
 

@@ -38,13 +38,19 @@ export default function ProgramDays({ days, week, peakNote }: { days: ProgramDay
 }
 
 // ── shell ─────────────────────────────────────────────────────────────────────
+// Radius 28 = the shared Aurora card radius (was 16 — a web↔mobile drift).
 function Card({ children }: { children: React.ReactNode }) {
-  return <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>{children}</div>;
+  return <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 28, overflow: "hidden", marginBottom: 12 }}>{children}</div>;
 }
-function DayHeader({ title, right }: { title: string; right: string | null }) {
+// The programme card's header — the day as a display-face TITLE (not a mono
+// kicker), the lift count as quiet right-side meta: SectionHead vocabulary.
+function DayHeader({ title, kindLabel, right }: { title: string; kindLabel?: string | null; right: string | null }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", borderBottom: `1px solid ${HAIR}` }}>
-      <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: AMBER }}>{title}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "13px 18px", borderBottom: `1px solid ${HAIR}` }}>
+      <span style={{ fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK }}>
+        {title}
+        {kindLabel && <span style={{ color: ASH, fontWeight: 600 }}> — {kindLabel}</span>}
+      </span>
       {right && <span style={{ fontFamily: mono, fontSize: 10, color: ASH }}>{right}</span>}
     </div>
   );
@@ -54,7 +60,7 @@ function DayHeader({ title, right }: { title: string; right: string | null }) {
 function DayCard({ day }: { day: ProgramDayView }) {
   return (
     <Card>
-      <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} />
+      <DayHeader title={day.title} kindLabel={day.kindLabel} right={dayContentSummary(day)} />
       {day.sessions.map((s, si) => (
         <SessionBlock key={si} s={s} si={si} count={day.sessions.length} />
       ))}
@@ -93,7 +99,7 @@ function SessionBlock({ s, si, count }: { s: ProgramSessionView; si: number; cou
   const marker = s.label ?? (count > 1 ? `Training ${si + 1}` : null);
   return (
     <>
-      {marker && <Band label={s.volume ? `${marker} (${s.volume})` : marker} color={HEX[sessionColor(s.label, si)]} topBorder={si > 0} />}
+      {marker && <Band label={s.volume ? `${marker} — ${s.volume}` : marker} color={HEX[sessionColor(s.label, si)]} topBorder={si > 0} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!marker || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent);
@@ -172,10 +178,12 @@ function PercentMatrix({ lifts }: { lifts: ProgramLiftView[] }) {
               <NameCell lift={l} />
               {cols.map((c) => {
                 const st = byLoad.get(c.load);
+                // An empty cell is SILENT — absence is the information, it
+                // needs no glyph.
                 return st ? (
                   <span key={c.load} style={{ fontFamily: mono, fontSize: 12, textAlign: "center", color: HEX[c.color] }}>{st.detail}</span>
                 ) : (
-                  <span key={c.load} style={{ fontFamily: mono, fontSize: 12, textAlign: "center", color: "#34372f" }}>·</span>
+                  <span key={c.load} aria-hidden style={{ fontFamily: mono, fontSize: 12, textAlign: "center" }} />
                 );
               })}
             </div>
