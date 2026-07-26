@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Page — The Cover</title>
+<style>
+  :root{
+    --page:#0a0a09;--ink:#0c0d0c;--panel:#151513;--panel2:#1a1a17;
+    --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.12);--hair:rgba(255,255,255,.05);
+    --chalk:#f3f4ef;--ash:#9fa295;--ash2:#6b6e63;
+    --lime:#c6f84f;--on-accent:#0c0d0c;
+    --sand:#d0cd94;--blue:#6cb6bd;--red:#e58a5c;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:48px 20px 110px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+  .wrap{max-width:1160px;margin:0 auto}
+
+  .kicker{font:700 11.5px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:18px}
+  h1{font-size:clamp(34px,5.4vw,54px);line-height:1.01;letter-spacing:-.035em;font-weight:800;max-width:16ch;text-wrap:balance;margin-bottom:18px}
+  h1 span{color:var(--ash)}
+  .lede{color:var(--ash);max-width:68ch;font-size:15.5px;line-height:1.65}
+  .lede b{color:var(--chalk);font-weight:600}
+  .lede + .lede{margin-top:12px}
+
+  h2{font-size:26px;letter-spacing:-.025em;font-weight:800;margin:0 0 8px}
+  .sec{margin-top:84px}
+  .sechead{display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:26px}
+  .sechead .meta{font:600 10.5px/1.5 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);text-align:right;flex:none}
+  .sub{color:var(--ash);font-size:14px;line-height:1.62;max-width:70ch}
+  .sub b{color:var(--chalk);font-weight:600}
+
+  /* five asks strip */
+  .asks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:26px}
+  .ask{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px 16px 18px}
+  .ask .q{font:600 10px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);margin-bottom:10px;min-height:28px}
+  .ask .a{font-size:14.5px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+  .ask .a em{font-style:normal;color:var(--lime)}
+
+  /* prototype layout */
+  .proto{display:grid;grid-template-columns:minmax(300px,392px) 1fr;gap:44px;align-items:start}
+  @media (max-width:840px){.proto{grid-template-columns:1fr}}
+  .notes{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+  .note{padding:16px 2px 17px;border-bottom:1px solid var(--line)}
+  .note .t{font-size:14.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:5px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  .note .t s{font:600 10px/1.6 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);text-decoration:none;flex:none}
+  .note p{color:var(--ash);font-size:13px;line-height:1.58}
+  .note p b{color:var(--chalk);font-weight:600}
+  .hint{margin-top:14px;font:600 10.5px/1.6 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--lime)}
+
+  /* phone frame */
+  .phone{position:relative;width:100%;max-width:392px;aspect-ratio:390/812;border-radius:52px;padding:11px;
+    background:linear-gradient(160deg,#26271e,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:var(--ink)}
+  .sbar{position:absolute;top:0;left:0;right:0;height:34px;z-index:12;display:flex;align-items:center;justify-content:space-between;padding:10px 26px 0;pointer-events:none}
+  .sbar b{font-size:12.5px;font-weight:700;letter-spacing:.02em}
+  .sbar i{font-style:normal;font:600 10px var(--mono);color:var(--ash)}
+  .island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:999px;background:#000;z-index:13}
+  .homebar{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:110px;height:4px;border-radius:4px;background:rgba(255,255,255,.28);z-index:13}
+
+  /* ---------- LIVE PROTOTYPE ---------- */
+  #pp-screen{--p:0}
+  #pp-scroll{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+  #pp-scroll::-webkit-scrollbar{display:none}
+
+  .pp-hero{position:sticky;top:0;z-index:9;height:calc(300px - 212px*var(--p));min-height:88px;overflow:hidden;background:var(--ink)}
+  .pp-wash,.pp-radial,.pp-scrim{position:absolute;inset:0;pointer-events:none}
+  .pp-wash{background:linear-gradient(202deg,color-mix(in srgb,var(--sand) 52%,var(--ink)) 0%,color-mix(in srgb,var(--sand) 15%,var(--ink)) 46%,var(--ink) 100%)}
+  .pp-radial{background:radial-gradient(120% 92% at 86% 8%,color-mix(in srgb,var(--sand) 42%,transparent),transparent 55%)}
+  .pp-scrim{background:linear-gradient(0deg,rgba(0,0,0,.5),transparent 52%);opacity:calc(1 - var(--p))}
+  .pp-hairline{position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line2);opacity:var(--p)}
+  .pp-glyph{position:absolute;top:calc(-34px - 44px*var(--p));right:-14px;font-size:150px;line-height:1;color:rgba(255,255,255,.07);opacity:calc(1 - .6*var(--p));pointer-events:none}
+  .pp-nav{position:absolute;top:40px;left:16px;right:18px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+  .pp-back{width:38px;height:38px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);display:grid;place-items:center;font-size:16px;color:#fff}
+  .pp-wks{font:700 10.5px/1 var(--mono);letter-spacing:.1em;color:rgba(255,255,255,.88)}
+  .pp-big{position:absolute;left:18px;right:18px;bottom:16px;z-index:2;opacity:clamp(0,calc(1 - var(--p)*1.9),1);transform:translateY(calc(var(--p)*14px))}
+  .pp-chip{display:inline-block;background:color-mix(in srgb,#fff 82%,var(--sand));color:#0d0e0d;font:700 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:6px 11px;border-radius:999px;margin-bottom:11px}
+  .pp-title{font-size:29px;line-height:1.04;letter-spacing:-.03em;font-weight:900;color:#fff;max-width:14ch;text-shadow:0 2px 18px rgba(0,0,0,.35)}
+  .pp-meta{margin-top:8px;font:500 10.5px/1 var(--mono);letter-spacing:.03em;color:rgba(255,255,255,.82)}
+  .pp-compact{position:absolute;top:38px;left:62px;right:62px;height:42px;z-index:2;display:flex;align-items:center;justify-content:center;opacity:clamp(0,calc((var(--p) - .62)*2.7),1)}
+  .pp-compact b{font-size:15.5px;font-weight:800;letter-spacing:-.015em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .pp-body{background:var(--ink)}
+  .pp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:18px 18px 4px}
+  .pp-stat{border-top:2px solid rgba(243,244,239,.18);padding-top:9px}
+  .pp-stat b{font-size:23px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .pp-stat b i{font-style:normal;font-size:12px;color:var(--ash);font-weight:700}
+  .pp-stat s{display:block;font:600 8.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash);text-decoration:none;margin-top:5px}
+  .pp-desc{padding:12px 18px 4px;font-size:13px;line-height:1.55;color:var(--ash)}
+
+  .pp-shead{display:flex;justify-content:space-between;align-items:baseline;padding:22px 18px 10px}
+  .pp-shead b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .pp-shead s{font:600 9px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash2);text-decoration:none}
+  .pp-ledger{margin:0 18px;border-top:1px solid var(--line)}
+  .pp-lrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .pp-lrow .n{font-size:13.5px;font-weight:600}
+  .pp-lrow .echo{font:500 9.5px var(--mono);color:var(--ash2);margin-left:auto}
+  .pp-lrow .in{width:64px;text-align:right;font:600 14px var(--mono);color:var(--chalk);border-bottom:1.5px solid var(--line2);padding-bottom:3px;font-variant-numeric:tabular-nums}
+  .pp-lrow .in.empty{color:var(--ash2)}
+
+  .pp-rail{position:sticky;top:88px;z-index:8;background:rgba(12,13,12,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--hair);padding:10px 0 0;margin-top:8px}
+  .pp-rail-in{display:flex;gap:4px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+  .pp-rail-in::-webkit-scrollbar{display:none}
+  .pp-wk{flex:0 0 auto;width:44px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:5px 0 7px;border-radius:12px}
+  .pp-wk .bar{width:16px;height:34px;display:flex;align-items:flex-end}
+  .pp-wk .bar i{display:block;width:100%;border-radius:3px;background:rgba(255,255,255,.16)}
+  .pp-wk s{font:600 8.5px/1 var(--mono);letter-spacing:.06em;color:var(--ash2);text-decoration:none;white-space:nowrap}
+  .pp-wk.on .bar i{background:var(--lime)}
+  .pp-wk.on s{color:var(--lime)}
+
+  .pp-card{margin:14px 14px 0;background:var(--panel);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+  .pp-dhead{display:flex;justify-content:space-between;align-items:baseline;padding:14px 16px 12px;border-bottom:1px solid var(--hair)}
+  .pp-dhead b{font-size:16px;font-weight:800;letter-spacing:-.02em}
+  .pp-dhead s{font:500 9.5px var(--mono);color:var(--ash2);text-decoration:none}
+  .pp-band{padding:7px 16px 5px;border-bottom:1px solid var(--hair);font:700 8.5px/1.6 var(--mono);letter-spacing:.16em;text-transform:uppercase}
+  .pp-band.am{color:var(--sand);background:rgba(208,205,148,.05)}
+  .pp-band.pm{color:var(--blue);background:rgba(108,182,189,.05)}
+  .pp-mx{width:100%;border-collapse:collapse}
+  .pp-mx th{font:600 8.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);padding:7px 6px 5px;border-bottom:1px solid var(--hair);text-align:center}
+  .pp-mx th:first-child{text-align:left;padding-left:16px}
+  .pp-mx th.c60{color:var(--blue)}.pp-mx th.c70{color:var(--lime)}.pp-mx th.c75{color:var(--sand)}
+  .pp-mx td{padding:10px 6px;border-top:1px solid var(--hair);font:500 11px var(--mono);text-align:center;font-variant-numeric:tabular-nums}
+  .pp-mx tr:first-child td{border-top:none}
+  .pp-mx td:first-child{text-align:left;padding-left:16px;font-family:var(--sans);font-size:13px;font-weight:600}
+  .pp-mx td.c60{color:var(--blue)}.pp-mx td.c70{color:var(--lime)}.pp-mx td.c75{color:var(--sand)}
+  .pp-mx td.off{color:rgba(255,255,255,.12)}
+
+  .pp-dock{position:absolute;left:16px;right:16px;bottom:16px;z-index:11;opacity:clamp(0,calc((var(--p) - .45)*1.8),1);transform:translateY(calc((1 - var(--p))*10px));pointer-events:none}
+  .pp-dock .pill{height:50px;border-radius:999px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-size:14.5px;font-weight:800;letter-spacing:-.01em;box-shadow:0 18px 40px -10px rgba(198,248,79,.35)}
+  .pp-space{height:120px}
+
+  /* ---------- wide anatomy ---------- */
+  .anatomy{position:relative;border-radius:28px;overflow:hidden;border:1px solid var(--line);background:var(--ink);aspect-ratio:21/9;min-height:300px}
+  .anatomy .pp-wash,.anatomy .pp-radial{border-radius:inherit}
+  .anatomy .scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.5),transparent 52%)}
+  .anatomy .glyph{position:absolute;top:-64px;right:6px;font-size:290px;line-height:1;color:rgba(255,255,255,.07)}
+  .an-nav{position:absolute;top:22px;left:22px;right:26px;display:flex;justify-content:space-between;align-items:center}
+  .an-back{width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);display:grid;place-items:center;font-size:17px;color:#fff}
+  .an-wks{font:700 12px/1 var(--mono);letter-spacing:.1em;color:rgba(255,255,255,.88)}
+  .an-big{position:absolute;left:24px;right:24px;bottom:24px}
+  .an-chip{display:inline-block;background:color-mix(in srgb,#fff 82%,var(--sand));color:#0d0e0d;font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:8px 14px;border-radius:999px;margin-bottom:14px}
+  .an-title{font-size:clamp(30px,4.6vw,48px);line-height:1.03;letter-spacing:-.03em;font-weight:900;color:#fff;max-width:14ch;text-shadow:0 2px 18px rgba(0,0,0,.35)}
+  .an-meta{margin-top:12px;font:500 12.5px/1 var(--mono);letter-spacing:.03em;color:rgba(255,255,255,.82)}
+  .pin{position:absolute;width:24px;height:24px;border-radius:999px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font:800 11px var(--mono);box-shadow:0 0 0 4px rgba(198,248,79,.18);z-index:5}
+  .legend{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0 36px;border-top:1px solid var(--line)}
+  .leg{display:flex;gap:13px;padding:15px 0;border-bottom:1px solid var(--line)}
+  .leg i{flex:none;width:22px;height:22px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);color:var(--lime);display:grid;place-items:center;font:800 10.5px var(--mono);font-style:normal;margin-top:1px}
+  .leg div b{display:block;font-size:13.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
+  .leg div p{color:var(--ash);font-size:12.5px;line-height:1.55}
+  .leg div p code{font:500 11px var(--mono);color:var(--sand)}
+
+  /* ---------- component sheets ---------- */
+  .sheet{display:grid;grid-template-columns:minmax(280px,430px) 1fr;gap:40px;align-items:start;padding:34px 0;border-bottom:1px solid var(--line)}
+  .sheet:last-child{border-bottom:none}
+  @media (max-width:840px){.sheet{grid-template-columns:1fr}}
+  .mock{background:var(--ink);border:1px solid var(--line);border-radius:24px;padding:18px;overflow:hidden}
+  .sh-title{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+  .sh-kick{font:700 10px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--lime);margin-bottom:12px}
+  .sh-body{color:var(--ash);font-size:13.5px;line-height:1.62}
+  .sh-body b{color:var(--chalk);font-weight:600}
+  .sh-body p+p{margin-top:10px}
+  .sh-body ul{list-style:none;margin-top:12px}
+  .sh-body li{padding:9px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+  .sh-body li::before{content:"—";color:var(--lime);flex:none}
+  .sh-body li b{font-weight:600}
+
+  /* spec table */
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:20px}
+  table.spec{width:100%;min-width:680px;border-collapse:collapse;background:var(--ink)}
+  table.spec th{font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);text-align:left;padding:13px 18px;border-bottom:1px solid var(--line)}
+  table.spec td{font-size:13px;line-height:1.5;padding:12px 18px;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ash)}
+  table.spec td:first-child{color:var(--chalk);font-weight:600;white-space:nowrap}
+  table.spec td code{font:500 11.5px var(--mono);color:var(--sand);white-space:nowrap}
+  table.spec tr:last-child td{border-bottom:none}
+
+  .cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  .panelcard{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 18px 20px}
+  .panelcard h3{font-size:15px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px}
+  .panelcard p,.panelcard li{color:var(--ash);font-size:13px;line-height:1.6}
+  .panelcard p b,.panelcard li b{color:var(--chalk);font-weight:600}
+  .panelcard ul{list-style:none;margin-top:8px}
+  .panelcard li{padding:7px 0;border-top:1px solid var(--line);display:flex;gap:9px}
+  .panelcard li::before{content:"—";color:var(--lime);flex:none}
+  .panelcard li code{font:500 11px var(--mono);color:var(--sand)}
+
+  .foot{margin-top:90px;border-top:1px solid var(--line);padding-top:20px;color:var(--ash2);font:500 11px/1.8 var(--mono);letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">HYBRID — Plan page redesign</div>
+    <h1>The plan is a record.<br><span>Give it a cover.</span></h1>
+    <p class="lede">Today the individual plan page opens with a rounded gradient card floating inside the screen gutter — a card about the plan, sitting on the page. The Explore tab already solved this identity: the <b>plan cover</b> — duotone discipline wash over near-black, an oversized ghost glyph, a white discipline chip, the title anchored heavy at the bottom. When you tap that cover, the detail page should feel like the cover <b>became the screen</b>, not like you navigated to a different product.</p>
+    <p class="lede">This brief redesigns the whole plan detail: a <b>full-bleed cover hero at the very top</b> that contracts into a sticky glass bar as you scroll, and beneath it the maxes, the week selector and the day tables rebuilt in the app's current material vocabulary — hairlines instead of boxes, one accent per cluster, data set in mono with tabular figures, everything full-bleed where it belongs.</p>
+
+    <div class="asks">
+      <div class="ask"><div class="q">Ask 1 — full width</div><div class="a">The hero becomes an <em>edge-to-edge cover</em> — no gutter, no rounded corners, no card frame.</div></div>
+      <div class="ask"><div class="q">Ask 2 — at the very top</div><div class="a">It starts at <em>y = 0</em>, running under the status bar; the safe-area inset becomes the cover's own padding.</div></div>
+      <div class="ask"><div class="q">Ask 3 — match Explore</div><div class="a">One cover recipe, shared: <em>the Explore PlanCover grows up</em> into the detail hero. Same wash, chip, glyph, title.</div></div>
+      <div class="ask"><div class="q">Ask 4 — redesign the body</div><div class="a">Maxes become a <em>ledger</em>, weeks a <em>waveform rail</em>, day tables a quieter <em>programme card</em>.</div></div>
+      <div class="ask"><div class="q">Ask 5 — sticky contraction</div><div class="a">The cover <em>pins and compresses</em> with scroll into a 56 dp glass bar — riding the shipped scroll-collapse signal.</div></div>
+    </div>
+  </header>
+
+  <!-- ================= LIVE PROTOTYPE ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>The behaviour, live</h2>
+      <div class="meta">Scroll inside the phone</div>
+    </div>
+
+    <div class="proto">
+      <div class="phone">
+        <div class="screen" id="pp-screen">
+          <div class="island"></div>
+          <div class="sbar"><b>15:09</b><i>▮▮▮ ᯤ 47</i></div>
+
+          <div id="pp-scroll">
+            <div class="pp-hero">
+              <div class="pp-wash"></div>
+              <div class="pp-radial"></div>
+              <div class="pp-scrim"></div>
+              <div class="pp-glyph">◢</div>
+              <div class="pp-nav">
+                <div class="pp-back">←</div>
+                <div class="pp-wks">8 WEEKS</div>
+              </div>
+              <div class="pp-big">
+                <span class="pp-chip">Olympic Weightlifting</span>
+                <div class="pp-title">Soviet 8-Week Peaking</div>
+                <div class="pp-meta">6×/wk &nbsp;–&nbsp; % of 1RM &nbsp;–&nbsp; ★ Popular</div>
+              </div>
+              <div class="pp-compact"><b>Soviet 8-Week Peaking</b></div>
+              <div class="pp-hairline"></div>
+            </div>
+
+            <div class="pp-body">
+              <div class="pp-stats">
+                <div class="pp-stat"><b>8</b><s>Weeks</s></div>
+                <div class="pp-stat"><b>6<i>/wk</i></b><s>Sessions</s></div>
+                <div class="pp-stat"><b>656</b><s>Lifts in wk 1</s></div>
+              </div>
+              <div class="pp-desc">A classic Soviet block: percentage-based snatch, clean &amp; jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition.</div>
+
+              <div class="pp-shead"><b>Your maxes</b><s>KG — optional</s></div>
+              <div class="pp-ledger">
+                <div class="pp-lrow"><span class="n">Snatch</span><span class="echo">→ 59 kg @ 60%</span><span class="in">98</span></div>
+                <div class="pp-lrow"><span class="n">Clean &amp; Jerk</span><span class="in">120</span></div>
+                <div class="pp-lrow"><span class="n">Front Squat</span><span class="in empty">—</span></div>
+                <div class="pp-lrow"><span class="n">Back Squat</span><span class="in empty">—</span></div>
+                <div class="pp-lrow"><span class="n">Press</span><span class="in empty">—</span></div>
+              </div>
+
+              <div class="pp-shead"><b>Schedule</b><s>656 lifts this week</s></div>
+              <div class="pp-rail">
+                <div class="pp-rail-in">
+                  <div class="pp-wk on"><span class="bar"><i style="height:88%"></i></span><s>WK 1</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:96%"></i></span><s>WK 2</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:78%"></i></span><s>WK 3</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:100%"></i></span><s>WK 4</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:92%"></i></span><s>WK 5</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:80%"></i></span><s>WK 6</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:62%"></i></span><s>WK 7</s></div>
+                  <div class="pp-wk"><span class="bar"><i style="height:38%"></i></span><s>WK 8</s></div>
+                </div>
+              </div>
+
+              <div class="pp-card">
+                <div class="pp-dhead"><b>Day 1</b><s>160 lifts</s></div>
+                <div class="pp-band am">AM — 71 lifts</div>
+                <table class="pp-mx">
+                  <tr><th>Exercise</th><th class="c60">60%</th><th class="c70">70%</th><th class="c75">75%</th></tr>
+                  <tr><td>Press</td><td class="c60">×4×3</td><td class="c70">×4×2</td><td class="off"></td></tr>
+                  <tr><td>Snatch</td><td class="c60">×3×2</td><td class="c70">×3×3</td><td class="c75">×2×3</td></tr>
+                  <tr><td>Front Squat</td><td class="c60">×5×3</td><td class="c70">×5×3</td><td class="off"></td></tr>
+                </table>
+                <div class="pp-band pm">PM — 89 lifts</div>
+                <table class="pp-mx">
+                  <tr><td>Power Clean &amp; Jerk</td><td class="c60">×4+1×4</td><td class="c70">×3+1×4</td><td class="off"></td></tr>
+                  <tr><td>Clean Extension</td><td class="c60">×5</td><td class="c70">×4×2</td><td class="c75">×4×2</td></tr>
+                  <tr><td>Good Morning</td><td class="off"></td><td class="off"></td><td>×8×4</td></tr>
+                </table>
+              </div>
+
+              <div class="pp-card">
+                <div class="pp-dhead"><b>Day 2</b><s>118 lifts</s></div>
+                <div class="pp-band am">AM — 54 lifts</div>
+                <table class="pp-mx">
+                  <tr><td>Snatch Pull</td><td class="c60">×4×2</td><td class="c70">×4×3</td><td class="off"></td></tr>
+                  <tr><td>Back Squat</td><td class="c60">×5×2</td><td class="c70">×5×3</td><td class="c75">×3×2</td></tr>
+                </table>
+              </div>
+
+              <div class="pp-space"></div>
+            </div>
+          </div>
+
+          <div class="pp-dock"><div class="pill">Enroll in Soviet 8-Week Peaking</div></div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="notes">
+          <div class="note"><div class="t">The cover pins, then compresses <s>0 → 150 dp</s></div><p>The hero is <b>sticky at y&nbsp;=&nbsp;0</b> and its height collapses from 300 dp to an 88 dp bar (56 dp + safe area) over the first 150 dp of scroll. It never leaves; the page scrolls underneath it. This is direct manipulation — the cover tracks your finger, frame for frame.</p></div>
+          <div class="note"><div class="t">Two titles cross-fade, no FLIP math <s>type</s></div><p>The big bottom-anchored 900-weight title fades out in the first half of the range; a <b>compact 16 pt centred title</b> fades in over the last third. Chip and meta line leave first — hierarchy sheds from the outside in, the name is the last thing standing.</p></div>
+          <div class="note"><div class="t">The wash stays, the bar earns a hairline <s>material</s></div><p>The duotone discipline wash never disappears — collapsed, the bar is still unmistakably <b>this plan's</b> bar. It gains a bottom hairline and (on device) a Liquid Glass backdrop blur so content sliding beneath reads as depth, not overlap.</p></div>
+          <div class="note"><div class="t">The week rail docks beneath it <s>second stick</s></div><p>The schedule rail is sticky at <code style="font-family:var(--mono);font-size:11px;color:var(--sand)">top: collapsed-height</code>. Once the cover is compact, week switching is <b>always one thumb-reach away</b> while you read Day 4 — the two sticky layers form the screen's permanent chrome.</p></div>
+          <div class="note"><div class="t">The CTA surfaces when the cover settles <s>enroll</s></div><p>The enroll pill docks above the tab bar as the cover finishes collapsing — commitment appears once you've actually looked at the work. One CTA on screen, never two.</p></div>
+        </div>
+        <div class="hint">↑ Drag inside the phone — release mid-range and it snaps</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ANATOMY ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>Anatomy of the cover</h2>
+      <div class="meta">One recipe — Explore card and detail hero</div>
+    </div>
+    <p class="sub" style="margin-bottom:26px">Every layer below already exists in Explore's <b>PlanCover</b> (web and mobile). The redesign promotes that exact recipe to the detail screen at full size — which is also what makes the shipped shared-element zoom finally usable: the Explore cover and this hero become the same object at two scales.</p>
+
+    <div class="anatomy">
+      <div class="pp-wash"></div>
+      <div class="pp-radial"></div>
+      <div class="scrim"></div>
+      <div class="glyph">◢</div>
+      <div class="an-nav">
+        <div class="an-back">←</div>
+        <div class="an-wks">8 WEEKS</div>
+      </div>
+      <div class="an-big">
+        <span class="an-chip">Olympic Weightlifting</span>
+        <div class="an-title">Soviet 8-Week Peaking</div>
+        <div class="an-meta">6×/wk &nbsp;–&nbsp; % of 1RM &nbsp;–&nbsp; ★ Popular</div>
+      </div>
+      <div class="pin" style="top:28px;left:74px">A</div>
+      <div class="pin" style="top:28px;right:120px">B</div>
+      <div class="pin" style="top:34%;right:34%">C</div>
+      <div class="pin" style="bottom:34%;left:210px">D</div>
+      <div class="pin" style="bottom:15%;left:44%">E</div>
+      <div class="pin" style="top:12px;left:38%">F</div>
+    </div>
+
+    <div class="legend">
+      <div class="leg"><i>A</i><div><b>Back — a glass circle, not a squircle tile</b><p>38 dp, <code>rgba(255,255,255,.12)</code> + backdrop blur. It floats on the art like a control on a photo, and it is the one element that never moves during collapse.</p></div></div>
+      <div class="leg"><i>B</i><div><b>Duration, top right</b><p>Explore's cover puts <code>8 WEEKS</code> here; the hero keeps it — replacing the old <code>% OF 1RM</code> nav label, which moves down into the meta line where it belongs.</p></div></div>
+      <div class="leg"><i>C</i><div><b>Ghost glyph — the cover art</b><p>The discipline glyph at 150–290 dp, white at 7%. On collapse it drifts up and dims to 3% — parallax against the shrinking frame, exactly like its press-parallax on Explore.</p></div></div>
+      <div class="leg"><i>D</i><div><b>Discipline chip</b><p>White mixed 82% toward the accent, ink text — the single loudest object on the wash, so it's the first to yield: it fades and lifts in the first 60 dp of scroll.</p></div></div>
+      <div class="leg"><i>E</i><div><b>Title + meta, bottom-anchored</b><p>Display 900 at 30–34 pt over the bottom scrim, max 14ch. Meta joins with spaced en dashes — <code>6×/wk – % of 1RM – ★ Popular</code> — never a middot.</p></div></div>
+      <div class="leg"><i>F</i><div><b>Duotone wash on cover ink</b><p><code>202°</code> accent-to-ink gradient + a radial burst at 86%/8% over <code>#0c0d0c</code> — the goal's own colour (sand for OWL, blue for running…), so every plan's page is tinted by its discipline, not by a global lime.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ================= COLLAPSE SPEC ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>The collapse, specified</h2>
+      <div class="meta">Scroll range 0 → 150 dp — progress <span style="font-family:var(--mono)">p</span></div>
+    </div>
+    <div class="tblwrap">
+      <table class="spec">
+        <tr><th>Layer</th><th>At p = 0 (top)</th><th>At p = 1 (scrolled)</th><th>Timing along p</th></tr>
+        <tr><td>Hero frame</td><td>300 dp tall, full-bleed, y = 0 under the status bar</td><td>88 dp bar (56 dp + safe-area), still full-bleed</td><td>Linear — height is the master track everything else reads from</td></tr>
+        <tr><td>Cover title</td><td>30 pt / 900, bottom-anchored, 14ch max</td><td>Gone</td><td>Opacity 1→0 over p 0–.5, translateY +14 dp</td></tr>
+        <tr><td>Compact title</td><td>Hidden</td><td>16 pt / 800, centred in the bar</td><td>Opacity 0→1 over p .62–1 — a beat after the big one leaves</td></tr>
+        <tr><td>Chip + meta line</td><td>Visible</td><td>Gone</td><td>First out: opacity 1→0 over p 0–.4</td></tr>
+        <tr><td>Ghost glyph</td><td>Top-right, 7% white</td><td>Drifted up 44 dp, 3% white</td><td>Linear — reads as parallax against the frame</td></tr>
+        <tr><td>Wash + scrim</td><td>Full duotone + bottom scrim</td><td>Wash kept; scrim off; hairline + glass blur on</td><td>Scrim 1→0 linear; hairline/blur 0→1 linear</td></tr>
+        <tr><td>Back / duration label</td><td colspan="2">Constant — the fixed points the compression happens around</td><td>—</td></tr>
+        <tr><td>Week rail</td><td>In flow after the stats + maxes</td><td>Docked at <code>top: 88dp</code> beneath the bar</td><td>Plain second sticky — no interpolation of its own</td></tr>
+        <tr><td>Enroll dock</td><td>Hidden (inline CTA territory)</td><td>Glass-shadowed lime pill above the tab bar</td><td>Opacity + 10 dp rise over p .45–1</td></tr>
+        <tr><td>Snap</td><td colspan="3">On release with p strictly between 0 and 1: settle to the nearer pole (threshold p = .5). Mobile fires a light haptic detent on settle — a genuine detent, consistent with the audited haptic policy and gated by <code>prefs.haptics</code>.</td></tr>
+        <tr><td>Reduce Motion</td><td colspan="3">The compression itself is <b>not</b> suppressed — it is direct manipulation tracking scroll position, the same stance the shipped masthead compression takes (and iOS large titles). Only the snap animation degrades to an instant settle.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= BODY SHEETS ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>The body, rebuilt</h2>
+      <div class="meta">Hairlines, one accent per cluster, mono data</div>
+    </div>
+
+    <div class="sheet">
+      <div class="mock">
+        <div class="pp-stats" style="padding:6px 2px 10px">
+          <div class="pp-stat"><b style="font-size:27px">8</b><s>Weeks</s></div>
+          <div class="pp-stat"><b style="font-size:27px">6<i>/wk</i></b><s>Sessions</s></div>
+          <div class="pp-stat"><b style="font-size:27px">656</b><s>Lifts in wk 1</s></div>
+        </div>
+        <div style="padding:8px 2px 2px;font-size:13.5px;line-height:1.6;color:var(--ash)">A classic Soviet block: percentage-based snatch, clean &amp; jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition.</div>
+      </div>
+      <div>
+        <div class="sh-kick">01 — The hem</div>
+        <div class="sh-title">Stat columns stay editorial — and sit directly on the ink</div>
+        <div class="sh-body">
+          <p>The rule-topped stat columns are already the strongest thing on the current page — they stay, verbatim: 2 dp chalk-18% rules, 900-weight tabular numerals, mono nano labels. What changes is their ground: they sit <b>directly on the screen ink</b>, flush under the cover with the standard 16 dp gutter, followed by the blurb. No card. They are the first content to slide beneath the pinned cover, which is exactly the depth cue the collapse needs in its first frames.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="mock">
+        <div class="pp-shead" style="padding:2px 2px 10px"><b>Your maxes</b><s>KG — optional</s></div>
+        <div class="pp-ledger" style="margin:0">
+          <div class="pp-lrow"><span class="n">Snatch</span><span class="echo">→ 59 kg @ 60%</span><span class="in">98</span></div>
+          <div class="pp-lrow"><span class="n">Clean &amp; Jerk</span><span class="echo">→ 84 kg @ 70%</span><span class="in">120</span></div>
+          <div class="pp-lrow"><span class="n">Front Squat</span><span class="in empty">—</span></div>
+          <div class="pp-lrow"><span class="n">Back Squat</span><span class="in empty">—</span></div>
+          <div class="pp-lrow"><span class="n">Press</span><span class="in empty">—</span></div>
+        </div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:999px;padding:8px 14px;font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash)">Use my logged 1RMs</div>
+      </div>
+      <div>
+        <div class="sh-kick">02 — The ledger</div>
+        <div class="sh-title">Maxes stop being a form and become a ledger</div>
+        <div class="sh-body">
+          <p>Today: a boxed card holding five boxed inputs — a form. Redesigned: a <b>SectionHead</b> ("Your maxes" / mono "KG — optional" on the right, stating the unit once) over hairline rows. Each row is lift name left, a bare <b>underline numeric field</b> right — tabular, right-aligned, no box-in-box.</p>
+          <ul>
+            <li><b>Live echo.</b> While a field is focused, a mono echo shows the first working weight it unlocks — <b>→ 59 kg @ 60%</b>. Type a max and the matrix below morphs from percentages to kilograms in place.</li>
+            <li><b>Prefill from the logbook.</b> A ghost pill offers "Use my logged 1RMs" — the history engine already knows these numbers; empty fields shouldn't.</li>
+            <li>Values keep persisting on-device via the existing shared maxes store — no behavioural change, only material.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="mock">
+        <div class="pp-shead" style="padding:2px 2px 8px"><b>Schedule</b><s>656 lifts this week</s></div>
+        <div class="pp-rail" style="position:static;background:none;border-bottom:1px solid var(--line);backdrop-filter:none;padding:4px 0 0;margin:0">
+          <div class="pp-rail-in" style="padding:0 0 12px">
+            <div class="pp-wk on"><span class="bar"><i style="height:88%"></i></span><s>WK 1</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:96%"></i></span><s>WK 2</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:78%"></i></span><s>WK 3</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:100%"></i></span><s>WK 4</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:92%"></i></span><s>WK 5</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:80%"></i></span><s>WK 6</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:62%"></i></span><s>WK 7</s></div>
+            <div class="pp-wk"><span class="bar"><i style="height:38%"></i></span><s>WK 8</s></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font:500 10px var(--mono);color:var(--ash2)">Bars = relative week volume — the taper is visible before it's read</div>
+      </div>
+      <div>
+        <div class="sh-kick">03 — The waveform</div>
+        <div class="sh-title">Week pills become the plan's volume waveform</div>
+        <div class="sh-body">
+          <p>Eight wrapping pills tell you the plan is eight weeks long; they tell you nothing about its <b>shape</b>. The rail replaces them: one full-bleed horizontal row (the exercise-widget bleed idiom — cards slide under the physical screen edge), each week a slim column whose <b>bar height is that week's real volume</b> from the program data. The Soviet wave and the week-8 taper become visible structure, not decoration.</p>
+          <ul>
+            <li><b>Selection is the accent</b> — the chosen week's bar and label turn lime; everything else stays 16% white. One accent per cluster.</li>
+            <li><b>It docks.</b> Sticky beneath the collapsed cover, so week switching stays reachable at any scroll depth.</li>
+            <li><b>Enrolled state:</b> the rail auto-centres the current week; completed weeks dim. "656 lifts" moves to the SectionHead's right meta, where counts live everywhere else in the app.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="mock" style="padding:0">
+        <div class="pp-dhead"><b>Day 1</b><s>160 lifts</s></div>
+        <div class="pp-band am">AM — 71 lifts</div>
+        <table class="pp-mx">
+          <tr><th>Exercise</th><th class="c60">60%</th><th class="c70">70%</th><th class="c75">75%</th></tr>
+          <tr><td>Press</td><td class="c60">×4×3</td><td class="c70">×4×2</td><td class="off"></td></tr>
+          <tr><td>Snatch</td><td class="c60">×3×2</td><td class="c70">×3×3</td><td class="c75">×2×3</td></tr>
+          <tr><td>Front Squat</td><td class="c60">×5×3</td><td class="c70">×5×3</td><td class="off"></td></tr>
+        </table>
+        <div class="pp-band pm">PM — Accessories</div>
+        <table class="pp-mx">
+          <tr><th>Exercise</th><th colspan="2" style="text-align:right;padding-right:8px">Sets×Reps</th><th style="text-align:right;padding-right:16px">RPE</th></tr>
+          <tr><td>Clean Pull<br><span style="font:400 9.5px var(--mono);color:var(--ash2)">pulling power, @ 90–110% of clean</span></td><td colspan="2" style="text-align:right;padding-right:8px">5×3</td><td style="text-align:right;padding-right:16px;color:var(--red)">@8</td></tr>
+          <tr><td>Snatch Balance<br><span style="font:400 9.5px var(--mono);color:var(--ash2)">speed under bar</span></td><td colspan="2" style="text-align:right;padding-right:8px">4×2</td><td style="text-align:right;padding-right:16px;color:var(--sand)">@7</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="sh-kick">04 — The programme card</div>
+        <div class="sh-title">The day table gets quieter and says more</div>
+        <div class="sh-body">
+          <p>The structure of the current matrix is right — exercises down, loads across, reps in the cells. The redesign changes its voice, not its grammar:</p>
+          <ul>
+            <li><b>Day header in the display face.</b> "Day 1" set 800/16 in chalk — a title, not a mono kicker — with the lift count as right-side mono meta, SectionHead-style. The amber all-caps header retires.</li>
+            <li><b>Session bands stay semantic.</b> AM keeps the sand tint, PM the blue — a 5% wash plus tinted mono label. That's load semantics, not decoration.</li>
+            <li><b>The column IS the intensity.</b> Each %-column keeps one tier colour (blue → lime → sand → red as load climbs) for header and cells; the tier system already shipped in the load-colour tokens.</li>
+            <li><b>Empty cells go silent.</b> The faint placeholder glyph is replaced by nothing — a 12%-white void. An empty cell is information; it doesn't need a character.</li>
+            <li><b>Sticky exercise column.</b> When the matrix scrolls horizontally, names hold at the left edge so a wide ramp never divorces reps from their lift.</li>
+            <li><b>Radius parity fix:</b> mobile day cards sit at radius 16 today while web Aurora cards are 28 — both move to the shared card radius.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="mock" style="display:grid;gap:12px">
+        <div class="pp-dock" style="position:static;opacity:1;transform:none"><div class="pill">Enroll in Soviet 8-Week Peaking</div></div>
+        <div class="pp-dock" style="position:static;opacity:1;transform:none"><div class="pill" style="background:var(--panel2);color:var(--chalk);border:1px solid var(--line2);box-shadow:none">✓ Enrolled — Week 3 of 8</div></div>
+      </div>
+      <div>
+        <div class="sh-kick">05 — The dock</div>
+        <div class="sh-title">One CTA, and it arrives when you've seen the work</div>
+        <div class="sh-body">
+          <p>The enroll button leaves the page flow and becomes a <b>docked Liquid Glass pill</b> above the tab bar, surfacing as the cover finishes collapsing (p ≥ .45). At the top of the page you're reading a cover; once you're inside the programme, the commitment is always in reach — and there is never an inline button and a docked one on screen at once.</p>
+          <p>Enrolled, the dock flips to a quiet status pill — <b>✓ Enrolled — Week 3 of 8</b> — and tapping it jumps to the current week. If enrolled, a 2 dp progress hairline also runs along the collapsed cover's bottom edge: semantic, not ornamental. The leave-plan section stays where it is, at the very bottom.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GROUNDED ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>Grounded in what's already shipped</h2>
+      <div class="meta">No new machinery invented</div>
+    </div>
+    <div class="cols2">
+      <div class="panelcard">
+        <h3>The scroll signal exists on both clients</h3>
+        <ul>
+          <li>Web: <code>lib/use-scroll-collapse.ts</code> publishes a registered <code>--scroll-collapse</code> CSS property every frame — zero React re-renders. The hero adds a sibling <code>--hero-collapse</code> over its own 0→150 range; every interpolation in the spec table is a CSS <code>calc()</code>/<code>clamp()</code> off that one number.</li>
+          <li>Mobile: the <code>NavScrollProvider</code> pattern is the same signal — the plan screen drives a Reanimated shared value from the scroll offset and interpolates height, opacity and translate on the UI thread.</li>
+          <li>The nav pill already compresses on this signal; the cover compressing <b>in step with it</b> makes the whole screen breathe as one surface.</li>
+        </ul>
+      </div>
+      <div class="panelcard">
+        <h3>This closes a known wave-3 gap</h3>
+        <ul>
+          <li>The transitions backlog notes the shared-element zoom mechanism (<code>SHARED_ELEMENTS</code>) is shipped and generic but "needs a per-plan detail screen to point at". This hero is that screen: <b>Explore cover → plan cover</b> is the exact zoom pair, same recipe at two scales.</li>
+          <li>Reduce Motion stance is inherited from the shipped masthead compression: scroll-tracking is direct manipulation and stays; only the snap settle degrades.</li>
+          <li>The snap haptic is a true detent — consistent with the audited haptic policy, gated by <code>prefs.haptics</code>.</li>
+        </ul>
+      </div>
+      <div class="panelcard">
+        <h3>House rules, kept by construction</h3>
+        <ul>
+          <li><b>Full-bleed rule:</b> the cover and the week rail both run under the physical screen edge (negative-gutter idiom from the exercise-widget rail / <code>CoachRail bleed</code>).</li>
+          <li><b>No middots:</b> cover meta joins with spaced en dashes; matrix empty cells become silence, not a glyph.</li>
+          <li><b>No decorative dots:</b> every section header is the Explore SectionHead — display-face title left, mono meta right. Section colour appears only in semantic bands (AM/PM, load tiers, RPE heat).</li>
+          <li><b>Reps stay single numbers</b> — content untouched; this is a material redesign, prescriptions render exactly as authored.</li>
+        </ul>
+      </div>
+      <div class="panelcard">
+        <h3>Build map — parity in one change</h3>
+        <ul>
+          <li><code>packages/core</code>: extend <code>planHeroView()</code> with the cover recipe — accent, glyph, chip, duration, meta parts — so PlanCover (Explore) and PlanHero (detail) render from one view model and cannot drift.</li>
+          <li>Mobile: <code>plan-hero.tsx</code> becomes the cover + collapse (screen goes edge-to-edge; safe-area inset becomes cover padding); <code>percent-program.tsx</code> gets ledger, rail, programme card; <code>aurora/plans.tsx</code> passes the scroll signal.</li>
+          <li>Web: <code>aurora/plans.tsx</code> PlanHero + <code>program-days.tsx</code> get the same treatment via <code>position: sticky</code> + the CSS custom-property track; full-bleed via <code>margin: 0 calc(-1 * var(--page-pad-x))</code>.</li>
+          <li>Classic (non-program) plan details reuse the identical cover and body vocabulary — one system for all six programs and the goal-tree plans.</li>
+          <li>Accessibility: the compact bar title is the same heading element (no landmark churn); the matrix stays a real table on web with column scope; inputs keep visible labels; Dynamic Type scales the bar height off font metrics.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">HYBRID — individual plan page redesign brief. Mock data: Soviet 8-Week Peaking (Olympic Weightlifting, sand accent). The prototype's collapse runs on the same math the spec table defines: p = clamp(scrollTop / 150, 0, 1).</div>
+</div>
+
+<script>
+(function(){
+  var scr = document.getElementById('pp-scroll');
+  var screen = document.getElementById('pp-screen');
+  if(!scr || !screen) return;
+  var R = 150, t = null;
+  var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function upd(){
+    var p = Math.min(1, Math.max(0, scr.scrollTop / R));
+    screen.style.setProperty('--p', p.toFixed(4));
+  }
+  function snap(){
+    var st = scr.scrollTop;
+    if(st > 8 && st < R) scr.scrollTo({ top: st > R/2 ? R : 0, behavior: reduced ? 'auto' : 'smooth' });
+  }
+  scr.addEventListener('scroll', function(){
+    upd();
+    if(t) clearTimeout(t);
+    t = setTimeout(snap, 140);
+  }, { passive: true });
+  upd();
+})();
+</script>
+</body>
+</html>
