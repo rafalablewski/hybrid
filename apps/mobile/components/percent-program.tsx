@@ -1,12 +1,34 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
-import { planProgramView, rpeColor, workoutColor, sessionColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
+import {
+  planProgramView,
+  planCoverView,
+  splitInputsTitle,
+  inputEcho,
+  rpeColor,
+  workoutColor,
+  sessionColor,
+  isProseLift,
+  liftKind,
+  dayContentSummary,
+  type GoalNode,
+  type GoalPlan,
+  type PlanProgram,
+  type PlanWeekBar,
+  type ProgramDayView,
+  type ProgramLiftView,
+  type ProgramSessionView,
+  type ProgramStepView,
+  type LoadColor,
+  type LiftKind,
+} from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F } from "../lib/ui";
-import PlanHero from "./plan-hero";
+import { fs, F, serifIf } from "../lib/ui";
+import { withAlpha } from "./aurora/kit";
+import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -39,32 +61,37 @@ function bandFor(kind: LiftKind, n: number, hasPercent: boolean, C: Palette): { 
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
- * blocks, endurance pace plans, …) through the shared planProgramView, so every
- * plan comes out in ONE consistent layout: a week selector, the discipline's
- * volume label, AM/PM or weekday cards, the prescription KEPT as written, and a
- * "fill in your numbers" panel (strength maxes → kg, or goal paces). Renders the
- * SAME content as the web. The caller supplies the screen wrapper (classic
- * <Screen> or Aurora <AuroraScreen>) so both templates reuse this one component.
+ * blocks, endurance pace plans, …) through the shared planProgramView, in the
+ * full-bleed cover redesign: PlanCoverScreen provides the collapsing cover, the
+ * stats hem and the docked enroll pill; this component supplies the body — the
+ * maxes LEDGER, the volume-WAVEFORM week rail (sticky under the collapsed bar),
+ * and the programme day cards. Renders the SAME content as the web.
  */
 export default function PercentProgram({
   goal,
   plan,
   program,
   back,
+  alreadyEnrolled,
+  onEnrolled,
+  leaveSection,
 }: {
   goal: GoalNode;
   plan: GoalPlan;
   program: PlanProgram;
   back: () => void;
+  alreadyEnrolled?: boolean;
+  onEnrolled?: () => void;
+  leaveSection?: ReactNode;
 }) {
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const [week, setWeek] = useState(1);
   // Maxes persist on-device (shared with Today) — seed each input from the store;
   // `vals` holds only the transient text being typed.
   const storedMaxes = usePlanMaxes();
   const [vals, setVals] = useState<Record<string, string>>({});
-  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">(alreadyEnrolled ? "done" : "idle");
   const inputValue = (key: string) => vals[key] ?? (storedMaxes[key] != null ? String(storedMaxes[key]) : "");
   const onMaxChange = (key: string, text: string) => {
     setVals((m) => ({ ...m, [key]: text }));
@@ -78,67 +105,129 @@ export default function PercentProgram({
     if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
   }
   const view = planProgramView(program, { week, maxes });
+  const cover = planCoverView(goal, plan, program);
 
   const enroll = async () => {
     setState("busy");
-    setState((await enrollPlan(goal.name, plan.id)) ? "done" : "error");
+    const ok = await enrollPlan(goal.name, plan.id);
+    setState(ok ? "done" : "error");
+    if (ok) onEnrolled?.();
   };
 
-  const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14, marginBottom: 12 } as const;
+  const multiWeek = view.weeks.length > 1;
+  const inputsHead = splitInputsTitle(view.inputsTitle);
 
   return (
-    <View>
-      <PlanHero goal={goal} plan={plan} program={program} back={back} />
+    <PlanCoverScreen
+      goal={goal}
+      plan={plan}
+      program={program}
+      back={back}
+      top={
+        <>
+          {/* the LEDGER — maxes / paces as hairline rows, unit stated once */}
+          <SecHead scheme={scheme} C={C} title={inputsHead.title} meta={inputsHead.meta} />
+          <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+            {view.inputs.map((inp) => {
+              const val = inputValue(inp.key);
+              const n = parseFloat(val);
+              const echo = inp.kind === "number" && Number.isFinite(n) && n > 0 ? inputEcho(program, inp.key, n) : null;
+              return (
+                <View key={inp.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{inp.label}</Text>
+                  {!!echo && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginLeft: "auto" }}>→ {echo}</Text>}
+                  <TextInput
+                    keyboardType={inp.kind === "number" ? "numeric" : "default"}
+                    placeholder={inp.placeholder ?? "—"}
+                    placeholderTextColor={withAlpha(C.ash, 0.6)}
+                    accessibilityLabel={inp.label}
+                    value={val}
+                    onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
+                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, 0.25), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
+                  />
+                </View>
+              );
+            })}
+          </View>
 
-      {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
-      <View style={card}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{view.inputsTitle}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-          {view.inputs.map((inp) => (
-            <View key={inp.key} style={{ gap: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{inp.label}</Text>
-              <TextInput
-                keyboardType={inp.kind === "number" ? "numeric" : "default"}
-                placeholder={inp.placeholder ?? ""}
-                placeholderTextColor={C.ash}
-                value={inputValue(inp.key)}
-                onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
-                style={{ fontFamily: F.mono, width: inp.kind === "number" ? 72 : 104, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7 }}
-              />
-            </View>
-          ))}
-        </View>
+          {/* schedule head — the week volume is the SectionHead's right meta */}
+          {(multiWeek || !!view.weekVolume) && (
+            <SecHead scheme={scheme} C={C} title="Schedule" meta={view.weekVolume ? `${view.weekVolume} ${t("w.train.plans.thisWeek")}` : view.peakNote ?? undefined} />
+          )}
+        </>
+      }
+      rail={multiWeek ? <WeekRail C={C} bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} /> : undefined}
+      dock={
+        <PlanDockPill
+          state={state}
+          idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`}
+          busyLabel={t("w.train.plans.enrolling")}
+          doneLabel={t("common.enrolled")}
+          onPress={enroll}
+        />
+      }
+    >
+      <View style={{ marginTop: 14 }}>
+        <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} scheme={scheme} />
       </View>
 
-      {/* Week selector (hidden for a single-week plan) + week volume. */}
-      {(view.weeks.length > 1 || !!view.weekVolume) && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 12 }}>
-          {view.weeks.length > 1 &&
-            view.weeks.map((w) => (
-              <Pressable key={w} onPress={() => setWeek(w)}>
-                <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.onAccent : C.chalk }}>{t("w.train.plans.wkShort")} {w}</Text>
-                </View>
-              </Pressable>
-            ))}
-          {!!view.weekVolume && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: "auto" }}>{view.weekVolume}</Text>}
-        </View>
-      )}
-
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
-
-      <View style={card}>
+      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 18, marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{view.progression}</Text>
       </View>
 
-      <Pressable onPress={enroll} disabled={state === "busy" || state === "done"} style={{ marginTop: 6, backgroundColor: state === "done" ? C.ink2 : C.lime, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: state === "done" ? C.lime : C.onAccent }}>
-          {state === "busy" ? "Enrolling…" : state === "done" ? "✓ Enrolled" : `Enroll in ${plan.name}`}
+      {state === "error" && (
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 4 }}>
+          {t("plans.enrollError")}
         </Text>
-      </Pressable>
-      {state === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
+      )}
+      {leaveSection}
+    </PlanCoverScreen>
+  );
+}
+
+/** The Explore SectionHead vocabulary — display-face title left, mono meta
+ *  right. Shared by the ledger and schedule heads on this screen. */
+function SecHead({ C, scheme, title, meta }: { C: Palette; scheme: "light" | "dark"; title: string; meta?: string | null }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 22, marginBottom: 10 }}>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      {!!meta && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, textAlign: "right", flexShrink: 1 }}>{meta}</Text>}
     </View>
+  );
+}
+
+/**
+ * The WAVEFORM week rail — one slim column per week whose bar height is that
+ * week's real volume, so the plan's wave and taper read as shape before they're
+ * read as numbers. Selection is the only accent. Full-bleed (the caller's rail
+ * slot runs edge-to-edge); docks under the collapsed cover.
+ */
+function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars: PlanWeekBar[]; weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string }) {
+  const byWeek = new Map(bars.map((b) => [b.week, b.value]));
+  const max = Math.max(1, ...bars.map((b) => b.value));
+  const hasBars = bars.length > 0;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 9, gap: 2 }}>
+      {weeks.map((w) => {
+        const on = w === week;
+        const v = byWeek.get(w) ?? 0;
+        return (
+          <Pressable key={w} onPress={() => setWeek(w)} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={4} style={{ width: 46, alignItems: "center", gap: 6, paddingVertical: 3 }}>
+            {hasBars ? (
+              <View style={{ width: 16, height: 34, justifyContent: "flex-end" }}>
+                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: 3, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16) }} />
+              </View>
+            ) : (
+              <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16), marginTop: 16 }} />
+            )}
+            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
+              {wkLabel} {w}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -147,18 +236,18 @@ export default function PercentProgram({
 // (pure running) → ONE week card of Day rows; anything with gym work → one card
 // per day, and a hybrid day splits into a RUN block (prose) + a STRENGTH block
 // (the Sets×Reps/RPE or %-ramp table).
-function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette }) {
-  const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" as const, marginBottom: 12 };
+function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette; scheme: "light" | "dark" }) {
+  const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden" as const, marginBottom: 12 };
   const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
   if (allProse) {
     return (
       <View style={card}>
-        <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
+        <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} scheme={scheme} />
         {days.map((day, di) => {
           const lifts = day.sessions.flatMap((s) => s.lifts);
           return (
-            <View key={di} style={{ flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: HAIR }}>
+            <View key={di} style={{ flexDirection: "row", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: HAIR }}>
               <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: "#5a5e56", textTransform: "uppercase" }}>{day.title}</Text>
               <View style={{ flex: 1 }}>
                 {lifts.length === 0 ? (
@@ -178,7 +267,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
     <>
       {days.map((day, di) => (
         <View key={di} style={card}>
-          <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} C={C} />
+          <DayHeader title={day.title} kindLabel={day.kindLabel} right={dayContentSummary(day)} C={C} scheme={scheme} />
           {day.sessions.map((s, si) => (
             <SessionBlock key={si} s={s} si={si} count={day.sessions.length} C={C} />
           ))}
@@ -188,10 +277,15 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
   );
 }
 
-function DayHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
+// The programme card's header — the day as a display-face TITLE (not a mono
+// kicker), the lift count as quiet right-side meta: SectionHead vocabulary.
+function DayHeader({ title, kindLabel, right, C, scheme }: { title: string; kindLabel?: string | null; right: string | null; C: Palette; scheme: "light" | "dark" }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: HAIR }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 18, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+      <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.2, color: C.chalk, flexShrink: 1 }}>
+        {title}
+        {!!kindLabel && <Text style={{ color: C.ash }}> — {kindLabel}</Text>}
+      </Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -199,7 +293,7 @@ function DayHeader({ title, right, C }: { title: string; right: string | null; C
 
 function Band({ label, color, topBorder, C }: { label: string; color: string; topBorder: boolean; C: Palette }) {
   return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, borderTopWidth: topBorder ? 1 : 0, borderTopColor: HAIR, backgroundColor: tint(color, 0.04) }}>
+    <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, borderTopWidth: topBorder ? 1 : 0, borderTopColor: HAIR, backgroundColor: tint(color, 0.04) }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, color) }}>{label}</Text>
     </View>
   );
@@ -207,7 +301,7 @@ function Band({ label, color, topBorder, C }: { label: string; color: string; to
 
 function ColHeader({ C }: { C: Palette }) {
   return (
-    <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+    <View style={{ flexDirection: "row", paddingHorizontal: 18, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
       <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets×Reps</Text>
       <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
@@ -225,7 +319,7 @@ function SessionBlock({ s, si, count, C }: { s: ProgramSessionView; si: number; 
   const marker = s.label ?? (count > 1 ? `Training ${si + 1}` : null);
   return (
     <View>
-      {!!marker && <Band label={s.volume ? `${marker} (${s.volume})` : marker} color={loadHex(C, sessionColor(s.label, si))} topBorder={si > 0} C={C} />}
+      {!!marker && <Band label={s.volume ? `${marker} — ${s.volume}` : marker} color={loadHex(C, sessionColor(s.label, si))} topBorder={si > 0} C={C} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!marker || si > 0;
         const band = bandFor(g.kind, g.lifts.length, hasPercent, C);
@@ -256,7 +350,7 @@ function ProseRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pa
   const rest = /rest/i.test(lift.name);
   const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
-    <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+    <View style={{ paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, liftColor(lift)) }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{lift.name}</Text>
@@ -294,8 +388,10 @@ function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
 }
 
 // Olympic / % work — the Percentage Matrix: loads are fixed columns (ordered by
-// %, bodyweight last); reps drop into the matching cell. Horizontal-scrolls when
-// there are many distinct loads.
+// %, bodyweight last); reps drop into the matching cell. The column IS the
+// intensity (each keeps its tier colour); an empty cell is SILENT — absence is
+// the information, it needs no glyph. Horizontal-scrolls when there are many
+// distinct loads.
 const MX_NAME = 132;
 const MX_COL = 64;
 function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
@@ -305,7 +401,7 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View>
-        <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+        <View style={{ flexDirection: "row", paddingHorizontal: 18, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
           <Text style={{ width: MX_NAME, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
           {cols.map((c) => (
             <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, fontWeight: "700", textAlign: "center", color: txt(C, loadHex(C, c.color)) }}>{c.load}</Text>
@@ -314,7 +410,7 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
         {lifts.map((l, i) => {
           const byLoad = new Map((l.steps ?? []).map((st) => [st.load, st]));
           return (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 11, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: HAIR }}>
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 11, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: HAIR }}>
               <View style={{ width: MX_NAME, paddingRight: 8 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{l.name}</Text>
                 {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
@@ -322,8 +418,8 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
               {cols.map((c) => {
                 const st = byLoad.get(c.load);
                 return (
-                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.caption, textAlign: "center", color: st ? txt(C, loadHex(C, c.color)) : "#34372f" }}>
-                    {st ? st.detail : "·"}
+                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.caption, textAlign: "center", color: txt(C, loadHex(C, c.color)) }}>
+                    {st ? st.detail : ""}
                   </Text>
                 );
               })}
@@ -338,7 +434,7 @@ function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
 // bodybuilding — Sets×Reps + RPE heat bar
 function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+    <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10 }}>{lift.setsReps ?? "—"}</Text>
       <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: txt(C, loadHex(C, rpeColor(lift.rpe!))) }}>@{lift.rpe}</Text>
@@ -351,7 +447,7 @@ function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
 // the web FallbackRow; otherwise it stays chalk.
 function FallbackRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </View>

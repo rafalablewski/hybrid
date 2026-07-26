@@ -19,6 +19,9 @@ import {
   liftKind,
   dayContentSummary,
   planHeroView,
+  planCoverView,
+  splitInputsTitle,
+  inputEcho,
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
@@ -581,5 +584,67 @@ describe("planHeroView — the plan-detail hero (The Columns)", () => {
       { value: "36", unit: null, label: "sessions total" },
     ]);
     expect(hero.blurb).toBe("Simple.");
+  });
+});
+
+describe("planCoverView — the full-bleed cover (Explore card ↔ detail hero)", () => {
+  const goal = { name: "Olympic Weightlifting", icon: "◢", color: "#d0cd94" };
+  const sovietPlan = { name: "Soviet 8-Week Peaking", weeks: 8, sessions: 6, tag: "% of 1RM", desc: "A classic Soviet block. More detail.", hot: true };
+
+  it("carries the goal's accent, glyph and chip plus the hero stats", () => {
+    const cover = planCoverView(goal, sovietPlan, SOVIET_OWL_8WK);
+    expect(cover.accent).toBe("#d0cd94");
+    expect(cover.glyph).toBe("◢");
+    expect(cover.chip).toBe("Olympic Weightlifting");
+    expect(cover.duration).toBe("8 WEEKS");
+    expect(cover.title).toBe("Soviet 8-Week Peaking");
+    expect(cover.metaParts).toEqual(["6×/wk", "% of 1RM", "★ Popular"]);
+    expect(cover.stats).toHaveLength(3); // the hero columns ride along
+  });
+
+  it("singularises a one-week duration and drops the Popular part when not hot", () => {
+    const cover = planCoverView(goal, { ...sovietPlan, weeks: 1, hot: false });
+    expect(cover.duration).toBe("1 WEEK");
+    expect(cover.metaParts[2]).toBeNull();
+  });
+
+  it("builds one waveform bar per week with the week-1 NL matching the hero", () => {
+    const cover = planCoverView(goal, sovietPlan, SOVIET_OWL_8WK);
+    expect(cover.weekBars.map((b) => b.week)).toEqual(SOVIET_OWL_8WK.weeks.map((w) => w.index));
+    expect(cover.weekBars[0]!.value).toBe(656); // = week-1 NL, the hero's third column
+    expect(Math.max(...cover.weekBars.map((b) => b.value))).toBeGreaterThan(0);
+  });
+
+  it("has no waveform for a single-week program or without a program", () => {
+    expect(planCoverView(goal, sovietPlan).weekBars).toEqual([]);
+    expect(planCoverView(goal, { ...sovietPlan, weeks: 1 }, BB_PPL_6DAY).weekBars).toEqual([]);
+  });
+
+  it("falls back to item counts for non-NL disciplines (running weeks still get bars)", () => {
+    const runGoal = { name: "Running", icon: "➜", color: "#3c787e" };
+    const cover = planCoverView(runGoal, { name: "5K Beginner", weeks: 9, sessions: 4, tag: "Pace-based", desc: "Run." }, RUN_5K_BEGINNER_9WK);
+    expect(cover.weekBars.length).toBe(RUN_5K_BEGINNER_9WK.weeks.length);
+    expect(cover.weekBars.every((b) => b.value > 0)).toBe(true);
+  });
+});
+
+describe("splitInputsTitle — SectionHead title + meta", () => {
+  it("splits on the em-dash separator", () => {
+    expect(splitInputsTitle("Your maxes (kg) — optional, to see working weights")).toEqual({ title: "Your maxes (kg)", meta: "optional, to see working weights" });
+  });
+  it("passes through a title with no separator", () => {
+    expect(splitInputsTitle("Your kettlebells (kg)")).toEqual({ title: "Your kettlebells (kg)", meta: null });
+  });
+});
+
+describe("inputEcho — the ledger's live working-weight echo", () => {
+  it("returns the lowest-% step of the first lift on that ref", () => {
+    // Soviet wk-1 snatch work starts at 60% → 100 kg max echoes 60 kg.
+    expect(inputEcho(SOVIET_OWL_8WK, "snatch", 100)).toMatch(/kg @ \d+%$/);
+  });
+  it("is null for an unknown ref or a non-positive max", () => {
+    expect(inputEcho(SOVIET_OWL_8WK, "nope", 100)).toBeNull();
+    expect(inputEcho(SOVIET_OWL_8WK, "snatch", 0)).toBeNull();
+    expect(inputEcho(SOVIET_OWL_8WK, "snatch", NaN)).toBeNull();
   });
 });

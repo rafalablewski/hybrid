@@ -616,3 +616,91 @@ export function planHeroView(
   const dot = plan.desc.indexOf(". ");
   return { navLabel: plan.tag, stats, blurb: dot === -1 ? plan.desc : plan.desc.slice(0, dot + 1) };
 }
+
+// ============================================================
+//  Cover — the full-bleed plan cover (Explore card ↔ detail hero)
+// ============================================================
+
+/** One bar of the schedule waveform — a week and its relative volume. */
+export interface PlanWeekBar {
+  week: number;
+  /** the discipline's volume count for the week (NL for strength-percent, item
+   *  count otherwise) — clients normalise against the max to draw bar heights. */
+  value: number;
+}
+
+/** The cover view model shared by the Explore PlanCover and the plan-detail
+ *  hero, so both render the SAME cover at two scales and cannot drift. */
+export interface PlanCoverView extends PlanHeroView {
+  /** the goal's accent — drives the duotone wash. */
+  accent: string;
+  /** the goal's glyph — the oversized ghost cover art. */
+  glyph: string;
+  /** the discipline chip label (the goal name). */
+  chip: string;
+  /** top-right duration label, e.g. "8 WEEKS". */
+  duration: string;
+  title: string;
+  /** meta-line parts (clients join with their MetaLine — spaced en dashes). */
+  metaParts: (string | null)[];
+  /** per-week volume for the schedule waveform; [] for single-week plans or
+   *  when the discipline has no comparable count (endurance). */
+  weekBars: PlanWeekBar[];
+}
+
+export function planCoverView(
+  goal: { name: string; icon: string; color: string },
+  plan: { name: string; weeks: number; sessions: number; tag: string; desc: string; hot?: boolean },
+  program?: PlanProgram,
+): PlanCoverView {
+  const hero = planHeroView(plan, program);
+  const weekBars: PlanWeekBar[] = [];
+  if (program && program.weeks.length > 1) {
+    for (const w of program.weeks) {
+      const nl = weekNL(w);
+      const items = w.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0);
+      weekBars.push({ week: w.index, value: nl > 0 ? nl : items });
+    }
+    // No signal at all (every week zero) → no waveform; clients fall back to
+    // plain week labels.
+    if (!weekBars.some((b) => b.value > 0)) weekBars.length = 0;
+  }
+  return {
+    ...hero,
+    accent: goal.color,
+    glyph: goal.icon,
+    chip: goal.name,
+    duration: `${plan.weeks} ${plan.weeks === 1 ? "WEEK" : "WEEKS"}`,
+    title: plan.name,
+    metaParts: [`${plan.sessions}×/wk`, plan.tag, plan.hot ? "★ Popular" : null],
+    weekBars,
+  };
+}
+
+/** Split a program's authored inputs title ("Your maxes (kg) — optional, to see
+ *  working weights") into a SectionHead title + right-side mono meta. */
+export function splitInputsTitle(t: string): { title: string; meta: string | null } {
+  const i = t.indexOf(" — ");
+  if (i === -1) return { title: t, meta: null };
+  return { title: t.slice(0, i), meta: t.slice(i + 3) };
+}
+
+/** The first working weight a just-typed max unlocks — "59 kg @ 60%" for the
+ *  lowest-% step of the first lift referencing `key` — so the maxes ledger can
+ *  echo what the number means the moment it's entered. Null when the program
+ *  has no %-work on that ref. */
+export function inputEcho(program: PlanProgram, key: string, max: number): string | null {
+  if (!Number.isFinite(max) || max <= 0) return null;
+  for (const w of program.weeks)
+    for (const d of w.days)
+      for (const s of d.sessions)
+        for (const l of s.lifts ?? []) {
+          if (l.ref !== key) continue;
+          const step = [...l.steps].filter((st) => st.pct != null).sort((a, b) => a.pct! - b.pct!)[0];
+          if (!step) continue;
+          const kg = stepKg(step, max);
+          if (kg == null) continue;
+          return `${kg} kg @ ${step.pct}%`;
+        }
+  return null;
+}

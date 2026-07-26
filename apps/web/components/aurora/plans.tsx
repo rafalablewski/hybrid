@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planHeroView, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { useEffect, useRef, useState } from "react";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planCoverView, splitInputsTitle, inputEcho, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
@@ -140,16 +140,22 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const docked = useHeroCollapse(rootRef, heroRef);
+  // Already enrolled in THIS plan → the dock is a quiet status pill from the start.
+  const { planId: enrolledPlanId } = useMacrocycle();
+  const displayState = state === "idle" && enrolledPlanId === plan.id ? "done" : state;
   const enroll = async () => {
     setState("busy");
     try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
     catch { setState("error"); }
   };
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <PlanHero goal={goal} plan={plan} back={back} />
+    <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <PlanHero goal={goal} plan={plan} back={back} heroRef={heroRef} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md, margin: "16px 0" }}>
         <Info label={t("w.train.plans.forWho")} value={d.forWho} /><Info label={t("w.train.plans.outcome")} value={d.outcome} /><Info label={t("w.train.plans.sessionLength")} value={d.sessionLength} /><Info label={t("w.train.plans.equipment")} value={d.equipment} /><Info label={t("w.train.plans.level")} value={d.level} />
       </div>
 
@@ -180,11 +186,9 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       ))}
 
       <Info label={t("w.train.plans.progression")} value={d.progression} />
-      <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>
-        {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
-      </button>
-      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
+      <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />
     </div>
   );
 }
@@ -193,26 +197,110 @@ function Info({ label, value }: { label: string; value: string }) {
   return <div style={card}><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div><p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 6, color: C("chalk") }}>{value}</p></div>;
 }
 
-/** "The Columns" plan-detail hero, shared by BOTH detail renderers (program +
- *  classic): a gradient panel (back + loading tag, goal chip, big title) over
- *  three rule-topped stat columns and a one-line blurb — all content from the
- *  shared planHeroView() so web and mobile can't drift. */
-function PlanHero({ goal, plan, program, back }: { goal: GoalNode; plan: GoalPlan; program?: PlanProgram; back: () => void }) {
-  const hero = planHeroView(plan, program);
+// ============================================================
+//  The COVER — the Explore PlanCover recipe at screen scale (one shared
+//  planCoverView, so the card and the hero can't drift), full-bleed at the very
+//  top of the page. It is `position: sticky` with a negative top equal to the
+//  collapse range: the page carries it up 1:1 with scroll until only the bar
+//  remains, then it pins — no height animation, and no React re-renders:
+//  useHeroCollapse publishes ONE number (--hero-collapse, 0→1) and every layer
+//  interpolates off it in CSS calc(), the use-scroll-collapse idiom.
+// ============================================================
+
+const COVER_INK = "#0c0d0c"; // fixed-dark cover base, both themes (Explore parity)
+const COVER_H = 272;
+const COVER_BAR = 56;
+const COVER_DELTA = COVER_H - COVER_BAR;
+
+/** Publishes `--hero-collapse` (0→1 over the cover's collapse range) onto the
+ *  detail root, rAF-throttled off window scroll; a release mid-range snaps to
+ *  the nearer pole (instantly under Reduce Motion — the scroll-tracking itself
+ *  stays, the shipped masthead-compression stance). Returns whether the cover
+ *  has collapsed enough to surface the docked CTA. */
+function useHeroCollapse(rootRef: React.RefObject<HTMLDivElement | null>, heroRef: React.RefObject<HTMLDivElement | null>): boolean {
+  const [docked, setDocked] = useState(false);
+  useEffect(() => {
+    const root = rootRef.current;
+    const hero = heroRef.current;
+    if (!root || !hero) return;
+    let frame = 0;
+    let last = -1;
+    let snapT: ReturnType<typeof setTimeout> | null = null;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const publish = () => {
+      frame = 0;
+      const p = Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / COVER_DELTA));
+      const rounded = Math.round(p * 1000) / 1000;
+      if (rounded === last) return;
+      last = rounded;
+      root.style.setProperty("--hero-collapse", String(rounded));
+      setDocked(rounded > 0.45); // React bails out when the boolean is unchanged
+    };
+    const snap = () => {
+      const risen = -hero.getBoundingClientRect().top;
+      if (risen <= 6 || risen >= COVER_DELTA) return;
+      window.scrollTo({ top: window.scrollY + ((risen > COVER_DELTA / 2 ? COVER_DELTA : 0) - risen), behavior: reduced ? "auto" : "smooth" });
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(publish);
+      if (snapT) clearTimeout(snapT);
+      snapT = setTimeout(snap, 140);
+    };
+    publish();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+      if (snapT) clearTimeout(snapT);
+      root.style.removeProperty("--hero-collapse");
+    };
+  }, [rootRef, heroRef]);
+  return docked;
+}
+
+/** The full-bleed collapsing cover + the stats HEM (rule-topped editorial
+ *  columns directly on the ink) + the one-line blurb. Shared by BOTH detail
+ *  renderers (program + classic). */
+function PlanHero({ goal, plan, program, back, heroRef }: { goal: GoalNode; plan: GoalPlan; program?: PlanProgram; back: () => void; heroRef: React.RefObject<HTMLDivElement | null> }) {
+  const cover = planCoverView(goal, plan, program);
+  const accent = cover.accent;
+  const p = "var(--hero-collapse, 0)";
   const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
   return (
     <>
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${C("line")}`, boxShadow: "var(--shadow-card)", padding: "18px 20px 24px", marginBottom: 18, background: `radial-gradient(130% 110% at 88% -10%, color-mix(in srgb, ${C("lime")} 16%, transparent), transparent 55%), linear-gradient(165deg, color-mix(in srgb, ${C("lime")} 9%, ${C("ink2")}), ${C("ink2")} 78%)` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <button onClick={back} aria-label={`← ${goal.name}`} style={{ width: 42, height: 42, borderRadius: 14, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, border: "none", color: C("chalk"), cursor: "pointer", fontSize: 17, lineHeight: "42px" }}>←</button>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".22em", textTransform: "uppercase", color: C("chalk") }}>{hero.navLabel}</span>
+      <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 16px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
+        {/* duotone wash bleeding from the top corner (Explore recipe) */}
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at 86% 8%, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
+        {/* bottom scrim for title legibility — retired as the title leaves */}
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 52%)", opacity: `calc(1 - ${p})` }} />
+        {/* ghost glyph — the cover art; parallax drift against the frame */}
+        <span aria-hidden style={{ position: "absolute", top: -36, right: -16, fontSize: 152, lineHeight: 1, color: "rgba(255,255,255,.07)", pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * 0.55)}px))` }}>{cover.glyph}</span>
+
+        {/* bar chrome — counter-translates so it never moves on screen */}
+        <div style={{ position: "absolute", top: 8, left: 16, right: 20, height: 42, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
+          <button onClick={back} aria-label={`← ${goal.name}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: ".06em", color: "rgba(255,255,255,.88)" }}>{cover.duration}</span>
         </div>
-        <span style={{ display: "inline-block", background: C("chalk"), color: C("ink"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.micro, letterSpacing: ".18em", textTransform: "uppercase", borderRadius: 999, padding: "10px 16px", marginBottom: 14 }}>{goal.name}</span>
-        <h2 style={{ fontWeight: 900, fontSize: "clamp(30px, 6vw, 38px)", lineHeight: 1.05, letterSpacing: "-.02em", margin: 0, textWrap: "balance" }}>{plan.name}</h2>
+
+        {/* compact bar title — fades in a beat after the big one leaves */}
+        <div aria-hidden style={{ position: "absolute", top: 8, left: 64, right: 64, height: 42, display: "grid", placeItems: "center", zIndex: 2, pointerEvents: "none", opacity: `clamp(0, calc((${p} - .62) * 2.7), 1)`, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15.5, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{cover.title}</span>
+        </div>
+
+        {/* the cover proper — chip, title, meta; slides up with the frame */}
+        <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
+          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 11px", borderRadius: 999 }}>{cover.chip}</span>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</h2>
+          <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 9, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+        </div>
+
+        {/* hairline — the collapsed bar's bottom edge */}
+        <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "rgba(255,255,255,.16)", opacity: p }} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 14 }}>
-        {hero.stats.map((s) => (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, margin: "18px 0 14px" }}>
+        {cover.stats.map((s) => (
           <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 10 }}>
             <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
               {s.value}{s.unit && <span style={{ fontSize: 15, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
@@ -221,8 +309,69 @@ function PlanHero({ goal, plan, program, back }: { goal: GoalNode; plan: GoalPla
           </div>
         ))}
       </div>
-      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: "0 0 16px", maxWidth: "62ch" }}>{hero.blurb}</p>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: "0 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>
     </>
+  );
+}
+
+/** The Explore SectionHead vocabulary — display-face title left, mono meta
+ *  right. Used for the maxes ledger and the schedule heads. */
+function PlanSecHead({ title, meta }: { title: string; meta?: string | null }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "22px 0 10px" }}>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{title}</span>
+      {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
+    </div>
+  );
+}
+
+/** The WAVEFORM week rail — one slim column per week whose bar height is that
+ *  week's real volume (shape before numbers: the wave and the taper read at a
+ *  glance). Full-bleed, and sticky beneath the collapsed cover so week
+ *  switching stays one reach away at any scroll depth. Selection is the accent. */
+function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekBar[]; weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string }) {
+  const byWeek = new Map(bars.map((b) => [b.week, b.value]));
+  const max = Math.max(1, ...bars.map((b) => b.value));
+  const hasBars = bars.length > 0;
+  return (
+    <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 16px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
+      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 9px" }}>
+        {weeks.map((w) => {
+          const on = w === week;
+          const v = byWeek.get(w) ?? 0;
+          return (
+            <button key={w} onClick={() => setWeek(w)} aria-pressed={on} style={{ flex: "0 0 auto", width: 46, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "3px 0", background: "none", border: "none", cursor: "pointer" }}>
+              {hasBars ? (
+                <span style={{ width: 16, height: 34, display: "flex", alignItems: "flex-end" }}>
+                  <span style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: 3, background: on ? C("lime") : `color-mix(in srgb, ${C("chalk")} 16%, transparent)` }} />
+                </span>
+              ) : (
+                <span style={{ width: 22, height: 2, borderRadius: 2, background: on ? C("lime") : `color-mix(in srgb, ${C("chalk")} 16%, transparent)`, marginTop: 16 }} />
+              )}
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: on ? C("lime") : C("ash") }}>{wkLabel} {w}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** The docked CTA — a pill above the pill nav that surfaces once the cover has
+ *  collapsed (you commit after you've seen the work). One CTA, never two. */
+function PlanDock({ docked, state, idleLabel, busyLabel, doneLabel, onClick }: { docked: boolean; state: "idle" | "busy" | "done" | "error"; idleLabel: string; busyLabel: string; doneLabel: string; onClick: () => void }) {
+  const done = state === "done";
+  return (
+    <div aria-hidden={!docked} style={{ position: "fixed", left: 0, right: 0, bottom: 96, zIndex: 40, display: "flex", justifyContent: "center", padding: "0 16px", pointerEvents: "none", opacity: docked ? 1 : 0, transform: docked ? "none" : "translateY(10px)", transition: "opacity .22s ease, transform .22s ease" }}>
+      <button
+        onClick={onClick}
+        disabled={state === "busy" || done}
+        tabIndex={docked ? 0 : -1}
+        style={{ pointerEvents: docked ? "auto" : "none", width: "100%", maxWidth: 560, height: 50, borderRadius: 999, border: `1px solid ${done ? C("line") : C("lime")}`, background: done ? C("ink2") : C("lime"), color: done ? C("lime") : C("ink"), fontWeight: 800, fontSize: fs.note, cursor: state === "busy" || done ? "default" : "pointer", boxShadow: done ? "var(--shadow-card)" : `0 18px 40px -10px color-mix(in srgb, ${C("lime")} 45%, transparent)` }}
+      >
+        {state === "busy" ? busyLabel : done ? doneLabel : idleLabel}
+      </button>
+    </div>
   );
 }
 
@@ -246,44 +395,64 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
   const maxes: Record<string, number> = {};
   for (const i of program.inputs) { if (i.kind !== "number") continue; const n = parseFloat(inputValue(i.key)); if (Number.isFinite(n) && n > 0) maxes[i.key] = n; }
   const view = planProgramView(program, { week, maxes });
+  const cover = planCoverView(goal, plan, program);
+  const inputsHead = splitInputsTitle(view.inputsTitle);
+  const multiWeek = view.weeks.length > 1;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const docked = useHeroCollapse(rootRef, heroRef);
+  // Already enrolled in THIS plan → the dock is a quiet status pill from the start.
+  const { planId: enrolledPlanId } = useMacrocycle();
+  const displayState = state === "idle" && enrolledPlanId === plan.id ? "done" : state;
   const enroll = async () => {
     setState("busy");
     try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
     catch { setState("error"); }
   };
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <PlanHero goal={goal} plan={plan} program={program} back={back} />
+    <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <PlanHero goal={goal} plan={plan} program={program} back={back} heroRef={heroRef} />
 
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{view.inputsTitle}</div>
-        <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
-          {view.inputs.map((inp) => (
-            <label key={inp.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{inp.label}</span>
-              <input type={inp.kind === "number" ? "number" : "text"} inputMode={inp.kind === "number" ? "numeric" : undefined} placeholder={inp.placeholder ?? ""} value={inputValue(inp.key)} onChange={(e) => (inp.kind === "number" ? onMaxChange(inp.key, e.target.value) : setVals((v) => ({ ...v, [inp.key]: e.target.value })))} style={{ fontFamily: "var(--font-mono)", width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
+      {/* the LEDGER — maxes / paces as hairline rows, unit stated once. Typing a
+          max echoes the first working weight it unlocks; the matrix below morphs
+          from % to kg in place (planProgramView already derives it). */}
+      <PlanSecHead title={inputsHead.title} meta={inputsHead.meta} />
+      <div style={{ borderTop: `1px solid ${C("line")}` }}>
+        {view.inputs.map((inp) => {
+          const val = inputValue(inp.key);
+          const n = parseFloat(val);
+          const echo = inp.kind === "number" && Number.isFinite(n) && n > 0 ? inputEcho(program, inp.key, n) : null;
+          return (
+            <label key={inp.key} style={{ display: "flex", alignItems: "baseline", gap: 12, padding: "10px 0", borderBottom: `1px solid ${C("line")}`, cursor: "text" }}>
+              <span style={{ fontWeight: 600, fontSize: 15 }}>{inp.label}</span>
+              {echo && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginLeft: "auto" }}>→ {echo}</span>}
+              <input
+                type={inp.kind === "number" ? "number" : "text"}
+                inputMode={inp.kind === "number" ? "numeric" : undefined}
+                placeholder={inp.placeholder ?? "—"}
+                aria-label={inp.label}
+                value={val}
+                onChange={(e) => (inp.kind === "number" ? onMaxChange(inp.key, e.target.value) : setVals((v) => ({ ...v, [inp.key]: e.target.value })))}
+                style={{ fontFamily: "var(--font-mono)", width: inp.kind === "number" ? 74 : 120, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: 14, color: C("chalk"), background: "transparent", border: "none", borderBottom: `1.5px solid color-mix(in srgb, ${C("chalk")} 25%, transparent)`, borderRadius: 0, padding: "2px 0", outline: "none", fontVariantNumeric: "tabular-nums" }}
+              />
             </label>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {(view.weeks.length > 1 || view.weekVolume) && (
-        <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-          {view.weeks.length > 1 && view.weeks.map((w) => (
-            <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.train.plans.wkShort")} {w}</button>
-          ))}
-          {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} {t("w.train.plans.thisWeek")}</span>}
-        </div>
+      {(multiWeek || view.weekVolume) && (
+        <PlanSecHead title="Schedule" meta={view.weekVolume ? `${view.weekVolume} ${t("w.train.plans.thisWeek")}` : view.peakNote ?? undefined} />
       )}
+      {multiWeek && <PlanWeekRail bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} />}
 
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
+      <div style={{ marginTop: 14 }}>
+        <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
+      </div>
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
-      <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>
-        {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
-      </button>
-      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.enrollError")}</div>}
+      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
+      <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />
     </div>
   );
 }
