@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, goalCoverView, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, AHeading, ABack, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
-import PlanCoverScreen, { PlanDockPill } from "../plan-hero";
+import PlanCoverScreen, { CoverScreen, PlanDockPill } from "../plan-hero";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
@@ -129,15 +128,19 @@ function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
   );
 }
 
+/** The category screen — the plan cover recipe one level up (idea 02, "the
+ *  goal hero"): the goal opens with the SAME full-bleed collapsing cover as
+ *  the plan detail (goalCoverView: accent wash, ghost glyph, category chip,
+ *  plan-count label, aggregate hem) and the plans list beneath it, so every
+ *  depth of the Plans stack is one physical object at a different compression. */
 function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const cover = goalCoverView(goal);
   return (
-    <AuroraScreen>
-      <Back onPress={back} label={t("w.train.plans.allGoals")} />
-      <AHeading style={{ fontSize: fs.display, marginTop: 8 }}>{goal.icon} {goal.name}</AHeading>
-      {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
-      <View style={{ marginTop: 12 }}>
+    <CoverScreen cover={{ ...cover, duration: cover.count }} backLabel={t("w.train.plans.allGoals")} back={back}>
+      <View style={{ marginTop: 10 }}>
+        {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
         {goal.plans.map((p) => (
           <Pressable key={p.id} onPress={() => pick(p.id)}>
             <ACard style={{ marginBottom: 12 }}>
@@ -151,7 +154,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
           </Pressable>
         ))}
       </View>
-    </AuroraScreen>
+    </CoverScreen>
   );
 }
 
@@ -227,15 +230,5 @@ function Field({ label, value }: { label: string; value: string }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{value}</Text>
     </ACard>
-  );
-}
-
-function Back({ onPress, label }: { onPress: () => void; label: string }) {
-  const { palette: C } = useTheme();
-  return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-      <AuroraIcon name="back" size={18} color={C.ash} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{label}</Text>
-    </Pressable>
   );
 }

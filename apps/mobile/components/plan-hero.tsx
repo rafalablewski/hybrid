@@ -66,6 +66,22 @@ const BAR_CONTENT = 56;
 /** Cover content height below the status-bar inset when fully expanded. */
 const COVER_CONTENT = 252;
 
+/** What the scaffold needs to draw a cover — a structural subset of core's
+ *  PlanCoverView, so the GOAL-level cover (goalCoverView) rides the exact same
+ *  scaffold with its plan-count label in the duration slot. */
+export interface CoverSpec {
+  accent: string;
+  glyph: string;
+  chip: string;
+  /** top-right mono label — "8 WEEKS" on a plan, "1 PLAN" on a goal. */
+  duration: string;
+  title: string;
+  metaParts: (string | null)[];
+  /** rule-topped hem columns; [] skips the hem entirely. */
+  stats: { value: string; unit: string | null; label: string }[];
+  blurb: string;
+}
+
 /**
  * PlanCoverScreen — the plan detail's full-bleed collapsing cover scaffold,
  * shared by BOTH mobile detail renderers (discipline-shaped program + classic).
@@ -103,9 +119,35 @@ export default function PlanCoverScreen({
   dock?: ReactNode;
   children?: ReactNode;
 }) {
+  return (
+    <CoverScreen cover={planCoverView(goal, plan, program)} backLabel={goal.name} back={back} top={top} rail={rail} dock={dock}>
+      {children}
+    </CoverScreen>
+  );
+}
+
+/** The generic scaffold behind PlanCoverScreen — same collapse physics, snap
+ *  detent and dock for ANY CoverSpec (plan detail and the goal/category hero). */
+export function CoverScreen({
+  cover,
+  backLabel,
+  back,
+  top,
+  rail,
+  dock,
+  children,
+}: {
+  cover: CoverSpec;
+  /** what the ← button announces ("← Olympic Weightlifting" / "← All goals"). */
+  backLabel: string;
+  back: () => void;
+  top?: ReactNode;
+  rail?: ReactNode;
+  dock?: ReactNode;
+  children?: ReactNode;
+}) {
   const { palette: C, scheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const cover = planCoverView(goal, plan, program);
   const heroH = insets.top + COVER_CONTENT;
   const barH = insets.top + BAR_CONTENT;
   const delta = heroH - barH;
@@ -187,18 +229,20 @@ export default function PlanCoverScreen({
             {/* the hem — editorial rule-topped stat columns directly on the ink,
                 the first content to slide under the pinned cover. */}
             <View style={{ paddingHorizontal: 16 }}>
-              <View style={{ flexDirection: "row", gap: 18, marginTop: 18, marginBottom: 14 }}>
-                {cover.stats.map((s) => (
-                  <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
-                      {s.value}
-                      {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
-                    </Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginBottom: 4 }}>{cover.blurb}</Text>
+              {cover.stats.length > 0 && (
+                <View style={{ flexDirection: "row", gap: 18, marginTop: 18, marginBottom: 14 }}>
+                  {cover.stats.map((s) => (
+                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                        {s.value}
+                        {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
+                      </Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {!!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
               {top}
             </View>
 
@@ -241,7 +285,7 @@ export default function PlanCoverScreen({
               <Pressable
                 onPress={back}
                 accessibilityRole="button"
-                accessibilityLabel={`← ${goal.name}`}
+                accessibilityLabel={`← ${backLabel}`}
                 hitSlop={8}
                 style={{ width: 38, height: 38, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" }}
               >

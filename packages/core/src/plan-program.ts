@@ -677,6 +677,68 @@ export function planCoverView(
   };
 }
 
+/** The GOAL-level cover — the plan cover recipe one level up, so the category
+ *  screen (goal → plan list) opens with the SAME full-bleed collapsing cover as
+ *  the plan detail: accent wash + ghost glyph from the goal, the discipline
+ *  category as the chip, the plan count as the top-right label, and an
+ *  aggregate hem (plans / weeks / sessions) across the goal's plans. Shared by
+ *  web + mobile so the two goal heroes cannot drift. */
+export interface GoalCoverView {
+  /** the goal's accent — drives the duotone wash. */
+  accent: string;
+  /** the goal's glyph — the oversized ghost cover art. */
+  glyph: string;
+  /** the discipline chip label (the goal's category, e.g. "Strength"). */
+  chip: string;
+  /** top-right label — the plan count ("3 PLANS" / "1 PLAN"), or "COMING SOON"
+   *  for a goal whose programs aren't authored yet (never "0 PLANS"). */
+  count: string;
+  /** the goal name — the bottom-anchored display title. */
+  title: string;
+  /** the goal blurb — rendered on the ink beneath the hem, like the plan blurb. */
+  blurb: string;
+  /** meta-line parts — the plans' loading tags (unique, first three). */
+  metaParts: (string | null)[];
+  /** aggregate hem columns (plans / weeks / sessions); [] when the goal has no
+   *  plans yet, so clients skip the hem instead of ruling over empty numbers. */
+  stats: PlanHeroStat[];
+}
+
+export function goalCoverView(goal: {
+  name: string;
+  icon: string;
+  color: string;
+  category: string;
+  blurb: string;
+  plans: { weeks: number; sessions: number; tag: string }[];
+}): GoalCoverView {
+  const n = goal.plans.length;
+  // "8" for a single value, "8–12" across plans (unspaced en dash — a range,
+  // not a separator).
+  const range = (vals: number[]) => {
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    return lo === hi ? String(lo) : `${lo}–${hi}`;
+  };
+  const stats: PlanHeroStat[] = n
+    ? [
+        { value: String(n), unit: null, label: n === 1 ? "plan" : "plans" },
+        { value: range(goal.plans.map((p) => p.weeks)), unit: null, label: "weeks" },
+        { value: range(goal.plans.map((p) => p.sessions)), unit: "/wk", label: "sessions" },
+      ]
+    : [];
+  return {
+    accent: goal.color,
+    glyph: goal.icon,
+    chip: goal.category,
+    count: n === 0 ? "COMING SOON" : `${n} ${n === 1 ? "PLAN" : "PLANS"}`,
+    title: goal.name,
+    blurb: goal.blurb,
+    metaParts: [...new Set(goal.plans.map((p) => p.tag))].slice(0, 3),
+    stats,
+  };
+}
+
 /** Split a program's authored inputs title ("Your maxes (kg) — optional, to see
  *  working weights") into a SectionHead title + right-side mono meta. */
 export function splitInputsTitle(t: string): { title: string; meta: string | null } {
