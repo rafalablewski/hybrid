@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, splitInputsTitle, inputEcho, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
@@ -117,27 +117,47 @@ function EnrolledCard() {
 /** The category screen — the plan cover recipe one level up (idea 02, "the
  *  goal hero"): the goal opens with the SAME full-bleed collapsing cover as
  *  the plan detail (goalCoverView: accent wash, ghost glyph, category chip,
- *  plan-count label, aggregate hem) and the plans list beneath it, so every
- *  depth of the Plans stack is one physical object at a different compression. */
+ *  plan-count label) and the plans beneath it, so every depth of the Plans
+ *  stack is one physical object at a different compression. NO aggregate hem
+ *  on the cover — with a full category those ranges mush into noise; instead
+ *  EACH plan card carries its own hem (planHeroView: weeks / sessions / the
+ *  discipline's volume), so plans differentiate card-by-card. */
 function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
   const { t } = useLang();
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   useHeroCollapse(rootRef, heroRef); // no dock at goal level — collapse + snap only
   const cover = goalCoverView(goal);
+  const rule = `color-mix(in srgb, ${C("chalk")} 14%, transparent)`;
   return (
     <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <CoverHero cover={{ ...cover, duration: cover.count, variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
+      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.train.plans.noPlansYet")}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
-        {goal.plans.map((p) => (
-          <div key={p.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(p.id); } }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontWeight: 800, fontSize: fs.title }}>{p.name}</div>{p.hot && chip(C("lime"), t("w.train.plans.popular"))}</div>
-            <MetaLine parts={[`${p.weeks} ${t("w.train.plans.wks")}`, `${p.sessions}${t("w.train.plans.perWk")}`, p.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.caption, margin: "6px 0 10px", color: C("ash") }} />
-            <p style={{ fontSize: fs.body, lineHeight: 1.5 }}>{p.desc}</p>
-            <div style={{ marginTop: 12 }}>{p.focus.map((f) => <span key={f}>{chip(C("ash"), f)}</span>)}</div>
-          </div>
-        ))}
+        {goal.plans.map((p) => {
+          const hero = planHeroView(p, programFor(p.id) ?? undefined);
+          return (
+            <div key={p.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(p.id); } }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{p.tag}</span>
+                {p.hot && chip(C("lime"), t("w.train.plans.popular"))}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 6 }}>{p.name}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "12px 0 10px" }}>
+                {hero.stats.map((s) => (
+                  <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 8 }}>
+                    <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                      {s.value}{s.unit && <span style={{ fontSize: 12, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: fs.body, lineHeight: 1.5 }}>{p.desc}</p>
+              <div style={{ marginTop: 12 }}>{p.focus.map((f) => <span key={f}>{chip(C("ash"), f)}</span>)}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

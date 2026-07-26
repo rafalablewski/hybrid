@@ -648,20 +648,10 @@ describe("goalCoverView — the goal-level cover (category screen hero)", () => 
     expect(cover.blurb).toBe(owl.blurb);
   });
 
-  it("pluralises the count and the hem's plan column properly", () => {
+  it("pluralises the count properly", () => {
     expect(goalCoverView(owl).count).toBe("1 PLAN");
-    expect(goalCoverView(owl).stats[0]).toEqual({ value: "1", unit: null, label: "plan" });
     const two = goalCoverView({ ...owl, plans: [...owl.plans, { weeks: 12, sessions: 4, tag: "RPE" }] });
     expect(two.count).toBe("2 PLANS");
-    expect(two.stats[0]).toEqual({ value: "2", unit: null, label: "plans" });
-  });
-
-  it("aggregates weeks and sessions as en-dash ranges across plans", () => {
-    const two = goalCoverView({ ...owl, plans: [...owl.plans, { weeks: 12, sessions: 4, tag: "RPE" }] });
-    expect(two.stats[1]).toEqual({ value: "8–12", unit: null, label: "weeks" });
-    expect(two.stats[2]).toEqual({ value: "4–6", unit: "/wk", label: "sessions" });
-    // single plan → plain values, mirroring the plan hero one level down
-    expect(goalCoverView(owl).stats[1]).toEqual({ value: "8", unit: null, label: "weeks" });
   });
 
   it("meta line carries the plans' unique loading tags", () => {
@@ -669,10 +659,9 @@ describe("goalCoverView — the goal-level cover (category screen hero)", () => 
     expect(three.metaParts).toEqual(["% of 1RM", "RPE"]);
   });
 
-  it("an empty goal says COMING SOON — never '0 PLANS' — and skips the hem", () => {
+  it("an empty goal says COMING SOON — never '0 PLANS'", () => {
     const empty = goalCoverView({ ...owl, name: "Strongman", plans: [] });
     expect(empty.count).toBe("COMING SOON");
-    expect(empty.stats).toEqual([]);
     expect(empty.metaParts).toEqual([]);
   });
 });

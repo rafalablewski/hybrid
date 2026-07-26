@@ -680,9 +680,11 @@ export function planCoverView(
 /** The GOAL-level cover — the plan cover recipe one level up, so the category
  *  screen (goal → plan list) opens with the SAME full-bleed collapsing cover as
  *  the plan detail: accent wash + ghost glyph from the goal, the discipline
- *  category as the chip, the plan count as the top-right label, and an
- *  aggregate hem (plans / weeks / sessions) across the goal's plans. Shared by
- *  web + mobile so the two goal heroes cannot drift. */
+ *  category as the chip, and the plan count as the top-right label. Shared by
+ *  web + mobile so the two goal heroes cannot drift. Deliberately NO aggregate
+ *  hem: ranges mushed across a full category ("6–16 weeks", "3–6/wk") say
+ *  nothing — the numbers live on each plan card instead (planHeroView per
+ *  plan), where they actually differentiate. */
 export interface GoalCoverView {
   /** the goal's accent — drives the duotone wash. */
   accent: string;
@@ -695,13 +697,10 @@ export interface GoalCoverView {
   count: string;
   /** the goal name — the bottom-anchored display title. */
   title: string;
-  /** the goal blurb — rendered on the ink beneath the hem, like the plan blurb. */
+  /** the goal blurb — rendered on the cover face (the emblem variant). */
   blurb: string;
   /** meta-line parts — the plans' loading tags (unique, first three). */
   metaParts: (string | null)[];
-  /** aggregate hem columns (plans / weeks / sessions); [] when the goal has no
-   *  plans yet, so clients skip the hem instead of ruling over empty numbers. */
-  stats: PlanHeroStat[];
 }
 
 export function goalCoverView(goal: {
@@ -713,20 +712,6 @@ export function goalCoverView(goal: {
   plans: { weeks: number; sessions: number; tag: string }[];
 }): GoalCoverView {
   const n = goal.plans.length;
-  // "8" for a single value, "8–12" across plans (unspaced en dash — a range,
-  // not a separator).
-  const range = (vals: number[]) => {
-    const lo = Math.min(...vals);
-    const hi = Math.max(...vals);
-    return lo === hi ? String(lo) : `${lo}–${hi}`;
-  };
-  const stats: PlanHeroStat[] = n
-    ? [
-        { value: String(n), unit: null, label: n === 1 ? "plan" : "plans" },
-        { value: range(goal.plans.map((p) => p.weeks)), unit: null, label: "weeks" },
-        { value: range(goal.plans.map((p) => p.sessions)), unit: "/wk", label: "sessions" },
-      ]
-    : [];
   return {
     accent: goal.color,
     glyph: goal.icon,
@@ -735,7 +720,6 @@ export function goalCoverView(goal: {
     title: goal.name,
     blurb: goal.blurb,
     metaParts: [...new Set(goal.plans.map((p) => p.tag))].slice(0, 3),
-    stats,
   };
 }
 
