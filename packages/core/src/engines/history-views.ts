@@ -15,8 +15,10 @@
  */
 
 import type { LoggedSession } from "./session";
-import { sessionVolume, sessionShape } from "./session";
+import { sessionVolume, sessionShape, sessionCardioTotals, cardioPace } from "./session";
 import { sessionLoad } from "./load";
+import { kgToUnit, type WeightUnit } from "../units";
+import { displaySportDistance, sportDistanceUnit } from "../olympic-sports";
 import { prsForSession } from "./records";
 import { loadLevel } from "./calendar";
 import { localDayKey, localTodayKey, localMondayMs, addLocalDays, dayKeyDiff } from "../day-key";
@@ -68,6 +70,81 @@ export const HISTORY_VIEWS: ReadonlyArray<{ id: HistoryViewId; labelKey: string 
  *  stored — fall back to the agenda. */
 export const normalizeHistoryView = (v: unknown): HistoryViewId =>
   HISTORY_VIEWS.some((x) => x.id === v) ? (v as HistoryViewId) : "agenda";
+
+// ============================================================
+//  Session headline — the ONE number a session leads with
+// ============================================================
+
+/**
+ * The "headline number" card treatment: every session card leads with a single
+ * large figure — tonnage for lifting, distance for cardio, minutes for a timed
+ * sport — and everything else (title, lift count, minutes, pace, PRs) drops to
+ * one mono meta line beneath it. Each fact appears exactly ONCE per card: the
+ * old title-chip-blockline layout said "Tennis, 75 min" twice and restated a
+ * swim's distance/time in two unit systems.
+ */
+export interface SessionHeadline {
+  /** what the figure measures — drives the fallback chain below. */
+  kind: "tonnage" | "distance" | "minutes" | "blocks";
+  /** the pre-formatted figure ("7.4", "612", "75"). */
+  value: string;
+  /** its small unit label ("t" | "lb" | "m" | "km" | "min"); empty for the
+   *  `blocks` fallback — the client renders its localized block label. */
+  unit: string;
+  /** the session's discipline accent (same encoding as the timeline dots). */
+  accent: "strength" | "cardio";
+  /** sport-split pace ("5:04 /100m") when the session is a single distance
+   *  activity — null otherwise (a summed pace across blocks would lie). */
+  pace: string | null;
+  /** summed non-strength minutes — meta-line material unless minutes IS the
+   *  headline (kind === "minutes"), in which case repeating it is forbidden. */
+  minutes: number;
+  /** strength-block count — the meta line's "4 lifts". */
+  lifts: number;
+}
+
+/**
+ * Pick a session's headline figure. Lifting/mixed sessions lead with tonnage
+ * (bodyweight-aware when `bwKg` is passed); cardio leads with distance in the
+ * sport's natural unit (metres for swimming/rowing, km otherwise) or minutes
+ * when untracked; the block count is the last honest resort. Shared by both
+ * clients so the card and the weeks-view rows can't drift.
+ */
+export function sessionHeadline(s: LoggedSession, units: WeightUnit, bwKg?: number | null): SessionHeadline {
+  const lifts = s.blocks.reduce((n, b) => n + (b.kind === "strength" ? 1 : 0), 0);
+  const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
+  if (sessionShape(s) === "cardio") {
+    const ct = sessionCardioTotals(s.blocks);
+    if (ct.distanceKm > 0) {
+      const dist = s.blocks.filter((b) => b.kind === "cardio" && (b.distance ?? 0) > 0);
+      const solo = dist.length === 1 ? dist[0]! : null;
+      return {
+        kind: "distance",
+        value: solo ? displaySportDistance(ct.distanceKm, solo.name) : String(Math.round(ct.distanceKm * 10) / 10),
+        unit: solo ? sportDistanceUnit(solo.name) : "km",
+        accent: "cardio",
+        pace: solo ? cardioPace(solo) : null,
+        minutes,
+        lifts,
+      };
+    }
+    if (minutes > 0) return { kind: "minutes", value: String(minutes), unit: "min", accent: "cardio", pace: null, minutes, lifts };
+    return { kind: "blocks", value: String(s.blocks.length), unit: "", accent: "cardio", pace: null, minutes, lifts };
+  }
+  const vol = sessionVolume(s.blocks, false, bwKg);
+  if (vol > 0)
+    return {
+      kind: "tonnage",
+      value: units === "kg" ? (vol / 1000).toFixed(1) : Math.round(kgToUnit(vol, "lb")).toLocaleString(),
+      unit: units === "kg" ? "t" : "lb",
+      accent: "strength",
+      pace: null,
+      minutes,
+      lifts,
+    };
+  if (minutes > 0) return { kind: "minutes", value: String(minutes), unit: "min", accent: "strength", pace: null, minutes, lifts };
+  return { kind: "blocks", value: String(s.blocks.length), unit: "", accent: "strength", pace: null, minutes, lifts };
+}
 
 // ============================================================
 //  Day stream — training days + rest gaps (agenda + timeline)
