@@ -70,7 +70,6 @@ import AuroraToday from "./aurora/today";
 const AuroraProfile = dynamic(() => import("./aurora/profile"), { ssr: false });
 import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
-const AuroraCockpit = dynamic(() => import("./aurora/cockpit"), { ssr: false });
 const AuroraNutrition = dynamic(() => import("./aurora/nutrition"), { ssr: false });
 const AuroraOnboarding = dynamic(() => import("./aurora/onboarding"), { ssr: false });
 const AuroraCheckins = dynamic(() => import("./aurora/checkins"), { ssr: false });
@@ -799,15 +798,16 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "cockpit" && (
-          <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+        {/* The merged Performance page (ex-Cockpit + the analyze Performance
+            screen). BOTH ids resolve here so ⌘K entries, saved deep links and
+            every existing setScreen("cockpit") caller keep working. */}
+        {(screen === "performance" || screen === "cockpit") && (
+          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
           <AuroraOnboarding onEnrolled={finishOnboarding} />
         )}
-
-        {screen === "performance" && <AuroraPerformance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 

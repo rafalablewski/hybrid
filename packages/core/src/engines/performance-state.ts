@@ -121,6 +121,42 @@ export function computePerformanceState(
   return { hpi, readiness, fatigue, drivers: drivers.slice(0, 4), summary };
 }
 
+/**
+ * A truthful, history-grounded explanation of TODAY's readiness for the
+ * Performance page. Every clause is computed from the athlete's real log (and
+ * wearable baseline when present) — no unlogged lifts, no hypothetical
+ * session; with an empty log it says so honestly instead of inventing one.
+ * (The session-pick narrative — "I prescribed 4×5 @ …" — belongs to
+ * prescribeSession.why on the Today flow, not here.)
+ *
+ * Returned as LINES so the UI renders a scannable stack, not a wall of text.
+ */
+export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
+  const fatigue = computeFatigue(log);
+  const { score, bioAdj } = computeReadiness(fatigue, bio);
+  const lines: string[] = [`Readiness ${score}/100.`];
+  if (log.length === 0) {
+    lines.push("Nothing logged yet, so this is a resting baseline — log training and this read will come from your own sessions.");
+    return lines;
+  }
+  const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  lines.push(
+    top[1] >= 25
+      ? `Computed from your logged training: ${NICE[top[0]].toLowerCase()} fatigue (${top[1]}/100) is the main drag today.`
+      : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
+  );
+  const endFat = enduranceFatigue(fatigue);
+  if (endFat >= 30) lines.push(`Energy-system load from recent conditioning sits at ${endFat}/100.`);
+  if (bio && bioAdj !== 0) {
+    lines.push(
+      `Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${
+        bioAdj > 0 ? "HRV is above baseline and sleep was solid." : "HRV dipped and sleep ran short."
+      }`,
+    );
+  }
+  return lines;
+}
+
 export interface TrajectoryPoint {
   /** days before today (0 = today) */
   daysAgo: number;

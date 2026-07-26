@@ -1,5 +1,7 @@
-import AuroraPerformance from "../components/aurora/performance";
+import { Redirect } from "expo-router";
 
+/** The standalone Performance screen merged into the Performance tab (the
+ *  ex-Cockpit) — this stub keeps stale "/performance" deep links working. */
 export default function Performance() {
-  return <AuroraPerformance />;
+  return <Redirect href="/(tabs)/performance" />;
 }

@@ -665,7 +665,7 @@ export default function AuroraToday({
           title={t("w.home.today.cockpitTitle")}
           sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")}
           locked={!isAthlete}
-          onClick={() => (isAthlete ? (onNavigate ? onNavigate("cockpit") : router.push("/cockpit")) : upsell("today-cockpit"))}
+          onClick={() => (isAthlete ? (onNavigate ? onNavigate("performance") : router.push("/performance")) : upsell("today-cockpit"))}
         />
         <AccessCard
           title={t("w.home.today.sportTitle")}

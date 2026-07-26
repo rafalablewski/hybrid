@@ -40,6 +40,7 @@ export const web_analyze = {
     "w.analyze.perf.colProb": "P(injury)",
     "w.analyze.perf.colAcwr": "ACWR",
     "w.analyze.perf.colDriver": "Top driver",
+    "w.analyze.perf.tissueDetail": "Tissue detail",
 
     // volume
     "w.analyze.vol.title": "Volume",
@@ -402,6 +403,7 @@ export const web_analyze = {
     "w.analyze.perf.colProb": "P(kontuzji)",
     "w.analyze.perf.colAcwr": "ACWR",
     "w.analyze.perf.colDriver": "Główny czynnik",
+    "w.analyze.perf.tissueDetail": "Szczegóły tkanek",
 
     // volume
     "w.analyze.vol.title": "Objętość",
@@ -764,6 +766,7 @@ export const web_analyze = {
     "w.analyze.perf.colProb": "P(Verletzung)",
     "w.analyze.perf.colAcwr": "ACWR",
     "w.analyze.perf.colDriver": "Hauptfaktor",
+    "w.analyze.perf.tissueDetail": "Gewebedetail",
 
     // volume
     "w.analyze.vol.title": "Volumen",

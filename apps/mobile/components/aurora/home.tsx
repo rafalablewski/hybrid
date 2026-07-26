@@ -716,7 +716,7 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
-          <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
+          <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/performance") : goUpgrade("today-cockpit"))} />
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
         </View>
 
