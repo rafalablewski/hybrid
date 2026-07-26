@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Table — Ten Quieter Ideas</title>
+<style>
+  :root{
+    --page:#0a0a09;--ink:#0c0d0c;--panel:#151513;--panel2:#1a1a17;
+    --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.12);--hair:rgba(255,255,255,.05);
+    --chalk:#f3f4ef;--ash:#9fa295;--ash2:#6b6e63;
+    --lime:#c6f84f;--on-accent:#0c0d0c;
+    --sand:#d0cd94;--blue:#6cb6bd;--red:#e58a5c;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:48px 20px 110px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+  .wrap{max-width:1160px;margin:0 auto}
+
+  .kicker{font:700 11.5px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:18px}
+  h1{font-size:clamp(34px,5.4vw,54px);line-height:1.01;letter-spacing:-.035em;font-weight:800;max-width:17ch;text-wrap:balance;margin-bottom:18px}
+  h1 span{color:var(--ash)}
+  .lede{color:var(--ash);max-width:68ch;font-size:15.5px;line-height:1.65}
+  .lede b{color:var(--chalk);font-weight:600}
+  .lede + .lede{margin-top:12px}
+
+  h2{font-size:26px;letter-spacing:-.025em;font-weight:800;margin:0 0 8px}
+  .sec{margin-top:84px}
+  .sechead{display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:26px}
+  .sechead .meta{font:600 10.5px/1.5 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);text-align:right;flex:none}
+  .sub{color:var(--ash);font-size:14px;line-height:1.62;max-width:70ch}
+  .sub b{color:var(--chalk);font-weight:600}
+
+  /* the inventory strip — data that must survive every idea */
+  .keeps{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin-top:26px}
+  .keep{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:15px 16px 16px}
+  .keep .q{font:600 9.5px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);margin-bottom:8px}
+  .keep .a{font-size:13.5px;font-weight:700;letter-spacing:-.01em;line-height:1.35}
+  .keep .a em{font-style:normal;color:var(--lime)}
+
+  /* diagnosis strip */
+  .diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:4px}
+  .dg{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:17px 18px 18px}
+  .dg b{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em;margin-bottom:5px}
+  .dg b i{font-style:normal;font:700 10px var(--mono);letter-spacing:.12em;color:var(--red);margin-right:8px}
+  .dg p{color:var(--ash);font-size:12.5px;line-height:1.58}
+  .dg p code{font:500 11px var(--mono);color:var(--sand)}
+
+  /* idea sheets */
+  .sheet{display:grid;grid-template-columns:minmax(280px,430px) 1fr;gap:40px;align-items:start;padding:36px 0;border-bottom:1px solid var(--line)}
+  .sheet:last-child{border-bottom:none}
+  @media (max-width:840px){.sheet{grid-template-columns:1fr}}
+  .mock{background:var(--ink);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+  .mock.pad{padding:16px}
+  .sh-kick{font:700 10px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--lime);margin-bottom:10px}
+  .sh-kick s{text-decoration:none;color:var(--ash2);margin-left:10px;letter-spacing:.14em}
+  .sh-title{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px;text-wrap:balance}
+  .sh-body{color:var(--ash);font-size:13.5px;line-height:1.62;margin-top:8px}
+  .sh-body b{color:var(--chalk);font-weight:600}
+  .sh-body p+p{margin-top:10px}
+  .sh-body ul{list-style:none;margin-top:12px}
+  .sh-body li{padding:9px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+  .sh-body li::before{content:"—";color:var(--lime);flex:none}
+  .sh-body li b{font-weight:600}
+  .sh-body code{font:500 11.5px var(--mono);color:var(--sand)}
+
+  /* ——— the day-card mock vocabulary (mirrors the shipped card) ——— */
+  .dcard{background:var(--panel);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+  .dhead{display:flex;justify-content:space-between;align-items:baseline;padding:13px 16px 11px;border-bottom:1px solid var(--hair)}
+  .dhead b{font-size:15.5px;font-weight:800;letter-spacing:-.02em}
+  .dhead s{font:500 9.5px var(--mono);color:var(--ash2);text-decoration:none}
+  .band{padding:7px 16px 5px;border-bottom:1px solid var(--hair);font:700 8.5px/1.6 var(--mono);letter-spacing:.16em;text-transform:uppercase;display:flex;justify-content:space-between;gap:10px}
+  .band.am{color:var(--sand);background:rgba(208,205,148,.05)}
+  .band.pm{color:var(--blue);background:rgba(108,182,189,.05)}
+  .band.acc{color:var(--lime);background:rgba(198,248,79,.04)}
+  .band.plain{color:var(--ash2);background:none;letter-spacing:.1em}
+  .mx{width:100%;border-collapse:collapse}
+  .mx th{font:600 8.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);padding:7px 5px 5px;border-bottom:1px solid var(--hair);text-align:center;font-weight:600}
+  .mx th:first-child{text-align:left;padding-left:16px}
+  .mx th:last-child{padding-right:14px}
+  .mx td{padding:10px 5px;border-top:1px solid var(--hair);font:500 11px var(--mono);text-align:center;font-variant-numeric:tabular-nums}
+  .mx tr:first-child td,.mx thead + tbody tr:first-child td{border-top:none}
+  .mx td:first-child{text-align:left;padding-left:16px;font-family:var(--sans);font-size:12.5px;font-weight:600}
+  .mx td:last-child{padding-right:14px}
+  .mx td .nt{display:block;font:400 9px var(--mono);color:var(--ash2);margin-top:2px}
+  .c60{color:var(--blue)}.c70{color:var(--lime)}.c75{color:var(--sand)}.c80{color:var(--sand)}.cbw{color:var(--ash)}
+  .rpe{color:var(--red)}
+  .off{color:rgba(255,255,255,.1)}
+  .mocklabel{font:600 9px/1.6 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);padding:10px 16px 8px}
+  .mocklabel.bad{color:var(--red)}
+  .mocklabel.good{color:var(--lime)}
+
+  /* idea-specific bits */
+  .mono-ramp td{font-family:var(--mono)}
+  .w300{font-weight:400;opacity:.5}.w500{font-weight:500;opacity:.72}.w700{font-weight:700;opacity:.92}.w900{font-weight:800;color:var(--lime);opacity:1}
+
+  .kgh{display:block;font:700 12px var(--mono);letter-spacing:0;text-transform:none;color:var(--chalk)}
+  .kgh i{font-style:normal;font-size:8.5px;color:var(--ash2);font-weight:600}
+  .pcs{display:block;font:600 8px var(--mono);letter-spacing:.08em;margin-top:2px}
+
+  .fadewrap{position:relative;overflow:hidden}
+  .fadewrap .fade{position:absolute;top:0;right:0;bottom:0;width:56px;background:linear-gradient(90deg,transparent,var(--panel));pointer-events:none;z-index:2}
+  .stickycol{position:relative}
+  .stickycol td:first-child,.stickycol th:first-child{position:relative;z-index:1;background:var(--panel);box-shadow:8px 0 12px -8px rgba(0,0,0,.7)}
+
+  .spark{display:flex;align-items:flex-end;gap:2px;height:16px}
+  .spark i{display:block;width:5px;border-radius:1.5px;background:rgba(255,255,255,.22)}
+  .spark i.hot{background:var(--lime)}
+
+  .acc-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--hair)}
+  .acc-row:first-child{border-top:none}
+  .acc-row .l b{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em}
+  .acc-row .l s{display:block;font:500 9.5px var(--mono);color:var(--ash2);text-decoration:none;margin-top:3px}
+  .acc-row .r{display:flex;align-items:center;gap:12px}
+  .acc-row .r s{font:500 9.5px var(--mono);color:var(--ash2);text-decoration:none}
+  .acc-row .chev{width:26px;height:26px;border-radius:999px;border:1px solid var(--line2);display:grid;place-items:center;font:600 12px var(--mono);color:var(--ash)}
+  .acc-row.open .chev{background:var(--lime);border-color:var(--lime);color:var(--on-accent)}
+
+  .sheetmock{position:relative;background:linear-gradient(180deg,rgba(12,13,12,.4),rgba(12,13,12,.86) 30%);padding:52px 12px 12px}
+  .bsheet{background:rgba(26,26,23,.92);backdrop-filter:blur(14px);border:1px solid var(--line2);border-bottom:none;border-radius:24px 24px 0 0;padding:8px 16px 16px}
+  .grab{width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,.22);margin:4px auto 12px}
+  .bs-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:2px}
+  .bs-head b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .bs-head s{font:600 9px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);text-decoration:none}
+  .bs-note{font:500 10.5px var(--mono);color:var(--ash);margin-bottom:10px}
+  .bs-row{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-top:1px solid var(--hair)}
+  .bs-row .pc{width:44px;font:700 11px var(--mono)}
+  .bs-row .kg{width:64px;font:600 13px var(--mono);color:var(--chalk);font-variant-numeric:tabular-nums}
+  .bs-row .kg i{font-style:normal;font-size:9px;color:var(--ash2)}
+  .bs-row .rp{flex:1;font:500 11px var(--mono);color:var(--ash);text-align:right}
+  .bs-cta{margin-top:12px;display:flex;justify-content:center;padding:10px;border:1px solid var(--line2);border-radius:999px;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+
+  .bleedframe{position:relative;background:var(--ink);padding:14px 0 4px}
+  .bleedframe::before,.bleedframe::after{content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--line2)}
+  .bleedframe::before{left:0}.bleedframe::after{right:0}
+  .bleedframe .edge-note{font:600 8.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);padding:0 16px 10px}
+  .ledghead{display:flex;justify-content:space-between;align-items:baseline;padding:6px 16px 10px;position:sticky;top:0}
+  .ledghead b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .ledghead s{font:500 9.5px var(--mono);color:var(--ash2);text-decoration:none}
+
+  /* composition + build map */
+  .cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  .panelcard{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 18px 20px}
+  .panelcard h3{font-size:15px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px}
+  .panelcard h3 i{font-style:normal;font:700 10px var(--mono);letter-spacing:.12em;color:var(--lime);margin-right:8px}
+  .panelcard p,.panelcard li{color:var(--ash);font-size:13px;line-height:1.6}
+  .panelcard p b,.panelcard li b{color:var(--chalk);font-weight:600}
+  .panelcard ul{list-style:none;margin-top:8px}
+  .panelcard li{padding:7px 0;border-top:1px solid var(--line);display:flex;gap:9px}
+  .panelcard li::before{content:"—";color:var(--lime);flex:none}
+  .panelcard li code,.panelcard p code{font:500 11px var(--mono);color:var(--sand)}
+
+  .foot{margin-top:90px;border-top:1px solid var(--line);padding-top:20px;color:var(--ash2);font:500 11px/1.8 var(--mono);letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">HYBRID — schedule table redesign</div>
+    <h1>Take away everything<br><span>until only the training remains.</span></h1>
+    <p class="lede">The programme day card is structurally right — exercises down, loads across, reps where they meet. But on screen it still speaks like a spreadsheet: <b>three stacked header strips before the first rep</b>, a different colour for every column, phantom columns of empty space, and glyph-heavy cells (<b>×4+1×4</b>) that make a simple prescription look like an equation. The data is good. The table is loud.</p>
+    <p class="lede">These ten ideas apply one discipline — the one Jony Ive practised at every scale: <b>simplicity is not the absence of things, it's the absence of everything that isn't the point</b>. Order over chaos, achieved by subtraction; hierarchy carried by light and type instead of boxes and stripes; colour spent only where it is information; and the deepest care put into the details nobody will consciously notice. Nothing in the prescription is removed anywhere below — some of it just stops shouting, and some of it moves one honest tap away.</p>
+
+    <div class="keeps">
+      <div class="keep"><div class="q">Kept — always</div><div class="a">Every exercise, <em>every note</em></div></div>
+      <div class="keep"><div class="q">Kept — always</div><div class="a">Every % load, sets <em>×</em> reps</div></div>
+      <div class="keep"><div class="q">Kept — always</div><div class="a">RPE targets and <em>heat</em></div></div>
+      <div class="keep"><div class="q">Kept — always</div><div class="a">AM / PM splits + <em>lift counts</em></div></div>
+      <div class="keep"><div class="q">Kept — always</div><div class="a">Main / Accessories <em>grouping</em></div></div>
+    </div>
+  </header>
+
+  <!-- ================= DIAGNOSIS ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>What the current table gets wrong</h2>
+      <div class="meta">Four faults — all of them additive, none of them data</div>
+    </div>
+    <div class="diag">
+      <div class="dg"><b><i>01</i>Header stack</b><p>A PM session opens with <code>PM — 89 LIFTS</code>, then <code>MAIN (3 EXERCISES)</code>, then <code>EXERCISE / 60% / 70% / 80% / BW</code> — three full-width strips, two of them tinted, before a single rep appears. The chrome outweighs the content.</p></div>
+      <div class="dg"><b><i>02</i>Rainbow columns</b><p>Blue, lime, sand and ash all fire at once on every table. When every column carries a colour, colour stops meaning anything — the eye has nowhere to go first.</p></div>
+      <div class="dg"><b><i>03</i>Phantom width</b><p>Load columns are derived per <b>group</b>, so a <code>BW</code> column used by one Good Morning stretches empty across every other row, and names truncate to make room for voids.</p></div>
+      <div class="dg"><b><i>04</i>Glyph noise</b><p><code>×4+1×4</code> is four symbols and three numbers for "four sets of 4+1". The leading <code>×</code> is pure notation debt — it exists for the parser, not the athlete.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= TEN IDEAS ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>Ten ideas</h2>
+      <div class="meta">Each keeps all data — mock left, reasoning right</div>
+    </div>
+
+    <!-- 01 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="mocklabel bad">Today — three strips before the first rep</div>
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none">
+          <div class="band pm"><span>PM — 89 lifts</span></div>
+          <div class="band acc"><span>Main (3 exercises)</span></div>
+          <table class="mx"><thead><tr><th>Exercise</th><th class="c60">60%</th><th class="c70">70%</th><th class="c80">80%</th></tr></thead>
+          <tbody><tr><td>Power Clean &amp; Jerk</td><td class="c60">×4+1×4</td><td class="c70">×3+1×4</td><td class="off"></td></tr></tbody></table>
+        </div>
+        <div class="mocklabel good">Idea 01 — one line carries all three</div>
+        <div class="dcard" style="border-radius:0 0 24px 24px;border-left:none;border-right:none;border-bottom:none">
+          <table class="mx"><thead><tr><th style="color:var(--blue);letter-spacing:.14em">PM · <span style="color:var(--ash2)">Main — 3</span></th><th>60%</th><th>70%</th><th>80%</th><th style="color:var(--ash2)">89 lifts</th></tr></thead>
+          <tbody>
+            <tr><td>Power Clean &amp; Jerk<span class="nt">+ jerk</span></td><td>4+1 ×4</td><td>3+1 ×4</td><td class="off"></td><td></td></tr>
+            <tr><td>Clean Extension</td><td>5</td><td>4 ×2</td><td>4 ×2</td><td></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 01 <s>Reduction</s></div>
+        <div class="sh-title">Collapse the header stack — one rule line, not three strips</div>
+        <div class="sh-body">
+          <p>The session marker, the group label and the column header are all metadata about the same rows — so they share <b>one header line</b>. The session's time-of-day sits where "EXERCISE" sat (it was labelling the obvious), the group label rides beside it in quiet ash, and the lift count takes the right edge where counts live everywhere else in the app.</p>
+          <ul>
+            <li><b>Nothing is lost:</b> AM/PM, group name, exercise count, lift volume and every % column are all still stated — once each.</li>
+            <li>The tinted band backgrounds retire; the session colour survives on the session word itself. A second group in the same session ("Accessories — 5") gets its own single line.</li>
+            <li>Two strips and two tint washes fewer per session ≈ 30% of the card's vertical chrome gone before any row changes.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="mocklabel">Idea 02 — intensity as ink, one accent on the top load</div>
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+          <table class="mx mono-ramp"><thead><tr><th>Snatch day · AM</th><th>60%</th><th>70%</th><th>75%</th></tr></thead>
+          <tbody>
+            <tr><td>Press</td><td class="w300">4 ×3</td><td class="w500">4 ×2</td><td class="off"></td></tr>
+            <tr><td>Snatch</td><td class="w300">3 ×2</td><td class="w500">3 ×3</td><td class="w900">2 ×3</td></tr>
+            <tr><td>Front Squat</td><td class="w300">5 ×3</td><td class="w500">5 ×3</td><td class="off"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 02 <s>Restraint</s></div>
+        <div class="sh-title">Retire the rainbow — let ink weight carry intensity</div>
+        <div class="sh-body">
+          <p>Load already climbs left to right; the colour ramp restates what position says. Instead, intensity becomes <b>ink</b>: cells gain opacity and weight as the percentage climbs — 60% whispers, 75% is bold — and the single accent (chartreuse) marks only <b>the heaviest work of the day</b>. The eye lands on the one cell that defines the session, which is exactly the question an athlete asks a table.</p>
+          <ul>
+            <li>One accent per cluster — the standing house rule the current rainbow breaks.</li>
+            <li>The freed colours go back to being <b>semantic</b>: RPE heat, session identity, risk. Colour returns to meaning something.</li>
+            <li>Cheapest idea on this page: a style-map change in both matrix renderers, zero structure touched.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="mocklabel">Idea 03 — with a 98 kg snatch max typed in</div>
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+          <table class="mx"><thead><tr>
+            <th>Snatch work</th>
+            <th><span class="kgh">59<i> kg</i></span><span class="pcs c60">60%</span></th>
+            <th><span class="kgh">69<i> kg</i></span><span class="pcs c70">70%</span></th>
+            <th><span class="kgh">74<i> kg</i></span><span class="pcs c75">75%</span></th>
+          </tr></thead>
+          <tbody>
+            <tr><td>Snatch</td><td>3 ×2</td><td>3 ×3</td><td>2 ×3</td></tr>
+            <tr><td>Snatch Pull</td><td>4 ×2</td><td>4 ×3</td><td class="off"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 03 <s>Honesty</s></div>
+        <div class="sh-title">Say kilograms when you know them — the % becomes the footnote</div>
+        <div class="sh-body">
+          <p>A percentage is an instruction for a calculator; a kilogram is the thing you put on the bar. Once the ledger above the table holds a max, the column headers <b>morph in place</b>: the kilogram figure becomes the headline, the percentage drops to small print beneath it. Empty ledger, and the table honestly shows percentages — it never pretends to know a number it doesn't.</p>
+          <ul>
+            <li>Both truths stay visible — <b>59 kg</b> over <b>60%</b> — so the programme's logic is never hidden behind the arithmetic.</li>
+            <li>The morph is the reward for typing a max: the ledger's live echo (<code>→ 59 kg @ 60%</code>) already promises this; the table should keep that promise.</li>
+            <li>The maths already exists in <code>planProgramView</code> — today it's computed and then largely unspent.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="mocklabel bad">Today — BW stretches empty over every row</div>
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none">
+          <table class="mx"><thead><tr><th>Exercise</th><th class="c60">60%</th><th class="c70">70%</th><th class="c80">80%</th><th class="cbw">BW</th></tr></thead>
+          <tbody>
+            <tr><td>Power Clean…</td><td class="c60">×4+1×4</td><td class="c70">×3+1×4</td><td class="off"></td><td class="off"></td></tr>
+            <tr><td>Clean Ext…</td><td class="c60">×5</td><td class="c70">×4×2</td><td class="c80">×4×2</td><td class="off"></td></tr>
+            <tr><td>Good Morning</td><td class="off"></td><td class="off"></td><td class="off"></td><td class="cbw">×8×4</td></tr>
+          </tbody></table>
+        </div>
+        <div class="mocklabel good">Idea 04 — the outlier gets a full-width line instead</div>
+        <div class="dcard" style="border-radius:0 0 24px 24px;border-left:none;border-right:none;border-bottom:none">
+          <table class="mx"><thead><tr><th>Exercise</th><th>60%</th><th>70%</th><th>80%</th></tr></thead>
+          <tbody>
+            <tr><td>Power Clean &amp; Jerk</td><td>4+1 ×4</td><td>3+1 ×4</td><td class="off"></td></tr>
+            <tr><td>Clean Extension</td><td>5</td><td>4 ×2</td><td>4 ×2</td></tr>
+          </tbody></table>
+          <div class="acc-row" style="padding:11px 16px"><div class="l"><b style="font-size:12.5px;font-weight:600">Good Morning</b></div><div class="r"><s style="color:var(--ash)">bodyweight — 8 ×4</s></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 04 <s>Silence</s></div>
+        <div class="sh-title">Kill the phantom columns — outliers become lines, not lanes</div>
+        <div class="sh-body">
+          <p>Empty cells are honest silence, but an <b>empty column</b> is dead architecture: a lane the whole table pays for so one exercise can use it. Columns should be derived per <b>contiguous run of lifts that share loads</b> — and an exercise whose loads match nobody (the lone bodyweight Good Morning, a single 90% single) drops out of the grid into a <b>full-width row</b> carrying its complete prescription in words.</p>
+          <ul>
+            <li>Names stop truncating — <b>Power Clean &amp; Jerk</b> gets its letters back from the empty <code>BW</code> lane.</li>
+            <li>The grid earns its geometry: every lane that exists is used by most rows that cross it.</li>
+            <li>Derivation lives in <code>packages/core</code> next to <code>planProgramView</code>, so web and mobile can never disagree about which columns exist.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="mocklabel">Idea 05 — names hold; the ramp slides beneath a soft edge</div>
+        <div class="dcard fadewrap" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+          <div class="fade"></div>
+          <table class="mx stickycol"><thead><tr><th>Exercise</th><th>60%</th><th>65%</th><th>70%</th><th>75%</th><th>8</th></tr></thead>
+          <tbody>
+            <tr><td>Snatch</td><td>3 ×2</td><td>3 ×2</td><td>3 ×3</td><td>2 ×3</td><td>2</td></tr>
+            <tr><td>Clean &amp; Jerk</td><td>2+1 ×2</td><td>2+1 ×2</td><td>1+1 ×3</td><td>1+1 ×2</td><td>1</td></tr>
+            <tr><td>Back Squat</td><td>5 ×2</td><td>5 ×2</td><td>5 ×3</td><td>3 ×2</td><td>3</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 05 <s>Care</s></div>
+        <div class="sh-title">Pin the exercise column; fade the edge instead of cutting it</div>
+        <div class="sh-body">
+          <p>A long Soviet ramp can hold six loads, and today the whole table — names included — scrolls sideways, so by 80% you no longer know whose reps you're reading. The fix is the one every good instrument makes invisibly: <b>the name column pins</b> while the ramp slides beneath it, and the clipped edge is a <b>soft gradient fade</b>, not a hard cut — the material itself says "there is more", no chevron needed.</p>
+          <ul>
+            <li>A faint cast shadow under the pinned column gives the slide depth — light doing the work of a border.</li>
+            <li>Web: <code>position: sticky</code> on the first cell. Mobile: the name column renders outside the <code>ScrollView</code> — both are small, shipped patterns elsewhere in the app.</li>
+            <li>Pairs with Idea 04: fewer phantom lanes means most days never need to scroll at all.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div class="sheet">
+      <div class="mock pad">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px">
+          <div class="mocklabel bad" style="padding:0 0 10px">Today</div>
+          <div class="mocklabel good" style="padding:0 0 10px">Idea 06</div>
+          <div style="font:500 13px var(--mono);color:var(--ash);display:flex;flex-direction:column;gap:12px;padding-bottom:4px">
+            <span>×4×3</span><span>×4+1×4</span><span>×5</span><span>5×3 @8</span>
+          </div>
+          <div style="font:500 13px var(--mono);color:var(--chalk);display:flex;flex-direction:column;gap:12px;padding-bottom:4px">
+            <span>4 <i style="font-style:normal;color:var(--ash2)">×</i>3</span>
+            <span>4+1 <i style="font-style:normal;color:var(--ash2)">×</i>4</span>
+            <span>5</span>
+            <span>3 <i style="font-style:normal;color:var(--ash2)">×</i>5 <b class="rpe" style="font-weight:600">@8</b></span>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px;font:500 9.5px var(--mono);color:var(--ash2);letter-spacing:.06em">CARD FOOT — “REPS × SETS AT THE HEADER LOAD” — STATED ONCE</div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 06 <s>Typography</s></div>
+        <div class="sh-title">Quiet the notation — reps speak, the × steps back</div>
+        <div class="sh-body">
+          <p>Ive's teams sweated the parts nobody consciously sees; in a training table that part is the multiplication sign. The leading <code>×</code> on every cell is parser residue — <b>drop it</b>. The remaining <code>×</code> renders a shade of ash lighter than the digits, with a thin space either side, so <b>4 ×3</b> reads as a rhythm, not a formula. Cells align on the <code>×</code> via tabular figures, so a column of prescriptions becomes a column of matched shapes.</p>
+          <ul>
+            <li>The grammar — reps × sets at the header's load — is stated <b>once</b>, in the card's mono foot, instead of being re-implied by every cell.</li>
+            <li>Complex sets keep their full truth: <b>4+1 ×4</b> still says four quads-plus-one-jerk, only calmer.</li>
+            <li>One formatting function in <code>core</code>, shared by both clients and by Today's session runner — the notation becomes a product-wide voice.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+          <div class="dhead"><b>Day 1</b><div style="display:flex;align-items:center;gap:10px"><span class="spark"><i style="height:6px"></i><i style="height:9px"></i><i style="height:12px" class="hot"></i><i style="height:8px"></i><i style="height:11px"></i><i style="height:16px" class="hot"></i><i style="height:7px"></i></span><s style="font:500 9.5px var(--mono);color:var(--ash2)">160 lifts</s></div></div>
+          <table class="mx"><thead><tr><th>AM</th><th>60%</th><th>70%</th><th>75%</th><th style="color:var(--ash2)">71 lifts</th></tr></thead>
+          <tbody><tr><td>Press</td><td>4 ×3</td><td>4 ×2</td><td class="off"></td><td></td></tr></tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 07 <s>Form reveals work</s></div>
+        <div class="sh-title">Give the day a pulse — its load shape, drawn in the header</div>
+        <div class="sh-body">
+          <p>The week rail already renders the plan's volume as a waveform, so the shape language exists. Bring it down one level: beside the day's lift count, a <b>load spark</b> — one hairline bar per prescription, height from load × reps, the top-intensity touches in chartreuse. Before reading a single number you know whether Day 1 is a grind, a spike day, or a taper.</p>
+          <ul>
+            <li>This is the same "shape before numbers" argument that earned the waveform rail — applied to the day, keeping parent and child speaking one language.</li>
+            <li>Strictly semantic, so it passes the no-decoration rule: every bar is a real prescription; delete a set and the pulse changes.</li>
+            <li>Computed in <code>core</code> from data the view model already has. Nothing new is asked of the plan authors.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="dcard" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+          <div class="acc-row open"><div class="l"><b>Day 1</b><s>snatch + clean &amp; jerk + squats</s></div><div class="r"><s>160 lifts</s><span class="chev">−</span></div></div>
+          <table class="mx"><thead><tr><th>AM</th><th>60%</th><th>70%</th><th>75%</th></tr></thead>
+          <tbody>
+            <tr><td>Press</td><td>4 ×3</td><td>4 ×2</td><td class="off"></td></tr>
+            <tr><td>Snatch</td><td>3 ×2</td><td>3 ×3</td><td>2 ×3</td></tr>
+          </tbody></table>
+          <div class="acc-row"><div class="l"><b>Day 2</b><s>pulls + back squat</s></div><div class="r"><s>118 lifts</s><span class="chev">+</span></div></div>
+          <div class="acc-row"><div class="l"><b>Day 3</b><s>power snatch + presses</s></div><div class="r"><s>96 lifts</s><span class="chev">+</span></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 08 <s>Focus</s></div>
+        <div class="sh-title">One day open at a time — the week becomes an accordion</div>
+        <div class="sh-body">
+          <p>Six days × three tables is a wall; nobody trains Wednesday while reading Saturday. Each day collapses to a <b>single honest line</b> — title, a plain-words summary of what the day is, its lift count — and exactly one day is open at a time. Enrolled, <b>today's day arrives open</b>; browsing, Day&nbsp;1 does. The wall becomes a week you can hold in one glance, with the detail one intentional tap away.</p>
+          <ul>
+            <li>No data is deleted — every table still exists at full fidelity <b>inside</b> its day; only simultaneity is removed.</li>
+            <li>The closed-row summary is new information the wall never offered: what each day <i>is</i>, before what it contains.</li>
+            <li>The expand ride shares the accordion mechanics already prototyped in <code>reference/glass-card-accordion.html</code>; Reduce Motion gets an instant swap.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="sheetmock">
+          <div class="bsheet">
+            <div class="grab"></div>
+            <div class="bs-head"><b>Snatch</b><s>Day 1 — AM</s></div>
+            <div class="bs-note">full lift from the floor — 20 lifts today</div>
+            <div class="bs-row"><span class="pc c60">60%</span><span class="kg">59 <i>kg</i></span><span class="rp">3 reps × 2 sets</span></div>
+            <div class="bs-row"><span class="pc c70">70%</span><span class="kg">69 <i>kg</i></span><span class="rp">3 reps × 3 sets</span></div>
+            <div class="bs-row"><span class="pc c75">75%</span><span class="kg">74 <i>kg</i></span><span class="rp">2 reps × 3 sets</span></div>
+            <div class="bs-row" style="border-top-color:var(--line2)"><span class="pc" style="color:var(--ash2)">1RM</span><span class="kg">98 <i>kg</i></span><span class="rp">from your ledger</span></div>
+            <div class="bs-cta">Open snatch history →</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 09 <s>Depth, not density</s></div>
+        <div class="sh-title">The exercise sheet — every row can be pressed for its full story</div>
+        <div class="sh-body">
+          <p>A table cell can hold "3 ×2"; it cannot hold <i>why</i>. Any exercise row presses into a <b>Liquid Glass bottom sheet</b> that unpacks the whole prescription at reading size: each load as % <b>and</b> kilograms, reps and sets in words, the author's note given room instead of a squeezed second line, the max it's computed from, and the door to that lift's history. The table stays terse because depth is one tap away — density moves off the surface, not out of the product.</p>
+          <ul>
+            <li>This is the "sheet" answer to the brief: the table doesn't have to carry everything if the sheet carries the rest.</li>
+            <li>Long notes (<code>@ 90–110% of clean</code>) stop truncating forever — the sheet is where they were always meant to breathe.</li>
+            <li>Same sheet component both clients already use for session detail; the row press is the only new wiring.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="sheet">
+      <div class="mock">
+        <div class="bleedframe">
+          <div class="edge-note">← physical screen edge — hairlines run under it</div>
+          <div class="ledghead"><b>Day 1</b><s>160 lifts</s></div>
+          <table class="mx"><thead><tr><th>AM</th><th>60%</th><th>70%</th><th>75%</th></tr></thead>
+          <tbody>
+            <tr><td>Press</td><td>4 ×3</td><td>4 ×2</td><td class="off"></td></tr>
+            <tr><td>Snatch</td><td>3 ×2</td><td>3 ×3</td><td>2 ×3</td></tr>
+            <tr><td>Front Squat</td><td>5 ×3</td><td>5 ×3</td><td class="off"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="sh-kick">Idea 10 <s>Material</s></div>
+        <div class="sh-title">Dissolve the card — the schedule becomes a full-bleed ledger</div>
+        <div class="sh-body">
+          <p>The maxes above the schedule already live as hairline rows directly on the ink; then the schedule suddenly re-boxes itself into bordered cards. Drop the box: each day becomes a <b>ledger section</b> whose hairlines run <b>edge to edge under the physical screen</b> (the standing full-bleed idiom), separated by space and a sticky day header that picks up glass blur as rows slide beneath it. Depth comes from light and layering — never from a border.</p>
+          <ul>
+            <li>One material from cover to last row: the whole plan page becomes a single continuous document instead of a stack of containers.</li>
+            <li>Roughly 32&nbsp;dp of width returns to the columns — on this table, that's a whole extra load lane before scrolling.</li>
+            <li>The sticky blurred day header is the same recipe as the collapsed cover bar — the screen keeps one depth story.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMPOSITION ================= -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>How they compose</h2>
+      <div class="meta">Three coherent directions — not ten separate bets</div>
+    </div>
+    <div class="cols2">
+      <div class="panelcard">
+        <h3><i>QUIET</i>The quiet matrix — 01 + 02 + 04 + 06</h3>
+        <p>The pure-subtraction release: merge the header stack, retire the rainbow, drop phantom columns, calm the notation. <b>No structural or behavioural change</b> — the same table, with everything that wasn't the point removed. Ship this first; every later direction builds on it.</p>
+      </div>
+      <div class="panelcard">
+        <h3><i>ALIVE</i>The honest table — 03 + 05 + 07</h3>
+        <p>The table starts answering back: kilograms when a max exists, names that never abandon their reps, a pulse per day. Adds the small pieces of engineering (sticky column, header morph) that make the surface feel <b>considered rather than styled</b>.</p>
+      </div>
+      <div class="panelcard">
+        <h3><i>CALM</i>The focused schedule — 08 + 09 + 10</h3>
+        <p>The largest move: the wall becomes an accordion of days on a full-bleed ledger, with an exercise sheet carrying the depth. The screen shows <b>one day's work, beautifully</b> — everything else is a glance and a tap away. Prototype behind the enrolled state first.</p>
+      </div>
+      <div class="panelcard">
+        <h3><i>BUILD</i>Parity in one change</h3>
+        <ul>
+          <li><code>packages/core</code> — column derivation (04), notation formatter (06), kg morph (03) and the day pulse (07) all live beside <code>planProgramView</code>, so both clients read one truth.</li>
+          <li>Mobile <code>percent-program.tsx</code> + web <code>program-days.tsx</code> change in the <b>same commit</b> — the parity rule, kept by construction.</li>
+          <li>House rules hold throughout: single accent per cluster, no middots (en dashes in header lines), no decorative markers — the pulse and heat are semantic, every bar a real set.</li>
+          <li>Web keeps a real <code>&lt;table&gt;</code> with column scope; the sheet and accordion are focus-trapped and Reduce-Motion-safe.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">HYBRID — plan schedule table redesign brief. Mock data: Soviet 8-Week Peaking, Week 1 (Olympic Weightlifting). Ten ideas, zero data removed — prescriptions, notes, RPE, session splits and lift counts survive every mock above.</div>
+</div>
+</body>
+</html>
