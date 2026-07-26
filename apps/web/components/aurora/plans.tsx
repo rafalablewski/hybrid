@@ -127,7 +127,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
   const cover = goalCoverView(goal);
   return (
     <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <CoverHero cover={{ ...cover, duration: cover.count }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
+      <CoverHero cover={{ ...cover, duration: cover.count, variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.train.plans.noPlansYet")}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
         {goal.plans.map((p) => (
@@ -286,24 +286,35 @@ interface CoverSpec {
   /** rule-topped hem columns; [] skips the hem entirely. */
   stats: { value: string; unit: string | null; label: string }[];
   blurb: string;
+  /** Same material, different object. "plan" (default) is the POSTER — wash
+   *  from the top-RIGHT corner, modest ghost glyph, mono meta under the title,
+   *  blurb below on the ink. "goal" is the EMBLEM — the discipline's mark
+   *  blown up as the cover art (bigger, brighter, deeper parallax), the wash
+   *  mirrored to the top-LEFT so the two levels never read as the same
+   *  cover, and the blurb ON the cover face instead of the meta line. */
+  variant?: "plan" | "goal";
 }
 
 /** The generic scaffold behind PlanHero — same sticky collapse, snap detent
  *  and hem for ANY CoverSpec (plan detail and the goal/category hero). */
 function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back: () => void; backLabel: string; heroRef: React.RefObject<HTMLDivElement | null> }) {
   const accent = cover.accent;
+  const emblem = cover.variant === "goal";
   const p = "var(--hero-collapse, 0)";
   const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
   return (
     <>
       <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 16px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
-        {/* duotone wash bleeding from the top corner (Explore recipe) */}
-        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
-        <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at 86% 8%, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
+        {/* duotone wash bleeding from the top corner (Explore recipe) —
+            mirrored to the LEFT on the goal emblem so the light source itself
+            tells you which level you're on */}
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(${emblem ? "158deg" : "202deg"}, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at ${emblem ? "14% 8%" : "86% 8%"}, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
         {/* bottom scrim for title legibility — retired as the title leaves */}
         <span aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 52%)", opacity: `calc(1 - ${p})` }} />
-        {/* ghost glyph — the cover art; parallax drift against the frame */}
-        <span aria-hidden style={{ position: "absolute", top: -36, right: -16, fontSize: 152, lineHeight: 1, color: "rgba(255,255,255,.07)", pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * 0.55)}px))` }}>{cover.glyph}</span>
+        {/* ghost glyph — the cover art; parallax drift against the frame.
+            On the goal emblem it IS the subject: bigger, brighter, deeper. */}
+        <span aria-hidden style={{ position: "absolute", top: emblem ? -18 : -36, right: emblem ? -34 : -16, fontSize: emblem ? 218 : 152, lineHeight: 1, color: `rgba(255,255,255,${emblem ? ".09" : ".07"})`, pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * (emblem ? 0.66 : 0.55))}px))` }}>{cover.glyph}</span>
 
         {/* bar chrome — counter-translates so it never moves on screen */}
         <div style={{ position: "absolute", top: 8, left: 16, right: 20, height: 42, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
@@ -320,7 +331,11 @@ function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
           <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 11px", borderRadius: 999 }}>{cover.chip}</span>
           <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</h2>
-          <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 9, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+          {emblem ? (
+            <p style={{ margin: "8px 0 0", fontSize: 13.5, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
+          ) : (
+            <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 9, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+          )}
         </div>
 
         {/* hairline — the collapsed bar's bottom edge */}
@@ -339,7 +354,7 @@ function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back
           ))}
         </div>
       )}
-      {!!cover.blurb && <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: cover.stats.length ? "0 0 4px" : "16px 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>}
+      {!emblem && !!cover.blurb && <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: cover.stats.length ? "0 0 4px" : "16px 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>}
     </>
   );
 }

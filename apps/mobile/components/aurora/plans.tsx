@@ -138,7 +138,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   const { t } = useLang();
   const cover = goalCoverView(goal);
   return (
-    <CoverScreen cover={{ ...cover, duration: cover.count }} backLabel={t("w.train.plans.allGoals")} back={back}>
+    <CoverScreen cover={{ ...cover, duration: cover.count, variant: "goal" }} backLabel={t("w.train.plans.allGoals")} back={back}>
       <View style={{ marginTop: 10 }}>
         {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
         {goal.plans.map((p) => (
