@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
-import { planProgramView, rpeColor, workoutColor, sessionColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
+import { View, Text, Pressable, TextInput, ScrollView, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { planProgramView, planHeroView, rpeColor, workoutColor, sessionColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-import { MetaLine } from "./aurora/meta";
+import { withAlpha } from "./aurora/kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -85,19 +86,41 @@ export default function PercentProgram({
   };
 
   const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14, marginBottom: 12 } as const;
+  const hero = planHeroView(plan, program);
+  const rule = withAlpha(C.chalk, 0.18);
 
   return (
     <View>
-      <Pressable onPress={back} style={{ marginBottom: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {goal.name}</Text>
-      </Pressable>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
-      <View style={{ marginBottom: 14 }}>
-        <MetaLine
-          parts={[plan.weeks === 1 ? t("w.train.plans.week1") : `${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWk")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]}
-          textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}
-        />
+      {/* The Columns hero — gradient panel: back + loading tag, goal chip, big title. */}
+      <View style={{ borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, marginBottom: 16 }}>
+        <LinearGradient colors={[withAlpha(C.lime, 0.2), withAlpha(C.lime, 0.06), "transparent"]} start={{ x: 1, y: 0 }} end={{ x: 0.1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <View style={{ padding: 18, paddingBottom: 24 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel={`← ${goal.name}`} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: withAlpha(C.chalk, 0.1), alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.semi, fontSize: 17, color: C.chalk }}>←</Text>
+            </Pressable>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 2.2, textTransform: "uppercase", color: C.chalk }}>{hero.navLabel}</Text>
+          </View>
+          <View style={{ alignSelf: "flex-start", backgroundColor: C.chalk, borderRadius: 999, paddingHorizontal: 15, paddingVertical: 9, marginBottom: 14 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", letterSpacing: 1.6, textTransform: "uppercase", color: C.ink }}>{goal.name}</Text>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 33, lineHeight: 36, letterSpacing: -0.5, color: C.chalk }}>{plan.name}</Text>
+        </View>
       </View>
+
+      {/* Rule-topped editorial stat columns: duration, frequency, discipline volume. */}
+      <View style={{ flexDirection: "row", gap: 16, marginBottom: 14 }}>
+        {hero.stats.map((s) => (
+          <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: rule, paddingTop: 10 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+              {s.value}
+              {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginBottom: 16 }}>{hero.blurb}</Text>
 
       {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <View style={card}>
