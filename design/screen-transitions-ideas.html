@@ -704,14 +704,15 @@ footer {
 <div class="wrap">
 
   <header class="masthead">
-    <p class="eyebrow">HYBRID – Motion – Proposal, nothing shipped yet</p>
+    <p class="eyebrow">HYBRID – Motion – Waves 1–3 shipped, awaiting on-device sign-off</p>
     <h1>Screens should <em>move</em>, not blink.</h1>
     <p class="deck">
-      Every navigation in HYBRID today is the same 240–260&nbsp;ms fade-and-rise, on both clients.
-      A tab switch, a drill-down and a modal look identical, and on web the outgoing screen just
-      vanishes. The device on the right runs the <strong>real app</strong> — real week rail, real
-      exercise widgets, real plan covers, real pill nav — so you can flip between what ships today
-      and what's proposed and feel the difference rather than read about it.
+      This started as a proposal: every navigation was the same 240–260&nbsp;ms fade-and-rise, so a
+      tab switch, a drill-down and a modal looked identical. <strong>Waves 1–3 have since shipped on
+      both clients</strong> — spring tokens in <code>@hybrid/core</code>, direction from hierarchy,
+      a real paired exit, sheet parent-recede, shared-element continuity and masthead compression.
+      The device on the right still runs the <strong>real app</strong> against a Now/Proposed switch,
+      so it remains the fastest way to feel what changed. What's left, and why, is at the bottom.
     </p>
     <div class="mastfoot">
       <span class="factline"><b>13</b> proposals</span>
@@ -1259,7 +1260,7 @@ footer {
         </p>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Direction from hierarchy</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>Direction from hierarchy</h3><span class="chip have">Shipped</span></div>
           <p>
             The nav map in <code>packages/core/src/nav.ts</code> already knows the app's shape.
             Derive the transition from it: the five bottom-nav destinations slide horizontally in
@@ -1274,7 +1275,7 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Paired exit, not a hard cut</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>Paired exit, not a hard cut</h3><span class="chip have">Shipped</span></div>
           <p>
             Web currently animates only the arrival. The outgoing screen should leave on an
             <b>accelerating</b> curve — faster than the entrance, overlapping it by ~100&nbsp;ms —
@@ -1303,7 +1304,7 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Sheets that push the world back</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>Sheets that push the world back</h3><span class="chip have">Shipped</span></div>
           <p>
             Our sheet already slides correctly; the missing half is the presenting screen. It should
             scale to 0.92 and grow its corner radius to match the device, so the sheet sits on a real
@@ -1334,7 +1335,7 @@ footer {
         </p>
 
         <div class="prop">
-          <div class="prop-hd"><h3>The cover becomes the screen</h3><span class="chip part">Needs plumbing</span></div>
+          <div class="prop-hd"><h3>The cover becomes the screen</h3><span class="chip part">Mechanism shipped</span></div>
           <p>
             Tap a plan cover in the device. Instead of a new screen fading over it, the cover itself
             expands to fill the display — its corner radius unwinding, its oversized discipline glyph
@@ -1349,7 +1350,7 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>The number travels</h3><span class="chip part">Needs plumbing</span></div>
+          <div class="prop-hd"><h3>The number travels</h3><span class="chip have">Shipped</span></div>
           <p>
             A cheaper variant, and better suited to a training app. Rather than morphing whole cards,
             keep continuity on the <b>datum</b>: the 102&nbsp;kg on the Bench Press widget is the same
@@ -1363,7 +1364,7 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Interruptible back, with a live preview</h3><span class="chip gap">Not started</span></div>
+          <div class="prop-hd"><h3>Interruptible back, with a live preview</h3><span class="chip part">Shipped on mobile</span></div>
           <p>
             Open any detail screen and <b>drag from the left edge of the device</b>. The previous
             screen is real and already there, moving at one-third parallax behind your finger, with a
@@ -1415,7 +1416,7 @@ footer {
         </div>
 
         <div class="prop">
-          <div class="prop-hd"><h3>Continuous masthead compression</h3><span class="chip free">No new deps</span></div>
+          <div class="prop-hd"><h3>Continuous masthead compression</h3><span class="chip have">Shipped</span></div>
           <p>
             Scroll inside Today. The big <b>Today</b> headline shrinks and a compact frosted header
             resolves in above it — continuously, as a function of scroll offset, not a stepped swap.
@@ -1580,27 +1581,29 @@ footer {
       </section>
 
       <section id="order">
-        <p class="sec-kicker">Recommendation</p>
-        <h2>Shipping order</h2>
+        <p class="sec-kicker">Outcome</p>
+        <h2>What shipped</h2>
         <p class="sec-intro">
-          Ordered by impact per unit of risk. Wave 1 alone changes the feel substantially and touches
-          no native code, so it ships to web immediately and to mobile over the air.
+          Waves 1–3 are in the app on both clients. What remains is listed honestly below — each item
+          blocked on something specific, not on appetite.
         </p>
         <div class="tablewrap">
           <table>
-            <thead><tr><th>Wave</th><th>Item</th><th>Impact</th><th>Cost</th><th>Native build?</th></tr></thead>
+            <thead><tr><th>Item</th><th>Status</th><th>Note</th></tr></thead>
             <tbody>
-              <tr><td class="num">1</td><td><code>motion.ts</code> spring tokens</td><td>Enabling</td><td class="num">1 d</td><td>No</td></tr>
-              <tr><td class="num">1</td><td>Direction from hierarchy</td><td>High</td><td class="num">2 d</td><td>No</td></tr>
-              <tr><td class="num">1</td><td>Paired exit on web</td><td>High</td><td class="num">1 d</td><td>No</td></tr>
-              <tr><td class="num">1</td><td>Sheet parent recede</td><td>Medium</td><td class="num">1.5 d</td><td>No</td></tr>
-              <tr><td class="num">2</td><td>Zoom from source</td><td>Very high</td><td class="num">4–5 d</td><td>Yes, to verify</td></tr>
-              <tr><td class="num">2</td><td>Hero number travel</td><td>High</td><td class="num">2 d</td><td>Yes, to verify</td></tr>
-              <tr><td class="num">2</td><td>Interruptible back</td><td>High</td><td class="num">3 d</td><td>Yes</td></tr>
-              <tr><td class="num">3</td><td>Nav lens morph + merge</td><td>Medium</td><td class="num">1.5 d</td><td>Yes</td></tr>
-              <tr><td class="num">3</td><td>Masthead compression</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
-              <tr><td class="num">3</td><td>Ambient field continuity</td><td>Low</td><td class="num">0.5 d</td><td>No</td></tr>
-              <tr><td class="num">3</td><td>Focus mode + celebration handoff</td><td>Medium</td><td class="num">2 d</td><td>No</td></tr>
+              <tr><td><code>motion.ts</code> spring tokens</td><td><span class="chip have">Shipped</span></td><td>Springs, not duration+bezier. Durations solved numerically for visual settle — the first cut breached this system's own 450&nbsp;ms ceiling and the tests caught it.</td></tr>
+              <tr><td>Direction from hierarchy</td><td><span class="chip have">Shipped</span></td><td>Both clients read one rule, so back is the exact inverse of forward.</td></tr>
+              <tr><td>Paired exit on web</td><td><span class="chip have">Shipped</span></td><td>View Transitions API — the browser snapshots the outgoing tree, so no double-mounting of lazy screens.</td></tr>
+              <tr><td>Sheet parent-recede</td><td><span class="chip have">Shipped</span></td><td>Which is what earned the scrim drop from 0.6 to 0.28.</td></tr>
+              <tr><td>Shared-element continuity</td><td><span class="chip have">Shipped</span></td><td>The exercise figure travels into the stats-page hero. Mobile hand-rolls the FLIP on plain <code>Animated</code>.</td></tr>
+              <tr><td>Interruptible back</td><td><span class="chip part">Mobile only</span></td><td>iOS's own interactive pop, scoped off for workout and the funnel screens. Web needs the shell's screen chain extracted plus browser-history integration first.</td></tr>
+              <tr><td>Masthead compression</td><td><span class="chip have">Shipped</span></td><td>Web gained the shared scroll signal mobile already had, as a registered CSS property so nothing re-renders.</td></tr>
+              <tr><td>Reduce Motion substitution</td><td><span class="chip have">Shipped</span></td><td>150&nbsp;ms cross-dissolve everywhere. Required scoping the global <code>!important</code> backstop that was collapsing it to an instant cut.</td></tr>
+              <tr><td>Nav lens → FAB merge</td><td><span class="chip gap">Blocked</span></td><td>Needs <code>@expo/ui</code> to expose <code>GlassEffectContainer</code>, and a device.</td></tr>
+              <tr><td>Ambient field counter-drift</td><td><span class="chip gap">Blocked</span></td><td>Mobile renders the field per-screen behind an opaque navigator background; a root-level field would be fully occluded. Web-only would break parity.</td></tr>
+              <tr><td>Zoom where a card becomes a screen</td><td><span class="chip part">No target</span></td><td>Mechanism is shipped and generic; it needs a per-plan detail screen to point at.</td></tr>
+              <tr><td>Focus mode, celebration handoff</td><td><span class="chip gap">Not started</span></td><td>Wave 3 remainder.</td></tr>
+              <tr><td>Staggered entrance, specular sweep</td><td><span class="chip gap">Cut</span></td><td>Removed on the Apple-bar audit. Not to be re-proposed.</td></tr>
             </tbody>
           </table>
         </div>
@@ -1609,7 +1612,8 @@ footer {
       <footer>
         HYBRID – design/screen-transitions-ideas.html<br>
         The device runs the real Aurora design system — tokens, icons, components — with proposed motion.<br>
-        Proposals only. Nothing in this document is implemented in the app yet.
+        Waves 1–3 are implemented on both clients and verified by tests + headless Chromium.<br>
+        Native motion (stack animations, the mobile FLIP overlay, the sheet recede) awaits on-device sign-off.
       </footer>
 
     </div>
