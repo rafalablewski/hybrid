@@ -328,6 +328,12 @@ export interface ProgramStepView {
   color: LoadColor;
   /** the reps×sets tail, e.g. "×4×3", "×4+1×4" (complex kept). */
   detail: string;
+  /** the reps token alone ("4", "4+1") — the quiet-notation cell leads with it. */
+  reps: string;
+  /** set count (1 when the term had no set multiplier). */
+  sets: number;
+  /** lifts in this step — (reps + plus) × sets, the NL share of the step. */
+  nl: number;
   /** derived working weight ("95kg") when a 1RM is known, else null. */
   kg: string | null;
 }
@@ -343,6 +349,9 @@ export interface ProgramLiftView {
   /** Per-step ramp for strength-percent lifts (coloured loads). Absent for
    *  prose / hypertrophy entries. */
   steps?: ProgramStepView[];
+  /** the athlete's 1RM this lift's percentages are off ("98 kg"), when known —
+   *  surfaced by the exercise sheet so a % row can state its reference. */
+  oneRm?: string | null;
   // ── hypertrophy structured fields (present when the entry has sets/rpe) ──
   /** "4×6" or "4×AMRAP" — split from prescription for tabular display. */
   setsReps?: string;
@@ -444,6 +453,9 @@ function liftStepViews(lift: PlanLift, maxes?: Record<string, number>): ProgramS
       pct: s.pct,
       color: loadColor(s.pct),
       detail: `×${reps}${s.sets > 1 ? `×${s.sets}` : ""}`,
+      reps,
+      sets: s.sets,
+      nl: (s.reps + (s.plus ?? 0)) * s.sets,
       kg: kg != null ? `${kg}kg` : null,
     };
   });
@@ -505,13 +517,17 @@ export function planProgramView(
       sessions: d.sessions.map((s) => {
         const snl = sessionNL(s);
         const lifts: ProgramLiftView[] = [
-          ...(s.lifts ?? []).map((l) => ({
-            name: l.name,
-            prescription: formatLift(l, maxes),
-            nl: liftNL(l),
-            note: liftNote(l),
-            steps: liftStepViews(l, maxes),
-          })),
+          ...(s.lifts ?? []).map((l) => {
+            const oneRm = l.ref ? maxes?.[l.ref] : undefined;
+            return {
+              name: l.name,
+              prescription: formatLift(l, maxes),
+              nl: liftNL(l),
+              note: liftNote(l),
+              steps: liftStepViews(l, maxes),
+              ...(oneRm ? { oneRm: `${oneRm} kg` } : {}),
+            };
+          }),
           ...(s.entries ?? []).map((e) => {
             const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;
             const setsReps =
@@ -558,6 +574,180 @@ export function planProgramView(
     days,
     progression: program.progression,
   };
+}
+
+// ============================================================
+//  Schedule table — the quiet-matrix view (shared by both clients)
+// ============================================================
+//
+// The programme day table's redesign logic lives HERE so web and mobile cannot
+// drift: which columns a % matrix has (and which lifts fall out of the grid as
+// full-width outlier rows), how intensity maps to ink, the day-header pulse,
+// the accordion row's plain-words summary, and the exercise sheet's wording.
+
+/** One column of the % matrix — the load token and its order key. */
+export interface MatrixColumn {
+  load: string;
+  pct: number | null;
+  color: LoadColor;
+}
+
+/**
+ * The % matrix, with phantom columns removed. A lift is an OUTLIER when the
+ * group has other lifts and NONE of its loads is shared with any other lift —
+ * keeping it in the grid would add lanes only it uses (the lone bodyweight
+ * Good Morning stretching an empty BW column across every row). Outliers drop
+ * out of the grid and render as full-width prose rows; `before` holds the ones
+ * authored ahead of the first grid lift, `after` the rest, so the authored
+ * exercise order survives as closely as one contiguous grid allows.
+ * If EVERY lift would be an outlier (no shared loads at all) none are pulled —
+ * a grid is still the honest shape for a single lift or a fully-shared ramp.
+ */
+export interface PercentMatrixView {
+  cols: MatrixColumn[];
+  rows: ProgramLiftView[];
+  before: ProgramLiftView[];
+  after: ProgramLiftView[];
+}
+
+export function percentMatrixView(lifts: ProgramLiftView[]): PercentMatrixView {
+  const users = new Map<string, number>();
+  for (const l of lifts) {
+    const loads = new Set((l.steps ?? []).map((st) => st.load));
+    for (const load of loads) users.set(load, (users.get(load) ?? 0) + 1);
+  }
+  const isOutlier = (l: ProgramLiftView) =>
+    lifts.length > 1 && (l.steps ?? []).length > 0 && (l.steps ?? []).every((st) => (users.get(st.load) ?? 0) <= 1);
+  let out = lifts.map(isOutlier);
+  if (out.every(Boolean)) out = out.map(() => false);
+  const rows = lifts.filter((_, i) => !out[i]);
+  const firstRow = lifts.findIndex((_, i) => !out[i]);
+  const before = lifts.filter((_, i) => out[i] && i < firstRow);
+  const after = lifts.filter((_, i) => out[i] && i > firstRow);
+  const colMap = new Map<string, MatrixColumn>();
+  for (const l of rows)
+    for (const st of l.steps ?? [])
+      if (!colMap.has(st.load)) colMap.set(st.load, { load: st.load, pct: st.pct, color: st.color });
+  const cols = [...colMap.values()].sort((a, b) => (a.pct ?? 1e9) - (b.pct ?? 1e9));
+  return { cols, rows, before, after };
+}
+
+/** An outlier's full-width prescription, in words: "bodyweight 8 ×4",
+ *  "90% 1 ×3". Steps join with a comma; the renderer styles the × dim. */
+export function outlierPrescription(lift: ProgramLiftView): string {
+  return (lift.steps ?? [])
+    .map((st) => `${st.load === "BW" ? "bodyweight" : st.load} ${st.reps}${st.sets > 1 ? ` ×${st.sets}` : ""}`)
+    .join(", ");
+}
+
+/** The heaviest % prescribed anywhere in the day, or null when the day holds
+ *  no %-work. The ink ramp accents exactly this load. */
+export function dayMaxPct(day: ProgramDayView): number | null {
+  let max: number | null = null;
+  for (const s of day.sessions)
+    for (const l of s.lifts)
+      for (const st of l.steps ?? [])
+        if (st.pct != null && (max == null || st.pct > max)) max = st.pct;
+  return max;
+}
+
+/** Ink tier for a load within its day — the monochrome intensity ramp that
+ *  replaces the per-column rainbow. `top` is the day's heaviest % (the one
+ *  accent); the rest step down in ink weight by distance from it. Bodyweight
+ *  and unknown loads sit at `low`. */
+export type InkTier = "top" | "high" | "mid" | "low";
+export function loadTier(pct: number | null, dayMax: number | null): InkTier {
+  if (pct == null || dayMax == null) return pct == null ? "low" : "mid";
+  if (pct >= dayMax) return "top";
+  if (pct >= dayMax - 10) return "high";
+  if (pct >= dayMax - 20) return "mid";
+  return "low";
+}
+
+/** One bar of the day-header pulse. `h` is 0..1 (already normalised, floored so
+ *  the lightest touch still registers); `hot` marks the day's top-% work. */
+export interface PulseBar {
+  h: number;
+  hot: boolean;
+}
+
+/**
+ * The day's load shape — one bar per prescription (load × volume), the day-level
+ * echo of the plan's week waveform. Strictly semantic: every bar is a real
+ * step; delete a set and the pulse changes. Percent steps weigh load × NL; RPE
+ * work weighs effort × volume; prose entries (runs) carry no bar. When a long
+ * day would exceed `cap` bars, bars aggregate to one per lift so the pulse
+ * never turns into noise. Returns [] for days with nothing to draw.
+ */
+export function dayPulse(day: ProgramDayView, cap = 14): PulseBar[] {
+  const max = dayMaxPct(day);
+  type Raw = { v: number; hot: boolean; lift: number };
+  const raw: Raw[] = [];
+  let liftIx = 0;
+  for (const s of day.sessions)
+    for (const l of s.lifts) {
+      if (l.steps && l.steps.length) {
+        for (const st of l.steps)
+          raw.push({ v: ((st.pct ?? 40) / 100) * st.nl, hot: st.pct != null && st.pct === max, lift: liftIx });
+      } else if (l.rpe != null || l.setsReps != null) {
+        const nums = (l.setsReps ?? "").match(/\d+/g)?.map(Number) ?? [];
+        const vol = nums.length >= 2 ? nums[0]! * nums[1]! : (nums[0] ?? 1) * 10;
+        raw.push({ v: ((l.rpe ?? 7) / 10) * vol, hot: false, lift: liftIx });
+      }
+      liftIx += 1;
+    }
+  if (raw.length === 0) return [];
+  let bars: { v: number; hot: boolean }[] = raw;
+  if (raw.length > cap) {
+    const byLift = new Map<number, { v: number; hot: boolean }>();
+    for (const r of raw) {
+      const b = byLift.get(r.lift);
+      if (b) {
+        b.v += r.v;
+        b.hot = b.hot || r.hot;
+      } else byLift.set(r.lift, { v: r.v, hot: r.hot });
+    }
+    bars = [...byLift.values()];
+  }
+  const top = Math.max(...bars.map((b) => b.v));
+  if (top <= 0) return [];
+  return bars.map((b) => ({ h: 0.15 + 0.85 * (b.v / top), hot: b.hot }));
+}
+
+/** The accordion row's plain-words summary — what the day IS, before what it
+ *  contains: the first three distinct exercise names, joined with " + "
+ *  ("Press + Snatch + Front Squat"). Falls back to prose workout labels for
+ *  endurance days; null for a day with nothing to say (renderer shows the
+ *  kind label instead). */
+export function dayLeadWords(day: ProgramDayView): string | null {
+  const lifts = day.sessions.flatMap((s) => s.lifts);
+  const pick = (xs: ProgramLiftView[]) => {
+    const names: string[] = [];
+    for (const l of xs) {
+      if (/rest/i.test(l.name)) continue;
+      if (!names.some((n) => n.toLowerCase() === l.name.toLowerCase())) names.push(l.name);
+      if (names.length === 3) break;
+    }
+    return names;
+  };
+  const gym = pick(lifts.filter(isGymLift));
+  const names = gym.length ? gym : pick(lifts.filter(isProseLift));
+  return names.length ? names.join(" + ") : null;
+}
+
+/** A step's volume in words for the exercise sheet — "3 reps × 2 sets",
+ *  "4+1 reps × 4 sets", "1 rep × 1 set". */
+export function stepWords(step: ProgramStepView): string {
+  const one = !step.reps.includes("+") && step.reps === "1";
+  return `${step.reps} rep${one ? "" : "s"} × ${step.sets} set${step.sets === 1 ? "" : "s"}`;
+}
+
+/** What a target RPE means, in words — the sheet's one-line explanation of the
+ *  heat number ("2 reps in reserve"). */
+export function rpeMeaning(rpe: number): string {
+  const left = Math.max(0, Math.round(10 - rpe));
+  if (left === 0) return "nothing in reserve";
+  return `${left} rep${left === 1 ? "" : "s"} in reserve`;
 }
 
 // ============================================================
