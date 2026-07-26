@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Page — 10 Hero-Led Redesigns</title>
+<style>
+  :root{
+    --page:#0a0a09;--ink:#111110;--panel:#161614;--panel2:#1b1b18;
+    --line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.1);
+    --chalk:#f2f2ec;--ash:#9fa295;--ash2:#6b6e63;
+    --cream:#eeeee2;--on-cream:#151510;
+    --lime:#c6f84f;--on-accent:#0c0d0c;
+    --blue:#6cb6bd;--red:#e58a5c;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:44px 20px 90px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+
+  .page-head{max-width:1280px;margin:0 auto 16px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  .page-head h1{font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.035em;font-weight:800;margin-bottom:14px;text-wrap:balance}
+  .page-head h1 span{color:var(--ash)}
+  .page-head p{color:var(--ash);max-width:730px;font-size:15px;line-height:1.62}
+  .page-head p b{color:var(--chalk);font-weight:600}
+
+  .lang{max-width:1280px;margin:0 auto 52px;display:flex;flex-wrap:wrap;gap:8px}
+  .lang .tag{font:600 12px/1.5 var(--mono);color:var(--ash);background:var(--panel);border:1px solid var(--line);padding:9px 13px;border-radius:999px}
+  .lang .tag b{color:var(--chalk);font-weight:700}
+
+  .gallery{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(374px,1fr));gap:56px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:408px}
+  .cap{margin:0 6px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:10px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px}
+  .cap h2{font-size:22px;letter-spacing:-.02em;font-weight:800;margin-bottom:6px}
+  .cap p{color:var(--ash);font-size:13px;line-height:1.55}
+  .cap p b{color:var(--chalk);font-weight:600}
+
+  .phone{position:relative;width:100%;aspect-ratio:390/812;border-radius:52px;padding:11px;
+    background:linear-gradient(160deg,#26271e,#0b0c09);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.92),0 0 0 1px rgba(255,255,255,.05),inset 0 0 0 1px rgba(0,0,0,.6)}
+  .screen{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:var(--ink);display:flex;flex-direction:column}
+  .island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:98px;height:27px;border-radius:999px;background:#000;z-index:8}
+
+  /* ---- shared: the reference hero ---- */
+  .hero{position:relative;padding:62px 22px 26px;flex:none;overflow:hidden;
+    background:
+      radial-gradient(130% 110% at 88% -10%,rgba(213,219,152,.18),transparent 55%),
+      linear-gradient(165deg,#242519 0%,#161611 72%,var(--ink) 100%)}
+  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.035) 42%,rgba(255,255,255,.035) 62%,transparent 62%);pointer-events:none}
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+  .backbtn{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.09);display:grid;place-items:center;font-size:17px;color:var(--chalk)}
+  .navlab{font:600 11px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--chalk)}
+  .chip{display:inline-block;background:var(--cream);color:var(--on-cream);font:700 10.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;padding:11px 16px;border-radius:999px;margin-bottom:16px}
+  .htitle{font-size:39px;line-height:1.04;letter-spacing:-.025em;font-weight:700;text-wrap:balance}
+
+  .desc{padding:20px 22px 0;font-size:16px;line-height:1.55;color:var(--ash);flex:none}
+  .desc b{color:var(--chalk);font-weight:600}
+
+  .sechead{display:flex;justify-content:space-between;align-items:baseline;padding:22px 22px 12px;flex:none}
+  .sechead b{font-size:23px;font-weight:700;letter-spacing:-.02em}
+  .sechead s{font:600 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2);text-decoration:none}
+
+  .daycard{margin:0 16px;background:var(--panel);border-radius:22px;padding:4px 20px;flex:none}
+  .drow{padding:16px 0;border-bottom:1px solid var(--line)}
+  .drow:last-child{border-bottom:none}
+  .dt{font-size:17.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+  .toks{display:flex;gap:20px;flex-wrap:wrap}
+  .tok b{font-size:17px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .tok i{font:500 12px/1 var(--mono);font-style:normal;color:var(--ash2);margin-left:5px}
+
+  .tabbar{position:absolute;left:22px;right:22px;bottom:14px;height:58px;z-index:7;
+    background:rgba(23,23,21,.92);border:1px solid var(--line2);border-radius:999px;
+    display:flex;align-items:center;justify-content:space-around;box-shadow:0 18px 40px -12px rgba(0,0,0,.8)}
+  .tabbar span{color:var(--ash2);font-size:17px}
+  .tabbar .plus{width:46px;height:46px;border-radius:50%;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-size:22px;font-weight:700;box-shadow:0 0 0 5px rgba(198,248,79,.15)}
+  .fade{position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(transparent,var(--ink) 78%);z-index:5;pointer-events:none}
+
+  /* ===== 01 baseline ===== */
+  /* (pure shared components) */
+
+  /* ===== 02 wave ===== */
+  .c2 .chart{margin:20px 22px 0;flex:none}
+  .c2 .chart svg{display:block;width:100%}
+  .c2 .wknums{display:grid;grid-template-columns:repeat(8,1fr);margin-top:8px}
+  .c2 .wknums span{text-align:center;font:600 11px/1 var(--mono);color:var(--ash2)}
+  .c2 .wknums span.on{color:var(--chalk);font-weight:800}
+  .c2 .phrow{display:flex;justify-content:space-between;margin:14px 22px 0;flex:none}
+  .c2 .phrow i{font:600 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;font-style:normal;color:var(--ash2)}
+  .c2 .phrow i.on{color:var(--lime)}
+
+  /* ===== 03 stats ===== */
+  .c3 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;padding:22px 22px 0;flex:none}
+  .c3 .stats div{border-top:1.5px solid var(--line2);padding-top:12px}
+  .c3 .stats b{display:block;font-size:29px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .c3 .stats b i{font-style:normal;font-size:15px;color:var(--ash)}
+  .c3 .stats s{display:block;font:600 9px/1.5 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);text-decoration:none;margin-top:5px}
+
+  /* ===== 04 countdown ===== */
+  .c4 .count{padding:24px 22px 0;flex:none}
+  .c4 .count s{display:block;font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);text-decoration:none;margin-bottom:10px}
+  .c4 .bignum{font-size:76px;line-height:.9;font-weight:700;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+  .c4 .bignum i{font-style:normal;font-size:22px;letter-spacing:-.01em;color:var(--ash);margin-left:8px}
+  .c4 .track{height:5px;border-radius:3px;background:var(--panel2);margin:18px 0 14px;overflow:hidden}
+  .c4 .track i{display:block;height:100%;width:12%;border-radius:3px;background:var(--lime)}
+  .c4 .datechip{display:inline-flex;gap:8px;font:600 11.5px/1 var(--mono);color:var(--chalk);border:1px solid var(--line2);border-radius:999px;padding:11px 15px}
+  .c4 .datechip i{font-style:normal;color:var(--lime)}
+
+  /* ===== 05 cover ===== */
+  .c5 .hero{padding-top:150px;background:
+      repeating-radial-gradient(circle at 82% -30%,transparent 0 30px,rgba(238,238,226,.06) 30px 32px),
+      radial-gradient(130% 110% at 88% -10%,rgba(213,219,152,.22),transparent 60%),
+      linear-gradient(165deg,#242519 0%,#161611 78%,var(--ink) 100%)}
+
+  /* ===== 06 provenance ===== */
+  .c6 .quote{padding:22px 22px 0;flex:none}
+  .c6 .quote p{font-size:21px;line-height:1.42;letter-spacing:-.015em;font-weight:500;color:var(--chalk);text-wrap:balance}
+  .c6 .quote p b{color:var(--lime);font-weight:600}
+  .c6 .credit{font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin-top:14px}
+
+  /* ===== 07 numbers ===== */
+  .c7 .payoff{padding:24px 22px 0;flex:none}
+  .c7 .payoff s{display:block;font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);text-decoration:none;margin-bottom:10px}
+  .c7 .kg{font-size:64px;line-height:.92;font-weight:700;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+  .c7 .kg i{font-style:normal;font-size:22px;color:var(--ash);margin-left:6px}
+  .c7 .kg em{font-style:normal;font:500 12px/1 var(--mono);color:var(--ash2);margin-left:10px}
+  .c7 .maxes{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .c7 .maxes span{font:600 11.5px/1 var(--mono);padding:11px 14px;border-radius:999px;border:1px solid var(--line2);color:var(--ash2)}
+  .c7 .maxes span.set{background:var(--cream);border-color:var(--cream);color:var(--on-cream)}
+
+  /* ===== 08 phases ===== */
+  .c8 .segbar{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;padding:22px 22px 0;flex:none}
+  .c8 .segbar i{height:30px;border-radius:9px;font:700 10px/30px var(--mono);text-align:center;font-style:normal}
+  .c8 .sb{background:rgba(198,248,79,.16);color:var(--lime)}
+  .c8 .sb.on{background:var(--lime);color:var(--on-accent)}
+  .c8 .ss{background:rgba(229,138,92,.16);color:var(--red)}
+  .c8 .sh{background:rgba(108,182,189,.14);color:var(--blue)}
+  .c8 .st{background:rgba(159,162,149,.12);color:var(--ash)}
+
+  /* ===== 09 dock ===== */
+  .c9 .dock{position:absolute;left:22px;right:22px;bottom:84px;z-index:7;
+    background:var(--lime);color:var(--on-accent);border-radius:999px;padding:16px;
+    text-align:center;font:700 15px/1 var(--sans);box-shadow:0 16px 44px -10px rgba(198,248,79,.4)}
+
+  /* ===== 10 spec ===== */
+  .c10 .spec{margin:20px 22px 0;flex:none}
+  .c10 .spec div{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--line)}
+  .c10 .spec div:first-child{border-top:1.5px solid var(--line2)}
+  .c10 .spec s{font:600 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ash2);text-decoration:none}
+  .c10 .spec b{font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .c10 .spec b.lm{color:var(--lime)}
+
+  .footer-note{max-width:1280px;margin:64px auto 0;border-top:1px solid var(--line);padding-top:24px;color:var(--ash);font-size:13.5px;line-height:1.7}
+  .footer-note b{color:var(--chalk);font-weight:600}
+  .footer-note i{color:var(--lime);font-style:normal;font-weight:600}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="kicker">HYBRID — Train — Plan detail — v2</div>
+  <h1>The plan page, <span>10 variations on the gradient-hero direction</span></h1>
+  <p>Redesigned around your reference: an <b>olive gradient hero</b> under the dynamic island, a <b>cream discipline chip</b>, a big two-line title with the duration set in mono opposite the back button, a generous ash description, and soft day cards that read <b>"Day 1 – Snatch, 70% × 3"</b>. Concept 1 is that reference productionized; the other nine keep the language and swap what fills the hero's information slot.</p>
+</header>
+
+<div class="lang">
+  <span class="tag"><b>Language:</b> olive gradient + diagonal sheen</span>
+  <span class="tag"><b>Cream chip</b> for the discipline</span>
+  <span class="tag"><b>Mono micro-labels</b> right-aligned</span>
+  <span class="tag"><b>Soft cards,</b> hairlines, % × reps tokens</span>
+  <span class="tag"><b>Floating pill tab bar,</b> lime +</span>
+</div>
+
+<main class="gallery">
+
+  <!-- ========== 01 THE BASELINE ========== -->
+  <section class="concept c1">
+    <div class="cap">
+      <div class="n"><i>1</i>The Baseline</div>
+      <h2>The reference, productionized</h2>
+      <p>Your mock, mapped to real program data: chip = goal, "8 WEEKS" from <b>plan.weeks</b>, description from the plan blurb, and day cards titled by each day's <b>headline lift</b> with the %-ramp as tokens. Tapping a day expands the full AM/PM matrix — the dense table becomes progressive disclosure instead of the landing view.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="desc">A classic Soviet block: percentage-based snatch, clean &amp; jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition.</div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 3 – Back Squat</div><div class="toks"><span class="tok"><b>80%</b><i>× 5</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 02 THE WAVE ========== -->
+  <section class="concept c2">
+    <div class="cap">
+      <div class="n"><i>2</i>The Wave</div>
+      <h2>Description → the block's shape</h2>
+      <p>The paragraph gives way to the plan's real curve: <b>volume falling as intensity spikes to week 4</b>, drawn thin and quiet to stay inside the airy language. The week numbers under it are the selector — the Wk 1–8 pill row disappears. Phase words sit below in mono.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="chart">
+        <svg viewBox="0 0 346 120" aria-hidden="true">
+          <path d="M8,45 L56,36 L104,30 L152,60 L200,66 L248,72 L296,80 L338,102 L338,118 L8,118 Z" fill="rgba(238,238,226,.05)"/>
+          <path d="M8,45 L56,36 L104,30 L152,60 L200,66 L248,72 L296,80 L338,102" fill="none" stroke="rgba(238,238,226,.4)" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M8,68 L56,56 L104,46 L152,16 L200,26 L248,24 L296,32 L338,76" fill="none" stroke="#c6f84f" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="8" cy="68" r="5" fill="#c6f84f" stroke="#111110" stroke-width="2"/>
+        </svg>
+        <div class="wknums"><span class="on">1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+      </div>
+      <div class="phrow"><i class="on">Build</i><i>Spike</i><i>Hold</i><i>Taper</i></div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 03 THE COLUMNS ========== -->
+  <section class="concept c3">
+    <div class="cap">
+      <div class="n"><i>3</i>The Columns</div>
+      <h2>Editorial stat columns</h2>
+      <p>Between hero and week list, three <b>rule-topped columns</b> carry the numbers the description was burying: duration, frequency, and week-one volume in NL. Reads like a magazine infobox and scales to any discipline — the running plan's columns become distance, days, goal pace.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">% of 1RM</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="stats">
+        <div><b>8</b><s>weeks</s></div>
+        <div><b>6<i>/wk</i></b><s>sessions</s></div>
+        <div><b>656</b><s>lifts wk 1</s></div>
+      </div>
+      <div class="desc" style="font-size:14.5px;padding-top:18px">Waves volume and intensity, then tapers into a competition.</div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 04 THE COUNTDOWN ========== -->
+  <section class="concept c4">
+    <div class="cap">
+      <div class="n"><i>4</i>The Countdown</div>
+      <h2>Days-to-peak under the hero</h2>
+      <p>The description slot becomes the meet countdown: a big <b>"56 days"</b>, a thin progress track, and an editable meet-date chip. Uses the model's date-anchored peaking; the hero's right label switches to your position in the block ("WK 1 OF 8").</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">Wk 1 of 8</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="count">
+        <s>Peaks Sunday, Sep 20</s>
+        <div class="bignum">56<i>days</i></div>
+        <div class="track"><i></i></div>
+        <span class="datechip">Meet date <i>Sep 20</i> ✎</span>
+      </div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 05 THE COVER ========== -->
+  <section class="concept c5">
+    <div class="cap">
+      <div class="n"><i>5</i>The Cover</div>
+      <h2>Generative art in the gradient</h2>
+      <p>The hero grows taller and gains faint <b>concentric rings generated from the plan's % ladder</b> — each program gets its own quiet artwork inside the same olive field. Collapses to a slim bar (chip + title) on scroll so the CTA and week context stay pinned.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="desc">Percentage-based snatch, clean &amp; jerk, squat and pull work, tapering into a competition.</div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 06 THE PROVENANCE ========== -->
+  <section class="concept c6">
+    <div class="cap">
+      <div class="n"><i>6</i>The Provenance</div>
+      <h2>The philosophy as the description</h2>
+      <p>Same frame, different words: the description slot carries the program's <b>doctrine as a set quote</b> with the source credit in mono beneath. Sells historic plans on authority without leaving the language — a per-plan copy decision, not a new layout.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="quote">
+        <p>"Volume is counted in <b>lifts, not sets</b> — intensity waves up, and you peak exactly once."</p>
+        <div class="credit">Pendlay Forum — Soviet system</div>
+      </div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 07 YOUR NUMBERS ========== -->
+  <section class="concept c7">
+    <div class="cap">
+      <div class="n"><i>7</i>Your Numbers</div>
+      <h2>The maxes form becomes the payoff</h2>
+      <p>Instead of a form above the plan, the description slot shows <b>what week 4 will have you lifting</b>, computed live from your snatch max. Maxes are pills — the filled one goes cream, empty ones invite a tap. Every % token below turns into kg as maxes land.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">% of 1RM</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="payoff">
+        <s>Week 4 has you snatching</s>
+        <div class="kg">129<i>kg</i><em>92% of 140</em></div>
+        <div class="maxes">
+          <span class="set">Snatch 140</span><span>C&amp;J +</span><span>Front Sq +</span><span>Press +</span>
+        </div>
+      </div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>98 kg</b><i>× 3</i></span><span class="tok"><b>112 kg</b><i>× 3</i></span><span class="tok"><b>119 kg</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 08 THE PHASES ========== -->
+  <section class="concept c8">
+    <div class="cap">
+      <div class="n"><i>8</i>The Phases</div>
+      <h2>A phase-banded week bar</h2>
+      <p>An 8-segment bar under the hero is the week selector, <b>tinted by phase</b> — build, spike, hold, taper. The section head names the phase you're in rather than just "Week 1", so the list below always has a why. Quietest way to add block structure to the reference.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="segbar">
+        <i class="sb on">1</i><i class="sb">2</i><i class="sb">3</i><i class="ss">4</i><i class="sh">5</i><i class="sh">6</i><i class="sh">7</i><i class="st">8</i>
+      </div>
+      <div class="desc" style="font-size:14.5px;padding-top:16px">Build — volume climbs at 60–90%. <b>656 lifts</b> this week.</div>
+      <div class="sechead"><b>Week 1 – Build</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 09 THE DOCK ========== -->
+  <section class="concept c9">
+    <div class="cap">
+      <div class="n"><i>9</i>The Dock</div>
+      <h2>The missing enroll, docked</h2>
+      <p>The reference has no enroll affordance at all. This variant adds it as a <b>lime pill floating above the tab bar</b> — always on screen, never interrupting the layout. Once enrolled it swaps to "Start Day 1 →", making the page double as the plan's launcher.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">8 weeks</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="desc">A classic Soviet block: percentage-based snatch, clean &amp; jerk, squat and pull work across 8 weeks.</div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+        <div class="drow"><div class="dt">Day 2 – Clean &amp; Jerk</div><div class="toks"><span class="tok"><b>75%</b><i>× 2</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="dock">Enroll in this plan</div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+  <!-- ========== 10 THE SPEC ========== -->
+  <section class="concept c10">
+    <div class="cap">
+      <div class="n"><i>10</i>The Spec</div>
+      <h2>Facts as a hairline table</h2>
+      <p>For athletes who skim: the description becomes a <b>rule-topped spec list</b> — discipline, duration, frequency, loading, peak — mono labels left, bold values right. The most information-dense variant that still breathes like the reference.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="hero">
+        <div class="navrow"><div class="backbtn">←</div><div class="navlab">No. 001</div></div>
+        <div class="chip">Olympic Weightlifting</div>
+        <div class="htitle">Soviet 8-Week Peaking</div>
+      </div>
+      <div class="spec">
+        <div><s>Duration</s><b>8 weeks</b></div>
+        <div><s>Frequency</s><b>6 days/wk</b></div>
+        <div><s>Loading</s><b class="lm">% of 1RM</b></div>
+        <div><s>Volume</s><b>656 NL wk 1</b></div>
+        <div><s>Peak</s><b>Competition</b></div>
+      </div>
+      <div class="sechead"><b>Week 1</b><s>6 sessions</s></div>
+      <div class="daycard">
+        <div class="drow"><div class="dt">Day 1 – Snatch</div><div class="toks"><span class="tok"><b>70%</b><i>× 3</i></span><span class="tok"><b>80%</b><i>× 3</i></span><span class="tok"><b>85%</b><i>× 2</i></span></div></div>
+      </div>
+      <div class="fade"></div>
+      <div class="tabbar"><span>⌂</span><span>◎</span><div class="plus">+</div><span>▦</span><span>◯</span></div>
+    </div></div>
+  </section>
+
+</main>
+
+<footer class="footer-note">
+  <p><b>How to choose.</b> Everything shares concept 1's frame, so these compose instead of compete: <i>1</i> is the shippable baseline; add <i>9 (Dock)</i> for the missing enroll CTA, then pick ONE information slot — <i>2 (Wave)</i>, <i>4 (Countdown)</i>, <i>7 (Your Numbers)</i> or <i>10 (Spec)</i> — and optionally swap the week head for <i>8 (Phases)</i>. My pick: <b>1 + 9 + 7, with 8's phase bar</b>. Build note: day cards need a "headline lift + token ramp" summary derived in <b>planProgramView()</b> (core) so web and mobile render identically, with the full AM/PM matrix behind a tap.</p>
+</footer>
+
+</body>
+</html>

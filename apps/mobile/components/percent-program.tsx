@@ -6,7 +6,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-import { MetaLine } from "./aurora/meta";
+import PlanHero from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -88,16 +88,7 @@ export default function PercentProgram({
 
   return (
     <View>
-      <Pressable onPress={back} style={{ marginBottom: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {goal.name}</Text>
-      </Pressable>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
-      <View style={{ marginBottom: 14 }}>
-        <MetaLine
-          parts={[plan.weeks === 1 ? t("w.train.plans.week1") : `${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWk")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]}
-          textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}
-        />
-      </View>
+      <PlanHero goal={goal} plan={plan} program={program} back={back} />
 
       {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <View style={card}>

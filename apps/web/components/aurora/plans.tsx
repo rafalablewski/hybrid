@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planHeroView, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
@@ -147,12 +147,10 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
   };
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {backLink(back, goal.name)}
-      <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "6px 0 4px" }}><h2 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{plan.name}</h2>{plan.hot && chip(C("lime"), t("w.train.plans.popular"))}</div>
-      <MetaLine parts={[`${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWeek")}`, d.level]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }} />
+      <PlanHero goal={goal} plan={plan} back={back} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md, marginBottom: 16 }}>
-        <Info label={t("w.train.plans.forWho")} value={d.forWho} /><Info label={t("w.train.plans.outcome")} value={d.outcome} /><Info label={t("w.train.plans.sessionLength")} value={d.sessionLength} /><Info label={t("w.train.plans.equipment")} value={d.equipment} />
+        <Info label={t("w.train.plans.forWho")} value={d.forWho} /><Info label={t("w.train.plans.outcome")} value={d.outcome} /><Info label={t("w.train.plans.sessionLength")} value={d.sessionLength} /><Info label={t("w.train.plans.equipment")} value={d.equipment} /><Info label={t("w.train.plans.level")} value={d.level} />
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
@@ -195,6 +193,39 @@ function Info({ label, value }: { label: string; value: string }) {
   return <div style={card}><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div><p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 6, color: C("chalk") }}>{value}</p></div>;
 }
 
+/** "The Columns" plan-detail hero, shared by BOTH detail renderers (program +
+ *  classic): a gradient panel (back + loading tag, goal chip, big title) over
+ *  three rule-topped stat columns and a one-line blurb — all content from the
+ *  shared planHeroView() so web and mobile can't drift. */
+function PlanHero({ goal, plan, program, back }: { goal: GoalNode; plan: GoalPlan; program?: PlanProgram; back: () => void }) {
+  const hero = planHeroView(plan, program);
+  const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
+  return (
+    <>
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${C("line")}`, boxShadow: "var(--shadow-card)", padding: "18px 20px 24px", marginBottom: 18, background: `radial-gradient(130% 110% at 88% -10%, color-mix(in srgb, ${C("lime")} 16%, transparent), transparent 55%), linear-gradient(165deg, color-mix(in srgb, ${C("lime")} 9%, ${C("ink2")}), ${C("ink2")} 78%)` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <button onClick={back} aria-label={`← ${goal.name}`} style={{ width: 42, height: 42, borderRadius: 14, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, border: "none", color: C("chalk"), cursor: "pointer", fontSize: 17, lineHeight: "42px" }}>←</button>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".22em", textTransform: "uppercase", color: C("chalk") }}>{hero.navLabel}</span>
+        </div>
+        <span style={{ display: "inline-block", background: C("chalk"), color: C("ink"), fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.micro, letterSpacing: ".18em", textTransform: "uppercase", borderRadius: 999, padding: "10px 16px", marginBottom: 14 }}>{goal.name}</span>
+        <h2 style={{ fontWeight: 900, fontSize: "clamp(30px, 6vw, 38px)", lineHeight: 1.05, letterSpacing: "-.02em", margin: 0, textWrap: "balance" }}>{plan.name}</h2>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 14 }}>
+        {hero.stats.map((s) => (
+          <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 10 }}>
+            <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+              {s.value}{s.unit && <span style={{ fontSize: 15, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash"), marginTop: 6 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: "0 0 16px", maxWidth: "62ch" }}>{hero.blurb}</p>
+    </>
+  );
+}
+
 // Aurora rendering of a discipline-shaped program (OWL % blocks, endurance pace
 // plans, …) — same shared planProgramView as the classic web + mobile, in the
 // rounded Aurora skin.
@@ -222,9 +253,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
   };
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {backLink(back, goal.name)}
-      <h2 style={{ fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
-      <MetaLine parts={[plan.weeks === 1 ? t("w.train.plans.week1") : `${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWeek")}`, plan.tag, view.peakNote ? view.peakNote.toLowerCase() : ""]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }} />
+      <PlanHero goal={goal} plan={plan} program={program} back={back} />
 
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{view.inputsTitle}</div>

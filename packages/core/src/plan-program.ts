@@ -559,3 +559,60 @@ export function planProgramView(
     progression: program.progression,
   };
 }
+
+// ============================================================
+//  Hero — the plan page's editorial opening ("The Columns")
+// ============================================================
+
+/** One rule-topped stat column in the plan hero ("8 weeks", "6/wk sessions",
+ *  "656 lifts in wk 1"). */
+export interface PlanHeroStat {
+  value: string;
+  /** small suffix rendered tight after the value ("/wk"), or null. */
+  unit: string | null;
+  label: string;
+}
+
+/** The plan-detail hero: a gradient panel (goal chip + plan title, with the
+ *  loading tag opposite the back button) over three editorial stat columns and
+ *  a one-line blurb. Derived, never authored per-plan: the stats come from the
+ *  plan meta + the program's own week-1 volume, and the blurb is the first
+ *  sentence of the plan description — so every discipline gets the same hero
+ *  for free. Shared here so web and mobile render identical content. */
+export interface PlanHeroView {
+  /** mono label opposite the back button — the plan's loading tag ("% of 1RM"). */
+  navLabel: string;
+  /** always exactly three columns: duration, frequency, volume. */
+  stats: PlanHeroStat[];
+  /** first sentence of the plan description. */
+  blurb: string;
+}
+
+export function planHeroView(
+  plan: { weeks: number; sessions: number; tag: string; desc: string },
+  /** Omitted for classic (non-program) plans — the volume column then falls
+   *  back to total sessions, so every plan detail gets the same hero. */
+  program?: PlanProgram,
+): PlanHeroView {
+  const stats: PlanHeroStat[] = [
+    { value: String(plan.weeks), unit: null, label: plan.weeks === 1 ? "week" : "weeks" },
+    { value: String(plan.sessions), unit: "/wk", label: "sessions" },
+  ];
+  // Third column: the discipline's own volume metric for week 1 (NL for
+  // strength-percent, exercise count for hypertrophy/conditioning). Endurance —
+  // and a classic plan with no program — has no comparable count → total
+  // sessions across the plan.
+  const wk1 = program?.weeks[0];
+  const nl = wk1 ? weekNL(wk1) : 0;
+  const items = wk1 ? wk1.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0) : 0;
+  const inWk1 = program && program.weeks.length > 1 ? " in wk 1" : "";
+  if (program?.discipline === "strength-percent" && nl > 0) {
+    stats.push({ value: String(nl), unit: null, label: `lifts${inWk1}` });
+  } else if ((program?.discipline === "hypertrophy" || program?.discipline === "conditioning") && items > 0) {
+    stats.push({ value: String(items), unit: null, label: `exercises${inWk1}` });
+  } else {
+    stats.push({ value: String(plan.weeks * plan.sessions), unit: null, label: "sessions total" });
+  }
+  const dot = plan.desc.indexOf(". ");
+  return { navLabel: plan.tag, stats, blurb: dot === -1 ? plan.desc : plan.desc.slice(0, dot + 1) };
+}

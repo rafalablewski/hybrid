@@ -18,6 +18,7 @@ import {
   isProseLift,
   liftKind,
   dayContentSummary,
+  planHeroView,
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
@@ -536,5 +537,49 @@ describe("hypertrophy (bodybuilding) program — same model, sets × reps", () =
     // Exercises without a weightRef are unaffected.
     const incline = v.days[0]!.sessions[0]!.lifts[1]!;
     expect(incline.prescription).toBe("3×8 @8");
+  });
+});
+
+describe("planHeroView — the plan-detail hero (The Columns)", () => {
+  const sovietPlan = { weeks: 8, sessions: 6, tag: "% of 1RM", desc: "First sentence here. Second sentence never shows." };
+
+  it("derives the three stat columns from plan meta + week-1 NL (strength-percent)", () => {
+    const hero = planHeroView(sovietPlan, SOVIET_OWL_8WK);
+    expect(hero.navLabel).toBe("% of 1RM");
+    expect(hero.stats).toEqual([
+      { value: "8", unit: null, label: "weeks" },
+      { value: "6", unit: "/wk", label: "sessions" },
+      { value: "656", unit: null, label: "lifts in wk 1" }, // matches the program's own week-1 NL
+    ]);
+  });
+
+  it("takes only the FIRST sentence of the description as the blurb", () => {
+    expect(planHeroView(sovietPlan, SOVIET_OWL_8WK).blurb).toBe("First sentence here.");
+    // A one-sentence description passes through whole.
+    expect(planHeroView({ ...sovietPlan, desc: "Only sentence, no trailing split." }, SOVIET_OWL_8WK).blurb).toBe("Only sentence, no trailing split.");
+  });
+
+  it("counts exercises for hypertrophy, dropping 'wk 1' on a single-week plan", () => {
+    const hero = planHeroView({ weeks: 1, sessions: 6, tag: "Repeat weekly", desc: "Push, pull, legs." }, BB_PPL_6DAY);
+    expect(hero.stats[0]).toEqual({ value: "1", unit: null, label: "week" });
+    const vol = hero.stats[2]!;
+    expect(vol.label).toBe("exercises");
+    expect(Number(vol.value)).toBeGreaterThan(0);
+  });
+
+  it("falls back to total sessions for endurance (no comparable volume count)", () => {
+    const hero = planHeroView({ weeks: 9, sessions: 4, tag: "5K", desc: "Run." }, RUN_5K_BEGINNER_9WK);
+    expect(hero.stats[2]).toEqual({ value: "36", unit: null, label: "sessions total" });
+  });
+
+  it("renders for a classic plan with NO program (total-sessions fallback)", () => {
+    const hero = planHeroView({ weeks: 12, sessions: 3, tag: "Linear", desc: "Simple. Steady." });
+    expect(hero.navLabel).toBe("Linear");
+    expect(hero.stats).toEqual([
+      { value: "12", unit: null, label: "weeks" },
+      { value: "3", unit: "/wk", label: "sessions" },
+      { value: "36", unit: null, label: "sessions total" },
+    ]);
+    expect(hero.blurb).toBe("Simple.");
   });
 });
