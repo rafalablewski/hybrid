@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import SwipeRow from "@/components/swipe-row";
+import Sheet from "@/components/aurora/sheet";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "../lib/use-dialog";
@@ -153,6 +154,8 @@ export default function WorkoutBlocks({
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
   // block (only one set is active per block, so keying by block uid is enough).
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
+  // LIVE: which exercise has its detail sheet up (per-set bar speed + summary).
+  const [sheetUid, setSheetUid] = useState<string | null>(null);
   // The Olympic-sport quick-add picker (manual sport-session logging — no gear
   // needed). Picking a sport adds a cardio block named after it.
   const [sportPicker, setSportPicker] = useState(false);
@@ -400,7 +403,7 @@ export default function WorkoutBlocks({
               {b.kind}
             </Mono>
             {ssLabels[idx] && (
-              <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 33%, transparent)`, borderRadius: 6, padding: "1px 6px" }}>
+              <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "1px 6px" }}>
                 ⛓ {ssLabels[idx]}
               </span>
             )}
@@ -424,7 +427,7 @@ export default function WorkoutBlocks({
                 title={t("w.train.blocks.supersetTitle")}
                 style={
                   isSupersettedWithPrev(blocks, idx)
-                    ? { ...blockBtn(LIME), padding: "6px 10px" }
+                    ? { ...blockBtn(CHALK), padding: "6px 10px" }
                     : { ...blockBtn(ASH), padding: "6px 10px" }
                 }
               >
@@ -487,7 +490,6 @@ export default function WorkoutBlocks({
                   const numInput = { ...disp, fontSize: 46, fontWeight: 800, letterSpacing: "-.035em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: "2.2ch", textAlign: "center" } as const;
                   const numField = { display: "inline-flex", alignItems: "baseline", gap: 4, cursor: "text", padding: "2px 4px", borderRadius: 12 } as const;
                   const unitLbl = { ...mono, fontSize: fs.body, color: ASH, cursor: "text", userSelect: "none" } as const;
-                  const detailInput = { ...input, background: "transparent", border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)` };
                   const grip = (i: number) => (
                     <span draggable={b.sets.length > 1} onDragStart={() => setDragSet({ uid: b.uid, i })} onDragEnd={() => setDragSet(null)} title={t("w.train.blocks.dragToReorder")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), cursor: b.sets.length > 1 ? "grab" : "default", userSelect: "none", lineHeight: 1 }}>⠿</span>
                   );
@@ -500,18 +502,22 @@ export default function WorkoutBlocks({
                     const typeAccent = st === "warmup" ? AMBER : st === "cooldown" ? BLUE : st === "drop" ? LIME : null;
                     if (focus === "active") {
                       return (
-                        <SwipeRow key={i} radius={22} margin="8px 0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
+                        <SwipeRow key={i} radius={14} margin="4px 0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
                         <div
                           onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                           onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                          style={{ borderRadius: 22, padding: "14px 16px 16px", background: `${LIME}0f`, border: `1px solid ${LIME}38`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -22px rgba(0,0,0,.8)", opacity: dragging ? 0.5 : 1 }}
+                          // FLAT active section — no inner card (the exercise card
+                          // is the one surface): the set you're on reads as focus
+                          // by SCALE, not by a second border/tint. De-greened: the
+                          // only lime left in the loop is the Log CTA itself.
+                          style={{ padding: "12px 2px", opacity: dragging ? 0.5 : 1 }}
                         >
                           {/* Label row — grip on the left (matching the recede
                               rows), kicker, planned-rest hint, then the type badge
                               on the right (swipe left to delete). */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                             {grip(i)}
-                            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(LIME) }}>
+                            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
                             </span>
                             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
@@ -560,27 +566,35 @@ export default function WorkoutBlocks({
                               </>
                             )}
                           </div>
-                          {/* RPE tray — reveals under the numbers only when the chip
-                              is tapped; the RIR ⇄ swap sits in the caption. */}
+                          {/* RPE — ONE TAP, not another input row: tapping the
+                              chip reveals a single row of value pills (the core
+                              RPE scale, RIR-labelled when swapped); tapping a
+                              pill sets the number and closes. Tap the picked
+                              value again to clear it. */}
                           {detailed && rpeOpenUid === b.uid && (
-                            <div style={{ marginTop: 12 }}>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                                <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: txt(ASH) }}>{t("w.train.blocks.whatIsRpe")}</span>
-                                <button onClick={() => setLoggerPref("rpeAsRir", !rirMode)} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}>{rirMode ? "rir" : "rpe"} ⇄</button>
-                              </div>
-                              <input className="ghost-ph" value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} inputMode="numeric" autoFocus style={detailInput} />
-                            </div>
-                          )}
-                          {velocity && (
-                            <div style={{ marginTop: 12 }}>
-                              <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, display: "block", marginBottom: 4 }}>m/s</span>
-                              <input className="ghost-ph" value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={detailInput} />
+                            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                              <button onClick={() => setLoggerPref("rpeAsRir", !rirMode)} title={t("w.train.blocks.whatIsRpe")} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer", flex: "none" }}>{rirMode ? "rir" : "rpe"} ⇄</button>
+                              {[...RPE_SCALE].reverse().map((step) => {
+                                const val = String(step.rpe);
+                                const on = (s.rpe ?? "") === val;
+                                return (
+                                  <button
+                                    key={val}
+                                    onClick={() => { updateSet(b.uid, i, "rpe", on ? "" : val); setRpeOpenUid(null); }}
+                                    aria-pressed={on}
+                                    style={{ ...mono, flex: 1, fontSize: fs.caption, fontWeight: on ? 700 : 400, color: on ? CHALK : txt(ASH), background: on ? `${CHALK}1f` : INK2, border: `1px solid ${on ? CHALK : LINE}`, borderRadius: 999, padding: "8px 0", cursor: "pointer" }}
+                                  >
+                                    {rirMode ? step.rir : val}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                           {/* Primary action — a proper, sized Log button (the old
                               floating + is retired). Full-width, banks the set and
-                              starts the rest timer. */}
-                          <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 14, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "14px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, border: "none", cursor: "pointer", boxShadow: `0 12px 28px -12px color-mix(in srgb, ${LIME} 55%, transparent), inset 0 1px 0 rgba(255,255,255,.4)` }}>
+                              starts the rest timer. The screen's one lime fill in
+                              the logging loop. */}
+                          <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 14, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "14px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, border: "none", cursor: "pointer", boxShadow: "0 10px 24px -14px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35)" }}>
                             <span style={{ fontSize: 17, lineHeight: 0, fontWeight: 900 }}>✓</span> {t("workout.logSet")}
                           </button>
                         </div>
@@ -591,11 +605,13 @@ export default function WorkoutBlocks({
                     const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
                     const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
                     return (
-                      <SwipeRow key={i} radius={14} margin="6px 0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
+                      <SwipeRow key={i} radius={10} margin="0" label={t("common.delete")} onDelete={() => removeSet(b.uid, i)}>
                       <div
                         onDragOver={isDrop ? (e) => e.preventDefault() : undefined}
                         onDrop={isDrop ? (e) => { e.preventDefault(); moveSetTo(b.uid, dragSet!.i, i); setDragSet(null); } : undefined}
-                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, background: `color-mix(in srgb, ${INK2} 55%, transparent)`, border: `1px solid color-mix(in srgb, ${LINE} 70%, transparent)`, opacity: dragging ? 0.4 : focus === "done" ? 0.62 : 0.72 }}
+                        // Quiet ledger row — a plain hairline-separated line, not
+                        // a boxed mini-card (no card-in-card).
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 2px", borderBottom: `1px solid color-mix(in srgb, ${LINE} 60%, transparent)`, opacity: dragging ? 0.4 : focus === "done" ? 0.62 : 0.72 }}
                       >
                         {grip(i)}
                         <span style={{ ...mono, width: 20, fontSize: fs.caption, color: typeAccent ? txt(typeAccent) : ASH }}>{setTypeBadge(s, i)}</span>
@@ -802,21 +818,23 @@ export default function WorkoutBlocks({
                     is queued below, it wears the prominent lime tint (it's the next
                     move); otherwise a quiet card so the queue keeps the focus. */}
                 {(() => {
+                  // "Next move" emphasis is a brighter hairline + bold text — not
+                  // another lime fill (de-greened; the Log CTA keeps lime).
                   const ghost = live && addSetIsNext(b.sets as { done?: boolean }[]);
                   return (
-                    <div style={{ flex: 1, display: "flex", alignItems: "stretch", borderRadius: 16, overflow: "hidden", background: ghost ? `${LIME}14` : INK2, border: `1px solid ${ghost ? `${LIME}55` : LINE}` }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "stretch", borderRadius: 16, overflow: "hidden", background: INK2, border: `1px solid ${ghost ? `${CHALK}59` : LINE}` }}>
                       <button
                         onClick={() => addSet(b.uid)}
-                        style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, fontWeight: 700, fontSize: fs.caption, color: ghost ? txt(LIME) : txt(CHALK), background: "transparent", border: "none", padding: "12px 14px", cursor: "pointer" }}
+                        style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, fontWeight: 700, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: "none", padding: "12px 14px", cursor: "pointer" }}
                       >
-                        <span style={{ width: 20, height: 20, borderRadius: 999, border: `1.5px solid ${ghost ? LIME : ASH}`, color: ghost ? txt(LIME) : txt(ASH), display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15, lineHeight: 0 }}>+</span>
+                        <span style={{ width: 20, height: 20, borderRadius: 999, border: `1.5px solid ${ghost ? CHALK : ASH}`, color: ghost ? txt(CHALK) : txt(ASH), display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15, lineHeight: 0 }}>+</span>
                         {t("w.train.blocks.addSet").replace(/^\+\s*/, "")}
                       </button>
                       <button
                         onClick={() => { setPlanUid((u) => (u === b.uid ? null : b.uid)); setSpecialUid(null); }}
                         title={t("w.train.blocks.presetsTitle")}
                         aria-label={t("w.train.blocks.presetsTitle")}
-                        style={{ ...mono, padding: "0 13px", color: txt(ASH), background: "transparent", border: "none", borderLeft: `1px solid ${ghost ? `${LIME}33` : LINE}`, cursor: "pointer", fontSize: fs.body, letterSpacing: "1px" }}
+                        style={{ ...mono, padding: "0 13px", color: txt(ASH), background: "transparent", border: "none", borderLeft: `1px solid ${ghost ? `${CHALK}40` : LINE}`, cursor: "pointer", fontSize: fs.body, letterSpacing: "1px" }}
                       >
                         ⋯
                       </button>
@@ -853,11 +871,11 @@ export default function WorkoutBlocks({
                           <button
                             key={p.k}
                             onClick={() => { applyPreset(b.uid, p.sets, p.reps); setPlanUid(null); }}
-                            style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: pi === 0 ? `${LIME}14` : INK2, border: `1px solid ${pi === 0 ? `${LIME}4d` : LINE}`, borderRadius: 20, padding: "16px 15px", cursor: "pointer" }}
+                            style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: INK2, border: `1px solid ${pi === 0 ? `${CHALK}4d` : LINE}`, borderRadius: 20, padding: "16px 15px", cursor: "pointer" }}
                           >
                             <div style={{ ...disp, fontSize: 28, fontWeight: 900, letterSpacing: "-.035em", color: CHALK, lineHeight: 1 }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 19 }}>×</span>{p.reps}</div>
                             <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 8 }}>{t(`w.train.blocks.${p.k}`)}</div>
-                            <div style={{ ...mono, fontSize: fs.nano, color: txt(LIME), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</div>
+                            <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</div>
                           </button>
                         ))}
                       </div>
@@ -913,6 +931,28 @@ export default function WorkoutBlocks({
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
                     {pl.perSide.length ? `${t("w.train.blocks.perSide")} ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" – ")}${pl.remainder ? " ≈" : ""}` : `${t("w.train.blocks.barOnly")} (${pl.bar} ${units})`}
                   </Mono>
+                );
+              })()}
+              {/* Live exercise summary — sets banked, tonnage, top set (and mean
+                  bar speed once entered). Click to open the exercise sheet with
+                  per-set m/s entry. */}
+              {live && (() => {
+                const ls = exerciseLiveStats(b.name, b.sets as (StrengthSet & { done?: boolean })[], bodyweightKg);
+                const parts = [
+                  `${ls.setsDone}/${ls.setsTotal} ${t("workout.setsWord")}`,
+                  ...(ls.volumeKg > 0 ? [fmtTonnage(ls.volumeKg, units)] : []),
+                  ...(ls.topKg > 0 ? [`${t("workout.topWord")} ${displayLoad(String(ls.topKg), units)} ${units}${ls.topReps ? ` × ${ls.topReps}` : ""}`] : []),
+                  ...(ls.meanVel != null ? [`${t("workout.meanWord")} ${ls.meanVel} m/s`] : []),
+                ];
+                return (
+                  <button
+                    onClick={() => setSheetUid(b.uid)}
+                    aria-label={t("workout.exDetail")}
+                    style={{ ...mono, width: "100%", display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "11px 2px 0", borderTop: `1px solid color-mix(in srgb, ${LINE} 70%, transparent)`, borderLeft: "none", borderRight: "none", borderBottom: "none", background: "none", cursor: "pointer", textAlign: "left" }}
+                  >
+                    <span style={{ flex: 1, fontSize: fs.caption, color: txt(ASH), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{parts.join(" – ")}</span>
+                    <span style={{ ...disp, fontSize: fs.body, fontWeight: 600, color: txt(ASH), flex: "none" }}>›</span>
+                  </button>
                 );
               })()}
             </>
@@ -998,6 +1038,24 @@ export default function WorkoutBlocks({
       </datalist>
 
       {rpeHelp && <RpeHelp onClose={() => setRpeHelp(false)} />}
+
+      {/* LIVE: exercise detail sheet — per-set pills, live totals, and per-set
+          bar-speed (m/s) entry with a set-by-set velocity strip (manual VBT;
+          live sensor capture is the blocked vbt-capture capability). */}
+      {live && (() => {
+        const sb = blocks.find((x) => x.uid === sheetUid);
+        const strength = sb && sb.kind === "strength" ? sb : null;
+        return (
+          <ExerciseDetailSheet
+            b={strength}
+            last={strength ? lastByLift?.get(strength.name) : undefined}
+            units={units}
+            bodyweightKg={bodyweightKg}
+            onVel={(u, i, v) => updateSet(u, i, "vel", v)}
+            onClose={() => setSheetUid(null)}
+          />
+        );
+      })()}
 
       {/* Searchable exercise picker — the sport-picker dropdown pattern, grouped
           by muscle/pattern, plus sports and a free-typed custom entry. */}
@@ -1269,6 +1327,127 @@ function SignalMetrics({ b, units, bodyweightKg }: { b: EditableBlock; units: We
             cell(t("w.train.signal.estTime"), `${minutes} min`, VIOLET),
           ];
   return <div style={{ display: "flex", gap: 20, flexWrap: "wrap", margin: "0 2px 12px" }}>{cells}</div>;
+}
+
+/**
+ * Exercise detail sheet — opened by clicking an exercise's live summary bar.
+ * Set pills to pick a set, the exercise's live totals (volume, reps of the
+ * picked set, mean bar speed), a per-set m/s input and a set-by-set velocity
+ * strip — the manual-VBT twin of a bar-sensor app's set screen. Twin of the
+ * mobile logger's ExerciseSheet.
+ */
+function ExerciseDetailSheet({
+  b,
+  last,
+  units,
+  bodyweightKg,
+  onVel,
+  onClose,
+}: {
+  b: Extract<EditableBlock, { kind: "strength" }> | null;
+  last?: string;
+  units: WeightUnit;
+  bodyweightKg?: number | null;
+  onVel: (uid: string, i: number, v: string) => void;
+  onClose: () => void;
+}) {
+  const { t } = useLang();
+  const [sel, setSel] = useState(0);
+  // Re-anchor the selection to the active (first un-banked) set whenever the
+  // sheet opens for a different exercise.
+  const anchored = useRef<string | null>(null);
+  useEffect(() => {
+    if (!b) {
+      anchored.current = null;
+      return;
+    }
+    if (anchored.current === b.uid) return;
+    anchored.current = b.uid;
+    const sets = b.sets as (StrengthSet & { done?: boolean })[];
+    const active = sets.findIndex((s) => !s.done);
+    setSel(active >= 0 ? active : Math.max(0, sets.length - 1));
+  }, [b]);
+
+  const body = b
+    ? (() => {
+        const sets = b.sets as (StrengthSet & { done?: boolean })[];
+        const ls = exerciseLiveStats(b.name, sets, bodyweightKg);
+        const i = Math.min(sel, sets.length - 1);
+        const s = sets[i]!;
+        const known = ls.vels.filter((v): v is number => v != null);
+        const maxVel = known.length ? Math.max(...known) : 0;
+        const stat = (label: string, value: string) => (
+          <div key={label} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: "12px 4px", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
+            <div style={{ ...disp, fontSize: fs.title, fontWeight: 800, color: CHALK }}>{value}</div>
+            <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".1em", textTransform: "uppercase", marginTop: 3 }}>{label}</div>
+          </div>
+        );
+        return (
+          <div style={{ marginTop: 16 }}>
+            {/* Set pills — pick the set whose bar speed you're entering. */}
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+              {sets.map((st, j) => {
+                const on = j === i;
+                return (
+                  <button key={j} onClick={() => setSel(j)} aria-pressed={on} style={{ ...disp, flex: "none", display: "inline-flex", alignItems: "center", gap: 6, fontSize: fs.caption, fontWeight: 600, color: on ? CHALK : txt(ASH), background: on ? `${CHALK}1a` : "var(--color-ink)", border: `1px solid ${on ? CHALK : LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
+                    {`${t("workout.setWord")} ${j + 1}`}
+                    {st.done && <span style={{ color: txt(LIME), fontWeight: 800 }}>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Live totals — volume banked, the picked set, mean bar speed. */}
+            <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
+              {stat(t("workout.totalVolume"), fmtTonnage(ls.volumeKg, units))}
+              {stat(t("w.train.blocks.reps"), s.reps.trim() || "–")}
+              {stat("m/s", ls.meanVel != null ? String(ls.meanVel) : "–")}
+            </div>
+
+            {/* Bar speed for the picked set. */}
+            <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".1em", textTransform: "uppercase", margin: "16px 0 6px" }}>
+              {`${t("workout.barSpeed")} (m/s) — ${t("workout.setWord")} ${i + 1}`}
+            </div>
+            <input
+              className="ghost-ph"
+              value={s.vel ?? ""}
+              onChange={(e) => onVel(b.uid, i, e.target.value)}
+              placeholder="0.45"
+              inputMode="decimal"
+              style={{ ...mono, width: "100%", boxSizing: "border-box", fontSize: fs.subtitle, color: CHALK, textAlign: "center", background: "var(--color-ink)", border: `1px solid ${LINE}`, borderRadius: 12, padding: "11px 0", outline: "none" }}
+            />
+
+            {/* Set-by-set velocity strip — click a bar to jump to that set. */}
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginTop: 16, height: 72 }}>
+              {sets.map((st, j) => {
+                const v = ls.vels[j];
+                const h = v != null && maxVel > 0 ? Math.max(8, Math.round((v / maxVel) * 64)) : 3;
+                return (
+                  <button key={j} onClick={() => setSel(j)} aria-label={`${t("workout.setWord")} ${j + 1}`} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                    <div style={{ width: "100%", height: h, borderRadius: 4, background: j === i ? LIME : v != null ? `${CHALK}8c` : `color-mix(in srgb, ${LINE} 90%, transparent)` }} />
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
+              {sets.map((_, j) => (
+                <span key={j} style={{ ...mono, flex: 1, textAlign: "center", fontSize: fs.nano, color: j === i ? CHALK : txt(ASH) }}>
+                  {ls.vels[j] != null ? String(ls.vels[j]) : "–"}
+                </span>
+              ))}
+            </div>
+
+            <div style={{ ...mono, fontSize: fs.micro, color: txt(ASH), lineHeight: 1.5, marginTop: 14 }}>{t("workout.velHint")}</div>
+          </div>
+        );
+      })()
+    : null;
+
+  return (
+    <Sheet open={!!b} onClose={onClose} title={b?.name} sub={last ? `${t("workout.lastTime")} – ${last}` : undefined} label={t("workout.exDetail")}>
+      {body}
+    </Sheet>
+  );
 }
 
 // The RPE cheatsheet — the same scale (from @hybrid/core) the mobile logger shows.

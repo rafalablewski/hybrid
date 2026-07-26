@@ -572,7 +572,7 @@ export default function AuroraLogger({
                 : `✦ ${t("w.train.logger.startSession")}`}
           </button>
           {routines.map((r) => (
-            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" – ")}>
+            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("chalk")} title={r.blocks.map((b) => b.name).join(" – ")}>
               {r.name}
             </button>
           ))}
@@ -591,6 +591,7 @@ export default function AuroraLogger({
         plateCalc={prefs.plateCalc}
         live
         carryOver={prefs.carryOver}
+        bodyweightKg={bodyweightKg}
         lastByLift={lastByLift}
         restSec={prefs.restTimer ? prefs.restSeconds : null}
         onToggleDone={toggleDone}
