@@ -11,6 +11,7 @@ import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
+import PlanHero from "../plan-hero";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
@@ -169,14 +170,13 @@ function Detail({ goal, plan, back, onEnrolled, leaveSection }: { goal: GoalNode
   };
   return (
     <AuroraScreen>
-      <Back onPress={back} label={goal.name} />
-      <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{plan.name}</AHeading>
-      <View style={{ marginBottom: 14, marginTop: 4 }}><MetaLine parts={[`${plan.weeks} ${t("w.train.plans.weeks")}`, `${plan.sessions}${t("w.train.plans.perWk")}`, d.level]} textStyle={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }} /></View>
+      <PlanHero goal={goal} plan={plan} back={back} />
 
       <Field label={t("w.train.plans.forWho")} value={d.forWho} />
       <Field label={t("w.train.plans.outcome")} value={d.outcome} />
       <Field label={t("w.train.plans.sessionLength")} value={d.sessionLength} />
       <Field label={t("w.train.plans.equipment")} value={d.equipment} />
+      <Field label={t("w.train.plans.level")} value={d.level} />
 
       <ACard style={{ marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>

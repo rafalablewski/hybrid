@@ -571,4 +571,15 @@ describe("planHeroView — the plan-detail hero (The Columns)", () => {
     const hero = planHeroView({ weeks: 9, sessions: 4, tag: "5K", desc: "Run." }, RUN_5K_BEGINNER_9WK);
     expect(hero.stats[2]).toEqual({ value: "36", unit: null, label: "sessions total" });
   });
+
+  it("renders for a classic plan with NO program (total-sessions fallback)", () => {
+    const hero = planHeroView({ weeks: 12, sessions: 3, tag: "Linear", desc: "Simple. Steady." });
+    expect(hero.navLabel).toBe("Linear");
+    expect(hero.stats).toEqual([
+      { value: "12", unit: null, label: "weeks" },
+      { value: "3", unit: "/wk", label: "sessions" },
+      { value: "36", unit: null, label: "sessions total" },
+    ]);
+    expect(hero.blurb).toBe("Simple.");
+  });
 });

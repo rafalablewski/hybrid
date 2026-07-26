@@ -590,22 +590,25 @@ export interface PlanHeroView {
 
 export function planHeroView(
   plan: { weeks: number; sessions: number; tag: string; desc: string },
-  program: PlanProgram,
+  /** Omitted for classic (non-program) plans — the volume column then falls
+   *  back to total sessions, so every plan detail gets the same hero. */
+  program?: PlanProgram,
 ): PlanHeroView {
   const stats: PlanHeroStat[] = [
     { value: String(plan.weeks), unit: null, label: plan.weeks === 1 ? "week" : "weeks" },
     { value: String(plan.sessions), unit: "/wk", label: "sessions" },
   ];
   // Third column: the discipline's own volume metric for week 1 (NL for
-  // strength-percent, exercise count for hypertrophy/conditioning). Endurance
-  // has no comparable count → total sessions across the plan.
-  const wk1 = program.weeks[0];
+  // strength-percent, exercise count for hypertrophy/conditioning). Endurance —
+  // and a classic plan with no program — has no comparable count → total
+  // sessions across the plan.
+  const wk1 = program?.weeks[0];
   const nl = wk1 ? weekNL(wk1) : 0;
   const items = wk1 ? wk1.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0) : 0;
-  const inWk1 = program.weeks.length > 1 ? " in wk 1" : "";
-  if (program.discipline === "strength-percent" && nl > 0) {
+  const inWk1 = program && program.weeks.length > 1 ? " in wk 1" : "";
+  if (program?.discipline === "strength-percent" && nl > 0) {
     stats.push({ value: String(nl), unit: null, label: `lifts${inWk1}` });
-  } else if ((program.discipline === "hypertrophy" || program.discipline === "conditioning") && items > 0) {
+  } else if ((program?.discipline === "hypertrophy" || program?.discipline === "conditioning") && items > 0) {
     stats.push({ value: String(items), unit: null, label: `exercises${inWk1}` });
   } else {
     stats.push({ value: String(plan.weeks * plan.sessions), unit: null, label: "sessions total" });
