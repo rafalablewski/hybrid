@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AField, AHeading, ABack, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
-import { MetaLine } from "./meta";
+import { AuroraScreen, ACard, AField, AHeading, ABack, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
-import PlanCoverScreen, { PlanDockPill } from "../plan-hero";
+import PlanCoverScreen, { CoverScreen, PlanDockPill } from "../plan-hero";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
@@ -129,29 +127,50 @@ function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
   );
 }
 
+/** The category screen — the plan cover recipe one level up (idea 02, "the
+ *  goal hero"): the goal opens with the SAME full-bleed collapsing cover as
+ *  the plan detail (goalCoverView: accent wash, ghost glyph, category chip,
+ *  plan-count label) and the plans beneath it, so every depth of the Plans
+ *  stack is one physical object at a different compression. NO aggregate hem
+ *  on the cover — with a full category those ranges mush into noise; instead
+ *  EACH plan card carries its own hem (planHeroView: weeks / sessions / the
+ *  discipline's volume), so plans differentiate card-by-card. */
 function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const cover = goalCoverView(goal);
   return (
-    <AuroraScreen>
-      <Back onPress={back} label={t("w.train.plans.allGoals")} />
-      <AHeading style={{ fontSize: fs.display, marginTop: 8 }}>{goal.icon} {goal.name}</AHeading>
-      {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
-      <View style={{ marginTop: 12 }}>
-        {goal.plans.map((p) => (
-          <Pressable key={p.id} onPress={() => pick(p.id)}>
-            <ACard style={{ marginBottom: 12 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{p.name}</Text>
-                {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
-              </View>
-              <View style={{ marginVertical: 6 }}><MetaLine parts={[`${p.weeks} ${t("w.train.plans.weeks")}`, `${p.sessions}${t("w.train.plans.perWk")}`, p.tag]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
-            </ACard>
-          </Pressable>
-        ))}
+    <CoverScreen cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} backLabel={t("w.train.plans.allGoals")} back={back}>
+      <View style={{ marginTop: 10 }}>
+        {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
+        {goal.plans.map((p) => {
+          const hero = planHeroView(p, programFor(p.id) ?? undefined);
+          return (
+            <Pressable key={p.id} onPress={() => pick(p.id)}>
+              <ACard style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{p.tag}</Text>
+                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
+                <View style={{ flexDirection: "row", gap: 14, marginTop: 12, marginBottom: 10 }}>
+                  {hero.stats.map((s) => (
+                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.4, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                        {s.value}
+                        {!!s.unit && <Text style={{ fontSize: 12, color: C.ash }}>{s.unit}</Text>}
+                      </Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
+              </ACard>
+            </Pressable>
+          );
+        })}
       </View>
-    </AuroraScreen>
+    </CoverScreen>
   );
 }
 
@@ -227,15 +246,5 @@ function Field({ label, value }: { label: string; value: string }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{value}</Text>
     </ACard>
-  );
-}
-
-function Back({ onPress, label }: { onPress: () => void; label: string }) {
-  const { palette: C } = useTheme();
-  return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-      <AuroraIcon name="back" size={18} color={C.ash} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{label}</Text>
-    </Pressable>
   );
 }

@@ -66,6 +66,29 @@ const BAR_CONTENT = 56;
 /** Cover content height below the status-bar inset when fully expanded. */
 const COVER_CONTENT = 252;
 
+/** What the scaffold needs to draw a cover — a structural subset of core's
+ *  PlanCoverView, so the GOAL-level cover (goalCoverView) rides the exact same
+ *  scaffold with its plan-count label in the duration slot. */
+export interface CoverSpec {
+  accent: string;
+  glyph: string;
+  chip: string;
+  /** top-right mono label — "8 WEEKS" on a plan, "1 PLAN" on a goal. */
+  duration: string;
+  title: string;
+  metaParts: (string | null)[];
+  /** rule-topped hem columns; [] skips the hem entirely. */
+  stats: { value: string; unit: string | null; label: string }[];
+  blurb: string;
+  /** Same material, different object. "plan" (default) is the POSTER — wash
+   *  from the top-RIGHT corner, modest ghost glyph, mono meta under the title,
+   *  blurb below on the ink. "goal" is the EMBLEM — the discipline's mark
+   *  blown up as the cover art (bigger, brighter, deeper parallax), the wash
+   *  mirrored to the top-LEFT so the two levels never read as the same
+   *  cover, and the blurb ON the cover face instead of the meta line. */
+  variant?: "plan" | "goal";
+}
+
 /**
  * PlanCoverScreen — the plan detail's full-bleed collapsing cover scaffold,
  * shared by BOTH mobile detail renderers (discipline-shaped program + classic).
@@ -103,9 +126,36 @@ export default function PlanCoverScreen({
   dock?: ReactNode;
   children?: ReactNode;
 }) {
+  return (
+    <CoverScreen cover={planCoverView(goal, plan, program)} backLabel={goal.name} back={back} top={top} rail={rail} dock={dock}>
+      {children}
+    </CoverScreen>
+  );
+}
+
+/** The generic scaffold behind PlanCoverScreen — same collapse physics, snap
+ *  detent and dock for ANY CoverSpec (plan detail and the goal/category hero). */
+export function CoverScreen({
+  cover,
+  backLabel,
+  back,
+  top,
+  rail,
+  dock,
+  children,
+}: {
+  cover: CoverSpec;
+  /** what the ← button announces ("← Olympic Weightlifting" / "← All goals"). */
+  backLabel: string;
+  back: () => void;
+  top?: ReactNode;
+  rail?: ReactNode;
+  dock?: ReactNode;
+  children?: ReactNode;
+}) {
   const { palette: C, scheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const cover = planCoverView(goal, plan, program);
+  const emblem = cover.variant === "goal";
   const heroH = insets.top + COVER_CONTENT;
   const barH = insets.top + BAR_CONTENT;
   const delta = heroH - barH;
@@ -145,7 +195,7 @@ export default function PlanCoverScreen({
     scrollY.interpolate({ inputRange: input, outputRange: output, extrapolate: "clamp" });
   const heroShift = clamp([0, delta], [0, -delta]);
   const counter = clamp([0, delta], [0, delta]);
-  const glyphCounter = clamp([0, delta], [0, delta * 0.55]);
+  const glyphCounter = clamp([0, delta], [0, delta * (emblem ? 0.66 : 0.55)]);
   const glyphFade = clamp([0, delta], [1, 0.4]);
   const scrimFade = clamp([0, delta], [1, 0]);
   const bigFade = clamp([0, delta * 0.5], [1, 0]);
@@ -187,18 +237,20 @@ export default function PlanCoverScreen({
             {/* the hem — editorial rule-topped stat columns directly on the ink,
                 the first content to slide under the pinned cover. */}
             <View style={{ paddingHorizontal: 16 }}>
-              <View style={{ flexDirection: "row", gap: 18, marginTop: 18, marginBottom: 14 }}>
-                {cover.stats.map((s) => (
-                  <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
-                      {s.value}
-                      {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
-                    </Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginBottom: 4 }}>{cover.blurb}</Text>
+              {cover.stats.length > 0 && (
+                <View style={{ flexDirection: "row", gap: 18, marginTop: 18, marginBottom: 14 }}>
+                  {cover.stats.map((s) => (
+                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                        {s.value}
+                        {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
+                      </Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {!emblem && !!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
               {top}
             </View>
 
@@ -222,16 +274,19 @@ export default function PlanCoverScreen({
             pointerEvents="box-none"
             style={{ position: "absolute", top: 0, left: 0, right: 0, height: heroH, zIndex: 20, overflow: "hidden", backgroundColor: COVER_INK, transform: [{ translateY: heroShift }] }}
           >
-            {/* duotone wash bleeding from the top corner (Explore recipe) */}
-            <LinearGradient colors={[`${accent}c8`, `${accent}4d`, `${accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+            {/* duotone wash bleeding from the top corner (Explore recipe) —
+                mirrored to the LEFT on the goal emblem so the light source
+                itself tells you which level you're on */}
+            <LinearGradient colors={[`${accent}c8`, `${accent}4d`, `${accent}0d`]} start={emblem ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }} end={emblem ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
             {/* bottom scrim for title legibility — retired as the title leaves */}
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: scrimFade }]}>
               <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
             </Animated.View>
-            {/* ghost glyph — the cover art; parallax drift against the frame */}
+            {/* ghost glyph — the cover art; parallax drift against the frame.
+                On the goal emblem it IS the subject: bigger, brighter, deeper. */}
             <Animated.Text
               pointerEvents="none"
-              style={{ position: "absolute", top: insets.top - 26, right: -10, fontSize: 150, lineHeight: 158, color: "rgba(255,255,255,0.07)", opacity: glyphFade, transform: [{ translateY: glyphCounter }] }}
+              style={{ position: "absolute", top: insets.top - (emblem ? 4 : 26), right: emblem ? -30 : -10, fontSize: emblem ? 214 : 150, lineHeight: emblem ? 222 : 158, color: `rgba(255,255,255,${emblem ? 0.09 : 0.07})`, opacity: glyphFade, transform: [{ translateY: glyphCounter }] }}
             >
               {cover.glyph}
             </Animated.Text>
@@ -241,7 +296,7 @@ export default function PlanCoverScreen({
               <Pressable
                 onPress={back}
                 accessibilityRole="button"
-                accessibilityLabel={`← ${goal.name}`}
+                accessibilityLabel={`← ${backLabel}`}
                 hitSlop={8}
                 style={{ width: 38, height: 38, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" }}
               >
@@ -264,9 +319,13 @@ export default function PlanCoverScreen({
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
-              <View style={{ marginTop: 9 }}>
-                <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
-              </View>
+              {emblem ? (
+                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
+              ) : (
+                <View style={{ marginTop: 9 }}>
+                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
+                </View>
+              )}
             </Animated.View>
 
             {/* hairline — the collapsed bar's bottom edge */}
