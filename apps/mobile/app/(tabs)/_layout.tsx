@@ -23,12 +23,13 @@ export default function TabsLayout() {
   const { session, ready } = useSession();
   const { t } = useLang();
   const { palette } = useTheme();
-  // Cockpit is a real tab only for athlete+ (the freemium upgrade is sold on the
-  // single Unlock Full page, not as a locked tab). Casual keeps a clean bar.
+  // Performance (the merged ex-Cockpit hub) is a real tab only for athlete+
+  // (the freemium upgrade is sold on the single Unlock Full page, not as a
+  // locked tab). Casual keeps a clean bar.
   const persona = usePersona();
   const access = useNavAccess();
   const aurora = useTemplate().template === "aurora";
-  const showCockpit = navVisibleTo(persona, "cockpit", access);
+  const showPerformance = navVisibleTo(persona, "performance", access);
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
 
@@ -49,10 +50,10 @@ export default function TabsLayout() {
         }}
       >
         {/* The funnel: see today → train → review. Everything else lives under More.
-            Cockpit sits next to Today for the athlete persona; hidden for casual
-            (whose upgrade path is the single Unlock Full page). */}
+            Performance sits next to Today for the athlete persona; hidden for
+            casual (whose upgrade path is the single Unlock Full page). */}
         <Tabs.Screen name="index" options={{ title: t("nav.dashboard"), tabBarIcon: icon("◆", aurora, "play") }} />
-        <Tabs.Screen name="cockpit" options={{ title: t("nav.cockpit"), tabBarIcon: icon("◈", aurora, "arrow-up"), href: showCockpit ? undefined : null }} />
+        <Tabs.Screen name="performance" options={{ title: t("nav.performance"), tabBarIcon: icon("◈", aurora, "arrow-up"), href: showPerformance ? undefined : null }} />
         <Tabs.Screen name="log" options={{ title: t("nav.train"), tabBarIcon: icon("▶", aurora, "add") }} />
         <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣", aurora, "calendar") }} />
         <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯", aurora, "settings") }} />

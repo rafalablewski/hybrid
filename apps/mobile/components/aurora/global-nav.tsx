@@ -175,9 +175,10 @@ export default function AuroraGlobalNav() {
   const inTabs = top === "(tabs)";
   const activeSeg = inTabs ? (segments[1] ?? "index") : null;
 
-  // Cockpit was removed from the bar (it lives under the More hub now); this gate
-  // is kept referenced so the access/persona import stays meaningful.
-  void navVisibleTo(persona, "cockpit", access);
+  // Performance (the merged ex-Cockpit hub) isn't on the bar (it lives under the
+  // More hub); this gate is kept referenced so the access/persona import stays
+  // meaningful.
+  void navVisibleTo(persona, "performance", access);
 
   // Liquid-glass pill: a frosted BlurView lets the screen fizz through the bar —
   // but LIGHTER than the classic GlassCard (no grain/sheen, a more opaque tint

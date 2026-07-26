@@ -51,7 +51,7 @@ export default function PrivateTab({
         pa={pa}
         locked={!isFull}
         onPress={() => {
-          if (isFull) { router.push("/(tabs)/cockpit"); return; }
+          if (isFull) { router.push("/(tabs)/performance"); return; }
           track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "private-cockpit" });
           router.push("/upgrade");
         }}

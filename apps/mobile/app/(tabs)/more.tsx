@@ -31,7 +31,7 @@ import { useTemplate } from "../../lib/template";
 // that opens the web app (so granted access is never silently invisible).
 const HREF: Record<string, Href> = {
   today: "/(tabs)",
-  cockpit: "/(tabs)/cockpit",
+  performance: "/(tabs)/performance",
   notifications: "/notifications",
   log: "/workout?source=empty",
   timer: "/interval-timer",
@@ -44,7 +44,6 @@ const HREF: Record<string, Href> = {
   competition: "/competition",
   analytics: "/analytics",
   statistics: "/statistics",
-  performance: "/performance",
   volume: "/volume",
   exercises: "/exercises",
   trends: "/trends",

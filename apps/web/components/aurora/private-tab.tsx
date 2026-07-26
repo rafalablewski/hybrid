@@ -47,7 +47,7 @@ export default function PrivateTab({
       <CommandCenterCard
         locked={!isFull}
         onClick={() => {
-          if (isFull) { nav("cockpit"); return; }
+          if (isFull) { nav("performance"); return; }
           track(FUNNEL.upgradeEntryClick, { client: "web", source: "private-cockpit" });
           nav("upgrade");
         }}

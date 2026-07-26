@@ -195,7 +195,6 @@ export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
  */
 export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   today: "village",
-  cockpit: "user-circle",
   notifications: "bell",
   log: "list-add",
   timer: "play",
@@ -207,7 +206,7 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   sport: "navigation",
   competition: "offer",
   statistics: "arrow-up",
-  performance: "check-circle",
+  performance: "arrow-up", // the home-group state hub (ex-Cockpit) — trend-y metric icon, matching the mobile tab glyph
   analytics: "info",
   volume: "list-check",
   exercises: "list-play",

@@ -17,8 +17,8 @@ describe("navForPersonaWithLocks", () => {
 
   it("shows a casual user Full (athlete-tier) items LOCKED, not hidden", () => {
     const rows = navForPersonaWithLocks("casual");
-    // cockpit is minPersona 'athlete' → visible but locked for a free user.
-    expect(find(rows, "cockpit")).toMatchObject({ locked: true });
+    // performance is minPersona 'athlete' → visible but locked for a free user.
+    expect(find(rows, "performance")).toMatchObject({ locked: true });
     // today is casual-tier → visible + unlocked.
     expect(find(rows, "today")).toMatchObject({ locked: false });
   });
@@ -31,7 +31,7 @@ describe("navForPersonaWithLocks", () => {
 
   it("gives a paid athlete the Full items UNLOCKED", () => {
     const rows = navForPersonaWithLocks("athlete");
-    expect(find(rows, "cockpit")).toMatchObject({ locked: false });
+    expect(find(rows, "performance")).toMatchObject({ locked: false });
     // still no coach tools for an athlete
     expect(find(rows, "coach")).toBeUndefined();
   });
@@ -112,10 +112,10 @@ describe("navForPersona", () => {
 
   it("casual never sees athlete+ features in nav (the upgrade lives on one page)", () => {
     const casual = navForPersona("casual").map((i) => i.id);
-    expect(casual).not.toContain("cockpit");
+    expect(casual).not.toContain("performance");
     expect(casual).not.toContain("velocity");
-    expect(navVisibleTo("casual", "cockpit")).toBe(false);
-    expect(navVisibleTo("athlete", "cockpit")).toBe(true);
+    expect(navVisibleTo("casual", "performance")).toBe(false);
+    expect(navVisibleTo("athlete", "performance")).toBe(true);
   });
 
   it("nests: each persona sees everything the lower one does, plus more", () => {
