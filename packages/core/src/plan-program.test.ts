@@ -20,6 +20,7 @@ import {
   dayContentSummary,
   planHeroView,
   planCoverView,
+  goalCoverView,
   splitInputsTitle,
   inputEcho,
   percentMatrixView,
@@ -633,6 +634,43 @@ describe("planCoverView — the full-bleed cover (Explore card ↔ detail hero)"
     const cover = planCoverView(runGoal, { name: "5K Beginner", weeks: 9, sessions: 4, tag: "Pace-based", desc: "Run." }, RUN_5K_BEGINNER_9WK);
     expect(cover.weekBars.length).toBe(RUN_5K_BEGINNER_9WK.weeks.length);
     expect(cover.weekBars.every((b) => b.value > 0)).toBe(true);
+  });
+});
+
+describe("goalCoverView — the goal-level cover (category screen hero)", () => {
+  const owl = {
+    name: "Olympic Weightlifting",
+    icon: "◢",
+    color: "#d0cd94",
+    category: "Strength",
+    blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
+    plans: [{ weeks: 8, sessions: 6, tag: "% of 1RM" }],
+  };
+
+  it("carries the goal's accent, glyph, category chip and blurb", () => {
+    const cover = goalCoverView(owl);
+    expect(cover.accent).toBe("#d0cd94");
+    expect(cover.glyph).toBe("◢");
+    expect(cover.chip).toBe("Strength");
+    expect(cover.title).toBe("Olympic Weightlifting");
+    expect(cover.blurb).toBe(owl.blurb);
+  });
+
+  it("pluralises the count properly", () => {
+    expect(goalCoverView(owl).count).toBe("1 PLAN");
+    const two = goalCoverView({ ...owl, plans: [...owl.plans, { weeks: 12, sessions: 4, tag: "RPE" }] });
+    expect(two.count).toBe("2 PLANS");
+  });
+
+  it("meta line carries the plans' unique loading tags", () => {
+    const three = goalCoverView({ ...owl, plans: [{ weeks: 8, sessions: 6, tag: "% of 1RM" }, { weeks: 10, sessions: 5, tag: "% of 1RM" }, { weeks: 6, sessions: 3, tag: "RPE" }] });
+    expect(three.metaParts).toEqual(["% of 1RM", "RPE"]);
+  });
+
+  it("an empty goal says COMING SOON — never '0 PLANS'", () => {
+    const empty = goalCoverView({ ...owl, name: "Strongman", plans: [] });
+    expect(empty.count).toBe("COMING SOON");
+    expect(empty.metaParts).toEqual([]);
   });
 });
 

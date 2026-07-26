@@ -1,0 +1,251 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — History: before vs after</title>
+<style>
+  /* ————— AURORA tokens (mirrors packages/core/src/theme/palette.ts, dark) ————— */
+  :root{
+    color-scheme: dark;
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5c6058;
+    --lime:#c6f84f; --teal:#6cb6bd; --sand:#d0cd94;
+    --font-display:"Archivo","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070807;color:var(--chalk);font-family:var(--font-display);line-height:1.55;padding:52px 20px 120px}
+  .wrap{max-width:1080px;margin:0 auto}
+
+  .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;color:var(--lime);text-transform:uppercase}
+  h1{font-size:clamp(28px,4vw,42px);font-weight:900;letter-spacing:-.022em;margin:10px 0 14px;text-wrap:balance}
+  .lede{color:var(--ash);max-width:68ch;font-size:15px}
+  .lede b{color:var(--chalk);font-weight:700}
+
+  .duo{display:flex;gap:36px;justify-content:center;flex-wrap:wrap;margin-top:44px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .col-label{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px}
+  .col-label .cl{font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+  .col-label .cl.before{color:var(--sand)}
+  .col-label .cl.after{color:var(--lime)}
+  .col-label .cm{font-family:var(--font-mono);font-size:10px;color:var(--ash2)}
+
+  /* ————— phone fragment ————— */
+  .shot{width:392px;max-width:92vw;background:var(--ink);border:1px solid #262a26;border-radius:34px;padding:24px 16px;box-shadow:0 30px 70px -34px rgba(0,0,0,.85)}
+  .tl{display:grid;grid-template-columns:44px 1fr;column-gap:12px}
+  .rail{position:relative}
+  .rail::before{content:"";position:absolute;left:5px;top:8px;bottom:0;width:1px;background:var(--line)}
+  .dwrap{position:relative;margin-bottom:2px}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--teal)}
+  .dot.lift{background:var(--lime)}
+  .dlabel{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:5px}
+  .dnum{font-family:var(--font-mono);font-size:14px;color:var(--chalk)}
+  .dnum.today{color:var(--lime)}
+  .cards{display:flex;flex-direction:column;gap:10px;padding-bottom:20px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 15px}
+  .crow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .ctitle{font-weight:700;font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chips{display:flex;gap:6px;flex:none}
+  .chip{font-family:var(--font-mono);font-size:10px;border-radius:999px;padding:3px 10px;white-space:nowrap;color:var(--ash);background:rgba(139,143,134,.13)}
+  .chip.teal{color:var(--teal);background:rgba(108,182,189,.13)}
+  .chip.lime{color:var(--lime);background:rgba(198,248,79,.16);font-weight:700}
+  .bline{display:flex;justify-content:space-between;gap:10px;margin-top:7px}
+  .bname{font-family:var(--font-mono);font-size:12px;color:rgba(243,244,239,.74);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bsum{font-family:var(--font-mono);font-size:12px;color:var(--ash);white-space:nowrap;flex:none}
+  .bmore{font-family:var(--font-mono);font-size:10px;color:var(--ash);margin-top:6px}
+  .rest{font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash2);padding:8px 0 18px}
+
+  /* after — headline card */
+  .hero{font-family:var(--font-mono);font-size:26px;letter-spacing:-.02em;line-height:1.1;color:var(--chalk);font-variant-numeric:tabular-nums}
+  .hero small{font-size:14px;letter-spacing:0;color:var(--ash);font-weight:400}
+  .meta{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta b{color:var(--lime);font-weight:400}
+
+  /* redundancy strike annotations on the before column */
+  .dupe{position:relative;outline:1.5px dashed rgba(208,205,148,.45);outline-offset:2px;border-radius:5px}
+  .dupe::after{content:"×2";position:absolute;right:-7px;top:-13px;background:var(--sand);color:#141614;font-family:var(--font-mono);font-size:9px;font-weight:700;border-radius:4px;padding:0 5px}
+  .dump{position:relative;outline:1.5px dashed rgba(208,205,148,.45);outline-offset:2px;border-radius:5px}
+  .dump::after{content:"raw sets";position:absolute;right:-7px;top:-13px;background:var(--sand);color:#141614;font-family:var(--font-mono);font-size:9px;font-weight:700;border-radius:4px;padding:0 5px}
+
+  /* what-changed list */
+  .changes{margin:72px auto 0;max-width:760px;border:1px solid var(--line);border-radius:22px;background:var(--ink2);padding:28px 30px}
+  .changes h2{font-size:21px;font-weight:900;letter-spacing:-.01em;margin:8px 0 14px}
+  .chg{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;align-items:baseline;padding:12px 0;border-top:1px solid var(--line)}
+  @media (max-width:640px){.chg{grid-template-columns:1fr}}
+  .chg .b4{font-family:var(--font-mono);font-size:12px;color:var(--sand);text-decoration:line-through;text-decoration-color:rgba(208,205,148,.5)}
+  .chg .now{font-family:var(--font-mono);font-size:12px;color:var(--chalk)}
+  .chg .now b{color:var(--lime);font-weight:400}
+  .chg .why{grid-column:1/-1;font-size:12.5px;color:var(--ash);max-width:64ch}
+  .foot{font-family:var(--font-mono);font-size:11px;color:var(--ash2);margin-top:20px}
+</style>
+
+<div class="wrap">
+  <div class="kicker">History — Timeline</div>
+  <h1>Before vs after: the same week, said once.</h1>
+  <p class="lede">Your exact screenshot rebuilt in both layouts. Left is what shipped before — every card narrating its data two or three times. Right is the <b>headline number</b> treatment now on the branch: one large figure, one meta line, each fact exactly once. Same information, roughly <b>half the ink</b>, and more history fits on a screen.</p>
+
+  <div class="duo">
+    <!-- ————— BEFORE ————— -->
+    <div class="col">
+      <div class="col-label"><span class="cl before">Before</span><span class="cm">title + chip + raw block lines</span></div>
+      <div class="shot">
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Sun</div><div class="dnum today">26</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal dupe">0.6 km – 31 min</span></div></div>
+              <div class="bline dupe"><span class="bname">Swimming</span><span class="bsum">612 m, 31 min, 5:04 /100m</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="crow"><div class="ctitle dupe">Squash</div><div class="chips"><span class="chip teal dupe">60 min</span></div></div>
+              <div class="bline"><span class="bname">Squash</span><span class="bsum">60 min</span></div>
+            </div>
+            <div class="card">
+              <div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span><span class="chip">7.4 t</span></div></div>
+              <div class="bline dump"><span class="bname">Barbell Dea…</span><span class="bsum">90×7, 70×8, 100×5, 70×10, 100×6</span></div>
+              <div class="bline"><span class="bname">Pull-up</span><span class="bsum">–×5, –×5, –×5, –×5, –×5</span></div>
+              <div class="bmore">+2 blocks</div>
+            </div>
+          </div>
+        </div>
+        <div class="rest" style="padding-left:56px">1 rest day</div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Thu</div><div class="dnum">23</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="crow"><div class="ctitle dupe">Tennis</div><div class="chips"><span class="chip teal dupe">75 min</span></div></div>
+              <div class="bline"><span class="bname">Tennis</span><span class="bsum">75 min</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Wed</div><div class="dnum">22</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal">0.4 km – 19 min</span></div></div>
+              <div class="bline"><span class="bname">Swimming</span><span class="bsum">374 m, 19 min, 5:05 /100m</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Tue</div><div class="dnum">21</div></div>
+          <div class="cards" style="padding-bottom:4px">
+            <div class="card">
+              <div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal">0.3 km – 20 min</span></div></div>
+              <div class="bline"><span class="bname">Swimming</span><span class="bsum">340 m, 20 min, 5:53 /100m</span></div>
+            </div>
+            <div class="card">
+              <div class="crow"><div class="ctitle">Afternoon workout</div><div class="chips"><span class="chip lime">↑ 5 PR</span><span class="chip">10.7 t</span></div></div>
+              <div class="bline"><span class="bname">Barbell Bench…</span><span class="bsum">40×8, 40×8, 60×8, 60×8, 60×6</span></div>
+              <div class="bline"><span class="bname">Dip</span><span class="bsum">–×15, –×15, –×16, –×20</span></div>
+              <div class="bmore">+2 blocks</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ————— AFTER ————— -->
+    <div class="col">
+      <div class="col-label"><span class="cl after">After — shipped</span><span class="cm">one figure + one meta line</span></div>
+      <div class="shot">
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Sun</div><div class="dnum today">26</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="hero">612 <small>m</small></div>
+              <div class="meta">Swimming – 31 min – 5:04 /100m</div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="hero">60 <small>min</small></div>
+              <div class="meta">Squash</div>
+            </div>
+            <div class="card">
+              <div class="hero">7.4 <small>t</small></div>
+              <div class="meta">Morning workout – 4 lifts – <b>↑ 3 PR</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="rest" style="padding-left:56px">1 rest day</div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Thu</div><div class="dnum">23</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="hero">75 <small>min</small></div>
+              <div class="meta">Tennis</div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Wed</div><div class="dnum">22</div></div>
+          <div class="cards">
+            <div class="card">
+              <div class="hero">374 <small>m</small></div>
+              <div class="meta">Swimming – 19 min – 5:05 /100m</div>
+            </div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="rail"><div class="dwrap"><div class="dot"></div></div><div class="dlabel">Tue</div><div class="dnum">21</div></div>
+          <div class="cards" style="padding-bottom:4px">
+            <div class="card">
+              <div class="hero">340 <small>m</small></div>
+              <div class="meta">Swimming – 20 min – 5:53 /100m</div>
+            </div>
+            <div class="card">
+              <div class="hero">10.7 <small>t</small></div>
+              <div class="meta">Afternoon workout – 4 lifts – <b>↑ 5 PR</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ————— WHAT CHANGED ————— -->
+  <div class="changes">
+    <div class="kicker">Line by line</div>
+    <h2>Every redundancy, and where it went</h2>
+
+    <div class="chg">
+      <span class="b4">Tennis&ensp;/&ensp;75 min&ensp;+&ensp;Tennis&ensp;75 min</span>
+      <span class="now">75 min as the hero figure, "Tennis" once in the meta line</span>
+      <p class="why">A single-block sport log repeated its name and time by construction — the block was named after the sport. The block line is gone; the duration is promoted to the headline.</p>
+    </div>
+
+    <div class="chg">
+      <span class="b4">0.6 km – 31 min&ensp;+&ensp;612 m, 31 min, 5:04 /100m</span>
+      <span class="now">612 m&ensp;hero, then "31 min – 5:04 /100m"</span>
+      <p class="why">Distance was stated in two unit systems and time twice. Now distance appears once, in the sport's natural unit (metres for swimming/rowing, km otherwise), with time and pace each said once.</p>
+    </div>
+
+    <div class="chg">
+      <span class="b4">90×7, 70×8, 100×5, 70×10, 100×6&ensp;/&ensp;–×5, –×5, –×5…</span>
+      <span class="now">7.4 t&ensp;hero, then "4 lifts – <b>↑ 3 PR</b>"</span>
+      <p class="why">The set-by-set dump was the session page's job leaking onto the shelf. The card now answers what the day cost (tonnage) and whether it mattered (PRs); the full sets are one tap deep.</p>
+    </div>
+
+    <div class="chg">
+      <span class="b4">Agenda day-header chips: ↑ 3 PR&ensp;7.4 t</span>
+      <span class="now">removed — the cards carry the numbers</span>
+      <p class="why">With heroes on every card, the agenda's per-day tonnage/PR chips restated the same figures one level up. Same rule, applied consistently: one fact, one place.</p>
+    </div>
+
+    <div class="chg">
+      <span class="b4">Weeks rows: "0.6 km – 31 min – 1 block"</span>
+      <span class="now">"612 m – 31 min – 5:04 /100m" / "7.4 t – 4 lifts"</span>
+      <p class="why">The weeks view's slim rows now read from the same shared sessionHeadline engine, so the two surfaces can never disagree on a session's number again.</p>
+    </div>
+
+    <p class="foot">Both clients render one engine: packages/core/src/engines/history-views.ts → sessionHeadline(). Branch claude/history-display-redesign-3sgxd8, commit 4586bfb.</p>
+  </div>
+</div>

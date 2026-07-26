@@ -867,6 +867,52 @@ export function planCoverView(
   };
 }
 
+/** The GOAL-level cover — the plan cover recipe one level up, so the category
+ *  screen (goal → plan list) opens with the SAME full-bleed collapsing cover as
+ *  the plan detail: accent wash + ghost glyph from the goal, the discipline
+ *  category as the chip, and the plan count as the top-right label. Shared by
+ *  web + mobile so the two goal heroes cannot drift. Deliberately NO aggregate
+ *  hem: ranges mushed across a full category ("6–16 weeks", "3–6/wk") say
+ *  nothing — the numbers live on each plan card instead (planHeroView per
+ *  plan), where they actually differentiate. */
+export interface GoalCoverView {
+  /** the goal's accent — drives the duotone wash. */
+  accent: string;
+  /** the goal's glyph — the oversized ghost cover art. */
+  glyph: string;
+  /** the discipline chip label (the goal's category, e.g. "Strength"). */
+  chip: string;
+  /** top-right label — the plan count ("3 PLANS" / "1 PLAN"), or "COMING SOON"
+   *  for a goal whose programs aren't authored yet (never "0 PLANS"). */
+  count: string;
+  /** the goal name — the bottom-anchored display title. */
+  title: string;
+  /** the goal blurb — rendered on the cover face (the emblem variant). */
+  blurb: string;
+  /** meta-line parts — the plans' loading tags (unique, first three). */
+  metaParts: (string | null)[];
+}
+
+export function goalCoverView(goal: {
+  name: string;
+  icon: string;
+  color: string;
+  category: string;
+  blurb: string;
+  plans: { weeks: number; sessions: number; tag: string }[];
+}): GoalCoverView {
+  const n = goal.plans.length;
+  return {
+    accent: goal.color,
+    glyph: goal.icon,
+    chip: goal.category,
+    count: n === 0 ? "COMING SOON" : `${n} ${n === 1 ? "PLAN" : "PLANS"}`,
+    title: goal.name,
+    blurb: goal.blurb,
+    metaParts: [...new Set(goal.plans.map((p) => p.tag))].slice(0, 3),
+  };
+}
+
 /** Split a program's authored inputs title ("Your maxes (kg) — optional, to see
  *  working weights") into a SectionHead title + right-side mono meta. */
 export function splitInputsTitle(t: string): { title: string; meta: string | null } {

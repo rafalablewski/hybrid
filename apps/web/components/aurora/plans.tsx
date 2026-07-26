@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planCoverView, splitInputsTitle, inputEcho, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, type GoalCategory, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
@@ -13,7 +13,6 @@ import { MetaLine } from "./meta";
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 18 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
-const backLink = (onClick: () => void, label: string) => <button onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 6, fontFamily: "var(--font-mono)", fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash") }}>← {label}</button>;
 
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
  *  exact GOAL_TREE / planDetail + /api/macrocycles enroll. */
@@ -115,22 +114,50 @@ function EnrolledCard() {
   );
 }
 
+/** The category screen — the plan cover recipe one level up (idea 02, "the
+ *  goal hero"): the goal opens with the SAME full-bleed collapsing cover as
+ *  the plan detail (goalCoverView: accent wash, ghost glyph, category chip,
+ *  plan-count label) and the plans beneath it, so every depth of the Plans
+ *  stack is one physical object at a different compression. NO aggregate hem
+ *  on the cover — with a full category those ranges mush into noise; instead
+ *  EACH plan card carries its own hem (planHeroView: weeks / sessions / the
+ *  discipline's volume), so plans differentiate card-by-card. */
 function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
   const { t } = useLang();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  useHeroCollapse(rootRef, heroRef); // no dock at goal level — collapse + snap only
+  const cover = goalCoverView(goal);
+  const rule = `color-mix(in srgb, ${C("chalk")} 14%, transparent)`;
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {backLink(back, t("w.train.plans.allGoals"))}
-      <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "6px 0 16px" }}><span style={{ fontSize: 24, color: goal.color }}>{goal.icon}</span><h2 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{goal.name}</h2></div>
-      {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.train.plans.noPlansYet")}</p>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg }}>
-        {goal.plans.map((p) => (
-          <div key={p.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(p.id); } }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontWeight: 800, fontSize: fs.title }}>{p.name}</div>{p.hot && chip(C("lime"), t("w.train.plans.popular"))}</div>
-            <MetaLine parts={[`${p.weeks} ${t("w.train.plans.wks")}`, `${p.sessions}${t("w.train.plans.perWk")}`, p.tag]} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.caption, margin: "6px 0 10px", color: C("ash") }} />
-            <p style={{ fontSize: fs.body, lineHeight: 1.5 }}>{p.desc}</p>
-            <div style={{ marginTop: 12 }}>{p.focus.map((f) => <span key={f}>{chip(C("ash"), f)}</span>)}</div>
-          </div>
-        ))}
+    <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
+      {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.train.plans.noPlansYet")}</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
+        {goal.plans.map((p) => {
+          const hero = planHeroView(p, programFor(p.id) ?? undefined);
+          return (
+            <div key={p.id} role="button" tabIndex={0} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(p.id); } }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{p.tag}</span>
+                {p.hot && chip(C("lime"), t("w.train.plans.popular"))}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 6 }}>{p.name}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "12px 0 10px" }}>
+                {hero.stats.map((s) => (
+                  <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 8 }}>
+                    <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                      {s.value}{s.unit && <span style={{ fontSize: 12, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: fs.body, lineHeight: 1.5 }}>{p.desc}</p>
+              <div style={{ marginTop: 12 }}>{p.focus.map((f) => <span key={f}>{chip(C("ash"), f)}</span>)}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -262,24 +289,56 @@ function useHeroCollapse(rootRef: React.RefObject<HTMLDivElement | null>, heroRe
  *  columns directly on the ink) + the one-line blurb. Shared by BOTH detail
  *  renderers (program + classic). */
 function PlanHero({ goal, plan, program, back, heroRef }: { goal: GoalNode; plan: GoalPlan; program?: PlanProgram; back: () => void; heroRef: React.RefObject<HTMLDivElement | null> }) {
-  const cover = planCoverView(goal, plan, program);
+  return <CoverHero cover={planCoverView(goal, plan, program)} back={back} backLabel={goal.name} heroRef={heroRef} />;
+}
+
+/** What the cover scaffold needs to draw — a structural subset of core's
+ *  PlanCoverView, so the GOAL-level cover (goalCoverView) rides the exact same
+ *  scaffold with its plan-count label in the duration slot. */
+interface CoverSpec {
+  accent: string;
+  glyph: string;
+  chip: string;
+  /** top-right mono label — "8 WEEKS" on a plan, "1 PLAN" on a goal. */
+  duration: string;
+  title: string;
+  metaParts: (string | null)[];
+  /** rule-topped hem columns; [] skips the hem entirely. */
+  stats: { value: string; unit: string | null; label: string }[];
+  blurb: string;
+  /** Same material, different object. "plan" (default) is the POSTER — wash
+   *  from the top-RIGHT corner, modest ghost glyph, mono meta under the title,
+   *  blurb below on the ink. "goal" is the EMBLEM — the discipline's mark
+   *  blown up as the cover art (bigger, brighter, deeper parallax), the wash
+   *  mirrored to the top-LEFT so the two levels never read as the same
+   *  cover, and the blurb ON the cover face instead of the meta line. */
+  variant?: "plan" | "goal";
+}
+
+/** The generic scaffold behind PlanHero — same sticky collapse, snap detent
+ *  and hem for ANY CoverSpec (plan detail and the goal/category hero). */
+function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back: () => void; backLabel: string; heroRef: React.RefObject<HTMLDivElement | null> }) {
   const accent = cover.accent;
+  const emblem = cover.variant === "goal";
   const p = "var(--hero-collapse, 0)";
   const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
   return (
     <>
       <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 16px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
-        {/* duotone wash bleeding from the top corner (Explore recipe) */}
-        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
-        <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at 86% 8%, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
+        {/* duotone wash bleeding from the top corner (Explore recipe) —
+            mirrored to the LEFT on the goal emblem so the light source itself
+            tells you which level you're on */}
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(${emblem ? "158deg" : "202deg"}, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at ${emblem ? "14% 8%" : "86% 8%"}, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
         {/* bottom scrim for title legibility — retired as the title leaves */}
         <span aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 52%)", opacity: `calc(1 - ${p})` }} />
-        {/* ghost glyph — the cover art; parallax drift against the frame */}
-        <span aria-hidden style={{ position: "absolute", top: -36, right: -16, fontSize: 152, lineHeight: 1, color: "rgba(255,255,255,.07)", pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * 0.55)}px))` }}>{cover.glyph}</span>
+        {/* ghost glyph — the cover art; parallax drift against the frame.
+            On the goal emblem it IS the subject: bigger, brighter, deeper. */}
+        <span aria-hidden style={{ position: "absolute", top: emblem ? -18 : -36, right: emblem ? -34 : -16, fontSize: emblem ? 218 : 152, lineHeight: 1, color: `rgba(255,255,255,${emblem ? ".09" : ".07"})`, pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * (emblem ? 0.66 : 0.55))}px))` }}>{cover.glyph}</span>
 
         {/* bar chrome — counter-translates so it never moves on screen */}
         <div style={{ position: "absolute", top: 8, left: 16, right: 20, height: 42, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
-          <button onClick={back} aria-label={`← ${goal.name}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
+          <button onClick={back} aria-label={`← ${backLabel}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: ".06em", color: "rgba(255,255,255,.88)" }}>{cover.duration}</span>
         </div>
 
@@ -292,24 +351,30 @@ function PlanHero({ goal, plan, program, back, heroRef }: { goal: GoalNode; plan
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
           <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 11px", borderRadius: 999 }}>{cover.chip}</span>
           <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</h2>
-          <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 9, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+          {emblem ? (
+            <p style={{ margin: "8px 0 0", fontSize: 13.5, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
+          ) : (
+            <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 9, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+          )}
         </div>
 
         {/* hairline — the collapsed bar's bottom edge */}
         <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "rgba(255,255,255,.16)", opacity: p }} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, margin: "18px 0 14px" }}>
-        {cover.stats.map((s) => (
-          <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 10 }}>
-            <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-              {s.value}{s.unit && <span style={{ fontSize: 15, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+      {cover.stats.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, margin: "18px 0 14px" }}>
+          {cover.stats.map((s) => (
+            <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 10 }}>
+              <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                {s.value}{s.unit && <span style={{ fontSize: 15, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash"), marginTop: 6 }}>{s.label}</div>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash"), marginTop: 6 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: "0 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>
+          ))}
+        </div>
+      )}
+      {!emblem && !!cover.blurb && <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: cover.stats.length ? "0 0 4px" : "16px 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>}
     </>
   );
 }

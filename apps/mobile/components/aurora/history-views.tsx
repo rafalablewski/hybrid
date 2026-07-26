@@ -2,14 +2,11 @@ import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import {
   fmtTonnage,
-  sessionVolume,
-  sessionShape,
-  sessionCardioTotals,
+  sessionHeadline,
   sessionsByDay,
   historyStream,
   upcomingPlanDays,
   weekChapters,
-  blockSummary,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
   localDayKey,
@@ -19,6 +16,7 @@ import {
   type HistoryViewId,
   type LoggedSession,
   type PlanScheduleResult,
+  type SessionHeadline,
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
@@ -32,6 +30,8 @@ import { RADIUS, withAlpha } from "./kit";
 // behind the History screen's view switcher — parity with
 // apps/web/components/aurora/history-views.tsx. All grouping math lives in
 // @hybrid/core (engines/history-views.ts); these components only render.
+// Session cards use the "headline number" treatment: one large figure
+// (sessionHeadline), one mono meta line — each fact stated exactly once.
 // Chartreuse = lifting, teal = sport/cardio, shading = sRPE load.
 
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
@@ -50,8 +50,6 @@ export interface ViewCtx {
   onOpen: (id: string) => void;
 }
 
-const sessionVolumeOf = (s: LoggedSession, ctx: ViewCtx) => sessionVolume(s.blocks, false, ctx.bw(s.startedAt));
-
 function Chip({ C, color, label, strong }: { C: Palette; color: string; label: string; strong?: boolean }) {
   return (
     <View style={{ backgroundColor: withAlpha(color, strong ? 0.16 : 0.13), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
@@ -60,53 +58,46 @@ function Chip({ C, color, label, strong }: { C: Palette; color: string; label: s
   );
 }
 
-/** The one-line key metric of a session: tonnage for lifting, distance–time for
- *  cardio; conditioning-only sessions (a match, a circuit) fall back to their
- *  summed minutes, then to the block count. */
-function keyMetric(s: LoggedSession, ctx: ViewCtx, t: (k: string) => string): { color: "blue" | "ash"; label: string } {
-  if (sessionShape(s) === "cardio") {
-    const ct = sessionCardioTotals(s.blocks);
-    const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
-    if (parts.length) return { color: "blue", label: parts.join(" – ") };
-    const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
-    return { color: "blue", label: minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}` };
-  }
-  return { color: "ash", label: fmtTonnage(sessionVolumeOf(s, ctx), ctx.units) };
+/** The headline's unit label — localized block count for the last-resort kind. */
+const unitOf = (h: SessionHeadline, t: (k: string) => string) =>
+  h.kind === "blocks" ? t(h.value === "1" ? "w.analyze.hist.block" : "history.blocks") : h.unit;
+
+/** The mono meta parts that follow the title: lift count, summed minutes
+ *  (unless minutes IS the headline), then pace — each fact exactly once. */
+function headlineMeta(h: SessionHeadline, t: (k: string) => string): string[] {
+  const parts: string[] = [];
+  if (h.lifts > 0) parts.push(`${h.lifts} ${t(h.lifts === 1 ? "histview.liftLbl" : "histview.liftsLbl")}`);
+  if (h.minutes > 0 && h.kind !== "minutes") parts.push(`${h.minutes} min`);
+  if (h.pace) parts.push(h.pace);
+  return parts;
 }
 
-/** Compact tappable session card shared by agenda / timeline. */
-function SessionCard({ C, s, ctx, ghost, lines = 3 }: { C: Palette; s: LoggedSession; ctx: ViewCtx; ghost?: boolean; lines?: number }) {
+/** Tappable session card shared by agenda / timeline — the "headline number"
+ *  treatment: one large figure (tonnage / distance / minutes), then a single
+ *  mono meta line (title – lifts – minutes – pace – PRs). Sets, splits and the
+ *  full block list live on the session page, one tap deep. */
+function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx }) {
   const { t } = useLang();
   const prs = ctx.prs(s.id);
-  const km = keyMetric(s, ctx, t);
+  const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
     <Pressable
       onPress={() => ctx.onOpen(s.id)}
-      style={{
-        borderRadius: 22,
-        padding: 15,
-        backgroundColor: ghost ? "transparent" : C.ink2,
-        borderWidth: ghost ? 1.5 : 1,
-        borderStyle: ghost ? "dashed" : "solid",
-        borderColor: ghost ? withAlpha(C.ash, 0.38) : C.line,
-      }}
+      style={{ borderRadius: 22, padding: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: ghost ? C.ash : C.chalk }}>{s.title}</Text>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {prs > 0 && <Chip C={C} color={C.lime} label={`↑ ${prs} PR`} strong />}
-          <Chip C={C} color={km.color === "blue" ? C.blue : C.ash} label={km.label} />
-        </View>
-      </View>
-      {s.blocks.slice(0, lines).map((b, i) => (
-        <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: 10, marginTop: i === 0 ? 8 : 4 }}>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: ghost ? C.ash : withAlpha(C.chalk, 0.74) }}>{b.name}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{blockSummary(b)}</Text>
-        </View>
-      ))}
-      {s.blocks.length > lines && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 5 }}>+{s.blocks.length - lines} {t("history.blocks")}</Text>
-      )}
+      <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: -0.5, color: C.chalk }}>
+        {h.value}
+        <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
+      </Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
+        {[s.title, ...headlineMeta(h, t)].join(" – ")}
+        {prs > 0 && (
+          <>
+            {" – "}
+            <Text style={{ color: txt(C, C.lime) as string }}>{`↑ ${prs} PR`}</Text>
+          </>
+        )}
+      </Text>
     </Pressable>
   );
 }
@@ -217,13 +208,9 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
           <RestGapRow key={`g${i}`} C={C} days={item.days} />
         ) : (
           <View key={item.dateKey} style={{ gap: 8 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <DayLabel C={C} text={item.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(item.dateKey)}` : fmtDayLong(item.dateKey)} today={item.isToday} />
-              <View style={{ flexDirection: "row", gap: 6 }}>
-                {item.prs > 0 && <Chip C={C} color={C.lime} label={`↑ ${item.prs} PR`} strong />}
-                {item.volume > 0 && <Chip C={C} color={C.ash} label={fmtTonnage(item.volume, ctx.units)} />}
-              </View>
-            </View>
+            {/* the cards lead with their own figures now — a day-level tonnage/PR
+                chip here would restate them (say it once). */}
+            <DayLabel C={C} text={item.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(item.dateKey)}` : fmtDayLong(item.dateKey)} today={item.isToday} />
             {item.sessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} />)}
           </View>
         ),
@@ -267,7 +254,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
           </View>
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);
-            const km = keyMetric(s, ctx, t);
+            const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
             return (
               <Pressable key={s.id} onPress={() => ctx.onOpen(s.id)} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>
                 <View style={{ width: 32, alignItems: "center" }}>
@@ -276,8 +263,8 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{s.title}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
-                    {km.label} – {s.blocks.length} {s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
+                    {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </Text>
                 </View>
                 <Text style={{ fontFamily: F.mono, color: C.ash }}>›</Text>
@@ -318,7 +305,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: item.isToday ? lime : C.chalk, fontWeight: "700" }}>{Number(item.dateKey.slice(8, 10))}</Text>
             </View>
             <View style={{ gap: 8 }}>
-              {item.sessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} lines={2} />)}
+              {item.sessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} />)}
             </View>
           </View>
         ),
