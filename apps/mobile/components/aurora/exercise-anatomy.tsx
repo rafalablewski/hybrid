@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { View, Text, Pressable, Modal, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import * as Haptics from "expo-haptics";
 import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
@@ -111,16 +109,16 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
 export default function AuroraExerciseAnatomy({ name }: { name: string }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const haptics = useLoggerPrefs().haptics;
   const [open, setOpen] = useState(false);
   const a = exerciseAnatomy(name);
   if (!a) return null;
   const meta = a.mechanics === "isolation" ? t("w.analyze.exp.anatomy.isolation") : t("w.analyze.exp.anatomy.compound");
-  // a light tap as the sheet opens (respecting the user's haptics preference)
-  const openSheet = () => {
-    if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setOpen(true);
-  };
+  // No haptic here, deliberately. Opening a disclosure sheet is presentation,
+  // not a state change with consequence — and this was the ONLY sheet in the app
+  // that buzzed, so it read as a glitch rather than as feedback. Haptics stay
+  // where there is a real detent: a set banked, a rest target reached, a drag
+  // picked up or dropped (workout.tsx, use-drag-reorder.ts).
+  const openSheet = () => setOpen(true);
 
   return (
     <>

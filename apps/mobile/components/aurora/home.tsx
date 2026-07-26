@@ -54,7 +54,7 @@ import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";
 import { CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
-import { useNavScrollProps } from "../../lib/nav-scroll";
+import { useNavScroll, useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
@@ -98,6 +98,14 @@ export default function AuroraHome() {
   const { width: winW } = useWindowDimensions();
   const structW = Math.min(300, Math.round(winW * 0.72));
   const navScroll = useNavScrollProps();
+  // MASTHEAD COMPRESSION — the big title shrinks and the secondary lines recede
+  // as a CONTINUOUS function of scroll offset, not a stepped swap. Reads the
+  // SAME `collapse` value the floating nav pill already collapses on (one
+  // signal, two subscribers), so web and mobile compress in step — the web twin
+  // is globals.css .motion-masthead driven by --scroll-collapse.
+  const collapse = useNavScroll()?.collapse;
+  const mastScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.76] }) : 1;
+  const mastSubFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) : 1;
 
   // Sessions + signals from the shared cache; the rest stay home-local.
   const { data: sessions = [], refetch: refetchSessions, isError: sessionsError } = useSessionsQuery();
@@ -420,15 +428,18 @@ export default function AuroraHome() {
             becomes the "Back to today" return affordance, teal, in the same
             spot every time. Mirrors web today.tsx. */}
         <View style={{ marginTop: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+          <Animated.View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10, opacity: mastSubFade }}>
             <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{mastCaption || " "}</Text>
             {firstRun || (logbookMode && !mastTag) ? (
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
             ) : mastTag ? (
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber) }}>{mastTag}</Text>
             ) : null}
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2 }}>
+          </Animated.View>
+          {/* transformOrigin has no RN equivalent, so the row is left-aligned and
+              scaled about its own left edge via the trailing translate — the
+              title shrinks toward the margin rather than toward the centre. */}
+          <Animated.View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2, alignSelf: "flex-start", transform: [{ scale: mastScale }] }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 34, letterSpacing: -1, color: C.chalk }}>{mastTitle}</Text>
             {/* Kyoto Hour hanko — the vermilion seal beside the true "Today" only
                 (never the scrubbed days); Aurora (dark) hides it. Decorative,
@@ -443,9 +454,9 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: serifIf(scheme, F.semi), fontSize: 13, color: C.ink }}>力</Text>
               </View>
             )}
-          </View>
+          </Animated.View>
           {dayIsToday ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2 }}>{greeting ? `${greeting}, ${firstName}.` : " "}</Text>
+            <Animated.Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2, opacity: mastSubFade }}>{greeting ? `${greeting}, ${firstName}.` : " "}</Animated.Text>
           ) : (
             <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.backToToday")} →</Text>

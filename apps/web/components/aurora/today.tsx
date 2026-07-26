@@ -380,8 +380,8 @@ export default function AuroraToday({
           lie in the largest type on screen. Off today, the greeting line
           becomes the "Back to today" return affordance, teal, in the same
           spot every time. Mirrors mobile home.tsx. */}
-      <div style={{ margin: "16px 2px 2px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+      <div className="motion-masthead" style={{ margin: "16px 2px 2px" }}>
+        <div className="motion-masthead-sub" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
           {firstRun || (logbookMode && !mastTag) ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
@@ -389,7 +389,7 @@ export default function AuroraToday({
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
           ) : null}
         </div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>
+        <div className="motion-masthead-title" style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>
           {mastTitle}
           {/* Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
               "Today" only (never the scrubbed days). Hidden in Aurora via CSS

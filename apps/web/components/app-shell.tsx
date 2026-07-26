@@ -33,6 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
+import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
 const AuroraPlans = dynamic(() => import("./aurora/plans"), { ssr: false });
@@ -167,6 +168,9 @@ export default function AppShell() {
   // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
   const [screen, setScreenRaw] = useState("today");
   const setScreen = useScreenTransition(screen, setScreenRaw);
+  // ONE scroll signal for the whole shell, published as a CSS custom property.
+  // The web twin of the mobile NavScrollProvider; see lib/use-scroll-collapse.
+  useScrollCollapse();
   // First-run guided tour (#2): shown once, right after a fresh account finishes
   // onboarding. (Web has no guest mode, so there's no guest-workout to save
   // first — that ordering only applies on mobile.)
