@@ -119,6 +119,9 @@ export default function AuroraPerformance({
   const bw = useBodyweightLookup();
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
+  // The readiness "why" split into sentences — rendered as separate lines so the
+  // multi-clause explanation scans instead of reading as one wall of text.
+  const whyLines = useMemo(() => (rx.why.match(/[^.!?]+[.!?]+["')\]]*(?:\s+|$)/g) ?? [rx.why]).map((s) => s.trim()).filter(Boolean), [rx.why]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
@@ -204,11 +207,19 @@ export default function AuroraPerformance({
                 <Comp label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
               </div>
               {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 12 }}>{state.drivers[0].detail}</div>}
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
-                <div>
+                {/* The explanation takes the card's width (flex:1, readable ~62ch
+                    measure — the old 36ch cap squeezed it into a skinny column on
+                    wide cards) and is split into its sentences so the engine's
+                    multi-clause "why" reads as scannable lines, not a wall. */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
-                  <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "36ch" }}>{rx.why}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6, maxWidth: "62ch" }}>
+                    {whyLines.map((line, i) => (
+                      <div key={i} style={{ fontSize: fs.body, lineHeight: 1.6, color: i === 0 ? C("chalk") : C("ash") }}>{line}</div>
+                    ))}
+                  </div>
                   {/* READINESS NUDGE — the one-tap check-in moved today's load;
                       glanceable, tinted in the feeling's own accent. Absent on a
                       neutral ("good") day. Mirrors mobile. */}

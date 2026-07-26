@@ -91,6 +91,9 @@ function Full() {
     return c ? checkinFeeling(c) : null;
   }, [checkins]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
+  // The readiness "why" split into sentences — rendered as separate lines so the
+  // multi-clause explanation scans instead of reading as one wall of text.
+  const whyLines = useMemo(() => (rx.why.match(/[^.!?]+[.!?]+["')\]]*(?:\s+|$)/g) ?? [rx.why]).map((s) => s.trim()).filter(Boolean), [rx.why]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
@@ -168,13 +171,20 @@ function Full() {
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
             </View>
             {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
               <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
               </Ring>
+              {/* The "why" is split into its sentences and rendered as separate
+                  lines so the engine's multi-clause explanation scans instead of
+                  reading as one wall of text. Mirrors web. */}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 16 }}>{rx.why}</Text>
+                <View style={{ gap: 5, marginTop: 5 }}>
+                  {whyLines.map((line, i) => (
+                    <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: 19 }}>{line}</Text>
+                  ))}
+                </View>
                 {/* READINESS NUDGE — the one-tap check-in moved today's load;
                     glanceable, tinted in the feeling's own accent. Absent on a
                     neutral ("good") day. Mirrors web. */}
