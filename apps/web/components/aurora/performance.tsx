@@ -6,7 +6,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
   fmtWeight, strengthPrDelta,
-  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE,
+  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
   type MuscleGroup, type TissueRisk, colors,
@@ -119,9 +119,11 @@ export default function AuroraPerformance({
   const bw = useBodyweightLookup();
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
-  // The readiness "why" split into sentences — rendered as separate lines so the
-  // multi-clause explanation scans instead of reading as one wall of text.
-  const whyLines = useMemo(() => (rx.why.match(/[^.!?]+[.!?]+["')\]]*(?:\s+|$)/g) ?? [rx.why]).map((s) => s.trim()).filter(Boolean), [rx.why]);
+  // Truth-based readiness lines — every clause computed from the REAL log +
+  // wearable baseline (readinessWhy, @hybrid/core). The old rx.why narrated the
+  // session PICK ("Back Squat… I prescribed 4×5 @ 90kg") and invented a lift +
+  // load for athletes with no history; that copy stays on the Today flow.
+  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
@@ -206,8 +208,7 @@ export default function AuroraPerformance({
                 <Comp label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
                 <Comp label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
               </div>
-              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 12 }}>{state.drivers[0].detail}</div>}
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 {/* The explanation takes the card's width (flex:1, readable ~62ch
                     measure — the old 36ch cap squeezed it into a skinny column on

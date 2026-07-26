@@ -6,7 +6,7 @@ import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, toTrainingLog, toBiometrics,
   fmtWeight, strengthPrDelta, evaluateRtp, STAGE_LABEL,
-  velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
@@ -91,9 +91,11 @@ function Full() {
     return c ? checkinFeeling(c) : null;
   }, [checkins]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
-  // The readiness "why" split into sentences — rendered as separate lines so the
-  // multi-clause explanation scans instead of reading as one wall of text.
-  const whyLines = useMemo(() => (rx.why.match(/[^.!?]+[.!?]+["')\]]*(?:\s+|$)/g) ?? [rx.why]).map((s) => s.trim()).filter(Boolean), [rx.why]);
+  // Truth-based readiness lines — every clause computed from the REAL log +
+  // wearable baseline (readinessWhy, @hybrid/core). The old rx.why narrated the
+  // session PICK ("Back Squat… I prescribed 4×5 @ 90kg") and invented a lift +
+  // load for athletes with no history; that copy stays on the Today flow.
+  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
@@ -170,8 +172,7 @@ function Full() {
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
             </View>
-            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
-            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
               <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
               </Ring>
