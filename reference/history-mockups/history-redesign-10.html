@@ -1,0 +1,479 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — History: 10 redesign ideas</title>
+<style>
+  /* ————— AURORA tokens (mirrors packages/core/src/theme/palette.ts, dark) ————— */
+  :root{
+    color-scheme: dark;
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5c6058;
+    --lime:#c6f84f; --teal:#6cb6bd; --sand:#d0cd94; --terra:#e58a5c;
+    --font-display:"Archivo","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:#070807;color:var(--chalk);font-family:var(--font-display);line-height:1.55;padding:52px 20px 140px}
+  .wrap{max-width:1060px;margin:0 auto}
+
+  .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;color:var(--lime);text-transform:uppercase}
+  h1{font-size:clamp(30px,4.4vw,46px);font-weight:900;letter-spacing:-.022em;margin:10px 0 16px;text-wrap:balance}
+  .lede{color:var(--ash);max-width:66ch;font-size:15px}
+  .lede b{color:var(--chalk);font-weight:700}
+  .lede em{color:var(--teal);font-style:normal}
+
+  /* principles strip */
+  .principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:34px 0 8px}
+  .principles>div{background:var(--ink2);padding:16px 18px}
+  .principles .pk{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--lime)}
+  .principles p{font-size:13px;color:var(--ash);margin-top:6px}
+  .principles p b{color:var(--chalk);font-weight:700}
+
+  /* ————— diagnosis ————— */
+  .diag{margin-top:64px;display:grid;grid-template-columns:392px 1fr;gap:44px;align-items:start}
+  @media (max-width:860px){.diag{grid-template-columns:1fr}}
+  .diag-notes h2{font-size:24px;font-weight:900;letter-spacing:-.01em;margin:6px 0 12px}
+  .diag-notes p{font-size:14px;color:#c9ccc3;max-width:54ch;margin-bottom:12px}
+  .flaw{border-left:2px solid var(--sand);padding:2px 0 2px 14px;margin-top:14px}
+  .flaw .fl{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sand)}
+  .flaw p{font-size:13px;color:var(--ash);margin:3px 0 0;max-width:52ch}
+
+  /* ————— concept sections ————— */
+  section.concept{margin-top:88px;display:grid;grid-template-columns:392px 1fr;gap:44px;align-items:start}
+  @media (max-width:860px){section.concept{grid-template-columns:1fr}}
+  .head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:6px}
+  .head h2{font-size:23px;font-weight:900;letter-spacing:-.01em}
+  .head .num{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;color:var(--ash);white-space:nowrap}
+  .tagline{color:var(--teal);font-size:13.5px;font-family:var(--font-mono);margin:10px 0 12px}
+  .notes p{font-size:14px;color:#c9ccc3;margin-bottom:12px;max-width:54ch}
+  .notes p b{color:var(--chalk)}
+  .trade{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;max-width:54ch}
+  @media (max-width:480px){.trade{grid-template-columns:1fr}}
+  .trade>div{border-left:2px solid var(--line);padding:2px 0 2px 12px}
+  .trade .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+  .trade .lbl.g{color:var(--lime)} .trade .lbl.w{color:var(--sand)}
+  .trade p{font-size:12.5px;color:var(--ash);margin:3px 0 0}
+
+  /* ————— phone fragment ————— */
+  .shot{width:392px;max-width:100%;background:var(--ink);border:1px solid #262a26;border-radius:34px;padding:22px 16px 26px;box-shadow:0 30px 70px -34px rgba(0,0,0,.85);flex:none}
+  .shot .screen-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin:0 2px 14px}
+
+  /* timeline rail + cards — mirrors history-views SessionCard */
+  .tl{display:grid;grid-template-columns:44px 1fr;column-gap:12px}
+  .rail{position:relative}
+  .rail::before{content:"";position:absolute;left:5px;top:8px;bottom:0;width:1px;background:var(--line)}
+  .dot{position:relative;width:11px;height:11px;border-radius:50%;background:var(--teal);margin-bottom:2px}
+  .dot.lift{background:var(--lime)}
+  .dot.small{width:7px;height:7px;margin-left:2px}
+  .dot.big{width:15px;height:15px;margin-left:-2px}
+  .dlabel{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:5px}
+  .dnum{font-family:var(--font-mono);font-size:14px;color:var(--chalk)}
+  .dnum.today{color:var(--lime)}
+  .cards{display:flex;flex-direction:column;gap:10px;padding-bottom:22px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 15px}
+  .crow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .ctitle{font-weight:700;font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chips{display:flex;gap:6px;flex:none}
+  .chip{font-family:var(--font-mono);font-size:10px;border-radius:999px;padding:3px 10px;white-space:nowrap;color:var(--ash);background:rgba(139,143,134,.13)}
+  .chip.teal{color:var(--teal);background:rgba(108,182,189,.13)}
+  .chip.lime{color:var(--lime);background:rgba(198,248,79,.16);font-weight:700}
+  .bline{display:flex;justify-content:space-between;gap:10px;margin-top:7px}
+  .bname{font-family:var(--font-mono);font-size:12px;color:rgba(243,244,239,.74);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bsum{font-family:var(--font-mono);font-size:12px;color:var(--ash);white-space:nowrap;flex:none}
+  .bmore{font-family:var(--font-mono);font-size:10px;color:var(--ash);margin-top:6px}
+  .stat{font-family:var(--font-mono);font-size:12px;color:var(--ash);margin-top:6px}
+  .stat b{color:rgba(243,244,239,.82);font-weight:400}
+  .num-tab{font-variant-numeric:tabular-nums}
+
+  /* annotation callouts on the "before" shot */
+  .anno{outline:1.5px dashed rgba(208,205,148,.55);outline-offset:3px;border-radius:6px;position:relative}
+  .anno-tag{position:absolute;right:-8px;top:-16px;background:var(--sand);color:#141614;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.08em;border-radius:4px;padding:1px 6px}
+
+  /* idea 2 — headline number */
+  .hero-num{font-family:var(--font-mono);font-size:30px;font-weight:300;letter-spacing:-.02em;color:var(--chalk);line-height:1.05;margin-top:2px}
+  .hero-num small{font-size:14px;color:var(--ash);font-weight:400;margin-left:2px}
+  .hero-sub{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:6px}
+
+  /* idea 3 — set sparkline */
+  .spark{display:flex;align-items:flex-end;gap:3px;height:26px;margin-top:9px}
+  .spark i{display:block;width:14px;border-radius:2.5px 2.5px 1px 1px;background:rgba(198,248,79,.34)}
+  .spark i.top{background:var(--lime)}
+  .spark i.t2{background:rgba(108,182,189,.4)}
+
+  /* idea 6 — spine rows */
+  .rowline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+  .rowline:last-child{border-bottom:0}
+  .rowline .rt{font-weight:700;font-size:14px}
+  .rowline .rm{font-family:var(--font-mono);font-size:11.5px;color:var(--ash);white-space:nowrap}
+  .rowline .rm b{color:var(--teal);font-weight:400}
+  .rowline .rm b.l{color:var(--lime)}
+
+  /* idea 9 — day card */
+  .dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:2px 2px 9px}
+  .dayhead .dt{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  .dayhead .dm{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
+  .sess-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 2px;border-top:1px solid var(--line)}
+  .sess-row .st{font-weight:700;font-size:14px}
+  .sess-row .sm{font-family:var(--font-mono);font-size:11.5px;color:var(--ash);white-space:nowrap}
+
+  /* idea 10 — ledger */
+  .ledger{font-family:var(--font-mono);font-size:12px}
+  .ledger .lrow{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:baseline;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .ledger .ld{color:var(--ash2);letter-spacing:.06em}
+  .ledger .lt{color:var(--chalk);font-family:var(--font-display);font-weight:700;font-size:13.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .ledger .lm{color:var(--ash);text-align:right;white-space:nowrap}
+  .ledger .lm b{color:var(--lime);font-weight:400}
+  .ledger .lm i{color:var(--teal);font-style:normal}
+
+  .rest{font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash2);padding:6px 0 16px}
+
+  /* verdict */
+  .verdict{margin-top:96px;border:1px solid var(--line);border-radius:22px;background:var(--ink2);padding:30px 32px}
+  .verdict h2{font-size:24px;font-weight:900;letter-spacing:-.01em;margin:8px 0 12px}
+  .verdict p{font-size:14px;color:#c9ccc3;max-width:72ch;margin-bottom:12px}
+  .verdict p b{color:var(--chalk)}
+  .verdict .foot{font-family:var(--font-mono);font-size:11.5px;color:var(--ash);border-top:1px solid var(--line);padding-top:14px;margin-top:18px;max-width:none}
+  a{color:var(--teal)}
+</style>
+
+<div class="wrap">
+  <div class="kicker">History — Timeline cards</div>
+  <h1>Say it once. Ten ways to get there.</h1>
+  <p class="lede">The timeline card currently narrates its data three times: the <b>title</b>, a <b>metric chip</b>, and then the <b>raw block lines</b> — so “Tennis, 75 min” appears twice, a swim states its time in the chip and again in the block line (in different units), and a gym session dumps every set of every exercise onto the shelf. Jony Ive's test applies directly: <em>simplicity isn't the absence of clutter — it's describing purpose with nothing left to take away.</em> Every idea below shows the same three sessions from the screenshot, so they compare honestly.</p>
+
+  <div class="principles">
+    <div><div class="pk">One fact, one place</div><p>A number appears <b>once</b> per card. If the chip says it, the body may not.</p></div>
+    <div><div class="pk">Detail is a tap deep</div><p>The card is a handle, not the record. Sets, splits and paces live on the <b>session page</b>.</p></div>
+    <div><div class="pk">Grammar per discipline</div><p>Lifting speaks in <b>tonnage and top sets</b>; cardio in <b>distance and pace</b>; sport in <b>time</b>. Never the same sentence.</p></div>
+    <div><div class="pk">The exceptional speaks</div><p>PRs and standout days earn ink. Ordinary days recede — that contrast <b>is</b> the design.</p></div>
+  </div>
+
+  <!-- ————— DIAGNOSIS ————— -->
+  <div class="diag">
+    <div class="shot">
+      <div class="screen-label">Today — what ships now</div>
+      <div class="tl">
+        <div class="rail"><div class="dot"></div><div class="dlabel">Thu</div><div class="dnum">23</div></div>
+        <div class="cards">
+          <div class="card">
+            <div class="crow"><div class="ctitle anno">Tennis<span class="anno-tag">1</span></div><div class="chips"><span class="chip teal anno">75 min<span class="anno-tag">2</span></span></div></div>
+            <div class="bline anno"><span class="anno-tag">1 + 2 again</span><span class="bname">Tennis</span><span class="bsum">75 min</span></div>
+          </div>
+          <div class="card">
+            <div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal anno">0.6 km – 31 min<span class="anno-tag">3</span></span></div></div>
+            <div class="bline anno"><span class="anno-tag">3 again, other units</span><span class="bname">Swimming</span><span class="bsum">612 m, 31 min, 5:04 /100m</span></div>
+          </div>
+          <div class="card">
+            <div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span><span class="chip">7.4 t</span></div></div>
+            <div class="bline anno"><span class="anno-tag">4</span><span class="bname">Barbell Dea…</span><span class="bsum">90×7, 70×8, 100×5, 70×10, 100×6</span></div>
+            <div class="bline"><span class="bname">Pull-up</span><span class="bsum">–×5, –×5, –×5, –×5, –×5</span></div>
+            <div class="bmore">+2 blocks</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="diag-notes">
+      <div class="kicker" style="color:var(--sand)">Diagnosis</div>
+      <h2>Where the redundancy comes from</h2>
+      <p>One component, <code style="font-family:var(--font-mono);font-size:12.5px;color:var(--teal)">SessionCard</code>, renders title + chip + up to three raw <code style="font-family:var(--font-mono);font-size:12.5px;color:var(--teal)">blockSummary</code> lines for every session shape. Quick sport logs are a single block named after the sport — so the card repeats itself by construction.</p>
+      <div class="flaw"><div class="fl">Flaw 1 — echoed title</div><p>Single-block sport sessions print the sport as the title <i>and</i> as the block name.</p></div>
+      <div class="flaw"><div class="fl">Flaw 2 — echoed metric</div><p>The chip and the block line state the same duration, minutes apart on the same card.</p></div>
+      <div class="flaw"><div class="fl">Flaw 3 — unit drift</div><p>“0.6 km” in the chip, “612 m” in the body. Same fact, two dialects — reads as a bug.</p></div>
+      <div class="flaw"><div class="fl">Flaw 4 — the data dump</div><p>Lifting cards enumerate every set of every exercise. That's the session page's job, not the shelf's.</p></div>
+    </div>
+  </div>
+
+  <!-- ————— 01 ————— -->
+  <section class="concept" id="c1">
+    <div class="shot">
+      <div class="screen-label">Idea 01 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot"></div><div class="dlabel">Thu</div><div class="dnum">23</div></div>
+        <div class="cards">
+          <div class="card"><div class="crow"><div class="ctitle">Tennis</div><div class="chips"><span class="chip teal">75 min</span></div></div></div>
+          <div class="card"><div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal">612 m – 31 min</span></div></div>
+            <div class="stat">5:04 /100m</div></div>
+          <div class="card"><div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span><span class="chip">7.4 t</span></div></div>
+            <div class="bline"><span class="bname">Barbell Deadlift</span><span class="bsum">5 sets</span></div>
+            <div class="bline"><span class="bname">Pull-up</span><span class="bsum">5 sets</span></div>
+            <div class="bmore">+2 blocks</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>Deduplicate, nothing else</h2><span class="num">Idea 01</span></div>
+      <div class="tagline">The smallest true fix — subtract, don't redesign.</div>
+      <p>Three rules, no new visual language: a block whose name matches the title is <b>never listed</b>; a fact stated in the chip is <b>struck from the body</b> (the swim keeps only its pace); set enumerations collapse to a <b>set count</b>. One unit system per metric — metres in both places or kilometres in both, never each.</p>
+      <p>Tennis becomes a one-row card. This is Ive's discipline at its plainest: the confidence to remove.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Ships in an afternoon; zero relearning; parity is one shared engine change.</p></div>
+        <div><div class="lbl w">Cost</div><p>Lifting cards still list exercises without saying anything interesting about them.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 02 ————— -->
+  <section class="concept" id="c2">
+    <div class="shot">
+      <div class="screen-label">Idea 02 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot"></div><div class="dlabel">Thu</div><div class="dnum">23</div></div>
+        <div class="cards">
+          <div class="card"><div class="hero-num num-tab">75<small>min</small></div><div class="hero-sub">Tennis</div></div>
+          <div class="card"><div class="hero-num num-tab">612<small>m</small></div><div class="hero-sub">Swimming – 5:04 /100m</div></div>
+          <div class="card"><div class="hero-num num-tab">7.4<small>t</small></div><div class="hero-sub">Morning workout – 4 lifts – <span style="color:var(--lime)">↑ 3 PR</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>The headline number</h2><span class="num">Idea 02</span></div>
+      <div class="tagline">Every session has one number that mattered. Print that.</div>
+      <p>Invert the hierarchy: the <b>key metric becomes the display element</b> — large, light-weight, tabular — and the title drops to a mono sub-line. Lifting leads with tonnage, cardio with distance, sport with time. Chips disappear entirely; the PR count joins the sub-line in lime.</p>
+      <p>The timeline stops being a list of labels and becomes a column of numbers you can read like an instrument — scanning down the rail you literally watch your week add up.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Instantly scannable; strong identity; numbers align down the column.</p></div>
+        <div><div class="lbl w">Cost</div><p>Custom titles (“Morning workout”) lose prominence; two same-sport days look near-identical.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 03 ————— -->
+  <section class="concept" id="c3">
+    <div class="shot">
+      <div class="screen-label">Idea 03 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot lift"></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+        <div class="cards">
+          <div class="card">
+            <div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span><span class="chip">7.4 t</span></div></div>
+            <div class="spark">
+              <i style="height:78%" class="top"></i><i style="height:56%"></i><i style="height:100%" class="top"></i><i style="height:56%"></i><i style="height:100%" class="top"></i>
+              <i style="height:0;width:6px"></i>
+              <i style="height:44%" class="t2"></i><i style="height:44%" class="t2"></i><i style="height:44%" class="t2"></i><i style="height:44%" class="t2"></i><i style="height:44%" class="t2"></i>
+            </div>
+            <div class="stat"><b>Deadlift</b> top 100 kg × 6 – <b>Pull-up</b> 5 × 5 – +2 blocks</div>
+          </div>
+          <div class="card"><div class="crow"><div class="ctitle">Squash</div><div class="chips"><span class="chip teal">60 min</span></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>The shape of the work</h2><span class="num">Idea 03</span></div>
+      <div class="tagline">“90×7, 70×8, 100×5…” becomes a form you read in 200 ms.</div>
+      <p>The set enumeration was information trying to be a picture. Let it be one: a <b>per-set load sparkline</b> — bar height is load, lime marks top sets, teal marks a second exercise. The wave-loading pattern of that deadlift session is <i>visible</i> now, which the string of numerals never achieved.</p>
+      <p>One mono line beneath names the lifts and their single best set. Honest materials: the data itself becomes the ornament, so the card needs no other decoration.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Session character (waves, pyramids, straight sets) readable at a glance; dense yet calm.</p></div>
+        <div><div class="lbl w">Cost</div><p>A new visual element to build well on both clients; meaningless for bodyweight-only sets.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 04 ————— -->
+  <section class="concept" id="c4">
+    <div class="shot">
+      <div class="screen-label">Idea 04 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot lift"></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+        <div class="cards">
+          <div class="card">
+            <div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span><span class="chip">7.4 t</span></div></div>
+            <div class="bline"><span class="bname">Barbell Deadlift</span><span class="bsum">100 kg × 6 <span style="color:var(--lime)">PR</span></span></div>
+            <div class="bline"><span class="bname">Pull-up</span><span class="bsum">5 × 5</span></div>
+            <div class="bline"><span class="bname">Dip</span><span class="bsum">× 20 <span style="color:var(--lime)">PR</span></span></div>
+            <div class="bmore">+1 block</div>
+          </div>
+          <div class="card"><div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal">612 m – 5:04 /100m</span></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>Best set only</h2><span class="num">Idea 04</span></div>
+      <div class="tagline">Each lift gets one line: its name and the set worth remembering.</div>
+      <p>Keep the exercise list — it's what distinguishes “Morning workout” from “Afternoon workout” — but each line carries only the <b>top set</b> (highest load × its reps), with a lime <b>PR</b> mark where that set broke a record. The card answers the question you actually have on the shelf: <i>what did I pull, and was it a record?</i></p>
+      <p>Sport and cardio sessions drop their block lines entirely; the chip already says everything.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Every line now earns its ink; PRs land on the exact lift, not just a count.</p></div>
+        <div><div class="lbl w">Cost</div><p>Volume-focused athletes lose the sets-completed picture on the shelf.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 05 ————— -->
+  <section class="concept" id="c5">
+    <div class="shot">
+      <div class="screen-label">Idea 05 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot"></div><div class="dlabel">Sun</div><div class="dnum today">26</div></div>
+        <div class="cards">
+          <div class="card"><div class="ctitle">Swimming</div><div class="stat" style="font-size:12.5px;margin-top:5px">612 m in 31 minutes, holding <b>5:04 /100m</b>.</div></div>
+          <div class="card"><div class="ctitle">Tennis</div><div class="stat" style="font-size:12.5px;margin-top:5px">75 minutes on court.</div></div>
+          <div class="card"><div class="ctitle">Morning workout</div><div class="stat" style="font-size:12.5px;margin-top:5px">7.4 t across 4 lifts in 52 minutes — <span style="color:var(--lime)">3 lifetime PRs</span>.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>One sentence</h2><span class="num">Idea 05</span></div>
+      <div class="tagline">The card body is a single composed sentence, not a data readout.</div>
+      <p>Retire chips and block lines both. A per-shape <b>sentence grammar</b> in <code style="font-family:var(--font-mono);font-size:12.5px;color:var(--teal)">packages/core</code> composes one line: cardio speaks distance-time-pace, lifting speaks tonnage-lifts-PRs, sport speaks time. Because it's prose, nothing can repeat — a sentence that said “75 minutes” twice would read as broken, which is exactly the guarantee we want from the layout.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Warmest, most human treatment; structurally immune to redundancy; trivially translatable.</p></div>
+        <div><div class="lbl w">Cost</div><p>Slower to scan than aligned figures; grammar needs care in every locale.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 06 ————— -->
+  <section class="concept" id="c6">
+    <div class="shot">
+      <div class="screen-label">Idea 06 — mock</div>
+      <div class="tl">
+        <div class="rail">
+          <div class="dot small" style="margin-bottom:44px"></div>
+          <div class="dot" style="margin-bottom:44px"></div>
+          <div class="dot big lift" style="margin-bottom:44px"></div>
+          <div class="dot small" style="margin-bottom:44px"></div>
+        </div>
+        <div class="cards" style="gap:0">
+          <div class="rowline"><div><div class="rt">Swimming</div><div class="dlabel">Sun 26</div></div><div class="rm"><b>612 m – 5:04 /100m</b></div></div>
+          <div class="rowline"><div><div class="rt">Squash</div><div class="dlabel">Sat 25</div></div><div class="rm"><b>60 min</b></div></div>
+          <div class="rowline"><div><div class="rt">Morning workout</div><div class="dlabel">Sat 25</div></div><div class="rm"><b class="l">7.4 t – ↑ 3 PR</b></div></div>
+          <div class="rowline"><div><div class="rt">Tennis</div><div class="dlabel">Thu 23</div></div><div class="rm"><b>75 min</b></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>The spine speaks</h2><span class="num">Idea 06</span></div>
+      <div class="tagline">Move meaning into the rail; flatten the cards into rows.</div>
+      <p>The timeline dot stops being punctuation and becomes the <b>datum</b>: colour is discipline (lime lifting, teal sport/cardio — already the app's code), <b>size is session load</b>. Cards flatten to single rows — title and one metric — because the spine now carries the at-a-glance story. Twice the history fits on one screen.</p>
+      <p>Deference in Ive's sense: the chrome (cards, borders, chips) withdraws so the structure itself is the display.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>2× density; the month's rhythm — heavy days, gaps, streaks — visible as a shape.</p></div>
+        <div><div class="lbl w">Cost</div><p>No exercise detail on the shelf at all; dot-size semantics need to be learnable.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 07 ————— -->
+  <section class="concept" id="c7">
+    <div class="shot">
+      <div class="screen-label">Idea 07 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot lift"></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+        <div class="cards">
+          <div class="card" style="border-color:rgba(198,248,79,.28)">
+            <div class="crow"><div class="ctitle">Morning workout</div><div class="chips"><span class="chip lime">↑ 3 PR</span></div></div>
+            <div class="bline"><span class="bname">Barbell Deadlift</span><span class="bsum" style="color:var(--lime)">100 kg × 6 — best ever</span></div>
+            <div class="bline"><span class="bname">Dip</span><span class="bsum" style="color:var(--lime)">× 20 — rep PR</span></div>
+            <div class="stat">7.4 t – 4 lifts – 52 min</div>
+          </div>
+          <div class="card"><div class="crow"><div class="ctitle">Squash</div><div class="chips"><span class="chip teal">60 min</span></div></div></div>
+          <div class="card"><div class="crow"><div class="ctitle">Swimming</div><div class="chips"><span class="chip teal">374 m – 19 min</span></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>Quiet unless exceptional</h2><span class="num">Idea 07</span></div>
+      <div class="tagline">Ordinary days are one row. Record days get to talk.</div>
+      <p>Hierarchy by merit: every card defaults to a <b>single row</b> — title plus one metric. A session only expands when something happened worth expanding for: a PR names <b>the exact lift and set</b> in lime, a standout volume day states its total. The lime border whispers before you even read.</p>
+      <p>This makes the timeline emotionally honest — scrolling your month, the days that mattered rise to meet you, and the rest keep respectfully out of the way.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Strong reward loop for PRs; most days compress to near-nothing.</p></div>
+        <div><div class="lbl w">Cost</div><p>Needs a well-tuned “exceptional” threshold or every card ends up quiet.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 08 ————— -->
+  <section class="concept" id="c8">
+    <div class="shot">
+      <div class="screen-label">Idea 08 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot"></div><div class="dlabel">Sun</div><div class="dnum today">26</div></div>
+        <div class="cards">
+          <div class="card"><div class="ctitle">Swimming</div><div class="stat num-tab"><b>612 m</b> – 31 min – 5:04 /100m</div></div>
+          <div class="card"><div class="ctitle">Tennis</div><div class="stat num-tab"><b>75 min</b></div></div>
+          <div class="card"><div class="ctitle">Morning workout</div><div class="stat num-tab"><b>7.4 t</b> – 4 lifts – 52 min – <span style="color:var(--lime)">↑ 3 PR</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>One grammar</h2><span class="num">Idea 08</span></div>
+      <div class="tagline">Exactly two lines, always: the name, then one mono stat line.</div>
+      <p>The strictest system of the ten: every card is <b>title + one stat line</b>, full stop. The line is composed per shape from a fixed grammar — lifting: <i>tonnage – lifts – time – PRs</i>; cardio: <i>distance – time – pace</i>; sport: <i>time</i>. Leading figure emphasised, en-dash separated, tabular numerals so the column aligns down the shelf.</p>
+      <p>Chips retire (the stat line replaced them), so the top-right corner returns to silence. Uniformity here isn't blandness — it's the grid that makes the numbers comparable.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Perfectly predictable rhythm; redundancy is grammatically impossible; easiest to test.</p></div>
+        <div><div class="lbl w">Cost</div><p>No exercise names on the shelf; single-metric sport cards feel sparse.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 09 ————— -->
+  <section class="concept" id="c9">
+    <div class="shot">
+      <div class="screen-label">Idea 09 — mock</div>
+      <div class="tl">
+        <div class="rail"><div class="dot lift"></div><div class="dlabel">Sat</div><div class="dnum">25</div></div>
+        <div class="cards">
+          <div class="card">
+            <div class="dayhead"><span class="dt">Saturday 25</span><span class="dm">2 sessions – 112 min</span></div>
+            <div class="sess-row"><span class="st">Squash</span><span class="sm">60 min</span></div>
+            <div class="sess-row"><span class="st">Morning workout</span><span class="sm">7.4 t – <span style="color:var(--lime)">↑ 3 PR</span></span></div>
+          </div>
+          <div class="rest">1 rest day</div>
+          <div class="card">
+            <div class="dayhead"><span class="dt">Thursday 23</span><span class="dm">1 session</span></div>
+            <div class="sess-row"><span class="st">Tennis</span><span class="sm">75 min</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>The day is the card</h2><span class="num">Idea 09</span></div>
+      <div class="tagline">Group by day, not by session — the unit you actually think in.</div>
+      <p>Hybrid athletes double up constantly (the screenshot's Saturday has squash <i>and</i> a lift). Make the <b>day</b> the card: a mono date header with the day's own summary, sessions as rows inside it. The rail no longer repeats a date per session, two-session days shrink to one surface, and a “what did Saturday cost me” read appears for free.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Matches the mental model; day-level totals; less chrome per screen.</p></div>
+        <div><div class="lbl w">Cost</div><p>Individual sessions lose their own tap target size; a bigger structural change to both clients.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— 10 ————— -->
+  <section class="concept" id="c10">
+    <div class="shot">
+      <div class="screen-label">Idea 10 — mock</div>
+      <div class="ledger">
+        <div class="lrow"><span class="ld">Sun 26</span><span class="lt">Swimming</span><span class="lm num-tab"><i>612 m</i></span></div>
+        <div class="lrow"><span class="ld">Sat 25</span><span class="lt">Squash</span><span class="lm num-tab"><i>60 min</i></span></div>
+        <div class="lrow"><span class="ld">Sat 25</span><span class="lt">Morning workout</span><span class="lm num-tab">7.4 t <b>↑ 3</b></span></div>
+        <div class="lrow"><span class="ld">Thu 23</span><span class="lt">Tennis</span><span class="lm num-tab"><i>75 min</i></span></div>
+        <div class="lrow"><span class="ld">Wed 22</span><span class="lt">Swimming</span><span class="lm num-tab"><i>374 m</i></span></div>
+        <div class="lrow"><span class="ld">Tue 21</span><span class="lt">Swimming</span><span class="lm num-tab"><i>340 m</i></span></div>
+        <div class="lrow"><span class="ld">Tue 21</span><span class="lt">Afternoon workout</span><span class="lm num-tab">10.7 t <b>↑ 5</b></span></div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="head"><h2>The ledger</h2><span class="num">Idea 10</span></div>
+      <div class="tagline">No cards at all. A training log as an honest instrument.</div>
+      <p>The most radical reduction: retire the card metaphor and set history as a <b>ledger</b> — hairline rows, mono date, display-face title, one right-aligned tabular metric. Discipline reads through colour alone. Seven days fit where three cards sat; the whole month becomes one legible column of work done.</p>
+      <p>This is the “aluminium and glass” answer — no upholstery, just the material. It would live best as a fourth view alongside Agenda / Weeks / Timeline rather than replacing them.</p>
+      <div class="trade">
+        <div><div class="lbl g">Gain</div><p>Maximum density and calm; beautiful with months of data; near-zero chrome to maintain.</p></div>
+        <div><div class="lbl w">Cost</div><p>Small tap targets; least expressive for PR celebration; a departure from the app's card language.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ————— VERDICT ————— -->
+  <div class="verdict">
+    <div class="kicker">Recommendation</div>
+    <h2>What I'd ship</h2>
+    <p><b>Idea 01 is the floor</b> — the deduplication rules are correct under every other concept, so land them first regardless of direction. Then compose <b>08 + 04 + 07</b>: the one-line stat grammar as every card's base, best-set exercise lines added only for lifting, and the quiet/exceptional hierarchy deciding when a card gets to say more than two lines. Those three agree with each other and stay recognisably AURORA.</p>
+    <p><b>03 (sparkline)</b> is the one worth prototyping as a delight layer on lifting cards. <b>06, 09 and 10</b> are structural swings — good candidates for evolving the existing Agenda / Weeks / Timeline switcher rather than changes to the default card.</p>
+    <p class="foot">All composition logic belongs in packages/core (engines/history-views.ts, engines/session.ts) so web and mobile render one source of truth — per the parity rule. Same three sessions used in every mock: Swimming 612 m / 31 min, Tennis 75 min, Morning workout 7.4 t / 3 PR.</p>
+  </div>
+</div>
