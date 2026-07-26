@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planProgramView,
@@ -20,6 +20,9 @@ import {
   dayLeadWords,
   stepWords,
   rpeMeaning,
+  springs,
+  springToRN,
+  durations,
   type GoalNode,
   type GoalPlan,
   type PlanProgram,
@@ -35,6 +38,7 @@ import { enrollPlan } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
+import { useReducedMotion } from "../lib/use-reduced-motion";
 import { fs, F, serifIf } from "../lib/ui";
 import { withAlpha } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
@@ -332,6 +336,45 @@ function Pulse({ day, C }: { day: ProgramDayView; C: Palette }) {
   );
 }
 
+/**
+ * The accordion's expand/collapse — house motion: the body ARRIVES on the sheet
+ * spring (springs.sheet via springToRN, the same physics the web rides through
+ * --e-sheet) and LEAVES fast on an accelerating curve (durations.fast), per the
+ * "things leave faster than they arrive" rule. Reduce Motion SUBSTITUTES a
+ * cross-dissolve (durations.reduced): the height change is instant, opacity
+ * still tells you something changed. Content stays mounted (measured via
+ * onLayout so the height animation has a real target) but is clipped, untappable
+ * and hidden from AT while closed.
+ */
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [h, setH] = useState(0);
+  const anim = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) {
+      Animated.timing(anim, { toValue: open ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false }).start();
+      return;
+    }
+    if (open) Animated.spring(anim, { toValue: 1, ...springToRN(springs.sheet), useNativeDriver: false }).start();
+    else Animated.timing(anim, { toValue: 0, duration: durations.fast, easing: Easing.in(Easing.cubic), useNativeDriver: false }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, reduced]);
+  // Height rides the animation once measured; under Reduce Motion it snaps.
+  const height = reduced ? (open ? undefined : 0) : h > 0 ? anim.interpolate({ inputRange: [0, 1], outputRange: [0, h] }) : open ? undefined : 0;
+  return (
+    <Animated.View
+      style={{ height, opacity: anim, overflow: "hidden" }}
+      pointerEvents={open ? "auto" : "none"}
+      accessibilityElementsHidden={!open}
+      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+    >
+      <View onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))} style={{ borderTopWidth: 1, borderTopColor: HAIR }}>
+        {children}
+      </View>
+    </Animated.View>
+  );
+}
+
 // One accordion day: a pressable summary row (title + plain-words summary,
 // pulse + volume + chevron) that opens into the day's full tables.
 function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayView; open: boolean; onToggle: () => void; onLift: (l: ProgramLiftView, marker: string | null) => void; C: Palette; scheme: "light" | "dark" }) {
@@ -346,7 +389,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={`${day.title}${day.kindLabel ? ` — ${day.kindLabel}` : ""}${words ? `, ${words}` : ""}${right ? `, ${right}` : ""}`}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 13, borderBottomWidth: open ? 1 : 0, borderBottomColor: HAIR }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 13 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.2, color: C.chalk }} numberOfLines={1}>
@@ -367,7 +410,13 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
           </View>
         )}
       </Pressable>
-      {open && day.sessions.map((s, si) => <SessionBlock key={si} s={s} si={si} count={day.sessions.length} day={day} C={C} onLift={onLift} />)}
+      {expandable && (
+        <Collapse open={open}>
+          {day.sessions.map((s, si) => (
+            <SessionBlock key={si} s={s} si={si} count={day.sessions.length} day={day} C={C} onLift={onLift} />
+          ))}
+        </Collapse>
+      )}
     </View>
   );
 }

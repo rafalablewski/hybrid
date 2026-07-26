@@ -96,6 +96,64 @@ const rowBtn: React.CSSProperties = {
 /** What pressing a row opens: the lift plus where it lives. */
 type SheetSel = { lift: ProgramLiftView; day: string; marker: string | null };
 
+// Mirrors the mobile useReducedMotion + the app's @media (prefers-reduced-motion)
+// coverage so the accordion motion is substituted for users who ask for less.
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return reduced;
+}
+
+/**
+ * The accordion's expand/collapse — house motion: the body ARRIVES on the sheet
+ * spring (--e-sheet, the same physics mobile rides through springToRN) and
+ * LEAVES fast on the accelerating exit curve, per the "things leave faster than
+ * they arrive" rule. The 0fr→1fr grid track animates the unknown content
+ * height; `visibility` rides the same transition (discrete, so it flips at the
+ * closed end), keeping collapsed rows out of the tab order and the AT tree.
+ * Reduce Motion SUBSTITUTES a cross-dissolve: the track snaps, opacity fades.
+ */
+function Collapse({ open, children }: { open: boolean; children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateRows: open ? "1fr" : "0fr",
+        transition: reduced
+          ? "none"
+          : open
+            ? "grid-template-rows var(--d-sheet) var(--e-sheet)"
+            : "grid-template-rows var(--d-fast) var(--e-exit)",
+      }}
+    >
+      <div
+        style={{
+          overflow: "hidden",
+          minHeight: 0,
+          borderTop: `1px solid ${HAIR}`,
+          visibility: open ? "visible" : "hidden",
+          opacity: open ? 1 : 0,
+          transition: reduced
+            ? "opacity 150ms linear, visibility 150ms"
+            : open
+              ? "opacity var(--d-sheet) var(--e-fade), visibility var(--d-sheet)"
+              : "opacity var(--d-fast) var(--e-exit), visibility var(--d-fast)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function ProgramDays({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
   const [open, setOpen] = useState(0);
   const [sel, setSel] = useState<SheetSel | null>(null);
@@ -156,7 +214,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
         disabled={!expandable}
         onClick={onToggle}
         aria-expanded={open}
-        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", borderBottom: open ? `1px solid ${HAIR}` : "none", cursor: expandable ? "pointer" : "default" }}
+        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", cursor: expandable ? "pointer" : "default" }}
       >
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -173,7 +231,13 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
           </span>
         )}
       </button>
-      {open && day.sessions.map((s, si) => <SessionBlock key={si} s={s} si={si} count={day.sessions.length} day={day} onLift={onLift} />)}
+      {expandable && (
+        <Collapse open={open}>
+          {day.sessions.map((s, si) => (
+            <SessionBlock key={si} s={s} si={si} count={day.sessions.length} day={day} onLift={onLift} />
+          ))}
+        </Collapse>
+      )}
     </Card>
   );
 }
