@@ -16,24 +16,28 @@ export default function PlanHero({ goal, plan, program, back }: { goal: GoalNode
   const rule = withAlpha(C.chalk, 0.18);
   return (
     <View>
-      <View style={{ borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, marginBottom: 16 }}>
-        <LinearGradient colors={[withAlpha(C.lime, 0.2), withAlpha(C.lime, 0.06), "transparent"]} start={{ x: 1, y: 0 }} end={{ x: 0.1, y: 1 }} style={StyleSheet.absoluteFill} />
-        <View style={{ padding: 18, paddingBottom: 24 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel={`← ${goal.name}`} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: withAlpha(C.chalk, 0.1), alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 17, color: C.chalk }}>←</Text>
-            </Pressable>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 2.2, textTransform: "uppercase", color: C.chalk }}>{hero.navLabel}</Text>
+      {/* Shadow lives on the OUTER view (ACard's soft depth — web --shadow-card
+          parity); the inner view clips the gradient to the rounded corners. */}
+      <View style={{ borderRadius: 28, marginBottom: 16, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }}>
+        <View style={{ borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
+          <LinearGradient colors={[withAlpha(C.lime, 0.2), withAlpha(C.lime, 0.06), "transparent"]} start={{ x: 1, y: 0 }} end={{ x: 0.1, y: 1 }} style={StyleSheet.absoluteFill} />
+          <View style={{ padding: 20, paddingTop: 18, paddingBottom: 24 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <Pressable onPress={back} accessibilityRole="button" accessibilityLabel={`← ${goal.name}`} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: withAlpha(C.chalk, 0.1), alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.semi, fontSize: 17, color: C.chalk }}>←</Text>
+              </Pressable>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 2.4, textTransform: "uppercase", color: C.chalk }}>{hero.navLabel}</Text>
+            </View>
+            <View style={{ alignSelf: "flex-start", backgroundColor: C.chalk, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", color: C.ink }}>{goal.name}</Text>
+            </View>
+            <Text style={{ fontFamily: F.black, fontSize: 33, lineHeight: 36, letterSpacing: -0.5, color: C.chalk }}>{plan.name}</Text>
           </View>
-          <View style={{ alignSelf: "flex-start", backgroundColor: C.chalk, borderRadius: 999, paddingHorizontal: 15, paddingVertical: 9, marginBottom: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", letterSpacing: 1.6, textTransform: "uppercase", color: C.ink }}>{goal.name}</Text>
-          </View>
-          <Text style={{ fontFamily: F.black, fontSize: 33, lineHeight: 36, letterSpacing: -0.5, color: C.chalk }}>{plan.name}</Text>
         </View>
       </View>
 
       {/* Rule-topped editorial stat columns: duration, frequency, discipline volume. */}
-      <View style={{ flexDirection: "row", gap: 16, marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", gap: 18, marginBottom: 14 }}>
         {hero.stats.map((s) => (
           <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: rule, paddingTop: 10 }}>
             <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
