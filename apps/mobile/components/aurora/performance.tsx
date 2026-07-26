@@ -296,10 +296,15 @@ function Full() {
               per-tissue calibrated probability table and the plain-language
               driver explanations. Mirrors web (which adds the SVG body map). */}
           <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-            <Pressable onPress={() => setTissueOpen((v) => !v)} hitSlop={6} accessibilityRole="button" accessibilityState={{ expanded: tissueOpen }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.8, color: txt(C, calm ? C.lime : C.red) }}>{t("w.analyze.perf.tissueDetail")}</Text>
-              <Text style={{ fontSize: 8, color: txt(C, calm ? C.lime : C.red) }}>{tissueOpen ? "▲" : "▼"}</Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <Pressable onPress={() => setTissueOpen((v) => !v)} hitSlop={6} accessibilityRole="button" accessibilityState={{ expanded: tissueOpen }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.8, color: txt(C, calm ? C.lime : C.red) }}>{t("w.analyze.perf.tissueDetail")}</Text>
+                <Text style={{ fontSize: 8, color: txt(C, calm ? C.lime : C.red) }}>{tissueOpen ? "▲" : "▼"}</Text>
+              </Pressable>
+              {/* The model-version annotation the old screen's header carried —
+                  always visible, qualifying the risk numbers + the table. */}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.perf.model")} {risk.modelVersion}</Text>
+            </View>
             {tissueOpen && (
               <View style={{ marginTop: 10 }}>
                 {/* Column header — Tissue · ACWR · P(injury) · Risk (the top driver
@@ -326,7 +331,6 @@ function Full() {
                     </View>
                   </View>
                 ))}
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>{t("w.analyze.perf.model")} {risk.modelVersion} – {t("w.analyze.perf.calibrated")}</Text>
                 {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
                     at play (workload spike, high load, return-from-lull, recovery). */}
                 {driverKinds.length > 0 && (

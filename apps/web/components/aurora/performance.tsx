@@ -325,9 +325,15 @@ export default function AuroraPerformance({
                 own: the anterior/posterior body map, the per-tissue calibrated
                 probability table, and the plain-language driver explanations. */}
             <div style={{ marginTop: 16, borderTop: `1px dashed color-mix(in srgb, ${C("line")} 80%, ${C("red")})`, paddingTop: 14 }}>
-              <button onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
-                {t("w.analyze.perf.tissueDetail")} <span aria-hidden style={{ fontSize: 8 }}>{tissueOpen ? "▲" : "▼"}</span>
-              </button>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <button onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
+                  {t("w.analyze.perf.tissueDetail")} <span aria-hidden style={{ fontSize: 8 }}>{tissueOpen ? "▲" : "▼"}</span>
+                </button>
+                {/* The model-version annotation the old analyze header carried —
+                    always visible, qualifying the risk numbers above and the
+                    probability table inside the disclosure. */}
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.perf.model")} {risk.modelVersion} – {t("w.analyze.perf.calibrated")}</span>
+              </div>
               {tissueOpen && (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
@@ -354,7 +360,6 @@ export default function AuroraPerformance({
                           ))}
                         </tbody>
                       </table>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.5, marginTop: 10 }}>{t("w.analyze.perf.model")} {risk.modelVersion} – {t("w.analyze.perf.calibrated")}</div>
                     </div>
                   </div>
                   {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
