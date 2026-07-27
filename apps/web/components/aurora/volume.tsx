@@ -277,7 +277,7 @@ function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6 }}>
             {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
               <div key={k}>
-                <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV", "MAV", "MRV"][i]}</div>
+                <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
                 {editing ? (
                   <input
                     type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}

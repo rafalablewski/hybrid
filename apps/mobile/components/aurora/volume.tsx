@@ -306,7 +306,7 @@ function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
             {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
               <View key={k} style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>
-                  {["MV", "MEV", "MAV", "MAV", "MRV"][i]}
+                  {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
                 </Text>
                 {editing ? (
                   <TextInput
