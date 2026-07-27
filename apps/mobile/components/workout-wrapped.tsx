@@ -3,21 +3,14 @@ import { Modal, View, Text, Pressable, ScrollView, Dimensions, Animated, Easing,
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   sessionWrapped,
   fitScale,
   STAT_FIT_EM,
   liftStanding,
   hasActiveConnection,
-  FEELS,
-  FATIGUES,
-  feltSessionLoad,
-  loadBand,
-  LOAD_BAND_KEY,
   feelSamples,
   loadBaseline,
-  relativeEffort,
   doneReceipt,
   sessionCelebration,
   isFullAccess,
@@ -46,8 +39,8 @@ import {
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
-import { fetchTalent, fetchConnections, patchSessionFeel } from "../lib/api";
-import { qk } from "../lib/queries";
+import { fetchTalent, fetchConnections } from "../lib/api";
+import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
@@ -88,126 +81,6 @@ function CountUp({ value, style }: { value: string; style: TextStyle }) {
     return () => cancelAnimationFrame(raf);
   }, [value]);
   return <Text style={style} numberOfLines={1} adjustsFontSizeToFit>{disp}</Text>;
-}
-
-/**
- * "How did that feel?" — the post-workout self-report, asked once, right where
- * the athlete already is. Two taps: perceived effort, then how spent they are.
- *
- * It exists because the log alone can't tell two athletes apart: the same 10 km
- * in 40 minutes is a jog for one and a near-death experience for the other, and
- * an engine that treats them identically will keep prescribing the wrong next
- * session to the second one. Effort × duration is that session's internal load
- * (sRPE) — see core/session-feel.ts. Web parity: the same panel in
- * apps/web/components/aurora/workout-wrapped.tsx.
- */
-function FeelPanel({
-  session,
-  all,
-  bw,
-  eyebrow,
-}: {
-  session: LoggedSession;
-  all: LoggedSession[];
-  bw: BodyweightLookup;
-  eyebrow: (label: string) => ReactNode;
-}) {
-  const C = useTheme().palette;
-  const { t } = useLang();
-  const qc = useQueryClient();
-  const [feel, setFeel] = useState<number | null>(session.feel ?? null);
-  const [fatigue, setFatigue] = useState<number | null>(session.fatigue ?? null);
-  const [failed, setFailed] = useState(false);
-
-  // Optimistic: the taps land instantly and the write follows. A failed save
-  // says so rather than silently pretending the answer was recorded.
-  const save = async (patch: { feel?: number; fatigue?: number }) => {
-    const ok = await patchSessionFeel(session.id, patch);
-    setFailed(!ok);
-    if (ok) void qc.invalidateQueries({ queryKey: qk.sessions });
-  };
-
-  const minutes = doneReceipt(session, { bodyweightKg: bw(session.startedAt) }).durationMin;
-  const load = feltSessionLoad(feel, minutes);
-  // "vs your usual" compares the athlete to THEMSELVES over the last month —
-  // never to a cohort, and never until there are enough rated sessions for the
-  // comparison to mean anything (loadBaseline enforces the floor).
-  // Memoised: feelSamples walks every logged session (doneReceipt per row), and
-  // this panel re-renders on every tap.
-  const baseline = useMemo(
-    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
-    [all, bw, session.id],
-  );
-  const rel = load != null ? relativeEffort(load, baseline) : null;
-
-  const row = (
-    levels: readonly { value: number; labelKey: string; emoji: string }[],
-    picked: number | null,
-    onPick: (v: number) => void,
-  ) => (
-    <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
-      {levels.map((l) => {
-        const on = picked === l.value;
-        return (
-          <Pressable
-            key={l.value}
-            onPress={() => onPick(l.value)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={t(l.labelKey)}
-            style={{
-              flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 2,
-              borderRadius: 14, borderWidth: 1,
-              borderColor: on ? C.lime : C.line,
-              backgroundColor: on ? `${C.lime}26` : "#0e0f0d",
-            }}
-          >
-            <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-
-  // Deliberately compact: a Wrapped panel is a fixed screen-height box, so every
-  // row here is sized to still fit BOTH questions plus the load read-out on a
-  // small phone (and the prose is line-capped rather than pushing content out).
-  return (
-    <View>
-      {eyebrow(t("session.feel.q"))}
-      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: 21, color: C.chalk, letterSpacing: -0.4, lineHeight: 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
-      {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
-
-      {feel != null && (
-        <View style={{ marginTop: 18 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
-          {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
-        </View>
-      )}
-
-      {load != null && (
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>
-            {rel && (
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: rel.pct >= 0 ? txt(C, C.lime) : C.ash, marginTop: 3 }}>
-                {rel.pct >= 0 ? "+" : "−"}{Math.abs(rel.pct)}% {t("session.feel.vsUsual")}
-              </Text>
-            )}
-          </View>
-        </View>
-      )}
-
-      {(failed || feel != null) && (
-        <Text numberOfLines={3} style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 15, color: C.ash, marginTop: 12 }}>
-          {failed ? t("session.feel.retry") : t("session.feel.why")}
-        </Text>
-      )}
-    </View>
-  );
 }
 
 /**
@@ -270,6 +143,15 @@ export function WorkoutWrapped({
 
   const bwHere = bw(session.startedAt);
   const wrapped = sessionWrapped(session, all, { units, bw });
+  const receipt = doneReceipt(session, { bodyweightKg: bwHere });
+  // "vs your usual" compares the athlete to THEMSELVES over the last month —
+  // never a cohort, and never until there are enough rated sessions for the
+  // comparison to mean anything (loadBaseline enforces the floor). Memoised:
+  // feelSamples walks every logged session.
+  const feelBaseline = useMemo(
+    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
+    [all, bw, session.id],
+  );
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
@@ -451,7 +333,14 @@ export function WorkoutWrapped({
 
         {/* ── HOW DID THAT FEEL? ── */}
         <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}12`} top={panelH * 0.05} left={-90} />}>
-          <FeelPanel session={session} all={all} bw={bw} eyebrow={eyebrow} />
+          <FeelPrompt
+            sessionId={session.id}
+            minutes={receipt.durationMin}
+            initialFeel={session.feel ?? null}
+            initialFatigue={session.fatigue ?? null}
+            baseline={feelBaseline}
+            eyebrow={eyebrow}
+          />
         </Panel>
 
         {/* ── PREMIUM ── */}
