@@ -13,21 +13,32 @@ import { useDialog } from "@/lib/use-dialog";
 import { AuroraIcon } from "./icons";
 
 /**
- * AURORA pill nav (web) — the floating bottom pill bar, the web twin of the
- * mobile Aurora tab bar. On web it COEXISTS with the left sidebar (the sidebar
- * is the full nav; this is quick-access to the five funnel destinations). Self-
- * gates to Aurora (renders null in Classic). Glyphs are the uploaded design-kit
- * line icons only. "More" opens a sheet with the full persona-filtered nav.
+ * AURORA pill nav (web) — the floating bottom bar in the iOS 26 SwiftUI
+ * TabView anatomy, the web twin of the mobile Aurora bar: the four side tabs
+ * (icon + label) live inside a Liquid Glass capsule and Train floats BESIDE it
+ * as a detached circular action (Apple's split tab bar — the tab group + the
+ * standalone accessory), replacing the old centre FAB that punched through the
+ * bar. On web it COEXISTS with the left sidebar (the sidebar is the full nav;
+ * this is quick-access to the five funnel destinations). Self-gates to Aurora
+ * (renders null in Classic). Glyphs are the uploaded design-kit line icons
+ * only. "More" opens a sheet with the full persona-filtered nav.
  */
-// PRIMARY pills sit to the LEFT of the elevated center Train action; More ·
-// Profile sit to the right. The bar reads Today · Explore · [Train] · More ·
-// Profile. Explore opens the social/discovery surface (the Feed screen); Profile
-// returns to the bar (it also lives in the Today header). Plans/History/Cockpit
-// stay reachable from the More sheet.
+// PRIMARY tabs sit to the LEFT inside the capsule; More · Profile sit to the
+// right. The bar reads Today · Explore · More · Profile — [Train]. Explore
+// opens the social/discovery surface (the Feed screen); Profile returns to the
+// bar (it also lives in the Today header). Plans/History/Cockpit stay
+// reachable from the More sheet.
 const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
   { id: "today", icon: "village", label: "Today" },
   { id: "explore", icon: "globe", label: "Explore" },
 ];
+
+// iOS 26 tab-bar geometry (matching the mobile bar): each slot is icon +
+// label, the selection lens is a capsule covering both, and the detached Train
+// circle matches the bar's full height.
+const LENS_W = 60;
+const SLOT_H = 46;
+const TRAIN_D = 58;
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -43,13 +54,16 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const closeMore = () => { setMoreOpen(false); setQuery(""); };
   const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
 
-  // Sliding selection indicator (the Instagram-style liquid pill): a single
-  // chalk highlight that SPRINGS to the active flat slot and STRETCHES mid-
-  // travel (scaled by travel DISTANCE, like Instagram's blob), instead of a
-  // static per-tab background. barRef is the offset parent; flatRefs holds the
-  // four flat buttons. The centre Train FAB is excluded (it has its own glow) —
-  // while Train is active the indicator FADES OUT IN PLACE but stays mounted,
-  // so re-entering a side tab travels/fades instead of popping.
+  // Sliding selection indicator (the iOS 26 glass lens): a single translucent
+  // highlight that SPRINGS to the active flat slot and STRETCHES mid-travel
+  // (scaled by travel DISTANCE, like Instagram's blob), instead of a static
+  // per-tab background. barRef is the capsule (the offset parent); flatRefs
+  // holds the four flat buttons; wrapRef is the whole split bar (capsule +
+  // Train circle) for the shrink-on-scroll. The detached Train circle is
+  // excluded (it has its own glow) — while Train is active the indicator FADES
+  // OUT IN PLACE but stays mounted, so re-entering a side tab travels/fades
+  // instead of popping.
+  const wrapRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const flatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ind, setInd] = useState<{ x: number; top: number } | null>(null);
@@ -99,7 +113,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
         setStretch(1);
         return;
       }
-      const next = { x: el.offsetLeft + (el.offsetWidth - 52) / 2, top: el.offsetTop + (el.offsetHeight - 52) / 2 };
+      const next = { x: el.offsetLeft + (el.offsetWidth - LENS_W) / 2, top: el.offsetTop + (el.offsetHeight - SLOT_H) / 2 };
       const prev = indRef.current;
       const wasShown = indShownRef.current;
       indRef.current = next;
@@ -123,18 +137,19 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFlat]);
 
-  // Shrink-on-scroll (the Instagram behaviour): full size at the very top, the
-  // pill scales down smoothly as the page scrolls. The whole bar (barRef) is
-  // scaled — the FAB + sliding indicator are its children, so they shrink with
-  // it. Applied imperatively per animation frame (transform isn't in the bar's
-  // React-managed style, so it's never clobbered on re-render); honours reduced
-  // motion; recomputed on screen change so a short screen re-expands.
+  // Shrink-on-scroll (the tabBarMinimizeBehavior feel): full size at the very
+  // top, the bar scales down smoothly as the page scrolls. The whole split bar
+  // (wrapRef — capsule + Train circle) is scaled; the sliding indicator is a
+  // child, so it shrinks with it. Applied imperatively per animation frame
+  // (transform isn't in the bar's React-managed style, so it's never clobbered
+  // on re-render); honours reduced motion; recomputed on screen change so a
+  // short screen re-expands.
   useEffect(() => {
     const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     const apply = () => {
       raf = 0;
-      const bar = barRef.current;
+      const bar = wrapRef.current;
       if (!bar) return;
       const y = window.scrollY || 0;
       const p = reduce ? 0 : y <= 0 ? 0 : y >= 48 ? 1 : y / 48;
@@ -282,35 +297,44 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       )}
 
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 18px 18px", pointerEvents: "none" }}>
-        {/* Liquid-glass pill — a frosted blur lets the page fizz through, lighter
-            than the classic .liquid-glass (translucent tint + a top rim highlight,
-            no grain/sheen). */}
-        <div ref={barRef} style={{ position: "relative", pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
-          {/* The single sliding highlight — springs between flat slots (transform),
-              stretching mid-travel (scaleX, distance-scaled) for the liquid feel;
-              sits behind the icons (zIndex 0). While Train is active it fades out
-              in place (opacity) but stays MOUNTED, so the next selection travels
-              instead of popping in. */}
-          {ind && (
-            <span
-              aria-hidden
-              style={{
-                position: "absolute", left: 0, top: ind.top, width: 52, height: 52, borderRadius: 26,
-                background: C("chalk"), transformOrigin: "center",
-                transform: `translateX(${ind.x}px) scaleX(${stretch})`,
-                opacity: indShown ? 1 : 0,
-                transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease",
-                zIndex: 0, pointerEvents: "none",
-              }}
-            />
-          )}
-          {/* Today · Explore | [Train] | More · Profile */}
-          {tabs.map((tab) => (
-            <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} onClick={() => go(tab.id)} />
-          ))}
+        {/* The iOS 26 split bar: [glass capsule with the four tabs] + [detached
+            Train circle], shrinking together on scroll. */}
+        <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, width: "100%", maxWidth: 460 }}>
+          {/* The Liquid Glass capsule — a clearer, brighter frost than the old
+              tinted pill (the page genuinely fizzes through, like the native
+              iOS 26 TabView material), with a hairline edge + top rim light. */}
+          <div ref={barRef} style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", background: "color-mix(in srgb, var(--color-ink2) 40%, transparent)", backdropFilter: "blur(24px) saturate(1.5)", WebkitBackdropFilter: "blur(24px) saturate(1.5)", border: `1px solid color-mix(in srgb, var(--color-chalk) 14%, transparent)`, borderRadius: 999, padding: "6px 8px", boxShadow: "0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.16)" }}>
+            {/* The single sliding highlight — a translucent glass lens (not an
+                opaque pill: the active glyph stays chalk over it, like the
+                native glass selection) that springs between flat slots
+                (transform), stretching mid-travel (scaleX, distance-scaled) for
+                the liquid feel; sits behind the icons (zIndex 0). While Train
+                is active it fades out in place (opacity) but stays MOUNTED, so
+                the next selection travels instead of popping in. */}
+            {ind && (
+              <span
+                aria-hidden
+                style={{
+                  position: "absolute", left: 0, top: ind.top, width: LENS_W, height: SLOT_H, borderRadius: SLOT_H / 2,
+                  background: "color-mix(in srgb, var(--color-chalk) 14%, transparent)",
+                  border: `1px solid color-mix(in srgb, var(--color-chalk) 16%, transparent)`,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)",
+                  transformOrigin: "center",
+                  transform: `translateX(${ind.x}px) scaleX(${stretch})`,
+                  opacity: indShown ? 1 : 0,
+                  transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease",
+                  zIndex: 0, pointerEvents: "none",
+                }}
+              />
+            )}
+            {/* Today · Explore · More · Profile */}
+            {tabs.map((tab) => (
+              <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} onClick={() => go(tab.id)} />
+            ))}
+            <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} onClick={() => setMoreOpen((v) => !v)} />
+            <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} onClick={() => go("profile")} />
+          </div>
           <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
-          <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} onClick={() => setMoreOpen((v) => !v)} />
-          <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} onClick={() => go("profile")} />
         </div>
       </div>
     </>
@@ -318,16 +342,29 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 }
 
 function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; reduced: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
+  // Each item is icon + label (the iOS 26 TabView item), stacked TWICE: an ash
+  // base and a chalk active overlay. zIndex 1 keeps the stack above the shared
+  // sliding glass lens, which is drawn once in the bar, not per-button. The
+  // active tint is a CROSSFADE synced to the lens's arrival — the incoming
+  // glyph waits a beat (~.1s delay) so it lands WITH the sliding lens; an
+  // instant flip reads as "icon changed, pill lagging" (the Instagram-audit
+  // finding). Outgoing fades back immediately. Over the translucent lens the
+  // active glyph stays bright (chalk), never inverting to dark-on-glass.
+  // Glyph weight 4.5 (viewBox units, ~1.3px at 21) — the shared NAV-BAR weight,
+  // matching mobile's AuroraSvgIcon in global-nav. Before this the clients
+  // drifted (web stroked the bar at a 2.6 hairline, mobile at the design-kit 6);
+  // 4.5 is the unified midpoint, a touch lighter than the kit default so the
+  // glyphs sit comfortably beside a 10pt label on glass.
+  const item = (color: string) => (
+    <span style={{ display: "grid", justifyItems: "center", gap: 2 }}>
+      <AuroraIcon name={icon} size={21} strokeWidth={4} color={color} />
+      <span style={{ fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 600, lineHeight: 1, color, whiteSpace: "nowrap", maxWidth: LENS_W - 4, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+    </span>
+  );
   return (
-    // zIndex 1 keeps the glyph above the shared sliding highlight; the highlight
-    // itself (chalk pill) is drawn once in the bar, not per-button. The active
-    // ink tint is a CROSSFADE overlay synced to the highlight's arrival — the
-    // incoming glyph waits a beat (~.1s delay) so it lands WITH the sliding
-    // pill; an instant flip reads as "icon changed, pill lagging" (the
-    // Instagram-audit finding). Outgoing fades back immediately.
-    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
-      <span style={{ position: "relative", width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center" }}>
-        <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={C("ash")} />
+    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+      <span style={{ position: "relative", width: LENS_W, height: SLOT_H, display: "grid", placeItems: "center" }}>
+        {item(C("ash"))}
         <span
           aria-hidden
           style={{
@@ -336,7 +373,7 @@ function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon:
             transition: reduced ? "none" : active ? "opacity .2s ease .1s" : "opacity .12s ease",
           }}
         >
-          <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={C("ink")} />
+          {item(C("chalk"))}
         </span>
       </span>
     </button>
@@ -344,24 +381,26 @@ function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon:
 }
 
 /**
- * The elevated center Train action — a larger lime circle raised above the bar
- * (an ink ring + soft lime glow) with an inline dumbbell glyph, like the mockup.
+ * The detached Train action — the standalone lime circle beside the capsule
+ * (the iOS 26 accessory-button idiom), bar-height, with an inline dumbbell
+ * glyph and a soft lime glow: the app's CTA identity in Apple's
+ * prominent-button slot.
  */
 function TrainFab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
-      <span
-        style={{
-          width: 58, height: 58, borderRadius: "50%", display: "grid", placeItems: "center",
-          background: C("lime"), border: `4px solid ${C("ink")}`,
-          boxShadow: `0 10px 24px -6px color-mix(in srgb, var(--color-lime) 60%, transparent)${active ? `, 0 0 0 2px color-mix(in srgb, var(--color-lime) 40%, transparent)` : ""}`,
-          transform: "translateY(-20px)",
-        }}
-      >
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
-        </svg>
-      </span>
+    <button
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      style={{
+        width: TRAIN_D, height: TRAIN_D, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center",
+        background: C("lime"), border: "none", cursor: "pointer",
+        boxShadow: `0 8px 22px -6px color-mix(in srgb, var(--color-lime) 55%, transparent)${active ? `, 0 0 0 2px color-mix(in srgb, var(--color-lime) 40%, transparent)` : ""}`,
+      }}
+    >
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
+      </svg>
     </button>
   );
 }
