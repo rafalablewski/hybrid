@@ -77,6 +77,34 @@ export function railGeometry(s: MuscleVolumeStatus): RailGeometry {
   };
 }
 
+/** The three landmark VALUES a row prints beneath its rail. Because the rail is
+ *  normalised, they sit at fixed anchors — the same anchors the section legend
+ *  names once as MEV / MAV / MRV — so the words are the column headers and each
+ *  row supplies its own numbers underneath. That is what replaces the old
+ *  per-row swatch legend: same information, stated as a scale rather than a key
+ *  redrawn seven times. */
+export interface RailScale {
+  mev: string;
+  /** The MAV range, collapsed to a single value when low and high coincide. */
+  mav: string;
+  mrv: string;
+  mevX: number;
+  /** Midpoint of the MAV band — always inside the band, on every muscle. */
+  mavX: number;
+  mrvX: number;
+}
+
+export function railScale(l: VolumeLandmark): RailScale {
+  return {
+    mev: String(l.mev),
+    mav: l.mavLow === l.mavHigh ? String(l.mavHigh) : `${l.mavLow}–${l.mavHigh}`,
+    mrv: String(l.mrv),
+    mevX: RAIL.mev,
+    mavX: (RAIL.mev + RAIL.mavHigh) / 2,
+    mrvX: RAIL.mrv,
+  };
+}
+
 /** Which sentence the hero leads with. */
 export type VolumeVerdict = "none" | "balanced" | "over" | "under" | "mixed";
 

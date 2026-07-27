@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import {
   volumeStatus, resolveLandmarks,
-  railGeometry, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  railGeometry, railScale, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -166,7 +166,7 @@ export default function AuroraVolume() {
         <ACard style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
             <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.sets")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           </View>
 
           <LegendRail />
@@ -220,6 +220,8 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
     <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? 0.35 : 1 }}>
       {/* the productive band, lit through the whole column width */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, 0.13) }} />
+      {/* the territory past the ceiling */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
       {/* this week */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(g.x), backgroundColor: color, opacity: 0.9, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
       {/* the ceiling reads as a NOTCH in the column, so it survives the fill */}
@@ -261,6 +263,7 @@ function LegendRail() {
     <View style={{ marginTop: 16, marginBottom: 18 }}>
       <View style={{ height: 4, borderRadius: 2, backgroundColor: C.ink, overflow: "hidden" }}>
         <View style={{ position: "absolute", left: pct(RAIL.mev), width: pct(RAIL.mavHigh - RAIL.mev), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.3) }} />
+        <View style={{ position: "absolute", left: pct(RAIL.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.3) }} />
       </View>
       <View style={{ height: 14 }}>
         {([["MEV", RAIL.mev], ["MAV", (RAIL.mev + RAIL.mavHigh) / 2], ["MRV", RAIL.mrv]] as const).map(([label, x]) => (
@@ -280,6 +283,7 @@ function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const g = railGeometry(s);
+  const sc = railScale(s.landmark);
   return (
     <Pressable
       onPress={onToggle}
@@ -289,40 +293,54 @@ function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
     >
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(ZONE_KEY[s.zone])}</Text>
       </View>
 
       <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
+        {/* The track is itself the key: the productive band lit, the territory
+            past the ceiling tinted, so the zones read even on an empty rail. */}
         <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
+        <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
         <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
         {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
         <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
         <View style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
       </View>
 
-      {expanded && (
-        <View style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: "row", gap: 6 }}>
-            {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
-              <View key={k} style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>
-                  {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
-                </Text>
-                {editing ? (
-                  <TextInput
-                    defaultValue={String(s.landmark[k])}
-                    onEndEditing={(e) => onEdit(s.muscle, k, e.nativeEvent.text)}
-                    keyboardType="number-pad"
-                    accessibilityLabel={`${label} ${k}`}
-                    style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 }}
-                  />
-                ) : (
-                  <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, paddingVertical: 8 }}>{s.landmark[k]}</Text>
-                )}
-              </View>
-            ))}
-          </View>
-          {!editing && <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>}
+      {/* This muscle's own landmark values, under the anchors the legend above
+          names once. The scale every row used to redraw as a swatch key. */}
+      <View style={{ height: 15, marginTop: 5 }}>
+        {([[sc.mev, sc.mevX], [sc.mav, sc.mavX], [sc.mrv, sc.mrvX]] as const).map(([v, x], i) => (
+          <Text key={i} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -21, width: 42, textAlign: "center", fontFamily: F.mono, fontSize: 10, color: C.ash }}>{v}</Text>
+        ))}
+      </View>
+
+      {/* Expanding adds only what the scale above does NOT already say: the
+          maintenance floor and the prescription. Editing swaps in all five
+          fields, since all five are editable. */}
+      {expanded && !editing && (
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
+          <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
+        </View>
+      )}
+      {expanded && editing && (
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 12 }}>
+          {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
+            <View key={k} style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>
+                {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
+              </Text>
+              <TextInput
+                defaultValue={String(s.landmark[k])}
+                onEndEditing={(e) => onEdit(s.muscle, k, e.nativeEvent.text)}
+                keyboardType="number-pad"
+                accessibilityLabel={`${label} ${k}`}
+                style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 }}
+              />
+            </View>
+          ))}
         </View>
       )}
     </Pressable>

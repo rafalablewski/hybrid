@@ -3,7 +3,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, resolveLandmarks,
-  railGeometry, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  railGeometry, railScale, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -142,7 +142,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
         <section style={card}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
             <h2 style={sectionTitle}>{t("w.analyze.vol.byMuscle")}</h2>
-            <span style={eyebrow}>{t("w.analyze.vol.sets")}</span>
+            <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
           </div>
 
           <LegendRail />
@@ -196,6 +196,8 @@ function ShapeColumn({ s, token, dim }: { s: MuscleVolumeStatus; token: string; 
   return (
     <div style={{ position: "relative", width: "100%", height: 66, borderRadius: 7, background: C("ink"), overflow: "hidden", opacity: dim ? 0.35 : 1, transition: "opacity .18s ease" }}>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), background: mix("lime", 13) }} />
+      {/* the territory past the ceiling */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, background: mix("red", 16) }} />
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(g.x), background: C(token), opacity: 0.9, borderRadius: "7px 7px 0 0", transition: "height .3s cubic-bezier(.2,.7,.2,1)" }} />
       {/* the ceiling reads as a NOTCH in the column, so it survives the fill */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), height: 2, background: C("ink2") }} />
@@ -234,6 +236,7 @@ function LegendRail() {
     <div style={{ marginTop: 16, marginBottom: 18 }}>
       <div style={{ position: "relative", height: 4, borderRadius: 2, background: C("ink"), overflow: "hidden" }}>
         <div style={{ position: "absolute", left: pct(RAIL.mev), width: pct(RAIL.mavHigh - RAIL.mev), top: 0, bottom: 0, background: mix("lime", 30) }} />
+        <div style={{ position: "absolute", left: pct(RAIL.mrv), right: 0, top: 0, bottom: 0, background: mix("red", 30) }} />
       </div>
       <div style={{ position: "relative", height: 14 }}>
         {([["MEV", RAIL.mev], ["MAV", (RAIL.mev + RAIL.mavHigh) / 2], ["MRV", RAIL.mrv]] as const).map(([label, x]) => (
@@ -252,6 +255,7 @@ function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
 }) {
   const { t } = useLang();
   const g = railGeometry(s);
+  const sc = railScale(s.landmark);
   return (
     <div style={{ padding: "12px 0" }}>
       <button
@@ -260,37 +264,50 @@ function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
         style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
       >
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
-          <span style={{ fontSize: fs.note, fontWeight: 600 }}>{label}</span>
-          <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)}</span>
+          <span style={{ flex: 1, fontSize: fs.note, fontWeight: 600 }}>{label}</span>
+          <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
+          <span style={{ ...mono(fs.caption), color: C("ash") }}>{t(ZONE_KEY[s.zone])}</span>
         </div>
         <div style={{ position: "relative", height: 11, borderRadius: 6, background: C("ink"), overflow: "hidden" }}>
+          {/* The track is itself the key: the productive band lit, the territory
+              past the ceiling tinted, so the zones read even on an empty rail. */}
           <div style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, background: mix("lime", 13) }} />
+          <div style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, background: mix("red", 16) }} />
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), background: C(token), opacity: 0.9, borderRadius: 6, transition: "width .3s cubic-bezier(.2,.7,.2,1)" }} />
           {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
           <div style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
           <div style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
         </div>
+        {/* This muscle's own landmark values, under the anchors the legend above
+            names once. The scale every row used to redraw as a swatch key. */}
+        <div style={{ position: "relative", height: 15, marginTop: 5 }}>
+          {([[sc.mev, sc.mevX], [sc.mav, sc.mavX], [sc.mrv, sc.mrvX]] as const).map(([v, x]) => (
+            <span key={x} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -24, width: 48, textAlign: "center", ...mono(10), color: C("ash") }}>{v}</span>
+          ))}
+        </div>
       </button>
 
-      {expanded && (
-        <div style={{ marginTop: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6 }}>
-            {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
-              <div key={k}>
-                <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
-                {editing ? (
-                  <input
-                    type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}
-                    onBlur={(e) => onEdit(s.muscle, k, e.target.value)}
-                    style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" }}
-                  />
-                ) : (
-                  <div style={{ ...mono(fs.body), textAlign: "center", color: C("chalk"), padding: "8px 0" }}>{s.landmark[k]}</div>
-                )}
-              </div>
-            ))}
-          </div>
-          {!editing && <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>}
+      {/* Expanding adds only what the scale above does NOT already say: the
+          maintenance floor and the prescription. Editing swaps in all five
+          fields, since all five are editable. */}
+      {expanded && !editing && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
+          <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
+        </div>
+      )}
+      {expanded && editing && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6, marginTop: 12 }}>
+          {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
+            <div key={k}>
+              <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
+              <input
+                type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}
+                onBlur={(e) => onEdit(s.muscle, k, e.target.value)}
+                style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" }}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

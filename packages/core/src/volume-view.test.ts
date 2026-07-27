@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { RAIL, railX, railGeometry, volumeSummary, sortByUrgency, setsLabel, deltaLabel } from "./volume-view";
+import { RAIL, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel } from "./volume-view";
 import { muscleVolumeStatus, VOLUME_LANDMARKS } from "./engines/landmarks";
 import type { MuscleGroup } from "./engines/types";
 
@@ -53,6 +53,27 @@ describe("railGeometry", () => {
     expect(g.bandEnd).toBe(RAIL.mavHigh);
     expect(g.mev).toBe(RAIL.mev);
     expect(g.mrv).toBe(RAIL.mrv);
+  });
+});
+
+describe("railScale", () => {
+  it("prints each muscle's own landmark values at the shared anchors", () => {
+    const s = railScale(L.chest);
+    expect([s.mev, s.mav, s.mrv]).toEqual(["8", "12–18", "20"]);
+    expect(s.mevX).toBe(RAIL.mev);
+    expect(s.mrvX).toBe(RAIL.mrv);
+  });
+
+  it("puts the MAV label inside the band for every muscle", () => {
+    for (const m of Object.keys(L) as MuscleGroup[]) {
+      const s = railScale(L[m]);
+      expect(s.mavX).toBeGreaterThanOrEqual(railX(L[m].mavLow, L[m]));
+      expect(s.mavX).toBeLessThanOrEqual(RAIL.mavHigh);
+    }
+  });
+
+  it("collapses a degenerate MAV range to one number", () => {
+    expect(railScale({ mv: 4, mev: 6, mavLow: 12, mavHigh: 12, mrv: 16 }).mav).toBe("12");
   });
 });
 
