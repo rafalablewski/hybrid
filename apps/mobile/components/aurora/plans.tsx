@@ -1,27 +1,40 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
-import { useFocusEffect } from "expo-router";
-import { GOAL_TREE, GOAL_CATEGORIES, filterGoalGroups, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalCategory, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Animated, View, Text, Pressable, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, AField, AHeading, ABack, RADIUS, withAlpha } from "./kit";
+import { fs, space, F, serifIf } from "../../lib/ui";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { ACard, AField, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
-import PlanCoverScreen, { CoverScreen, PlanDockPill } from "../plan-hero";
+import PlanCoverScreen, { CoverScreen, PlanDockPill, type CoverScreenApi } from "../plan-hero";
+
+/** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
+ *  they expand into (Explore's PlanCover recipe). */
+const TILE_INK = "#0c0d0c";
+/** One goal tile: wide enough that two-and-a-bit peek at 393dp, so a shelf
+ *  reads as a rail rather than a cut-off grid. */
+const TILE_W = 172;
+const TILE_H = 140;
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
 export default function AuroraPlans() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const router = useRouter();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
-  // Browse filter — narrows the goal grid by discipline and/or free-text so the
-  // library stays findable as it grows past a scroll-it-all list.
+  // Free-text search over the library. The CATEGORY lever is gone: with every
+  // category rendered as its own shelf, filtering to one leaves an empty
+  // screen — so the chips navigate to a shelf instead of narrowing to one.
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<GoalCategory | "all">("all");
+  const scrollApi = useRef<CoverScreenApi | null>(null);
+  const shelfTops = useRef<Record<string, number>>({});
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
@@ -50,61 +63,191 @@ export default function AuroraPlans() {
   }
   if (goal) return <PlanList goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
+  // ── the library cover: the SAME scaffold the goal and plan screens ride, so
+  // every depth of the Plans stack is one object at a different compression.
+  // Its accent is the theme's primary (no discipline owns "Plans"), softened by
+  // the "library" variant so the root can't out-shout the goals on its shelves.
+  const shelves = goalShelves(query);
+  const lib = libraryCoverView(GOAL_TREE.length, GOAL_CATEGORIES, {
+    chip: t("w.train.plans.libraryChip"),
+    title: t("plans.title"),
+    goal: t("w.train.plans.goalCount"),
+    goals: t("w.train.plans.goalsCount"),
+  });
+  // The scaffold lands the shelf head under the collapsed bar + docked rail.
+  const jumpTo = (category: string) => {
+    const y = shelfTops.current[category];
+    if (y != null) scrollApi.current?.scrollToChild(y);
+  };
+
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("plans.title")}</AHeading>
+    <CoverScreen
+      cover={{ accent: C.lime, glyph: lib.glyph, chip: lib.chip, duration: lib.count, title: lib.title, metaParts: lib.metaParts, stats: [], blurb: "", variant: "library" }}
+      backLabel={t("common.back")}
+      back={() => router.back()}
+      scrollApi={scrollApi}
+      rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} /> : undefined}
+    >
+      <View style={{ marginTop: 14 }}>
+        <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
       </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14 }}>{t("plans.chooseGoal")}</Text>
       <EnrolledCard enrolled={enrolled} />
-      <FilterBar query={query} setQuery={setQuery} cat={cat} setCat={setCat} />
-      {(() => {
-        const groups = filterGoalGroups(query, cat);
-        if (groups.length === 0) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 4 }}>{t("w.train.plans.noMatches")}</Text>;
-        return groups.map((group) => (
-          <View key={group.category} style={{ marginBottom: 8 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
-            {group.goals.map((g) => (
-              <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
-                <ACard style={{ marginBottom: 12 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                    <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{g.name}</Text>
-                  </View>
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 19 }}>{g.blurb}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, g.color), marginTop: 8 }}>{g.plans.length} {t("plans.plansCount")} →</Text>
-                </ACard>
-              </Pressable>
-            ))}
-          </View>
-        ));
-      })()}
-    </AuroraScreen>
+      {shelves.length === 0 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.train.plans.noMatches")}</Text>
+      ) : (
+        shelves.map((group) => (
+          <GoalShelf
+            key={group.category}
+            group={group}
+            onLayout={(e) => {
+              shelfTops.current[group.category] = e.nativeEvent.layout.y;
+            }}
+            pick={setGoalId}
+          />
+        ))
+      )}
+    </CoverScreen>
   );
 }
 
-// Browse filter for the goal grid — a search field over a full-bleed row of
-// discipline chips (All + each category). Both levers feed the shared
-// filterGoalGroups() so web + mobile narrow the library identically.
-function FilterBar({ query, setQuery, cat, setCat }: { query: string; setQuery: (v: string) => void; cat: GoalCategory | "all"; setCat: (c: GoalCategory | "all") => void }) {
+/** The category chips, riding the scaffold's `rail` slot so they dock beneath
+ *  the collapsed bar and stay reachable at any scroll position. They JUMP, they
+ *  don't filter — the shelves already are the categories, so narrowing to one
+ *  would just empty the screen. Full-bleed per the house rule. */
+function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c: string) => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const cats: (GoalCategory | "all")[] = ["all", ...GOAL_CATEGORIES];
   return (
-    <View style={{ marginBottom: 8 }}>
-      <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 10 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-        {cats.map((c) => {
-          const on = c === cat;
-          return (
-            <Pressable key={c} onPress={() => setCat(c)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? C.lime : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "600", color: on ? C.onAccent : C.ash }}>{c === "all" ? t("w.train.plans.allCats") : c}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+    <ScrollView
+      horizontal
+      // Labelled, but deliberately NOT role="tablist" — these scroll to a
+      // section, they don't switch panels, and the chips are buttons already.
+      accessibilityLabel={t("w.train.plans.jumpToCategory")}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 9 }}
+    >
+      {categories.map((c) => (
+        <Pressable
+          key={c}
+          onPress={() => onJump(c)}
+          accessibilityRole="button"
+          hitSlop={6}
+          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 })}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c}</Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+}
+
+/** One category = one full-bleed shelf. The head states the COUNT so a
+ *  two-card peek is never mistaken for the whole set, and a hairline track
+ *  under the rail shows position — the two halves of making a horizontal rail
+ *  honest about its tail. */
+function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: string) => void; onLayout: (e: LayoutChangeEvent) => void }) {
+  const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
+  const x = useRef(new Animated.Value(0)).current;
+  const [rail, setRail] = useState({ view: 0, content: 0 });
+  const overflows = rail.content > rail.view + 1;
+
+  return (
+    <View onLayout={onLayout} style={{ marginTop: 18 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
+        <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
+          {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
+        </Text>
+      </View>
+      <Animated.ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        onLayout={(e) => setRail((r) => ({ ...r, view: e.nativeEvent.layout.width }))}
+        onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+        style={{ marginHorizontal: -16 }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: 16 }}
+      >
+        {group.goals.map((g) => (
+          <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />
+        ))}
+      </Animated.ScrollView>
+      {overflows && <ShelfTrack x={x} view={rail.view} content={rail.content} />}
     </View>
+  );
+}
+
+/** The hairline under a shelf — a thumb sized to the visible share of the rail,
+ *  riding the scroll offset. Native-driven, so it costs no re-renders.
+ *  The thumb travels within the TRACK, which is the content column; `view` is
+ *  the full-bleed rail, a gutter wider on each side. Sizing the thumb off the
+ *  rail overshoots and its tail gets clipped away, so the track measures
+ *  itself. */
+function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; content: number }) {
+  const { palette: C } = useTheme();
+  const [track, setTrack] = useState(0);
+  const thumb = Math.max(24, Math.min(1, view / content) * track);
+  const maxScroll = Math.max(1, content - view);
+  return (
+    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 9, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
+      <Animated.View
+        style={{
+          height: 2,
+          width: thumb,
+          borderRadius: 2,
+          backgroundColor: withAlpha(C.chalk, 0.34),
+          transform: [{ translateX: x.interpolate({ inputRange: [0, maxScroll], outputRange: [0, Math.max(0, track - thumb)], extrapolate: "clamp" }) }],
+        }}
+      />
+    </View>
+  );
+}
+
+/** A goal as a COVER, not a card — Explore's PlanCover recipe at tile scale, so
+ *  tapping one expands it into the same poster at screen scale. A goal with no
+ *  authored programs keeps its colour but at 45%, and says so, instead of
+ *  printing "0 plans". */
+function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
+  const { palette: C, scheme } = useTheme();
+  const cover = goalCoverView(goal);
+  const reduce = useReducedMotion();
+  return (
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`${goal.name} – ${cover.count}`}
+      style={({ pressed }) => ({
+        width: TILE_W,
+        height: TILE_H,
+        borderRadius: 20,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.07)",
+        backgroundColor: TILE_INK,
+        padding: 13,
+        justifyContent: "space-between",
+        transform: [{ scale: pressed && !reduce ? 0.97 : 1 }],
+      })}
+    >
+      {({ pressed }) => (
+        <>
+          <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
+            <LinearGradient colors={[`${cover.accent}c8`, `${cover.accent}4d`, `${cover.accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+          </View>
+          <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <Text
+            pointerEvents="none"
+            style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 100, color: `rgba(255,255,255,${cover.ready ? 0.09 : 0.05})`, transform: [{ translateX: pressed && !reduce ? -5 : 0 }, { translateY: pressed && !reduce ? 4 : 0 }] }}
+          >
+            {cover.glyph}
+          </Text>
+          <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.8, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
+          <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.4, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
+        </>
+      )}
+    </Pressable>
   );
 }
 

@@ -891,6 +891,9 @@ export interface GoalCoverView {
   blurb: string;
   /** meta-line parts — the plans' loading tags (unique, first three). */
   metaParts: (string | null)[];
+  /** false when the goal has no authored programs yet — the root's shelves sort
+   *  on it and dim the tile, instead of printing "0 plans". */
+  ready: boolean;
 }
 
 export function goalCoverView(goal: {
@@ -910,6 +913,43 @@ export function goalCoverView(goal: {
     title: goal.name,
     blurb: goal.blurb,
     metaParts: [...new Set(goal.plans.map((p) => p.tag))].slice(0, 3),
+    ready: n > 0,
+  };
+}
+
+/** The LIBRARY-level cover — the same recipe one level up again, so the Plans
+ *  ROOT opens with the cover its two children already use and the whole stack
+ *  is one object at three compressions.
+ *
+ *  It differs from the two below it on purpose, or the levels would be
+ *  indistinguishable: "Plans" owns no discipline, so instead of inventing a
+ *  brand colour it washes in the THEME's own primary (the client passes
+ *  `palette.lime` — chartreuse on Aurora, pine on Kyoto Hour) at a SOFTER mix
+ *  than a goal cover, because the container must not out-shout the nineteen
+ *  accents it holds. `◈` is its glyph: the same geometric family as the goal
+ *  marks, and not one of them. */
+export interface LibraryCoverView {
+  glyph: string;
+  /** the white pill — names the level, the way a goal cover names its category. */
+  chip: string;
+  /** top-right label — how many goals the library holds ("19 GOALS"). */
+  count: string;
+  title: string;
+  /** meta-line parts — the categories, in display order. */
+  metaParts: (string | null)[];
+}
+
+export function libraryCoverView(
+  goalCount: number,
+  categories: string[],
+  labels: { chip: string; title: string; goal: string; goals: string },
+): LibraryCoverView {
+  return {
+    glyph: "◈",
+    chip: labels.chip,
+    count: `${goalCount} ${goalCount === 1 ? labels.goal : labels.goals}`.toUpperCase(),
+    title: labels.title,
+    metaParts: categories,
   };
 }
 

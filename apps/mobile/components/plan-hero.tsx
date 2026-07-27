@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
   KeyboardAvoidingView,
@@ -66,6 +66,28 @@ const BAR_CONTENT = 56;
 /** Cover content height below the status-bar inset when fully expanded. */
 const COVER_CONTENT = 252;
 
+/** ── the seam ──────────────────────────────────────────────────────────────
+ *  The cover's bottom edge used to butt straight up against the page and read
+ *  as a CUT: both sides are near-black, but the cover carries its own accent
+ *  wash + title scrim while the page carries the AuroraField wash, so the two
+ *  never quite match and the join draws a line right above the first card.
+ *  This band continues the cover ink DOWN into the page and dissolves it, so
+ *  the two washes cross-fade instead of meeting at an edge. `OVER` is an opaque
+ *  head that lives BEHIND the cover — it keeps the join seamless while the
+ *  ScrollView rubber-bands away from the pinned cover at the top of the list. */
+const BLEED_OVER = 64;
+const BLEED_FADE = 148;
+/** Eased ink→nothing ramp (a linear alpha ramp bands and dies too early). Both
+ *  ends share the cover's RGB, so the interpolation never greys out. */
+const BLEED = (() => {
+  const head = BLEED_OVER / (BLEED_OVER + BLEED_FADE);
+  const at = (f: number) => head + f * (1 - head);
+  return {
+    colors: [COVER_INK, COVER_INK, `${COVER_INK}e6`, `${COVER_INK}9e`, `${COVER_INK}4d`, `${COVER_INK}00`] as [string, string, ...string[]],
+    locations: [0, head, at(0.22), at(0.45), at(0.68), 1] as [number, number, ...number[]],
+  };
+})();
+
 /** What the scaffold needs to draw a cover — a structural subset of core's
  *  PlanCoverView, so the GOAL-level cover (goalCoverView) rides the exact same
  *  scaffold with its plan-count label in the duration slot. */
@@ -85,8 +107,22 @@ export interface CoverSpec {
    *  blurb below on the ink. "goal" is the EMBLEM — the discipline's mark
    *  blown up as the cover art (bigger, brighter, deeper parallax), the wash
    *  mirrored to the top-LEFT so the two levels never read as the same
-   *  cover, and the blurb ON the cover face instead of the meta line. */
-  variant?: "plan" | "goal";
+   *  cover, and the blurb ON the cover face instead of the meta line.
+   *  "library" is the SHELF — the Plans root. Emblem-sized glyph like the goal,
+   *  but the wash comes from the right like the plan AND runs at a softer mix:
+   *  its accent is the theme's own primary (no discipline owns "Plans"), and
+   *  the container must not out-shout the nineteen goal accents it holds. */
+  variant?: "plan" | "goal" | "library";
+}
+
+/** Imperative handle onto the scaffold's scroll, for a `rail` that navigates
+ *  the content beneath it (the Plans root's category chips). */
+export interface CoverScreenApi {
+  /** Scroll so the child at `y` — measured by the CHILD's own onLayout, i.e.
+   *  relative to the children slot — comes to rest just under the collapsed bar
+   *  and the docked rail. The scaffold owns both of those offsets, so callers
+   *  never have to reconstruct them from insets. */
+  scrollToChild: (y: number, animated?: boolean) => void;
 }
 
 /**
@@ -142,6 +178,7 @@ export function CoverScreen({
   top,
   rail,
   dock,
+  scrollApi,
   children,
 }: {
   cover: CoverSpec;
@@ -151,11 +188,17 @@ export function CoverScreen({
   top?: ReactNode;
   rail?: ReactNode;
   dock?: ReactNode;
+  /** filled with the scroll handle, so a `rail` can jump the content. */
+  scrollApi?: { current: CoverScreenApi | null };
   children?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const emblem = cover.variant === "goal";
+  const library = cover.variant === "library";
+  // Both non-plan levels blow the glyph up as cover art; only the goal mirrors
+  // the light source to the left.
+  const emblem = cover.variant === "goal" || library;
+  const mirrored = cover.variant === "goal";
   const heroH = insets.top + COVER_CONTENT;
   const barH = insets.top + BAR_CONTENT;
   const delta = heroH - barH;
@@ -165,10 +208,25 @@ export function CoverScreen({
   const dockedRef = useRef(false);
   const [docked, setDocked] = useState(false);
   const [railTop, setRailTop] = useState<number | null>(null);
+  // Measured so `scrollToChild` can land a child under the bar + docked rail
+  // without the caller reconstructing either offset.
+  const childrenTop = useRef(0);
+  const railH = useRef(0);
   const ns = useNavScroll();
   const reduced = useReducedMotion();
   const haptics = useLoggerPrefs().haptics;
   const entrance = useEntrance();
+
+  useEffect(() => {
+    if (!scrollApi) return;
+    scrollApi.current = {
+      scrollToChild: (y, animated = true) =>
+        scrollRef.current?.scrollTo({ y: Math.max(0, childrenTop.current + y - barH - railH.current), animated }),
+    };
+    return () => {
+      scrollApi.current = null;
+    };
+  }, [scrollApi, barH]);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
@@ -222,6 +280,28 @@ export function CoverScreen({
       <AuroraField />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, entrance]}>
+          {/* the cover ink bleeding into the page — glued to the CONTENT (not
+              the cover), so it slides up under the pinned cover and is gone by
+              the time the collapsed bar's hairline takes over as the edge. Dark
+              only: on the light theme a dark poster meeting warm paper is a
+              real boundary, not an artifact, and a dark veil there would only
+              muddy the hem underneath it. */}
+          {scheme !== "light" && (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: heroH - BLEED_OVER,
+                height: BLEED_OVER + BLEED_FADE,
+                opacity: scrimFade,
+                transform: [{ translateY: Animated.multiply(scrollY, -1) }],
+              }}
+            >
+              <LinearGradient colors={BLEED.colors} locations={BLEED.locations} style={StyleSheet.absoluteFill} />
+            </Animated.View>
+          )}
           <ScrollView
             ref={scrollRef}
             onScroll={onScroll}
@@ -259,14 +339,26 @@ export function CoverScreen({
                 onLayout={(e) => setRailTop(e.nativeEvent.layout.y)}
                 style={{ zIndex: 10, transform: [{ translateY: railShift }] }}
               >
-                <View style={{ backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}>
+                <View
+                  onLayout={(e) => {
+                    railH.current = e.nativeEvent.layout.height;
+                  }}
+                  style={{ backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
+                >
                   <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
                   {rail}
                 </View>
               </Animated.View>
             )}
 
-            <View style={{ paddingHorizontal: 16 }}>{children}</View>
+            <View
+              onLayout={(e) => {
+                childrenTop.current = e.nativeEvent.layout.y;
+              }}
+              style={{ paddingHorizontal: 16 }}
+            >
+              {children}
+            </View>
           </ScrollView>
 
           {/* ── the cover: pinned overlay, slides up by exactly the scroll ── */}
@@ -276,11 +368,22 @@ export function CoverScreen({
           >
             {/* duotone wash bleeding from the top corner (Explore recipe) —
                 mirrored to the LEFT on the goal emblem so the light source
-                itself tells you which level you're on */}
-            <LinearGradient colors={[`${accent}c8`, `${accent}4d`, `${accent}0d`]} start={emblem ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }} end={emblem ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
-            {/* bottom scrim for title legibility — retired as the title leaves */}
+                itself tells you which level you're on, and run at a SOFTER mix
+                on the library so the root never out-shouts the goal accents
+                sitting on the shelves beneath it */}
+            <LinearGradient
+              colors={library ? [`${accent}7a`, `${accent}2e`, `${accent}08`] : [`${accent}c8`, `${accent}4d`, `${accent}0d`]}
+              start={mirrored ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }}
+              end={mirrored ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+            {/* bottom scrim for title legibility — retired as the title leaves.
+                The last sliver runs out to FULLY opaque cover ink (below the
+                title, so the poster's wash is untouched) so the bleed band
+                underneath starts from exactly the same colour. */}
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: scrimFade }]}>
-              <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc", COVER_INK]} locations={[0, 0.95, 1]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
             </Animated.View>
             {/* ghost glyph — the cover art; parallax drift against the frame.
                 On the goal emblem it IS the subject: bigger, brighter, deeper. */}
@@ -319,7 +422,7 @@ export function CoverScreen({
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
-              {emblem ? (
+              {emblem && !library ? (
                 <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 9 }}>

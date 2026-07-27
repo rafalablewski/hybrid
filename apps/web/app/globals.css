@@ -206,6 +206,11 @@ html {
      both themes now (overridden below only for surface values) — the glow
      follows the accent. */
   --glass-glow-rgb: 198, 248, 79;
+
+  /* Plan/goal cover → page transition (components/aurora/plans.tsx CoverHero).
+     1 = the cover's ink bleeds down into the page and dissolves, so its wash
+     cross-fades with the page's instead of meeting it at a visible cut. */
+  --cover-bleed: 1;
 }
 
 [data-theme="light"] {
@@ -235,6 +240,9 @@ html {
   --color-lime: #44584c; /* pine — primary action fill */
   --color-blue: #5f6d4b; /* sage — secondary / conditioning fill */
   --color-gold: #b58a24; /* rating gold — deepened so it reads gold on washi */
+  /* No cover bleed on washi: a dark poster meeting warm paper is a genuine
+     boundary, not an artifact — a dark veil there would only muddy the hem. */
+  --cover-bleed: 0;
 
   --glass-base: 255, 255, 255;
   --glass-rgb: 255, 255, 255;
