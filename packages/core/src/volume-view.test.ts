@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { RAIL, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel } from "./volume-view";
+import { RAIL, BAND_KEYS, bandRegion, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel } from "./volume-view";
 import { muscleVolumeStatus, VOLUME_LANDMARKS } from "./engines/landmarks";
 import type { MuscleGroup } from "./engines/types";
 
@@ -74,6 +74,28 @@ describe("railScale", () => {
 
   it("collapses a degenerate MAV range to one number", () => {
     expect(railScale({ mv: 4, mev: 6, mavLow: 12, mavHigh: 12, mrv: 16 }).mav).toBe("12");
+  });
+});
+
+describe("bandRegion", () => {
+  it("spans the shortfall, the productive band and the overshoot", () => {
+    const l = L.chest;
+    expect(bandRegion("mev", l)).toEqual({ from: 0, to: RAIL.mev });
+    expect(bandRegion("mrv", l)).toEqual({ from: RAIL.mrv, to: 1 });
+    const mav = bandRegion("mav", l);
+    expect(mav.from).toBeCloseTo(railX(l.mavLow, l), 6);
+    expect(mav.to).toBe(RAIL.mavHigh);
+  });
+
+  it("gives every band a non-empty, in-order, in-bounds region on every muscle", () => {
+    for (const m of Object.keys(L) as MuscleGroup[]) {
+      for (const k of BAND_KEYS) {
+        const r = bandRegion(k, L[m]);
+        expect(r.from).toBeGreaterThanOrEqual(0);
+        expect(r.to).toBeLessThanOrEqual(1);
+        expect(r.to).toBeGreaterThan(r.from);
+      }
+    }
   });
 });
 

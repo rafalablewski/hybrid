@@ -3,8 +3,8 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, resolveLandmarks,
-  railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
-  type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
+  railGeometry, railScale, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
@@ -14,6 +14,8 @@ const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder",
 const C = (v: string) => `var(--color-${v})`;
 const mix = (token: string, amount: number) => `color-mix(in srgb, ${C(token)} ${amount}%, transparent)`;
 const pct = (v: number) => `${v * 100}%`;
+const BAND_LABEL: Record<VolumeBandKey, string> = { mev: "MEV", mav: "MAV", mrv: "MRV" };
+const GLOSS_KEY: Record<VolumeBandKey, string> = { mev: "w.analyze.vol.glossMev", mav: "w.analyze.vol.glossMav", mrv: "w.analyze.vol.glossMrv" };
 
 const ZONE_TOKEN: Record<VolumeZone, string> = { overreaching: "red", under: "amber", peak: "blue", productive: "lime" };
 
@@ -47,6 +49,11 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
   const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
   const [gloss, setGloss] = useState(false);
+  // Which landmark band is spotlighted across the list, and the row whose scale
+  // was clicked (that row carries the definition, next to the pointer).
+  const [zone, setZone] = useState<{ key: VolumeBandKey; muscle: MuscleGroup } | null>(null);
+  const pickZone = (key: VolumeBandKey, muscle: MuscleGroup) =>
+    setZone((z) => (z && z.key === key && z.muscle === muscle ? null : { key, muscle }));
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;
 
   const editField = (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => {
@@ -150,7 +157,9 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} token={ZONE_TOKEN[r.zone]}
                 expanded={editing || open === r.muscle} editing={editing}
+                zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
+                onZone={(k) => pickZone(k, r.muscle)}
                 onEdit={editField}
               />
             ))}
@@ -230,13 +239,19 @@ function Prescription({ title, why, items, token, ml, unit }: {
 
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
+function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
   s: MuscleVolumeStatus; label: string; token: string; expanded: boolean; editing: boolean;
-  onToggle: () => void; onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
+  /** The band spotlighted across the whole list, if any. */
+  zone: VolumeBandKey | null;
+  /** True on the row whose scale was clicked — it carries the definition. */
+  showGloss: boolean;
+  onToggle: () => void; onZone: (k: VolumeBandKey) => void;
+  onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
 }) {
   const { t } = useLang();
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
+  const region = zone ? bandRegion(zone, s.landmark) : null;
   return (
     <div style={{ padding: "12px 0" }}>
       <button
@@ -258,20 +273,42 @@ function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
           {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
           <div style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
           <div style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
-        </div>
-        {/* This muscle's OWN scale, each value named and sitting under the mark
-            it belongs to — MEV and MRV directly beneath their notches, MAV under
-            the middle of the band. The old row said the same thing, but
-            left-packed and with a coloured square in front of every label; here
-            the label is the quiet part and the number carries the weight. */}
-        <div style={{ position: "relative", height: 16, marginTop: 6 }}>
-          {([["MEV", sc.mev, sc.mevX], ["MAV", sc.mav, sc.mavX], ["MRV", sc.mrv, sc.mrvX]] as const).map(([k, v, x]) => (
-            <span key={k} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -45, width: 90, textAlign: "center", ...mono(9), letterSpacing: ".05em", color: C("ash") }}>
-              {k} <span style={{ fontSize: 11, color: C("chalk") }}>{v}</span>
-            </span>
-          ))}
+          {/* SPOTLIGHT — clicking a landmark below scrims everything outside that
+              band, on EVERY row at once, so the question "which part of the bar
+              is my productive range" is answered by the chart itself. */}
+          {region && (
+            <>
+              <div style={{ position: "absolute", left: 0, width: pct(region.from), top: 0, bottom: 0, background: mix("ink", 76), transition: "width .2s ease" }} />
+              <div style={{ position: "absolute", left: pct(region.to), right: 0, top: 0, bottom: 0, background: mix("ink", 76), transition: "left .2s ease" }} />
+              {/* Caliper edges, so the lit slice reads even when it is empty. */}
+              <div style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeft: `1px solid ${mix("chalk", 45)}`, borderRight: `1px solid ${mix("chalk", 45)}` }} />
+            </>
+          )}
         </div>
       </button>
+
+      {/* This muscle's OWN scale — a plain three-column table pinned to the left
+          edge, so the values line up down the whole list instead of floating at
+          three different indents. Each cell is a control: click it to spotlight
+          that band and read what it means. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 7, maxWidth: 420 }}>
+        {BAND_KEYS.map((k) => {
+          const on = zone === k;
+          return (
+            <button
+              key={k} onClick={() => onZone(k)} aria-pressed={on}
+              aria-label={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".05em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
+            >
+              {BAND_LABEL[k]} <span style={{ fontSize: 11, color: C("chalk") }}>{sc[k]}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {zone && showGloss && (
+        <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(GLOSS_KEY[zone])}</p>
+      )}
 
       {/* Expanding adds only what the scale above does NOT already say: the
           maintenance floor and the prescription. Editing swaps in all five

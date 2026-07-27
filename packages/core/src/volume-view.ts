@@ -105,6 +105,23 @@ export function railScale(l: VolumeLandmark): RailScale {
   };
 }
 
+/** The three landmark bands an athlete can spotlight from a row's scale. */
+export type VolumeBandKey = "mev" | "mav" | "mrv";
+export const BAND_KEYS: readonly VolumeBandKey[] = ["mev", "mav", "mrv"] as const;
+
+/**
+ * The stretch of rail (0…1) a band occupies for one muscle. Tapping a scale
+ * label spotlights this region on EVERY row at once — dimming the rest — so
+ * "which part of the bar is my productive range" is answered by the chart
+ * itself instead of by a paragraph. `mev` is the shortfall below the minimum,
+ * `mav` the productive band, `mrv` the territory past the ceiling.
+ */
+export function bandRegion(key: VolumeBandKey, l: VolumeLandmark): { from: number; to: number } {
+  if (key === "mev") return { from: 0, to: RAIL.mev };
+  if (key === "mav") return { from: railX(l.mavLow, l), to: RAIL.mavHigh };
+  return { from: RAIL.mrv, to: 1 };
+}
+
 /** Which sentence the hero leads with. */
 export type VolumeVerdict = "none" | "balanced" | "over" | "under" | "mixed";
 

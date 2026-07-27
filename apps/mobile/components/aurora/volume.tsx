@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
+import * as Haptics from "expo-haptics";
 import {
   volumeStatus, resolveLandmarks,
-  railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
-  type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
+  railGeometry, railScale, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -15,6 +16,8 @@ import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
+const BAND_LABEL: Record<VolumeBandKey, string> = { mev: "MEV", mav: "MAV", mrv: "MRV" };
+const GLOSS_KEY: Record<VolumeBandKey, string> = { mev: "w.analyze.vol.glossMev", mav: "w.analyze.vol.glossMav", mrv: "w.analyze.vol.glossMrv" };
 const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
 
 /**
@@ -48,6 +51,13 @@ export default function AuroraVolume() {
   const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
   const [gloss, setGloss] = useState(false);
+  // Which landmark band is spotlighted across the list, and the row whose scale
+  // was tapped (that row carries the definition, next to the finger).
+  const [zone, setZone] = useState<{ key: VolumeBandKey; muscle: MuscleGroup } | null>(null);
+  const pickZone = (key: VolumeBandKey, muscle: MuscleGroup) => {
+    Haptics.selectionAsync().catch(() => {});
+    setZone((z) => (z && z.key === key && z.muscle === muscle ? null : { key, muscle }));
+  };
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;
 
   const editField = (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => {
@@ -174,7 +184,9 @@ export default function AuroraVolume() {
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
                 expanded={editing || open === r.muscle} editing={editing}
+                zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
+                onZone={(k) => pickZone(k, r.muscle)}
                 onEdit={editField}
               />
             ))}
@@ -256,54 +268,84 @@ function Prescription({ title, why, items, color, ml, unit }: {
 
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
+function MuscleRow({ s, label, color, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
   s: MuscleVolumeStatus; label: string; color: string; expanded: boolean; editing: boolean;
-  onToggle: () => void; onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
+  /** The band spotlighted across the whole list, if any. */
+  zone: VolumeBandKey | null;
+  /** True on the row whose scale was tapped — it carries the definition. */
+  showGloss: boolean;
+  onToggle: () => void; onZone: (k: VolumeBandKey) => void;
+  onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
+  const region = zone ? bandRegion(zone, s.landmark) : null;
   return (
-    <Pressable
-      onPress={onToggle}
-      accessibilityRole="button"
-      accessibilityLabel={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
-      style={{ paddingVertical: 12 }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(ZONE_KEY[s.zone])}</Text>
+    <View style={{ paddingVertical: 12 }}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
+      >
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
+          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(ZONE_KEY[s.zone])}</Text>
+        </View>
+
+        <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
+          {/* The track is itself the key: the productive band lit, the territory
+              past the ceiling tinted, so the zones read even on an empty rail. */}
+          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+          <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
+          {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
+          <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
+          {/* SPOTLIGHT — tapping a landmark below scrims everything outside that
+              band, on EVERY row at once, so the question "which part of the bar
+              is my productive range" is answered by the chart itself. */}
+          {region && (
+            <>
+              <View style={{ position: "absolute", left: 0, width: pct(region.from), top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
+              <View style={{ position: "absolute", left: pct(region.to), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
+              {/* Caliper edges, so the lit slice reads even when it is empty. */}
+              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, 0.45) }} />
+            </>
+          )}
+        </View>
+      </Pressable>
+
+      {/* This muscle's OWN scale — a plain three-column table pinned to the left
+          edge, so the values line up down the whole list instead of floating at
+          three different indents. Each cell is a control: tap it to spotlight
+          that band and read what it means. */}
+      <View style={{ flexDirection: "row", marginTop: 7 }}>
+        {BAND_KEYS.map((k) => {
+          const on = zone === k;
+          return (
+            <Pressable
+              key={k}
+              onPress={() => onZone(k)}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
+              style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
+            >
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, color: on ? txt(C, C.lime) : C.ash }}>
+                {BAND_LABEL[k]} <Text style={{ fontSize: 11, color: C.chalk }}>{sc[k]}</Text>
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
-        {/* The track is itself the key: the productive band lit, the territory
-            past the ceiling tinted, so the zones read even on an empty rail. */}
-        <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
-        <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
-        <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
-        {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
-        <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
-        <View style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
-      </View>
-
-      {/* This muscle's OWN scale, each value named and sitting under the mark it
-          belongs to — MEV and MRV directly beneath their notches, MAV under the
-          middle of the band. The old row said the same thing, but left-packed
-          and with a coloured square in front of every label; here the label is
-          the quiet part and the number carries the weight. */}
-      <View style={{ height: 16, marginTop: 6 }}>
-        {([["MEV", sc.mev, sc.mevX], ["MAV", sc.mav, sc.mavX], ["MRV", sc.mrv, sc.mrvX]] as const).map(([k, v, x]) => (
-          <Text
-            key={k}
-            maxFontSizeMultiplier={FIXED_FONT_SCALE}
-            style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -45, width: 90, textAlign: "center", fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, color: C.ash }}
-          >
-            {k} <Text style={{ fontSize: 11, color: C.chalk }}>{v}</Text>
-          </Text>
-        ))}
-      </View>
+      {zone && showGloss && (
+        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t(GLOSS_KEY[zone])}</Text>
+      )}
 
       {/* Expanding adds only what the scale above does NOT already say: the
           maintenance floor and the prescription. Editing swaps in all five
@@ -332,7 +374,7 @@ function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
           ))}
         </View>
       )}
-    </Pressable>
+    </View>
   );
 }
 
