@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
+import { View, Text, Pressable, StyleSheet, Animated, AccessibilityInfo, Platform, Easing } from "react-native";
 import { BlurView } from "expo-blur";
-import { Host, RoundedRectangle, ZStack } from "@expo/ui/swift-ui";
+import { Host, Capsule, ZStack } from "@expo/ui/swift-ui";
 import { glassEffect, frame, offset, opacity, animation, Animation } from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
@@ -15,13 +15,17 @@ import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useNavScroll } from "../../lib/nav-scroll";
+import { fs, F } from "../../lib/ui";
 import { AuroraSvgIcon } from "./icons";
 
-// The bottom nav: Today · Explore · [Train FAB] · More · Profile. Train is the
-// elevated centre action (a raised lime FAB that punches up through the bar).
-// Explore opens the social/discovery surface (the Feed); Profile returns to the
-// bar (it also lives in the Today header). Plans · History · Cockpit stay
-// reachable from the More hub. Side glyphs are design-kit line icons only.
+// The bottom nav, in the iOS 26 SwiftUI TabView anatomy: the four side tabs
+// (Today · Explore · More · Profile) live INSIDE a Liquid Glass capsule, and
+// Train floats BESIDE it as a detached circular action — Apple's split tab bar
+// (the tab group + the standalone accessory, like Search in the system apps).
+// This replaces the old centre FAB that punched up through the bar. Explore
+// opens the social/discovery surface (the Feed); Profile also lives in the
+// Today header. Plans · History · Cockpit stay reachable from the More hub.
+// Side glyphs are design-kit line icons only.
 type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", href: "/(tabs)", seg: "index" },
@@ -32,26 +36,39 @@ const RIGHT: Side[] = [
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", href: "/(tabs)/you", seg: "you" },
 ];
 const SIDES: Side[] = [...LEFT, ...RIGHT];
-// The centre Train action opens the Train launcher hub (start today's session,
-// AI/repeat-last, routines, resume a draft) — matching web, where the Train FAB
-// also opens the launcher. From there one tap drops into the live logger.
+// The detached Train action opens the Train launcher hub (start today's
+// session, AI/repeat-last, routines, resume a draft) — matching web, where the
+// Train circle also opens the launcher. From there one tap drops into the live
+// logger.
 const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.
 const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade"]);
 
-// The sliding highlight's size. Widened toward Instagram's proportions (the
-// lens reads as "the selection", not a small token drifting behind the glyph).
-const PILL_W = 56;
-const PILL_H = 40;
+// iOS 26 tab-bar geometry: each slot is icon + label (like the native TabView
+// items), the selection lens is a capsule covering both, and the detached
+// Train circle matches the bar's full height.
+const LENS_W = 60; // selection lens width
+const SLOT_H = 46; // slot content height (icon + label) = lens height
+const BAR_PAD_V = 6;
+const BAR_PAD_H = 8;
+const TRAIN_D = SLOT_H + BAR_PAD_V * 2; // 58 — the circle matches bar height
+
+// Native Liquid Glass (SwiftUI glassEffect) exists from iOS 26. Older iOS and
+// Android keep the frosted BlurView bar + the opaque chalk selection pill, so
+// the bar never renders invisible where the material doesn't exist.
+const NATIVE_GLASS = Platform.OS === "ios" && (parseInt(String(Platform.Version), 10) || 0) >= 26;
 
 /**
- * AURORA global navigation — the floating pill bottom bar, rendered once at the
- * ROOT so it shows on EVERY screen (tab routes AND pushed sub-pages like
- * Statistics/Settings/Periodize), not just the five tabs. Router-driven (no
- * dependency on the Tabs navigator), self-gating to Aurora + an authed session.
- * Replaces the per-Tabs Aurora bar; Classic keeps its glass tab bar + command orb.
+ * AURORA global navigation — the floating iOS 26-style bottom bar, rendered
+ * once at the ROOT so it shows on EVERY screen (tab routes AND pushed sub-pages
+ * like Statistics/Settings/Periodize), not just the five tabs. Router-driven
+ * (no dependency on the Tabs navigator), self-gating to Aurora + an authed
+ * session. On iOS 26 the capsule itself is REAL Liquid Glass (a native SwiftUI
+ * glassEffect capsule — the same material as the system tab bar); elsewhere it
+ * falls back to the frosted blur. Replaces the per-Tabs Aurora bar; Classic
+ * keeps its glass tab bar + command orb.
  */
 export default function AuroraGlobalNav() {
   const { palette: C, scheme } = useTheme();
@@ -66,11 +83,11 @@ export default function AuroraGlobalNav() {
   const haptics = useLoggerPrefs().haptics;
   const navScroll = useNavScroll();
 
-  // Shrink-on-scroll (the Instagram behaviour): the whole pill+FAB is full size
-  // at the top and scales down smoothly as the active surface scrolls, driven by
-  // the shared `collapse` value (0 → 1). Reset to full whenever the route
-  // changes so landing on a new screen always starts expanded, even if the
-  // previous screen was scrolled.
+  // Shrink-on-scroll (the tabBarMinimizeBehavior feel): the whole capsule +
+  // Train circle is full size at the top and scales down smoothly as the active
+  // surface scrolls, driven by the shared `collapse` value (0 → 1). Reset to
+  // full whenever the route changes so landing on a new screen always starts
+  // expanded, even if the previous screen was scrolled.
   const collapse = navScroll?.collapse;
   const routeKey = segments.join("/");
   useEffect(() => { navScroll?.reset(); }, [routeKey, navScroll]);
@@ -89,8 +106,8 @@ export default function AuroraGlobalNav() {
   const activeSeg0 = inTabs0 ? (segments[1] ?? "index") : null;
   const focusedSeg = SIDES.find((s) => activeSeg0 === s.seg || (!inTabs0 && top0 === s.seg))?.seg ?? null;
 
-  // Android's selection highlight is a per-slot chalk pill that CROSS-FADES
-  // between tabs (opacity only; iOS gets the travelling native glass lens —
+  // The fallback selection highlight is a per-slot chalk pill that CROSS-FADES
+  // between tabs (opacity only; iOS 26 gets the travelling native glass lens —
   // see GlassMorphSelector). Each slot owns an opacity Animated.Value.
   const lensOpRef = useRef<Record<string, Animated.Value> | null>(null);
   if (!lensOpRef.current) lensOpRef.current = Object.fromEntries(SIDES.map((s) => [s.seg, new Animated.Value(s.seg === focusedSeg ? 1 : 0)]));
@@ -130,19 +147,19 @@ export default function AuroraGlobalNav() {
   // tapped tab). A press sets selectedSeg first; this keeps it honest after.
   useEffect(() => { setSelectedSeg(focusedSeg); }, [focusedSeg]);
 
-  // iOS renders the moving highlight as REAL Liquid Glass (a native SwiftUI
+  // iOS 26 renders the moving highlight as REAL Liquid Glass (a native SwiftUI
   // glassEffect lens via @expo/ui — the same material the kit's GlassSurface
-  // uses); Android falls back to the opaque chalk pill. Over the translucent
-  // glass the active glyph stays bright (chalk) so it never inverts to an
-  // invisible dark-on-glass; over the opaque chalk pill it flips to ink.
-  const useGlass = Platform.OS === "ios";
+  // uses); older iOS + Android fall back to the opaque chalk pill. Over the
+  // translucent glass the active glyph stays bright (chalk) so it never inverts
+  // to an invisible dark-on-glass; over the opaque chalk pill it flips to ink.
+  const useGlass = NATIVE_GLASS;
   const activeIconColor = useGlass ? C.chalk : C.onAccent;
 
   useEffect(() => {
-    // Android lens cross-fade + (both platforms) the active-glyph tint
+    // Fallback lens cross-fade + (both platforms) the active-glyph tint
     // crossfade. The glyph is timed to the lens: incoming waits ~a beat then
     // fades in as the lens arrives (iOS spring lands ~250-300ms after press;
-    // Android's in-place fade is quicker, so the delay is shorter); outgoing
+    // the in-place fallback fade is quicker, so the delay is shorter); outgoing
     // fades back immediately as the lens leaves. Snap on first paint or
     // reduced motion.
     SIDES.forEach((s) => {
@@ -180,10 +197,9 @@ export default function AuroraGlobalNav() {
   // meaningful.
   void navVisibleTo(persona, "performance", access);
 
-  // Liquid-glass pill: a frosted BlurView lets the screen fizz through the bar —
-  // but LIGHTER than the classic GlassCard (no grain/sheen, a more opaque tint
-  // film so the nav stays legible over any content). Shadow on the OUTER view
-  // (a rounded drop shadow); the INNER view clips the blur to the pill radius.
+  // Fallback material (Android + iOS < 26): the frosted BlurView capsule — a
+  // translucent tint film + top rim so the nav stays legible over any content.
+  // On iOS 26 the native glass carries its own edge light, so no film/border.
   const light = scheme === "light";
   const film = light ? "rgba(243,244,239,0.62)" : "rgba(20,22,20,0.55)";
   const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.16)";
@@ -215,20 +231,27 @@ export default function AuroraGlobalNav() {
         hitSlop={8}
         style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
-        {/* iOS: the selection highlight is a single native Liquid Glass lens that
-            TRAVELS between slots (rendered once, behind all icons — see
-            GlassMorphSelector); nothing per-slot here. Android: an opaque chalk
-            pill per slot that cross-fades (opacity only) so switching stays
-            smooth without a native glass view. The glyph is TWO stacked icons
-            (ash base + active tint overlay) so the tint CROSSFADES in sync with
-            the lens instead of flipping instantly on press. */}
-        <View style={{ width: PILL_W, height: PILL_H, alignItems: "center", justifyContent: "center" }}>
+        {/* iOS 26: the selection highlight is a single native Liquid Glass lens
+            that TRAVELS between slots (rendered once, behind all icons — see
+            GlassMorphSelector); nothing per-slot here. Fallback: an opaque
+            chalk pill per slot that cross-fades (opacity only) so switching
+            stays smooth without a native glass view. Each item is icon + label
+            (the iOS 26 TabView item), stacked TWICE (ash base + active tint
+            overlay) so the tint CROSSFADES in sync with the lens instead of
+            flipping instantly on press. */}
+        <View style={{ width: LENS_W, height: SLOT_H, alignItems: "center", justifyContent: "center" }}>
           {!useGlass && (
-            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 20, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
+            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SLOT_H / 2, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
           )}
-          <AuroraSvgIcon name={tab.glyph} size={23} color={C.ash} />
+          <View style={{ alignItems: "center", gap: 2 }}>
+            <AuroraSvgIcon name={tab.glyph} size={21} color={C.ash} />
+            <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: C.ash }}>{label}</Text>
+          </View>
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", opacity: iconOp[tab.seg] }]}>
-            <AuroraSvgIcon name={tab.glyph} size={23} color={activeIconColor} />
+            <View style={{ alignItems: "center", gap: 2 }}>
+              <AuroraSvgIcon name={tab.glyph} size={21} color={activeIconColor} />
+              <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: activeIconColor }}>{label}</Text>
+            </View>
           </Animated.View>
         </View>
       </Pressable>
@@ -237,77 +260,95 @@ export default function AuroraGlobalNav() {
 
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: Math.max(insets.bottom, 12), paddingHorizontal: 18, alignItems: "center" }}>
+      {/* The iOS 26 split bar: [glass capsule with the four tabs] + [detached
+          Train circle], shrinking together on scroll. */}
       <Animated.View
         style={{
           width: "100%",
           maxWidth: 420,
-          borderRadius: 999,
-          shadowColor: "#000",
-          shadowOpacity: 0.35,
-          shadowRadius: 18,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
           opacity: collapseFade,
           transform: [{ translateY: collapseShift }, { scale: collapseScale }],
         }}
       >
-      {/* The frosted pill itself (clips the blur to the radius). The four side
-          items sit either side of a centre gap reserved for the elevated FAB. */}
-      <View
-        style={{
-          borderRadius: 999,
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: border,
-          paddingHorizontal: 10,
-          paddingVertical: 9,
-        }}
-      >
-        <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {/* Inner row. On iOS the native glass-morph layer fills this row BEHIND
-            the icons and travels between slots; the icons/FAB/taps stay RN, so
-            the bar still works even if the native layer doesn't render. */}
+        {/* The capsule. Shadow on the OUTER view (a rounded drop shadow); the
+            INNER view clips the material to the capsule radius. */}
         <View
-          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-          onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w && w !== rowW) setRowW(w); }}
+          style={{
+            flex: 1,
+            borderRadius: 999,
+            shadowColor: "#000",
+            shadowOpacity: useGlass ? 0.22 : 0.35,
+            shadowRadius: 18,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 12,
+          }}
         >
-          {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} reduceMotion={reduceMotion} />}
-          {LEFT.map(renderSideItem)}
-          {/* centre gap — the raised Train FAB overlays this slot */}
-          <View style={{ width: 64 }} />
-          {RIGHT.map(renderSideItem)}
+          <View
+            style={{
+              borderRadius: 999,
+              overflow: "hidden",
+              paddingHorizontal: BAR_PAD_H,
+              paddingVertical: BAR_PAD_V,
+              ...(useGlass ? null : { borderWidth: 1, borderColor: border }),
+            }}
+          >
+            {useGlass ? (
+              // iOS 26: the bar IS Liquid Glass — a native SwiftUI capsule with
+              // glassEffect, the same material as the system TabView bar. No
+              // film, rim or border: the material adapts to the content behind
+              // it and draws its own edge light.
+              <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+                <ZStack>
+                  <Capsule modifiers={[glassEffect({ glass: { variant: "regular" }, shape: "capsule" })]} />
+                </ZStack>
+              </Host>
+            ) : (
+              <>
+                <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
+                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
+                <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
+              </>
+            )}
+            {/* Inner row — four equal slots. On iOS 26 the native glass-morph
+                layer fills this row BEHIND the icons and travels between slots;
+                the icons/taps stay RN, so the bar still works even if the
+                native layer doesn't render. */}
+            <View
+              style={{ flexDirection: "row", alignItems: "center" }}
+              onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w && w !== rowW) setRowW(w); }}
+            >
+              {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} reduceMotion={reduceMotion} />}
+              {SIDES.map(renderSideItem)}
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* ELEVATED TRAIN FAB — a larger lime circle raised above the bar, with a
-          thick ink ring so it punches cleanly through, and a soft lime glow.
-          Rendered in the OUTER (non-clipped) wrapper so it can overflow upward. */}
-      <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, alignItems: "center" }}>
+        {/* DETACHED TRAIN ACTION — the standalone circle beside the capsule
+            (the iOS 26 accessory-button idiom), bar-height, solid lime with a
+            soft glow: the app's CTA identity in Apple's prominent-button slot. */}
         <Pressable
           onPress={() => { setSelectedSeg(null); if (!trainFocused) { if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.navigate(TRAIN.href); } }}
           accessibilityRole="button"
           accessibilityState={{ selected: trainFocused }}
           accessibilityLabel={t("nav.train")}
           hitSlop={8}
-          style={{ alignItems: "center", transform: [{ translateY: -22 }] }}
         >
           <View
             style={{
-              width: 60,
-              height: 60,
-              borderRadius: 30,
+              width: TRAIN_D,
+              height: TRAIN_D,
+              borderRadius: TRAIN_D / 2,
               backgroundColor: C.lime,
-              borderWidth: 4,
-              borderColor: C.ink,
               alignItems: "center",
               justifyContent: "center",
               shadowColor: C.lime,
-              shadowOpacity: 0.55,
-              shadowRadius: 14,
-              shadowOffset: { width: 0, height: 8 },
-              elevation: 14,
+              shadowOpacity: 0.45,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 6 },
+              elevation: 12,
             }}
           >
             {/* Dumbbell — two plate stacks + a connecting handle, drawn from Views
@@ -321,15 +362,14 @@ export default function AuroraGlobalNav() {
             </View>
           </View>
         </Pressable>
-      </View>
       </Animated.View>
     </View>
   );
 }
 
 /**
- * The iOS selection highlight — a SINGLE, PERSISTENT native Liquid Glass lens
- * that TRAVELS between slots via an animated SwiftUI `.offset`, driven by
+ * The iOS 26 selection highlight — a SINGLE, PERSISTENT native Liquid Glass
+ * lens that TRAVELS between slots via an animated SwiftUI `.offset`, driven by
  * `.animation(_:value:)` keyed to a monotonic pose tick.
  *
  * Why this shape (from auditing @expo/ui's native Swift): matched-geometry
@@ -357,21 +397,17 @@ export default function AuroraGlobalNav() {
  * Every pose change bumps `tick`, the `.animation(value:)` key, so each phase
  * (travel+stretch → settle → hide/show) animates natively in SwiftUI.
  *
- * Offsets are from the row centre. Slots are (rowW−64)/4 wide with a 64pt centre
- * gap for the Train FAB, so the four slot centres sit at ∓(1.5·slotW+32) and
- * ∓(0.5·slotW+32) around centre. Rendered behind the RN glyphs, pointer-
- * transparent; the glyphs/FAB/taps are all RN so the bar works regardless.
+ * Offsets are from the row centre. With Train detached beside the bar there is
+ * no centre gap any more: four equal slots of rowW/4, whose centres sit at
+ * (i − 1.5)·slotW around the row centre. Rendered behind the RN glyphs,
+ * pointer-transparent; the glyphs/taps are all RN so the bar works regardless.
  */
 function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: number; selectedIndex: number; reduceMotion: boolean }) {
-  const slotW = Math.max(0, (rowW - 64) / 4);
-  const xFor = (i: number) =>
-    i === 0 ? -(1.5 * slotW) - 32
-    : i === 1 ? -(0.5 * slotW) - 32
-    : i === 2 ? 0.5 * slotW + 32
-    : 1.5 * slotW + 32;
+  const slotW = rowW / 4;
+  const xFor = (i: number) => (i - 1.5) * slotW;
   const [pose, setPose] = useState(() => ({
     x: selectedIndex >= 0 ? xFor(selectedIndex) : 0,
-    w: PILL_W,
+    w: LENS_W,
     shown: selectedIndex >= 0,
     tick: 0,
   }));
@@ -384,19 +420,19 @@ function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: numbe
     if (selectedIndex === prev) return;
     if (selectedIndex < 0) {
       // Train: fade out IN PLACE (staying mounted is what keeps this animatable).
-      setPose((p) => ({ ...p, w: PILL_W, shown: false, tick: p.tick + 1 }));
+      setPose((p) => ({ ...p, w: LENS_W, shown: false, tick: p.tick + 1 }));
       return;
     }
     const x = xFor(selectedIndex);
     if (prev < 0 || reduceMotion) {
       // Reappear after Train (or reduced motion): settle at the slot, fading in.
-      setPose((p) => ({ x, w: PILL_W, shown: true, tick: p.tick + 1 }));
+      setPose((p) => ({ x, w: LENS_W, shown: true, tick: p.tick + 1 }));
       return;
     }
     // Travel: stretch toward the target on take-off, contract on arrival.
-    const stretchW = Math.min(PILL_W + Math.abs(x - xFor(prev)) * 0.3, PILL_W * 2);
+    const stretchW = Math.min(LENS_W + Math.abs(x - xFor(prev)) * 0.3, LENS_W * 2);
     setPose((p) => ({ x, w: stretchW, shown: true, tick: p.tick + 1 }));
-    const settle = setTimeout(() => setPose((p) => ({ ...p, w: PILL_W, tick: p.tick + 1 })), 150);
+    const settle = setTimeout(() => setPose((p) => ({ ...p, w: LENS_W, tick: p.tick + 1 })), 150);
     return () => clearTimeout(settle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIndex, reduceMotion]);
@@ -405,18 +441,17 @@ function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: numbe
   useEffect(() => {
     if (slotWRef.current === slotW) return;
     slotWRef.current = slotW;
-    setPose((p) => (prevIdxRef.current >= 0 ? { ...p, x: xFor(prevIdxRef.current), w: PILL_W } : p));
+    setPose((p) => (prevIdxRef.current >= 0 ? { ...p, x: xFor(prevIdxRef.current), w: LENS_W } : p));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotW]);
 
   return (
     <Host style={StyleSheet.absoluteFill} pointerEvents="none">
       <ZStack>
-        <RoundedRectangle
-          cornerRadius={20}
+        <Capsule
           modifiers={[
-            frame({ width: pose.w, height: PILL_H }),
-            glassEffect({ glass: { variant: "regular" }, shape: "roundedRectangle", cornerRadius: 20 }),
+            frame({ width: pose.w, height: SLOT_H }),
+            glassEffect({ glass: { variant: "regular" }, shape: "capsule" }),
             offset({ x: pose.x, y: 0 }),
             opacity(pose.shown ? 1 : 0),
             animation(
