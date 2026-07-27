@@ -6,6 +6,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   sessionWrapped,
+  fitScale,
+  STAT_FIT_EM,
   liftStanding,
   hasActiveConnection,
   FEELS,
@@ -439,7 +441,7 @@ export function WorkoutWrapped({
               <View key={b.labelKey} style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 4, alignItems: "center", backgroundColor: "#0e0f0d", borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
                 {/* A modelled figure wears a "~" — it is never presented as a
                     measurement (see core/energy.ts). */}
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
               </View>
             ))}

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { sessionWrapped, liftStanding, wrappedDiscipline } from "./session-wrapped";
+import {
+  sessionWrapped, liftStanding, wrappedDiscipline,
+  fitScale, textWidthEm, HERO_FIT_EM, HERO_TRACKING_EM, STAT_FIT_EM,
+} from "./session-wrapped";
 import type { LoggedSession } from "./engines/session";
 
 const strengthSession = (id: string, startedAt: string, load: number): LoggedSession => ({
@@ -164,5 +167,55 @@ describe("liftStanding", () => {
     const strong = liftStanding(160, 80, cohort)!; // 2.0x
     expect(strong.percentile).toBeGreaterThan(weak.percentile);
     expect(strong.topPct).toBeLessThan(weak.topPct);
+  });
+});
+
+// Making the panel discipline-aware widened the value vocabulary from "11.3 t"
+// to "2:20 /100m" — which wrapped, and a wrapped value drags its label out of
+// line with the tiles beside it. Expected widths below are measured from
+// Archivo Black at the slot's own size (tile 22px / 76px, hero 96px / 338px).
+describe("fitScale", () => {
+  it("does not treat every character as the same width", () => {
+    // The bug a character count would have: same length, 29% different width.
+    expect("11.3 t".length).toBe("1500 m".length);
+    expect(textWidthEm("1500 m")).toBeGreaterThan(textWidthEm("11.3 t") * 1.2);
+  });
+
+  it("leaves a value that already fits alone", () => {
+    for (const v of ["25", "255", "78", "11.3 t", "~395", "0.0 t"])
+      expect(fitScale(v, STAT_FIT_EM), v).toBe(1);
+    for (const v of ["11.3 t", "60 kg", "90 min"])
+      expect(fitScale(v, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM }), v).toBe(1);
+  });
+
+  it("shrinks every value that would otherwise overflow its tile", () => {
+    // px widths at 22px measured in the browser; 76px is the tile's inner room.
+    const overflowing: [string, number][] = [
+      ["1500 m", 85], ["2:20 /100m", 129], ["10.0 km", 92], ["5:00 /km", 99], ["1.5 km", 78], ["90 min", 78],
+    ];
+    for (const [v, px] of overflowing) {
+      const s = fitScale(v, STAT_FIT_EM);
+      expect(s, v).toBeLessThan(1);
+      expect(px * s, v).toBeLessThanOrEqual(76);
+    }
+  });
+
+  it("shrinks the hero values that would otherwise wrap", () => {
+    const overflowing: [string, number][] = [["1500 m", 352], ["10.0 km", 381]];
+    for (const [v, px] of overflowing) {
+      const s = fitScale(v, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM });
+      expect(s, v).toBeLessThan(1);
+      expect(px * s, v).toBeLessThanOrEqual(338);
+    }
+  });
+
+  it("never shrinks past the floor, however long the value", () => {
+    expect(fitScale("8".repeat(200), STAT_FIT_EM)).toBe(0.5);
+    expect(fitScale("8".repeat(200), STAT_FIT_EM, { floor: 0.7 })).toBe(0.7);
+  });
+
+  it("stays legible for every value the panel can actually produce", () => {
+    for (const v of ["1500 m", "10.0 km", "2:20 /100m", "5:00 /km", "~395", "11.3 t", "90 min", "255", "12"])
+      expect(fitScale(v, STAT_FIT_EM), v).toBeGreaterThanOrEqual(0.5);
   });
 });

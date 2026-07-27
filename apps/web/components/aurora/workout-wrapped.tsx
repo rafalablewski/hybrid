@@ -11,6 +11,10 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   sessionWrapped,
+  fitScale,
+  HERO_FIT_EM,
+  HERO_TRACKING_EM,
+  STAT_FIT_EM,
   liftStanding,
   hasActiveConnection,
   FEELS,
@@ -405,7 +409,7 @@ export function WorkoutWrapped({
           </div>
           <div className="pr-trophy" style={{ fontSize: 88, lineHeight: 1 }}>🏆</div>
           <Mono s={{ fontSize: fs.body, letterSpacing: ".2em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
-          <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(64px, 20vw, 104px)", letterSpacing: "-.05em", lineHeight: .9, marginTop: 10 }}><CountUp value={heroBig} /></div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.05em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
           {scrollHint}
         </section>
@@ -417,7 +421,7 @@ export function WorkoutWrapped({
         {eyebrow(t("session.wrapped.title"))}
         <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
         <div style={{ flex: 1 }} />
-        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(64px, 22vw, 112px)", letterSpacing: "-.06em", lineHeight: .8, position: "relative" }}><CountUp value={heroBig} /></div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.06em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
         {signature.length >= SIGNATURE_MIN_BARS && (
           <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 18, position: "relative" }}>
@@ -429,7 +433,7 @@ export function WorkoutWrapped({
             <div key={b.labelKey} style={{ background: "#0e0f0d", padding: "14px 6px", textAlign: "center" }}>
               {/* A modelled figure wears a "~" — it is never presented as a
                   measurement (see core/energy.ts). */}
-              <div style={{ ...disp, fontWeight: 900, fontSize: 22, fontVariantNumeric: "tabular-nums" }}>{b.estimate ? "~" : ""}{b.value}</div>
+              <div style={{ ...disp, fontWeight: 900, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{b.estimate ? "~" : ""}{b.value}</div>
               <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginTop: 3 }}>{t(b.labelKey)}</Mono>
             </div>
           ))}

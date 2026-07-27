@@ -71,6 +71,63 @@ export interface SessionWrapped {
 }
 
 /**
+ * How much to shrink a Wrapped number so it stays on ONE line.
+ *
+ * The hero and the stat tiles were sized for the gym vocabulary they used to
+ * carry — "11.3 t", "25", "78". Making them discipline-aware widened that
+ * vocabulary a lot: "1500 m", "2:20 /100m", "10.0 km". At the original size
+ * those wrap, and a wrapped value drags its label out of line with the tiles
+ * beside it.
+ *
+ * A CHARACTER COUNT WON'T DO. "11.3 t" and "1500 m" are both six characters and
+ * measure 66px and 85px in the tile — the dot and the space are a third the
+ * width of a digit, so counting them equally is off by 30%. The table below is
+ * per-glyph advance width in em, measured from Archivo Black (the app's display
+ * face) and verified against both slots.
+ *
+ * Living here rather than in each client is the point: mobile could lean on
+ * `adjustsFontSizeToFit` and web has no equivalent, so two implementations
+ * would mean two different answers to "how big is this number".
+ */
+const CHAR_EM: Record<string, number> = {
+  " ": 0.36, ".": 0.27, ",": 0.27, ":": 0.27, "/": 0.45, "~": 0.64,
+  "+": 0.6, "−": 0.45, "-": 0.45, "%": 0.9, "°": 0.45,
+  m: 0.77, i: 0.27, n: 0.59, k: 0.64, t: 0.32, g: 0.62, s: 0.55, h: 0.6,
+  e: 0.6, r: 0.42, l: 0.27, a: 0.58, o: 0.62, d: 0.62, u: 0.6, c: 0.55, p: 0.62,
+};
+/** A digit — and the fallback for anything not in the table. */
+const DEFAULT_EM = 0.682;
+
+/** Approximate rendered width of a value, in em of its own font size.
+ *  `trackingEm` is the slot's letter-spacing (negative tightens). */
+export function textWidthEm(value: string, trackingEm = 0): number {
+  let w = 0;
+  for (const ch of value) w += (CHAR_EM[ch] ?? DEFAULT_EM) + trackingEm;
+  return Math.max(0, w);
+}
+
+/**
+ * Multiplier in (0, 1] that keeps `value` inside `budgetEm` — the slot's width
+ * expressed in em of the value's base font size (available px ÷ base px).
+ */
+export function fitScale(
+  value: string,
+  budgetEm: number,
+  opts: { trackingEm?: number; floor?: number } = {},
+): number {
+  const w = textWidthEm(value, opts.trackingEm ?? 0);
+  if (!(w > budgetEm)) return 1;
+  return Math.max(opts.floor ?? 0.5, budgetEm / w);
+}
+
+/** The Wrapped hero: 338px of gutter-to-gutter room at a 96px base. */
+export const HERO_FIT_EM = 3.4;
+/** The hero's letter-spacing (−3px at 96px). */
+export const HERO_TRACKING_EM = -0.031;
+/** One of the four stat tiles: ~76px of room at a 22px base. */
+export const STAT_FIT_EM = 3.25;
+
+/**
  * "Where you stand" — the headline lift's RELATIVE-STRENGTH percentile vs a
  * cohort (sport / sex / age), from the documented synthetic norms in
  * benchmarks.ts. An ESTIMATE (norms-prior-v0), surfaced only when the athlete
