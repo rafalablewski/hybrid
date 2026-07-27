@@ -37,5 +37,6 @@ export * from "./achievements";
 export * from "./comparisons";
 export * from "./forceplate";
 export * from "./engine-room";
+export * from "./personal";
 export * from "./composition";
 export * from "./segment";

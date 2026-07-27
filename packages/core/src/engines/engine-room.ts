@@ -161,13 +161,13 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     id: "injury-spike",
     engine: "injury",
     name: "Workload-spike component",
-    expression: "spike = ramp(ACWR, 1.3, 2.2) × 55",
+    expression: "spike = ramp(ACWR, onset, onset + 0.9) × 55",
     constants: [
-      { symbol: "1.3", value: "onset", meaning: "ACWR where spike risk starts" },
-      { symbol: "2.2", value: "saturation", meaning: "ACWR of maximum spike risk" },
+      { symbol: "onset", value: "1.3 default", meaning: "population prior; personalized 1.1..1.6 from the athlete's outcome history" },
+      { symbol: "0.9", value: "ramp width", meaning: "risk saturates 0.9 above the onset (default → 2.2)" },
       { symbol: "55", value: "55 pts", meaning: "max contribution" },
     ],
-    note: "The classic ACWR danger zone, per tissue. ramp() is a linear 0..1 ramp between the bounds.",
+    note: "The classic ACWR danger zone, per tissue. ramp() is a linear 0..1 ramp between the bounds. The onset shrinks toward what THIS athlete has demonstrated: tolerated spikes raise it, injuries lower it (personal.ts).",
   },
   {
     id: "injury-load",
@@ -290,13 +290,15 @@ export interface EngineTrace {
 export function computeEngineTrace(
   log: TrainingLog,
   bio?: Biometrics,
-  opts?: { weights?: HpiWeights; coeffs?: CalibrationCoeffs; days?: number },
+  opts?: { weights?: HpiWeights; coeffs?: CalibrationCoeffs; days?: number; spikeOnset?: number },
 ): EngineTrace {
   const weights = opts?.weights ?? HYBRID_WEIGHTS;
   const state = computePerformanceState(log, bio, weights);
   return {
     state,
-    injury: computeInjuryRisk(log, bio, opts?.coeffs ?? PRIOR_COEFFS),
+    injury: computeInjuryRisk(log, bio, opts?.coeffs ?? PRIOR_COEFFS, {
+      spikeOnset: opts?.spikeOnset,
+    }),
     trajectory: performanceTrajectory(log, opts?.days ?? 14),
     enduranceFatigue: enduranceFatigue(state.fatigue),
   };

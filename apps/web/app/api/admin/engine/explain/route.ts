@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  acwrEventsFromHistory,
   computeEngineTrace,
+  derivePersonalization,
   readinessWhy,
   whatIfBio,
   whatIfLog,
   SAMPLE_BIOMETRICS,
   SAMPLE_TRAINING_LOG,
+  SPIKE_ONSET_PRIOR,
   type Biometrics,
   type TrainingLog,
   type WhatIf,
@@ -60,6 +63,7 @@ export async function POST(request: Request) {
   let log: TrainingLog = SAMPLE_TRAINING_LOG;
   let bio: Biometrics | undefined = SAMPLE_BIOMETRICS;
   let subject = "the built-in sample athlete";
+  let spikeOnset = SPIKE_ONSET_PRIOR;
   if (body.userId) {
     const user = await prisma.user.findUnique({
       where: { id: String(body.userId) },
@@ -70,6 +74,21 @@ export async function POST(request: Request) {
     log = inputs.log;
     bio = inputs.bio;
     subject = `athlete ${user.id}`;
+    // Same personal spike onset the Engine Room feed computes, so the
+    // narrative matches the numbers on screen.
+    const outcomes = await prisma.riskOutcome.findMany({
+      where: { userId: user.id },
+      select: { injured: true, ts: true },
+      orderBy: { ts: "desc" },
+      take: 200,
+    });
+    const now = Date.now();
+    spikeOnset = derivePersonalization(
+      acwrEventsFromHistory(
+        log,
+        outcomes.map((o) => ({ daysAgo: (now - o.ts.getTime()) / 86_400_000, injured: o.injured })),
+      ),
+    ).spikeOnset;
     await audit({
       actor: gate.admin,
       action: "user.engine.explain",
@@ -83,8 +102,8 @@ export async function POST(request: Request) {
   const { coeffs, version } = await activeCalibration();
   const simLog = whatIfActive ? whatIfLog(log, whatIf.loadPct) : log;
   const simBio = whatIfActive ? whatIfBio(bio, whatIf) : bio;
-  const trace = computeEngineTrace(simLog, simBio, { coeffs });
-  const actual = whatIfActive ? computeEngineTrace(log, bio, { coeffs }) : trace;
+  const trace = computeEngineTrace(simLog, simBio, { coeffs, spikeOnset });
+  const actual = whatIfActive ? computeEngineTrace(log, bio, { coeffs, spikeOnset }) : trace;
 
   // Deterministic fallback — the engines' own explanation, always available.
   const engineLines = [
@@ -125,7 +144,12 @@ export async function POST(request: Request) {
       }. Actual (untransformed) state: HPI ${actual.state.hpi.score}, readiness ${actual.state.readiness.score}, overall risk ${actual.injury.overall} (p ${(actual.injury.prob * 100).toFixed(1)}%).`
     : "No what-if is active — this is the live state.";
 
-  const userMsg = `Subject: ${subject}. Sessions in the log: ${log.length}. Calibration model: ${version}.
+  const personalLine =
+    spikeOnset !== SPIKE_ONSET_PRIOR
+      ? `Personal model: this athlete's ACWR spike onset is personalized to ${spikeOnset} (population prior ${SPIKE_ONSET_PRIOR}), learned from their labeled outcome history.`
+      : `Personal model: no personalization — the ACWR spike onset is the population prior ${SPIKE_ONSET_PRIOR}.`;
+
+  const userMsg = `Subject: ${subject}. Sessions in the log: ${log.length}. Calibration model: ${version}. ${personalLine}
 HPI ${trace.state.hpi.score}/100 (${trace.state.hpi.band}); components — strength ${trace.state.hpi.components.strength}, endurance ${trace.state.hpi.components.endurance}, recovery ${trace.state.hpi.components.recovery >= 0 ? "+" : ""}${trace.state.hpi.components.recovery}; limiter: ${trace.state.hpi.limiter}.
 Readiness ${trace.state.readiness.score}/100 (wearable adjustment ${trace.state.readiness.bioAdj >= 0 ? "+" : ""}${trace.state.readiness.bioAdj}).
 State drivers: ${drivers || "(none notable)"}.

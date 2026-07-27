@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { acwrEventsFromHistory, derivePersonalization } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { athleteInputs } from "@/lib/athlete-state";
 import { activeCalibration } from "@/lib/calibration";
 import { prisma } from "@/lib/db";
+
+const DAY_MS = 86_400_000;
 
 // Engine Room athlete feed: the RAW ENGINE INPUTS (TrainingLog + Biometrics)
 // for one athlete plus the live calibration, so the admin console runs the
@@ -23,10 +26,26 @@ export async function GET(request: Request) {
   });
   if (!user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const [{ log, bio, sessionCount }, calibration] = await Promise.all([
+  const [{ log, bio, sessionCount }, calibration, outcomes] = await Promise.all([
     athleteInputs(userId),
     activeCalibration(),
+    prisma.riskOutcome.findMany({
+      where: { userId },
+      select: { injured: true, ts: true },
+      orderBy: { ts: "desc" },
+      take: 200,
+    }),
   ]);
+
+  // Personal spike onset: replay the athlete's peak ACWR at each labeled
+  // outcome and shrink the onset toward what they've demonstrated.
+  const now = Date.now();
+  const personal = derivePersonalization(
+    acwrEventsFromHistory(
+      log,
+      outcomes.map((o) => ({ daysAgo: (now - o.ts.getTime()) / DAY_MS, injured: o.injured })),
+    ),
+  );
 
   await audit({
     actor: gate.admin,
@@ -37,5 +56,5 @@ export async function GET(request: Request) {
     req: request,
   });
 
-  return NextResponse.json({ user, log, bio: bio ?? null, sessionCount, calibration });
+  return NextResponse.json({ user, log, bio: bio ?? null, sessionCount, calibration, personal });
 }

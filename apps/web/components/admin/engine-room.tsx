@@ -40,9 +40,13 @@ import {
   RISK_MODEL_VERSION,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
+  SPIKE_ONSET_PRIOR,
+  SPIKE_ONSET_MIN,
+  SPIKE_ONSET_MAX,
   riskRole,
   hpiRole,
   readinessRole,
+  type Personalization,
   type Biometrics,
   type CalibrationCoeffs,
   type EngineTrace,
@@ -67,6 +71,7 @@ type Feed = {
   bio: Biometrics | null;
   sessionCount: number;
   calibration: { coeffs: CalibrationCoeffs; version: string; n: number };
+  personal?: Personalization;
 };
 
 const PROFILES: { id: string; label: string; weights: HpiWeights }[] = [
@@ -150,14 +155,16 @@ export default function EngineRoom() {
   const bio: Biometrics | undefined = feed ? (feed.bio ?? undefined) : SAMPLE_BIOMETRICS;
   const coeffs = feed ? feed.calibration.coeffs : PRIOR_COEFFS;
   const modelVersion = feed ? feed.calibration.version : RISK_MODEL_VERSION;
+  const personal = feed?.personal;
+  const spikeOnset = personal?.spikeOnset ?? SPIKE_ONSET_PRIOR;
   const weights = (PROFILES.find((p) => p.id === profileId) ?? PROFILES[0]!).weights;
 
   const whatIfActive =
     whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null;
 
   const base = useMemo(
-    () => computeEngineTrace(log, bio, { weights, coeffs }),
-    [log, bio, weights, coeffs],
+    () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset }),
+    [log, bio, weights, coeffs, spikeOnset],
   );
   const sim = useMemo(
     () =>
@@ -169,10 +176,10 @@ export default function EngineRoom() {
               restingHr: whatIf.restingHr ?? undefined,
               sleep: whatIf.sleep ?? undefined,
             }),
-            { weights, coeffs },
+            { weights, coeffs, spikeOnset },
           )
         : base,
-    [whatIfActive, log, bio, weights, coeffs, whatIf, base],
+    [whatIfActive, log, bio, weights, coeffs, spikeOnset, whatIf, base],
   );
 
   const t = sim; // what the headline reflects (base when no what-if is active)
@@ -380,6 +387,56 @@ export default function EngineRoom() {
             step={0.5}
             onChange={(v) => setWhatIf({ ...whatIf, sleep: v })}
           />
+        </div>
+      </Card>
+
+      {/* ---- personal model ---- */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+            Personal model – this athlete&apos;s ACWR spike onset
+          </Mono>
+          {personal?.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+        </div>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
+          The population model starts ramping spike risk at ACWR {SPIKE_ONSET_PRIOR}. The personal
+          onset shrinks toward what this athlete has demonstrated: spikes tolerated without injury
+          raise it (max {SPIKE_ONSET_MAX}), recorded injuries lower it (min {SPIKE_ONSET_MIN}).
+          {!feed && " The sample athlete has no outcome history, so the prior applies."}
+        </Mono>
+        {/* onset scale: min .. max with the prior and the personal value marked */}
+        <div style={{ marginTop: 16, position: "relative", height: 34 }}>
+          <div style={{ position: "absolute", top: 14, left: 0, right: 0, height: 6, background: INK2, borderRadius: 3 }} />
+          {[
+            { v: SPIKE_ONSET_PRIOR, label: `prior ${SPIKE_ONSET_PRIOR}`, c: ASH, dashed: true },
+            ...(spikeOnset !== SPIKE_ONSET_PRIOR
+              ? [{ v: spikeOnset, label: `personal ${spikeOnset}`, c: VIOLET, dashed: false }]
+              : []),
+          ].map((m) => {
+            const pct = ((m.v - SPIKE_ONSET_MIN) / (SPIKE_ONSET_MAX - SPIKE_ONSET_MIN)) * 100;
+            return (
+              <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
+                <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+              </div>
+            );
+          })}
+          <Mono s={{ fontSize: fs.nano, position: "absolute", left: 0, bottom: -14 }}>{SPIKE_ONSET_MIN}</Mono>
+          <Mono s={{ fontSize: fs.nano, position: "absolute", right: 0, bottom: -14 }}>{SPIKE_ONSET_MAX}</Mono>
+        </div>
+        <div style={{ display: "flex", gap: space.lg, flexWrap: "wrap", marginTop: 26 }}>
+          <Mono s={{ fontSize: fs.micro }}>
+            evidence: {personal ? `${personal.n} informative outcome${personal.n === 1 ? "" : "s"}` : "none"}
+          </Mono>
+          <Mono s={{ fontSize: fs.micro }} c={LIME}>
+            tolerated spikes: {personal?.toleratedSpikes ?? 0}
+          </Mono>
+          <Mono s={{ fontSize: fs.micro }} c={RED}>
+            injuries: {personal?.injuries ?? 0}
+          </Mono>
+          <Mono s={{ fontSize: fs.micro, marginLeft: "auto" }}>
+            spike formula in effect: ramp(ACWR, {spikeOnset}, {(spikeOnset + 0.9).toFixed(2)}) × 55
+          </Mono>
         </div>
       </Card>
 
