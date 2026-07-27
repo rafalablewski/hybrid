@@ -8,7 +8,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { AuroraScreen, ACard, AField, RADIUS, withAlpha } from "./kit";
+import { ACard, AField, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import PlanCoverScreen, { CoverScreen, PlanDockPill, type CoverScreenApi } from "../plan-hero";
@@ -86,7 +86,7 @@ export default function AuroraPlans() {
       backLabel={t("common.back")}
       back={() => router.back()}
       scrollApi={scrollApi}
-      rail={<CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} />}
+      rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} /> : undefined}
     >
       <View style={{ marginTop: 14 }}>
         <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
@@ -155,7 +155,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
   return (
     <View onLayout={onLayout} style={{ marginTop: 18 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
@@ -180,20 +180,25 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
 }
 
 /** The hairline under a shelf — a thumb sized to the visible share of the rail,
- *  riding the scroll offset. Native-driven, so it costs no re-renders. */
+ *  riding the scroll offset. Native-driven, so it costs no re-renders.
+ *  The thumb travels within the TRACK, which is the content column; `view` is
+ *  the full-bleed rail, a gutter wider on each side. Sizing the thumb off the
+ *  rail overshoots and its tail gets clipped away, so the track measures
+ *  itself. */
 function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; content: number }) {
   const { palette: C } = useTheme();
-  const thumb = Math.max(24, (view / content) * view);
+  const [track, setTrack] = useState(0);
+  const thumb = Math.max(24, Math.min(1, view / content) * track);
   const maxScroll = Math.max(1, content - view);
   return (
-    <View style={{ height: 2, borderRadius: 2, marginTop: 9, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
+    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 9, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
       <Animated.View
         style={{
           height: 2,
           width: thumb,
           borderRadius: 2,
           backgroundColor: withAlpha(C.chalk, 0.34),
-          transform: [{ translateX: x.interpolate({ inputRange: [0, maxScroll], outputRange: [0, Math.max(0, view - thumb)], extrapolate: "clamp" }) }],
+          transform: [{ translateX: x.interpolate({ inputRange: [0, maxScroll], outputRange: [0, Math.max(0, track - thumb)], extrapolate: "clamp" }) }],
         }}
       />
     </View>

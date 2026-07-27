@@ -17,16 +17,14 @@ const chip = (color: string, label: string) => <span style={{ background: `color
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
  *  exact GOAL_TREE / planDetail + /api/macrocycles enroll. */
 export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void }) {
-  const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   // Free-text search over the library. The CATEGORY lever is gone: with every
   // category rendered as its own shelf, filtering to one leaves an empty
   // screen — so the chips navigate to a shelf instead of narrowing to one.
+  // Held HERE, above the level switch, so a round trip into a goal and back
+  // doesn't silently drop what you typed.
   const [query, setQuery] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLDivElement>(null);
-  useHeroCollapse(rootRef, heroRef); // no dock at the root — collapse + snap only
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
@@ -36,6 +34,21 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
     return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
   }
   if (goal) return <List goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
+  return <Library query={query} setQuery={setQuery} pick={setGoalId} />;
+}
+
+/** The library ROOT — its OWN component, not an early-return branch of
+ *  AuroraPlans, and that is load-bearing: useHeroCollapse captures the root and
+ *  hero NODES once (its deps are stable ref objects), so it must live in
+ *  something that unmounts when the level changes. AuroraPlans stays mounted
+ *  across the whole stack; leaving the root inline left the hook holding
+ *  detached nodes after goal → back, and the cover stopped collapsing. `List`
+ *  and `Detail` are separate components for exactly this reason. */
+function Library({ query, setQuery, pick }: { query: string; setQuery: (v: string) => void; pick: (id: string) => void }) {
+  const { t } = useLang();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  useHeroCollapse(rootRef, heroRef); // no dock at the root — collapse + snap only
 
   // ── the library cover: the SAME scaffold the goal and plan screens ride, so
   // every depth of the Plans stack is one object at a different compression.
@@ -55,7 +68,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
         cover={{ accent: C("lime"), glyph: lib.glyph, chip: lib.chip, duration: lib.count, title: lib.title, metaParts: lib.metaParts, stats: [], blurb: "", variant: "library" }}
         heroRef={heroRef}
       />
-      <CategoryRail categories={shelves.map((s) => s.category)} />
+      {shelves.length > 0 && <CategoryRail categories={shelves.map((s) => s.category)} />}
       <div style={{ position: "relative", margin: "14px 0 0" }}>
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
@@ -70,7 +83,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
       {shelves.length === 0 ? (
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), padding: "8px 2px" }}>{t("w.train.plans.noMatches")}</p>
       ) : (
-        shelves.map((group) => <GoalShelf key={group.category} group={group} pick={setGoalId} />)
+        shelves.map((group) => <GoalShelf key={group.category} group={group} pick={pick} />)
       )}
     </div>
   );
@@ -126,23 +139,28 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
   const [overflows, setOverflows] = useState(false);
 
   // Drive the hairline straight off the node — no re-render per scroll frame.
+  // The thumb travels within the TRACK, which is the content column; the rail
+  // is full-bleed and so a gutter wider on each side. Measuring travel against
+  // the rail overshoots and the tail of the thumb gets clipped away.
   const sync = () => {
     const rail = railRef.current;
     const thumb = thumbRef.current;
-    if (!rail || !thumb) return;
+    const track = thumb?.parentElement;
+    if (!rail || !thumb || !track) return;
     const max = rail.scrollWidth - rail.clientWidth;
     setOverflows(max > 1);
     if (max <= 1) return;
-    const frac = rail.clientWidth / rail.scrollWidth;
-    thumb.style.width = `${Math.max(12, frac * 100)}%`;
-    thumb.style.transform = `translateX(${(rail.scrollLeft / max) * (1 - frac) * rail.clientWidth}px)`;
+    const frac = Math.min(1, rail.clientWidth / rail.scrollWidth);
+    const width = Math.max(24, frac * track.clientWidth);
+    thumb.style.width = `${width}px`;
+    thumb.style.transform = `translateX(${(rail.scrollLeft / max) * Math.max(0, track.clientWidth - width)}px)`;
   };
   useEffect(() => {
     sync();
     window.addEventListener("resize", sync);
     return () => window.removeEventListener("resize", sync);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group.category, group.goals.length]);
+  }, [group.category, group.goals.map((g) => g.id).join()]);
 
   return (
     <section id={shelfId(group.category)} style={{ marginTop: 24, scrollMarginTop: COVER_BAR + RAIL_H }}>
@@ -176,17 +194,22 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
  *  printing "0 plans". */
 function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
   const cover = goalCoverView(goal);
+  const [pressed, setPressed] = useState(false);
+  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <button
       onClick={onOpen}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
       aria-label={`${goal.name} – ${cover.count}`}
-      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 20, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 13, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer" }}
+      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 20, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 13, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, opacity: cover.ready ? 1 : 0.45, background: `linear-gradient(202deg, color-mix(in srgb, ${cover.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cover.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 6%, transparent 58%)` }} />
       <span aria-hidden style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 1, color: `rgba(255,255,255,${cover.ready ? ".09" : ".05"})`, pointerEvents: "none" }}>{cover.glyph}</span>
       <span style={{ position: "relative", alignSelf: "flex-end", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, letterSpacing: ".08em", color: `rgba(255,255,255,${cover.ready ? ".85" : ".5"})` }}>{cover.count}</span>
-      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.025em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)" }}>{goal.name}</span>
+      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.025em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.name}</span>
     </button>
   );
 }
@@ -436,6 +459,11 @@ interface CoverSpec {
   variant?: "plan" | "goal" | "library";
 }
 
+/** The cover's display title at whichever heading level its screen needs. */
+function CoverTitle({ as: Tag, style, children }: { as: "h1" | "h2"; style: React.CSSProperties; children: React.ReactNode }) {
+  return <Tag style={style}>{children}</Tag>;
+}
+
 /** The generic scaffold behind PlanHero — same sticky collapse, snap detent
  *  and hem for ANY CoverSpec (plan detail, the goal hero, the library root).
  *  `back` is optional: the Plans root is a top-level screen with nowhere to go
@@ -486,7 +514,9 @@ function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back
         {/* the cover proper — chip, title, meta; slides up with the frame */}
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
           <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 11px", borderRadius: 999 }}>{cover.chip}</span>
-          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</h2>
+          {/* the library cover IS the page's h1 — the root has no other heading
+              above it; the goal and plan covers stay h2 under their own screen */}
+          <CoverTitle as={library ? "h1" : "h2"} style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</CoverTitle>
           {emblem && !library ? (
             <p style={{ margin: "8px 0 0", fontSize: 13.5, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
           ) : (
