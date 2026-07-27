@@ -243,13 +243,16 @@ export default function AuroraGlobalNav() {
           {!useGlass && (
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SLOT_H / 2, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
           )}
+          {/* Glyph weight 4.5 (viewBox units, ~1.3px at 21) — the NAV-BAR weight
+              shared with web's PillButton, lighter than the design-kit default
+              (6) which read too heavy beside a 10pt label on glass. */}
           <View style={{ alignItems: "center", gap: 2 }}>
-            <AuroraSvgIcon name={tab.glyph} size={21} color={C.ash} />
+            <AuroraSvgIcon name={tab.glyph} size={21} color={C.ash} strokeWidth={4.5} />
             <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: C.ash }}>{label}</Text>
           </View>
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", opacity: iconOp[tab.seg] }]}>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <AuroraSvgIcon name={tab.glyph} size={21} color={activeIconColor} />
+              <AuroraSvgIcon name={tab.glyph} size={21} color={activeIconColor} strokeWidth={4.5} />
               <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: activeIconColor }}>{label}</Text>
             </View>
           </Animated.View>
