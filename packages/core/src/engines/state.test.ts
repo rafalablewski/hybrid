@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computePerformanceState,
   computeInjuryRisk,
+  MIN_HISTORY_DAYS,
   performanceTrajectory,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
@@ -115,6 +116,36 @@ describe("computeInjuryRisk", () => {
     // just not a fabricated spike.
     expect(r.overall).toBeLessThan(50);
     expect(r.flagged).toHaveLength(0);
+    // …and the clients are told to explain the dash, since this athlete IS
+    // training — every tissue they loaded is waiting on a baseline.
+    expect(r.awaitingBaseline.length).toBeGreaterThan(0);
+    expect(r.historyDays).toBe(5);
+    expect(r.minHistoryDays).toBe(MIN_HISTORY_DAYS);
+  });
+
+  it("only asks for the explainer about tissues the athlete actually trained", () => {
+    const log: TrainingLog = [
+      { daysAgo: 1, items: [{ move: "Bench Press", topRpe: 8, hardSets: 4 }] },
+    ];
+    const r = computeInjuryRisk(log);
+    // Chest was trained this week with no baseline → explain it. Everything
+    // else is simply untrained, which needs no explanation.
+    expect(r.awaitingBaseline).toContain("chest");
+    expect(r.awaitingBaseline).not.toContain("glutes");
+  });
+
+  it("stops asking for the explainer once every trained tissue has a baseline", () => {
+    const log: TrainingLog = Array.from({ length: 10 }, (_, i) => ({
+      daysAgo: i * 3 + 1,
+      items: [{ move: "Back Squat", topRpe: 7, hardSets: 4 }],
+    }));
+    expect(computeInjuryRisk(log).awaitingBaseline).toEqual([]);
+  });
+
+  it("an empty log asks for nothing", () => {
+    const r = computeInjuryRisk([]);
+    expect(r.awaitingBaseline).toEqual([]);
+    expect(r.historyDays).toBe(0);
   });
 
   it("a tissue trained for the first time this week gets no ACWR, even with a long log", () => {

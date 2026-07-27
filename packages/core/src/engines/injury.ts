@@ -102,6 +102,18 @@ export interface InjuryRisk {
   tissues: TissueRisk[];
   /** the subset at elevated/high risk — the coach's worklist */
   flagged: TissueRisk[];
+  /** how far back the log reaches, in days (0 with no sessions) */
+  historyDays: number;
+  /** the span an ACWR needs before it is trusted (MIN_HISTORY_DAYS) */
+  minHistoryDays: number;
+  /**
+   * Tissues trained in the last 7 days that have NO chronic baseline yet — the
+   * ones whose ACWR reads "—". Non-empty means the athlete IS training but the
+   * ratio can't be computed honestly, which is exactly when the clients owe
+   * them an explanation rather than a bare dash. A tissue they simply haven't
+   * trained is not listed: there is nothing to explain about it.
+   */
+  awaitingBaseline: MuscleGroup[];
 }
 
 /** Undecayed per-tissue load summed over sessions in the window `[from, days)`
@@ -151,7 +163,7 @@ const SPIKE_RAMP_WIDTH = 0.9;
  * actually did. That is the formula's ceiling, not a workload spike, and it
  * used to hand a brand-new athlete a phantom 55-point "spike" on every tissue.
  */
-const MIN_HISTORY_DAYS = 14;
+export const MIN_HISTORY_DAYS = 14;
 
 /**
  * Per-tissue injury risk. Components (capped, summed to 0..100):
@@ -235,5 +247,8 @@ export function computeInjuryRisk(
     modelVersion: RISK_MODEL_VERSION,
     tissues,
     flagged: tissues.filter((t) => t.risk >= 50),
+    historyDays: spanDays,
+    minHistoryDays: MIN_HISTORY_DAYS,
+    awaitingBaseline: tissues.filter((t) => !t.enoughHistory && acute[t.tissue] > 0).map((t) => t.tissue),
   };
 }

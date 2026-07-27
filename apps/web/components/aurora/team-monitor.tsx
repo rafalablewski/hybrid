@@ -181,6 +181,13 @@ export default function AuroraTeamMonitor() {
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, display: "block", marginTop: 10, color: C("ash") }}>
         {t("w.teams.monitor.acwrNote")}
       </span>
+      {/* Only when a row actually shows the dash — explain the gap so a coach
+          doesn't read it as missing data or a broken metric. */}
+      {sorted.some((a) => a.acwrBand === "insufficient") && (
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, display: "block", marginTop: 6, color: C("ash") }}>
+          {t("w.teams.monitor.acwrInsufficient")}
+        </span>
+      )}
     </div>
   );
 }

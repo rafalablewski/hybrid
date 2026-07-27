@@ -362,6 +362,17 @@ export default function AuroraPerformance({
                       </table>
                     </div>
                   </div>
+                  {/* WHY THE DASH — an athlete who IS training but has no chronic
+                      baseline yet reads "—" in the ACWR column. Say why, rather
+                      than leaving a blank that looks like a broken number. The
+                      engine decides who sees this (awaitingBaseline), so web and
+                      mobile can never disagree about it. */}
+                  {risk.awaitingBaseline.length > 0 && (
+                    <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${C("ash")} 8%, transparent)` }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginBottom: 4 }}>{t("w.injury.acwrPending")}</div>
+                      <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t("w.injury.acwrPendingBody")}</div>
+                    </div>
+                  )}
                   {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
                       at play (workload spike, high load, return-from-lull, recovery). */}
                   {driverKinds.length > 0 && (
