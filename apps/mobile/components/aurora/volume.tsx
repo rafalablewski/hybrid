@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import {
   volumeStatus, resolveLandmarks,
-  railGeometry, railScale, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -10,7 +10,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, space, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
@@ -169,8 +169,6 @@ export default function AuroraVolume() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           </View>
 
-          <LegendRail />
-
           <View style={{ marginTop: 4 }}>
             {ranked.map((r) => (
               <MuscleRow
@@ -256,24 +254,6 @@ function Prescription({ title, why, items, color, ml, unit }: {
   );
 }
 
-/** The shared landmark geometry, drawn once as the key for the whole stack. */
-function LegendRail() {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ marginTop: 16, marginBottom: 18 }}>
-      <View style={{ height: 4, borderRadius: 2, backgroundColor: C.ink, overflow: "hidden" }}>
-        <View style={{ position: "absolute", left: pct(RAIL.mev), width: pct(RAIL.mavHigh - RAIL.mev), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.3) }} />
-        <View style={{ position: "absolute", left: pct(RAIL.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.3) }} />
-      </View>
-      <View style={{ height: 14 }}>
-        {([["MEV", RAIL.mev], ["MAV", (RAIL.mev + RAIL.mavHigh) / 2], ["MRV", RAIL.mrv]] as const).map(([label, x]) => (
-          <Text key={label} style={{ position: "absolute", left: pct(x), top: 4, marginLeft: -16, width: 32, textAlign: "center", fontFamily: F.mono, fontSize: 9, letterSpacing: 0.8, color: C.ash }}>{label}</Text>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
 function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
@@ -308,11 +288,20 @@ function MuscleRow({ s, label, color, expanded, editing, onToggle, onEdit }: {
         <View style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
       </View>
 
-      {/* This muscle's own landmark values, under the anchors the legend above
-          names once. The scale every row used to redraw as a swatch key. */}
-      <View style={{ height: 15, marginTop: 5 }}>
-        {([[sc.mev, sc.mevX], [sc.mav, sc.mavX], [sc.mrv, sc.mrvX]] as const).map(([v, x], i) => (
-          <Text key={i} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -21, width: 42, textAlign: "center", fontFamily: F.mono, fontSize: 10, color: C.ash }}>{v}</Text>
+      {/* This muscle's OWN scale, each value named and sitting under the mark it
+          belongs to — MEV and MRV directly beneath their notches, MAV under the
+          middle of the band. The old row said the same thing, but left-packed
+          and with a coloured square in front of every label; here the label is
+          the quiet part and the number carries the weight. */}
+      <View style={{ height: 16, marginTop: 6 }}>
+        {([["MEV", sc.mev, sc.mevX], ["MAV", sc.mav, sc.mavX], ["MRV", sc.mrv, sc.mrvX]] as const).map(([k, v, x]) => (
+          <Text
+            key={k}
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -45, width: 90, textAlign: "center", fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, color: C.ash }}
+          >
+            {k} <Text style={{ fontSize: 11, color: C.chalk }}>{v}</Text>
+          </Text>
         ))}
       </View>
 

@@ -3,7 +3,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, resolveLandmarks,
-  railGeometry, railScale, RAIL, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -145,8 +145,6 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
             <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
           </div>
 
-          <LegendRail />
-
           <div>
             {ranked.map((r) => (
               <MuscleRow
@@ -230,23 +228,6 @@ function Prescription({ title, why, items, token, ml, unit }: {
   );
 }
 
-/** The shared landmark geometry, drawn once as the key for the whole stack. */
-function LegendRail() {
-  return (
-    <div style={{ marginTop: 16, marginBottom: 18 }}>
-      <div style={{ position: "relative", height: 4, borderRadius: 2, background: C("ink"), overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: pct(RAIL.mev), width: pct(RAIL.mavHigh - RAIL.mev), top: 0, bottom: 0, background: mix("lime", 30) }} />
-        <div style={{ position: "absolute", left: pct(RAIL.mrv), right: 0, top: 0, bottom: 0, background: mix("red", 30) }} />
-      </div>
-      <div style={{ position: "relative", height: 14 }}>
-        {([["MEV", RAIL.mev], ["MAV", (RAIL.mev + RAIL.mavHigh) / 2], ["MRV", RAIL.mrv]] as const).map(([label, x]) => (
-          <span key={label} style={{ position: "absolute", left: pct(x), top: 4, marginLeft: -16, width: 32, textAlign: "center", ...mono(9), letterSpacing: ".08em", color: C("ash") }}>{label}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
 function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
@@ -278,11 +259,16 @@ function MuscleRow({ s, label, token, expanded, editing, onToggle, onEdit }: {
           <div style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
           <div style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
         </div>
-        {/* This muscle's own landmark values, under the anchors the legend above
-            names once. The scale every row used to redraw as a swatch key. */}
-        <div style={{ position: "relative", height: 15, marginTop: 5 }}>
-          {([[sc.mev, sc.mevX], [sc.mav, sc.mavX], [sc.mrv, sc.mrvX]] as const).map(([v, x]) => (
-            <span key={x} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -24, width: 48, textAlign: "center", ...mono(10), color: C("ash") }}>{v}</span>
+        {/* This muscle's OWN scale, each value named and sitting under the mark
+            it belongs to — MEV and MRV directly beneath their notches, MAV under
+            the middle of the band. The old row said the same thing, but
+            left-packed and with a coloured square in front of every label; here
+            the label is the quiet part and the number carries the weight. */}
+        <div style={{ position: "relative", height: 16, marginTop: 6 }}>
+          {([["MEV", sc.mev, sc.mevX], ["MAV", sc.mav, sc.mavX], ["MRV", sc.mrv, sc.mrvX]] as const).map(([k, v, x]) => (
+            <span key={k} style={{ position: "absolute", left: pct(x), top: 0, marginLeft: -45, width: 90, textAlign: "center", ...mono(9), letterSpacing: ".05em", color: C("ash") }}>
+              {k} <span style={{ fontSize: 11, color: C("chalk") }}>{v}</span>
+            </span>
           ))}
         </div>
       </button>
