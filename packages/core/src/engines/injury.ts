@@ -101,8 +101,10 @@ export interface InjuryRisk {
   flagged: TissueRisk[];
 }
 
-/** Undecayed per-tissue load summed over sessions within the last `days`. */
-function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
+/** Undecayed per-tissue load summed over sessions within the last `days`.
+ *  Exported so the Engine Room's derivations show the same acute/chronic
+ *  windows the risk engine actually used. */
+export function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
   const load = Object.fromEntries(ALL_MUSCLES.map((m) => [m, 0])) as Record<MuscleGroup, number>;
   for (const session of log) {
     if (session.daysAgo < 0 || session.daysAgo >= days) continue;

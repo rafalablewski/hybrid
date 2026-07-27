@@ -28,8 +28,15 @@ import {
 } from "@/lib/ui";
 import {
   computeEngineTrace,
+  deriveHpi,
+  deriveReadiness,
+  deriveTissueRisk,
+  feelingImpacts,
+  FEELING_THRESHOLDS,
+  READINESS_FACE,
   ENGINE_FORMULAS,
   ENGINE_FORMULA_GROUPS,
+  ALL_MUSCLES,
   logisticCurve,
   whatIfLog,
   whatIfBio,
@@ -46,6 +53,8 @@ import {
   riskRole,
   hpiRole,
   readinessRole,
+  type Derivation,
+  type MuscleGroup,
   type Personalization,
   type Biometrics,
   type CalibrationCoeffs,
@@ -97,6 +106,19 @@ const DRIVER_LABEL: Record<string, string> = {
 type WhatIfState = { loadPct: number; hrv: number | null; restingHr: number | null; sleep: number | null };
 const WHATIF_OFF: WhatIfState = { loadPct: 100, hrv: null, restingHr: null, sleep: null };
 
+type Scenario = { id: string; name: string; whatIf: WhatIfState };
+
+/** Ready-made scenarios so comparison starts with one click. Biometric
+ *  overrides are RELATIVE (pct of baseline) so they fit any athlete. */
+const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number }[] = [
+  { name: "Crashed recovery", loadPct: 100, hrvPct: 65, sleepH: 5 },
+  { name: "Eased week (50%)", loadPct: 50 },
+  { name: "Overreached (150%)", loadPct: 150 },
+];
+
+// Feeling accent → the app's semantic tokens (same mapping READINESS_FACE uses).
+const FEELING_COLOR: Record<string, string> = { lime: LIME_HEX, blue: BLUE, amber: AMBER, red: RED };
+
 export default function EngineRoom() {
   // ---- source: sample athlete or a real user ----
   const [q, setQ] = useState("");
@@ -106,7 +128,11 @@ export default function EngineRoom() {
   const [err, setErr] = useState("");
   const [profileId, setProfileId] = useState("hybrid");
   const [whatIf, setWhatIf] = useState<WhatIfState>(WHATIF_OFF);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [scenarioName, setScenarioName] = useState("");
+  const [tissue, setTissue] = useState<MuscleGroup>("quads");
   const searchSeq = useRef(0);
+  const scenarioSeq = useRef(0);
 
   useEffect(() => {
     const query = q.trim();
@@ -166,21 +192,73 @@ export default function EngineRoom() {
     () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset }),
     [log, bio, weights, coeffs, spikeOnset],
   );
-  const sim = useMemo(
+  // The transformed inputs are shared by the headline trace, the derivations,
+  // and the feeling lab, so everything on screen describes the SAME state.
+  const simLog = useMemo(
+    () => (whatIfActive ? whatIfLog(log, whatIf.loadPct) : log),
+    [whatIfActive, log, whatIf.loadPct],
+  );
+  const simBio = useMemo(
     () =>
       whatIfActive
-        ? computeEngineTrace(
-            whatIfLog(log, whatIf.loadPct),
-            whatIfBio(bio, {
-              hrv: whatIf.hrv ?? undefined,
-              restingHr: whatIf.restingHr ?? undefined,
-              sleep: whatIf.sleep ?? undefined,
-            }),
-            { weights, coeffs, spikeOnset },
-          )
-        : base,
-    [whatIfActive, log, bio, weights, coeffs, spikeOnset, whatIf, base],
+        ? whatIfBio(bio, {
+            hrv: whatIf.hrv ?? undefined,
+            restingHr: whatIf.restingHr ?? undefined,
+            sleep: whatIf.sleep ?? undefined,
+          })
+        : bio,
+    [whatIfActive, bio, whatIf],
   );
+  const sim = useMemo(
+    () =>
+      whatIfActive ? computeEngineTrace(simLog, simBio, { weights, coeffs, spikeOnset }) : base,
+    [whatIfActive, simLog, simBio, weights, coeffs, spikeOnset, base],
+  );
+
+  // Step-by-step derivations of the state on screen (simulated when a what-if
+  // is active — the math always explains the numbers you're looking at).
+  const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio), [simLog, simBio]);
+  const hpiDeriv = useMemo(() => deriveHpi(simLog, simBio, weights), [simLog, simBio, weights]);
+  const tissueDeriv = useMemo(
+    () => deriveTissueRisk(simLog, tissue, simBio, coeffs, spikeOnset),
+    [simLog, tissue, simBio, coeffs, spikeOnset],
+  );
+  const feelings = useMemo(() => feelingImpacts(simLog, simBio), [simLog, simBio]);
+
+  // Named scenarios, each run through the full stack against the ACTUAL inputs.
+  const scenarioTraces = useMemo(
+    () =>
+      scenarios.map((s) => {
+        const active =
+          s.whatIf.loadPct !== 100 || s.whatIf.hrv != null || s.whatIf.restingHr != null || s.whatIf.sleep != null;
+        const t = active
+          ? computeEngineTrace(
+              whatIfLog(log, s.whatIf.loadPct),
+              whatIfBio(bio, {
+                hrv: s.whatIf.hrv ?? undefined,
+                restingHr: s.whatIf.restingHr ?? undefined,
+                sleep: s.whatIf.sleep ?? undefined,
+              }),
+              { weights, coeffs, spikeOnset },
+            )
+          : base;
+        return { ...s, trace: t };
+      }),
+    [scenarios, log, bio, weights, coeffs, spikeOnset, base],
+  );
+
+  const addScenario = (name: string, w: WhatIfState) => {
+    scenarioSeq.current += 1;
+    setScenarios((prev) => [...prev, { id: `s${scenarioSeq.current}`, name, whatIf: w }]);
+  };
+  const addPreset = (p: (typeof SCENARIO_PRESETS)[number]) => {
+    addScenario(p.name, {
+      loadPct: p.loadPct,
+      hrv: p.hrvPct != null && bio ? Math.round(bio.hrv.baseline * (p.hrvPct / 100)) : null,
+      restingHr: null,
+      sleep: p.sleepH ?? null,
+    });
+  };
 
   const t = sim; // what the headline reflects (base when no what-if is active)
   const delta = (a: number, b: number) => {
@@ -332,6 +410,12 @@ export default function EngineRoom() {
         />
       </div>
 
+      {/* ---- why these numbers: step-by-step derivations ---- */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: space.lg }}>
+        <DerivationPanel derivation={readinessDeriv} accent={LIME} whatIfActive={whatIfActive} />
+        <DerivationPanel derivation={hpiDeriv} accent={LIME} whatIfActive={whatIfActive} />
+      </div>
+
       {/* ---- what-if simulator ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
@@ -388,6 +472,139 @@ export default function EngineRoom() {
             onChange={(v) => setWhatIf({ ...whatIf, sleep: v })}
           />
         </div>
+
+        {/* named scenarios — save the sliders, add presets, compare in one table */}
+        <div style={{ borderTop: `1px solid ${LINE}`, marginTop: 16, paddingTop: 14 }}>
+          <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Scenarios</Mono>
+            {SCENARIO_PRESETS.map((p) => (
+              <button
+                key={p.name}
+                onClick={() => addPreset(p)}
+                disabled={scenarios.some((s) => s.name === p.name)}
+                style={{
+                  ...mono,
+                  fontSize: fs.micro,
+                  color: txt(ASH),
+                  background: "transparent",
+                  border: `1px dashed ${LINE}`,
+                  borderRadius: 999,
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                  opacity: scenarios.some((s) => s.name === p.name) ? 0.4 : 1,
+                }}
+              >
+                + {p.name}
+              </button>
+            ))}
+            <span style={{ display: "inline-flex", gap: 6, alignItems: "center", marginLeft: "auto" }}>
+              <input
+                value={scenarioName}
+                onChange={(e) => setScenarioName(e.target.value)}
+                placeholder="Name current sliders…"
+                style={{ ...mono, fontSize: fs.micro, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 999, padding: "6px 12px", outline: "none", width: 170 }}
+              />
+              <Button
+                label="Save scenario"
+                variant="outline"
+                disabled={!whatIfActive}
+                onClick={() => {
+                  addScenario(scenarioName.trim() || `Scenario ${scenarios.length + 1}`, whatIf);
+                  setScenarioName("");
+                }}
+              />
+            </span>
+          </div>
+
+          {scenarioTraces.length > 0 && (
+            <div style={{ overflowX: "auto", marginTop: 12 }}>
+              <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    {["Scenario", "Inputs", "HPI", "Readiness", "Risk", "p(injury)", "Flagged", ""].map((h) => (
+                      <th key={h} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${LINE}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={cellPlain(CHALK)}>Actual</td>
+                    <td style={cellPlain(ASH)}>as logged</td>
+                    <ScenarioCells trace={base} baseline={base} />
+                    <td style={cellPlain(ASH)} />
+                  </tr>
+                  {scenarioTraces.map((s) => (
+                    <tr key={s.id}>
+                      <td style={cellPlain(CHALK)}>{s.name}</td>
+                      <td style={cellPlain(ASH)}>{describeWhatIf(s.whatIf, bio)}</td>
+                      <ScenarioCells trace={s.trace} baseline={base} />
+                      <td style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}` }}>
+                        <button
+                          onClick={() => setScenarios((prev) => prev.filter((x) => x.id !== s.id))}
+                          aria-label={`Remove scenario ${s.name}`}
+                          style={{ ...mono, fontSize: fs.micro, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer" }}
+                        >
+                          remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* ---- feeling lab ---- */}
+      <Card>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+          Check-in feeling lab – what the one-tap answer does
+        </Mono>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
+          The picker writes a 1–5 rating (energy, sleep, soreness, mood — the quick pick sets all
+          four equal). The rating maps to a feeling, and the feeling mechanically scales today&apos;s
+          prescribed session. Each row below is the REAL prescription engine run for this athlete
+          under that feeling.
+        </Mono>
+        <div style={{ display: "flex", gap: space.md, flexWrap: "wrap", marginTop: 10 }}>
+          {FEELING_THRESHOLDS.map((t) => (
+            <Mono key={t.feeling} s={{ fontSize: fs.nano }}>
+              <span style={{ color: txt(FEELING_COLOR[READINESS_FACE[t.feeling].accent]) }}>{t.feeling}</span> {t.range}
+            </Mono>
+          ))}
+        </div>
+        <div style={{ overflowX: "auto", marginTop: 12 }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Feeling", "Load factor", "Sets shed", "Prescribed session", "Moved it?"].map((h) => (
+                  <th key={h} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${LINE}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {feelings.map((r) => (
+                <tr key={r.feeling}>
+                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}` }}>
+                    <Chip c={FEELING_COLOR[READINESS_FACE[r.feeling].accent]}>{r.feeling}</Chip>
+                  </td>
+                  <td style={cellPlain(CHALK)}>× {r.factor.toFixed(2)}</td>
+                  <td style={cellPlain(r.setAdj ? RED : ASH)}>{r.setAdj || "—"}</td>
+                  <td style={cellPlain(CHALK)}>
+                    {r.move} – {r.sets} × {r.reps} @ {r.load}{r.load === "BW" ? "" : " kg"}
+                  </td>
+                  <td style={cellPlain(r.moved ? CHALK : ASH)}>{r.moved ? "yes" : "neutral"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 10, lineHeight: 1.5 }}>
+          The feeling never touches HPI, readiness, or injury risk — those read the objective log
+          and wearables. It scales the PRESCRIPTION on top of the progression dose
+          (readinessLoadFactor in prescribeSession), and a wrecked day also sheds a set.
+        </Mono>
       </Card>
 
       {/* ---- personal model ---- */}
@@ -549,7 +766,37 @@ export default function EngineRoom() {
             flagged (≥50): {t.injury.flagged.length ? t.injury.flagged.map((f) => f.tissue).join(", ") : "none"}
           </Mono>
         </div>
+
+        {/* per-tissue derivation — pick a tissue, see the substituted math */}
+        <div style={{ borderTop: `1px solid ${LINE}`, marginTop: 14, paddingTop: 14 }}>
+          <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Show the math for</Mono>
+            {ALL_MUSCLES.map((m) => (
+              <button
+                key={m}
+                onClick={() => setTissue(m)}
+                style={{
+                  ...mono,
+                  fontSize: fs.micro,
+                  textTransform: "capitalize",
+                  color: txt(tissue === m ? LIME : ASH),
+                  background: tissue === m ? `${LIME_HEX}1c` : "transparent",
+                  border: `1px solid ${tissue === m ? LIME : LINE}`,
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <DerivationSteps derivation={tissueDeriv} />
+        </div>
       </Card>
+
+      {/* ---- compare two athletes ---- */}
+      <CompareCard weights={weights} whatIfActive={whatIfActive} current={{ label: feed ? (feed.user.name ?? feed.user.email) : "Sample athlete", trace: base, personalOnset: spikeOnset, sessionCount: feed?.sessionCount ?? SAMPLE_TRAINING_LOG.length, bio }} />
 
       {/* ---- formula sheet ---- */}
       <Card>
@@ -682,6 +929,257 @@ function ExplainCard({
 
 function cell(color: string): React.CSSProperties {
   return { ...mono, fontSize: fs.caption, padding: "8px 10px", color: txt(color), borderBottom: `1px solid ${LINE}`, textTransform: "capitalize" };
+}
+
+function cellPlain(color: string): React.CSSProperties {
+  return { ...mono, fontSize: fs.caption, padding: "8px 10px", color: txt(color), borderBottom: `1px solid ${LINE}` };
+}
+
+/** Human line for a scenario's transformed inputs. */
+function describeWhatIf(w: WhatIfState, bio?: Biometrics): string {
+  const parts: string[] = [];
+  if (w.loadPct !== 100) parts.push(`load ${w.loadPct}%`);
+  if (w.hrv != null) parts.push(`HRV ${w.hrv}${bio ? ` (base ${bio.hrv.baseline})` : ""}`);
+  if (w.restingHr != null) parts.push(`RHR ${w.restingHr}`);
+  if (w.sleep != null) parts.push(`sleep ${w.sleep} h`);
+  return parts.length ? parts.join(", ") : "as logged";
+}
+
+/** The four metric cells of a scenario row, with deltas vs the actual state. */
+function ScenarioCells({ trace, baseline }: { trace: EngineTrace; baseline: EngineTrace }) {
+  const d = (a: number, b: number) => {
+    const x = a - b;
+    return x === 0 ? "" : x > 0 ? ` (+${x})` : ` (−${Math.abs(x)})`;
+  };
+  const same = trace === baseline;
+  return (
+    <>
+      <td style={cellPlain(CHALK)}>
+        {trace.state.hpi.score}
+        {!same && <span style={{ color: txt(ASH) }}>{d(trace.state.hpi.score, baseline.state.hpi.score)}</span>}
+      </td>
+      <td style={cellPlain(CHALK)}>
+        {trace.state.readiness.score}
+        {!same && <span style={{ color: txt(ASH) }}>{d(trace.state.readiness.score, baseline.state.readiness.score)}</span>}
+      </td>
+      <td style={cellPlain(CHALK)}>
+        {trace.injury.overall}
+        {!same && <span style={{ color: txt(ASH) }}>{d(trace.injury.overall, baseline.injury.overall)}</span>}
+      </td>
+      <td style={cellPlain(CHALK)}>{(trace.injury.prob * 100).toFixed(1)}%</td>
+      <td style={cellPlain(trace.injury.flagged.length ? RED : ASH)}>{trace.injury.flagged.length}</td>
+    </>
+  );
+}
+
+/** Step list of a derivation — label + the substituted arithmetic. */
+function DerivationSteps({ derivation }: { derivation: Derivation }) {
+  return (
+    <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+      {derivation.steps.map((s) => (
+        <div key={s.label} style={{ display: "grid", gap: 2 }}>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{s.label}</Mono>
+          <code style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: INK2, border: `1px solid ${LINE}`, borderRadius: 7, padding: "6px 10px", overflowX: "auto", whiteSpace: "nowrap" }}>
+            {s.math}
+          </code>
+          {s.note && <Mono s={{ fontSize: fs.nano, lineHeight: 1.5 }}>{s.note}</Mono>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A headline derivation as a collapsible card ("How is this calculated?"). */
+function DerivationPanel({ derivation, accent, whatIfActive }: { derivation: Derivation; accent: string; whatIfActive: boolean }) {
+  return (
+    <Card>
+      <details>
+        <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
+          <span>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={accent}>
+              How is this calculated – {derivation.title}
+            </Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 3 }} c={CHALK}>
+              {derivation.result}
+              {whatIfActive ? " (simulated inputs)" : ""}
+            </Mono>
+          </span>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>expand ▾</Mono>
+        </summary>
+        <DerivationSteps derivation={derivation} />
+      </details>
+    </Card>
+  );
+}
+
+/** Side-by-side athlete comparison — why does one athlete read better? */
+function CompareCard({
+  weights,
+  whatIfActive,
+  current,
+}: {
+  weights: HpiWeights;
+  whatIfActive: boolean;
+  current: { label: string; trace: EngineTrace; personalOnset: number; sessionCount: number; bio?: Biometrics };
+}) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<PickedUser[]>([]);
+  const [other, setOther] = useState<Feed | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const seq = useRef(0);
+
+  useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
+    const mySeq = ++seq.current;
+    const t = setTimeout(() => {
+      fetch(`/api/admin/users?q=${encodeURIComponent(query)}&pageSize=8`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d: { users: PickedUser[] }) => {
+          if (seq.current === mySeq) setResults(d.users);
+        })
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const pick = async (u: PickedUser) => {
+    setLoading(true);
+    setErr("");
+    setResults([]);
+    setQ("");
+    try {
+      const r = await fetch(`/api/admin/engine?user=${encodeURIComponent(u.id)}`);
+      if (!r.ok) throw new Error();
+      setOther((await r.json()) as Feed);
+    } catch {
+      setErr("Failed to load the comparison athlete.");
+      setOther(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const otherTrace = useMemo(
+    () =>
+      other
+        ? computeEngineTrace(other.log, other.bio ?? undefined, {
+            weights,
+            coeffs: other.calibration.coeffs,
+            spikeOnset: other.personal?.spikeOnset,
+          })
+        : null,
+    [other, weights],
+  );
+
+  // The deterministic "why": which HPI pillar diverges most between the two.
+  const why = useMemo(() => {
+    if (!otherTrace) return null;
+    const a = current.trace.state;
+    const b = otherTrace.state;
+    const gaps: { name: string; d: number; av: number; bv: number }[] = [
+      { name: "strength freshness", d: a.hpi.components.strength - b.hpi.components.strength, av: a.hpi.components.strength, bv: b.hpi.components.strength },
+      { name: "endurance freshness", d: a.hpi.components.endurance - b.hpi.components.endurance, av: a.hpi.components.endurance, bv: b.hpi.components.endurance },
+      { name: "recovery signal", d: a.hpi.components.recovery - b.hpi.components.recovery, av: a.hpi.components.recovery, bv: b.hpi.components.recovery },
+    ].sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+    const top = gaps[0]!;
+    if (top.d === 0) return "The two states are effectively identical on every pillar.";
+    const ahead = top.d > 0 ? current.label : (other?.user.name ?? other?.user.email ?? "the other athlete");
+    return `Biggest divergence: ${top.name} (${top.av} vs ${top.bv}) — ${ahead} is ahead there. Each side's drivers below show what produced it.`;
+  }, [otherTrace, current, other]);
+
+  const row = (label: string, av: React.ReactNode, bv: React.ReactNode) => (
+    <tr>
+      <td style={cellPlain(ASH)}>{label}</td>
+      <td style={cellPlain(CHALK)}>{av}</td>
+      <td style={cellPlain(CHALK)}>{bv}</td>
+    </tr>
+  );
+
+  return (
+    <Card>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
+        <div>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+            Compare athletes – why does one read better?
+          </Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
+            Both columns are ACTUAL states (what-if excluded{whatIfActive ? " — your simulation stays on the main view" : ""}),
+            each computed with that athlete&apos;s own inputs, calibration, and personal spike onset.
+          </Mono>
+        </div>
+        <div style={{ position: "relative", flex: "0 1 260px" }}>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Compare with… (name or email)"
+            style={{ width: "100%", ...mono, fontSize: fs.body, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 9, padding: "8px 12px", outline: "none" }}
+          />
+          {results.length > 0 && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20, background: INK2, border: `1px solid ${LINE}`, borderRadius: 9, overflow: "hidden" }}>
+              {results.map((u) => (
+                <button key={u.id} onClick={() => pick(u)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`, cursor: "pointer" }}>
+                  <span style={{ ...disp, fontSize: fs.body, fontWeight: 600, color: CHALK }}>{u.name ?? u.email}</span>
+                  <Mono s={{ fontSize: fs.micro, display: "block" }}>{u.email}</Mono>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {loading && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }}>Loading…</Mono>}
+      {err && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{err}</Mono>}
+
+      {other && otherTrace && (
+        <>
+          <div style={{ overflowX: "auto", marginTop: 14 }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(ASH), textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${LINE}` }}>Metric</th>
+                  <th style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(LIME), textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${LINE}` }}>{current.label}</th>
+                  <th style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(BLUE), textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${LINE}` }}>{other.user.name ?? other.user.email}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {row("HPI", `${current.trace.state.hpi.score} (${current.trace.state.hpi.band})`, `${otherTrace.state.hpi.score} (${otherTrace.state.hpi.band})`)}
+                {row("Limiter", current.trace.state.hpi.limiter, otherTrace.state.hpi.limiter)}
+                {row("Readiness", current.trace.state.readiness.score, otherTrace.state.readiness.score)}
+                {row("Wearable adjustment", `${current.trace.state.readiness.bioAdj >= 0 ? "+" : ""}${current.trace.state.readiness.bioAdj}`, `${otherTrace.state.readiness.bioAdj >= 0 ? "+" : ""}${otherTrace.state.readiness.bioAdj}`)}
+                {row("Injury risk", `${current.trace.injury.overall} (${current.trace.injury.band})`, `${otherTrace.injury.overall} (${otherTrace.injury.band})`)}
+                {row("p(injury)", `${(current.trace.injury.prob * 100).toFixed(1)}%`, `${(otherTrace.injury.prob * 100).toFixed(1)}%`)}
+                {row("Personal spike onset", current.personalOnset.toFixed(2), (other.personal?.spikeOnset ?? 1.3).toFixed(2))}
+                {row("Sessions in the log", current.sessionCount, other.sessionCount)}
+                {row("Wearables", current.bio ? "connected" : "none", other.bio ? "connected" : "none")}
+              </tbody>
+            </table>
+          </div>
+          {why && (
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12, lineHeight: 1.55 }} c={CHALK}>
+              {why}
+            </Mono>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 12 }}>
+            {[{ label: current.label, tr: current.trace, c: LIME }, { label: other.user.name ?? other.user.email, tr: otherTrace, c: BLUE }].map((side) => (
+              <div key={side.label} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12 }}>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={side.c}>{side.label} – drivers</Mono>
+                {side.tr.state.drivers.length === 0 && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }}>nothing notable</Mono>}
+                {side.tr.state.drivers.map((d) => (
+                  <Mono key={d.factor} s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={d.impact === "negative" ? RED : LIME}>
+                    {d.impact === "negative" ? "−" : "+"} {d.factor}: <span style={{ color: txt(ASH) }}>{d.detail}</span>
+                  </Mono>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Card>
+  );
 }
 
 // ---- small controls -------------------------------------------------------
