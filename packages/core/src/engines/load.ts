@@ -9,6 +9,7 @@
  */
 
 import type { LoggedSession } from "./session";
+import { estimateSessionEnergy } from "../energy";
 
 const DAY = 86_400_000;
 const num = (s: string | undefined) => {
@@ -39,6 +40,20 @@ export function sessionLoad(s: LoggedSession): number {
   return Math.round(load);
 }
 
+/**
+ * Total approximate MINUTES of a session, on the same duration heuristic
+ * sessionLoad uses. Exported because sessionLoad is Σ (minutes × RPE), so
+ * load ÷ minutes is exactly the minutes-weighted mean RPE — the OBJECTIVE
+ * session effort the effort model compares the athlete's own answer against
+ * (see engines/effort.ts). Deriving it here rather than re-deriving it there
+ * keeps the two from drifting.
+ */
+export function sessionMinutes(s: LoggedSession): number {
+  let m = 0;
+  for (const b of s.blocks) m += blockMinutes(b);
+  return m;
+}
+
 /** Approximate MINUTES of a block, mirroring the duration heuristic sessionLoad
  *  uses (strength ≈ 3.5 min/set incl. rest; cardio/conditioning from minutes or
  *  the work/rest/rounds interval). Kept beside sessionLoad so the two never drift. */
@@ -48,32 +63,32 @@ function blockMinutes(b: LoggedSession["blocks"][number]): number {
   return b.minutes ?? (b.work && b.rest && b.rounds ? ((b.work + b.rest) * b.rounds) / 60 : 12);
 }
 
-/** A per-kind MET (metabolic equivalent) scaled by intensity. Resistance work is
- *  metabolically flatter than conditioning, so strength sits near a moderate ~5
- *  MET while cardio/conditioning climb with RPE. Bounded to keep the estimate
- *  honest (a rough fuel figure, never a lab measurement). */
-function blockMet(b: LoggedSession["blocks"][number]): number {
-  if (b.kind === "strength") {
-    const rpes = b.sets.map((x) => num(x.rpe)).filter((n) => Number.isFinite(n));
-    const rpe = rpes.length ? Math.max(...rpes) : 7;
-    return Math.min(7, 3.5 + rpe * 0.25); // ~5.25 at RPE 7, capped at 7
-  }
-  const rpe = b.rpe ?? (b.kind === "cardio" ? 6 : 7);
-  return Math.min(13, 3 + rpe * 0.95); // ~8.7 at RPE 6, ~9.65 at RPE 7
-}
-
 /**
- * Rough energy expenditure (kcal) of one logged session, from each block's
- * minutes × a MET scaled by intensity × bodyweight (the standard
- * kcal/min = MET × 3.5 × kg / 200). This is the "eat for the work you did"
- * figure the nutrition engine adds to a training-day target — an estimate, not a
- * measurement. Defaults to a 75 kg athlete when bodyweight is unknown.
+ * Rough energy expenditure (kcal) of one logged session — the "eat for the work
+ * you did" figure the nutrition engine adds to a training-day target. An
+ * estimate, not a measurement. Defaults to a 75 kg athlete when bodyweight is
+ * unknown, because a nutrition target has to produce SOME number.
+ *
+ * The MET model lives in energy.ts, which reads the activity's measured pace and
+ * the sport catalog before falling back to RPE; this stays as the nutrition
+ * engine's entry point (its signature and its 75 kg default are relied on by the
+ * fuel target) but delegates the physiology, so there is one MET model in the
+ * codebase rather than two that drift.
+ *
+ * That default is exactly why the WRAPPED does not use this function: a summary
+ * shown to the athlete must not present a 75 kg stranger's calories as theirs,
+ * so `estimateSessionEnergy` returns null instead. Same model, different honesty
+ * budget — a target that must exist vs a figure that may be omitted.
  */
 export function sessionEnergyKcal(s: LoggedSession, bodyMassKg = 75): number {
   const kg = bodyMassKg > 0 ? bodyMassKg : 75;
-  let kcal = 0;
-  for (const b of s.blocks) kcal += (blockMinutes(b) * blockMet(b) * 3.5 * kg) / 200;
-  return Math.round(kcal);
+  const est = estimateSessionEnergy(s.blocks, {
+    bodyweightKg: kg,
+    // Strength blocks carry no minutes of their own, so hand the model the same
+    // set-count duration heuristic the rest of this file uses.
+    strengthMinutes: s.blocks.reduce((m, b) => (b.kind === "strength" ? m + blockMinutes(b) : m), 0),
+  });
+  return est?.kcal ?? 0;
 }
 
 /** Total estimated training energy (kcal) burned across every session on the

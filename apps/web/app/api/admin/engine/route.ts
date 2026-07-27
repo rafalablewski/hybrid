@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { acwrEventsFromHistory, derivePersonalization } from "@hybrid/core";
+import {
+  acwrEventsFromHistory,
+  derivePersonalization,
+  effortSamples,
+  deriveEffortModel,
+  effortTrend,
+} from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { athleteInputs } from "@/lib/athlete-state";
 import { activeCalibration } from "@/lib/calibration";
@@ -26,7 +32,7 @@ export async function GET(request: Request) {
   });
   if (!user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const [{ log, bio, sessionCount }, calibration, outcomes] = await Promise.all([
+  const [{ log, bio, sessions, sessionCount }, calibration, outcomes] = await Promise.all([
     athleteInputs(userId),
     activeCalibration(),
     prisma.riskOutcome.findMany({
@@ -47,6 +53,16 @@ export async function GET(request: Request) {
     ),
   );
 
+  // The effort model: how this athlete's REPORTED effort compares to what their
+  // log implies, learned server-side because it needs the raw sessions (the
+  // TrainingLog has already collapsed each session to per-item intensities).
+  const samples = effortSamples(sessions);
+  const effort = {
+    model: deriveEffortModel(samples),
+    trend: effortTrend(samples),
+    rated: samples.length,
+  };
+
   await audit({
     actor: gate.admin,
     action: "user.engine.view",
@@ -56,5 +72,5 @@ export async function GET(request: Request) {
     req: request,
   });
 
-  return NextResponse.json({ user, log, bio: bio ?? null, sessionCount, calibration, personal });
+  return NextResponse.json({ user, log, bio: bio ?? null, sessionCount, calibration, personal, effort });
 }

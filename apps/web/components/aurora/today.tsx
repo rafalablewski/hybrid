@@ -8,7 +8,7 @@ import { fs, space,
   computeAccountability,
   buildActivityFeed,
   planProgramToday,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   sessionsOnDay,
   sessionShape,
@@ -192,7 +192,7 @@ export default function AuroraToday({
   }, [liftsOpen]);
   const toggleLifts = (open: boolean) => { liftsToggled.current = true; setLiftsOpen(open); };
 
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);

@@ -3,7 +3,7 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   toBiometrics,
-  toTrainingLog,
+  personalTrainingLog,
   migrateBlocks,
   type LoggedSession,
   type Signal,
@@ -35,6 +35,11 @@ export async function athleteInputs(userId: string) {
     completedAt: r.completedAt?.toISOString() ?? null,
     blocks: migrateBlocks(r.blocks),
     readiness: r.readiness,
+    // The athlete's own "how did that feel?" answer — dropped here, every
+    // server-side engine read would silently fall back to the constants while
+    // the clients (which get the full row) used the real thing, so the AI coach
+    // would reason about a different athlete than the app shows.
+    feel: r.feel,
   }));
 
   const signals: Signal[] = sigRows.map((r) => ({
@@ -46,10 +51,14 @@ export async function athleteInputs(userId: string) {
     ts: r.ts.toISOString(),
   }));
 
-  const log = toTrainingLog(sessions);
+  const log = personalTrainingLog(sessions);
   // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
-  return { log, bio, sessionCount: sessions.length };
+  // `sessions` rides along for the callers that need the RAW rows rather than
+  // the derived log — the effort model reads each session's reported feeling
+  // against the effort its blocks imply, which the TrainingLog has already
+  // collapsed away.
+  return { log, bio, sessions, sessionCount: sessions.length };
 }
 
 /**

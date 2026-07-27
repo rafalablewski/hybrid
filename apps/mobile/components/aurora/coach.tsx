@@ -6,7 +6,7 @@ import {
   buildMacrocycle,
   buildTrainingWeek,
   trainingDaysPerWeek,
-  toTrainingLog,
+  personalTrainingLog,
   localTodayKey,
   formatStrengthPr,
 } from "@hybrid/core";
@@ -303,7 +303,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       if (!enrolled) { setGenMsg(t("w.teams.coach.enrollFailed")); return; }
       const days = trainingDaysPerWeek(sessions);
       const wk = Math.max(1, Math.min(genMacro.totalWeeks, genWeek));
-      const week = buildTrainingWeek({ macro: genMacro, currentWeek: wk, log: toTrainingLog(sessions), daysPerWeek: days });
+      const week = buildTrainingWeek({ macro: genMacro, currentWeek: wk, log: personalTrainingLog(sessions), daysPerWeek: days });
       const results = await Promise.all(week.map((it) => assignToClient(link.id, { name: it.name, blocks: it.blocks, date: it.date })));
       const ok = results.filter(Boolean).length;
       setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${genGoal} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));

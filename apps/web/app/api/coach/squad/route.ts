@@ -3,7 +3,7 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   computeLoad,
-  toTrainingLog,
+  personalTrainingLog,
   toBiometrics,
   migrateBlocks,
   type LoggedSession,
@@ -72,12 +72,19 @@ export async function GET(request: Request) {
         completedAt: s.completedAt ? s.completedAt.toISOString() : null,
         blocks: migrateBlocks(s.blocks),
         readiness: s.readiness,
+        // Engine input ONLY. This response serialises aggregates and a session
+        // COUNT — never the session objects — so the coach's readiness/ACWR/risk
+        // can reflect what their athlete reported without the per-session answer
+        // ever leaving the server. The endpoint that DOES return raw rows to a
+        // coach (coach/links/[id]/sessions) keeps its explicit select, which
+        // excludes feel/fatigue along with the private note.
+        feel: s.feel,
       }));
       const signals: Signal[] = sigRows.map((r) => ({
         athleteId: r.userId, kind: r.kind as Signal["kind"], value: r.value, unit: r.unit, source: r.source, ts: r.ts.toISOString(),
       }));
 
-      const log = toTrainingLog(sessions);
+      const log = personalTrainingLog(sessions);
       const bio = toBiometrics(signals);
       const state = computePerformanceState(log, bio);
       const risk = computeInjuryRisk(log, bio);

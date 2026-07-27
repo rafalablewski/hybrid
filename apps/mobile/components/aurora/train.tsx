@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   prescribeSession,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   sessionsOnDay,
   type LoggedSession,
@@ -46,7 +46,7 @@ export default function AuroraTrain() {
 
   const rx = useMemo(
     () =>
-      prescribeSession(toTrainingLog(sessions), undefined, {
+      prescribeSession(personalTrainingLog(sessions), undefined, {
         profiles: velocityProfiles(sessions),
       }),
     [sessions],

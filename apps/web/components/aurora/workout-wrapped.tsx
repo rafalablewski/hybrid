@@ -6,11 +6,19 @@
 // through → the story-share sheet. The set breakdown + charts + manage ride
 // along as a trailing `details` section. Mobile parity: apps/mobile/components/
 // workout-wrapped.tsx.
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   sessionWrapped,
+  fitScale,
+  HERO_FIT_EM,
+  HERO_TRACKING_EM,
+  STAT_FIT_EM,
   liftStanding,
+  hasActiveConnection,
+  feelSamples,
+  loadBaseline,
+  doneReceipt,
   sessionCelebration,
   isFullAccess,
   volumeByMuscle,
@@ -22,7 +30,6 @@ import {
   strengthPrDelta,
   formatCardioPr,
   fmtWeight,
-  fmtTonnage,
   paceClock,
   formatSportDistance,
   prsForSession,
@@ -42,6 +49,7 @@ import { usePersona } from "@/lib/persona";
 import { useLang } from "@/lib/i18n";
 import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
+import { FeelPrompt } from "./feel-prompt";
 import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
 
 const GOLD = "#e6c34e";
@@ -83,6 +91,7 @@ export function WorkoutWrapped({
   bw,
   onBack,
   details,
+  onNavigate,
 }: {
   session: LoggedSession;
   all: LoggedSession[];
@@ -91,6 +100,9 @@ export function WorkoutWrapped({
   onBack: () => void;
   /** the workout's charts + set breakdown + manage row (trailing section) */
   details: ReactNode;
+  /** switch the app shell to another screen (the shell is one page, not routes)
+   *  — used by the Full upsell and the connect-a-device CTA. */
+  onNavigate?: (screen: string) => void;
 }) {
   const { t } = useLang();
   const router = useRouter();
@@ -102,6 +114,9 @@ export function WorkoutWrapped({
   const [sharing, setSharing] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
   const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
+  // null = not known yet (don't flash a "connect a device" prompt at someone
+  // who already has one connected).
+  const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pagerRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +125,9 @@ export function WorkoutWrapped({
     fetch("/api/talent").then((r) => (r.ok ? r.json() : null)).then((d) => {
       const p = d?.profile;
       if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
+    }).catch(() => {});
+    fetch("/api/connections").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (alive && d) setDeviceConnected(hasActiveConnection(d.connections));
     }).catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -124,6 +142,15 @@ export function WorkoutWrapped({
 
   const bwHere = bw(session.startedAt);
   const wrapped = sessionWrapped(session, all, { units, bw });
+  const receipt = doneReceipt(session, { bodyweightKg: bwHere });
+  // "vs your usual" compares the athlete to THEMSELVES over the last month —
+  // never a cohort, and never until there are enough rated sessions for the
+  // comparison to mean anything (loadBaseline enforces the floor). Memoised:
+  // feelSamples walks every logged session.
+  const feelBaseline = useMemo(
+    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
+    [all, bw, session.id],
+  );
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
@@ -146,9 +173,12 @@ export function WorkoutWrapped({
   const topE1rm = session.blocks.reduce((m, b) => (b.kind === "strength" ? Math.max(m, Math.round(blockBestE1rm(b, bwHere))) : m), 0);
   const standing = cohort && topE1rm > 0 && bwHere ? liftStanding(topE1rm, bwHere, cohort) : null;
 
+  // No PR to celebrate → the hero shows the number that DEFINES this kind of
+  // session (distance for a swim, tonnage for a lift, time for a match), not
+  // tonnage for everything — which read "0.0 t" on every cardio log.
   const heroBig = cel
     ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
-    : fmtTonnage(volume, units);
+    : wrapped.headline.value;
   // A record isn't always a heavier bar — more reps at the same load is a real
   // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
@@ -177,10 +207,17 @@ export function WorkoutWrapped({
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as StorySlide] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as StorySlide] : []),
   ];
+  // The overview card is a GYM card (title + minutes/sets/volume): on a swim it
+  // would read "1 set, 0.0 t", so it only rides along when the session actually
+  // did that kind of work. The single-stat card headlines the same number the
+  // hero does, so a cardio log leads with its distance instead of zero tonnage.
+  const gymSession = wrapped.discipline === "strength" || wrapped.discipline === "mixed";
   const slides: StorySlide[] = [
     ...bespoke,
-    { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests, firstEver: false } },
-    { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
+    ...(gymSession
+      ? [{ kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests, firstEver: false } } as StorySlide]
+      : []),
+    { kind: "stat", eyebrow: t("summary.slide.load"), value: wrapped.headline.value, unit: t(wrapped.headline.labelKey) },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.todaysBests"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as StorySlide] : []),
     ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as StorySlide] : []),
@@ -203,14 +240,29 @@ export function WorkoutWrapped({
       setSharing(false);
     }
   };
+  // Leave the takeover, then switch the shell. The shell is ONE page with a
+  // `screen` state, so a router push would 404; `onNavigate` is the real move
+  // and the push only remains as the fallback for a caller that didn't wire it.
+  const go = (screen: string) => {
+    onBack();
+    if (onNavigate) onNavigate(screen);
+    else router.push(`/${screen}`);
+  };
   const onPagerScroll = () => { const el = pagerRef.current; if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); };
   const goTo = (i: number) => { const el = pagerRef.current; if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" }); };
 
+  // The post-workout self-report ("How did that feel?") and — when nothing is
+  // measuring this athlete — the device prompt that would replace the estimates
+  // with measurements. Both ride in the scroll sequence, before the standing.
+  const showDevice = deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+
   // Which panels exist (dots + active tracking); details rides after them.
-  const keys: ("reveal" | "hero" | "premium" | "standing")[] = [
+  const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "standing")[] = [
     ...(cel ? ["reveal" as const] : []),
     "hero" as const,
+    "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
+    ...(showDevice ? ["device" as const] : []),
     "standing" as const,
   ];
   const onScroll = () => { const el = scrollRef.current; if (el) setPanel(Math.round(el.scrollTop / Math.max(1, el.clientHeight))); };
@@ -237,7 +289,7 @@ export function WorkoutWrapped({
           </div>
           <div className="pr-trophy" style={{ fontSize: 88, lineHeight: 1 }}>🏆</div>
           <Mono s={{ fontSize: fs.body, letterSpacing: ".2em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
-          <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(64px, 20vw, 104px)", letterSpacing: "-.05em", lineHeight: .9, marginTop: 10 }}><CountUp value={heroBig} /></div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.05em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
           {scrollHint}
         </section>
@@ -249,7 +301,7 @@ export function WorkoutWrapped({
         {eyebrow(t("session.wrapped.title"))}
         <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
         <div style={{ flex: 1 }} />
-        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(64px, 22vw, 112px)", letterSpacing: "-.06em", lineHeight: .8, position: "relative" }}><CountUp value={heroBig} /></div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.06em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
         {signature.length >= SIGNATURE_MIN_BARS && (
           <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 18, position: "relative" }}>
@@ -259,11 +311,27 @@ export function WorkoutWrapped({
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(4, wrapped.basics.length)}, 1fr)`, gap: 1, marginTop: 20, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
           {wrapped.basics.map((b) => (
             <div key={b.labelKey} style={{ background: "#0e0f0d", padding: "14px 6px", textAlign: "center" }}>
-              <div style={{ ...disp, fontWeight: 900, fontSize: 22, fontVariantNumeric: "tabular-nums" }}>{b.value}</div>
+              {/* A modelled figure wears a "~" — it is never presented as a
+                  measurement (see core/energy.ts). */}
+              <div style={{ ...disp, fontWeight: 900, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{b.estimate ? "~" : ""}{b.value}</div>
               <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginTop: 3 }}>{t(b.labelKey)}</Mono>
             </div>
           ))}
         </div>
+        {scrollHint}
+      </section>
+
+      {/* ── HOW DID THAT FEEL? ── */}
+      <section style={{ ...panelStyle, justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 20% 10%, color-mix(in srgb, ${LIME} 10%, transparent), transparent 60%)` }} />
+        <FeelPrompt
+          sessionId={session.id}
+          minutes={receipt.durationMin}
+          initialFeel={session.feel ?? null}
+          initialFatigue={session.fatigue ?? null}
+          baseline={feelBaseline}
+          eyebrow={eyebrow}
+        />
         {scrollHint}
       </section>
 
@@ -281,8 +349,34 @@ export function WorkoutWrapped({
             ))}
           </div>
           {!full && (
-            <button onClick={() => { onBack(); router.push("/upgrade"); }} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 22px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
+            <button onClick={() => go("upgrade")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 22px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
           )}
+        </section>
+      )}
+
+      {/* ── CONNECT A DEVICE ── */}
+      {showDevice && (
+        <section style={{ ...panelStyle, justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 90% 15%, color-mix(in srgb, ${VIOLET} 18%, transparent), transparent 60%)` }} />
+          {eyebrow(t("session.wrapped.device.title"))}
+          <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{t("session.wrapped.device.lead")}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, marginTop: 22, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
+            {[
+              ["♥", "session.wrapped.device.hr"],
+              ["🔥", "session.wrapped.device.energy"],
+              ["⏱", "session.wrapped.device.time"],
+              ["🌙", "session.wrapped.device.recovery"],
+            ].map(([glyph, key]) => (
+              <div key={key} style={{ background: "#0e0f0d", padding: "14px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                <span aria-hidden style={{ fontSize: 16 }}>{glyph}</span>
+                <span style={{ ...disp, fontWeight: 700, fontSize: fs.caption }}>{t(key!)}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 24px", cursor: "pointer", position: "relative" }}>{t("session.wrapped.device.cta")} →</button>
+          <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
+            {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
+          </Mono>
         </section>
       )}
 

@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
   brand,
   prescribeSession,
+  feelSamples,
+  loadBaseline,
   checkinFeeling,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   newPrsInSession,
   newCardioPrsInSession,
@@ -41,6 +43,7 @@ import { fs, space,
 import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import SaveRoutineCard, { SessionRename, SessionNote } from "@/components/save-routine-card";
+import { FeelPrompt } from "./feel-prompt";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useBodyweightLookup, refreshBodyweight } from "@/lib/use-bodyweight";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
@@ -316,7 +319,7 @@ export default function AuroraLogger({
     return () => { alive = false; };
   }, []);
   const rx = useMemo(() => {
-    const log = toTrainingLog(sessions);
+    const log = personalTrainingLog(sessions);
     return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined });
   }, [sessions, todayFeeling]);
 
@@ -436,7 +439,7 @@ export default function AuroraLogger({
     }
   };
 
-  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} onUpgrade={onUpgrade} />;
+  if (done) return <Finish data={done} prior={sessions} units={prefs.units} onDone={onSaved} onHome={onHome} onUpgrade={onUpgrade} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -644,10 +647,14 @@ export default function AuroraLogger({
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
-function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void; onUpgrade?: () => void }) {
+function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: FinishData; prior: LoggedSession[]; units: WeightUnit; onDone: () => void; onHome?: () => void; onUpgrade?: () => void }) {
   const { t } = useLang();
   const router = useRouter();
-  const bodyweightKg = useBodyweightLookup()();
+  const bwLookup = useBodyweightLookup();
+  const bodyweightKg = bwLookup();
+  // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
+  // last month, from the sessions they'd already rated before this one.
+  const feelBaseline = useMemo(() => loadBaseline(feelSamples(prior, bwLookup)), [prior, bwLookup]);
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(data.title);
@@ -805,6 +812,12 @@ function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; 
 
         {/* Optional rename + private note, as quiet as they were. */}
         <div style={{ textAlign: "center" }}>
+          {/* "How did that feel?" — asked HERE, straight after the last set,
+              which is when the answer is most accurate and the athlete is still
+              at the screen. The Wrapped asks the same question later for a
+              session that was never rated; both read the stored value, so
+              nobody is asked twice. See core/session-feel.ts for why it matters. */}
+          <FeelPrompt compact sessionId={sessionId} minutes={minutes} baseline={feelBaseline} />
           <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
           <SessionNote sessionId={sessionId} />
         </div>

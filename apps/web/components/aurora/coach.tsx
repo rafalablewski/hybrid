@@ -8,7 +8,7 @@ import { fs, space,
   buildMacrocycle,
   buildTrainingWeek,
   trainingDaysPerWeek,
-  toTrainingLog,
+  personalTrainingLog,
   type LoggedSession,
   localTodayKey,
   formatStrengthPr,
@@ -295,7 +295,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       const week = buildTrainingWeek({
         macro: genMacro,
         currentWeek: wk,
-        log: toTrainingLog(sessions),
+        log: personalTrainingLog(sessions),
         daysPerWeek: days,
       });
       const results = await Promise.all(

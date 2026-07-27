@@ -21,6 +21,7 @@
  */
 
 import type { Biometrics, BiometricMetric, TrainingLog } from "./types";
+import { EFFORT_BIAS_PRIOR_WEIGHT, EFFORT_TREND_MIN_SAMPLES, EFFORT_TREND_MIN_DAYS } from "./effort";
 import {
   calibrateRisk,
   computeInjuryRisk,
@@ -43,7 +44,8 @@ export type EngineFormulaGroup =
   | "hpi"
   | "load"
   | "injury"
-  | "calibration";
+  | "calibration"
+  | "effort";
 
 /** One live formula, as data — the console's formula sheet renders these. */
 export interface EngineFormula {
@@ -65,6 +67,7 @@ export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; sou
   { id: "load", label: "Session load & ACWR", source: "engines/load.ts + injury.ts" },
   { id: "injury", label: "Injury risk", source: "engines/injury.ts" },
   { id: "calibration", label: "p(injury) calibration", source: "engines/injury.ts + datanet.ts" },
+  { id: "effort", label: "Reported effort model", source: "engines/effort.ts" },
 ];
 
 export const ENGINE_FORMULAS: EngineFormula[] = [
@@ -137,6 +140,45 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "wₛ/wₑ", value: "0.55/0.45 hybrid", meaning: "profile weights (0.8/0.2 strength, 0.25/0.75 endurance)" },
     ],
     note: "The limiter is whichever pillar has the largest gap to fully-ready; a recovery drag counts double.",
+  },
+  {
+    id: "effort-objective",
+    engine: "effort",
+    name: "Objective session effort",
+    expression: "objectiveRpe = sessionLoad ÷ sessionMinutes",
+    constants: [{ symbol: "1..10", value: "clamped", meaning: "session RPE scale" }],
+    note: "The minutes-weighted mean RPE the LOG implies — what the engine would assume if it never asked the athlete.",
+  },
+  {
+    id: "effort-residual",
+    engine: "effort",
+    name: "Effort residual",
+    expression: "residual = reportedRpe − objectiveRpe",
+    constants: [],
+    note: "The gap between what the log implies and what the athlete says it cost them. Positive = this athlete pays more for the same work.",
+  },
+  {
+    id: "effort-bias",
+    engine: "effort",
+    name: "Personal effort bias (shrunk)",
+    expression: "bias = clamp( (n × mean(residual) + w × 0) ÷ (n + w) , −2.5, +2.5 )",
+    constants: [
+      { symbol: "w", value: String(EFFORT_BIAS_PRIOR_WEIGHT), meaning: "pseudo-observations the prior is worth" },
+      { symbol: "0", value: "0 RPE", meaning: "population prior — an athlete reports what the log implies" },
+      { symbol: "±2.5", value: "±2.5 RPE", meaning: "hard bounds on personalization" },
+    ],
+    note: "Same shrinkage idiom as the personal ACWR onset: one rated session barely moves it, twenty move it a long way, and no history can push it somewhere absurd.",
+  },
+  {
+    id: "effort-trend",
+    engine: "effort",
+    name: "Is the same work getting easier",
+    expression: "trend = 30 × slope( residual vs days )",
+    constants: [
+      { symbol: "n", value: String(EFFORT_TREND_MIN_SAMPLES), meaning: "rated sessions required" },
+      { symbol: "d", value: `${EFFORT_TREND_MIN_DAYS} days`, meaning: "window the samples must span" },
+    ],
+    note: "Holds the objective work fixed and watches only what the athlete says it cost. A falling residual is the one honest fitness read a self-report can give.",
   },
   {
     id: "srpe-load",
