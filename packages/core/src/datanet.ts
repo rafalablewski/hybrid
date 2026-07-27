@@ -155,6 +155,108 @@ export const CALIBRATION_PRIOR = { intercept: -4.83, slope: 5.26 };
  * prior when there's too little signal. This is how the heuristic becomes a
  * trained model as the data network accumulates injuries.
  */
+/** P(injury) under a given calibration — mirrors injury.ts calibrateRisk. */
+function calProb(score: number, coeffs: { intercept: number; slope: number }): number {
+  const x = Math.max(0, Math.min(100, score)) / 100;
+  return 1 / (1 + Math.exp(-(coeffs.intercept + coeffs.slope * x)));
+}
+
+/**
+ * Brier score of a calibration on labeled outcomes — mean squared error between
+ * the predicted probability and what happened (0 = perfect, 0.25 = coin-flip on
+ * a balanced set; LOWER is better). Null with no samples: no data, no verdict.
+ */
+export function brierScore(
+  samples: InjurySample[],
+  coeffs: { intercept: number; slope: number } = CALIBRATION_PRIOR,
+): number | null {
+  if (samples.length === 0) return null;
+  let sum = 0;
+  for (const s of samples) {
+    const err = calProb(s.score, coeffs) - (s.injured ? 1 : 0);
+    sum += err * err;
+  }
+  return sum / samples.length;
+}
+
+/**
+ * ROC AUC of the risk SCORE on labeled outcomes — probability a random injured
+ * sample outscores a random healthy one (0.5 = no signal, 1 = perfect ranking).
+ * Coefficient-free: any monotone calibration preserves the ranking, so this
+ * evaluates the heuristic itself. Rank-based (Mann–Whitney) with tie handling.
+ * Null unless both classes are present.
+ */
+export function rocAuc(samples: InjurySample[]): number | null {
+  const pos = samples.filter((s) => s.injured).length;
+  const neg = samples.length - pos;
+  if (pos === 0 || neg === 0) return null;
+  const sorted = [...samples].sort((a, b) => a.score - b.score);
+  // average ranks over ties
+  const ranks = new Array<number>(sorted.length);
+  for (let i = 0; i < sorted.length; ) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1]!.score === sorted[i]!.score) j++;
+    const avg = (i + j) / 2 + 1; // 1-based average rank of the tie block
+    for (let k = i; k <= j; k++) ranks[k] = avg;
+    i = j + 1;
+  }
+  let posRankSum = 0;
+  sorted.forEach((s, i) => {
+    if (s.injured) posRankSum += ranks[i]!;
+  });
+  return (posRankSum - (pos * (pos + 1)) / 2) / (pos * neg);
+}
+
+export interface ReliabilityBucket {
+  /** predicted-probability bin bounds */
+  lo: number;
+  hi: number;
+  n: number;
+  meanPredicted: number;
+  observedRate: number;
+}
+
+/**
+ * Reliability (calibration) diagram data: bin samples by their PREDICTED
+ * p(injury) under `coeffs`, and report the observed injury rate per bin. A
+ * well-calibrated model sits on the diagonal (predicted ≈ observed). Empty
+ * bins are omitted.
+ */
+export function reliabilityBuckets(
+  samples: InjurySample[],
+  coeffs: { intercept: number; slope: number } = CALIBRATION_PRIOR,
+  bins = 8,
+): ReliabilityBucket[] {
+  if (samples.length === 0 || bins < 1) return [];
+  const pMin = calProb(0, coeffs);
+  const pMax = calProb(100, coeffs);
+  const width = (pMax - pMin) / bins || 1;
+  const buckets = Array.from({ length: bins }, (_, i) => ({
+    lo: pMin + i * width,
+    hi: pMin + (i + 1) * width,
+    n: 0,
+    pSum: 0,
+    injured: 0,
+  }));
+  for (const s of samples) {
+    const p = calProb(s.score, coeffs);
+    const i = Math.min(bins - 1, Math.max(0, Math.floor((p - pMin) / width)));
+    const b = buckets[i]!;
+    b.n++;
+    b.pSum += p;
+    if (s.injured) b.injured++;
+  }
+  return buckets
+    .filter((b) => b.n > 0)
+    .map((b) => ({
+      lo: b.lo,
+      hi: b.hi,
+      n: b.n,
+      meanPredicted: b.pSum / b.n,
+      observedRate: b.injured / b.n,
+    }));
+}
+
 export function refitCalibration(samples: InjurySample[], iters = 500, lr = 0.1): { intercept: number; slope: number; n: number } {
   if (samples.length < 30) return { ...CALIBRATION_PRIOR, n: samples.length };
   let a = CALIBRATION_PRIOR.intercept;

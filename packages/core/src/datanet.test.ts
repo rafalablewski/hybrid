@@ -7,6 +7,9 @@ import {
   aggregate,
   datasetStats,
   refitCalibration,
+  brierScore,
+  rocAuc,
+  reliabilityBuckets,
   CALIBRATION_PRIOR,
   K_ANON,
   type Observation,
@@ -103,5 +106,78 @@ describe("refitCalibration", () => {
     // a high score should now map to a high probability
     const p = 1 / (1 + Math.exp(-(out.intercept + out.slope * 0.85)));
     expect(p).toBeGreaterThan(0.7);
+  });
+});
+
+// separable set: high scores injured, low scores healthy
+const separable: InjurySample[] = Array.from({ length: 100 }, (_, i) => {
+  const score = i % 2 === 0 ? 15 : 90;
+  return { score, injured: score > 50 };
+});
+
+describe("brierScore", () => {
+  it("is null with no samples", () => {
+    expect(brierScore([])).toBeNull();
+  });
+
+  it("rewards a refit that matches the outcomes", () => {
+    const prior = brierScore(separable, CALIBRATION_PRIOR)!;
+    const refit = refitCalibration(separable, 2000, 0.5);
+    const after = brierScore(separable, refit)!;
+    expect(after).toBeLessThan(prior);
+    expect(after).toBeGreaterThanOrEqual(0);
+    expect(prior).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("rocAuc", () => {
+  it("is null without both classes", () => {
+    expect(rocAuc([])).toBeNull();
+    expect(rocAuc([{ score: 50, injured: true }])).toBeNull();
+  });
+
+  it("is 1 on perfectly separable scores and 0.5 on identical ones", () => {
+    expect(rocAuc(separable)).toBe(1);
+    const flat: InjurySample[] = [
+      { score: 50, injured: true },
+      { score: 50, injured: false },
+      { score: 50, injured: true },
+      { score: 50, injured: false },
+    ];
+    expect(rocAuc(flat)).toBeCloseTo(0.5, 10);
+  });
+
+  it("handles ties by average rank", () => {
+    const s: InjurySample[] = [
+      { score: 10, injured: false },
+      { score: 50, injured: false },
+      { score: 50, injured: true },
+      { score: 90, injured: true },
+    ];
+    // one clean win, one tie (0.5), one clean win out of 4 pairs → 0.875
+    expect(rocAuc(s)).toBeCloseTo(0.875, 10);
+  });
+});
+
+describe("reliabilityBuckets", () => {
+  it("is empty with no samples", () => {
+    expect(reliabilityBuckets([])).toEqual([]);
+  });
+
+  it("bins by predicted p and reports observed rates in [0,1]", () => {
+    const buckets = reliabilityBuckets(separable, CALIBRATION_PRIOR, 6);
+    expect(buckets.length).toBeGreaterThan(0);
+    let total = 0;
+    for (const b of buckets) {
+      total += b.n;
+      expect(b.meanPredicted).toBeGreaterThanOrEqual(b.lo - 1e-9);
+      expect(b.meanPredicted).toBeLessThanOrEqual(b.hi + 1e-9);
+      expect(b.observedRate).toBeGreaterThanOrEqual(0);
+      expect(b.observedRate).toBeLessThanOrEqual(1);
+    }
+    expect(total).toBe(separable.length);
+    // the low-score half is all healthy, the high-score half all injured
+    expect(buckets[0]!.observedRate).toBe(0);
+    expect(buckets[buckets.length - 1]!.observedRate).toBe(1);
   });
 });
