@@ -35,6 +35,7 @@ import {
   type LiftKind,
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
+import { useRevalidate } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
@@ -112,11 +113,14 @@ export default function PercentProgram({
   const view = planProgramView(program, { week, maxes });
   const cover = planCoverView(goal, plan, program);
 
+  const revalidate = useRevalidate();
   const enroll = async () => {
     setState("busy");
     const ok = await enrollPlan(goal.name, plan.id);
     setState(ok ? "done" : "error");
-    if (ok) onEnrolled?.();
+    // Enrolling changed the season — drop the cached macrocycle so Today and
+    // Performance don't keep rendering "No season yet" off a pre-enrol read.
+    if (ok) { revalidate.macrocycle(); onEnrolled?.(); }
   };
 
   const multiWeek = view.weeks.length > 1;

@@ -104,6 +104,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     }
     setDone(true);
     revalidate.recovery();
+    // The check-in row itself is cached now (qk.checkins) and drives today's
+    // feeling card + the prescription's readiness nudge — so the write has to
+    // drop it, or the athlete's own answer is the thing that looks stale.
+    revalidate.checkins();
     onDone?.();
   };
 

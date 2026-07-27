@@ -6,7 +6,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   fmtWeight, strengthPrDelta,
-  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy,
+  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, localDayKey,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
   type MuscleGroup, type TissueRisk, colors,
@@ -14,6 +14,8 @@ import { fs, space,
 import { LINE_HEX, ASH, BLUE, LIME_HEX, tip, mono, roleHex } from "@/lib/ui";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
+import { useCheckins } from "@/lib/use-checkins";
+import { useToday } from "@/lib/use-today";
 import { useIsMobile } from "@/lib/use-media-query";
 import AuroraOnboarding from "./onboarding";
 import RtpPanel from "../rtp-panel";
@@ -34,6 +36,36 @@ const C = (v: string) => `var(--color-${v})`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const SVG_INK2 = colors.ink2;
+
+/* ---------- unknown-state placeholders ---------- */
+/** One skeleton bar — a placeholder that states nothing. Deliberately not a
+ *  shimmer: a second animated element competing with the page's own refresh
+ *  affordance is just noise. Mirrors mobile's <Bar>. */
+function Bar({ w, h, mt }: { w: number | string; h: number; mt?: number }) {
+  return <div style={{ width: w, height: h, borderRadius: h / 2, background: C("line"), opacity: 0.45, marginTop: mt }} />;
+}
+
+/** The Performance State card's unknown state — roughly the shape of the real
+ *  thing (a big number, a caption, the three component columns) so the card
+ *  doesn't resize under the reader when the data lands. */
+function StateSkeleton() {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <Bar w={64} h={40} />
+        <div style={{ flex: 1, display: "grid", gap: 8 }}>
+          <Bar w="70%" h={11} />
+          <Bar w="100%" h={20} />
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{ flex: 1, display: "grid", gap: 7 }}><Bar w="55%" h={18} /><Bar w="80%" h={9} /></div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ---------- tissue body map (from the retired analyze Performance screen) ---------- */
 type Region = { tissue: MuscleGroup; x: number; y: number; w: number; h: number };
@@ -72,6 +104,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
  *  goal + season → return-to-play. Same live engines as before. */
 export default function AuroraPerformance({
   sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled,
+  sessionsReady = true, macroReady = true, macroSettled = true,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -79,6 +112,18 @@ export default function AuroraPerformance({
   currentWeek?: number;
   setScreen: (id: string) => void;
   onEnrolled: () => void;
+  /** SAFE CACHE (lib/read.ts): whether the shell's sessions / macrocycle reads
+   *  have a real server answer yet. Without these the page cannot tell "no
+   *  training history" from "we haven't asked", and states the zero-case as
+   *  fact — "log a session", "No season yet" — at an athlete with years of
+   *  data, for as long as the fetch is in flight. Default true so any caller
+   *  that already has settled data is unaffected. */
+  sessionsReady?: boolean;
+  macroReady?: boolean;
+  /** Whether the macrocycle read has STOPPED WAITING (answered or failed).
+   *  Skeletons gate on this rather than `macroReady` so a failed read can't
+   *  leave a placeholder up forever — a failed read is never `ready`. */
+  macroSettled?: boolean;
 }) {
   const { t } = useLang();
   const isMobile = useIsMobile();
@@ -99,22 +144,17 @@ export default function AuroraPerformance({
   // TODAY's readiness FEELING (the one-tap check-in) — fed into prescribeSession
   // so the readiness block reflects, and explains, the load nudge the pick
   // applies to the session (the Today screen no longer previews it).
-  const [checkins, setCheckins] = useState<{ weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null; createdAt?: string }[]>([]);
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/checkins");
-        if (!r.ok) return;
-        const d = (await r.json()) as { checkins?: typeof checkins } | null;
-        setCheckins(d?.checkins ?? []);
-      } catch { /* leave empty — the readiness score still renders */ }
-    })();
-  }, []);
+  const checkinsRead = useCheckins();
+  const checkins = checkinsRead.data ?? [];
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo. Without
+  // it this recomputed only when `checkins` changed, so a tab left open across
+  // midnight kept treating yesterday's check-in as today's — and scaled today's
+  // prescription off it. See lib/use-today.ts.
+  const today = useToday();
   const todayFeeling = useMemo(() => {
-    const today = new Date().toDateString();
-    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    const c = checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today);
     return c ? checkinFeeling(c) : null;
-  }, [checkins]);
+  }, [checkins, today]);
 
   const bw = useBodyweightLookup();
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
@@ -144,7 +184,9 @@ export default function AuroraPerformance({
     return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"))} />;
   }
 
-  const hasData = sessions.length > 0;
+  // Only a legitimate reading once the sessions read is `ready`: before the
+  // first response an empty list means "we haven't asked", not "nothing logged".
+  const hasData = sessionsReady && sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
   // Injury risk is exception-driven: a slim all-clear row when nothing's flagged,
   // the full maroon alert only when a tissue needs attention.
@@ -239,7 +281,14 @@ export default function AuroraPerformance({
                 </div>
               </div>
             </>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
+          ) : sessionsReady ? (
+            /* A real answer: the athlete genuinely has no logged training. */
+            <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>
+          ) : (
+            /* UNKNOWN — the fetch hasn't answered. Rendering twinEmpty here is
+               what told athletes with years of history to "log a session". */
+            <StateSkeleton />
+          )}
         </div>
 
         {/* 3 · TRAJECTORY — the real 14-day chart (HPI + Readiness) from the old
@@ -444,16 +493,25 @@ export default function AuroraPerformance({
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{macro.goalOrSport}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} – ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
               </>
-            ) : <div style={{ fontSize: fs.caption, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
+            ) : macroSettled ? (
+              /* Settled: the server said "not enrolled", or the read failed —
+                 either way, stop waiting rather than hanging a placeholder. */
+              <div style={{ fontSize: fs.caption, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>
+            ) : <Bar w="80%" h={14} />}
           </div>
           {/* widget 2 — season progress / plan controls */}
           <div style={CARD}>
-            <SHead title={macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} />
+            {/* The HEADING is itself a claim ("Set up" vs "Season") — hold it
+                until enrollment is known, or an enrolled athlete is briefly
+                told to set up a season they already have. */}
+            <SHead title={!macroSettled ? "\u00a0" : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} />
             {macro ? (
               <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "2px 0 12px" }}>
                 <div style={{ width: `${seasonPct}%`, height: "100%", background: C("violet") }} />
               </div>
-            ) : <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>}
+            ) : macroSettled ? (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>
+            ) : <div style={{ margin: "2px 0 10px" }}><Bar w="90%" h={12} /></div>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
               {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.cockpit.periodize")} →</button>}
               <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>

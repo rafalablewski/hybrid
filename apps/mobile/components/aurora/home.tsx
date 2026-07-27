@@ -19,6 +19,7 @@ import {
   relativeTime,
   planSchedule,
   masthead,
+  localDayKey,
   alsoTodayCopy,
   sessionClockTime,
   sessionIcon,
@@ -40,9 +41,10 @@ import {
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, fetchCheckins, createCheckin, fetchRoutines, favouriteRoutine, type Assignment, type Checkin } from "../../lib/api";
+import { fetchAssignments, createCheckin, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { useSessionsQuery, useSignalsQuery, useRevalidate } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useToday } from "../../lib/use-today";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -110,19 +112,41 @@ export default function AuroraHome() {
   const mastScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.76] }) : 1;
   const mastSubFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) : 1;
 
-  // Sessions + signals from the shared cache; the rest stay home-local.
-  const { data: sessions = [], refetch: refetchSessions, isError: sessionsError } = useSessionsQuery();
-  const { data: signals = [], refetch: refetchSignals } = useSignalsQuery();
+  // SAFE CACHE (lib/queries.ts `Read`). Sessions, signals, the enrolled season
+  // and the check-ins all come from the SHARED cache, so Today and Performance
+  // read the same entries — moving between them renders instantly off cache and
+  // revalidates behind the spinner instead of re-fetching from nothing.
+  //
+  // `ready` is the important part: it says a real server answer is in hand.
+  // Anything Today asserts about the athlete (their plan, their history, their
+  // check-in) is gated on it, because an empty array before the first response
+  // is the absence of an answer, not the answer "none".
+  const sessionsRead = useSessionsRead();
+  const signalsRead = useSignalsRead();
+  const macroRead = useMacrocycleRead();
+  const checkinsRead = useCheckinsRead();
+  const sessions = sessionsRead.data ?? [];
+  const signals = signalsRead.data ?? [];
+  const sessionsError = sessionsRead.failed;
+  const planId = macroRead.data?.planId ?? null;
+  const planStartedAt = macroRead.data?.planStartedAt ?? null;
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [planId, setPlanId] = useState<string | null>(null);
-  const [planStartedAt, setPlanStartedAt] = useState<string | null>(null);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
-  const [refreshing, setRefreshing] = useState(false);
-  // True until the FIRST home load (sessions + enrollment) settles. Gates the
+  // Drives the pull-to-refresh spinner and NOTHING else. It must never gate
+  // content: flipping a rendered card back to a skeleton because a background
+  // revalidate started is the same lie as showing the empty state, in reverse.
+  const refreshing = sessionsRead.refreshing || macroRead.refreshing || checkinsRead.refreshing || signalsRead.refreshing;
+  // True until sessions AND enrollment have both really answered. Gates the
   // plan hero so an already-enrolled athlete sees a skeleton — never the
-  // first-run chooser — while planId is still null on cold start.
-  const [initialLoad, setInitialLoad] = useState(true);
+  // first-run chooser — while planId is still null on cold start. Derived from
+  // the reads rather than a one-shot flag, so it is also correct after a
+  // sign-out/sign-in or a cache eviction, not just on first mount.
+  // `settled`, not `ready`: a failed read is never `ready`, so gating on that
+  // alone would leave the skeleton up forever when the network is down. Settled
+  // means we've stopped waiting — the sessions FetchError below owns the
+  // failure case, so falling through here is honest rather than a hang.
+  const initialLoad = !(sessionsRead.settled && macroRead.settled);
   // TIER-2 glance strip modals: Quick Log (sport carousel) + Done today (a
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
@@ -145,27 +169,21 @@ export default function AuroraHome() {
   // check-in (primed/good/flat/wrecked), not a computed score. The raw list is
   // kept so the feeling card can be scoped to WHICHEVER day the week rail has
   // selected; refreshed on focus, pull-to-refresh, and after a face saves.
-  const [checkins, setCheckins] = useState<Checkin[]>([]);
-  const loadFeeling = useCallback(async () => {
-    // Self-contained try/catch: this runs inside the home-load Promise.all, so a
-    // throw here must never block sessions/assignments/macrocycle from loading.
-    try {
-      setCheckins(await fetchCheckins());
-    } catch (err) {
-      console.error("Failed to load readiness feeling:", err);
-    }
-  }, []);
+  const checkins = checkinsRead.data ?? [];
 
+  // Pull-to-refresh / focus. Each source revalidates INDEPENDENTLY rather than
+  // through one Promise.all — the old fan-out committed the whole screen at the
+  // slowest of five endpoints, so a fast readiness read bought nothing. Stable
+  // identity (see useRefreshAll) so the focus effect below can't loop.
+  const refreshAll = useRefreshAll();
   const load = useCallback(() => {
-    setRefreshing(true);
-    Promise.all([fetchAssignments(), fetchMacrocycle(), refetchSessions(), refetchSignals(), loadFeeling()])
-      .then(([a, m]) => {
-        setAssignments(a);
-        setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null);
-      })
-      .catch((err) => console.error("Failed to load home data:", err))
-      .finally(() => { setRefreshing(false); setInitialLoad(false); });
-  }, [loadFeeling]);
+    refreshAll();
+    // Assignments are still home-local (no other screen reads them), so they
+    // keep their own fetch — but they no longer hold anything else up.
+    fetchAssignments()
+      .then(setAssignments)
+      .catch((err) => console.error("Failed to load assignments:", err));
+  }, [refreshAll]);
   const loadRoutines = useCallback(() => {
     fetchRoutines().then((r) => setRoutines(r)).catch(() => setRoutines([]));
   }, []);
@@ -199,11 +217,16 @@ export default function AuroraHome() {
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo. Without
+  // it this recomputed only when `checkins` changed — so a phone left
+  // backgrounded overnight (the normal case) woke still treating yesterday's
+  // check-in as today's, and scaled today's prescription off it. See
+  // lib/use-today.ts.
+  const today = useToday();
   const todayFeeling = useMemo(() => {
-    const today = new Date().toDateString();
-    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    const c = checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today);
     return c ? checkinFeeling(c) : null;
-  }, [checkins]);
+  }, [checkins, today]);
   const rx = useMemo(
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
     [log, sessions, bio, prefExp, prefEquip, todayFeeling],
@@ -211,7 +234,9 @@ export default function AuroraHome() {
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
-  const hasData = sessions.length > 0;
+  // Only a legitimate reading once sessions have really answered — before that
+  // an empty list means "we haven't asked", not "you have nothing logged".
+  const hasData = sessionsRead.ready && sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
   // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
@@ -313,10 +338,12 @@ export default function AuroraHome() {
   // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
   // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
   // global 6h re-log cooldown, which also holds when back-logging a past day.
+  // `today` is in the deps for the dayTs == null case, where "the viewed day"
+  // IS today and therefore moves at midnight.
   const dayCheckin = useMemo(() => {
-    const dstr = new Date(dayTs ?? Date.now()).toDateString();
-    return checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === dstr) ?? null;
-  }, [checkins, dayTs]);
+    const dstr = dayTs == null ? today : localDayKey(dayTs);
+    return checkins.find((c) => c && c.weekOf && localDayKey(c.weekOf) === dstr) ?? null;
+  }, [checkins, dayTs, today]);
   const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
   const feelingAt = dayCheckin?.weekOf ? new Date(dayCheckin.weekOf).getTime() : null;
   const lastCheckinAt = useMemo(
@@ -774,7 +801,7 @@ export default function AuroraHome() {
             isFuture={dayIsFuture}
             dayTs={railDay?.ts ?? null}
             dayLabel={dayLabel}
-            onPicked={loadFeeling}
+            onPicked={checkinsRead.retry}
           />
         </View>
 
@@ -1105,6 +1132,9 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
       // old values back. Collapse; re-opening re-reads the row.
       setLogMoreOpen(false);
       revalidate.recovery();
+      // The cached check-in row drives this very card — drop it so the athlete's
+      // own pick is never the thing that looks stale.
+      revalidate.checkins();
       onPicked();
     }
   };

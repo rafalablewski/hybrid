@@ -103,6 +103,10 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
       if (!res.ok) { setError(`${t("w.recovery.checkins.errSubmit")} (HTTP ${res.status}).`); setSaving(false); return; }
       setDone(true);
       revalidate.recovery();
+      // The check-in row itself is cached now (checkinsKey) and drives today's
+      // feeling card + the prescription's readiness nudge — so the write has to
+      // drop it, or the athlete's own answer is the thing that looks stale.
+      revalidate.checkins();
       onDone?.();
     } catch { setError(t("w.recovery.checkins.errNetwork")); }
     setSaving(false);
