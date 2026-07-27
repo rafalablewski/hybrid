@@ -49,3 +49,21 @@ export const localMondayMs = (ms: number): number => {
 /** Whole days from day-key `a` to day-key `b` (b − a). Pure label math. */
 export const dayKeyDiff = (a: string, b: string): number =>
   Math.round((Date.parse(`${b}T00:00:00.000Z`) - Date.parse(`${a}T00:00:00.000Z`)) / DAY);
+
+/**
+ * Milliseconds from `now` until the next LOCAL midnight — i.e. how long the
+ * current day key stays valid.
+ *
+ * "Today" is not a pure function of the data: a screen mounted at 23:59 is
+ * showing yesterday one minute later, and phones sit backgrounded overnight far
+ * more often than they're closed. Anything that renders a day-scoped claim
+ * (today's check-in, today's prescription, the masthead date, the week rail's
+ * anchor) has to re-derive when this elapses, not only when its data changes —
+ * that's what `useToday()` on each client schedules against.
+ *
+ * DST-safe: it steps a whole local calendar day from local midnight, so the
+ * 23- and 25-hour days land on midnight like every other day. Always ≥ 1 so a
+ * caller can't schedule a zero-delay timer and spin.
+ */
+export const msUntilNextLocalDay = (now: number = Date.now()): number =>
+  Math.max(1, addLocalDays(localMidnightMs(now), 1) - now);

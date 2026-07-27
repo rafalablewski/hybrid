@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { LoggedSession } from "@hybrid/core";
 import { ensureExerciseCatalog } from "./exercise-catalog";
+import { toRead } from "./read";
 
 /** Query key for the signed-in user's (non-archived) sessions. Mutations that
  *  change sessions should invalidate this key to revalidate every consumer. */
@@ -31,11 +32,17 @@ async function fetchSessions(): Promise<LoggedSession[]> {
  *  unchanged. */
 export function useSessions() {
   const q = useQuery({ queryKey: sessionsKey, queryFn: fetchSessions });
+  const read = toRead(q);
   return {
     sessions: q.data ?? [],
-    // `loading` historically meant "a fetch is in flight". isPending covers the
-    // first load; isFetching keeps the existing refresh-spinner semantics.
-    loading: q.isPending || q.isFetching,
+    // `loading` now means UNKNOWN — no server answer yet — not "a fetch is in
+    // flight". It used to be `isPending || isFetching`, which made every
+    // background revalidate drop already-rendered content back to a skeleton:
+    // the same lie as the empty state, in reverse. Consumers gate CLAIMS on
+    // this; anything that just wants the spinner reads `refreshing`.
+    loading: !read.ready,
+    refreshing: read.refreshing,
+    ready: read.ready,
     error: q.isError ? (q.error instanceof Error ? q.error.message : "network") : null,
     refresh: () => q.refetch(),
   };

@@ -7,10 +7,12 @@ import {
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   fmtWeight, strengthPrDelta, evaluateRtp, STAGE_LABEL,
   velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
-  RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
-  type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
+  RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY, localDayKey,
+  type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
-import { fetchSessions, fetchMacrocycle, fetchSignals, fetchCheckins, fetchRtpProtocols, createRtpProtocol, mutateRtpProtocol, type CoreSignal, type Checkin, type RtpProtocol, type RtpAuditEntry } from "../../lib/api";
+import { fetchRtpProtocols, createRtpProtocol, mutateRtpProtocol, type RtpProtocol, type RtpAuditEntry } from "../../lib/api";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, combineReads } from "../../lib/queries";
+import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
@@ -20,6 +22,7 @@ import { fs, space, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
+import FetchError from "./fetch-error";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Scheme = ReturnType<typeof useTheme>["scheme"];
@@ -50,26 +53,42 @@ function Full() {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [macro, setMacro] = useState<Macrocycle | null>(null);
-  const [currentWeek, setCurrentWeek] = useState(1);
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
-  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  // SAFE CACHE (lib/queries.ts `Read`): each source reports whether it has a
+  // real, server-returned value — never a bare array that a first render can't
+  // tell apart from "no training history". The screen renders cached values
+  // instantly and revalidates behind the spinner; it renders CLAIMS (the
+  // zero-states below) only once `ready`.
+  //
+  // This replaced a useState([]) + useEffect(Promise.all) load, which is what
+  // made the screen announce "log a session", "No season yet" and "No active
+  // protocols" to an athlete with years of history for the second the fetch was
+  // in flight — then swap in an HPI of 51. The empty array was never an answer;
+  // it was the absence of one.
+  const sessionsRead = useSessionsRead();
+  const signalsRead = useSignalsRead();
+  const macroRead = useMacrocycleRead();
+  const checkinsRead = useCheckinsRead();
+  // Each claim is gated on ITS OWN source, never on the combined gate: a single
+  // failing endpoint (check-ins, say) must not pin the whole page in a skeleton
+  // when sessions answered fine. `combineReads` is used only for the screen-wide
+  // spinner and the has-anything-failed check.
+  const { refreshing, failed } = combineReads(sessionsRead, signalsRead, macroRead, checkinsRead);
+  const sessions = sessionsRead.data ?? [];
+  const signals = signalsRead.data ?? [];
+  const checkins = checkinsRead.data ?? [];
+  const macro = macroRead.data?.macro ?? null;
+  const currentWeek = macroRead.data?.currentWeek ?? 1;
+  const load = () => {
+    sessionsRead.retry(); signalsRead.retry(); macroRead.retry(); checkinsRead.retry();
+  };
+
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   // Injury-risk depth is a DISCLOSURE: the per-tissue probability table and the
   // plain-language driver explanations stay one tap away so the card itself
   // remains a glance. Mirrors web.
   const [tissueOpen, setTissueOpen] = useState(false);
 
-  const load = () => {
-    setRefreshing(true);
-    Promise.all([fetchSessions(), fetchMacrocycle(), fetchSignals(), fetchCheckins().catch(() => [])])
-      .then(([s, m, sig, ci]) => { setSessions(s); setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setSignals(sig); setCheckins(ci as Checkin[]); })
-      .finally(() => setRefreshing(false));
-  };
   useEffect(() => {
-    load();
     AsyncStorage.getItem("hybrid.sport").then((raw) => {
       if (!raw) return;
       const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
@@ -85,11 +104,14 @@ function Full() {
   // TODAY's readiness FEELING (the one-tap check-in) → prescribeSession, so the
   // readiness block reflects + explains the load nudge the pick applies
   // (the Today screen no longer previews it). Mirrors web.
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo: without
+  // it this only recomputed when `checkins` changed, so a screen alive across
+  // midnight kept treating yesterday's check-in as today's. See use-today.ts.
+  const today = useToday();
   const todayFeeling = useMemo(() => {
-    const today = new Date().toDateString();
-    const c = checkins.find((x) => x && x.weekOf && new Date(x.weekOf).toDateString() === today);
+    const c = checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today);
     return c ? checkinFeeling(c) : null;
-  }, [checkins]);
+  }, [checkins, today]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
   // Truth-based readiness lines — every clause computed from the REAL log +
   // wearable baseline (readinessWhy, @hybrid/core). The old rx.why narrated the
@@ -104,12 +126,16 @@ function Full() {
   const traj = useMemo(() => performanceTrajectory(log, 14), [log]);
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const bw = useBodyweightLookup();
-  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
+  // Same reason as todayFeeling: the recap's week window is anchored on "now",
+  // so it has to re-derive when the calendar day turns over.
+  const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw, today]); // eslint-disable-line react-hooks/exhaustive-deps
   // "Endurance" = real endurance cardio (runs, swims, rides, rows) — drop
   // racket/team/combat sports so a tennis session doesn't inflate the summary.
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
-  const hasData = sessions.length > 0;
+  // Only a legitimate reading once SESSIONS have answered: before that an empty
+  // list means "we haven't asked", not "you have nothing logged".
+  const hasData = sessionsRead.ready && sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
   // Exception-driven: slim all-clear row when nothing's flagged, full maroon otherwise.
   const calm = risk.flagged.length === 0;
@@ -151,6 +177,12 @@ function Full() {
           {hasData && <Pill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</Pill>}
         </ScrollView>
       )}
+
+      {/* A load FAILURE is its own state, never emptiness. Only shown when we
+          have nothing cached to fall back on — if a previous value is in hand
+          the page keeps rendering it and the pull-to-refresh retry sits on top,
+          which beats blanking a screen the athlete was reading. */}
+      {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginTop: 14 }} />}
 
       {/* 2 · PERFORMANCE STATE — the headline read (the classic anatomy):
           big HPI + band/limiter caption + sparkline, STR/END/REC in three
@@ -204,8 +236,16 @@ function Full() {
               </View>
             </View>
           </>
-        ) : (
+        ) : sessionsRead.ready ? (
+          /* A real answer: the athlete genuinely has no logged training. */
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.twinEmpty")}</Text>
+        ) : (
+          /* UNKNOWN, or the read failed (the retry card above says so). Showing
+             twinEmpty here is what told athletes with years of history to "log
+             a session". A skeleton claims nothing; the pull-to-refresh spinner
+             already says we're working on it. `settled` keeps the skeleton from
+             hanging forever — a failed read is never `ready`. */
+          <StateSkeleton C={C} />
         )}
       </ACard>
 
@@ -415,19 +455,28 @@ function Full() {
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} – ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</Text>
             </>
-          ) : (
+          ) : macroRead.settled ? (
+            /* Settled: the server said "not enrolled", or the read failed and
+               the retry card above owns that — either way, stop waiting. */
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>{t("w.home.cockpit.noSeason")}</Text>
+          ) : (
+            <Bar C={C} w="80%" h={14} />
           )}
         </ACard>
         {/* widget 2 — season progress / plan controls */}
         <ACard style={{ flex: 1 }}>
-          <SHead C={C} scheme={scheme} title={macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
+          {/* The HEADING itself is a claim ("Set up" vs "Season") — hold it
+              until enrollment is known, or an enrolled athlete is briefly told
+              to set up a season they already have. */}
+          <SHead C={C} scheme={scheme} title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
           {macro ? (
             <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
               <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
             </View>
-          ) : (
+          ) : macroRead.settled ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, marginBottom: 10, lineHeight: 16 }}>{t("w.home.cockpit.fourQuestions")}</Text>
+          ) : (
+            <View style={{ marginTop: 2, marginBottom: 10 }}><Bar C={C} w="90%" h={12} /></View>
           )}
           <View style={{ gap: 8 }}>
             {macro && <Pressable onPress={() => router.push("/periodize")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.periodize")} →</Text></Pressable>}
@@ -529,6 +578,35 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
 }
 
 /* ---------- primitives ---------- */
+/** One skeleton bar — a placeholder that states nothing. Deliberately not a
+ *  shimmer: the pull-to-refresh spinner already carries "we're working on it",
+ *  and a second animated element competing with it just adds noise. */
+function Bar({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
+  return <View style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: C.line, opacity: 0.45, marginTop: mt }} />;
+}
+
+/** The Performance State card's unknown state. Occupies roughly the shape of
+ *  the real thing (a big number, a caption, the three component columns) so the
+ *  card doesn't resize under the reader when the data lands. */
+function StateSkeleton({ C }: { C: Palette }) {
+  return (
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <Bar C={C} w={64} h={40} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <Bar C={C} w="70%" h={11} />
+          <Bar C={C} w="100%" h={20} />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+      </View>
+    </View>
+  );
+}
+
 /** SectionHead — the golden-standard card header (Explore's SectionHead idiom):
  *  a bold display-face title on the left, any meta/action as small mono
  *  uppercase (or a pill) on the RIGHT of the same row. No decorative dot. */

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { fs, space,
+  localDayKey,
   prescribeSession,
   computeAccountability,
   buildActivityFeed,
@@ -41,6 +42,9 @@ import { fs, space,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
+import { useCheckins } from "@/lib/use-checkins";
+import { useRevalidate } from "@/lib/use-invalidate";
+import { useToday } from "@/lib/use-today";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { track } from "@/lib/track";
@@ -278,21 +282,22 @@ export default function AuroraToday({
   // kept so the feeling card can be scoped to WHICHEVER day the week rail has
   // selected; refetched when a face saves. Client-only fetch so the
   // day-comparison never mismatches the server clock on hydration.
-  const [checkins, setCheckins] = useState<{ weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null; createdAt?: string }[]>([]);
-  const loadFeeling = useCallback(async () => {
-    try {
-      const r = await fetch("/api/checkins");
-      if (!r.ok) return;
-      const d = (await r.json()) as { checkins?: typeof checkins } | null;
-      setCheckins(d?.checkins ?? []);
-    } catch { /* leave as-is */ }
-  }, []);
-  useEffect(() => { loadFeeling(); }, [loadFeeling]);
+  // From the SHARED cache (lib/use-checkins), so Today and Performance read one
+  // entry instead of each holding a private copy that the other's write can't
+  // reach — and so a failed fetch surfaces as a failure rather than silently
+  // resolving to "you haven't checked in".
+  const checkinsRead = useCheckins();
+  const checkins = checkinsRead.data ?? [];
+  const loadFeeling = checkinsRead.retry;
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo — without
+  // it this only recomputed when `checkins` changed, so a tab open across
+  // midnight kept yesterday's check-in as today's. See lib/use-today.ts.
+  const today = useToday();
   // The viewed day's check-in (if any) → its feeling + logged-at time.
   const dayCheckin = useMemo(() => {
-    const dstr = new Date(dayTs ?? Date.now()).toDateString();
-    return checkins.find((c) => c && c.weekOf && new Date(c.weekOf).toDateString() === dstr) ?? null;
-  }, [checkins, dayTs]);
+    const dstr = dayTs == null ? today : localDayKey(dayTs);
+    return checkins.find((c) => c && c.weekOf && localDayKey(c.weekOf) === dstr) ?? null;
+  }, [checkins, dayTs, today]);
   const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
   const feelingAt = dayCheckin?.weekOf ? new Date(dayCheckin.weekOf).getTime() : null;
   // The most recent check-in WRITE anywhere (createdAt, not the day it covers)
@@ -990,6 +995,7 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
   onPicked: () => void;
 }) {
   const { t } = useLang();
+  const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
   // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
   // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
@@ -1024,6 +1030,9 @@ function FeelingCard({ feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs
         // its prefill was read from the PREVIOUS row, so submitting it would
         // write the old values back. Collapse; re-opening re-reads the row.
         setLogMoreOpen(false);
+        // The cached check-in row drives this very card — drop it so the
+        // athlete's own pick is never the thing that looks stale.
+        revalidate.checkins();
         onPicked();
       }
     } catch {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
+import { useRevalidate } from "@/lib/use-invalidate";
 import { usePlanMaxes, setPlanMax } from "@/lib/plan-maxes";
 import LeavePlanSection from "./leave-plan";
 import ProgramDays from "../program-days";
@@ -287,6 +288,9 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  // Enrolling changes the season — drop the cached macrocycle so every consumer
+  // revalidates, rather than relying on a prop-drilled callback reaching them.
+  const revalidate = useRevalidate();
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const docked = useHeroCollapse(rootRef, heroRef);
@@ -295,7 +299,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
   const displayState = state === "idle" && enrolledPlanId === plan.id ? "done" : state;
   const enroll = async () => {
     setState("busy");
-    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
+    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); revalidate.macrocycle(); onEnrolled?.(); }
     catch { setState("error"); }
   };
   return (
@@ -626,6 +630,9 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
   const storedMaxes = usePlanMaxes();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  // Enrolling changes the season — drop the cached macrocycle so every consumer
+  // revalidates, rather than relying on a prop-drilled callback reaching them.
+  const revalidate = useRevalidate();
   const inputValue = (key: string) => vals[key] ?? (storedMaxes[key] != null ? String(storedMaxes[key]) : "");
   const onMaxChange = (key: string, text: string) => {
     setVals((v) => ({ ...v, [key]: text }));
@@ -646,7 +653,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
   const displayState = state === "idle" && enrolledPlanId === plan.id ? "done" : state;
   const enroll = async () => {
     setState("busy");
-    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
+    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); revalidate.macrocycle(); onEnrolled?.(); }
     catch { setState("error"); }
   };
   return (

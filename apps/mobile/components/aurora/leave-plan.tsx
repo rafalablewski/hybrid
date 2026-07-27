@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { leavePlan } from "../../lib/api";
+import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
@@ -27,6 +28,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const armed = !wipe || confirmText.trim().toUpperCase() === "DELETE";
+  const revalidate = useRevalidate();
 
   const leave = async () => {
     if (!armed || busy) return;
@@ -35,6 +37,10 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
     const ok = await leavePlan(enrolled.macroId, wipe);
     setBusy(false);
     if (!ok) { setError(true); return; }
+    // Left the plan (and possibly wiped history) — drop both, or the app keeps
+    // showing a season the athlete just cancelled.
+    revalidate.macrocycle();
+    if (wipe) revalidate.sessions();
     onLeft();
   };
 

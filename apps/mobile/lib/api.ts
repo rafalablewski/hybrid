@@ -737,6 +737,13 @@ export async function fetchCheckins(): Promise<Checkin[]> {
   }
 }
 
+/** Check-ins for React Query — THROWS on failure (see ApiError), so a screen
+ *  can tell "you haven't checked in" from "we couldn't ask". */
+export async function queryCheckins(): Promise<Checkin[]> {
+  const data = await fetchJson<{ checkins?: Checkin[] }>(`/api/checkins`);
+  return data.checkins ?? [];
+}
+
 export type CreateCheckinResult = { ok: boolean; cooldownMs?: number };
 
 export async function createCheckin(payload: Partial<Checkin>): Promise<CreateCheckinResult> {
@@ -889,6 +896,27 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
   } catch {
     return null;
   }
+}
+
+/** The enrolled macrocycle for React Query — THROWS on failure (see ApiError).
+ *  `fetchMacrocycle` above swallows to null, which a screen cannot tell apart
+ *  from "not enrolled" — so it renders the first-run chooser at an enrolled
+ *  athlete whose request merely timed out. This variant lets isError fire. */
+export async function queryMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null; planStartedAt: string | null; macroId: string } | null> {
+  const data = await fetchJson<{ macrocycles?: MacroRow[] }>(`/api/macrocycles`);
+  const row = data.macrocycles?.[0];
+  if (!row || !row.blocks?.length) return null;
+  const blocks = row.blocks;
+  const totalWeeks = blocks[blocks.length - 1]!.endWeek;
+  const started = new Date(row.startedAt).getTime();
+  const elapsed = Number.isFinite(started) ? Math.floor((Date.now() - started) / (7 * 86400000)) + 1 : 1;
+  return {
+    macro: { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks },
+    currentWeek: Math.max(1, Math.min(totalWeeks, elapsed)),
+    planId: row.planId ?? null,
+    planStartedAt: row.startedAt ?? null,
+    macroId: row.id,
+  };
 }
 
 // The athlete's training maxes (1RMs) stored on the account, so the plan card

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { Macrocycle, MacroBlock } from "@hybrid/core";
+import { toRead } from "./read";
 
 type Row = { id: string; goal: string; planId?: string | null; blocks: MacroBlock[]; startedAt: string };
 
@@ -51,5 +52,9 @@ export function useMacrocycle() {
   // window that used to flash the "How do you want to start?" chooser at an
   // already-enrolled athlete before their plan resolved), isFetching keeps the
   // refresh semantics. Consumers gate the cold-start chooser on it.
-  return { macro, currentWeek, planId, planStartedAt, macroId, loading: q.isPending || q.isFetching, refresh: () => q.refetch() };
+  const read = toRead(q);
+  // `loading` means UNKNOWN — no server answer yet. See use-sessions.tsx: the
+  // old `isPending || isFetching` flipped an enrolled athlete's plan hero back
+  // to the cold-start skeleton on every background revalidate.
+  return { macro, currentWeek, planId, planStartedAt, macroId, loading: !read.ready, refreshing: read.refreshing, ready: read.ready, settled: read.settled, refresh: () => q.refetch() };
 }

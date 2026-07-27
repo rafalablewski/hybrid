@@ -106,8 +106,13 @@ import { useSignals } from "@/lib/use-signals";
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
-  const { sessions, loading: sessionsLoading, error: sessionsError, refresh } = useSessions();
-  const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, refresh: refreshMacro } = useMacrocycle();
+  // SAFE CACHE (lib/read.ts): `loading` here means UNKNOWN — no server answer
+  // yet — not "a fetch is in flight". Screens gate every CLAIM about the
+  // athlete on it, so a cold start shows a skeleton instead of asserting the
+  // zero-case ("log a session", "No season yet") and retracting it a second
+  // later. A background revalidate no longer flips content back to a skeleton.
+  const { sessions, loading: sessionsLoading, ready: sessionsReady, error: sessionsError, refresh } = useSessions();
+  const { macro, currentWeek, planId, planStartedAt, loading: macroLoading, ready: macroReady, settled: macroSettled, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics } = useBiometrics();
@@ -802,7 +807,7 @@ export default function AppShell() {
             screen). BOTH ids resolve here so ⌘K entries, saved deep links and
             every existing setScreen("cockpit") caller keep working. */}
         {(screen === "performance" || screen === "cockpit") && (
-          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (

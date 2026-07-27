@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
+import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
@@ -322,11 +323,14 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">(alreadyEnrolled ? "done" : "idle");
+  const revalidate = useRevalidate();
   const enroll = async () => {
     setEnrolled("busy");
     const ok = await enrollPlan(goal.name, plan.id);
     setEnrolled(ok ? "done" : "error");
-    if (ok) onEnrolled?.();
+    // Enrolling changed the season — drop the cached macrocycle so Today and
+    // Performance don't keep rendering "No season yet" off a pre-enrol read.
+    if (ok) { revalidate.macrocycle(); onEnrolled?.(); }
   };
   return (
     <PlanCoverScreen

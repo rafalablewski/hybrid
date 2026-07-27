@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { localDayKey, localTodayKey, localMidnightMs, addLocalDays, localMondayMs, dayKeyDiff } from "./day-key";
+import { localDayKey, localTodayKey, localMidnightMs, addLocalDays, localMondayMs, dayKeyDiff, msUntilNextLocalDay } from "./day-key";
 
 // These tests are TIMEZONE-ROBUST: fixtures are built from LOCAL date
 // components (new Date(y, m, d, h)), so the expectations hold whatever TZ the
@@ -59,5 +59,39 @@ describe("dayKeyDiff", () => {
     expect(dayKeyDiff("2026-07-13", "2026-07-16")).toBe(3);
     expect(dayKeyDiff("2026-07-16", "2026-07-13")).toBe(-3);
     expect(dayKeyDiff("2026-12-31", "2027-01-01")).toBe(1);
+  });
+});
+
+describe("msUntilNextLocalDay", () => {
+  it("counts down to the next local midnight", () => {
+    // 2026-07-16 22:00 local → two hours left in the day.
+    const at22 = new Date(2026, 6, 16, 22, 0, 0, 0).getTime();
+    expect(msUntilNextLocalDay(at22)).toBe(2 * 60 * 60 * 1000);
+    // One minute before midnight → one minute.
+    const at2359 = new Date(2026, 6, 16, 23, 59, 0, 0).getTime();
+    expect(msUntilNextLocalDay(at2359)).toBe(60 * 1000);
+  });
+
+  it("lands exactly on the next day key, never on the current one", () => {
+    for (const h of [0, 1, 9, 12, 18, 23]) {
+      const now = new Date(2026, 6, 16, h, 30).getTime();
+      const next = now + msUntilNextLocalDay(now);
+      expect(localDayKey(next)).toBe("2026-07-17");
+      // and the instant just before is still today
+      expect(localDayKey(next - 1)).toBe("2026-07-16");
+    }
+  });
+
+  it("is always positive, so a timer scheduled on it can't spin", () => {
+    const midnight = new Date(2026, 6, 16, 0, 0, 0, 0).getTime();
+    expect(msUntilNextLocalDay(midnight)).toBeGreaterThan(0);
+    expect(msUntilNextLocalDay(midnight)).toBe(86_400_000);
+  });
+
+  it("crosses month and year boundaries", () => {
+    const dec31 = new Date(2026, 11, 31, 23, 30).getTime();
+    expect(localDayKey(dec31 + msUntilNextLocalDay(dec31))).toBe("2027-01-01");
+    const jul31 = new Date(2026, 6, 31, 20, 0).getTime();
+    expect(localDayKey(jul31 + msUntilNextLocalDay(jul31))).toBe("2026-08-01");
   });
 });
