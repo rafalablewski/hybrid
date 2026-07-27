@@ -116,9 +116,13 @@ export default function AuroraPlans() {
  *  would just empty the screen. Full-bleed per the house rule. */
 function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c: string) => void }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   return (
     <ScrollView
       horizontal
+      // Labelled, but deliberately NOT role="tablist" — these scroll to a
+      // section, they don't switch panels, and the chips are buttons already.
+      accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 9 }}
     >
@@ -156,7 +160,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
       </View>
-      <ScrollView
+      <Animated.ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         onLayout={(e) => setRail((r) => ({ ...r, view: e.nativeEvent.layout.width }))}
@@ -169,7 +173,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
       {overflows && <ShelfTrack x={x} view={rail.view} content={rail.content} />}
     </View>
   );

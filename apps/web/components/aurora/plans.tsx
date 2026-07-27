@@ -87,6 +87,7 @@ const shelfId = (category: string) => `plan-shelf-${category.toLowerCase().repla
  *  `rail` slot). They JUMP, they don't filter — the shelves already are the
  *  categories, so narrowing to one would just empty the screen. */
 function CategoryRail({ categories }: { categories: string[] }) {
+  const { t } = useLang();
   const navRef = useRef<HTMLElement>(null);
   const jump = (category: string) => {
     const el = document.getElementById(shelfId(category));
@@ -98,7 +99,7 @@ function CategoryRail({ categories }: { categories: string[] }) {
   return (
     <nav
       ref={navRef}
-      aria-label="Jump to category"
+      aria-label={t("w.train.plans.jumpToCategory")}
       style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "9px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
     >
       {categories.map((c) => (
