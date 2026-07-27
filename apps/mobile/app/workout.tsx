@@ -1061,6 +1061,17 @@ export default function Workout() {
                 : undefined
             }
           >
+          {/* Press-and-hold anywhere on a strength card opens its exercise
+              sheet (user-picked entry, review round 3). A bare long-press
+              wrapper: taps still fall through to the card's own controls, and
+              interactive children (inputs, buttons, grips) own their touches. */}
+          <Pressable
+            onLongPress={x.kind === "strength" ? () => {
+              if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              setSheetUid(x.uid);
+            } : undefined}
+            delayLongPress={400}
+          >
           <Card>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
               <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? C.chalk : C.ash} />
@@ -1484,6 +1495,7 @@ export default function Workout() {
               </View>
             )}
           </Card>
+          </Pressable>
           </Animated.View>
           );
         })}

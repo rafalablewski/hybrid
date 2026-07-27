@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
@@ -156,6 +156,26 @@ export default function WorkoutBlocks({
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
   // LIVE: which exercise has its detail sheet up (per-set bar speed + summary).
   const [sheetUid, setSheetUid] = useState<string | null>(null);
+  // Press-and-hold anywhere on a strength card opens its exercise sheet
+  // (user-picked entry — the pointer twin of mobile's onLongPress). Holds
+  // starting on a control (input/button/grip) are ignored, and any real
+  // movement (scroll, swipe, drag) cancels the hold.
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFrom = useRef<{ x: number; y: number } | null>(null);
+  const cancelHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+    holdFrom.current = null;
+  };
+  const beginHold = (e: ReactPointerEvent, uid: string) => {
+    if ((e.target as HTMLElement).closest('input,button,textarea,select,[draggable="true"]')) return;
+    cancelHold();
+    holdFrom.current = { x: e.clientX, y: e.clientY };
+    holdTimer.current = setTimeout(() => { holdTimer.current = null; setSheetUid(uid); }, 400);
+  };
+  const moveHold = (e: ReactPointerEvent) => {
+    if (holdFrom.current && Math.hypot(e.clientX - holdFrom.current.x, e.clientY - holdFrom.current.y) > 8) cancelHold();
+  };
   // The Olympic-sport quick-add picker (manual sport-session logging — no gear
   // needed). Picking a sport adds a cardio block named after it.
   const [sportPicker, setSportPicker] = useState(false);
@@ -383,6 +403,11 @@ export default function WorkoutBlocks({
                 }
               : undefined
           }
+          onPointerDown={live && b.kind === "strength" ? (e) => beginHold(e, b.uid) : undefined}
+          onPointerUp={live && b.kind === "strength" ? cancelHold : undefined}
+          onPointerLeave={live && b.kind === "strength" ? cancelHold : undefined}
+          onPointerCancel={live && b.kind === "strength" ? cancelHold : undefined}
+          onPointerMove={live && b.kind === "strength" ? moveHold : undefined}
           style={{ opacity: dragUid === b.uid ? 0.5 : 1 }}
         >
         <Card style={{ marginBottom: 12 }}>
