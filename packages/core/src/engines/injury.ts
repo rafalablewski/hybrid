@@ -101,8 +101,10 @@ export interface InjuryRisk {
   flagged: TissueRisk[];
 }
 
-/** Undecayed per-tissue load summed over sessions within the last `days`. */
-function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
+/** Undecayed per-tissue load summed over sessions within the last `days`.
+ *  Exported so the Engine Room's derivations show the same acute/chronic
+ *  windows the risk engine actually used. */
+export function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
   const load = Object.fromEntries(ALL_MUSCLES.map((m) => [m, 0])) as Record<MuscleGroup, number>;
   for (const session of log) {
     if (session.daysAgo < 0 || session.daysAgo >= days) continue;
@@ -131,14 +133,26 @@ function ramp(x: number, lo: number, hi: number): number {
   return (x - lo) / (hi - lo);
 }
 
+/** Width of the spike ramp: risk saturates `SPIKE_RAMP_WIDTH` above the onset
+ *  (default onset 1.3 → saturation 2.2, the documented population values). */
+const SPIKE_RAMP_WIDTH = 0.9;
+
 /**
  * Per-tissue injury risk. Components (capped, summed to 0..100):
- *   • workload spike — ACWR above ~1.3 ramps in (the classic, but per-tissue)
+ *   • workload spike — ACWR above the onset ramps in (the classic, but
+ *     per-tissue). The onset defaults to the population 1.3 and can be the
+ *     athlete's PERSONAL onset learned from their outcome history (personal.ts)
  *   • absolute load  — a hammered tissue carries baseline risk even in balance
  *   • detraining     — very low ACWR (<0.8) carries a small spike-on-return risk
  *   • recovery       — suppressed HRV/sleep / elevated resting HR raises all tissues
  */
-export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics, coeffs: CalibrationCoeffs = PRIOR_COEFFS): InjuryRisk {
+export function computeInjuryRisk(
+  log: TrainingLog,
+  bio?: Biometrics,
+  coeffs: CalibrationCoeffs = PRIOR_COEFFS,
+  opts?: { spikeOnset?: number },
+): InjuryRisk {
+  const onset = opts?.spikeOnset ?? 1.3;
   const fatigue = computeFatigue(log);
   const acute = tissueLoadWindow(log, 7);
   const chronic28 = tissueLoadWindow(log, 28);
@@ -154,7 +168,7 @@ export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics, coeffs: Ca
 
     const drivers: RiskDriver[] = [];
 
-    const spike = ramp(acwr, 1.3, 2.2) * 55;
+    const spike = ramp(acwr, onset, onset + SPIKE_RAMP_WIDTH) * 55;
     if (spike > 1)
       drivers.push({ kind: "spike", label: `Workload spike (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(spike), acwr });
 

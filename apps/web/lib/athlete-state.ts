@@ -12,11 +12,12 @@ import { activeCalibration } from "@/lib/calibration";
 import { publishExerciseCatalog } from "@/lib/cache";
 
 /**
- * Compute an athlete's Performance State + injury risk from their stored
- * sessions and Signal ontology. Authorization is the CALLER's responsibility —
- * this reads raw rows, so only call it after a relationship/role check.
+ * Assemble the ENGINE INPUTS for an athlete from their stored sessions and
+ * Signal ontology: the TrainingLog + Biometrics every engine consumes.
+ * Authorization is the CALLER's responsibility — this reads raw rows, so only
+ * call it after a relationship/role check.
  */
-export async function athleteState(userId: string) {
+export async function athleteInputs(userId: string) {
   // The engines resolve logged exercise names against the movement catalog —
   // publish the admin library first or every library-named lift attributes to no
   // tissue at all (zero fatigue / injury load).
@@ -48,8 +49,17 @@ export async function athleteState(userId: string) {
   const log = toTrainingLog(sessions);
   // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
+  return { log, bio, sessionCount: sessions.length };
+}
+
+/**
+ * Compute an athlete's Performance State + injury risk from their stored
+ * sessions and Signal ontology. Same authorization contract as athleteInputs.
+ */
+export async function athleteState(userId: string) {
+  const { log, bio, sessionCount } = await athleteInputs(userId);
   const state = computePerformanceState(log, bio);
   const { coeffs } = await activeCalibration();
   const risk = computeInjuryRisk(log, bio, coeffs);
-  return { state, risk, sessionCount: sessions.length };
+  return { state, risk, sessionCount };
 }
