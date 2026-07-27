@@ -54,7 +54,11 @@ export async function athleteInputs(userId: string) {
   const log = personalTrainingLog(sessions);
   // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
-  return { log, bio, sessionCount: sessions.length };
+  // `sessions` rides along for the callers that need the RAW rows rather than
+  // the derived log — the effort model reads each session's reported feeling
+  // against the effort its blocks imply, which the TrainingLog has already
+  // collapsed away.
+  return { log, bio, sessions, sessionCount: sessions.length };
 }
 
 /**

@@ -40,6 +40,9 @@ import {
   logisticCurve,
   whatIfLog,
   whatIfBio,
+  EFFORT_BIAS_MAX,
+  EFFORT_TREND_MIN_SAMPLES,
+  EFFORT_TREND_MIN_DAYS,
   HYBRID_WEIGHTS,
   STRENGTH_WEIGHTS,
   ENDURANCE_WEIGHTS,
@@ -56,6 +59,8 @@ import {
   type Derivation,
   type MuscleGroup,
   type Personalization,
+  type EffortModel,
+  type EffortTrend,
   type Biometrics,
   type CalibrationCoeffs,
   type EngineTrace,
@@ -81,6 +86,7 @@ type Feed = {
   sessionCount: number;
   calibration: { coeffs: CalibrationCoeffs; version: string; n: number };
   personal?: Personalization;
+  effort?: { model: EffortModel; trend: EffortTrend | null; rated: number };
 };
 
 const PROFILES: { id: string; label: string; weights: HpiWeights }[] = [
@@ -183,6 +189,7 @@ export default function EngineRoom() {
   const modelVersion = feed ? feed.calibration.version : RISK_MODEL_VERSION;
   const personal = feed?.personal;
   const spikeOnset = personal?.spikeOnset ?? SPIKE_ONSET_PRIOR;
+  const effort = feed?.effort;
   const weights = (PROFILES.find((p) => p.id === profileId) ?? PROFILES[0]!).weights;
 
   const whatIfActive =
@@ -655,6 +662,88 @@ export default function EngineRoom() {
             spike formula in effect: ramp(ACWR, {spikeOnset}, {(spikeOnset + 0.9).toFixed(2)}) × 55
           </Mono>
         </div>
+      </Card>
+
+      {/* ---- effort model ---- */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+            Effort model – what this athlete says the work costs them
+          </Mono>
+          {effort?.model.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+        </div>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
+          Two athletes run the same 10 km in the same 40 minutes and the log records the same
+          session. The bias is the shrunk mean of (reported session RPE − the RPE the log implies),
+          so a positive value means this athlete pays more for the same work. Bounded to
+          ±{EFFORT_BIAS_MAX} RPE; it feeds ACWR and injury risk through the training log.
+          {!feed && " The sample athlete has no rated sessions, so the prior applies."}
+        </Mono>
+
+        {/* bias scale: −max .. +max with the prior (0) and the learned value marked */}
+        <div style={{ marginTop: 16, position: "relative", height: 34 }}>
+          <div style={{ position: "absolute", top: 14, left: 0, right: 0, height: 6, background: INK2, borderRadius: 3 }} />
+          {[
+            { v: 0, label: "prior 0", c: ASH, dashed: true },
+            ...(effort && effort.model.bias !== 0
+              ? [{ v: effort.model.bias, label: `personal ${effort.model.bias > 0 ? "+" : ""}${effort.model.bias}`, c: VIOLET, dashed: false }]
+              : []),
+          ].map((m) => {
+            const pct = ((m.v + EFFORT_BIAS_MAX) / (2 * EFFORT_BIAS_MAX)) * 100;
+            return (
+              <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
+                <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+              </div>
+            );
+          })}
+          <Mono s={{ fontSize: fs.nano, position: "absolute", left: 0, bottom: -14 }}>−{EFFORT_BIAS_MAX}</Mono>
+          <Mono s={{ fontSize: fs.nano, position: "absolute", right: 0, bottom: -14 }}>+{EFFORT_BIAS_MAX}</Mono>
+        </div>
+
+        {/* Does the personalization actually earn its keep? Leave-one-out, so an
+            honest "no" is possible — an in-sample fit always looks like a win. */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: space.lg, marginTop: 30 }}>
+          <Stat label="Rated sessions" value={String(effort?.rated ?? 0)} />
+          <Stat
+            label="Model error (LOO)"
+            value={effort?.model.mae != null ? `${effort.model.mae.toFixed(2)} RPE` : "—"}
+            sub="held out"
+          />
+          <Stat
+            label="Engine baseline"
+            value={effort?.model.baselineMae != null ? `${effort.model.baselineMae.toFixed(2)} RPE` : "—"}
+            sub="no personalization"
+          />
+          <Stat
+            label="Same work over time"
+            value={effort?.trend ? `${effort.trend.perMonth > 0 ? "+" : ""}${effort.trend.perMonth} /mo` : "—"}
+            sub={effort?.trend ? effort.trend.direction : "not enough data"}
+            c={effort?.trend?.direction === "fitter" ? LIME : effort?.trend?.direction === "harder" ? RED : CHALK}
+          />
+        </div>
+
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 18, lineHeight: 1.6 }}>
+          {(() => {
+            const m = effort?.model;
+            if (!m || m.mae == null || m.baselineMae == null)
+              return `Not scored yet — leave-one-out needs at least 3 rated sessions (${effort?.rated ?? 0} so far).`;
+            const d = m.baselineMae - m.mae;
+            if (d > 0.005)
+              return `Personalizing beats the unpersonalised engine by ${d.toFixed(2)} RPE per session, held out. Scored leave-one-out: the bias is refitted without each session before predicting it, so this is not the fit flattering itself.`;
+            return "No better than the unpersonalised engine — this athlete reports roughly what their log implies, so there is nothing to personalise. Scored leave-one-out, which is why it can say so.";
+          })()}
+        </Mono>
+
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10, lineHeight: 1.6 }} c={effort?.trend?.direction === "fitter" ? LIME : effort?.trend?.direction === "harder" ? RED : undefined}>
+          {effort?.trend
+            ? effort.trend.direction === "fitter"
+              ? `The same objective work is reporting ${Math.abs(effort.trend.perMonth)} RPE easier per month across ${effort.trend.n} sessions over ${effort.trend.days} days — the one fitness read a self-report can honestly give.`
+              : effort.trend.direction === "harder"
+                ? `The same objective work is reporting ${effort.trend.perMonth} RPE harder per month across ${effort.trend.n} sessions over ${effort.trend.days} days — worth reading next to load and recovery.`
+                : `Flat across ${effort.trend.n} sessions over ${effort.trend.days} days: the same work costs them the same as it did.`
+            : `No trend yet — it needs ${EFFORT_TREND_MIN_SAMPLES} rated sessions spanning ${EFFORT_TREND_MIN_DAYS} days, because a slope through fewer points in one week is a line through noise.`}
+        </Mono>
       </Card>
 
       {/* ---- trajectory + calibration curve ---- */}
