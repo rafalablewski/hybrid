@@ -670,7 +670,15 @@ export default function EngineRoom() {
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
             Effort model – what this athlete says the work costs them
           </Mono>
-          {effort?.model.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+          <div style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
+            {/* Every other card on this screen follows the what-if sliders. This
+                one deliberately does not: the sliders transform the CURRENT
+                inputs, and an athlete's past answers don't change because an
+                operator dragged a slider. Said out loud so a static card next to
+                moving ones doesn't read as a bug. */}
+            {whatIfActive && <Chip c={ASH}>not simulated</Chip>}
+            {effort?.model.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+          </div>
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
           Two athletes run the same 10 km in the same 40 minutes and the log records the same
