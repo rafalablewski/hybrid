@@ -357,7 +357,7 @@ function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon:
   // glyphs sit comfortably beside a 10pt label on glass.
   const item = (color: string) => (
     <span style={{ display: "grid", justifyItems: "center", gap: 2 }}>
-      <AuroraIcon name={icon} size={21} strokeWidth={4.5} color={color} />
+      <AuroraIcon name={icon} size={21} strokeWidth={4} color={color} />
       <span style={{ fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 600, lineHeight: 1, color, whiteSpace: "nowrap", maxWidth: LENS_W - 4, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
     </span>
   );
