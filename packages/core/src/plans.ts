@@ -205,6 +205,19 @@ export function filterGoalGroups(query = "", category: GoalCategory | "all" = "a
     .filter((group) => group.goals.length > 0);
 }
 
+/** The Plans ROOT's shelves — `filterGoalGroups` with each category's goals
+ *  ordered READY FIRST (goals that actually have plans, then the ones still
+ *  coming), preserving GOAL_TREE order within each half. The root renders every
+ *  category as a horizontal shelf, so what sits past the fold is what isn't
+ *  built yet rather than an arbitrary slice of the library. Pure + shared so
+ *  both clients order identically. */
+export function goalShelves(query = ""): GoalGroup[] {
+  return filterGoalGroups(query).map((group) => ({
+    category: group.category,
+    goals: [...group.goals.filter((g) => g.plans.length > 0), ...group.goals.filter((g) => g.plans.length === 0)],
+  }));
+}
+
 // ============================================================
 //  PLAN DETAIL — every plan's full workout summary (level, who it's for,
 //  outcome, duration/frequency, split, every training day spec'd, progression).
