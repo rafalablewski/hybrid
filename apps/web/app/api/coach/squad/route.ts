@@ -99,7 +99,11 @@ export async function GET(request: Request) {
         readiness: state.readiness.score,
         hpi: state.hpi.score,
         hpiBand: state.hpi.band,
-        acwr: load.acwr,
+        // Send 0 — which both monitors render as "—" — when the athlete has no
+        // chronic base yet. The raw ratio is 4.00 by construction while every
+        // session still sits inside the 7-day acute window (acute / (acute/4)),
+        // and a squad row showing "4.00" reads as an emergency, not a gap.
+        acwr: load.enoughHistory ? load.acwr : 0,
         acwrBand: load.band,
         acute: load.acute,
         strain: load.strain,

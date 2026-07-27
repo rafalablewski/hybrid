@@ -183,6 +183,7 @@ export const web_teams = {
     "w.teams.monitor.thInjuryRisk": "Injury risk",
     "w.teams.monitor.thLast": "Last",
     "w.teams.monitor.acwrNote": "ACWR (acute:chronic workload, 7d vs 28d-weekly) is a guide, not a verdict — read it with acute load and injury risk. Sweet-spot ≈ 0.8–1.3; caution 1.3–1.5; danger >1.5; detraining <0.8.",
+    "w.teams.monitor.acwrInsufficient": "A dash under \"insufficient\" means that athlete has no chronic base yet — every session they've logged still falls inside the last 7 days, so the ratio would read 4.00 for arithmetic reasons alone. It resolves once they have about two weeks of history.",
 
     // org.tsx
     "w.teams.org.invitedPending": "Invited — they'll join on first sign-in.",
@@ -396,6 +397,7 @@ export const web_teams = {
     "w.teams.monitor.thInjuryRisk": "Ryzyko kontuzji",
     "w.teams.monitor.thLast": "Ostatnia",
     "w.teams.monitor.acwrNote": "ACWR (obciążenie ostre:przewlekłe, 7 dni vs 28 dni-tygodniowo) to wskazówka, nie wyrok — czytaj je z obciążeniem ostrym i ryzykiem kontuzji. Strefa optymalna ≈ 0,8–1,3; ostrożność 1,3–1,5; zagrożenie >1,5; roztrenowanie <0,8.",
+    "w.teams.monitor.acwrInsufficient": "Kreska przy statusie „niewystarczające” oznacza, że zawodnik nie ma jeszcze bazy przewlekłej — wszystkie zapisane sesje mieszczą się w ostatnich 7 dniach, więc wskaźnik pokazałby 4,00 z samej arytmetyki. Zniknie, gdy uzbiera się około dwóch tygodni historii.",
 
     // org.tsx
     "w.teams.org.invitedPending": "Zaproszono — dołączą przy pierwszym logowaniu.",
@@ -609,6 +611,7 @@ export const web_teams = {
     "w.teams.monitor.thInjuryRisk": "Verletzungsrisiko",
     "w.teams.monitor.thLast": "Letzte",
     "w.teams.monitor.acwrNote": "ACWR (akute:chronische Last, 7 Tage vs. 28 Tage-wöchentlich) ist ein Richtwert, kein Urteil — lies sie zusammen mit akuter Last und Verletzungsrisiko. Optimalbereich ≈ 0,8–1,3; Vorsicht 1,3–1,5; Gefahr >1,5; Detraining <0,8.",
+    "w.teams.monitor.acwrInsufficient": "Ein Strich bei „unzureichend“ heißt, dass diese Athletin oder dieser Athlet noch keine chronische Basis hat — alle protokollierten Einheiten liegen innerhalb der letzten 7 Tage, der Quotient stünde also rein rechnerisch auf 4,00. Das löst sich nach rund zwei Wochen Historie.",
 
     // org.tsx
     "w.teams.org.invitedPending": "Eingeladen — sie treten bei der ersten Anmeldung bei.",

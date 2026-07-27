@@ -331,6 +331,17 @@ function Full() {
                     </View>
                   </View>
                 ))}
+                {/* WHY THE DASH — an athlete who IS training but has no chronic
+                    baseline yet reads "—" in the ACWR column. Say why, rather
+                    than leaving a blank that looks like a broken number. The
+                    engine decides who sees this (awaitingBaseline), so web and
+                    mobile can never disagree about it. */}
+                {risk.awaitingBaseline.length > 0 && (
+                  <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
+                  </View>
+                )}
                 {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
                     at play (workload spike, high load, return-from-lull, recovery). */}
                 {driverKinds.length > 0 && (

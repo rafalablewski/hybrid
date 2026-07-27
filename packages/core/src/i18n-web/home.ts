@@ -502,6 +502,8 @@ export const web_home = {
     "w.injury.whatsThis": "What's raising this?",
     "w.injury.hide": "Hide",
     "w.injury.acwrNote": "ACWR compares your last 7 days of load with your 4-week weekly average. Around 0.8–1.3 is the sweet spot; higher means you're ramping fast.",
+    "w.injury.acwrPending": "Some areas show a dash instead of an ACWR",
+    "w.injury.acwrPendingBody": "The ratio needs something to compare this week against, and all your training on those areas is still inside the last 7 days. Until about two weeks of history builds up, showing a number would just be arithmetic — every area would read 4.00. Your risk score is still real: it's coming from your actual tissue load and recovery, just without the workload-ratio part.",
 
     // analytics
     "w.home.analytics.noAnalytics": "No analytics yet",
@@ -1144,6 +1146,8 @@ export const web_home = {
     "w.injury.whatsThis": "Co to podnosi?",
     "w.injury.hide": "Ukryj",
     "w.injury.acwrNote": "ACWR porównuje obciążenie z ostatnich 7 dni z Twoją 4-tygodniową średnią tygodniową. Około 0,8–1,3 to strefa optymalna; wyżej oznacza szybki przyrost.",
+    "w.injury.acwrPending": "Część partii pokazuje kreskę zamiast ACWR",
+    "w.injury.acwrPendingBody": "Wskaźnik potrzebuje punktu odniesienia dla tego tygodnia, a cały Twój trening tych partii mieści się w ostatnich 7 dniach. Zanim zbierze się około dwóch tygodni historii, pokazana liczba byłaby tylko arytmetyką — każda partia miałaby 4,00. Twój wynik ryzyka nadal jest prawdziwy: liczy się z rzeczywistego obciążenia tkanek i regeneracji, tylko bez części opartej na wskaźniku obciążenia.",
 
     // analytics
     "w.home.analytics.noAnalytics": "Brak analityki",
@@ -1784,6 +1788,8 @@ export const web_home = {
     "w.injury.whatsThis": "Was treibt das hoch?",
     "w.injury.hide": "Ausblenden",
     "w.injury.acwrNote": "ACWR vergleicht deine Last der letzten 7 Tage mit deinem 4-Wochen-Wochenschnitt. Rund 0,8–1,3 ist der optimale Bereich; höher heißt, du steigerst schnell.",
+    "w.injury.acwrPending": "Einige Regionen zeigen einen Strich statt eines ACWR",
+    "w.injury.acwrPendingBody": "Der Quotient braucht etwas, womit er diese Woche vergleichen kann, und dein gesamtes Training dieser Regionen liegt noch innerhalb der letzten 7 Tage. Bis sich rund zwei Wochen Historie aufgebaut haben, wäre eine Zahl reine Arithmetik — jede Region stünde auf 4,00. Dein Risikowert bleibt echt: er kommt aus deiner tatsächlichen Gewebelast und Erholung, nur ohne den Belastungsquotienten.",
 
     // analytics
     "w.home.analytics.noAnalytics": "Noch keine Analysen",
