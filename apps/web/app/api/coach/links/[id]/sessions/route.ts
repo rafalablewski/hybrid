@@ -21,8 +21,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     where: { userId: link.clientId, archivedAt: null },
     orderBy: { startedAt: "desc" },
     take: 50,
-    // Explicit field list — the athlete's private note/mood/tags are OWNER-ONLY
-    // and must never reach a coach. Never widen this to a raw-row return.
+    // Explicit field list — the athlete's private note/mood/tags AND their
+    // post-workout feel/fatigue answer are OWNER-ONLY and must never reach a
+    // coach as raw values. (The squad endpoint may feed `feel` to the ENGINES,
+    // because it serialises aggregates rather than sessions — see the note
+    // there.) Never widen this to a raw-row return.
     select: { id: true, userId: true, title: true, startedAt: true, completedAt: true, blocks: true, readiness: true, archivedAt: true },
   });
   return NextResponse.json({ sessions });

@@ -55,6 +55,11 @@ export async function POST(request: Request) {
     completedAt: r.completedAt?.toISOString() ?? null,
     blocks: migrateBlocks(r.blocks),
     readiness: r.readiness,
+    // The athlete's own "how did that feel?" answer — dropped here, every
+    // server-side engine read would silently fall back to the constants while
+    // the clients (which get the full row) used the real thing, so the AI coach
+    // would reason about a different athlete than the app shows.
+    feel: r.feel,
   }));
 
   // Recovery from the Signal ontology (manual check-in + wearables write here).
