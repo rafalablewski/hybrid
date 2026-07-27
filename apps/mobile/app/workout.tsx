@@ -21,6 +21,7 @@ import {
   newPrsInSession,
   newCardioPrsInSession,
   liveSessionStats,
+  exerciseLiveStats,
   exerciseHistory,
   inferBlockKind,
   migrateBlocks,
@@ -91,6 +92,7 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 }
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
+import Sheet from "../components/aurora/sheet";
 import SwipeRow from "../components/swipe-row";
 import DragHandle from "../components/drag-handle";
 import { useDragReorder } from "../lib/use-drag-reorder";
@@ -259,6 +261,8 @@ export default function Workout() {
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
   // exercise (only one set is active per exercise, so keying by uid is enough).
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
+  // Which exercise has its detail sheet up (per-set bar speed + live summary).
+  const [sheetUid, setSheetUid] = useState<string | null>(null);
   // Refs to the active set's load/reps inputs (keyed `${uid}:load|reps`) so
   // tapping the unit label focuses the field — the RN twin of a web <label for>.
   const inputRefs = useRef<Record<string, TextInput | null>>({});
@@ -986,11 +990,11 @@ export default function Workout() {
         {needsBw && <BodyweightNudge C={C} R={R} t={t} units={prefs.units} />}
 
         {showTip && (
-          <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
+          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("workout.tipTitle")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.tipTitle")}</Text>
               <Pressable onPress={dismissTip} hitSlop={8}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("workout.tipGot")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{t("workout.tipGot")}</Text>
               </Pressable>
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("workout.tipBody")}</Text>
@@ -1057,14 +1061,25 @@ export default function Workout() {
                 : undefined
             }
           >
+          {/* Press-and-hold anywhere on a strength card opens its exercise
+              sheet (user-picked entry, review round 3). A bare long-press
+              wrapper: taps still fall through to the card's own controls, and
+              interactive children (inputs, buttons, grips) own their touches. */}
+          <Pressable
+            onLongPress={x.kind === "strength" ? () => {
+              if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              setSheetUid(x.uid);
+            } : undefined}
+            delayLongPress={400}
+          >
           <Card>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
-              <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? txt(C, C.lime) : C.ash} />
+              <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? C.chalk : C.ash} />
               <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>
                 {x.kind.toUpperCase()}
               </Text>
               {ssLabels[xi] && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }} />
               {/* Superset with the exercise BELOW — placed on the upper card so
@@ -1076,9 +1091,9 @@ export default function Workout() {
                   <Pressable
                     onPress={() => supersetWithPrev(nextUid)}
                     hitSlop={6}
-                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? withAlpha(C.chalk, 0.4) : C.line, backgroundColor: joined ? withAlpha(C.chalk, 0.08) : "transparent" }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("w.train.blocks.joined") : t("workout.superset")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? C.chalk : C.ash }}>⛓ {joined ? t("w.train.blocks.joined") : t("workout.superset")}</Text>
                   </Pressable>
                 );
               })()}
@@ -1125,7 +1140,7 @@ export default function Workout() {
                     const st = setType(s);
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     const grip = (
-                      <DragHandle onStart={() => setDrag.begin(x.uid, i, x.sets.length)} onMove={setDrag.move} onEnd={setDrag.end} color={lifted ? txt(C, C.lime) : C.ash} size={fs.note} />
+                      <DragHandle onStart={() => setDrag.begin(x.uid, i, x.sets.length)} onMove={setDrag.move} onEnd={setDrag.end} color={lifted ? C.chalk : C.ash} size={fs.note} />
                     );
                     return (
                       <Animated.View
@@ -1135,28 +1150,18 @@ export default function Workout() {
                       >
                       <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)}>
                         {focus === "active" ? (
-                          <View
-                            style={{
-                              marginVertical: 6,
-                              borderRadius: 20,
-                              padding: 16,
-                              backgroundColor: withAlpha(C.lime, 0.06),
-                              borderWidth: 1,
-                              borderColor: withAlpha(C.lime, 0.22),
-                              shadowColor: "#000",
-                              shadowOpacity: 0.28,
-                              shadowRadius: 14,
-                              shadowOffset: { width: 0, height: 8 },
-                              elevation: 5,
-                            }}
-                          >
-                            <GlassSurface radius={20} tintColor={C.lime} />
+                          // FLAT active section — no inner card (the exercise card
+                          // is the one surface): the set you're on reads as focus
+                          // by SCALE (big numbers) and breathing room, not by a
+                          // second border/tint. De-greened: the only lime left in
+                          // the loop is the Log CTA itself.
+                          <View style={{ paddingVertical: 12 }}>
                             {/* Label row — grip on the left (matching the recede
                                 rows), kicker, planned-rest hint, then the type badge
                                 on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                               {grip}
-                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: txt(C, C.lime) }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: C.ash }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -1166,8 +1171,8 @@ export default function Workout() {
                                   </Text>
                                 )}
                                 {/* RPE — a quiet chip, not a permanent field. Tap to
-                                    reveal the compact input below; the value rides on
-                                    the chip once set. Hidden entirely in Simple mode. */}
+                                    reveal the one-tap pill row below; the value rides
+                                    on the chip once set. Hidden entirely in Simple mode. */}
                                 {prefs.detailed && (() => {
                                   const rpeShown = rpeRirSwap(s.rpe, prefs.rpeAsRir);
                                   const set = !!rpeShown;
@@ -1225,25 +1230,37 @@ export default function Workout() {
                                 </>
                               )}
                             </View>
-                            {/* RPE tray — reveals under the numbers only when the chip
-                                is tapped; the RIR ⇄ swap sits in the caption. */}
+                            {/* RPE — ONE TAP, not another input row: tapping the
+                                chip reveals a single row of value pills (the core
+                                RPE scale, RIR-labelled when swapped); tapping a
+                                pill sets the number and closes. Tap the picked
+                                value again to clear it. */}
                             {prefs.detailed && rpeOpenUid === x.uid && (
-                              <View style={{ marginTop: 14 }}>
+                              <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
-                                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
+                                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
                                 </Pressable>
-                                <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} active />
-                              </View>
-                            )}
-                            {prefs.velocity && (
-                              <View style={{ marginTop: 14 }}>
-                                <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 5 }}>M/S</Text>
-                                <Cell value={s.vel ?? ""} onChange={(v) => setSetField(x.uid, i, "vel", v)} active />
+                                {[...RPE_SCALE].reverse().map((step) => {
+                                  const val = String(step.rpe);
+                                  const on = s.rpe === val;
+                                  return (
+                                    <Pressable
+                                      key={val}
+                                      onPress={() => { setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenUid(null); }}
+                                      accessibilityRole="button"
+                                      accessibilityState={{ selected: on }}
+                                      style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, 0.12) : C.ink2 }}
+                                    >
+                                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: on ? "700" : "400", color: on ? C.chalk : C.ash }}>{prefs.rpeAsRir ? step.rir : val}</Text>
+                                    </Pressable>
+                                  );
+                                })}
                               </View>
                             )}
                             {/* Primary action — a proper, sized Log button (the old
-                                floating ＋ is retired). Banks the set + starts rest. */}
-                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 14, shadowColor: C.lime, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 }}>
+                                floating ＋ is retired). Banks the set + starts rest.
+                                The screen's one lime fill in the logging loop. */}
+                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 14, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
                               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
                             </Pressable>
@@ -1255,7 +1272,9 @@ export default function Workout() {
                           const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
                           const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
                           return (
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 10, paddingHorizontal: 12, marginVertical: 4, borderRadius: 14, backgroundColor: withAlpha(C.ink2, 0.55), borderWidth: 1, borderColor: withAlpha(C.line, 0.7), opacity: focus === "done" ? 0.62 : 0.72 }}>
+                            // Quiet ledger row — a plain hairline-separated line,
+                            // not a boxed mini-card (no card-in-card).
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 11, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
                               {grip}
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
@@ -1278,14 +1297,16 @@ export default function Workout() {
                   {(() => {
                     const ghost = addSetIsNext(x.sets);
                     return (
-                      <View style={{ flexGrow: 1, flexDirection: "row", alignItems: "stretch", borderRadius: R.cta, overflow: "hidden", backgroundColor: ghost ? withAlpha(C.lime, 0.1) : C.ink2, borderWidth: 1, borderColor: ghost ? withAlpha(C.lime, 0.5) : C.line }}>
+                      // "Next move" emphasis is a brighter hairline + bold text —
+                      // not another lime fill (de-greened; the Log CTA keeps lime).
+                      <View style={{ flexGrow: 1, flexDirection: "row", alignItems: "stretch", borderRadius: R.cta, overflow: "hidden", backgroundColor: C.ink2, borderWidth: 1, borderColor: ghost ? withAlpha(C.chalk, 0.35) : C.line }}>
                         <Pressable onPress={() => addSet(x.uid)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 14 }}>
-                          <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: 1.5, borderColor: ghost ? C.lime : C.ash, alignItems: "center", justifyContent: "center" }}>
-                            <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 16, color: ghost ? txt(C, C.lime) : C.ash }}>＋</Text>
+                          <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: 1.5, borderColor: ghost ? C.chalk : C.ash, alignItems: "center", justifyContent: "center" }}>
+                            <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 16, color: ghost ? C.chalk : C.ash }}>＋</Text>
                           </View>
-                          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: ghost ? txt(C, C.lime) : C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
+                          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
                         </Pressable>
-                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.lime, 0.33) : C.line }}>
+                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.chalk, 0.25) : C.line }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 1 }}>⋯</Text>
                         </Pressable>
                       </View>
@@ -1325,11 +1346,11 @@ export default function Workout() {
                         <Pressable
                           key={p.k}
                           onPress={() => { applyPreset(x.uid, p.sets, p.reps); setPlanUid(null); }}
-                          style={{ width: 116, paddingVertical: 16, paddingHorizontal: 15, borderRadius: 20, backgroundColor: pi === 0 ? withAlpha(C.lime, 0.08) : C.card, borderWidth: 1, borderColor: pi === 0 ? withAlpha(C.lime, 0.3) : C.line }}
+                          style={{ width: 116, paddingVertical: 16, paddingHorizontal: 15, borderRadius: 20, backgroundColor: C.card, borderWidth: 1, borderColor: pi === 0 ? withAlpha(C.chalk, 0.3) : C.line }}
                         >
                           <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -1, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 19, color: C.ash }}>×</Text>{p.reps}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 8 }}>{t(p.k)}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</Text>
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -1369,7 +1390,7 @@ export default function Workout() {
                         <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                           {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
                             <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: R.field, borderWidth: 1, borderColor: C.line }}>
-                              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
+                              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{d > 0 ? `+${d}` : d}</Text>
                             </Pressable>
                           ))}
                           <Mono style={{ fontSize: fs.micro }}>{prefs.units}</Mono>
@@ -1384,6 +1405,29 @@ export default function Workout() {
                         );
                       })()}
                     </View>
+                  );
+                })()}
+                {/* Live exercise summary — sets banked, tonnage, top set (and
+                    mean bar speed once entered). Tap to open the exercise sheet
+                    with per-set m/s entry. */}
+                {(() => {
+                  const ls = exerciseLiveStats(x.name, x.sets, bodyweightKg);
+                  const parts = [
+                    `${ls.setsDone}/${ls.setsTotal} ${t("workout.setsWord")}`,
+                    ...(ls.volumeKg > 0 ? [fmtTonnage(ls.volumeKg, prefs.units)] : []),
+                    ...(ls.topKg > 0 ? [`${t("workout.topWord")} ${displayLoad(String(ls.topKg), prefs.units)} ${prefs.units}${ls.topReps ? ` × ${ls.topReps}` : ""}`] : []),
+                    ...(ls.meanVel != null ? [`${t("workout.meanWord")} ${ls.meanVel} m/s`] : []),
+                  ];
+                  return (
+                    <Pressable
+                      onPress={() => setSheetUid(x.uid)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("workout.exDetail")}
+                      style={{ marginTop: 12, paddingTop: 11, borderTopWidth: 1, borderTopColor: withAlpha(C.line, 0.7), flexDirection: "row", alignItems: "center", gap: 8 }}
+                    >
+                      <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{parts.join(" – ")}</Text>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>›</Text>
+                    </Pressable>
                   );
                 })()}
               </>
@@ -1451,6 +1495,7 @@ export default function Workout() {
               </View>
             )}
           </Card>
+          </Pressable>
           </Animated.View>
           );
         })}
@@ -1479,11 +1524,11 @@ export default function Workout() {
             </Pressable>
             {routines.length > 0 && (
               <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), marginBottom: 8 }}>{t("train.routines")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                   {routines.map((r) => (
-                    <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, borderRadius: R.chip, paddingVertical: 7, paddingHorizontal: 12 }}>
-                      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{r.name}</Text>
+                    <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, borderRadius: R.chip, paddingVertical: 7, paddingHorizontal: 12 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{r.name}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -1501,6 +1546,24 @@ export default function Workout() {
           title={t("workout.pickExercise")}
           recent={recent.map((r) => ({ name: r.name, kind: r.kind }))}
         />
+
+        {/* Exercise detail sheet — per-set pills, live totals, and per-set
+            bar-speed (m/s) entry with a set-by-set velocity strip (manual VBT;
+            live sensor capture is the blocked vbt-capture capability). */}
+        {(() => {
+          const x = exercises.find((e) => e.uid === sheetUid) ?? null;
+          return (
+            <ExerciseSheet
+              x={x}
+              last={x ? (() => { const l = lastByLift.get(x.name); return l ? blockSummary(l) : undefined; })() : undefined}
+              units={prefs.units}
+              bodyweightKg={bodyweightKg}
+              onVel={(u, i, v) => setSetField(u, i, "vel", v)}
+              onClose={() => setSheetUid(null)}
+              t={t}
+            />
+          );
+        })()}
 
         {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono></View>}
 
@@ -1542,6 +1605,133 @@ export default function Workout() {
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Exercise detail sheet — opened by tapping an exercise's live summary bar.
+ * Flat totals (no boxed cells), then ONE velocity module: a bar chart that IS
+ * the set selector — each set's m/s value rides above its bar, the selected
+ * column's value is the editable input, set numbers sit under a shared
+ * baseline. "m/s" appears exactly once (the module header, with the mean).
+ */
+function ExerciseSheet({
+  x,
+  last,
+  units,
+  bodyweightKg,
+  onVel,
+  onClose,
+  t,
+}: {
+  x: WExercise | null;
+  last?: string;
+  units: WeightUnit;
+  bodyweightKg?: number | null;
+  onVel: (u: string, i: number, v: string) => void;
+  onClose: () => void;
+  t: (k: string) => string;
+}) {
+  const C = useTheme().palette;
+  const [sel, setSel] = useState(0);
+  // Re-anchor the selection to the active (first un-banked) set whenever the
+  // sheet opens for a different exercise.
+  const anchored = useRef<string | null>(null);
+  useEffect(() => {
+    if (!x) {
+      anchored.current = null;
+      return;
+    }
+    if (anchored.current === x.uid) return;
+    anchored.current = x.uid;
+    const active = x.sets.findIndex((s) => !s.done);
+    setSel(active >= 0 ? active : Math.max(0, x.sets.length - 1));
+  }, [x]);
+
+  const body = x
+    ? (() => {
+        const ls = exerciseLiveStats(x.name, x.sets, bodyweightKg);
+        const i = Math.min(sel, x.sets.length - 1);
+        const s = x.sets[i]!;
+        const known = ls.vels.filter((v): v is number => v != null);
+        const maxVel = known.length ? Math.max(...known) : 0;
+        const loadPart = s.load.trim() ? `${displayLoad(s.load, units)} ${units}` : "";
+        const setLine = [loadPart, s.reps.trim()].filter(Boolean).join(" × ") || "–";
+        return (
+          <View style={{ marginTop: 18 }}>
+            {/* Flat totals — big number over a small mono label, no boxes. */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
+              <View>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
+              </View>
+              <View>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk }}>{setLine}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+              </View>
+            </View>
+
+            {/* ONE velocity module — the unit is named once, with the mean. */}
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
+              {ls.meanVel != null && (
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
+              )}
+            </View>
+            {/* The chart IS the selector: each set is a column — value above its
+                bar (the selected one is the editable input), bars share a
+                baseline, set numbers underneath. */}
+            <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.9) }}>
+              {x.sets.map((st, j) => {
+                const v = ls.vels[j];
+                const on = j === i;
+                const h = v != null && maxVel > 0 ? Math.max(12, Math.round((v / maxVel) * 56)) : 3;
+                return (
+                  <Pressable
+                    key={st.uid ?? j}
+                    onPress={() => setSel(j)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={`${t("workout.setWord")} ${j + 1}`}
+                    style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}
+                  >
+                    {on ? (
+                      <TextInput
+                        value={s.vel ?? ""}
+                        onChangeText={(val) => onVel(x.uid, i, val)}
+                        keyboardType="numeric"
+                        placeholder="0.00"
+                        placeholderTextColor={C.ash}
+                        style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "700", color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
+                      />
+                    ) : (
+                      <Text style={{ fontFamily: F.mono, fontSize: 11, color: v != null ? C.chalk : C.ash, marginBottom: 7 }}>{v != null ? String(v) : "–"}</Text>
+                    )}
+                    <View style={{ alignSelf: "stretch", marginHorizontal: 10, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: on ? txt(C, C.lime) : v != null ? withAlpha(C.chalk, 0.4) : withAlpha(C.line, 1) }} />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 7 }}>
+              {x.sets.map((st, j) => (
+                <Pressable key={st.uid ?? j} onPress={() => setSel(j)} style={{ flex: 1, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: j === i ? C.chalk : C.ash }}>
+                    {`${j + 1}${st.done ? " ✓" : ""}`}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: 15, marginTop: 16 }}>{t("workout.velHint")}</Text>
+          </View>
+        );
+      })()
+    : null;
+
+  return (
+    <Sheet visible={!!x} onClose={onClose} title={x?.name} sub={last ? `${t("workout.lastTime")} – ${last}` : undefined}>
+      {body}
+    </Sheet>
   );
 }
 

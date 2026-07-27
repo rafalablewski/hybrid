@@ -8,8 +8,8 @@
  * canonical session/record engines (sessionVolume, newPrsInSession,
  * newCardioPrsInSession) so volume + PR detection stay single-source.
  */
-import type { SessionBlock, LoggedSession } from "./engines";
-import { sessionVolume, newPrsInSession, newCardioPrsInSession } from "./engines";
+import type { SessionBlock, LoggedSession, SetRole, StrengthBlock } from "./engines";
+import { sessionVolume, newPrsInSession, newCardioPrsInSession, strengthBlockStats } from "./engines";
 
 export interface LiveStats {
   /** Exercises with at least one logged set / a logged effort. */
@@ -73,4 +73,76 @@ export function liveSessionStats(
   const cardioPrs = prior.length ? newCardioPrsInSession(live, prior).length : 0;
 
   return { exercises, sets, volume, prs, cardioPrs };
+}
+
+/** The editor-side set shape both live loggers hold (a StrengthSet plus the
+ *  in-progress `done` flag). Kept structural so either client's state fits. */
+export interface LiveSetInput {
+  load?: string;
+  reps?: string;
+  vel?: string;
+  done?: boolean;
+  drop?: boolean;
+  role?: SetRole;
+}
+
+export interface ExerciseLiveStats {
+  /** Sets banked (✓) so far. */
+  setsDone: number;
+  setsTotal: number;
+  /** Working tonnage entered so far, kg (bodyweight-aware). */
+  volumeKg: number;
+  /** Heaviest entered working load, kg (0 when nothing entered). */
+  topKg: number;
+  /** The reps entered on that heaviest set ("" when none). */
+  topReps: string;
+  /** Mean of the entered per-set bar speeds, m/s (null until one is entered). */
+  meanVel: number | null;
+  /** Per-set bar speed, m/s, aligned with `sets` (null where not entered). */
+  vels: (number | null)[];
+}
+
+/**
+ * The one-exercise mid-workout summary (the card footer + exercise sheet on
+ * both live loggers): sets banked, tonnage, top set, and the manual VBT bar
+ * speeds. Derived only — same tonnage/top math as the Builder's signal card
+ * (strengthBlockStats), so the two can't disagree.
+ */
+export function exerciseLiveStats(
+  name: string,
+  sets: LiveSetInput[],
+  bodyweightKg?: number | null,
+): ExerciseLiveStats {
+  const block: StrengthBlock = {
+    kind: "strength",
+    name,
+    sets: sets.map((s) => ({
+      load: s.load ?? "",
+      reps: s.reps ?? "",
+      ...(s.drop ? { drop: true } : {}),
+      ...(s.role ? { role: s.role } : {}),
+    })),
+  };
+  const stats = strengthBlockStats(block, bodyweightKg);
+  // The reps that went with the heaviest entered working load.
+  const topSet = block.sets.find(
+    (s) => s.role !== "warmup" && s.role !== "cooldown" && parseFloat(s.load) === stats.topKg,
+  );
+  const vels = sets.map((s) => {
+    const v = parseFloat(s.vel ?? "");
+    return Number.isFinite(v) && v > 0 ? v : null;
+  });
+  const known = vels.filter((v): v is number => v != null);
+  const meanVel = known.length
+    ? Math.round((known.reduce((a, b) => a + b, 0) / known.length) * 100) / 100
+    : null;
+  return {
+    setsDone: sets.filter((s) => s.done).length,
+    setsTotal: sets.length,
+    volumeKg: stats.volumeKg,
+    topKg: stats.topKg,
+    topReps: stats.topKg > 0 ? (topSet?.reps ?? "") : "",
+    meanVel,
+    vels,
+  };
 }
