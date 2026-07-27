@@ -7,7 +7,7 @@ import { fs, space,
   feelSamples,
   loadBaseline,
   checkinFeeling,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   newPrsInSession,
   newCardioPrsInSession,
@@ -319,7 +319,7 @@ export default function AuroraLogger({
     return () => { alive = false; };
   }, []);
   const rx = useMemo(() => {
-    const log = toTrainingLog(sessions);
+    const log = personalTrainingLog(sessions);
     return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined });
   }, [sessions, todayFeeling]);
 

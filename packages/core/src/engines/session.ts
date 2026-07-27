@@ -974,10 +974,30 @@ export function bestE1rmByLift(sessions: LoggedSession[], bw?: BodyweightInput):
 /**
  * Convert logged sessions into the engine's TrainingLog so fatigue/readiness/
  * prescription run on the athlete's REAL data — the Sprint 4 spine.
+ *
+ * WHERE A REPORTED FEELING BECOMES TRAINING LOAD. Every intensity below used to
+ * fall back to a CONSTANT when the athlete hadn't typed a per-set or per-block
+ * RPE — 7 for a lift, 6 for cardio, 8 for conditioning — so two athletes who
+ * logged the identical session were, to every engine downstream, identical. If
+ * the athlete answered "how did that feel?" for a session (session-feel.ts),
+ * that answer is a real measurement of what the work cost THEM and replaces the
+ * constant. An RPE they entered per block still wins over both: it is more
+ * specific than a whole-session rating.
+ *
+ * `feelRpe` is passed in rather than derived here so the caller can supply the
+ * effort model's prediction for unrated sessions too (see engines/effort.ts
+ * `effectiveSessionRpe`); with no override the behaviour is bit-for-bit what it
+ * was before.
  */
-export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): TrainingLog {
+export function toTrainingLog(
+  sessions: LoggedSession[],
+  now = Date.now(),
+  feelRpe?: (s: LoggedSession) => number | null,
+): TrainingLog {
   return sessions.map((s) => {
     const daysAgo = Math.max(0, Math.round((now - new Date(s.startedAt).getTime()) / 86_400_000));
+    // The athlete's own answer for this session, when there is one.
+    const felt = feelRpe?.(s) ?? null;
     const items = s.blocks.map((b) => {
       if (b.kind === "strength") {
         const est = Math.round(blockBestE1rm(b));
@@ -990,19 +1010,19 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
         return {
           move: b.name,
           e1rm: est || undefined,
-          topRpe: topRpe || undefined,
+          topRpe: topRpe || felt || undefined,
           hardSets: working.length,
         };
       }
       if (b.kind === "cardio") {
         const system = (movementFor(b.name)?.system ?? "aerobic") as EnergySystem;
-        return { move: b.name, system, minutes: b.minutes ?? 30, rpe: b.rpe ?? 6, ...(b.distance ? { distance: b.distance } : {}) };
+        return { move: b.name, system, minutes: b.minutes ?? 30, rpe: b.rpe ?? felt ?? 6, ...(b.distance ? { distance: b.distance } : {}) };
       }
       const system = (movementFor(b.name)?.system ?? "anaerobic") as EnergySystem;
       const minutes =
         b.minutes ??
         (b.work && b.rest && b.rounds ? Math.round(((b.work + b.rest) * b.rounds) / 60) : 12);
-      return { move: b.name, system, minutes, rpe: b.rpe ?? 8 };
+      return { move: b.name, system, minutes, rpe: b.rpe ?? felt ?? 8 };
     });
     return { daysAgo, items };
   });

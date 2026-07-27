@@ -5,7 +5,7 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   toBiometrics,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   sessionVolume,
   runTotals,
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   // Engines resolve exercise names against the movement catalog — publish the
   // admin library first, or library-named lifts contribute zero tissue load.
   await publishExerciseCatalog();
-  const log = toTrainingLog(sessions);
+  const log = personalTrainingLog(sessions);
   const rx = prescribeSession(log, bio, { profiles: velocityProfiles(sessions) });
   const state = computePerformanceState(log, bio);
   const risk = computeInjuryRisk(log, bio);

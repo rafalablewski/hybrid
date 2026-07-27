@@ -5,7 +5,7 @@ import {
   sessionBuckets,
   weeklyRecap,
   computePerformanceState,
-  toTrainingLog,
+  personalTrainingLog,
   toBiometrics,
   type StatRange,
   type LoggedSession,
@@ -46,7 +46,7 @@ export default function Statistics() {
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const state = useMemo(() => {
     const bio = toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]);
-    return computePerformanceState(toTrainingLog(sessions), bio);
+    return computePerformanceState(personalTrainingLog(sessions), bio);
   }, [sessions, signals]);
   const hasData = sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));

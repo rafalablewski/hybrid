@@ -3,7 +3,7 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   computeLoad,
-  toTrainingLog,
+  personalTrainingLog,
   toBiometrics,
   migrateBlocks,
   type LoggedSession,
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
         athleteId: r.userId, kind: r.kind as Signal["kind"], value: r.value, unit: r.unit, source: r.source, ts: r.ts.toISOString(),
       }));
 
-      const log = toTrainingLog(sessions);
+      const log = personalTrainingLog(sessions);
       const bio = toBiometrics(signals);
       const state = computePerformanceState(log, bio);
       const risk = computeInjuryRisk(log, bio);

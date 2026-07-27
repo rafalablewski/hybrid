@@ -3,7 +3,7 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   toBiometrics,
-  toTrainingLog,
+  personalTrainingLog,
   migrateBlocks,
   type LoggedSession,
   type Signal,
@@ -46,7 +46,7 @@ export async function athleteInputs(userId: string) {
     ts: r.ts.toISOString(),
   }));
 
-  const log = toTrainingLog(sessions);
+  const log = personalTrainingLog(sessions);
   // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
   return { log, bio, sessionCount: sessions.length };

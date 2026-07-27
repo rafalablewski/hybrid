@@ -11,7 +11,7 @@ import { FeelPrompt } from "../components/feel-prompt";
 import {
   needsBodyweight,
   prescribeSession,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   planProgramToday,
   sessionVolume,
@@ -455,7 +455,7 @@ export default function Workout() {
         // AI prescription is premium — bounce a guest/free user to the funnel
         // instead of fabricating a session for them.
         if (!gateAI("workout-ai")) return;
-        const log = toTrainingLog(sessions);
+        const log = personalTrainingLog(sessions);
         const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
         const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: feeling ?? undefined });
         setReadiness(rx.readiness);
@@ -545,7 +545,7 @@ export default function Workout() {
   // the live screen.
   const loadPrescribed = async () => {
     if (!gateAI("workout-ai")) return;
-    const log = toTrainingLog(prior.current);
+    const log = personalTrainingLog(prior.current);
     const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
     const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current), subjectiveReadiness: feeling ?? undefined });
     setReadiness(rx.readiness);

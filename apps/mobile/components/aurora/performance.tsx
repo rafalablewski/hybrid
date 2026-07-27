@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, enduranceSessions, toTrainingLog, toBiometrics,
+  runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   fmtWeight, strengthPrDelta, evaluateRtp, STAGE_LABEL,
   velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
@@ -81,7 +81,7 @@ function Full() {
   }, []);
 
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness FEELING (the one-tap check-in) → prescribeSession, so the
   // readiness block reflects + explains the load nudge the pick applies
   // (the Today screen no longer previews it). Mirrors web.
