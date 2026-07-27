@@ -1,41 +1,65 @@
 import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
-import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import {
-  volumeStatus, volumeAdvice, resolveLandmarks, ALL_MUSCLES,
-  type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
+  volumeStatus, resolveLandmarks,
+  railGeometry, railScale, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { fs, space, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
+import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
+const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
+const BAND_LABEL: Record<VolumeBandKey, string> = { mev: "MEV", mav: "MAV", mrv: "MRV" };
+const GLOSS_KEY: Record<VolumeBandKey, string> = { mev: "w.analyze.vol.glossMev", mav: "w.analyze.vol.glossMav", mrv: "w.analyze.vol.glossMrv" };
+const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
 
-/** AURORA Volume landmarks — weekly working sets vs MEV/MAV/MRV with the
- *  per-muscle nudge + landmark editor, reusing the exact @hybrid/core engine. */
+/**
+ * AURORA Volume — weekly working sets against the athlete's own MEV/MAV/MRV.
+ *
+ * The redesign leads with ONE hero: how many muscles are in range, drawn as a
+ * seven-column week-shape you read before you read a word. Everything below it
+ * is the same fact at increasing resolution — the week's prescription, then the
+ * per-muscle rails, then (only if you ask) the landmark numbers and the
+ * glossary. The rail geometry is normalised in @hybrid/core (`railX`) so every
+ * muscle's band lands at the same x and the rows stack into one picture.
+ * Mirrored by apps/web/components/aurora/volume.tsx.
+ */
 export default function AuroraVolume() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
-  const router = useRouter();
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
-
-  const load = () => refetch();
   useRefreshOnFocus(refetch);
 
   const prefs = useLoggerPrefs();
-  const iw = prefs.countWarmupsInVolume;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
-  const fr = prefs.fractionalVolume;
-  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const trained = rows.some((r) => r.sets > 0);
+  const rows = useMemo(
+    () => volumeStatus(sessions, { includeWarmups: prefs.countWarmupsInVolume, fractional: prefs.fractionalVolume, landmarks: lm }),
+    [sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume, lm],
+  );
+  const summary = useMemo(() => volumeSummary(rows), [rows]);
+  const ranked = useMemo(() => sortByUrgency(rows), [rows]);
+
   const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState<MuscleGroup | null>(null);
+  const [picked, setPicked] = useState<MuscleGroup | null>(null);
+  const [gloss, setGloss] = useState(false);
+  // Which landmark band is spotlighted across the list, and the row whose scale
+  // was tapped (that row carries the definition, next to the finger).
+  const [zone, setZone] = useState<{ key: VolumeBandKey; muscle: MuscleGroup } | null>(null);
+  const pickZone = (key: VolumeBandKey, muscle: MuscleGroup) => {
+    Haptics.selectionAsync().catch(() => {});
+    setZone((z) => (z && z.key === key && z.muscle === muscle ? null : { key, muscle }));
+  };
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;
+
   const editField = (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => {
     const next = { ...prefs.landmarkOverrides, [m]: { ...prefs.landmarkOverrides[m] } };
     if (raw.trim() === "") delete next[m]![k];
@@ -43,124 +67,326 @@ export default function AuroraVolume() {
     if (!Object.keys(next[m]!).length) delete next[m];
     setLoggerPref("landmarkOverrides", next);
   };
+  const toggleEditing = () => {
+    // Turning editing ON opens every row, so the fields are where the athlete
+    // is already looking rather than in a separate table of unlabelled numbers.
+    setEditing((v) => !v);
+    setOpen(null);
+  };
 
-  const ZONE: Record<VolumeZone, { label: string; c: string }> = {
-    under: { label: t("w.analyze.vol.zoneUnder"), c: C.amber }, productive: { label: t("w.analyze.vol.zoneProductive"), c: C.lime },
-    peak: { label: t("w.analyze.vol.zonePeak"), c: C.blue }, overreaching: { label: t("w.analyze.vol.zoneOver"), c: C.red },
-  };
-  const adviceLine = (s: MuscleVolumeStatus): string => {
-    if (s.action === "add") { const n = Math.round(s.deltaSets); return `${t("w.analyze.vol.adviceAddPre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceAddTail")}${s.maintaining ? t("w.analyze.vol.adviceMaintaining") : ""}.`; }
-    if (s.action === "reduce") { const n = Math.round(Math.abs(s.deltaSets)); return `${t("w.analyze.vol.adviceReducePre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceReduceTail")}`; }
-    if (s.action === "progress") return `${t("w.analyze.vol.adviceProgressPre")}${s.deltaSets}${t("w.analyze.vol.adviceProgressTail")}`;
-    return t("w.analyze.vol.adviceHold");
-  };
+  const zoneColor = (z: VolumeZone) => (z === "overreaching" ? C.red : z === "under" ? C.amber : z === "peak" ? C.blue : C.lime);
+
+  // The hero's one line: either the tapped muscle, or the week's verdict.
+  const pickedRow = picked ? rows.find((r) => r.muscle === picked) : undefined;
+  const verdict = (() => {
+    if (summary.verdict === "none") return t("w.analyze.vol.verdictNone");
+    if (summary.verdict === "balanced") return t("w.analyze.vol.verdictBalanced");
+    const parts: string[] = [];
+    if (summary.over.length) parts.push(`${summary.over.length}${t("w.analyze.vol.verdictOverTail")}`);
+    if (summary.under.length) parts.push(`${summary.under.length}${t("w.analyze.vol.verdictUnderTail")}`);
+    return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
+  })();
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen refreshing={refreshing} onRefresh={refetch}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
-        <Pressable onPress={() => setEditing((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? t("w.analyze.vol.done") : customized ? t("w.analyze.vol.landmarksEdit") : t("w.analyze.vol.editLandmarks")}</Text>
+        <Pressable
+          onPress={toggleEditing}
+          accessibilityRole="button"
+          style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing ? txt(C, C.lime) : C.ash }}>
+            {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
+          </Text>
         </Pressable>
       </View>
-      <ASub style={{ marginTop: 10 }}>{t("w.analyze.vol.subtitle")}</ASub>
 
-      {editing && (
+      {/* ── HERO — the whole week as one number and one shape ─────────────── */}
+      <ACard style={{ marginTop: 16, paddingBottom: 18 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+          {customized && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.vol.customised")}</Text>
+          )}
+        </View>
+
+        {summary.empty ? (
+          <Text style={{ marginTop: 14, fontFamily: F.reg, fontSize: fs.note, lineHeight: 23, color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 68, lineHeight: 74, letterSpacing: -2.5, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, marginLeft: 4 }}>/{summary.total}</Text>
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 21, color: C.ash, marginTop: -2, maxWidth: 240 }}>{t("w.analyze.vol.heroCaption")}</Text>
+
+            {/* The week-shape: one column per muscle, same normalised geometry
+                as the rails below, so shape and list agree row for row. */}
+            <View style={{ flexDirection: "row", gap: 6, marginTop: 22 }}>
+              {rows.map((r) => {
+                const on = picked === r.muscle;
+                const label = ml(r.muscle);
+                return (
+                  <Pressable
+                    key={r.muscle}
+                    onPress={() => setPicked(on ? null : r.muscle)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} – ${setsLabel(r.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[r.zone])}`}
+                    style={{ flex: 1, alignItems: "center" }}
+                  >
+                    <ShapeColumn s={r} color={zoneColor(r.zone)} dim={picked !== null && !on} />
+                    <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: on ? C.chalk : C.ash }}>
+                      {label.slice(0, 3).toUpperCase()}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={{ marginTop: 16, fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 20, color: C.chalk }}>
+              {pickedRow ? (
+                <>
+                  {ml(pickedRow.muscle)}
+                  <Text style={{ color: C.ash }}>{" — "}</Text>
+                  <Text style={{ fontFamily: F.mono, color: txt(C, zoneColor(pickedRow.zone)) }}>{setsLabel(pickedRow.sets)} {t("w.analyze.vol.sets")}</Text>
+                  <Text style={{ color: C.ash }}>, {t(ZONE_KEY[pickedRow.zone])}</Text>
+                </>
+              ) : (
+                verdict
+              )}
+            </Text>
+          </>
+        )}
+      </ACard>
+
+      {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ─────────── */}
+      <Prescription
+        title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")}
+        items={summary.over} color={C.red} ml={ml} unit={t("w.analyze.vol.perWeek")}
+      />
+      <Prescription
+        title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")}
+        items={summary.under} color={C.amber} ml={ml} unit={t("w.analyze.vol.perWeek")}
+      />
+
+      {/* ── BY MUSCLE — one legend, then the stack of comparable rails ────── */}
+      {!summary.empty && (
         <ACard style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vol.yourLandmarks")}</Text>
-            {customized && <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text></Pressable>}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+            <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           </View>
-          <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 2 }}>
-            <View style={{ width: 90 }} />
-            {(["MV", "MEV", "MAVlo", "MAVhi", "MRV"] as const).map((h) => (
-              <Text key={h} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.5 }}>{h}</Text>
+
+          <View style={{ marginTop: 4 }}>
+            {ranked.map((r) => (
+              <MuscleRow
+                key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
+                expanded={editing || open === r.muscle} editing={editing}
+                zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
+                onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
+                onZone={(k) => pickZone(k, r.muscle)}
+                onEdit={editField}
+              />
             ))}
           </View>
-          {ALL_MUSCLES.map((m) => (
-            <View key={m} style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
-              <Text style={{ width: 90, fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{ml(m)}</Text>
-              {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k) => (
-                <TextInput key={k} defaultValue={String(lm[m][k])} onEndEditing={(e) => editField(m, k, e.nativeEvent.text)} keyboardType="number-pad"
-                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }} />
-              ))}
-            </View>
-          ))}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 15 }}>
-            {t("w.analyze.vol.landmarksHelp")}
-          </Text>
         </ACard>
       )}
 
-      {!trained && (
-        <ACard style={{ marginTop: 14, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.vol.empty")}</Text>
-        </ACard>
-      )}
-
-      {trained && advice.length > 0 && (
-        <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vol.adjust")}</Text>
-          <View style={{ marginTop: 10, gap: 9 }}>
-            {advice.map((s) => (
-              <View key={s.muscle} style={{ flexDirection: "row", gap: space.sm }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: txt(C, s.action === "reduce" ? C.red : C.amber), width: 110 }}>{s.action === "reduce" ? "↓" : "↑"} {ml(s.muscle)}</Text>
-                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{adviceLine(s)}</Text>
+      {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
+      <ACard style={{ marginTop: 14 }}>
+        <Pressable onPress={() => setGloss((v) => !v)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whatBands")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{gloss ? "–" : "+"}</Text>
+        </Pressable>
+        {gloss && (
+          <View style={{ marginTop: 14, gap: 12 }}>
+            {([["MV", "w.analyze.vol.glossMv"], ["MEV", "w.analyze.vol.glossMev"], ["MAV", "w.analyze.vol.glossMav"], ["MRV", "w.analyze.vol.glossMrv"]] as const).map(([k, key]) => (
+              <View key={k} style={{ flexDirection: "row", gap: space.md }}>
+                <Text style={{ width: 42, fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{k}</Text>
+                <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t(key)}</Text>
               </View>
             ))}
           </View>
-        </ACard>
-      )}
+        )}
+      </ACard>
 
-      {trained && (
-        <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vol.byMuscle")}</Text>
-          <View style={{ marginTop: 14, gap: space.lg }}>
-            {rows.map((r) => <LandmarkBar key={r.muscle} s={r} zone={ZONE[r.zone]} />)}
-          </View>
-        </ACard>
+      {editing && customized && (
+        <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 16, paddingVertical: 10, paddingHorizontal: 18 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text>
+        </Pressable>
       )}
     </AuroraScreen>
   );
 }
 
-function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string; c: string } }) {
+/** One column of the hero's week-shape — the same normalised rail, stood up. */
+function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; dim: boolean }) {
   const { palette: C } = useTheme();
-  const { t } = useLang();
-  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
-  const max = Math.max(s.landmark.mrv * 1.15, s.sets * 1.05, 1);
-  const pct = (v: number): DimensionValue => `${Math.min(100, (v / max) * 100)}%` as DimensionValue;
+  const g = railGeometry(s);
+  const H = 66;
   return (
-    <View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{ml(s.muscle)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption }}>
-          <Text style={{ color: txt(C, zone.c), fontWeight: "700" }}>{s.sets} {t("w.analyze.vol.sets")}</Text>
-          <Text style={{ color: C.ash }}> – {zone.label}</Text>
-        </Text>
-      </View>
-      <View style={{ height: 12, backgroundColor: C.ink, borderRadius: 6, borderWidth: 1, borderColor: C.line }}>
-        <View style={{ position: "absolute", left: pct(s.landmark.mev), width: `${Math.max(0, ((s.landmark.mavHigh - s.landmark.mev) / max) * 100)}%` as DimensionValue, top: 0, bottom: 0, backgroundColor: `${C.lime}22` }} />
-        <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(s.sets), backgroundColor: zone.c, borderRadius: 6, opacity: 0.85 }} />
-        <View style={{ position: "absolute", left: pct(s.landmark.mev), top: -2, bottom: -2, width: 2, backgroundColor: C.amber }} />
-        <View style={{ position: "absolute", left: pct(s.landmark.mrv), top: -2, bottom: -2, width: 2, backgroundColor: C.red }} />
-      </View>
-      <View style={{ flexDirection: "row", gap: space.md, marginTop: 5 }}>
-        <Tick c={C.amber} label={`MEV ${s.landmark.mev}`} />
-        <Tick c={C.lime} label={`MAV ${s.landmark.mavLow}–${s.landmark.mavHigh}`} />
-        <Tick c={C.red} label={`MRV ${s.landmark.mrv}`} />
-      </View>
+    <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? 0.35 : 1 }}>
+      {/* the productive band, lit through the whole column width */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, 0.13) }} />
+      {/* the territory past the ceiling */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+      {/* this week */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(g.x), backgroundColor: color, opacity: 0.9, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
+      {/* the ceiling reads as a NOTCH in the column, so it survives the fill */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), height: 2, backgroundColor: C.ink2 }} />
     </View>
   );
 }
 
-function Tick({ c, label }: { c: string; label: string }) {
-  const { palette: C } = useTheme();
+/** "Ease off" / "Add volume" — the prescription as chips, with the reason said
+ *  ONCE underneath instead of repeated verbatim on every muscle. */
+function Prescription({ title, why, items, color, ml, unit }: {
+  title: string; why: string; items: MuscleVolumeStatus[]; color: string; ml: (m: string) => string; unit: string;
+}) {
+  const { palette: C, scheme } = useTheme();
+  if (!items.length) return null;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
-      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.5 }}>{label}</Text>
+    <ACard style={{ marginTop: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+        {items.map((s) => (
+          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 9, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{ml(s.muscle)}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, color) }}>{deltaLabel(s)}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={{ marginTop: 14, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{why}</Text>
+    </ACard>
+  );
+}
+
+/** One muscle: name, count, the normalised rail — and, on tap, the landmarks
+ *  behind it (read-only, or as fields while editing). */
+function MuscleRow({ s, label, color, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
+  s: MuscleVolumeStatus; label: string; color: string; expanded: boolean; editing: boolean;
+  /** The band spotlighted across the whole list, if any. */
+  zone: VolumeBandKey | null;
+  /** True on the row whose scale was tapped — it carries the definition. */
+  showGloss: boolean;
+  onToggle: () => void; onZone: (k: VolumeBandKey) => void;
+  onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
+}) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const g = railGeometry(s);
+  const sc = railScale(s.landmark);
+  const region = zone ? bandRegion(zone, s.landmark) : null;
+  return (
+    <View style={{ paddingVertical: 12 }}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
+      >
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
+          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(ZONE_KEY[s.zone])}</Text>
+        </View>
+
+        <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
+          {/* The track is itself the key: the productive band lit, the territory
+              past the ceiling tinted, so the zones read even on an empty rail. */}
+          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+          <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
+          {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
+          <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
+          {/* SPOTLIGHT — tapping a landmark below scrims everything outside that
+              band, on EVERY row at once, so the question "which part of the bar
+              is my productive range" is answered by the chart itself. */}
+          {region && (
+            <>
+              <View style={{ position: "absolute", left: 0, width: pct(region.from), top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
+              <View style={{ position: "absolute", left: pct(region.to), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
+              {/* Caliper edges, so the lit slice reads even when it is empty. */}
+              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, 0.45) }} />
+            </>
+          )}
+        </View>
+      </Pressable>
+
+      {/* This muscle's OWN scale — a plain three-column table pinned to the left
+          edge, so the values line up down the whole list instead of floating at
+          three different indents. Each cell is a control: tap it to spotlight
+          that band and read what it means. */}
+      <View style={{ flexDirection: "row", marginTop: 7 }}>
+        {BAND_KEYS.map((k) => {
+          const on = zone === k;
+          return (
+            <Pressable
+              key={k}
+              onPress={() => onZone(k)}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
+              style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
+            >
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, color: on ? txt(C, C.lime) : C.ash }}>
+                {BAND_LABEL[k]} <Text style={{ fontSize: 11, color: C.chalk }}>{sc[k]}</Text>
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {zone && showGloss && (
+        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t(GLOSS_KEY[zone])}</Text>
+      )}
+
+      {/* Expanding adds only what the scale above does NOT already say: the
+          maintenance floor and the prescription. Editing swaps in all five
+          fields, since all five are editable. */}
+      {expanded && !editing && (
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
+          <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
+        </View>
+      )}
+      {expanded && editing && (
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 12 }}>
+          {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
+            <View key={k} style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>
+                {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
+              </Text>
+              <TextInput
+                defaultValue={String(s.landmark[k])}
+                onEndEditing={(e) => onEdit(s.muscle, k, e.nativeEvent.text)}
+                keyboardType="number-pad"
+                accessibilityLabel={`${label} ${k}`}
+                style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 }}
+              />
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
+}
+
+function rowAdvice(s: MuscleVolumeStatus, t: (k: string) => string): string {
+  if (s.action === "add") {
+    const n = Math.round(s.deltaSets);
+    return `${t("w.analyze.vol.adviceAddPre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceAddTail")}${s.maintaining ? t("w.analyze.vol.adviceMaintaining") : ""}.`;
+  }
+  if (s.action === "reduce") {
+    const n = Math.round(Math.abs(s.deltaSets));
+    return `${t("w.analyze.vol.adviceReducePre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceReduceTail")}`;
+  }
+  if (s.action === "progress") return `${t("w.analyze.vol.adviceProgressPre")}${s.deltaSets}${t("w.analyze.vol.adviceProgressTail")}`;
+  return t("w.analyze.vol.adviceHold");
 }
