@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, sanitizeTags } from "@hybrid/core";
+import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { getCachedPublishedExercises } from "@/lib/cache";
@@ -53,6 +53,8 @@ export async function POST(request: Request) {
     note?: unknown;
     mood?: unknown;
     tags?: unknown;
+    feel?: unknown;
+    fatigue?: unknown;
   };
 
   if (typeof b.title !== "string" || !b.title.trim()) {
@@ -72,6 +74,11 @@ export async function POST(request: Request) {
       note: sanitizeNote(b.note),
       mood: sanitizeMood(b.mood),
       tags: sanitizeTags(b.tags),
+      // Post-workout self-report — normally PATCHed from the Wrapped after the
+      // save, but accepted here too so a client that already has the answer
+      // (an import, or a finish flow that asked first) doesn't need two calls.
+      feel: sanitizeFeelLevel(b.feel),
+      fatigue: sanitizeFeelLevel(b.fatigue),
     },
   });
 

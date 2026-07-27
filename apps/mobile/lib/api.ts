@@ -248,6 +248,26 @@ export async function patchSessionNote(
   }
 }
 
+// Record the post-workout self-report ("How did that feel?") on a saved
+// session: `feel` is perceived effort 1..5, `fatigue` is how spent the athlete
+// is 1..5. Sent one field at a time as the athlete taps, so the first answer is
+// safe even if they never give the second. Owner-only; best effort.
+export async function patchSessionFeel(
+  id: string,
+  patch: { feel?: number; fatigue?: number },
+): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Reusable workout routines (WorkoutTemplate) the user owns — save a workout,
 // then load it to start a live session.
 export type Routine = {

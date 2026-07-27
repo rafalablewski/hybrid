@@ -62,7 +62,7 @@ type SwipeAction = { key: string; label: string; color: string; onPress: () => v
  *  view switcher. Live sessions are managed (archive/delete) from the full
  *  breakdown (SessionDetail); the archived screen keeps the classic swipe list
  *  — drag a card left (pointer or touch) to reveal restore/delete. */
-export default function AuroraHistory({ sessions, planId, planStartedAt, initialOpenId, onOpenExercise, onChanged, fetchError = false, onRetry }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; initialOpenId?: string | null; onOpenExercise?: (name: string) => void; onChanged?: () => void; fetchError?: boolean; onRetry?: () => void }) {
+export default function AuroraHistory({ sessions, planId, planStartedAt, initialOpenId, onOpenExercise, onNavigate, onChanged, fetchError = false, onRetry }: { sessions: LoggedSession[]; planId?: string | null; planStartedAt?: string | null; initialOpenId?: string | null; onOpenExercise?: (name: string) => void; onNavigate?: (screen: string) => void; onChanged?: () => void; fetchError?: boolean; onRetry?: () => void }) {
   const { t } = useLang();
   // Seeded when Today deep-links one session's breakdown (the "Also today"
   // card — parity with mobile's /session/{id}); the screen remounts per shell
@@ -130,6 +130,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
         all={sessions}
         onBack={() => setOpenId(null)}
         onOpenExercise={onOpenExercise}
+        onNavigate={onNavigate}
         onArchive={() => void setArchivedFlag(open.id, true)}
         onDelete={() => void remove(open.id, open.title)}
         manageBusy={busy === open.id}

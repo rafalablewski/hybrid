@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sessionWrapped, liftStanding } from "./session-wrapped";
+import { sessionWrapped, liftStanding, wrappedDiscipline } from "./session-wrapped";
 import type { LoggedSession } from "./engines/session";
 
 const strengthSession = (id: string, startedAt: string, load: number): LoggedSession => ({
@@ -57,6 +57,90 @@ describe("sessionWrapped", () => {
     const s = { ...strengthSession("s1", "2026-01-10T10:00:00.000Z", 60), readiness: 82 };
     const w = sessionWrapped(s, [s], { units: "kg" });
     expect(w.facts.find((f) => f.labelKey === "home.readiness")?.value).toBe("82");
+  });
+
+  it("adds an estimated calorie tile once a bodyweight is known", () => {
+    const s = strengthSession("s1", "2026-01-10T10:00:00.000Z", 60);
+    const plain = sessionWrapped(s, [s], { units: "kg" });
+    expect(plain.energy).toBeNull();
+    const withBw = sessionWrapped(s, [s], { units: "kg", bw: 80 });
+    expect(withBw.energy!.kcal).toBeGreaterThan(0);
+    // Strength shows four gym tiles, so kcal only reaches the panel elsewhere —
+    // but the estimate itself is always available to the client.
+    expect(withBw.basics.every((b) => b.value !== "")).toBe(true);
+  });
+});
+
+// The bug this shape exists to kill: a 1 500 m swim rendering as "1 SET".
+describe("sessionWrapped — discipline shapes", () => {
+  const cardio = (
+    name: string,
+    extra: Partial<{ distance: number; minutes: number; rpe: number; discipline: "running" | "swimming" | "sport" }>,
+  ): LoggedSession => ({
+    id: "c1",
+    title: name,
+    startedAt: "2026-01-10T10:00:00.000Z",
+    completedAt: "2026-01-10T10:40:00.000Z",
+    blocks: [{ kind: "cardio", name, ...extra }],
+  });
+
+  it("classifies each kind of session", () => {
+    expect(wrappedDiscipline(cardio("Swimming", { distance: 1.5, minutes: 35, discipline: "swimming" }))).toBe("endurance");
+    expect(wrappedDiscipline(cardio("Tennis", { minutes: 60, discipline: "sport" }))).toBe("sport");
+    expect(wrappedDiscipline(strengthSession("s", "2026-01-10T10:00:00.000Z", 60))).toBe("strength");
+    const mixed: LoggedSession = {
+      ...strengthSession("m", "2026-01-10T10:00:00.000Z", 60),
+      blocks: [
+        ...strengthSession("m", "2026-01-10T10:00:00.000Z", 60).blocks,
+        { kind: "cardio", name: "Running", discipline: "running", distance: 5, minutes: 25 },
+      ],
+    };
+    expect(wrappedDiscipline(mixed)).toBe("mixed");
+    expect(
+      wrappedDiscipline({
+        id: "k",
+        title: "Metcon",
+        startedAt: "2026-01-10T10:00:00.000Z",
+        blocks: [{ kind: "conditioning", name: "EMOM", rounds: 12, minutes: 12 }],
+      }),
+    ).toBe("conditioning");
+  });
+
+  it("never shows sets or volume for a swim", () => {
+    const swim = cardio("Swimming", { distance: 1.5, minutes: 35, discipline: "swimming" });
+    const w = sessionWrapped(swim, [swim], { units: "kg", bw: 78 });
+    const labels = w.basics.map((b) => b.labelKey);
+    expect(labels).not.toContain("summary.sets");
+    expect(labels).not.toContain("summary.volumeMoved");
+    expect(labels).not.toContain("session.wrapped.reps");
+    expect(labels).toContain("session.distance");
+    expect(labels).toContain("session.pace");
+    // Distance + pace read in the pool's own unit, not "0.0 t" and not km.
+    expect(w.basics.find((b) => b.labelKey === "session.distance")!.value).toContain("m");
+    expect(w.basics.find((b) => b.labelKey === "session.pace")!.value).toContain("/100m");
+    expect(w.headline.labelKey).toBe("session.distance");
+  });
+
+  it("summarises a timed sport by time, calories and effort", () => {
+    const tennis = cardio("Tennis", { minutes: 90, rpe: 7, discipline: "sport" });
+    const w = sessionWrapped(tennis, [tennis], { units: "kg", bw: 78 });
+    const labels = w.basics.map((b) => b.labelKey);
+    expect(labels).toEqual(["summary.minutes", "session.wrapped.kcal", "session.wrapped.effort"]);
+    expect(w.basics.find((b) => b.labelKey === "session.wrapped.kcal")!.estimate).toBe(true);
+    expect(w.headline.labelKey).toBe("summary.minutes");
+  });
+
+  it("marks a session sparse only when nothing measured its intensity", () => {
+    const bare = cardio("Tennis", { minutes: 90, discipline: "sport" });
+    expect(sessionWrapped(bare, [bare], { units: "kg" }).sparse).toBe(true);
+    const paced = cardio("Running", { distance: 10, minutes: 50, discipline: "running" });
+    expect(sessionWrapped(paced, [paced], { units: "kg", bw: 78 }).sparse).toBe(false);
+  });
+
+  it("caps the panel at four tiles for every discipline", () => {
+    const ride = cardio("Cycling", { distance: 40, minutes: 80, rpe: 6 });
+    for (const s of [ride, strengthSession("s", "2026-01-10T10:00:00.000Z", 60)])
+      expect(sessionWrapped(s, [s], { units: "kg", bw: 78 }).basics.length).toBeLessThanOrEqual(4);
   });
 });
 

@@ -42,9 +42,13 @@ const SIDES: Side[] = [...LEFT, ...RIGHT];
 // logger.
 const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 
-// Routes that should NOT show the bar: auth/funnel + the focused live workout
-// (accidental nav mid-set loses context). Everything else gets it.
-const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade"]);
+// Routes that should NOT show the bar: auth/funnel, the focused live workout
+// (accidental nav mid-set loses context), and the post-workout Wrapped — a
+// full-bleed story takeover with its own back button and its own sticky share
+// dock, which the floating bar sat on top of. Web reaches the same result by
+// rendering the Wrapped as an opaque fixed overlay ABOVE the pill nav; this is
+// the native equivalent. Everything else gets the bar.
+const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout", "upgrade", "session"]);
 
 // iOS 26 tab-bar geometry: each slot is icon + label (like the native TabView
 // items), the selection lens is a capsule covering both, and the detached

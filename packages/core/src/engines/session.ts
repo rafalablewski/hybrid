@@ -258,6 +258,14 @@ export interface LoggedSession {
   note?: string | null;
   mood?: number | null;
   tags?: string[] | null;
+  /**
+   * "How did that feel?" — perceived effort (1..5) and fatigue after (1..5),
+   * asked once on the post-workout Wrapped. Effort × duration is the session's
+   * internal training load (sRPE); see session-feel.ts for the model and why
+   * two identical-looking sessions are not the same session.
+   */
+  feel?: number | null;
+  fatigue?: number | null;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";

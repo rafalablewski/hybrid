@@ -1,11 +1,22 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Modal, View, Text, Pressable, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   sessionWrapped,
   liftStanding,
+  hasActiveConnection,
+  FEELS,
+  FATIGUES,
+  feltSessionLoad,
+  loadBand,
+  LOAD_BAND_KEY,
+  feelSamples,
+  loadBaseline,
+  relativeEffort,
+  doneReceipt,
   sessionCelebration,
   isFullAccess,
   volumeByMuscle,
@@ -20,7 +31,6 @@ import {
   formatCardioPr,
   workoutShareCaption,
   fmtWeight,
-  fmtTonnage,
   paceClock,
   formatSportDistance,
   statCountUp,
@@ -34,7 +44,8 @@ import {
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
-import { fetchTalent } from "../lib/api";
+import { fetchTalent, fetchConnections, patchSessionFeel } from "../lib/api";
+import { qk } from "../lib/queries";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
@@ -78,6 +89,126 @@ function CountUp({ value, style }: { value: string; style: TextStyle }) {
 }
 
 /**
+ * "How did that feel?" — the post-workout self-report, asked once, right where
+ * the athlete already is. Two taps: perceived effort, then how spent they are.
+ *
+ * It exists because the log alone can't tell two athletes apart: the same 10 km
+ * in 40 minutes is a jog for one and a near-death experience for the other, and
+ * an engine that treats them identically will keep prescribing the wrong next
+ * session to the second one. Effort × duration is that session's internal load
+ * (sRPE) — see core/session-feel.ts. Web parity: the same panel in
+ * apps/web/components/aurora/workout-wrapped.tsx.
+ */
+function FeelPanel({
+  session,
+  all,
+  bw,
+  eyebrow,
+}: {
+  session: LoggedSession;
+  all: LoggedSession[];
+  bw: BodyweightLookup;
+  eyebrow: (label: string) => ReactNode;
+}) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  const qc = useQueryClient();
+  const [feel, setFeel] = useState<number | null>(session.feel ?? null);
+  const [fatigue, setFatigue] = useState<number | null>(session.fatigue ?? null);
+  const [failed, setFailed] = useState(false);
+
+  // Optimistic: the taps land instantly and the write follows. A failed save
+  // says so rather than silently pretending the answer was recorded.
+  const save = async (patch: { feel?: number; fatigue?: number }) => {
+    const ok = await patchSessionFeel(session.id, patch);
+    setFailed(!ok);
+    if (ok) void qc.invalidateQueries({ queryKey: qk.sessions });
+  };
+
+  const minutes = doneReceipt(session, { bodyweightKg: bw(session.startedAt) }).durationMin;
+  const load = feltSessionLoad(feel, minutes);
+  // "vs your usual" compares the athlete to THEMSELVES over the last month —
+  // never to a cohort, and never until there are enough rated sessions for the
+  // comparison to mean anything (loadBaseline enforces the floor).
+  // Memoised: feelSamples walks every logged session (doneReceipt per row), and
+  // this panel re-renders on every tap.
+  const baseline = useMemo(
+    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
+    [all, bw, session.id],
+  );
+  const rel = load != null ? relativeEffort(load, baseline) : null;
+
+  const row = (
+    levels: readonly { value: number; labelKey: string; emoji: string }[],
+    picked: number | null,
+    onPick: (v: number) => void,
+  ) => (
+    <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+      {levels.map((l) => {
+        const on = picked === l.value;
+        return (
+          <Pressable
+            key={l.value}
+            onPress={() => onPick(l.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={t(l.labelKey)}
+            style={{
+              flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 2,
+              borderRadius: 14, borderWidth: 1,
+              borderColor: on ? C.lime : C.line,
+              backgroundColor: on ? `${C.lime}26` : "#0e0f0d",
+            }}
+          >
+            <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  // Deliberately compact: a Wrapped panel is a fixed screen-height box, so every
+  // row here is sized to still fit BOTH questions plus the load read-out on a
+  // small phone (and the prose is line-capped rather than pushing content out).
+  return (
+    <View>
+      {eyebrow(t("session.feel.q"))}
+      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: 21, color: C.chalk, letterSpacing: -0.4, lineHeight: 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
+      {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
+
+      {feel != null && (
+        <View style={{ marginTop: 18 }}>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
+          {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
+        </View>
+      )}
+
+      {load != null && (
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+          <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
+          <View style={{ alignItems: "flex-end" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>
+            {rel && (
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: rel.pct >= 0 ? txt(C, C.lime) : C.ash, marginTop: 3 }}>
+                {rel.pct >= 0 ? "+" : "−"}{Math.abs(rel.pct)}% {t("session.feel.vsUsual")}
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
+
+      {(failed || feel != null) && (
+        <Text numberOfLines={3} style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 15, color: C.ash, marginTop: 12 }}>
+          {failed ? t("session.feel.retry") : t("session.feel.why")}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
  * WORKOUT WRAPPED — the individual-session view, rendered as the reference
  * prototype (reference/pr-wrapped-flow.html): open a session and it IS the
  * experience — the PR reveal (if any) → the premium Wrapped panels you scroll
@@ -117,6 +248,9 @@ export function WorkoutWrapped({
   const [active, setActive] = useState(0);
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
+  // null = not known yet (don't flash a "connect a device" prompt at someone
+  // who already has one connected).
+  const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
   const pagerRef = useRef<ScrollView>(null);
   const storyRefs = useRef<Record<number, View | null>>({});
 
@@ -125,6 +259,9 @@ export function WorkoutWrapped({
     fetchTalent().then((d) => {
       const p = d?.profile;
       if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
+    }).catch(() => {});
+    fetchConnections().then((d) => {
+      if (alive) setDeviceConnected(hasActiveConnection(d.connections));
     }).catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -153,9 +290,12 @@ export function WorkoutWrapped({
   const topE1rm = session.blocks.reduce((m, b) => (b.kind === "strength" ? Math.max(m, Math.round(blockBestE1rm(b, bwHere))) : m), 0);
   const standing = cohort && topE1rm > 0 && bwHere ? liftStanding(topE1rm, bwHere, cohort) : null;
 
+  // No PR to celebrate → the hero shows the number that DEFINES this kind of
+  // session (distance for a swim, tonnage for a lift, time for a match), not
+  // tonnage for everything — which read "0.0 t" on every cardio log.
   const heroBig = cel
     ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
-    : fmtTonnage(volume, units);
+    : wrapped.headline.value;
   // A record isn't always a heavier bar — more reps at the same load is a real
   // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
@@ -186,10 +326,17 @@ export function WorkoutWrapped({
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
   ];
+  // The overview card is a GYM card (title + minutes/sets/volume): on a swim it
+  // would read "1 set, 0.0 t", so it only rides along when the session actually
+  // did that kind of work. The single-stat card headlines the same number the
+  // hero does, so a cardio log leads with its distance instead of zero tonnage.
+  const gymSession = wrapped.discipline === "strength" || wrapped.discipline === "mixed";
   const slides: SlideData[] = [
     ...bespoke,
-    { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests }, firstEver: false },
-    { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
+    ...(gymSession
+      ? [{ kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests }, firstEver: false } as SlideData]
+      : []),
+    { kind: "stat", eyebrow: t("summary.slide.load"), value: wrapped.headline.value, unit: t(wrapped.headline.labelKey) },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.todaysBests"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
     ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as SlideData] : []),
@@ -221,11 +368,18 @@ export function WorkoutWrapped({
     return () => loop.stop();
   }, [cel, scale, burst, spin]);
 
+  // The post-workout self-report ("How did that feel?") and — when nothing is
+  // measuring this athlete — the device prompt that would replace the estimates
+  // with measurements. Both ride in the scroll sequence, before the standing.
+  const showDevice = deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+
   // Which panels exist (dots + snap offsets), details rides after them.
-  const keys: ("reveal" | "hero" | "premium" | "standing")[] = [
+  const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "standing")[] = [
     ...(cel ? ["reveal" as const] : []),
     "hero" as const,
+    "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
+    ...(showDevice ? ["device" as const] : []),
     "standing" as const,
   ];
   const detailsIndex = keys.length;
@@ -283,12 +437,19 @@ export function WorkoutWrapped({
           <View style={{ flexDirection: "row", marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
             {wrapped.basics.map((b, i) => (
               <View key={b.labelKey} style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 4, alignItems: "center", backgroundColor: "#0e0f0d", borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{b.value}</Text>
+                {/* A modelled figure wears a "~" — it is never presented as a
+                    measurement (see core/energy.ts). */}
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
               </View>
             ))}
           </View>
           {scrollHint}
+        </Panel>
+
+        {/* ── HOW DID THAT FEEL? ── */}
+        <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}12`} top={panelH * 0.05} left={-90} />}>
+          <FeelPanel session={session} all={all} bw={bw} eyebrow={eyebrow} />
         </Panel>
 
         {/* ── PREMIUM ── */}
@@ -307,6 +468,33 @@ export function WorkoutWrapped({
                 <Text style={{ fontFamily: F.black, fontSize: 15, color: premium.ink }}>✦ {t("session.wrapped.unlock")}</Text>
               </Pressable>
             )}
+          </Panel>
+        )}
+
+        {/* ── CONNECT A DEVICE ── */}
+        {showDevice && (
+          <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
+            {eyebrow(t("session.wrapped.device.title"))}
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
+            <View style={{ marginTop: 22, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+              {([
+                ["♥", "session.wrapped.device.hr"],
+                ["🔥", "session.wrapped.device.energy"],
+                ["⏱", "session.wrapped.device.time"],
+                ["🌙", "session.wrapped.device.recovery"],
+              ] as const).map(([glyph, key], i) => (
+                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                  <Text style={{ fontSize: 15 }}>{glyph}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(key)}</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 22, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("session.wrapped.device.cta")} →</Text>
+            </Pressable>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 16 }}>
+              {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
+            </Text>
           </Panel>
         )}
 
