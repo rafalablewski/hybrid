@@ -1331,10 +1331,11 @@ function SignalMetrics({ b, units, bodyweightKg }: { b: EditableBlock; units: We
 
 /**
  * Exercise detail sheet — opened by clicking an exercise's live summary bar.
- * Set pills to pick a set, the exercise's live totals (volume, reps of the
- * picked set, mean bar speed), a per-set m/s input and a set-by-set velocity
- * strip — the manual-VBT twin of a bar-sensor app's set screen. Twin of the
- * mobile logger's ExerciseSheet.
+ * Flat totals (no boxed cells), then ONE velocity module: a bar chart that IS
+ * the set selector — each set's m/s value rides above its bar, the selected
+ * column's value is the editable input, set numbers sit under a shared
+ * baseline. "m/s" appears exactly once (the module header, with the mean).
+ * Twin of the mobile logger's ExerciseSheet.
  */
 function ExerciseDetailSheet({
   b,
@@ -1376,68 +1377,66 @@ function ExerciseDetailSheet({
         const s = sets[i]!;
         const known = ls.vels.filter((v): v is number => v != null);
         const maxVel = known.length ? Math.max(...known) : 0;
-        const stat = (label: string, value: string) => (
-          <div key={label} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: "12px 4px", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
-            <div style={{ ...disp, fontSize: fs.title, fontWeight: 800, color: CHALK }}>{value}</div>
-            <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".1em", textTransform: "uppercase", marginTop: 3 }}>{label}</div>
-          </div>
-        );
+        const loadPart = s.load.trim() ? `${displayLoad(s.load, units)} ${units}` : "";
+        const setLine = [loadPart, s.reps.trim()].filter(Boolean).join(" × ") || "–";
         return (
-          <div style={{ marginTop: 16 }}>
-            {/* Set pills — pick the set whose bar speed you're entering. */}
-            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
-              {sets.map((st, j) => {
-                const on = j === i;
-                return (
-                  <button key={j} onClick={() => setSel(j)} aria-pressed={on} style={{ ...disp, flex: "none", display: "inline-flex", alignItems: "center", gap: 6, fontSize: fs.caption, fontWeight: 600, color: on ? CHALK : txt(ASH), background: on ? `${CHALK}1a` : "var(--color-ink)", border: `1px solid ${on ? CHALK : LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
-                    {`${t("workout.setWord")} ${j + 1}`}
-                    {st.done && <span style={{ color: txt(LIME), fontWeight: 800 }}>✓</span>}
-                  </button>
-                );
-              })}
+          <div style={{ marginTop: 18 }}>
+            {/* Flat totals — big number over a small mono label, no boxes. */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "14px 36px" }}>
+              <div>
+                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.025em", color: CHALK }}>{fmtTonnage(ls.volumeKg, units)}</div>
+                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t("workout.totalVolume")}</div>
+              </div>
+              <div>
+                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.025em", color: CHALK }}>{setLine}</div>
+                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</div>
+              </div>
             </div>
 
-            {/* Live totals — volume banked, the picked set, mean bar speed. */}
-            <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
-              {stat(t("workout.totalVolume"), fmtTonnage(ls.volumeKg, units))}
-              {stat(t("w.train.blocks.reps"), s.reps.trim() || "–")}
-              {stat("m/s", ls.meanVel != null ? String(ls.meanVel) : "–")}
+            {/* ONE velocity module — the unit is named once, with the mean. */}
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 0 12px" }}>
+              <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH) }}>{`${t("workout.barSpeed")} (m/s)`}</span>
+              {ls.meanVel != null && (
+                <span style={{ ...mono, fontSize: 11, color: CHALK }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</span>
+              )}
             </div>
-
-            {/* Bar speed for the picked set. */}
-            <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), letterSpacing: ".1em", textTransform: "uppercase", margin: "16px 0 6px" }}>
-              {`${t("workout.barSpeed")} (m/s) — ${t("workout.setWord")} ${i + 1}`}
-            </div>
-            <input
-              className="ghost-ph"
-              value={s.vel ?? ""}
-              onChange={(e) => onVel(b.uid, i, e.target.value)}
-              placeholder="0.45"
-              inputMode="decimal"
-              style={{ ...mono, width: "100%", boxSizing: "border-box", fontSize: fs.subtitle, color: CHALK, textAlign: "center", background: "var(--color-ink)", border: `1px solid ${LINE}`, borderRadius: 12, padding: "11px 0", outline: "none" }}
-            />
-
-            {/* Set-by-set velocity strip — click a bar to jump to that set. */}
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginTop: 16, height: 72 }}>
+            {/* The chart IS the selector: each set is a column — value above its
+                bar (the selected one is the editable input), bars share a
+                baseline, set numbers underneath. */}
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", borderBottom: `1px solid color-mix(in srgb, ${LINE} 90%, transparent)` }}>
               {sets.map((st, j) => {
                 const v = ls.vels[j];
-                const h = v != null && maxVel > 0 ? Math.max(8, Math.round((v / maxVel) * 64)) : 3;
+                const on = j === i;
+                const h = v != null && maxVel > 0 ? Math.max(12, Math.round((v / maxVel) * 56)) : 3;
                 return (
-                  <button key={j} onClick={() => setSel(j)} aria-label={`${t("workout.setWord")} ${j + 1}`} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
-                    <div style={{ width: "100%", height: h, borderRadius: 4, background: j === i ? LIME : v != null ? `${CHALK}8c` : `color-mix(in srgb, ${LINE} 90%, transparent)` }} />
-                  </button>
+                  <div key={j} onClick={() => setSel(j)} role="button" aria-pressed={on} aria-label={`${t("workout.setWord")} ${j + 1}`} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", cursor: "pointer" }}>
+                    {on ? (
+                      <input
+                        className="ghost-ph"
+                        value={s.vel ?? ""}
+                        onChange={(e) => onVel(b.uid, i, e.target.value)}
+                        placeholder="0.00"
+                        inputMode="decimal"
+                        autoFocus
+                        style={{ ...mono, fontSize: 13, fontWeight: 700, color: CHALK, textAlign: "center", width: 52, maxWidth: "100%", background: "none", border: "none", borderBottom: `1px solid ${CHALK}8c`, borderRadius: 0, outline: "none", padding: "0 0 2px", marginBottom: 6 }}
+                      />
+                    ) : (
+                      <span style={{ ...mono, fontSize: 11, color: v != null ? CHALK : txt(ASH), marginBottom: 7 }}>{v != null ? String(v) : "–"}</span>
+                    )}
+                    <div style={{ alignSelf: "stretch", margin: "0 10px", height: h, borderRadius: "3px 3px 0 0", background: on ? LIME : v != null ? `${CHALK}66` : LINE }} />
+                  </div>
                 );
               })}
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
-              {sets.map((_, j) => (
-                <span key={j} style={{ ...mono, flex: 1, textAlign: "center", fontSize: fs.nano, color: j === i ? CHALK : txt(ASH) }}>
-                  {ls.vels[j] != null ? String(ls.vels[j]) : "–"}
-                </span>
+            <div style={{ display: "flex", gap: 10, marginTop: 7 }}>
+              {sets.map((st, j) => (
+                <button key={j} onClick={() => setSel(j)} style={{ ...mono, flex: 1, textAlign: "center", fontSize: fs.nano, color: j === i ? CHALK : txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+                  {`${j + 1}${st.done ? " ✓" : ""}`}
+                </button>
               ))}
             </div>
 
-            <div style={{ ...mono, fontSize: fs.micro, color: txt(ASH), lineHeight: 1.5, marginTop: 14 }}>{t("workout.velHint")}</div>
+            <div style={{ ...mono, fontSize: fs.micro, color: txt(ASH), lineHeight: 1.5, marginTop: 16 }}>{t("workout.velHint")}</div>
           </div>
         );
       })()

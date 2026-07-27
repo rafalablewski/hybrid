@@ -1598,9 +1598,10 @@ export default function Workout() {
 
 /**
  * Exercise detail sheet — opened by tapping an exercise's live summary bar.
- * Set pills to pick a set, the exercise's live totals (volume, reps of the
- * picked set, mean bar speed), a per-set m/s input and a set-by-set velocity
- * strip — the manual-VBT twin of a bar-sensor app's set screen.
+ * Flat totals (no boxed cells), then ONE velocity module: a bar chart that IS
+ * the set selector — each set's m/s value rides above its bar, the selected
+ * column's value is the editable input, set numbers sit under a shared
+ * baseline. "m/s" appears exactly once (the module header, with the mean).
  */
 function ExerciseSheet({
   x,
@@ -1642,74 +1643,74 @@ function ExerciseSheet({
         const s = x.sets[i]!;
         const known = ls.vels.filter((v): v is number => v != null);
         const maxVel = known.length ? Math.max(...known) : 0;
-        const stat = (label: string, value: string) => (
-          <View style={{ flex: 1, alignItems: "center", borderRadius: 14, paddingVertical: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{value}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{label}</Text>
-          </View>
-        );
+        const loadPart = s.load.trim() ? `${displayLoad(s.load, units)} ${units}` : "";
+        const setLine = [loadPart, s.reps.trim()].filter(Boolean).join(" × ") || "–";
         return (
-          <View style={{ marginTop: 16 }}>
-            {/* Set pills — pick the set whose bar speed you're entering. */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <View style={{ marginTop: 18 }}>
+            {/* Flat totals — big number over a small mono label, no boxes. */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
+              <View>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
+              </View>
+              <View>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk }}>{setLine}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+              </View>
+            </View>
+
+            {/* ONE velocity module — the unit is named once, with the mean. */}
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
+              {ls.meanVel != null && (
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
+              )}
+            </View>
+            {/* The chart IS the selector: each set is a column — value above its
+                bar (the selected one is the editable input), bars share a
+                baseline, set numbers underneath. */}
+            <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.9) }}>
               {x.sets.map((st, j) => {
+                const v = ls.vels[j];
                 const on = j === i;
+                const h = v != null && maxVel > 0 ? Math.max(12, Math.round((v / maxVel) * 56)) : 3;
                 return (
                   <Pressable
                     key={st.uid ?? j}
                     onPress={() => setSel(j)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, 0.1) : C.ink }}
+                    accessibilityLabel={`${t("workout.setWord")} ${j + 1}`}
+                    style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}
                   >
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{`${t("workout.setWord")} ${j + 1}`}</Text>
-                    {st.done && <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: txt(C, C.lime) }}>✓</Text>}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            {/* Live totals — volume banked, the picked set, mean bar speed. */}
-            <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14 }}>
-              {stat(t("workout.totalVolume"), fmtTonnage(ls.volumeKg, units))}
-              {stat(t("w.train.blocks.reps"), s.reps.trim() || "–")}
-              {stat("m/s", ls.meanVel != null ? String(ls.meanVel) : "–")}
-            </View>
-
-            {/* Bar speed for the picked set. */}
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>
-              {`${t("workout.barSpeed")} (m/s) — ${t("workout.setWord")} ${i + 1}`}
-            </Text>
-            <TextInput
-              value={s.vel ?? ""}
-              onChangeText={(v) => onVel(x.uid, i, v)}
-              keyboardType="numeric"
-              placeholder="0.45"
-              placeholderTextColor={C.ash}
-              style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, textAlign: "center", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 11 }}
-            />
-
-            {/* Set-by-set velocity strip — tap a bar to jump to that set. */}
-            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: 16, height: 72 }}>
-              {x.sets.map((st, j) => {
-                const v = ls.vels[j];
-                const h = v != null && maxVel > 0 ? Math.max(8, Math.round((v / maxVel) * 64)) : 3;
-                return (
-                  <Pressable key={st.uid ?? j} onPress={() => setSel(j)} style={{ flex: 1, alignItems: "stretch", justifyContent: "flex-end" }} accessibilityLabel={`${t("workout.setWord")} ${j + 1}`}>
-                    <View style={{ height: h, borderRadius: 4, backgroundColor: j === i ? txt(C, C.lime) : v != null ? withAlpha(C.chalk, 0.55) : withAlpha(C.line, 0.9) }} />
+                    {on ? (
+                      <TextInput
+                        value={s.vel ?? ""}
+                        onChangeText={(val) => onVel(x.uid, i, val)}
+                        keyboardType="numeric"
+                        placeholder="0.00"
+                        placeholderTextColor={C.ash}
+                        style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "700", color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
+                      />
+                    ) : (
+                      <Text style={{ fontFamily: F.mono, fontSize: 11, color: v != null ? C.chalk : C.ash, marginBottom: 7 }}>{v != null ? String(v) : "–"}</Text>
+                    )}
+                    <View style={{ alignSelf: "stretch", marginHorizontal: 10, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: on ? txt(C, C.lime) : v != null ? withAlpha(C.chalk, 0.4) : withAlpha(C.line, 1) }} />
                   </Pressable>
                 );
               })}
             </View>
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 5 }}>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 7 }}>
               {x.sets.map((st, j) => (
-                <Text key={st.uid ?? j} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: j === i ? C.chalk : C.ash }}>
-                  {ls.vels[j] != null ? String(ls.vels[j]) : "–"}
-                </Text>
+                <Pressable key={st.uid ?? j} onPress={() => setSel(j)} style={{ flex: 1, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: j === i ? C.chalk : C.ash }}>
+                    {`${j + 1}${st.done ? " ✓" : ""}`}
+                  </Text>
+                </Pressable>
               ))}
             </View>
 
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: 15, marginTop: 14 }}>{t("workout.velHint")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: 15, marginTop: 16 }}>{t("workout.velHint")}</Text>
           </View>
         );
       })()
