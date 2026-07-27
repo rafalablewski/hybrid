@@ -7,7 +7,9 @@ import { useTheme } from "../../lib/theme";
 import { GlassToggle } from "../glass-toggle";
 import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
+/** Every pref that is a plain on/off — derived from the type rather than listed
+ *  by exclusion, so adding a non-boolean pref can never break this screen. */
+type ToggleKey = { [K in keyof LoggerPrefs]: LoggerPrefs[K] extends boolean ? K : never }[keyof LoggerPrefs];
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },

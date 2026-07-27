@@ -1,12 +1,17 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
-  fs, space, volumeStatus, resolveLandmarks,
-  railGeometry, railScale, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  fs, space, volumeStatus, athleteLandmarks,
+  railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
+  sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
+  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useBodyweight } from "@/lib/use-bodyweight";
+import { readIntake } from "@/lib/intake";
 import { useLang } from "@/lib/i18n";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
@@ -28,16 +33,57 @@ const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWei
  * AURORA Volume (web) — weekly working sets against the athlete's own
  * MEV/MAV/MRV. Mirrors apps/mobile/components/aurora/volume.tsx exactly: one
  * hero (how many muscles are in range + the week drawn as a seven-column
- * shape), then the week's prescription, then the per-muscle rails, then — only
- * on request — the landmark numbers and the glossary. The rail geometry is
- * normalised in @hybrid/core (`railX`), so every muscle's band lands at the
- * same x and the rows stack into one readable picture.
+ * shape), then where the athlete is in the block, then the week's prescription,
+ * then the per-muscle rails, then — only on request — whose numbers these
+ * actually are and the glossary. The rail geometry is normalised in
+ * @hybrid/core (`railX`), so every muscle's band lands at the same x and the
+ * rows stack into one readable picture.
+ *
+ * The landmarks themselves come from ONE core call (`athleteLandmarks`), which
+ * layers population table → profile estimate → what the log observed → the
+ * athlete's own edits, and hands back the provenance so this screen never
+ * presents a population average as a personal fact.
  */
 export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }) {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const prefs = useLoggerPrefs();
-  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
+
+  // What we already know about the athlete elsewhere in the app fills the gaps
+  // the volume profile leaves — nobody should have to type their bodyweight
+  // twice. Anything stored on the profile itself wins.
+  const bodyweight = useBodyweight();
+  const [intake, setIntake] = useState<{ experience?: AthleteVolumeProfile["experience"]; daysPerWeek?: number }>({});
+  useEffect(() => setIntake(readIntake()), []);
+  const profile = useMemo<AthleteVolumeProfile>(() => ({
+    ...prefs.volumeProfile,
+    experience: prefs.volumeProfile.experience ?? intake.experience,
+    daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
+    bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
+  }), [prefs.volumeProfile, intake, bodyweight]);
+
+  const resolved = useMemo(
+    () => athleteLandmarks({
+      profile,
+      overrides: prefs.landmarkOverrides,
+      sessions,
+      adaptive: prefs.adaptiveLandmarks,
+      includeWarmups: prefs.countWarmupsInVolume,
+      fractional: prefs.fractionalVolume,
+    }),
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions],
+  );
+  const lm = resolved.landmarks;
+
+  const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
+  const plan = useMemo(
+    () => (prefs.periodizeVolume
+      ? blockVolumePlan(sessions, { block, landmarks: lm, includeWarmups: prefs.countWarmupsInVolume, fractional: prefs.fractionalVolume })
+      : null),
+    [prefs.periodizeVolume, block, lm, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume],
+  );
+  const targetFor = (m: MuscleGroup): BlockMuscleTarget | null => plan?.targets.find((x) => x.muscle === m) ?? null;
+
   const rows = useMemo(
     () => volumeStatus(sessions, { includeWarmups: prefs.countWarmupsInVolume, fractional: prefs.fractionalVolume, landmarks: lm }),
     [sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume, lm],
@@ -62,6 +108,13 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
     else next[m]![k] = Math.max(0, Math.round(Number(raw) || 0));
     if (!Object.keys(next[m]!).length) delete next[m];
     setLoggerPref("landmarkOverrides", next);
+  };
+
+  const setBlock = (patch: Partial<VolumeBlock>) => setLoggerPref("volumeBlock", resolveBlock({ ...block, ...patch }));
+  const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
+    const next = { ...prefs.volumeProfile, ...patch };
+    for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
+    setLoggerPref("volumeProfile", next);
   };
 
   const pickedRow = picked ? rows.find((r) => r.muscle === picked) : undefined;
@@ -140,6 +193,9 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
         )}
       </section>
 
+      {/* ── WHERE THIS WEEK SITS IN THE BLOCK ─────────────────────────────── */}
+      <BlockCard block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} editing={editing} setBlock={setBlock} />
+
       {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ─────────── */}
       <Prescription title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")} items={summary.over} token="red" ml={ml} unit={t("w.analyze.vol.perWeek")} />
       <Prescription title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")} items={summary.under} token="amber" ml={ml} unit={t("w.analyze.vol.perWeek")} />
@@ -156,6 +212,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
             {ranked.map((r) => (
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} token={ZONE_TOKEN[r.zone]}
+                target={targetFor(r.muscle)}
                 expanded={editing || open === r.muscle} editing={editing}
                 zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
@@ -166,6 +223,9 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
           </div>
         </section>
       )}
+
+      {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
+      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <section style={card}>
@@ -237,10 +297,219 @@ function Prescription({ title, why, items, token, ml, unit }: {
   );
 }
 
+/** A pill switch — the same control the block and adaptive toggles both use. */
+function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick} role="switch" aria-checked={on}
+      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "7px 13px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** A −/+ stepper for the small integer block settings. */
+function Stepper({ label, value, suffix, min, max, onChange }: {
+  label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
+}) {
+  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 10, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+      <span style={{ fontSize: fs.body, color: C("ash") }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button style={btn} aria-label={`${label} −`} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+        <span style={{ ...mono(fs.body), minWidth: 46, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</span>
+        <button style={btn} aria-label={`${label} +`} onClick={() => onChange(Math.min(max, value + 1))}>+</button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * THIS BLOCK — the week you're in, and the block drawn as a ramp.
+ *
+ * The strip is the argument: a low introduction week, a climb toward MAV, and
+ * the step down of the deload. Switched off, the card is just the case for
+ * turning it on, so the landmark view stays exactly as it was.
+ */
+function BlockCard({ block, ramp, on, editing, setBlock }: {
+  block: VolumeBlock; ramp: RampColumn[]; on: boolean; editing: boolean; setBlock: (p: Partial<VolumeBlock>) => void;
+}) {
+  const { t } = useLang();
+  const current = ramp.find((c) => c.current) ?? ramp[0];
+  return (
+    <section style={card}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <h2 style={sectionTitle}>{t("w.analyze.vol.thisBlock")}</h2>
+        <Toggle on={on} label={t("w.analyze.vol.periodize")} onClick={() => setLoggerPref("periodizeVolume", !on)} />
+      </div>
+
+      {!on ? (
+        <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.body, lineHeight: 1.55, color: C("ash") }}>{t("w.analyze.vol.periodizeWhy")}</p>
+      ) : (
+        <>
+          <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.bodyLg, lineHeight: 1.45, color: C("chalk") }}>
+            {t("w.analyze.vol.weekPre")}{block.week}{t("w.analyze.vol.weekOf")}{block.weeks}
+            <span style={{ color: C("ash") }}>{" — "}</span>
+            <span style={{ color: current?.kind === "deload" ? C("blue") : C("lime") }}>{current ? t(blockKindKey(current.kind)) : ""}</span>
+          </p>
+
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginTop: 16, height: 72, maxWidth: 420 }}>
+            {ramp.map((c) => (
+              <div key={c.week} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{ width: "100%", height: 56, display: "flex", alignItems: "flex-end", background: C("ink"), borderRadius: 7, overflow: "hidden" }}>
+                  <div
+                    title={`${c.sets}`}
+                    style={{ width: "100%", height: pct(c.height), background: c.kind === "deload" ? C("blue") : C("lime"), opacity: c.current ? 0.95 : 0.32, borderRadius: "7px 7px 0 0", transition: "height .3s cubic-bezier(.2,.7,.2,1)" }}
+                  />
+                </div>
+                <span style={{ ...mono(9), letterSpacing: ".06em", color: c.current ? C("chalk") : C("ash") }}>{c.week}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.rampCaption")}</p>
+
+          {editing && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+              <Stepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
+              <Stepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
+                <span style={{ fontSize: fs.body, color: C("ash") }}>{t("w.analyze.vol.lastLoadWeek")}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {(["mav", "overreach"] as const).map((k) => (
+                    <Toggle key={k} on={block.peakAt === k} label={t(k === "mav" ? "w.analyze.vol.peakMav" : "w.analyze.vol.peakOverreach")} onClick={() => setBlock({ peakAt: k })} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+                <span style={{ fontSize: fs.body, color: C("ash") }}>{t("w.analyze.vol.deloadLast")}</span>
+                <Toggle on={!!block.deloadLast} label={t(block.deloadLast ? "w.analyze.vol.done" : "w.analyze.vol.deloadLast")} onClick={() => setBlock({ deloadLast: !block.deloadLast })} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.analyze.vol.nutMaintenance", surplus: "w.analyze.vol.nutSurplus" } as const;
+const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
+
+/**
+ * WHOSE NUMBERS ARE THESE — the honest label on the landmarks, the factors that
+ * moved them, and the profile you can correct. Without this the screen quietly
+ * passes off a textbook average as a personal measurement.
+ */
+function SourceCard({ resolved, profile, stored, adaptive, editing, setProfile, ml }: {
+  resolved: ReturnType<typeof athleteLandmarks>;
+  profile: AthleteVolumeProfile;
+  stored: AthleteVolumeProfile;
+  adaptive: boolean;
+  editing: boolean;
+  setProfile: (p: Partial<AthleteVolumeProfile>) => void;
+  ml: (m: string) => string;
+}) {
+  const { t } = useLang();
+  const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
+  const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" };
+  const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 };
+
+  return (
+    <section style={card}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
+        <h2 style={{ ...sectionTitle, fontSize: fs.subtitle }}>{t("w.analyze.vol.whose")}</h2>
+        <span style={{ ...mono(fs.caption), color: resolved.source === "population" ? C("ash") : C("lime") }}>{t(sourceLabelKey(resolved.source))}</span>
+      </div>
+      <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.55, color: C("ash") }}>{t(sourceWhyKey(resolved.source))}</p>
+
+      {resolved.factors.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
+          {resolved.factors.map((f) => (
+            <div key={f.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+              <span style={{ fontSize: fs.body, color: C("chalk") }}>{t(factorLabelKey(f.key))}</span>
+              <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ ...mono(fs.caption), color: C("ash") }}>{f.key === "experience" ? t(EXP_KEY[f.value as keyof typeof EXP_KEY] ?? "w.analyze.vol.expBeginner") : f.key === "nutrition" ? t(NUTRITION_KEY[f.value as keyof typeof NUTRITION_KEY]) : f.value}</span>
+                <span style={{ ...mono(fs.body), fontWeight: 700, color: f.multiplier >= 1 ? C("lime") : C("amber"), minWidth: 44, textAlign: "right" }}>{factorPercent(f.multiplier)}</span>
+              </span>
+            </div>
+          ))}
+          {confidence > 0 && (
+            <div style={{ ...mono(fs.caption), color: C("ash"), marginTop: 4 }}>{confidence}% {t("w.analyze.vol.confidence")}</div>
+          )}
+        </div>
+      )}
+
+      {/* The log's correction — what your own training proved. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
+        <span style={{ fontSize: fs.body, color: C("chalk"), flex: 1, minWidth: 160 }}>{t("w.analyze.vol.adaptive")}</span>
+        <Toggle on={adaptive} label={adaptive ? t("w.analyze.vol.done") : t("w.analyze.vol.adaptive")} onClick={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
+      </div>
+      {adaptive && (
+        <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>
+          {resolved.adapted.length
+            ? `${resolved.adapted.map(ml).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`
+            : t("w.analyze.vol.notEnoughEvidence")}
+        </p>
+      )}
+
+      {editing && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+          <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.aboutYou")}</h3>
+
+          <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            {(["beginner", "intermediate", "advanced"] as const).map((e) => (
+              <Toggle key={e} on={profile.experience === e} label={t(EXP_KEY[e])} onClick={() => setProfile({ experience: profile.experience === e ? undefined : e })} />
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))", gap: 8, marginTop: 12 }}>
+            {([
+              ["ageYears", t("w.analyze.vol.fieldAge"), 10, 100],
+              ["bodyweightKg", t("w.analyze.vol.fieldBodyweight"), 25, 300],
+              ["sleep", t("w.analyze.vol.fieldSleep"), 1, 5],
+              ["stress", t("w.analyze.vol.fieldStress"), 1, 5],
+              ["daysPerWeek", t("w.analyze.vol.fieldDays"), 1, 14],
+            ] as const).map(([key, label, min, max]) => (
+              <div key={key}>
+                <div style={fieldLabel}>{label}</div>
+                <input
+                  type="number" min={min} max={max} aria-label={label}
+                  defaultValue={profile[key] ?? ""}
+                  onBlur={(e) => setProfile({ [key]: e.target.value.trim() === "" ? undefined : Number(e.target.value) } as Partial<AthleteVolumeProfile>)}
+                  style={field}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            {(["deficit", "maintenance", "surplus"] as const).map((n) => (
+              <Toggle key={n} on={profile.nutrition === n} label={t(NUTRITION_KEY[n])} onClick={() => setProfile({ nutrition: profile.nutrition === n ? undefined : n })} />
+            ))}
+          </div>
+
+          {Object.keys(stored).length > 0 && (
+            <button
+              onClick={() => setLoggerPref("volumeProfile", {})}
+              style={{ marginTop: 14, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
+            >
+              {t("w.analyze.vol.clearProfile")}
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
+function MuscleRow({ s, label, token, target, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
   s: MuscleVolumeStatus; label: string; token: string; expanded: boolean; editing: boolean;
+  /** This week's block target, when volume is being periodized. */
+  target: BlockMuscleTarget | null;
   /** The band spotlighted across the whole list, if any. */
   zone: VolumeBandKey | null;
   /** True on the row whose scale was clicked — it carries the definition. */
@@ -252,6 +521,10 @@ function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onTogg
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
+  // The block target sits on the SAME normalised rail as everything else, so
+  // "where I am" and "where the plan wants me" are one glance, not two.
+  const targetX = target ? railX(target.target, s.landmark) : null;
+  const verdict = target ? targetVerdict(s.sets, target.target) : null;
   return (
     <div style={{ padding: "12px 0" }}>
       <button
@@ -262,7 +535,7 @@ function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onTogg
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
           <span style={{ flex: 1, fontSize: fs.note, fontWeight: 600 }}>{label}</span>
           <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
-          <span style={{ ...mono(fs.caption), color: C("ash") }}>{t(ZONE_KEY[s.zone])}</span>
+          <span style={{ ...mono(fs.caption), color: C("ash") }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</span>
         </div>
         <div style={{ position: "relative", height: 11, borderRadius: 6, background: C("ink"), overflow: "hidden" }}>
           {/* The track is itself the key: the productive band lit, the territory
@@ -273,6 +546,11 @@ function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onTogg
           {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
           <div style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
           <div style={{ position: "absolute", left: pct(g.mrv), top: 0, bottom: 0, width: 2, background: C("ink2") }} />
+          {/* This week's block target — a bright caret ON the rail, so the gap
+              between where you are and where the plan wants you is a distance. */}
+          {targetX !== null && (
+            <div style={{ position: "absolute", left: pct(targetX), top: -2, bottom: -2, width: 2, background: C("chalk"), transition: "left .3s cubic-bezier(.2,.7,.2,1)" }} />
+          )}
           {/* SPOTLIGHT — clicking a landmark below scrims everything outside that
               band, on EVERY row at once, so the question "which part of the bar
               is my productive range" is answered by the chart itself. */}
@@ -316,6 +594,13 @@ function MuscleRow({ s, label, token, expanded, editing, zone, showGloss, onTogg
       {expanded && !editing && (
         <div style={{ marginTop: 12 }}>
           <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
+          {target && verdict && (
+            <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
+              {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
+              <span style={{ color: C("ash") }}>{" — "}</span>
+              {t(TARGET_VERDICT_KEY[verdict])}
+            </p>
+          )}
           <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
         </div>
       )}

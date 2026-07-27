@@ -1,5 +1,9 @@
 import type { MuscleGroup } from "./engines/types";
 import type { MuscleVolumeStatus, VolumeLandmark, VolumeZone } from "./engines/landmarks";
+import type { LandmarkSource } from "./engines/landmark-resolve";
+import type { LandmarkFactor } from "./engines/landmark-profile";
+import { ALL_MUSCLES } from "./engines/movements";
+import { blockWeeks, targetSetsForWeek, type BlockWeek, type BlockWeekKind, type VolumeBlock } from "./engines/volume-block";
 
 /**
  * VOLUME — the view model shared by both clients' Volume screen.
@@ -190,3 +194,80 @@ export function deltaLabel(s: MuscleVolumeStatus): string {
 export function shapeOrder(rows: MuscleVolumeStatus[]): MuscleGroup[] {
   return rows.map((r) => r.muscle);
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * WHOSE NUMBERS ARE THESE — and where in the block we are.
+ *
+ * Both clients render the same two answers, so the i18n keys, the percentages
+ * and the ramp geometry are derived once here rather than in each screen.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** i18n key naming the layer the landmarks came from. */
+export function sourceLabelKey(source: LandmarkSource): string {
+  return `w.analyze.vol.source${source.charAt(0).toUpperCase()}${source.slice(1)}`;
+}
+
+/** i18n key for the sentence explaining that layer. */
+export function sourceWhyKey(source: LandmarkSource): string {
+  return `w.analyze.vol.sourceWhy${source.charAt(0).toUpperCase()}${source.slice(1)}`;
+}
+
+/** i18n key naming one personalization factor. */
+export function factorLabelKey(key: LandmarkFactor["key"]): string {
+  return `w.analyze.vol.factor${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+/** i18n key naming a block week's job. */
+export function blockKindKey(kind: BlockWeekKind): string {
+  return `w.analyze.vol.kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+}
+
+/** A factor's effect as a signed percentage: `+8%`, `−15%`, `—` at parity.
+ *  Real minus sign, not a hyphen. */
+export function factorPercent(multiplier: number): string {
+  const pct = Math.round((multiplier - 1) * 100);
+  if (pct === 0) return "—";
+  return pct > 0 ? `+${pct}%` : `−${Math.abs(pct)}%`;
+}
+
+/** One column of the block's ramp strip. */
+export interface RampColumn extends BlockWeek {
+  /** 0…1 — the week's prescribed volume against the athlete's total ceiling. */
+  height: number;
+  /** Total prescribed working sets that week, across every muscle. */
+  sets: number;
+  current: boolean;
+}
+
+/**
+ * The block drawn as a shape: one column per week, each as tall as that week's
+ * total prescribed sets measured against the athlete's total MRV. Read left to
+ * right it IS the periodization — a low introduction week, a climb, and the
+ * step down of the deload — which is the whole argument for ramping said
+ * without a sentence.
+ */
+export function blockRamp(block: VolumeBlock, landmarks: Record<MuscleGroup, VolumeLandmark>): RampColumn[] {
+  const ceiling = ALL_MUSCLES.reduce((s, m) => s + landmarks[m].mrv, 0) || 1;
+  return blockWeeks(block).map((w) => {
+    const sets = ALL_MUSCLES.reduce((s, m) => s + targetSetsForWeek(landmarks[m], w, block.peakAt), 0);
+    return { ...w, sets, height: clamp01(sets / ceiling), current: w.week === block.week };
+  });
+}
+
+/** How this week's logged sets compare to the block's target for that muscle. */
+export type TargetVerdict = "under" | "on" | "over";
+
+/** On-target within one set either way — a rounded prescription doesn't deserve
+ *  to be reported as a miss. */
+export function targetVerdict(sets: number, target: number): TargetVerdict {
+  const delta = sets - target;
+  if (delta > 1) return "over";
+  if (delta < -1) return "under";
+  return "on";
+}
+
+export const TARGET_VERDICT_KEY: Record<TargetVerdict, string> = {
+  under: "w.analyze.vol.underTarget",
+  on: "w.analyze.vol.onTarget",
+  over: "w.analyze.vol.overTarget",
+};

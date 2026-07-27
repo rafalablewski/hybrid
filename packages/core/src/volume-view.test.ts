@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { RAIL, BAND_KEYS, bandRegion, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel } from "./volume-view";
+import {
+  RAIL, BAND_KEYS, bandRegion, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
+  sourceLabelKey, sourceWhyKey, factorLabelKey, blockKindKey, factorPercent, blockRamp, targetVerdict, TARGET_VERDICT_KEY,
+} from "./volume-view";
 import { muscleVolumeStatus, VOLUME_LANDMARKS } from "./engines/landmarks";
 import type { MuscleGroup } from "./engines/types";
 
@@ -147,5 +150,39 @@ describe("labels", () => {
     expect(deltaLabel(st("quads", 3))).toBe("+9");
     expect(deltaLabel(st("chest", 22))).toBe("−4");
     expect(deltaLabel(st("chest", 19))).toBe("—");
+  });
+});
+
+describe("landmark provenance + the block ramp", () => {
+  it("names the i18n key for each source, factor and week kind", () => {
+    expect(sourceLabelKey("population")).toBe("w.analyze.vol.sourcePopulation");
+    expect(sourceWhyKey("observed")).toBe("w.analyze.vol.sourceWhyObserved");
+    expect(factorLabelKey("bodyweight")).toBe("w.analyze.vol.factorBodyweight");
+    expect(blockKindKey("deload")).toBe("w.analyze.vol.kindDeload");
+  });
+
+  it("states a factor's effect as a signed percentage, with a real minus sign", () => {
+    expect(factorPercent(1.08)).toBe("+8%");
+    expect(factorPercent(0.85)).toBe("−15%");
+    expect(factorPercent(1)).toBe("—");
+    expect(factorPercent(0.85).includes("-")).toBe(false);
+  });
+
+  it("draws the block as a ramp that climbs then steps down for the deload", () => {
+    const cols = blockRamp({ week: 2, weeks: 4 }, VOLUME_LANDMARKS);
+    expect(cols).toHaveLength(4);
+    expect(cols[0]!.height).toBeLessThan(cols[1]!.height);
+    expect(cols[1]!.height).toBeLessThan(cols[2]!.height);
+    expect(cols[3]!.height).toBeLessThan(cols[0]!.height); // the deload
+    expect(cols.map((c) => c.current)).toEqual([false, true, false, false]);
+    expect(cols.every((c) => c.height > 0 && c.height <= 1)).toBe(true);
+  });
+
+  it("calls a set either side of the target on-target", () => {
+    expect(targetVerdict(12, 12)).toBe("on");
+    expect(targetVerdict(13, 12)).toBe("on");
+    expect(targetVerdict(14, 12)).toBe("over");
+    expect(targetVerdict(10, 12)).toBe("under");
+    expect(TARGET_VERDICT_KEY.over).toBe("w.analyze.vol.overTarget");
   });
 });

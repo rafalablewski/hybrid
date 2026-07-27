@@ -102,14 +102,20 @@ export function weeklySetsByMuscle(
 export type LandmarkOverrides = Partial<Record<MuscleGroup, Partial<VolumeLandmark>>>;
 
 /**
- * Merge user overrides onto the defaults and clamp each muscle's values into a
+ * Merge user overrides onto a base map and clamp each muscle's values into a
  * sane monotonic order (mv ≤ mev ≤ mavLow ≤ mavHigh ≤ mrv, all ≥ 0) — so a
  * fat-fingered edit can never invert the zones. Returns a full landmark map.
+ *
+ * `base` defaults to the population table; pass the athlete's personalized or
+ * log-adapted map to layer manual edits on top of it (see landmark-resolve.ts).
  */
-export function resolveLandmarks(overrides?: LandmarkOverrides): Record<MuscleGroup, VolumeLandmark> {
+export function resolveLandmarks(
+  overrides?: LandmarkOverrides,
+  base: Record<MuscleGroup, VolumeLandmark> = VOLUME_LANDMARKS,
+): Record<MuscleGroup, VolumeLandmark> {
   const out = {} as Record<MuscleGroup, VolumeLandmark>;
   for (const m of ALL_MUSCLES) {
-    const d = VOLUME_LANDMARKS[m];
+    const d = base[m];
     const o = overrides?.[m] ?? {};
     const n = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : fallback);
     let mv = n(o.mv, d.mv);

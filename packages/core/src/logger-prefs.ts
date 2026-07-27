@@ -5,6 +5,8 @@
 // hardcoded behavior, so nothing changes until they opt in.
 
 import { sanitizeLandmarkOverrides, type LandmarkOverrides } from "./engines/landmarks";
+import { sanitizeVolumeProfile, type AthleteVolumeProfile } from "./engines/landmark-profile";
+import { resolveBlock, DEFAULT_BLOCK, type VolumeBlock } from "./engines/volume-block";
 import type { WeightUnit } from "./units";
 
 export interface LoggerPrefs {
@@ -47,8 +49,19 @@ export interface LoggerPrefs {
   countWarmupsInVolume: boolean;
   /** Weight a movement's secondary muscles at 0.5 sets (vs 1.0) for volume. */
   fractionalVolume: boolean;
-  /** Per-muscle overrides of the default volume landmarks (empty = use defaults). */
+  /** Per-muscle overrides of the default volume landmarks (empty = use defaults).
+   *  These are the athlete's FINAL word — applied last, over both the profile
+   *  estimate and anything the log adapted. */
   landmarkOverrides: LandmarkOverrides;
+  /** What we know about the athlete, so the landmarks stop being a population
+   *  table (training age, mass, age, recovery). Empty = the population table. */
+  volumeProfile: AthleteVolumeProfile;
+  /** Let the training log correct the estimated ceiling (adaptive MRV). */
+  adaptiveLandmarks: boolean;
+  /** Where the athlete is in the current mesocycle — drives the MEV → MAV ramp. */
+  volumeBlock: VolumeBlock;
+  /** Show the block's weekly target on the Volume screen (off = landmarks only). */
+  periodizeVolume: boolean;
 }
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
@@ -71,6 +84,10 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   countWarmupsInVolume: false,
   fractionalVolume: false,
   landmarkOverrides: {},
+  volumeProfile: {},
+  adaptiveLandmarks: true,
+  volumeBlock: DEFAULT_BLOCK,
+  periodizeVolume: false,
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
@@ -120,5 +137,9 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
     fractionalVolume: bool(r.fractionalVolume, DEFAULT_LOGGER_PREFS.fractionalVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
+    volumeProfile: sanitizeVolumeProfile(r.volumeProfile),
+    adaptiveLandmarks: bool(r.adaptiveLandmarks, DEFAULT_LOGGER_PREFS.adaptiveLandmarks),
+    volumeBlock: resolveBlock(r.volumeBlock as Partial<VolumeBlock> | null | undefined),
+    periodizeVolume: bool(r.periodizeVolume, DEFAULT_LOGGER_PREFS.periodizeVolume),
   };
 }
