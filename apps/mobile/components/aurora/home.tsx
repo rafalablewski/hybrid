@@ -10,7 +10,7 @@ import {
   buildActivityFeed,
   planProgramToday,
   FUNNEL,
-  toTrainingLog,
+  personalTrainingLog,
   toBiometrics,
   velocityProfiles,
   readinessRole,
@@ -196,7 +196,7 @@ export default function AuroraHome() {
   }, []);
 
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
   const todayFeeling = useMemo(() => {

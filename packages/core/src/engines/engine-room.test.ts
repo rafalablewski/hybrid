@@ -8,6 +8,7 @@ import {
   whatIfLog,
 } from "./engine-room";
 import { calibrateRisk, computeInjuryRisk, PRIOR_COEFFS } from "./injury";
+import { EFFORT_BIAS_MAX, EFFORT_BIAS_PRIOR_WEIGHT, EFFORT_TREND_MIN_DAYS, EFFORT_TREND_MIN_SAMPLES } from "./effort";
 import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { enduranceFatigue } from "./hpi";
@@ -25,6 +26,15 @@ describe("ENGINE_FORMULAS", () => {
   it("every group has at least one formula", () => {
     for (const g of ENGINE_FORMULA_GROUPS)
       expect(ENGINE_FORMULAS.some((f) => f.engine === g.id)).toBe(true);
+  });
+
+  it("effort-model constants track the live ones (drift guard)", () => {
+    const bias = ENGINE_FORMULAS.find((f) => f.id === "effort-bias")!;
+    expect(bias.constants.find((c) => c.symbol === "w")!.value).toBe(String(EFFORT_BIAS_PRIOR_WEIGHT));
+    expect(bias.expression).toContain(String(EFFORT_BIAS_MAX));
+    const trend = ENGINE_FORMULAS.find((f) => f.id === "effort-trend")!;
+    expect(trend.constants.find((c) => c.symbol === "n")!.value).toBe(String(EFFORT_TREND_MIN_SAMPLES));
+    expect(trend.constants.find((c) => c.symbol === "d")!.value).toBe(`${EFFORT_TREND_MIN_DAYS} days`);
   });
 
   it("calibration constants track the live prior (drift guard)", () => {

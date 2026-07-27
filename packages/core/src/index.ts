@@ -75,6 +75,8 @@ export * from "./live-stats";
 export * from "./done-receipt";
 export * from "./session-celebration";
 export * from "./session-wrapped";
+export * from "./session-feel";
+export * from "./energy";
 export * from "./session-signature";
 export * from "./guidance";
 export * from "./account";

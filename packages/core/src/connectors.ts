@@ -46,6 +46,18 @@ export function connectorSpec(id: ProviderId): ConnectorSpec | undefined {
   return CONNECTORS.find((c) => c.id === id);
 }
 
+/**
+ * Does the athlete have ANY live wearable/sensor connection? A revoked row is
+ * history, not a connection. Shared so both clients decide identically whether
+ * to prompt "connect a device" on a session summary — the prompt is only honest
+ * when there is genuinely nothing feeding measured heart rate/energy in.
+ */
+export function hasActiveConnection(
+  connections: { status?: string | null }[] | null | undefined,
+): boolean {
+  return !!connections?.some((c) => (c.status ?? "active") !== "revoked");
+}
+
 /** A normalized recovery reading any provider can be reduced to. */
 export interface RecoveryReading {
   ts: string;

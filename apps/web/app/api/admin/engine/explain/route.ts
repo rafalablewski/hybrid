@@ -4,6 +4,10 @@ import {
   acwrEventsFromHistory,
   computeEngineTrace,
   derivePersonalization,
+  effortSamples,
+  deriveEffortModel,
+  effortTrend,
+  EFFORT_BIAS_MAX,
   readinessWhy,
   whatIfBio,
   whatIfLog,
@@ -11,6 +15,8 @@ import {
   SAMPLE_TRAINING_LOG,
   SPIKE_ONSET_PRIOR,
   type Biometrics,
+  type EffortModel,
+  type EffortTrend,
   type TrainingLog,
   type WhatIf,
 } from "@hybrid/core";
@@ -64,6 +70,9 @@ export async function POST(request: Request) {
   let bio: Biometrics | undefined = SAMPLE_BIOMETRICS;
   let subject = "the built-in sample athlete";
   let spikeOnset = SPIKE_ONSET_PRIOR;
+  // The effort model behind the numbers — see the grounding line below for why
+  // the narrative needs it.
+  let effort: { model: EffortModel; trend: EffortTrend | null; rated: number } | null = null;
   if (body.userId) {
     const user = await prisma.user.findUnique({
       where: { id: String(body.userId) },
@@ -74,6 +83,8 @@ export async function POST(request: Request) {
     log = inputs.log;
     bio = inputs.bio;
     subject = `athlete ${user.id}`;
+    const samples = effortSamples(inputs.sessions);
+    effort = { model: deriveEffortModel(samples), trend: effortTrend(samples), rated: samples.length };
     // Same personal spike onset the Engine Room feed computes, so the
     // narrative matches the numbers on screen.
     const outcomes = await prisma.riskOutcome.findMany({
@@ -105,6 +116,28 @@ export async function POST(request: Request) {
   const trace = computeEngineTrace(simLog, simBio, { coeffs, spikeOnset });
   const actual = whatIfActive ? computeEngineTrace(log, bio, { coeffs, spikeOnset }) : trace;
 
+  // WHY THIS LINE EXISTS: the log these numbers come from is personalTrainingLog,
+  // so a session the athlete rated carries THEIR reported effort rather than the
+  // engine's constant — and that moves ACWR hard (the same month of training
+  // reads 1.43 or 0.40 depending only on what they said it cost them). Without
+  // this, the model would be asked to explain an elevated risk while blind to
+  // the input driving it, and would confidently attribute it to something else.
+  const effortLine = !effort || effort.rated === 0
+    // Zero ratings is NOT "they report what the log implies" — that would be a
+    // claim about an athlete who has said nothing. It is the absence of data.
+    ? "Effort model: this athlete has not rated any sessions, so every session's intensity is the engine's own estimate and no reported effort is shaping the numbers above."
+    : `Effort model: ${effort.rated} session${effort.rated === 1 ? "" : "s"} rated by the athlete via the post-workout "how did that feel?" prompt. ` +
+      (effort.model.personalized
+        ? `They report this training ${effort.model.bias > 0 ? `${effort.model.bias} RPE HARDER` : `${Math.abs(effort.model.bias)} RPE EASIER`} than the log implies (bounded ±${EFFORT_BIAS_MAX}). `
+        : "They report roughly what the log implies, so no personalization is applied. ") +
+      (effort.model.mae != null && effort.model.baselineMae != null
+        ? `Held-out error ${effort.model.mae.toFixed(2)} RPE vs ${effort.model.baselineMae.toFixed(2)} unpersonalized. `
+        : "") +
+      (effort.trend
+        ? `Over ${effort.trend.days} days the same objective work is reporting ${effort.trend.direction === "fitter" ? "EASIER" : effort.trend.direction === "harder" ? "HARDER" : "unchanged"} (${effort.trend.perMonth} RPE/month).`
+        : "Not enough rated sessions yet for a trend.") +
+      " Rated sessions enter the training log at the athlete's OWN reported intensity, so this directly shapes the ACWR and injury numbers above.";
+
   // Deterministic fallback — the engines' own explanation, always available.
   const engineLines = [
     trace.state.summary,
@@ -114,6 +147,11 @@ export async function POST(request: Request) {
           .map((t) => `${t.tissue} ${t.risk}/100 (${t.drivers[0]?.label ?? "elevated"})`)
           .join("; ")}.`
       : "No tissue is flagged for elevated injury risk.",
+    // The deterministic path is what the operator actually reads until
+    // ANTHROPIC_API_KEY is configured, so it carries the effort read as well —
+    // otherwise the fallback explains an ACWR without naming the input that
+    // moved it most.
+    effortLine,
   ];
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -149,7 +187,7 @@ export async function POST(request: Request) {
       ? `Personal model: this athlete's ACWR spike onset is personalized to ${spikeOnset} (population prior ${SPIKE_ONSET_PRIOR}), learned from their labeled outcome history.`
       : `Personal model: no personalization — the ACWR spike onset is the population prior ${SPIKE_ONSET_PRIOR}.`;
 
-  const userMsg = `Subject: ${subject}. Sessions in the log: ${log.length}. Calibration model: ${version}. ${personalLine}
+  const userMsg = `Subject: ${subject}. Sessions in the log: ${log.length}. Calibration model: ${version}. ${personalLine} ${effortLine}
 HPI ${trace.state.hpi.score}/100 (${trace.state.hpi.band}); components — strength ${trace.state.hpi.components.strength}, endurance ${trace.state.hpi.components.endurance}, recovery ${trace.state.hpi.components.recovery >= 0 ? "+" : ""}${trace.state.hpi.components.recovery}; limiter: ${trace.state.hpi.limiter}.
 Readiness ${trace.state.readiness.score}/100 (wearable adjustment ${trace.state.readiness.bioAdj >= 0 ? "+" : ""}${trace.state.readiness.bioAdj}).
 State drivers: ${drivers || "(none notable)"}.

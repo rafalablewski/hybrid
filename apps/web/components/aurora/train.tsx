@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   fs,
   prescribeSession,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   sessionsOnDay,
   FUNNEL,
@@ -57,7 +57,7 @@ export default function AuroraTrainWeb({
       .catch(() => {});
   }, []);
 
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
   const last = sessions[0];
   const hasHistory = sessions.length > 0;

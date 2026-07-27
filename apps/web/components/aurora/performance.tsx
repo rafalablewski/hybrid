@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
-  runTotals, enduranceSessions, toTrainingLog, velocityProfiles, LEVELS,
+  runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   fmtWeight, strengthPrDelta,
   ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
@@ -117,7 +117,7 @@ export default function AuroraPerformance({
   }, [checkins]);
 
   const bw = useBodyweightLookup();
-  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
   // Truth-based readiness lines — every clause computed from the REAL log +
   // wearable baseline (readinessWhy, @hybrid/core). The old rx.why narrated the

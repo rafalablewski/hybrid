@@ -9,7 +9,7 @@ import {
   trainingDaysPerWeek,
   weekNeedsResync,
   velocityProfiles,
-  toTrainingLog,
+  personalTrainingLog,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -56,7 +56,7 @@ export default function ReconciledWeek({
   // biometric/readiness adjustment (that adaptive layer is the paid upgrade).
   const effBio = readOnly ? undefined : bio;
   const rx = useMemo(
-    () => prescribeSession(toTrainingLog(sessions), effBio, { profiles: velocityProfiles(sessions), experience, equipment }),
+    () => prescribeSession(personalTrainingLog(sessions), effBio, { profiles: velocityProfiles(sessions), experience, equipment }),
     [sessions, effBio, experience, equipment],
   );
 
@@ -102,7 +102,7 @@ export default function ReconciledWeek({
       const items = buildTrainingWeek({
         macro,
         currentWeek,
-        log: toTrainingLog(sessions),
+        log: personalTrainingLog(sessions),
         bio,
         profiles: velocityProfiles(sessions),
         sport: sportRx,

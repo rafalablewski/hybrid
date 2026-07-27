@@ -655,6 +655,13 @@ model Session {
   note        String?
   mood        Int?
   tags        String[]  @default([])
+  // "How did that feel?" — the post-workout self-report, asked once on the
+  // Wrapped. `feel` is perceived effort (1..5, easy → all out) and `fatigue` is
+  // how spent the athlete is after (1..5, fresh → wrecked). Effort × duration is
+  // the session's internal training load (sRPE); see core/session-feel.ts. Kept
+  // owner-only like the note above.
+  feel        Int?
+  fatigue     Int?
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.

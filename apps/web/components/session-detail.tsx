@@ -76,11 +76,15 @@ export function SessionDetail({
   onArchive,
   onDelete,
   manageBusy,
+  onNavigate,
 }: {
   session: LoggedSession;
   all: LoggedSession[];
   onBack: () => void;
   onOpenExercise?: (name: string) => void;
+  /** Switch the app shell to another screen — the Wrapped's Full upsell and
+   *  connect-a-device CTA need it (the shell is one page, not routes). */
+  onNavigate?: (screen: string) => void;
   /** Owner-only manage actions (History passes these; other callers omit them
    *  and the manage row doesn't render). Confirm/error handling stays with the
    *  caller; `manageBusy` disables the row while a request is in flight. */
@@ -267,6 +271,6 @@ export function SessionDetail({
   // panels → story share, with the charts/breakdown/manage riding along as
   // `details`. Full-screen takeover; onBack returns to History.
   return (
-    <WorkoutWrapped session={session} all={all} units={units} bw={bw} onBack={onBack} details={details} />
+    <WorkoutWrapped session={session} all={all} units={units} bw={bw} onBack={onBack} details={details} onNavigate={onNavigate} />
   );
 }

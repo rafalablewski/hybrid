@@ -7,10 +7,11 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
+import { FeelPrompt } from "../components/feel-prompt";
 import {
   needsBodyweight,
   prescribeSession,
-  toTrainingLog,
+  personalTrainingLog,
   velocityProfiles,
   planProgramToday,
   sessionVolume,
@@ -70,6 +71,8 @@ import {
   isFullAccess,
   mmss,
   MOODS,
+  feelSamples,
+  loadBaseline,
   SUGGESTED_TAGS,
   MAX_TAGS,
   tagLabelKey,
@@ -452,7 +455,7 @@ export default function Workout() {
         // AI prescription is premium — bounce a guest/free user to the funnel
         // instead of fabricating a session for them.
         if (!gateAI("workout-ai")) return;
-        const log = toTrainingLog(sessions);
+        const log = personalTrainingLog(sessions);
         const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
         const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), subjectiveReadiness: feeling ?? undefined });
         setReadiness(rx.readiness);
@@ -542,7 +545,7 @@ export default function Workout() {
   // the live screen.
   const loadPrescribed = async () => {
     if (!gateAI("workout-ai")) return;
-    const log = toTrainingLog(prior.current);
+    const log = personalTrainingLog(prior.current);
     const feeling = todayFeelingOf(await fetchCheckins().catch(() => []));
     const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current), subjectiveReadiness: feeling ?? undefined });
     setReadiness(rx.readiness);
@@ -913,7 +916,7 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
-  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} haptics={prefs.haptics} />;
+  if (phase === "done" && summary) return <Summary summary={summary} prior={prior.current} router={router} t={t} units={prefs.units} haptics={prefs.haptics} />;
 
   const ssLabels = supersetLabels(exercises);
 
@@ -1769,12 +1772,15 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
 
 function Summary({
   summary,
+  prior,
   router,
   t,
   units,
   haptics,
 }: {
   summary: Summ;
+  /** the athlete's sessions BEFORE this one — the "vs your usual" baseline. */
+  prior: LoggedSession[];
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
   units: WeightUnit;
@@ -1784,6 +1790,10 @@ function Summary({
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
   const bodyweightKg = useBodyweightLookup()();
+  const bwLookup = useBodyweightLookup();
+  // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
+  // last month, from the sessions they'd already rated before this one.
+  const feelBaseline = useMemo(() => loadBaseline(feelSamples(prior, bwLookup)), [prior, bwLookup]);
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
@@ -1953,6 +1963,15 @@ function Summary({
         <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: 1.5 }}>
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
+
+        {/* "How did that feel?" — asked HERE, straight after the last set, which
+            is when the answer is most accurate and the athlete is still holding
+            the phone. The Wrapped asks the same question later for a session
+            that was never rated; both read the stored value, so nobody is asked
+            twice. See core/session-feel.ts for why the answer matters. */}
+        {!summary.guest && (
+          <FeelPrompt compact sessionId={summary.sessionId} minutes={summary.minutes} baseline={feelBaseline} />
+        )}
 
         {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
         {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
