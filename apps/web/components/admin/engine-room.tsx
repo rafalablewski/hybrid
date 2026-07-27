@@ -406,6 +406,9 @@ export default function EngineRoom() {
         </Card>
       </div>
 
+      {/* ---- LLM explain ---- */}
+      <ExplainCard userId={feed?.user.id} whatIf={whatIf} whatIfActive={whatIfActive} />
+
       {/* ---- state drivers ---- */}
       <Card>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
@@ -540,6 +543,83 @@ export default function EngineRoom() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// "Explain this athlete" — asks the server to recompute the state and narrate
+// it via Claude, grounded on the structured engine output. Degrades to the
+// engines' own deterministic explanation (labelled) when no API key is set.
+function ExplainCard({
+  userId,
+  whatIf,
+  whatIfActive,
+}: {
+  userId?: string;
+  whatIf: WhatIfState;
+  whatIfActive: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ source: string; text: string; note?: string } | null>(null);
+  const [err, setErr] = useState("");
+
+  const explain = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      const r = await fetch("/api/admin/engine/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          whatIf: whatIfActive
+            ? {
+                loadPct: whatIf.loadPct,
+                hrv: whatIf.hrv ?? undefined,
+                restingHr: whatIf.restingHr ?? undefined,
+                sleep: whatIf.sleep ?? undefined,
+              }
+            : undefined,
+        }),
+      });
+      if (!r.ok) throw new Error();
+      setResult((await r.json()) as { source: string; text: string; note?: string });
+    } catch {
+      setErr("Explanation failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
+        <div>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+            Explain this athlete – grounded narrative
+          </Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
+            The server recomputes the engine state and asks Claude to narrate it — grounded only on
+            the structured output above{whatIfActive ? ", including the active what-if" : ""}. Falls
+            back to the deterministic engine explanation without an API key.
+          </Mono>
+        </div>
+        <Button label={busy ? "Explaining…" : "Explain"} onClick={explain} disabled={busy} />
+      </div>
+      {err && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{err}</Mono>}
+      {result && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
+          <Chip c={result.source === "ai" ? LIME_HEX : AMBER}>
+            {result.source === "ai" ? "Claude" : "engine fallback"}
+          </Chip>
+          <span style={{ ...disp, display: "block", fontSize: fs.bodyLg, lineHeight: 1.6, color: CHALK, marginTop: 8 }}>
+            {result.text}
+          </span>
+          {result.note && (
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={AMBER}>{result.note}</Mono>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
