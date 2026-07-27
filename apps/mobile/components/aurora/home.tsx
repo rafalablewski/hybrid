@@ -25,6 +25,8 @@ import {
   READINESS_FEELINGS,
   READINESS_FACE,
   type ReadinessFeeling,
+  logbookWeek,
+  todayDoneState,
   sessionsOnDay,
   sessionShape,
   sessionCardioTotals,
@@ -70,6 +72,7 @@ import CoachRail from "./coach-rail";
 import AuroraCheckin from "./checkin";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
+import AuroraTodayRail, { type TodayRailBottoms } from "./today-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -260,6 +263,53 @@ export default function AuroraHome() {
   // those rows "Plan" so the plan workout and the off-plan extras (the tennis
   // match, a freestyle lift) read apart while ALL of them stay listed.
   const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
+
+  // ── Today's sticky pill rail ──────────────────────────────────────────────
+  // Each pill is captured off its own source card's bottom edge, measured here
+  // with onLayout and compared against the scroll offset. The rule itself lives
+  // in core (today-rail.ts), shared with web so both pin at the same points.
+  // RN's onLayout reports a frame relative to its PARENT, so each source's
+  // content-space bottom is composed from the chain down to it: the entrance
+  // wrapper's own origin, the rail block, the card inside it, and (for the date
+  // capsule) the week strip's bottom inside that card.
+  const [railScrollY, setRailScrollY] = useState(0);
+  const [railGeom, setRailGeom] = useState({
+    origin: 0, // the entrance wrapper, within the scroll content
+    blockY: 0, // the rail block, within the wrapper
+    cardY: 0, // the week-rail card, within the block
+    cardH: 0,
+    weekBottom: null as number | null, // the week strip's bottom, within the card
+    feelY: 0, // the check-in card, within the wrapper
+    feelH: 0,
+  });
+  const measureRail = useCallback(
+    (patch: Partial<typeof railGeom>) =>
+      setRailGeom((g) => {
+        const next = { ...g, ...patch };
+        return (Object.keys(patch) as (keyof typeof g)[]).every((k) => g[k] === next[k]) ? g : next;
+      }),
+    [],
+  );
+  const railBottoms: TodayRailBottoms = useMemo(() => {
+    const { origin, blockY, cardY, cardH, weekBottom, feelY, feelH } = railGeom;
+    const cardTop = origin + blockY + cardY;
+    return {
+      date: weekBottom == null ? null : cardTop + weekBottom,
+      done: cardH ? cardTop + cardH : null,
+      ready: feelH ? origin + feelY + feelH : null,
+    };
+  }, [railGeom]);
+  // The same seven days the week strip draws, so the capsule's dot track and
+  // the strip can never disagree — the trailing window always ends on today.
+  const railWeek = useMemo(() => logbookWeek(sessions), [sessions]);
+  const railDoneState = useMemo(
+    () =>
+      todayDoneState({
+        loggedToday: railWeek.days[railWeek.days.length - 1]?.logged ?? false,
+        planStatus: sched?.days.find((d) => d.isToday)?.status ?? null,
+      }),
+    [railWeek, sched],
+  );
   // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
   // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
   // global 6h re-log cooldown, which also holds when back-logging a past day.
@@ -375,8 +425,19 @@ export default function AuroraHome() {
           same field here so it isn't the one flat tab next to History/More/You. */}
       <AuroraField />
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }} {...navScroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
-        <Animated.View style={enterStyle}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }}
+        {...navScroll}
+        // The nav pill owns its own scroll listener; chain ours after it rather
+        // than replacing it, so the pill still hides on scroll.
+        onScroll={(e) => {
+          navScroll.onScroll?.(e);
+          setRailScrollY(e.nativeEvent.contentOffset.y);
+        }}
+        scrollEventThrottle={16}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}
+      >
+        <Animated.View style={enterStyle} onLayout={(e) => measureRail({ origin: e.nativeEvent.layout.y })}>
         {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
             Replaces the old greeting + search/bell row: the brand sits centre
             with a lime accent rule, the avatar opens the profile, the bell
@@ -478,17 +539,20 @@ export default function AuroraHome() {
             <FetchError onRetry={load} />
           </View>
         ) : useRail ? (
-          <View style={{ marginTop: 14 }}>
-            <AuroraWeekRail
-              planId={planId!}
-              planStartedAt={planStartedAt!}
-              sessions={sessions}
-              maxes={planMaxes}
-              onStart={(blocks, title) => startPlanDay(blocks, title)}
-              onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
-              onSelectDay={setRailDay}
-              resetToken={railResetToken}
-            />
+          <View style={{ marginTop: 14 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
+            <View onLayout={(e) => measureRail({ cardY: e.nativeEvent.layout.y, cardH: e.nativeEvent.layout.height })}>
+              <AuroraWeekRail
+                planId={planId!}
+                planStartedAt={planStartedAt!}
+                sessions={sessions}
+                maxes={planMaxes}
+                onStart={(blocks, title) => startPlanDay(blocks, title)}
+                onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+                onSelectDay={setRailDay}
+                resetToken={railResetToken}
+                onWeekRowLayout={(bottom) => measureRail({ weekBottom: bottom })}
+              />
+            </View>
           </View>
         ) : logbookMode ? (
           /* LOGBOOK MODE ("The Constant") — the same week-rail object, in
@@ -496,14 +560,17 @@ export default function AuroraHome() {
              training, so a plan-less regular gets the calendar from their
              first session instead of the chooser forever. The chooser demotes
              to slim rows under an Explore-standard "Add structure" head. */
-          <View style={{ marginTop: 14 }}>
-            <AuroraLogbookRail
-              sessions={sessions}
-              onLog={() => router.push("/workout?source=empty")}
-              onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
-              onSelectDay={setRailDay}
-              resetToken={railResetToken}
-            />
+          <View style={{ marginTop: 14 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
+            <View onLayout={(e) => measureRail({ cardY: e.nativeEvent.layout.y, cardH: e.nativeEvent.layout.height })}>
+              <AuroraLogbookRail
+                sessions={sessions}
+                onLog={() => router.push("/workout?source=empty")}
+                onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+                onSelectDay={setRailDay}
+                resetToken={railResetToken}
+                onWeekRowLayout={(bottom) => measureRail({ weekBottom: bottom })}
+              />
+            </View>
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
@@ -697,17 +764,19 @@ export default function AuroraHome() {
             nothing else; the done count + log action live on the Also Today card
             above. Follows the rail's selected day: a past day shows (and can
             back-log) THAT day's feeling; a future day is read-only. */}
-        <FeelingCard
-          C={C}
-          feeling={feeling}
-          loggedAt={feelingAt}
-          cooldownFrom={lastCheckinAt}
-          isToday={dayIsToday}
-          isFuture={dayIsFuture}
-          dayTs={railDay?.ts ?? null}
-          dayLabel={dayLabel}
-          onPicked={loadFeeling}
-        />
+        <View onLayout={(e) => measureRail({ feelY: e.nativeEvent.layout.y, feelH: e.nativeEvent.layout.height })}>
+          <FeelingCard
+            C={C}
+            feeling={feeling}
+            loggedAt={feelingAt}
+            cooldownFrom={lastCheckinAt}
+            isToday={dayIsToday}
+            isFuture={dayIsFuture}
+            dayTs={railDay?.ts ?? null}
+            dayLabel={dayLabel}
+            onPicked={loadFeeling}
+          />
+        </View>
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
@@ -737,6 +806,22 @@ export default function AuroraHome() {
 
         </Animated.View>
       </ScrollView>
+
+      {/* THE STICKY PILL RAIL — what Today leaves behind once the masthead and
+          the logbook have scrolled away. Absolutely positioned OVER the scroll
+          view (never in its content), so nothing below it moves. Mirrors web
+          aurora/today-rail.tsx. */}
+      <AuroraTodayRail
+        scrollY={railScrollY}
+        bottoms={railBottoms}
+        days={railWeek.days}
+        doneState={railDoneState}
+        feeling={todayFeeling}
+        topInset={0}
+        onOpenMonth={() => router.push("/calendar")}
+        onOpenDone={() => (hasData ? router.push("/(tabs)/history") : router.push("/workout?source=empty"))}
+        onOpenCheckin={() => router.push("/checkin")}
+      />
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet visible={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>

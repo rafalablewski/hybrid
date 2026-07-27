@@ -28,6 +28,8 @@ import { fs, space,
   sessionIcon,
   READINESS_FEELINGS,
   READINESS_FACE,
+  logbookWeek,
+  todayDoneState,
   type ReadinessFeeling,
   type SemanticRole,
   type LoggedSession,
@@ -49,6 +51,7 @@ import QuickSportLog from "../quick-sport";
 import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
+import AuroraTodayRail from "./today-rail";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraNutrition from "./nutrition";
@@ -216,6 +219,24 @@ export default function AuroraToday({
   // (un-enrolled) — a stale day must never scope the cards with no rail visible.
   const [railDay, setRailDay] = useState<ScheduledDay | LogbookDay | null>(null);
   useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
+  // ── Today's sticky pill rail ──────────────────────────────────────────────
+  // Each pill is measured off its own source card's bottom edge, so the three
+  // anchors below are the ONLY coupling between this screen and the rail; the
+  // capture rule itself lives in core (today-rail.ts) and is shared with
+  // mobile. The rail always reads the REAL today, never the scrubbed day — a
+  // pinned bar that followed the rail's selection would contradict itself.
+  const railWeekRow = useRef<HTMLDivElement | null>(null);
+  const railSourceCard = useRef<HTMLDivElement | null>(null);
+  const railFeelingCard = useRef<HTMLDivElement | null>(null);
+  const railAnchors = useMemo(
+    () => ({ date: railWeekRow, done: railSourceCard, ready: railFeelingCard }),
+    [],
+  );
+  // The same seven days the week strip draws, so the capsule's dot track and
+  // the strip can never disagree. logbookWeek is the trailing window ending
+  // today for BOTH modes — the plan rail's own window is plan-relative, and a
+  // pinned capsule must always end on today.
+  const railWeek = useMemo(() => logbookWeek(sessions), [sessions]);
   const dayIsToday = !(useRail || logbookMode) || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
@@ -369,6 +390,23 @@ export default function AuroraToday({
         </div>
       </div>
 
+      {/* THE STICKY PILL RAIL — what Today leaves behind once the masthead and
+          the logbook have scrolled away. Zero-height in the flow: the bar is
+          absolutely positioned over the content, so nothing below moves and the
+          page scrolls UNDER the blur. Mirrors mobile home.tsx. */}
+      <AuroraTodayRail
+        anchors={railAnchors}
+        days={railWeek.days}
+        doneState={todayDoneState({
+          loggedToday: railWeek.days[railWeek.days.length - 1]?.logged ?? false,
+          planStatus: sched?.days.find((d) => d.isToday)?.status ?? null,
+        })}
+        feeling={todayFeeling}
+        onOpenMonth={() => (onNavigate ? onNavigate("calendar") : router.push("/calendar"))}
+        onOpenDone={() => (hasData ? setDoneOpen(true) : onStart())}
+        onOpenCheckin={() => railFeelingCard.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+      />
+
       {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
           chooser's "Free", or the scrub-distance tag), ONE big headline, and
           the greeting demoted to a single warm sentence beneath it. The old
@@ -422,16 +460,19 @@ export default function AuroraToday({
           <FetchError onRetry={() => onRetry?.()} />
         </div>
       ) : useRail ? (
-        <AuroraWeekRail
-          planId={planId!}
-          planStartedAt={planStartedAt!}
-          sessions={sessions}
-          maxes={planMaxes}
-          onStart={onStart}
-          onNavigate={onNavigate}
-          onSelectDay={setRailDay}
-          resetToken={railResetToken}
-        />
+        <div ref={railSourceCard}>
+          <AuroraWeekRail
+            planId={planId!}
+            planStartedAt={planStartedAt!}
+            sessions={sessions}
+            maxes={planMaxes}
+            onStart={onStart}
+            onNavigate={onNavigate}
+            onSelectDay={setRailDay}
+            resetToken={railResetToken}
+            weekRowRef={railWeekRow}
+          />
+        </div>
       ) : logbookMode ? (
         /* LOGBOOK MODE ("The Constant") — the same week-rail object, in
            logbook mode: the last seven days with the athlete's real logged
@@ -439,13 +480,16 @@ export default function AuroraToday({
            session instead of the chooser forever. The chooser demotes to slim
            rows under an Explore-standard "Add structure" head. */
         <div style={{ marginTop: 14 }}>
-          <AuroraLogbookRail
-            sessions={sessions}
-            onLog={() => onStart()}
-            onNavigate={onNavigate}
-            onSelectDay={setRailDay}
-            resetToken={railResetToken}
-          />
+          <div ref={railSourceCard}>
+            <AuroraLogbookRail
+              sessions={sessions}
+              onLog={() => onStart()}
+              onNavigate={onNavigate}
+              onSelectDay={setRailDay}
+              resetToken={railResetToken}
+              weekRowRef={railWeekRow}
+            />
+          </div>
           <div style={{ margin: "24px 2px 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.trainYourWay")}</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
@@ -643,16 +687,18 @@ export default function AuroraToday({
           the done count + log action live on the Also Today card above. Follows
           the rail's selected day: a past day shows (and can back-log) THAT day's
           feeling; a future day is read-only — you can't feel the future. */}
-      <FeelingCard
-        feeling={feeling}
-        loggedAt={feelingAt}
-        cooldownFrom={lastCheckinAt}
-        isToday={dayIsToday}
-        isFuture={dayIsFuture}
-        dayTs={railDay?.ts ?? null}
-        dayLabel={dayLabel}
-        onPicked={loadFeeling}
-      />
+      <div ref={railFeelingCard}>
+        <FeelingCard
+          feeling={feeling}
+          loggedAt={feelingAt}
+          cooldownFrom={lastCheckinAt}
+          isToday={dayIsToday}
+          isFuture={dayIsFuture}
+          dayTs={railDay?.ts ?? null}
+          dayLabel={dayLabel}
+          onPicked={loadFeeling}
+        />
+      </div>
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
           Explore-standard section head (bold display title); the ✦ stays — it's

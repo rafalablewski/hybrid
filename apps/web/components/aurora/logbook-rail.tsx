@@ -39,6 +39,7 @@ export default function AuroraLogbookRail({
   onNavigate,
   onSelectDay,
   resetToken,
+  weekRowRef,
 }: {
   sessions: LoggedSession[];
   /** Start an empty workout (today's primary action when nothing is logged). */
@@ -51,6 +52,9 @@ export default function AuroraLogbookRail({
   /** Bump to snap the rail's internal selection back to today (the masthead's
    *  "Back to today" affordance). */
   resetToken?: number;
+  /** Today's pill rail measures the date capsule's capture point off the week
+   *  strip's own bottom edge, so the pill appears exactly as the strip goes. */
+  weekRowRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -86,7 +90,7 @@ export default function AuroraLogbookRail({
       </div>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
         {week.days.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}

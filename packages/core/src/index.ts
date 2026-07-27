@@ -25,6 +25,7 @@ export * from "./plan-program";
 export * from "./plan-programs";
 export * from "./plan-schedule";
 export * from "./logbook-week";
+export * from "./today-rail";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";

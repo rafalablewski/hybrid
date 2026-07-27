@@ -92,6 +92,7 @@ export default function AuroraWeekRail({
   onNavigate,
   onSelectDay,
   resetToken,
+  weekRowRef,
 }: {
   planId: string;
   planStartedAt: string;
@@ -109,6 +110,9 @@ export default function AuroraWeekRail({
   /** Bump to snap the rail's internal selection back to today (the masthead's
    *  "Back to today" affordance). Mirrors the mobile rail. */
   resetToken?: number;
+  /** Today's pill rail measures the date capsule's capture point off the week
+   *  strip's own bottom edge, so the pill appears exactly as the strip goes. */
+  weekRowRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
@@ -165,7 +169,7 @@ export default function AuroraWeekRail({
       </div>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
         {windowDays.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
