@@ -817,7 +817,7 @@ export default function AuroraHome() {
         days={railWeek.days}
         doneState={railDoneState}
         feeling={todayFeeling}
-        topInset={0}
+        topInset={insets.top}
         onOpenMonth={() => router.push("/calendar")}
         onOpenDone={() => (hasData ? router.push("/(tabs)/history") : router.push("/workout?source=empty"))}
         onOpenCheckin={() => router.push("/checkin")}
