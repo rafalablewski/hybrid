@@ -228,18 +228,24 @@ describe("strength profiles (per-exercise editor behaviour)", () => {
     expect(exerciseProfile("Weighted Chin-Up").strength?.loadMode).toBe("bodyweight-plus");
   });
 
-  it("dips split by target muscle: plain Dip is triceps, Chest Dip is chest; both bodyweight, both have weighted variants", () => {
+  it("dips split by target muscle: Triceps Dip is triceps, Chest Dip is chest; both bodyweight, both have weighted variants", () => {
     // Triceps-primary (upright) and chest-primary (forward-lean) dips are
     // distinct catalog entries so tonnage/analytics attribute the right muscle.
-    expect(gymExercise("Dip")?.category).toBe("Triceps");
-    expect(gymExercise("Dip")?.primary).toEqual(["triceps"]);
+    expect(gymExercise("Triceps Dip")?.category).toBe("Triceps");
+    expect(gymExercise("Triceps Dip")?.primary).toEqual(["triceps"]);
     expect(gymExercise("Chest Dip")?.category).toBe("Chest");
     expect(gymExercise("Chest Dip")?.primary).toEqual(["chest"]);
     // Plain variants count bodyweight; weighted variants add the entered plate.
-    expect(gymExercise("Dip")?.loadMode).toBe("bodyweight");
-    expect(gymExercise("Weighted Dip")?.loadMode).toBe("bodyweight-plus");
+    expect(gymExercise("Triceps Dip")?.loadMode).toBe("bodyweight");
+    expect(gymExercise("Weighted Triceps Dip")?.loadMode).toBe("bodyweight-plus");
     expect(gymExercise("Chest Dip")?.loadMode).toBe("bodyweight");
     expect(gymExercise("Weighted Chest Dip")?.loadMode).toBe("bodyweight-plus");
+  });
+
+  it("the old ambiguous 'Dip' name still resolves, to the triceps entry (rename breadcrumb)", () => {
+    expect(gymExercise("Dip")?.name).toBe("Triceps Dip");
+    expect(gymExercise("Dip")?.category).toBe("Triceps");
+    expect(gymExercise("Weighted Dip")?.name).toBe("Weighted Triceps Dip");
   });
 
   it("a farmer carry is measured in metres", () => {

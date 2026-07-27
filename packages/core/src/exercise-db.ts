@@ -335,8 +335,8 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Close-Grip Push-Up", "Triceps", "push-h", ["triceps", "chest"], ["front-delts"], "bodyweight", null),
   // Triceps dips (upright torso, elbows tucked → triceps-primary) plus the
   // weighted variant (bodyweight-plus). Chest-focused dips live under Chest.
-  E("Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null),
-  E("Weighted Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null, BWPLUS),
+  E("Triceps Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null),
+  E("Weighted Triceps Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null, BWPLUS),
   E("Bench Dip", "Triceps", "push-v", ["triceps"], ["chest", "front-delts"], "bodyweight", null),
 
   // ---- Abs & Core ----
@@ -498,6 +498,10 @@ export const GYM_EXERCISE_MAP: Record<string, GymExercise> = Object.fromEntries(
 export const GYM_ALIASES: Record<string, string> = {
   // The old barbell "Incline Bench Press" became a dumbbell lift.
   "Incline Bench Press": "Incline Dumbbell Bench Press",
+  // "Dip" was ambiguous between the triceps- and chest-primary variants; the
+  // triceps-primary entry is now explicitly named. "Chest Dip" is unaffected.
+  "Dip": "Triceps Dip",
+  "Weighted Dip": "Weighted Triceps Dip",
 
   // ---- Prescribed-name bridges (plan programs + sport S&C pools) ----
   // The shipped plans and the sport engine name lifts the way a COACH writes
@@ -510,7 +514,7 @@ export const GYM_ALIASES: Record<string, string> = {
   // on purpose: a plan is code and must attribute without waiting on the
   // DB-backed library to load.
   "Squat": "Back Squat",
-  "Dips": "Dip",
+  "Dips": "Triceps Dip",
   "Dumbbell Curl": "DB Curl",
   "Lateral Raises": "Lateral Raise",
   "Skull Crushers": "Skull Crusher",
@@ -609,7 +613,7 @@ export const GYM_ALIASES: Record<string, string> = {
   "Frog Pump": "Glute Bridge",
   "KB Pistol Squat": "Pistol Squat",
   "KB Step-up": "Step-Up",
-  "KB Dips": "Dip",
+  "KB Dips": "Triceps Dip",
   "KB Cossack Squat": "Cossack Squat",
   "Lateral Squat": "Cossack Squat",
   "Curtsy Lunges": "Curtsy Lunge",

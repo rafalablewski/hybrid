@@ -57,7 +57,7 @@ describe("exercise animation", () => {
     expect(arch("Hip Thrust")).toBe("hipThrust");
     expect(arch("Bench Press")).toBe("pressH");
     expect(arch("Overhead Press")).toBe("pressV");
-    expect(arch("Dip")).toBe("dip");
+    expect(arch("Triceps Dip")).toBe("dip");
     expect(arch("Pull-Up")).toBe("pullV");
     expect(arch("Barbell Row")).toBe("pullH");
     expect(arch("Plank")).toBe("plank");
