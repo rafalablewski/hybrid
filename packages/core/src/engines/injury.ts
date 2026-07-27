@@ -84,7 +84,10 @@ export interface TissueRisk {
   /** acute:chronic workload ratio (1 = balanced; >1.5 = spiking) */
   acwr: number;
   drivers: RiskDriver[];
-  /** false when there isn't enough chronic history to trust the ACWR */
+  /** false when there isn't enough chronic history to trust the ACWR — the log
+   *  spans less than MIN_HISTORY_DAYS, or this tissue carries no load OUTSIDE
+   *  the acute window. Then `acwr` is reported as a neutral 1 and neither the
+   *  spike nor the detraining driver can fire (see computeInjuryRisk). */
   enoughHistory: boolean;
 }
 
@@ -101,13 +104,14 @@ export interface InjuryRisk {
   flagged: TissueRisk[];
 }
 
-/** Undecayed per-tissue load summed over sessions within the last `days`.
+/** Undecayed per-tissue load summed over sessions in the window `[from, days)`
+ *  days ago (default `from` 0 = the last `days` days).
  *  Exported so the Engine Room's derivations show the same acute/chronic
  *  windows the risk engine actually used. */
-export function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
+export function tissueLoadWindow(log: TrainingLog, days: number, from = 0): Record<MuscleGroup, number> {
   const load = Object.fromEntries(ALL_MUSCLES.map((m) => [m, 0])) as Record<MuscleGroup, number>;
   for (const session of log) {
-    if (session.daysAgo < 0 || session.daysAgo >= days) continue;
+    if (session.daysAgo < Math.max(0, from) || session.daysAgo >= days) continue;
     for (const it of session.items) {
       const meta = movementFor(it.move);
       if (!meta) continue;
@@ -138,6 +142,18 @@ function ramp(x: number, lo: number, hi: number): number {
 const SPIKE_RAMP_WIDTH = 0.9;
 
 /**
+ * Days the log must span before a chronic baseline means anything. Mirrors
+ * computeLoad (load.ts), which gates its ACWR band the same way.
+ *
+ * Without this gate the ratio DEGENERATES: when every logged session sits
+ * inside the 7-day acute window, chronic₂₈ equals acute₇, so
+ * acute / (chronic/4) = 4.00 exactly — for every tissue, whatever the athlete
+ * actually did. That is the formula's ceiling, not a workload spike, and it
+ * used to hand a brand-new athlete a phantom 55-point "spike" on every tissue.
+ */
+const MIN_HISTORY_DAYS = 14;
+
+/**
  * Per-tissue injury risk. Components (capped, summed to 0..100):
  *   • workload spike — ACWR above the onset ramps in (the classic, but
  *     per-tissue). The onset defaults to the population 1.3 and can be the
@@ -145,6 +161,10 @@ const SPIKE_RAMP_WIDTH = 0.9;
  *   • absolute load  — a hammered tissue carries baseline risk even in balance
  *   • detraining     — very low ACWR (<0.8) carries a small spike-on-return risk
  *   • recovery       — suppressed HRV/sleep / elevated resting HR raises all tissues
+ *
+ * The two ratio-derived components (spike, detraining) only fire when the
+ * tissue actually HAS a chronic baseline — see MIN_HISTORY_DAYS. Absolute load
+ * and recovery need no history, so a new athlete still gets a real score.
  */
 export function computeInjuryRisk(
   log: TrainingLog,
@@ -156,6 +176,14 @@ export function computeInjuryRisk(
   const fatigue = computeFatigue(log);
   const acute = tissueLoadWindow(log, 7);
   const chronic28 = tissueLoadWindow(log, 28);
+  // Load that PREDATES the acute window — the only part that can form a chronic
+  // baseline to compare this week against.
+  const preAcute = tissueLoadWindow(log, 28, 7);
+
+  // How far back the log reaches at all. A log that stops short of
+  // MIN_HISTORY_DAYS has no trustworthy chronic base for ANY tissue.
+  const spanDays = log.length ? Math.max(...log.map((s) => s.daysAgo)) : 0;
+  const enoughSpan = spanDays >= MIN_HISTORY_DAYS;
 
   // recovery suppression is systemic — same penalty across tissues (0..18)
   const recoveryPenalty = bio ? Math.max(0, -biometricAdjustment(bio)) * 1.2 : 0;
@@ -163,12 +191,18 @@ export function computeInjuryRisk(
   const tissues: TissueRisk[] = ALL_MUSCLES.map((tissue) => {
     const acuteLoad = acute[tissue];
     const chronicWeekly = chronic28[tissue] / 4; // weekly average
-    const enoughHistory = chronicWeekly > 0;
+    // Both conditions matter: the log must reach back far enough, AND this
+    // tissue must have been trained before this week. A tissue trained for the
+    // first time this week has no baseline to ratio against, however long the
+    // athlete's overall history is.
+    const enoughHistory = enoughSpan && chronicWeekly > 0 && preAcute[tissue] > 0;
     const acwr = enoughHistory ? acuteLoad / chronicWeekly : 1;
 
     const drivers: RiskDriver[] = [];
 
-    const spike = ramp(acwr, onset, onset + SPIKE_RAMP_WIDTH) * 55;
+    // Both ratio-derived drivers are gated on enoughHistory: with no baseline
+    // the ratio carries no information, so it must not add OR remove risk.
+    const spike = enoughHistory ? ramp(acwr, onset, onset + SPIKE_RAMP_WIDTH) * 55 : 0;
     if (spike > 1)
       drivers.push({ kind: "spike", label: `Workload spike (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(spike), acwr });
 

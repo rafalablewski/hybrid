@@ -85,10 +85,66 @@ describe("computeInjuryRisk", () => {
       { daysAgo: 1, items: [{ move: "Bench Press", topRpe: 8, hardSets: 4 }] },
     ];
     const r = computeInjuryRisk(log);
+    // A single session gives chest load inside the ACUTE window only — there is
+    // nothing before this week to ratio against, so the ACWR isn't trusted.
     const chest = r.tissues.find((t) => t.tissue === "chest")!;
-    expect(chest.enoughHistory).toBe(true); // within 28d window it has chronic load
+    expect(chest.enoughHistory).toBe(false);
     const back = r.tissues.find((t) => t.tissue === "glutes")!;
     expect(back.enoughHistory).toBe(false); // untouched tissue
+  });
+
+  // Regression: acute₇ / (chronic₂₈ / 4) collapses to exactly 4.00 when every
+  // logged session sits inside the acute window — the formula's ceiling, not a
+  // workload spike. It used to be reported as a real ACWR on every tissue and
+  // fed each one a phantom 55-point spike driver.
+  it("does not report the degenerate 4.00 ACWR when all training is inside the acute window", () => {
+    const log: TrainingLog = [
+      { daysAgo: 0, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+      { daysAgo: 2, items: [{ move: "Bench Press", topRpe: 8, hardSets: 4 }] },
+      { daysAgo: 3, items: [{ move: "Deadlift", topRpe: 9, hardSets: 3 }] },
+      { daysAgo: 5, items: [{ move: "Pull-up", topRpe: 8, hardSets: 4 }] },
+    ];
+    const r = computeInjuryRisk(log);
+    for (const t of r.tissues) {
+      expect(t.enoughHistory).toBe(false);
+      expect(t.acwr).toBe(1);
+      expect(t.drivers.some((d) => d.kind === "spike")).toBe(false);
+      expect(t.drivers.some((d) => d.kind === "detrain")).toBe(false);
+    }
+    // Absolute tissue load still scores — a new athlete gets a real number,
+    // just not a fabricated spike.
+    expect(r.overall).toBeLessThan(50);
+    expect(r.flagged).toHaveLength(0);
+  });
+
+  it("a tissue trained for the first time this week gets no ACWR, even with a long log", () => {
+    const log: TrainingLog = [
+      // months of squatting…
+      ...Array.from({ length: 9 }, (_, i) => ({
+        daysAgo: i * 3 + 1,
+        items: [{ move: "Back Squat", topRpe: 7, hardSets: 4 }],
+      })),
+      // …then bench for the very first time, this week
+      { daysAgo: 2, items: [{ move: "Bench Press", topRpe: 8, hardSets: 6 }] },
+    ];
+    const r = computeInjuryRisk(log);
+    expect(r.tissues.find((t) => t.tissue === "quads")!.enoughHistory).toBe(true);
+    const chest = r.tissues.find((t) => t.tissue === "chest")!;
+    expect(chest.enoughHistory).toBe(false);
+    expect(chest.acwr).toBe(1);
+  });
+
+  it("trusts the ratio once the log reaches back past the acute window", () => {
+    const log: TrainingLog = [
+      { daysAgo: 1, items: [{ move: "Back Squat", topRpe: 9, hardSets: 10 }] },
+      { daysAgo: 16, items: [{ move: "Back Squat", topRpe: 7, hardSets: 2 }] },
+      { daysAgo: 22, items: [{ move: "Back Squat", topRpe: 7, hardSets: 2 }] },
+    ];
+    const quad = computeInjuryRisk(log).tissues.find((t) => t.tissue === "quads")!;
+    expect(quad.enoughHistory).toBe(true);
+    expect(quad.acwr).toBeGreaterThan(1.3);
+    expect(quad.acwr).toBeLessThan(4);
+    expect(quad.drivers.some((d) => d.kind === "spike")).toBe(true);
   });
 
   it("(trajectory) returns one point per day, oldest first, ending today", () => {

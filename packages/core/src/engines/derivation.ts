@@ -201,7 +201,11 @@ export function deriveTissueRisk(
     },
     t.enoughHistory
       ? { label: "ACWR", math: `${f1(acute)} / ${f1(chronicWeekly)} = ${f2(t.acwr)}` }
-      : { label: "ACWR", math: "no chronic history → treated as 1 (not trusted)" },
+      : {
+          label: "ACWR",
+          math: "no chronic baseline before this week → treated as 1 (not trusted)",
+          note: "acute₇ / (chronic₂₈/4) is 4.00 by construction when all the load sits inside the acute window — a ceiling, not a spike. The spike and detraining terms are held at 0 until a real baseline exists.",
+        },
     {
       label: `Workload spike (onset ${f2(spikeOnset)})`,
       math: `ramp(${f2(t.acwr)}, ${f2(spikeOnset)}, ${f2(sat)}) × 55 = ${spike}`,

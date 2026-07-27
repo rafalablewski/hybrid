@@ -92,20 +92,41 @@ describe("computeInjuryRisk with a personal spike onset", () => {
 });
 
 describe("acwrEventsFromHistory", () => {
+  // A log with REAL chronic history: a base block reaching back four weeks plus
+  // a heavy recent week. The injury engine only trusts the ratio once the log
+  // reaches past the acute window, so evidence has to come from a log like this
+  // (SAMPLE_TRAINING_LOG spans just 9 days — see the last case below).
+  const withHistory: TrainingLog = [
+    { daysAgo: 1, items: [{ move: "Back Squat", topRpe: 9, hardSets: 8 }] },
+    { daysAgo: 3, items: [{ move: "Back Squat", topRpe: 9, hardSets: 7 }] },
+    ...Array.from({ length: 7 }, (_, i) => ({
+      daysAgo: 10 + i * 3,
+      items: [{ move: "Back Squat", topRpe: 7, hardSets: 2 }],
+    })),
+  ];
+
   it("replays the peak ACWR at each outcome date and drops no-history outcomes", () => {
-    const events = acwrEventsFromHistory(SAMPLE_TRAINING_LOG, [
+    const events = acwrEventsFromHistory(withHistory, [
       { daysAgo: 0, injured: false },
       { daysAgo: 500, injured: true }, // long before any session — no history
     ]);
     expect(events).toHaveLength(1);
-    expect(events[0]!.acwr).toBeCloseTo(maxAcwrAt(SAMPLE_TRAINING_LOG, 0), 10);
+    expect(events[0]!.acwr).toBeCloseTo(maxAcwrAt(withHistory, 0), 10);
     expect(events[0]!.injured).toBe(false);
   });
 
   it("maxAcwrAt rebases the log to the target day", () => {
-    const today = maxAcwrAt(SAMPLE_TRAINING_LOG, 0);
+    const today = maxAcwrAt(withHistory, 0);
     expect(today).toBeGreaterThan(0);
     // rebased far into the past there is nothing to compute
-    expect(maxAcwrAt(SAMPLE_TRAINING_LOG, 500)).toBe(0);
+    expect(maxAcwrAt(withHistory, 500)).toBe(0);
+  });
+
+  // Regression: the sample log spans 9 days, so every tissue's chronic window
+  // is really just the acute one and the ratio would be the 4.00 ceiling. That
+  // is not evidence — it used to push the learned onset straight to its cap.
+  it("yields no evidence from a log that never reaches past the acute window", () => {
+    expect(maxAcwrAt(SAMPLE_TRAINING_LOG, 0)).toBe(0);
+    expect(acwrEventsFromHistory(SAMPLE_TRAINING_LOG, [{ daysAgo: 0, injured: true }])).toEqual([]);
   });
 });

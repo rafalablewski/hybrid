@@ -122,8 +122,11 @@ describe("a second, library-named workout moves injury risk", () => {
 
     const risk = computeInjuryRisk(log);
     for (const t of risk.tissues) {
-      expect(t.enoughHistory, t.tissue).toBe(true);
+      // Every tissue carries real load — that's what resolving the library
+      // names buys. The ACWR stays untrusted: a two-day log has no chronic
+      // baseline, so the ratio would be the degenerate 4.00 ceiling.
       expect(t.risk, t.tissue).toBeGreaterThan(0);
+      expect(t.enoughHistory, t.tissue).toBe(false);
     }
   });
 
