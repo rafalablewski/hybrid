@@ -239,6 +239,26 @@ const COVER_H = 272;
 const COVER_BAR = 56;
 const COVER_DELTA = COVER_H - COVER_BAR;
 
+/** ── the seam ──────────────────────────────────────────────────────────────
+ *  The cover's bottom edge used to butt straight up against the page and read
+ *  as a CUT: both sides are near-black, but the cover carries its own accent
+ *  wash + title scrim while the page carries the lg-field wash, so the two
+ *  never quite match and the join draws a line right above the first card.
+ *  This band continues the cover ink DOWN into the page and dissolves it, so
+ *  the two washes cross-fade instead of meeting at an edge. `OVER` is an opaque
+ *  head that lives BEHIND the sticky cover, hiding the band's own top edge.
+ *  Mobile parity: apps/mobile/components/plan-hero.tsx BLEED_*. */
+const BLEED_OVER = 64;
+const BLEED_FADE = 148;
+/** Eased ink→nothing ramp (a linear alpha ramp bands and dies too early). Every
+ *  stop shares the cover's RGB, so the interpolation never greys out. */
+const BLEED_BG = (() => {
+  const head = (BLEED_OVER / (BLEED_OVER + BLEED_FADE)) * 100;
+  const at = (f: number) => (head + f * (100 - head)).toFixed(2);
+  const ink = (a: number) => `color-mix(in srgb, ${COVER_INK} ${a}%, transparent)`;
+  return `linear-gradient(180deg, ${COVER_INK} 0%, ${COVER_INK} ${head.toFixed(2)}%, ${ink(90)} ${at(0.22)}%, ${ink(62)} ${at(0.45)}%, ${ink(30)} ${at(0.68)}%, ${ink(0)} 100%)`;
+})();
+
 /** Publishes `--hero-collapse` (0→1 over the cover's collapse range) onto the
  *  detail root, rAF-throttled off window scroll; a release mid-range snaps to
  *  the nearer pole (instantly under Reduce Motion — the scroll-tracking itself
@@ -330,8 +350,11 @@ function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back
             tells you which level you're on */}
         <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(${emblem ? "158deg" : "202deg"}, color-mix(in srgb, ${accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
         <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at ${emblem ? "14% 8%" : "86% 8%"}, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
-        {/* bottom scrim for title legibility — retired as the title leaves */}
-        <span aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 52%)", opacity: `calc(1 - ${p})` }} />
+        {/* bottom scrim for title legibility — retired as the title leaves.
+            The last sliver runs out to FULLY opaque cover ink (below the title,
+            so the poster's wash is untouched) so the bleed band underneath
+            starts from exactly the same colour. */}
+        <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 50%, transparent) 3%, transparent 52%)`, opacity: `calc(1 - ${p})` }} />
         {/* ghost glyph — the cover art; parallax drift against the frame.
             On the goal emblem it IS the subject: bigger, brighter, deeper. */}
         <span aria-hidden style={{ position: "absolute", top: emblem ? -18 : -36, right: emblem ? -34 : -16, fontSize: emblem ? 218 : 152, lineHeight: 1, color: `rgba(255,255,255,${emblem ? ".09" : ".07"})`, pointerEvents: "none", opacity: `calc(1 - ${p} * .6)`, transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * (emblem ? 0.66 : 0.55))}px))` }}>{cover.glyph}</span>
@@ -360,6 +383,15 @@ function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back
 
         {/* hairline — the collapsed bar's bottom edge */}
         <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "rgba(255,255,255,.16)", opacity: p }} />
+      </div>
+
+      {/* the cover ink bleeding into the page — in normal flow (so it scrolls
+          up under the sticky cover) but zero-height and z-index:-1, so it costs
+          no layout and paints BEHIND the hem it fades past. `--cover-bleed` is
+          0 on the light theme: there a dark poster meeting warm paper is a real
+          boundary, not an artifact, and a dark veil would only muddy the hem. */}
+      <div aria-hidden style={{ position: "relative", height: 0, zIndex: -1, pointerEvents: "none" }}>
+        <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 16px))", right: "calc(-1 * var(--page-pad-x, 16px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${p}))` }} />
       </div>
 
       {cover.stats.length > 0 && (
