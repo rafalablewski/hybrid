@@ -56,7 +56,12 @@ export default function AuroraTodayRail({
   days: Pick<LogbookDay, "dateKey" | "logged" | "isToday" | "weekdayShort" | "dayOfMonth" | "monthShort">[];
   doneState: TodayDoneState;
   feeling: ReadinessFeeling | null;
-  /** safe-area top, so the bar clears the notch. */
+  /** The safe-area top inset. The overlay itself sits at the SCREEN's top edge
+   *  — an absolutely positioned child is laid out from its parent's border box,
+   *  so the host SafeAreaView's own paddingTop does NOT move it (the ambient
+   *  AuroraField behaves the same way, which is why its glow reaches behind the
+   *  status bar). The bar therefore pads its CONTENT down by this much: the ink
+   *  runs up under the clock with no seam, and the pills clear it. */
   topInset: number;
   onOpenMonth: () => void;
   onOpenDone: () => void;
@@ -83,9 +88,9 @@ export default function AuroraTodayRail({
   return (
     <View
       pointerEvents={state.pinned ? "box-none" : "none"}
-      style={{ position: "absolute", top: topInset, left: 0, right: 0, zIndex: 30 }}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 30 }}
     >
-      <Bar visible={state.pinned} reduced={reduced} C={C}>
+      <Bar visible={state.pinned} reduced={reduced} C={C} topInset={topInset}>
         {/* DATE — the week strip's residue. At the ceiling it sheds its month
             and dot track and contracts to "Sun 26". */}
         <Pill open={has("date")} reduced={reduced} C={C} onPress={onOpenMonth} label={t("w.home.pill.dateAria")}>
@@ -156,7 +161,7 @@ const READY_ACCENT: Record<ReadinessFeeling, "lime" | "blue" | "amber" | "red"> 
 };
 
 /** The bar: fades up 7dp with its hairline as the first pill lands. */
-function Bar({ visible, reduced, C, children }: { visible: boolean; reduced: boolean; C: ReturnType<typeof useTheme>["palette"]; children: React.ReactNode }) {
+function Bar({ visible, reduced, C, topInset, children }: { visible: boolean; reduced: boolean; C: ReturnType<typeof useTheme>["palette"]; topInset: number; children: React.ReactNode }) {
   const m = railMotion("pin", reduced);
   const v = useRef(new Animated.Value(visible ? 1 : 0)).current;
   useEffect(() => {
@@ -165,13 +170,15 @@ function Bar({ visible, reduced, C, children }: { visible: boolean; reduced: boo
   return (
     <Animated.View
       style={{
-        minHeight: TODAY_RAIL_BAR_H,
+        // The bar spans the status bar as well, so its own height is the rail
+        // plus whatever the notch takes.
+        minHeight: TODAY_RAIL_BAR_H + topInset,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 7,
         paddingHorizontal: 16,
-        paddingTop: 8,
+        paddingTop: topInset + 8,
         paddingBottom: 9,
         // No backdrop-filter in RN: an ink wash at the same weight as the web
         // blur keeps the two bars reading the same.
