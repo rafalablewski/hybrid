@@ -15,9 +15,6 @@ export const web_recovery = {
     "w.recovery.checkins.sleep": "Sleep",
     "w.recovery.checkins.freshness": "Freshness",
     "w.recovery.checkins.mood": "Mood",
-    "w.recovery.checkins.weightKg": "Weight kg",
-    "w.recovery.checkins.adherencePct": "Adherence %",
-    "w.recovery.checkins.notePlaceholder": "How did today go? Anything your coach should know…",
     "w.recovery.checkins.shareCoach": "Share with coach",
     "w.recovery.checkins.shareCoachOn": "Send today's check-in to your coach.",
     "w.recovery.checkins.shareCoachOff": "Full plan — upgrade to share check-ins with a coach.",
@@ -56,7 +53,6 @@ export const web_recovery = {
     "w.recovery.checkins.prev": "Back",
     "w.recovery.checkins.detailsStep": "Details",
     "w.recovery.checkins.reviewTitle": "Today's read",
-    "w.recovery.checkins.detailsOptional": "Optional — add weight, adherence or a note.",
     "w.recovery.checkins.loggedTitle": "Check-in logged",
     "w.recovery.checkins.loggedSub": "Nice — today's check-in is saved. Log again anytime it shifts.",
     "w.recovery.checkins.loggedPartialSub": "Saved. Some questions are still blank — nothing gets guessed for you, so you can fill them in whenever.",
@@ -68,6 +64,7 @@ export const web_recovery = {
     "w.recovery.checkins.cooldownTitle": "Once every 6 hours",
     // SAVED / EDIT — the flow re-opened on a day that is already fully answered
     // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.loading": "Reading today's check-in…",
     "w.recovery.checkins.savedTitle": "Check-in saved",
     "w.recovery.checkins.savedSub": "These answers are stored. Edit to change them.",
     "w.recovery.checkins.edit": "Edit",
@@ -396,9 +393,6 @@ export const web_recovery = {
     "w.recovery.checkins.sleep": "Sen",
     "w.recovery.checkins.freshness": "Świeżość mięśni",
     "w.recovery.checkins.mood": "Nastrój",
-    "w.recovery.checkins.weightKg": "Waga kg",
-    "w.recovery.checkins.adherencePct": "Zgodność %",
-    "w.recovery.checkins.notePlaceholder": "Jak minął dzień? Coś, co trener powinien wiedzieć…",
     "w.recovery.checkins.shareCoach": "Udostępnij trenerowi",
     "w.recovery.checkins.shareCoachOn": "Wyślij dzisiejsze podsumowanie do trenera.",
     "w.recovery.checkins.shareCoachOff": "Pełny plan — przejdź na wyższy plan, aby udostępniać podsumowania trenerowi.",
@@ -435,7 +429,6 @@ export const web_recovery = {
     "w.recovery.checkins.prev": "Wstecz",
     "w.recovery.checkins.detailsStep": "Szczegóły",
     "w.recovery.checkins.reviewTitle": "Dzisiejszy odczyt",
-    "w.recovery.checkins.detailsOptional": "Opcjonalnie — dodaj wagę, zgodność lub notatkę.",
     "w.recovery.checkins.loggedTitle": "Zapisano podsumowanie",
     "w.recovery.checkins.loggedSub": "Gotowe — dzisiejsze podsumowanie zapisane. Zapisz ponownie, gdy coś się zmieni.",
     "w.recovery.checkins.loggedPartialSub": "Zapisane. Kilka pytań zostało bez odpowiedzi — nic nie jest zgadywane za Ciebie, więc możesz je uzupełnić kiedy chcesz.",
@@ -447,6 +440,7 @@ export const web_recovery = {
     "w.recovery.checkins.cooldownTitle": "Raz na 6 godzin",
     // SAVED / EDIT — the flow re-opened on a day that is already fully answered
     // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.loading": "Wczytuję dzisiejszy check-in…",
     "w.recovery.checkins.savedTitle": "Check-in zapisany",
     "w.recovery.checkins.savedSub": "Te odpowiedzi są zapisane. Edytuj, aby je zmienić.",
     "w.recovery.checkins.edit": "Edytuj",
@@ -773,9 +767,6 @@ export const web_recovery = {
     "w.recovery.checkins.sleep": "Schlaf",
     "w.recovery.checkins.freshness": "Frische",
     "w.recovery.checkins.mood": "Stimmung",
-    "w.recovery.checkins.weightKg": "Gewicht kg",
-    "w.recovery.checkins.adherencePct": "Einhaltung %",
-    "w.recovery.checkins.notePlaceholder": "Wie war dein Tag? Etwas, das dein Coach wissen sollte…",
     "w.recovery.checkins.shareCoach": "Mit Coach teilen",
     "w.recovery.checkins.shareCoachOn": "Heutigen Check-in an deinen Coach senden.",
     "w.recovery.checkins.shareCoachOff": "Voller Plan — upgrade, um Check-ins mit einem Coach zu teilen.",
@@ -812,7 +803,6 @@ export const web_recovery = {
     "w.recovery.checkins.prev": "Zurück",
     "w.recovery.checkins.detailsStep": "Details",
     "w.recovery.checkins.reviewTitle": "Heutiger Read",
-    "w.recovery.checkins.detailsOptional": "Optional — Gewicht, Einhaltung oder eine Notiz.",
     "w.recovery.checkins.loggedTitle": "Check-in gespeichert",
     "w.recovery.checkins.loggedSub": "Super — dein heutiger Check-in ist gespeichert. Logge erneut, wenn es sich ändert.",
     "w.recovery.checkins.loggedPartialSub": "Gespeichert. Einige Fragen sind noch offen — nichts wird für dich geraten, du kannst sie jederzeit ergänzen.",
@@ -824,6 +814,7 @@ export const web_recovery = {
     "w.recovery.checkins.cooldownTitle": "Nur alle 6 Stunden",
     // SAVED / EDIT — the flow re-opened on a day that is already fully answered
     // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.loading": "Heutiger Check-in wird geladen…",
     "w.recovery.checkins.savedTitle": "Check-in gespeichert",
     "w.recovery.checkins.savedSub": "Diese Antworten sind gespeichert. Zum Ändern bearbeiten.",
     "w.recovery.checkins.edit": "Bearbeiten",

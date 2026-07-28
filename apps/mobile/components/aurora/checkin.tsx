@@ -111,13 +111,21 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     setEffortAnswered((s) => (s.has(id) ? s : new Set(s).add(id)));
     setDirty(true);
   };
-  const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
-  /** Every extras edit is an unsaved change too — the details card's Save has to
-   *  come back the moment a note or a weight is touched. */
-  const editExtras = (patch: Partial<typeof extras>) => {
-    setExtras((s) => ({ ...s, ...patch }));
-    setDirty(true);
-  };
+  // The ONLY thing the details card still collects besides the answers. The
+  // weight / adherence / note fields are gone: weight has a real home in the
+  // body log (one canonical weigh-in, not a second one buried in a check-in),
+  // adherence is something the app can count off the plan rather than ask for,
+  // and three blank optional boxes under a finished check-in made the card look
+  // unfinished when it wasn't.
+  const [sharedWithCoach, setSharedWithCoach] = useState(false);
+  const toggleShare = () => { setSharedWithCoach((v) => !v); setDirty(true); };
+  // HAS THE STORED CHECK-IN LANDED YET? Until it has, this component knows
+  // nothing about the day and must not pretend otherwise. It used to render
+  // immediately off empty state: an athlete whose day was 4/4 opened the sheet
+  // onto "Today's read — 0 / 4 answered", four dashes and a Submit button, which
+  // flipped to the saved read-back a moment later when the fetch landed. A blank
+  // form is not a neutral placeholder — it is a wrong answer.
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => { fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {}); }, []);
 
@@ -151,14 +159,12 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           soreness: c.soreness ?? s.soreness,
           mood: c.mood ?? s.mood,
         }));
-        setExtras((s) => ({
-          bodyMassKg: c.bodyMassKg != null ? String(c.bodyMassKg) : s.bodyMassKg,
-          adherencePct: c.adherencePct != null ? String(c.adherencePct) : s.adherencePct,
-          note: c.note ?? s.note,
-          sharedWithCoach: c.sharedWithCoach ?? s.sharedWithCoach,
-        }));
+        setSharedWithCoach((v) => v || !!c.sharedWithCoach);
       })
-      .catch(() => {});
+      .catch(() => {})
+      // Hydrated either way: a failed read is still a finished read, and holding
+      // the card forever would be worse than opening on what we have.
+      .finally(() => { if (alive) setHydrated(true); });
     return () => { alive = false; };
   }, []);
 
@@ -188,7 +194,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
    *  asked to change it. Answers stay legible; the CONTROLS go quiet and the
    *  Submit button is replaced by Edit, so a saved check-in can never be
    *  mistaken for an unsent one. */
-  const locked = savedAll && !editing && !done;
+  const locked = hydrated && savedAll && !editing && !done;
 
   const submit = async () => {
     // Whether this write CHANGES a check-in that already existed — the
@@ -204,10 +210,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
       // already has answers in it. Nothing is invented either — the server
       // writes null for a genuinely new day.
       ...checkinMetricPatch(ratings, answered),
-      ...(extras.bodyMassKg ? { bodyMassKg: parseFloat(extras.bodyMassKg) } : {}),
-      ...(extras.adherencePct ? { adherencePct: parseInt(extras.adherencePct, 10) } : {}),
-      ...(extras.note.trim() ? { note: extras.note } : {}),
-      sharedWithCoach: paid ? extras.sharedWithCoach : false,
+      sharedWithCoach: paid ? sharedWithCoach : false,
     });
     setSaving(false);
     if (!r.ok) {
@@ -249,7 +252,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     setAnswered(new Set());
     setEfforts({});
     setEffortAnswered(new Set());
-    setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
+    setSharedWithCoach(false);
     // A blank re-run is an EDIT of the same day (the server upserts), so it
     // opens live rather than in read-back mode.
     setEditing(true); setUpdated(false); setDirty(false);
@@ -304,17 +307,16 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t(locked ? "w.recovery.checkins.savedSub" : "w.recovery.checkins.editingSub")}</Text>
           </View>
-          {locked ? (
-            <Pressable onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.edit")}
-              style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink }}>
-              <AuroraIcon name="edit" size={14} color={C.ash} />
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{t("w.recovery.checkins.edit")}</Text>
-            </Pressable>
-          ) : null}
         </View>
       ) : null}
 
-      {done ? (
+      {!hydrated ? (
+        // Holding, not guessing. One quiet line rather than a form that would
+        // have to correct itself the moment the day's check-in arrives.
+        <View style={{ alignItems: "center", justifyContent: "center", minHeight: 220 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.checkins.loading")}</Text>
+        </View>
+      ) : done ? (
         <View style={{ alignItems: "center", paddingVertical: 16 }}>
           <AuroraIcon name="check-circle" size={54} color={txt(C, C.lime)} />
           {/* "Updated" rather than "logged" when the day already had a
@@ -367,10 +369,15 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               return (
                 <Pressable
                   key={m.key}
-                  onPress={() => to >= 0 && setStep(to)}
+                  onPress={() => !locked && to >= 0 && setStep(to)}
+                  disabled={locked}
                   accessibilityRole="button"
                   accessibilityLabel={`${t(m.labelKey)} – ${on ? t(checkinMetricWordKey(m.key, ratings[m.key])) : t("w.recovery.checkins.notAnswered")}`}
-                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 14, paddingVertical: 12, opacity: on ? 1 : 0.6 }}
+                  // LOCKED, THE REVIEW IS A REPORT, NOT A CONTROL. Left at full
+                  // colour and still tapping through to its question, it read as
+                  // "edit any of this whenever" — which is exactly what the Edit
+                  // button is for. Muted here, restored the moment Edit is pressed.
+                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 14, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
                 >
                   {on ? (
                     <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
@@ -390,30 +397,15 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             </Text>
           ) : null}
 
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.recovery.checkins.detailsOptional")}</Text>
-          <View style={{ flexDirection: "row", gap: space.ms }}>
-            <NumField value={extras.bodyMassKg} onChange={(v) => editExtras({ bodyMassKg: v })} ph={t("w.recovery.checkins.weightKg")} locked={locked} />
-            <NumField value={extras.adherencePct} onChange={(v) => editExtras({ adherencePct: v })} ph={t("w.recovery.checkins.adherencePct")} locked={locked} />
-          </View>
-          <TextInput
-            value={extras.note}
-            onChangeText={(v) => editExtras({ note: v })}
-            editable={!locked}
-            placeholder={t("w.recovery.checkins.notePlaceholder")}
-            placeholderTextColor={C.ash}
-            multiline
-            style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 80, textAlignVertical: "top", opacity: locked ? 0.55 : 1 }}
-          />
-
           <Pressable
-            onPress={() => paid && editExtras({ sharedWithCoach: !extras.sharedWithCoach })}
+            onPress={() => paid && toggleShare()}
             disabled={!paid || locked}
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}
-            accessibilityState={{ checked: !!(extras.sharedWithCoach && paid), disabled: !paid }}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 14, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: extras.sharedWithCoach && paid ? C.lime : C.line, backgroundColor: extras.sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
+            accessibilityState={{ checked: !!(sharedWithCoach && paid), disabled: !paid || locked }}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
           >
-            {extras.sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
+            {sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.checkins.shareCoach")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{paid ? t("w.recovery.checkins.shareCoachOnShort") : t("w.recovery.checkins.shareCoachOffShort")}</Text>
@@ -425,11 +417,19 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               "Submit check-in" over answers that were already submitted reads as
               work still outstanding. Locked, the card offers Done (or nothing
               but Back) and the banner's Edit is the way back in. */}
-          {step > minStep || !locked || onClose ? (
           <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-            {step > minStep ? backBtn : null}
+            {!locked && step > minStep ? backBtn : null}
             {locked ? (
-              onClose ? <APill label={t("w.recovery.checkins.doneClose")} onPress={onClose} style={{ flex: 1 }} /> : null
+              <>
+                {/* EDIT LIVES HERE AND ONLY HERE — beside Done, where the
+                    athlete already is when they decide the read is wrong. */}
+                <Pressable onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.edit")}
+                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 15, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}>
+                  <AuroraIcon name="edit" size={16} color={C.ash} />
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.checkins.edit")}</Text>
+                </Pressable>
+                {onClose ? <APill label={t("w.recovery.checkins.doneClose")} onPress={onClose} style={{ flex: 1 }} /> : null}
+              </>
             ) : (
               <APill
                 label={saving ? t("w.recovery.checkins.submitting") : t(editing || storedAll ? "w.recovery.checkins.saveChanges" : "w.recovery.checkins.submit")}
@@ -439,7 +439,6 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               />
             )}
           </View>
-          ) : null}
         </>
       ) : current?.kind === "effort" ? (
         (() => {
@@ -587,17 +586,3 @@ function SkipBtn({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-function NumField({ value, onChange, ph, locked = false }: { value: string; onChange: (v: string) => void; ph: string; locked?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      editable={!locked}
-      placeholder={ph}
-      placeholderTextColor={C.ash}
-      keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, opacity: locked ? 0.55 : 1 }}
-    />
-  );
-}

@@ -1133,7 +1133,14 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
   // The just-tapped row counts as a row: otherwise the faces could re-lock in
   // the window between the write and the refetch that confirms it.
   const blockingCooldown = cooling && !hasCheckin && pending == null;
-  const locked = busy || isFuture || blockingCooldown;
+  // A COMPLETE check-in is not a live control either. The four faces stayed
+  // tappable over a finished day, so the one answer the athlete had already
+  // committed could be overwritten by a stray thumb — and the guided flow
+  // below it was busy muting the very same answer. Changing it is deliberate
+  // now: open the check-in and press Edit. Scoped to TODAY, because a past day
+  // has no follow-up sheet and this row is the only way to back-log it.
+  const settled = isToday && done.complete;
+  const locked = busy || isFuture || blockingCooldown || settled;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
