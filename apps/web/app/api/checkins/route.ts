@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   // (their own personal log). Silently coerce to false rather than rejecting, so
   // a free user submitting still succeeds — just unshared.
   const sharedWithCoach = b.sharedWithCoach === true && me.entitlement === "paid";
-  const data = {
+  const full = {
     weekOf,
     bodyMassKg,
     energy: int1to5(b.energy),
@@ -73,9 +73,27 @@ export async function POST(request: Request) {
     note: typeof b.note === "string" && b.note.trim() ? b.note.trim().slice(0, 2000) : null,
     sharedWithCoach,
   };
+
+  // REFINING A DAY IS A PATCH, NOT A REWRITE. This wrote every column on every
+  // save, so a field the sender didn't carry was stored as null — and each
+  // surface sends a different subset. Re-tapping readiness in the afternoon
+  // (which sends the one metric it asked about) deleted the sleep, freshness and
+  // mood answered that morning; submitting the follow-up on web (whose form
+  // never loaded them) deleted the day's weight, adherence and note. The
+  // athlete's answers disappearing behind their back is exactly what "I filled
+  // it in but it didn't save" looks like.
+  //
+  // So an ABSENT key now leaves the stored value alone; only a key that is
+  // explicitly present may change it (present-and-null clears it deliberately).
+  // A new day still writes the full row, where absent genuinely means unknown.
+  const has = (k: string) => Object.prototype.hasOwnProperty.call(b, k);
+  const patch = Object.fromEntries(
+    Object.entries(full).filter(([k]) => k === "weekOf" || has(k)),
+  ) as Partial<typeof full>;
+
   const checkin = sameDay
-    ? await prisma.checkin.update({ where: { id: sameDay.id }, data })
-    : await prisma.checkin.create({ data: { userId: me.id, ...data } });
+    ? await prisma.checkin.update({ where: { id: sameDay.id }, data: patch })
+    : await prisma.checkin.create({ data: { userId: me.id, ...full } });
 
   // Mirror the weigh-in into the Signal ontology (bodyMass) so the nutrition
   // engine's maintenance estimate + the smoothed bodyweight trend run on the

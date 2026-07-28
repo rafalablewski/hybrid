@@ -11,6 +11,13 @@ export type CheckinRow = {
   sleep: number | null;
   soreness: number | null;
   mood: number | null;
+  // The details half of the row. The API has always returned these; the type
+  // didn't name them, so the wizard editing this row couldn't prefill them and
+  // submitted blanks over the athlete's own entries.
+  bodyMassKg?: number | null;
+  adherencePct?: number | null;
+  note?: string | null;
+  sharedWithCoach?: boolean | null;
   createdAt?: string;
 };
 

@@ -32,6 +32,11 @@ import {
   firstOutstandingIndex,
   stepAnswered,
   QUICK_CHECKIN_METRIC,
+  quickCheckinFeeling,
+  quickCheckinPatch,
+  checkinMetricPatch,
+  checkinMetricWordKey,
+  checkinScaleFeeling,
 } from "./checkin-flow";
 import { checkinFeeling, checkinRating } from "./readiness-feeling";
 
@@ -142,5 +147,77 @@ describe("one card — the day and its sessions", () => {
   it("an off-scale stored effort counts as unanswered", () => {
     const sessions = [S("a", "Squats", 7, 0 as unknown as number)];
     expect(stepAnswered(checkinSteps(sessions)[4]!, {})).toBe(false);
+  });
+});
+
+describe("the readiness question answers itself", () => {
+  it("reports the tap, not the average of four different questions", () => {
+    // THE REGRESSION: Today's picker drew `checkinFeeling` — the mean of every
+    // metric present — under "how ready do you feel?". Tap Primed, then answer
+    // the other three honestly, and the card came back highlighting a face the
+    // athlete never chose and captioning it "you logged Good".
+    const day = { energy: 5, sleep: 3, soreness: 2, mood: 4 };
+    expect(checkinFeeling(day)).toBe("good"); // the day, averaged — a different question
+    expect(quickCheckinFeeling(day)).toBe("primed"); // what was actually tapped
+  });
+
+  it("round-trips every level of the picker", () => {
+    for (const [rating, feeling] of [[5, "primed"], [4, "good"], [3, "flat"], [2, "wrecked"]] as const) {
+      expect(quickCheckinFeeling(quickCheckinMetrics(rating))).toBe(feeling);
+    }
+  });
+
+  it("is null when the readiness question itself is unanswered", () => {
+    // A day whose sleep and mood are logged has NOT answered "how ready do you
+    // feel" — the card must show no selection rather than infer one.
+    expect(quickCheckinFeeling({ energy: null, sleep: 4, soreness: 4, mood: 4 })).toBeNull();
+    expect(quickCheckinFeeling(null)).toBeNull();
+    expect(quickCheckinFeeling({})).toBeNull();
+  });
+
+  it("names the quick metric in the picker's own vocabulary", () => {
+    // Same stored number, same face, so it must not have two names: Today said
+    // "Primed" for a 5 while the wizard's own card said "Great".
+    expect(checkinMetricWordKey("energy", 5)).toBe("w.recovery.readiness.primed");
+    expect(checkinMetricWordKey("energy", 3)).toBe("w.recovery.readiness.flat");
+    // The other three are not readiness questions — "Wrecked" is not an answer
+    // to "how did you sleep?".
+    expect(checkinMetricWordKey("sleep", 5)).toBe("w.recovery.checkins.scale5");
+    expect(checkinMetricWordKey("mood", 3)).toBe("w.recovery.checkins.scale3");
+  });
+
+  it("agrees with the face drawn beside it", () => {
+    for (const v of [1, 2, 3, 4, 5]) {
+      expect(checkinMetricWordKey("energy", v)).toBe(`w.recovery.readiness.${checkinScaleFeeling(v)}`);
+    }
+  });
+});
+
+describe("a write may only touch what it answered", () => {
+  it("a readiness tap sends one metric and no nulls", () => {
+    // THE REGRESSION: this sent {energy, sleep: null, soreness: null, mood:
+    // null}, which the route wrote over the day's row — so re-tapping readiness
+    // in the afternoon deleted the sleep, freshness and mood logged that
+    // morning. An omitted key leaves the stored value alone.
+    expect(quickCheckinPatch(4)).toEqual({ energy: 4 });
+    expect(Object.keys(quickCheckinPatch(4))).toEqual(["energy"]);
+    expect(quickCheckinPatch(9)).toEqual({ energy: 5 });
+  });
+
+  it("the guided flow sends only the questions actually answered", () => {
+    const ratings = { energy: 3, sleep: 5, soreness: 3, mood: 3 };
+    // Sleep tapped; the rest walked past on their neutral default.
+    expect(checkinMetricPatch(ratings, ["sleep"])).toEqual({ sleep: 5 });
+    // A skipped question is absent, NOT a middling 3 — nothing downstream may
+    // read a default as a measurement.
+    expect("soreness" in checkinMetricPatch(ratings, ["sleep"])).toBe(false);
+    expect(checkinMetricPatch(ratings, ["energy", "sleep", "soreness", "mood"])).toEqual(ratings);
+    expect(checkinMetricPatch(ratings, [])).toEqual({});
+  });
+
+  it("clamps and rounds whatever it does send", () => {
+    expect(checkinMetricPatch({ mood: 7.6 }, ["mood"])).toEqual({ mood: 5 });
+    expect(checkinMetricPatch({ mood: Number.NaN }, ["mood"])).toEqual({});
+    expect(checkinMetricPatch({}, ["mood"])).toEqual({});
   });
 });

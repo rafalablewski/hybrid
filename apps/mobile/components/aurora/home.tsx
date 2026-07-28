@@ -15,7 +15,8 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
-  quickCheckinMetrics,
+  quickCheckinFeeling,
+  quickCheckinPatch,
   dayCompleteness,
   firstOutstandingIndex,
   checkinSteps,
@@ -356,7 +357,15 @@ export default function AuroraHome() {
     const dstr = dayTs == null ? today : localDayKey(dayTs);
     return checkins.find((c) => c && c.weekOf && localDayKey(c.weekOf) === dstr) ?? null;
   }, [checkins, dayTs, today]);
-  const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
+  // THE ANSWER TO THE QUESTION THAT WAS ASKED. This was `checkinFeeling` — the
+  // average of every metric present — so the face highlighted under "how ready
+  // do you feel?" drifted off the one the athlete tapped the moment they
+  // answered the other three: tap Primed, log sleep 3 / freshness 2 / mood 4,
+  // and the card came back highlighting Good and reporting "you logged Good".
+  // The card now shows the readiness answer itself. The AVERAGE is still what
+  // feeds the load model (todayFeeling) — that is a different question and more
+  // signal genuinely helps it.
+  const feeling = quickCheckinFeeling(dayCheckin);
   // BUG FIX: this read `weekOf` — the day the check-in COVERS, which for a
   // back-logged day is that day's NOON. "Logged 4 hours from now" is what that
   // produced. `createdAt` is when the row was actually written; weekOf is only
@@ -855,6 +864,7 @@ export default function AuroraHome() {
           <FeelingCard
             C={C}
             feeling={feeling}
+            hasCheckin={dayCheckin != null}
             dayMetrics={dayCheckin}
             daySessions={daySessions}
             recoveryDue={recoveryDue}
@@ -1147,9 +1157,14 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
+  /** The answer to THIS card's question, not a blend of the day's four. */
   feeling: ReadinessFeeling | null;
+  /** Whether the day has a check-in row at all — which is what the 6h cooldown
+   *  actually gates. Separate from `feeling`, which can be null on a day whose
+   *  other metrics were answered but whose readiness question wasn't. */
+  hasCheckin: boolean;
   /** The viewed day's stored metrics — which of the four are actually answered. */
   dayMetrics: Partial<CheckinMetrics> | null;
   /** The sessions trained that day — one effort question each. */
@@ -1186,7 +1201,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
   // A day that ALREADY has a check-in can be re-tapped to adjust it — the server
   // upserts the same day (cooldown-exempt). The 6h cooldown only locks STARTING
   // a fresh check-in on a day that has none yet (a new-day create would 429).
-  const blockingCooldown = cooling && !feeling;
+  // Keyed on the ROW existing, not on the readiness answer: a day whose sleep
+  // and mood are logged but whose readiness question isn't would otherwise lock
+  // the very question it is asking.
+  const blockingCooldown = cooling && !hasCheckin;
   const locked = busy || isFuture || blockingCooldown;
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
@@ -1204,13 +1222,17 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
     const weekOf = isToday || dayTs == null ? new Date().toISOString() : new Date(dayTs + 12 * 3600 * 1000).toISOString();
     const r = await createCheckin({
       weekOf,
-      bodyMassKg: null,
       // ONE tap answers ONE question. This used to write the picked level into
       // all four metrics, inventing three measurements the athlete never gave —
       // which the volume profile then showed back to them as "measured sleep".
       // See core/checkin-flow.ts.
-      ...quickCheckinMetrics(rating),
-      adherencePct: null, note: null, sharedWithCoach: false,
+      //
+      // …and it sends ONLY that metric. It used to send explicit nulls for the
+      // other three (and for the note + adherence), which the route wrote
+      // straight over the day's row — so a second tap in the afternoon deleted
+      // the sleep, freshness and mood answered that morning. An omitted field
+      // is now left alone.
+      ...quickCheckinPatch(rating),
     });
     setBusy(false);
     if (r.ok) {
@@ -1324,11 +1346,17 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
               title={t("w.recovery.readiness.followUpTitle")}
               sub={t("w.recovery.readiness.followUpSub")}
             >
+              {/* onDone REFRESHES; it no longer closes. Closing on the POST's
+                  return meant the wizard's "Check-in logged" card was mounted
+                  and unmounted in the same tick — the sheet just disappeared,
+                  which is indistinguishable from a save that failed. The
+                  athlete dismisses it now, from the confirmation. */}
               <AuroraCheckin
                 embedded
                 startStep={startStep}
                 sessions={daySessions}
-                onDone={() => { setFollowUpOpen(false); onPicked(); }}
+                onDone={onPicked}
+                onClose={() => setFollowUpOpen(false)}
               />
             </Sheet>
           ) : null}
