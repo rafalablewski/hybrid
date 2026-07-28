@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import {
   fs,
@@ -104,6 +104,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
   // giving the same screen two different definitions of "today". One cache, one
   // day-key helper.
   const checkins = useCheckins().data;
+  const extrasSeeded = useRef(false);
   useEffect(() => {
     if (!checkins) return;
     const today = localDayKey(Date.now());
@@ -126,12 +127,21 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
     // them as null — the follow-up silently deleted the weight, adherence and
     // note the athlete had entered earlier. Blank inputs on a form that never
     // read what it was editing.
-    setExtras((s) => ({
-      bodyMassKg: s.bodyMassKg || (c.bodyMassKg != null ? String(c.bodyMassKg) : ""),
-      adherencePct: s.adherencePct || (c.adherencePct != null ? String(c.adherencePct) : ""),
-      note: s.note || c.note || "",
-      sharedWithCoach: s.sharedWithCoach || !!c.sharedWithCoach,
-    }));
+    //
+    // SEEDED ONCE, unlike the ratings above. This effect re-runs on every cache
+    // change (it has to — the sheet opens before the readiness tap's refetch
+    // lands, and that refetch is what tells it Energy is answered), but these
+    // are text fields the athlete may be editing. Re-merging them would undo a
+    // note they had just cleared the moment any refetch arrived.
+    if (!extrasSeeded.current) {
+      extrasSeeded.current = true;
+      setExtras((s) => ({
+        bodyMassKg: s.bodyMassKg || (c.bodyMassKg != null ? String(c.bodyMassKg) : ""),
+        adherencePct: s.adherencePct || (c.adherencePct != null ? String(c.adherencePct) : ""),
+        note: s.note || c.note || "",
+        sharedWithCoach: s.sharedWithCoach || !!c.sharedWithCoach,
+      }));
+    }
   }, [checkins]);
 
   const current = steps[step];

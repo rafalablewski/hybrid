@@ -6,10 +6,14 @@
  *
  * The column is called `soreness`, and both the Prisma comment and the field
  * name imply 5 = very sore. THE STORED VALUE IS THE OPPOSITE. The guided flow
- * asks "How fresh do your muscles feel?" (checkin-flow.ts), the one-tap face on
- * Today writes the picked readiness level into all four metrics at once, and
- * `checkinRating` averages the four as if higher were better everywhere. Every
+ * asks "How fresh do your muscles feel?" (checkin-flow.ts), and `checkinRating`
+ * averages whatever is present as if higher were better everywhere. Every
  * writer agrees: 5 means FRESH, 1 means wrecked. Only the name disagrees.
+ *
+ * (This used to cite the one-tap face on Today as a third writer that "writes
+ * the picked readiness level into all four metrics at once". It has not done
+ * that since `quickCheckinPatch` — it writes its own metric and nothing else —
+ * so the claim is removed rather than left here to mislead the next reader.)
  *
  * That is a trap with teeth. A consumer that reads the field by its name gets a
  * perfectly plausible, exactly backwards answer — no crash, no type error, just

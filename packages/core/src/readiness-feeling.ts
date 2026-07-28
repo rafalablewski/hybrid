@@ -33,9 +33,22 @@ type CheckinScores = {
   mood?: number | null;
 };
 
-/** Average the four 1–5 sub-scores of a daily check-in into one rating (or
- *  null when none are present). The quick picker sets all four equal, so this
- *  round-trips the picked level; the full weekly form can mix them. */
+/**
+ * Average whichever of the four 1–5 sub-scores are present (or null when none
+ * are).
+ *
+ * NOT THE ATHLETE'S ANSWER TO "HOW READY DO YOU FEEL?". This averages four
+ * different questions — readiness, sleep, freshness and mood — into a number
+ * nobody reported. Use `quickCheckinFeeling` (checkin-flow.ts) anywhere the
+ * result is shown to the athlete as their own report or fed to something that
+ * quotes it back ("you're feeling flat today"): every caller in both clients
+ * was doing exactly that, and each one contradicted the face the athlete had
+ * tapped as soon as they answered the rest of the check-in.
+ *
+ * Kept for the honest reading it actually describes — the day as a whole,
+ * averaged — which is a legitimate thing to want and is what the check-in
+ * history charts.
+ */
 export function checkinRating(c: CheckinScores | null | undefined): number | null {
   if (!c) return null;
   const vals = [c.energy, c.sleep, c.soreness, c.mood].filter(

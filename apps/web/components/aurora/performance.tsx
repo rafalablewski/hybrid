@@ -6,7 +6,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   fmtWeight, strengthPrDelta,
-  ROLE_COLOR, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, localDayKey,
+  ROLE_COLOR, hpiRole, riskRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
   type MuscleGroup, type TissueRisk, colors,
@@ -151,10 +151,14 @@ export default function AuroraPerformance({
   // midnight kept treating yesterday's check-in as today's — and scaled today's
   // prescription off it. See lib/use-today.ts.
   const today = useToday();
-  const todayFeeling = useMemo(() => {
-    const c = checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today);
-    return c ? checkinFeeling(c) : null;
-  }, [checkins, today]);
+  // The readiness ANSWER, not `checkinFeeling`'s average of four different
+  // questions — the readiness nudge below renders this feeling's own face next
+  // to the words "you're feeling flat today", so it must be what the athlete
+  // said rather than a number derived from their sleep and mood.
+  const todayFeeling = useMemo(
+    () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
+    [checkins, today],
+  );
 
   const bw = useBodyweightLookup();
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);

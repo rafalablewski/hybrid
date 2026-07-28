@@ -6,7 +6,9 @@ import { fs, space,
   prescribeSession,
   feelSamples,
   loadBaseline,
-  checkinFeeling,
+  quickCheckinFeeling,
+  localDayKey,
+  localTodayKey,
   personalTrainingLog,
   velocityProfiles,
   newPrsInSession,
@@ -304,16 +306,21 @@ export default function AuroraLogger({
 
   // Today's one-tap readiness feeling scales the in-logger "AI session" quick-
   // start's load, at parity with Today's readout (client-only fetch).
-  const [todayFeeling, setTodayFeeling] = useState<ReturnType<typeof checkinFeeling>>(null);
+  // The readiness ANSWER, through the shared day-key helper. This read
+  // `checkinFeeling` (the average of four different questions) and compared
+  // days with its own `toDateString()` — so the session an athlete started from
+  // the logger could be scaled off a different feeling, on a different
+  // definition of "today", than the one Today was showing them.
+  const [todayFeeling, setTodayFeeling] = useState<ReturnType<typeof quickCheckinFeeling>>(null);
   useEffect(() => {
     let alive = true;
     fetch("/api/checkins")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[] } | null) => {
         if (!alive || !d?.checkins) return;
-        const today = new Date().toDateString();
-        const c = d.checkins.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
-        setTodayFeeling(c ? checkinFeeling(c) : null);
+        const today = localTodayKey();
+        const c = d.checkins.find((x) => x?.weekOf && localDayKey(x.weekOf) === today);
+        setTodayFeeling(quickCheckinFeeling(c ?? null));
       })
       .catch(() => {});
     return () => { alive = false; };

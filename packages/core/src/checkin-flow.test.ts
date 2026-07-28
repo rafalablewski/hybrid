@@ -38,7 +38,7 @@ import {
   checkinMetricWordKey,
   checkinScaleFeeling,
 } from "./checkin-flow";
-import { checkinFeeling, checkinRating } from "./readiness-feeling";
+import { checkinFeeling, checkinRating, readinessLoadFactor, READINESS_LOAD_FACTOR } from "./readiness-feeling";
 
 describe("one tap answers one question", () => {
   it("writes ONLY the metric it asked about", () => {
@@ -219,5 +219,32 @@ describe("a write may only touch what it answered", () => {
     expect(checkinMetricPatch({ mood: 7.6 }, ["mood"])).toEqual({ mood: 5 });
     expect(checkinMetricPatch({ mood: Number.NaN }, ["mood"])).toEqual({});
     expect(checkinMetricPatch({}, ["mood"])).toEqual({});
+  });
+});
+
+describe("one question, one number, every surface", () => {
+  // The readiness pick drives four separate things: the picker's own
+  // highlight, the week rail's readiness pill, the load multiplier, and the
+  // nudge that QUOTES it back ("you're feeling flat today"). Each of them read
+  // `checkinFeeling` — the average — so on any day whose four answers weren't
+  // equal, the app told the athlete they had said something they hadn't.
+  const day = { energy: 5, sleep: 2, soreness: 2, mood: 3 };
+
+  it("the average and the answer genuinely disagree", () => {
+    expect(checkinFeeling(day)).toBe("flat");
+    expect(quickCheckinFeeling(day)).toBe("primed");
+  });
+
+  it("the load factor follows the answer, not the average", () => {
+    // Reading the average here deloaded an athlete who had just said they were
+    // primed, and captioned it with their own supposed words.
+    expect(readinessLoadFactor(quickCheckinFeeling(day))).toBe(READINESS_LOAD_FACTOR.primed);
+    expect(readinessLoadFactor(quickCheckinFeeling(day))).not.toBe(readinessLoadFactor(checkinFeeling(day)));
+  });
+
+  it("no answer means no nudge, rather than one inferred from sleep and mood", () => {
+    const noReadiness = { energy: null, sleep: 2, soreness: 2, mood: 2 };
+    expect(quickCheckinFeeling(noReadiness)).toBeNull();
+    expect(readinessLoadFactor(quickCheckinFeeling(noReadiness))).toBe(1);
   });
 });

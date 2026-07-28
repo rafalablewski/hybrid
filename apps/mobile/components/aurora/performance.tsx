@@ -6,7 +6,7 @@ import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   fmtWeight, strengthPrDelta, evaluateRtp, STAGE_LABEL,
-  velocityProfiles, hpiRole, riskRole, readinessRole, checkinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, riskRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
   RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY, localDayKey,
   type AcwrBand, type RiskDriverKind,
 } from "@hybrid/core";
@@ -108,10 +108,14 @@ function Full() {
   // it this only recomputed when `checkins` changed, so a screen alive across
   // midnight kept treating yesterday's check-in as today's. See use-today.ts.
   const today = useToday();
-  const todayFeeling = useMemo(() => {
-    const c = checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today);
-    return c ? checkinFeeling(c) : null;
-  }, [checkins, today]);
+  // The readiness ANSWER, not `checkinFeeling`'s average of four different
+  // questions — the readiness nudge below renders this feeling's own face next
+  // to the words "you're feeling flat today", so it must be what the athlete
+  // said rather than a number derived from their sleep and mood.
+  const todayFeeling = useMemo(
+    () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
+    [checkins, today],
+  );
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, sessions, todayFeeling]);
   // Truth-based readiness lines — every clause computed from the REAL log +
   // wearable baseline (readinessWhy, @hybrid/core). The old rx.why narrated the
