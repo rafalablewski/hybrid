@@ -43,7 +43,6 @@ import {
   SLEEP_RECOVERY,
   STRESS_RECOVERY,
   NUTRITION_RECOVERY,
-  BODYWEIGHT_REF_KG,
   AGE_REF_YEARS,
   AGE_PENALTY_PER_YEAR,
   AGE_FLOOR,
@@ -51,6 +50,8 @@ import {
   MASS_FLOOR,
   RECOVERY_BOUNDS,
 } from "./landmark-profile";
+import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS } from "./athlete-profile";
+import { STRENGTH_STANDARDS } from "./fitness-level";
 import {
   RESIDUAL_FLOOR,
   RESIDUAL_TAU_H,
@@ -73,7 +74,8 @@ export type EngineFormulaGroup =
   | "effort"
   | "landmarks"
   | "volumeBlock"
-  | "feelTiming";
+  | "feelTiming"
+  | "fitnessLevel";
 
 /** One live formula, as data — the console's formula sheet renders these. */
 export interface EngineFormula {
@@ -99,6 +101,7 @@ export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; sou
   { id: "landmarks", label: "Volume landmarks (MEV/MAV/MRV)", source: "engines/landmark-profile.ts + landmark-adapt.ts + landmark-resolve.ts" },
   { id: "volumeBlock", label: "Block volume ramp", source: "engines/volume-block.ts" },
   { id: "feelTiming", label: "Feel timing", source: "feel-timing.ts + checkin-scales.ts" },
+  { id: "fitnessLevel", label: "Training level & profile", source: "engines/fitness-level.ts + athlete-profile.ts" },
 ];
 
 export const ENGINE_FORMULAS: EngineFormula[] = [
@@ -360,6 +363,45 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     expression: "soreness = 6 − storedValue",
     constants: [{ symbol: "stored", value: "1–5, 5 = FRESH", meaning: "the column is named 'soreness' but holds freshness" }],
     note: "The guided flow asks 'how fresh do your muscles feel?', so 5 means fresh. Reading the column by its NAME gives a plausible, exactly backwards answer — which is how the MRV estimator once punished athletes for reporting they felt good. Converted once, in checkin-scales.ts.",
+  },
+
+  {
+    id: "landmark-frame",
+    engine: "landmarks",
+    name: "Body mass read against frame",
+    expression: `adjusted = (mass / (${REFERENCE_BMI} × height²)) × ${BODYWEIGHT_REF_KG}`,
+    constants: [
+      { symbol: String(REFERENCE_BMI), value: "reference build", meaning: "the mass a height is expected to carry" },
+      { symbol: `${BODYWEIGHT_REF_KG} kg`, value: "reference mass", meaning: "where the recovery penalty starts" },
+    ],
+    note: "The recovery factor docks mass above the reference, but 95 kg at 195 cm and 95 kg at 170 cm are not the same load and the flat per-kilo rule penalised them identically. With height known, mass is read against what the frame predicts. Deliberately NOT a body-composition model — the app cannot see body fat. Without height the raw-kg rule applies unchanged.",
+  },
+
+  {
+    id: "level-ratio",
+    engine: "fitnessLevel",
+    name: "Training level from relative strength",
+    expression: "ratio = bestE1rm / bodyMass   vs   threshold × sexFactor × developmentFraction(age)",
+    constants: [
+      { symbol: "Back Squat", value: STRENGTH_STANDARDS.find((s) => s.key === "Back Squat")!.ratios.join(" / "), meaning: "novice / intermediate / advanced / elite" },
+      { symbol: "Deadlift", value: STRENGTH_STANDARDS.find((s) => s.key === "Deadlift")!.ratios.join(" / "), meaning: "entry ratios, ×bodyweight" },
+      { symbol: "Bench Press", value: STRENGTH_STANDARDS.find((s) => s.key === "Bench Press")!.ratios.join(" / "), meaning: "male, peak training age" },
+      { symbol: "≤12", value: "reps", meaning: "a rep-out is not a max test" },
+      { symbol: "180 d", value: "window", meaning: "current form, not a lifetime best" },
+    ],
+    note: "The BEST lift sets the level, not the average — training age is what you have built, not a number dragged down by the lift you neglect. Confidence rises with how many benchmark lifts are represented and caps at 0.85, because a ratio is a proxy for training age rather than a measurement of it. The athlete's own answer always wins; the estimate fills a gap and any disagreement is shown, never silently applied.",
+  },
+  {
+    id: "profile-completeness",
+    engine: "fitnessLevel",
+    name: "Profile completeness",
+    expression: "score = Σ weight(answered) / Σ weight(all)",
+    constants: VOLUME_PROFILE_FIELDS.slice(0, 4).map((f) => ({
+      symbol: f.key,
+      value: String(f.weight),
+      meaning: f.key === "experience" ? "moves MEV as well as MRV" : "adjusts what can be absorbed",
+    })),
+    note: "Weighted by how much each input actually moves the estimate rather than by counting boxes — a bar that treats training age and stress as equal lies about where the athlete's effort pays off. The weights are a distribution summing to 1.",
   },
 
   // ---- The block ramp: landmarks are walls, not targets. ----

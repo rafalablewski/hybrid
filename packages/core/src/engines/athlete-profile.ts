@@ -58,6 +58,19 @@ export const VOLUME_PROFILE_FIELDS: VolumeProfileField[] = [
   { key: "stress", weight: 0.03, derivable: false, unlocksKey: "w.analyze.vol.unlocksStress" },
 ];
 
+/** i18n key naming each field, so both clients label the meter identically
+ *  instead of each carrying its own copy of the map. */
+export const VOLUME_PROFILE_FIELD_KEY: Record<VolumeProfileFieldKey, string> = {
+  experience: "w.analyze.vol.factorExperience",
+  ageYears: "w.analyze.vol.fieldAge",
+  bodyweightKg: "w.analyze.vol.fieldBodyweight",
+  heightCm: "w.analyze.vol.fieldHeight",
+  sleep: "w.analyze.vol.fieldSleep",
+  stress: "w.analyze.vol.fieldStress",
+  nutrition: "w.analyze.vol.factorNutrition",
+  daysPerWeek: "w.analyze.vol.fieldDays",
+};
+
 /** The profile as the completeness check reads it — the landmark profile plus
  *  height, which the landmark model uses but does not store itself. */
 export interface FullAthleteProfile extends AthleteVolumeProfile {
@@ -146,6 +159,11 @@ export function volumeProfileCompleteness(
 /** The body mass a height predicts, at the model's reference build. */
 export const REFERENCE_BMI = 24.5;
 
+/** Body mass above which extra mass starts costing recovery, and the reference
+ *  a frame-adjusted mass is expressed against. Lives here with the frame maths
+ *  rather than in landmark-profile, so the two can never drift apart. */
+export const BODYWEIGHT_REF_KG = 80;
+
 export function expectedMassKg(heightCm: number): number | null {
   if (!Number.isFinite(heightCm) || heightCm < 120 || heightCm > 230) return null;
   const m = heightCm / 100;
@@ -161,6 +179,6 @@ export function frameAdjustedMassKg(bodyweightKg: number, heightCm?: number | nu
   if (!Number.isFinite(bodyweightKg) || bodyweightKg <= 0) return bodyweightKg;
   const expected = heightCm != null ? expectedMassKg(heightCm) : null;
   if (expected == null || expected <= 0) return bodyweightKg;
-  // 80 kg is the model's reference mass; scale the athlete's ratio onto it.
-  return Math.round((bodyweightKg / expected) * 80 * 10) / 10;
+  // Scale the athlete's mass-for-frame ratio onto the model's reference mass.
+  return Math.round((bodyweightKg / expected) * BODYWEIGHT_REF_KG * 10) / 10;
 }

@@ -7,7 +7,6 @@ import {
   space,
   CHECKIN_METRICS,
   CHECKIN_SCALE,
-  CHECKIN_STEP_COUNT,
   checkinScaleFeeling,
   checkinScaleWordKey,
   answeredMetrics,

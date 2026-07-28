@@ -4,11 +4,12 @@ import {
   EXPERIENCE_RECOVERY,
   SLEEP_RECOVERY,
   STRESS_RECOVERY,
-  BODYWEIGHT_REF_KG,
   AGE_REF_YEARS,
   RECOVERY_BOUNDS,
   personalizeLandmarks,
 } from "./landmark-profile";
+import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS, frameAdjustedMassKg } from "./athlete-profile";
+import { STRENGTH_STANDARDS, estimateFitnessLevel } from "./fitness-level";
 import { VOLUME_LANDMARKS } from "./landmarks";
 import { blockWeeks, targetSetsForWeek } from "./volume-block";
 import {
@@ -144,6 +145,55 @@ describe("ENGINE_FORMULAS", () => {
       const r = feelReading(4, h)!;
       expect(r.cost).toBeCloseTo(Math.min(MAX_COST, ((4 - 1) / 4) / expectedResidual(h)), 2);
     }
+  });
+
+  it("the level thresholds track the live standards (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "level-ratio")!;
+    for (const key of ["Back Squat", "Deadlift", "Bench Press"]) {
+      const std = STRENGTH_STANDARDS.find((s) => s.key === key)!;
+      expect(f.constants.find((c) => c.symbol === key)!.value).toBe(std.ratios.join(" / "));
+    }
+  });
+
+  it("the level formula reproduces the live engine (drift guard)", () => {
+    // The sheet says ratio = bestE1rm / bodyMass, compared to the entry ratios.
+    const squat = STRENGTH_STANDARDS.find((s) => s.key === "Back Squat")!;
+    const bw = 100;
+    const at = (ratio: number) => estimateFitnessLevel(
+      [{ id: "x", title: "S", startedAt: new Date().toISOString(),
+         blocks: [{ kind: "strength" as const, name: "Back Squat", sets: [{ load: String(ratio * bw), reps: "1" }] }] }],
+      { bodyweightKg: bw, ageYears: 28, sex: "M" },
+    );
+    // Just under the intermediate entry is novice; just over it is intermediate.
+    expect(at(squat.ratios[1]! - 0.05).level).toBe("novice");
+    expect(at(squat.ratios[1]! + 0.05).level).toBe("intermediate");
+    expect(at(squat.ratios[3]! + 0.05).level).toBe("elite");
+  });
+
+  it("the frame-adjustment formula reproduces the live engine (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "landmark-frame")!;
+    expect(f.expression).toContain(String(REFERENCE_BMI));
+    expect(f.expression).toContain(String(BODYWEIGHT_REF_KG));
+    // A CONCRETE outcome, not the formula restated: deriving both sides from
+    // the same constant would pass no matter what the constant became.
+    // 95 kg at 195 cm reads as ~82 kg of frame-adjusted mass at REFERENCE_BMI
+    // 24.5; move the reference and this number moves with it.
+    expect(frameAdjustedMassKg(95, 195)).toBeCloseTo(81.5, 1);
+    expect(frameAdjustedMassKg(95, 170)).toBeCloseTo(107.3, 1);
+    // …and the identity case: a body at exactly the reference build reads as
+    // exactly the reference mass.
+    const refHeight = Math.sqrt(BODYWEIGHT_REF_KG / REFERENCE_BMI) * 100;
+    expect(frameAdjustedMassKg(BODYWEIGHT_REF_KG, refHeight)).toBeCloseTo(BODYWEIGHT_REF_KG, 0);
+  });
+
+  it("the completeness weights on the sheet are the live ones (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "profile-completeness")!;
+    for (const c of f.constants) {
+      const field = VOLUME_PROFILE_FIELDS.find((x) => x.key === c.symbol)!;
+      expect(c.value).toBe(String(field.weight));
+    }
+    // …and they remain a distribution, not arbitrary numbers.
+    expect(VOLUME_PROFILE_FIELDS.reduce((s, x) => s + x.weight, 0)).toBeCloseTo(1, 2);
   });
 
   it("the soreness-polarity note matches the live conversion (drift guard)", () => {

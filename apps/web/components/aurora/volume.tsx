@@ -7,9 +7,10 @@ import {
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
   measuredProfile, withMeasured, measuredFields,
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY,
+  VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
-  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type RecoveryReport, type LandmarkFactor,
+  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type RecoveryReport, type LandmarkFactor, type WeightUnit,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useBodyweight, useBodyweightPoints } from "@/lib/use-bodyweight";
@@ -264,7 +265,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} />
+      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <section style={card}>
@@ -437,12 +438,6 @@ const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.ana
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
 /** Which profile field each personalization factor reads, so a measured field
  *  can be marked wherever its factor is shown. */
-const FIELD_LABEL_KEY: Record<string, string> = {
-  experience: "w.analyze.vol.factorExperience", ageYears: "w.analyze.vol.fieldAge",
-  bodyweightKg: "w.analyze.vol.fieldBodyweight", heightCm: "w.analyze.vol.fieldHeight",
-  sleep: "w.analyze.vol.fieldSleep", stress: "w.analyze.vol.fieldStress",
-  nutrition: "w.analyze.vol.factorNutrition", daysPerWeek: "w.analyze.vol.fieldDays",
-};
 const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = {
   experience: "experience", age: "ageYears", bodyweight: "bodyweightKg",
   sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
@@ -453,7 +448,7 @@ const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = 
  * moved them, and the profile you can correct. Without this the screen quietly
  * passes off a textbook average as a personal measurement.
  */
-function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience }: {
+function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   profile: AthleteVolumeProfile;
   stored: AthleteVolumeProfile;
@@ -466,6 +461,8 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
   ml: (m: string) => string;
   level: ReturnType<typeof estimateFitnessLevel>;
   experience: ReturnType<typeof resolveExperience>;
+  /** The athlete's weight unit — lifts are shown in the unit they train in. */
+  units: WeightUnit;
 }) {
   const { t } = useLang();
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
@@ -487,7 +484,7 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</span>
-          {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(FIELD_LABEL_KEY[done.next.key] ?? done.next.key)}</span>}
+          {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>}
         </div>
         <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 7, overflow: "hidden" }}>
           <div style={{ width: pct(done.score), height: "100%", background: C("lime"), transition: "width .3s cubic-bezier(.2,.7,.2,1)" }} />
@@ -513,7 +510,7 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
               {level.evidence.slice(0, 3).map((e) => (
                 <div key={e.lift} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
                   <span style={{ fontSize: fs.body, color: C("chalk") }}>{e.lift}</span>
-                  <span style={{ ...mono(fs.caption), color: C("ash") }}>{e.e1rm} kg</span>
+                  <span style={{ ...mono(fs.caption), color: C("ash") }}>{fmtWeight(e.e1rm, units)}</span>
                   <span style={{ ...mono(fs.body), fontWeight: 700, minWidth: 74, textAlign: "right" }}>{e.ratio.toFixed(2)} {t("w.analyze.vol.ofBodyweight")}</span>
                 </div>
               ))}

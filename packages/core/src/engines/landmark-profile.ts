@@ -2,7 +2,7 @@ import type { MuscleGroup } from "./types";
 import type { Experience } from "../onboarding";
 import { VOLUME_LANDMARKS, type VolumeLandmark } from "./landmarks";
 import { ALL_MUSCLES } from "./movements";
-import { frameAdjustedMassKg } from "./athlete-profile";
+import { frameAdjustedMassKg, BODYWEIGHT_REF_KG } from "./athlete-profile";
 
 /**
  * PERSONALIZED VOLUME LANDMARKS.
@@ -105,9 +105,6 @@ export const SLEEP_RECOVERY = [1, 0.78, 0.86, 0.94, 1, 1.05];
 export const STRESS_RECOVERY = [1, 1.04, 1, 0.95, 0.88, 0.8];
 export const NUTRITION_RECOVERY = { deficit: 0.85, maintenance: 1, surplus: 1.05 } as const;
 
-/** Body mass above which extra mass starts costing recovery, and the reference
- *  below which a lighter athlete gets a small credit. */
-export const BODYWEIGHT_REF_KG = 80;
 /** Age below which there is no recovery penalty. */
 export const AGE_REF_YEARS = 30;
 /** Recovery lost per year past AGE_REF_YEARS, and the floor it stops at. */

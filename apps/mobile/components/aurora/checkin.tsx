@@ -3,7 +3,6 @@ import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
-  CHECKIN_STEP_COUNT,
   checkinScaleFeeling,
   checkinScaleWordKey,
   type CheckinMetricKey,
