@@ -6,6 +6,7 @@ import {
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
   measuredProfile, withMeasured, measuredFields,
+  volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY,
   sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type RecoveryReport, type LandmarkFactor,
@@ -74,12 +75,30 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
     return keys;
   }, [prefs.volumeProfile, measured, bodyweight]);
 
+  // WHAT LEVEL THE BAR SAYS. Training age is the strongest input to the whole
+  // model and it used to come from one onboarding tap. Relative strength on the
+  // benchmark lifts is a better read, it is already in the log, and the
+  // athlete's own answer still wins — the estimate only fills a gap, and any
+  // disagreement is shown rather than silently applied.
+  const levelEstimate = useMemo(
+    () => estimateFitnessLevel(sessions, {
+      bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight,
+      ageYears: prefs.volumeProfile.ageYears ?? null,
+    }),
+    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, bodyweight],
+  );
+  const statedExperience = prefs.volumeProfile.experience ?? intake.experience;
+  const experience = useMemo(
+    () => resolveExperience(statedExperience, levelEstimate),
+    [statedExperience, levelEstimate],
+  );
+
   const profile = useMemo<AthleteVolumeProfile>(() => ({
     ...withMeasured(prefs.volumeProfile, measured),
-    experience: prefs.volumeProfile.experience ?? intake.experience,
+    experience: experience.experience,
     daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
     bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
-  }), [prefs.volumeProfile, measured, intake, bodyweight]);
+  }), [prefs.volumeProfile, measured, intake, bodyweight, experience.experience]);
 
   const resolved = useMemo(
     () => athleteLandmarks({
@@ -245,7 +264,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} />
+      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <section style={card}>
@@ -418,6 +437,12 @@ const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.ana
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
 /** Which profile field each personalization factor reads, so a measured field
  *  can be marked wherever its factor is shown. */
+const FIELD_LABEL_KEY: Record<string, string> = {
+  experience: "w.analyze.vol.factorExperience", ageYears: "w.analyze.vol.fieldAge",
+  bodyweightKg: "w.analyze.vol.fieldBodyweight", heightCm: "w.analyze.vol.fieldHeight",
+  sleep: "w.analyze.vol.fieldSleep", stress: "w.analyze.vol.fieldStress",
+  nutrition: "w.analyze.vol.factorNutrition", daysPerWeek: "w.analyze.vol.fieldDays",
+};
 const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = {
   experience: "experience", age: "ageYears", bodyweight: "bodyweightKg",
   sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
@@ -428,7 +453,7 @@ const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = 
  * moved them, and the profile you can correct. Without this the screen quietly
  * passes off a textbook average as a personal measurement.
  */
-function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml }: {
+function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   profile: AthleteVolumeProfile;
   stored: AthleteVolumeProfile;
@@ -439,9 +464,12 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
   editing: boolean;
   setProfile: (p: Partial<AthleteVolumeProfile>) => void;
   ml: (m: string) => string;
+  level: ReturnType<typeof estimateFitnessLevel>;
+  experience: ReturnType<typeof resolveExperience>;
 }) {
   const { t } = useLang();
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
+  const done = volumeProfileCompleteness(profile, measuredKeys);
   const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" };
   const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 };
 
@@ -452,6 +480,56 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
         <span style={{ ...mono(fs.caption), color: resolved.source === "population" ? C("ash") : C("lime") }}>{t(sourceLabelKey(resolved.source))}</span>
       </div>
       <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.55, color: C("ash") }}>{t(sourceWhyKey(resolved.source))}</p>
+
+      {/* HOW COMPLETE THE PROFILE IS, weighted by influence rather than by
+          counting boxes — and what the single most valuable missing answer
+          would buy. "Estimated for you" should be able to say how well. */}
+      <div style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+          <span style={{ ...mono(fs.caption), color: C("ash") }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</span>
+          {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(FIELD_LABEL_KEY[done.next.key] ?? done.next.key)}</span>}
+        </div>
+        <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 7, overflow: "hidden" }}>
+          <div style={{ width: pct(done.score), height: "100%", background: C("lime"), transition: "width .3s cubic-bezier(.2,.7,.2,1)" }} />
+        </div>
+        {done.next && (
+          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(done.next.unlocksKey)}</p>
+        )}
+      </div>
+
+      {/* YOUR LEVEL, FROM YOUR LIFTS. */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
+          <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.levelTitle")}</h3>
+          {level.basis !== "none" && (
+            <span style={{ ...mono(fs.caption), color: C("lime") }}>{t(LEVEL_KEY[level.level])}</span>
+          )}
+        </div>
+        {level.basis === "none" ? (
+          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.levelNoData")}</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 11 }}>
+              {level.evidence.slice(0, 3).map((e) => (
+                <div key={e.lift} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+                  <span style={{ fontSize: fs.body, color: C("chalk") }}>{e.lift}</span>
+                  <span style={{ ...mono(fs.caption), color: C("ash") }}>{e.e1rm} kg</span>
+                  <span style={{ ...mono(fs.body), fontWeight: 700, minWidth: 74, textAlign: "right" }}>{e.ratio.toFixed(2)} {t("w.analyze.vol.ofBodyweight")}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>
+              {t("w.analyze.vol.levelFromLifts")} {Math.round(level.confidence * 100)}% {t("w.analyze.vol.confidence")}
+            </p>
+            {experience.disagrees && (
+              <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
+                <p style={{ flex: 1, minWidth: 200, margin: 0, fontSize: fs.body, lineHeight: 1.5, color: C("amber") }}>{t("w.analyze.vol.levelDisagrees")}</p>
+                <Toggle on={false} label={t("w.analyze.vol.levelUse")} onClick={() => setProfile({ experience: level.experience })} />
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {resolved.factors.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
@@ -505,6 +583,7 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
             {([
               ["ageYears", t("w.analyze.vol.fieldAge"), 10, 100],
               ["bodyweightKg", t("w.analyze.vol.fieldBodyweight"), 25, 300],
+              ["heightCm", t("w.analyze.vol.fieldHeight"), 120, 230],
               ["sleep", t("w.analyze.vol.fieldSleep"), 1, 5],
               ["stress", t("w.analyze.vol.fieldStress"), 1, 5],
               ["daysPerWeek", t("w.analyze.vol.fieldDays"), 1, 14],

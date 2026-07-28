@@ -19,6 +19,8 @@ export * from "./session-signal";
 export * from "./running";
 export * from "./records";
 export * from "./landmarks";
+export * from "./athlete-profile";
+export * from "./fitness-level";
 export * from "./landmark-profile";
 export * from "./landmark-resolve";
 export * from "./landmark-adapt";

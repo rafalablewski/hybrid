@@ -36,6 +36,7 @@ import {
   type TrajectoryPoint,
 } from "./performance-state";
 import { enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
+import { COST_OK } from "./landmark-adapt";
 import {
   EXPERIENCE_STIMULUS,
   EXPERIENCE_RECOVERY,
@@ -396,7 +397,18 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(MIN_STRAIN_FATIGUE), value: "raw floor", meaning: "no lag can inflate 'I feel fine' into strain" },
       { symbol: String(MAX_COST), value: "bound", meaning: "one tap can never imply a superhuman disturbance" },
     ],
-    note: "The same tap at a different hour is a different measurement: fatigue 4 at 1 h ≈ 0.83 (a hard session), the same 4 at 10 h ≈ 1.50 (a recovery problem). Thresholds run on cost, not the 1–5 scale, because 5 saturates.",
+    note: "The same tap at a different hour is a different measurement: fatigue 4 at 1 h ≈ 0.83 (a hard session), the same 4 at 10 h ≈ 1.50 (a recovery problem). Thresholds run on cost, not the 1–5 scale, because 5 saturates. Since the one-card merge this runs over the DAILY CHECK-IN too — the lag is measured from the last session that ended before the check-in was written.",
+  },
+  {
+    id: "recovery-pooled",
+    engine: "feelTiming",
+    name: "One recovery reading",
+    expression: "spent = mean( soreness, 6 − energy )   →   recoveryCost = Σ(cost × weight) / Σ(weight)",
+    constants: [
+      { symbol: String(COST_HIGH), value: "strain threshold", meaning: "one threshold for every recovery answer" },
+      { symbol: String(COST_OK), value: "absorbed below", meaning: "a week only reads as tolerated under this" },
+    ],
+    note: "Soreness and energy answer the same question in opposite directions, so they are folded onto ONE spentness scale (5 = wrecked), lag-adjusted, and pooled with any historical post-workout answers into a single number. Before the merge these were two raw thresholds on two code paths, which is how the card could promise a reading was not counted while the estimator counted it.",
   },
   {
     id: "feel-weight",

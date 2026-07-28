@@ -1,0 +1,24 @@
+-- HYBRID — standing height on the body log.
+-- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma model BodyMetric.
+-- Idempotent.
+--
+-- Adds `heightCm` to BodyMetric. There was no athlete height anywhere in the
+-- schema before this (the existing `height` column is on MediaAsset and means
+-- image pixels).
+--
+-- WHY IT MATTERS TO THE VOLUME MODEL. The personalized MRV multiplier docks
+-- recovery for body mass above an 80 kg reference, on the reasoning that more
+-- mass means more absolute load moved per set and more tissue to repair. Raw
+-- kilos are a crude proxy: a 95 kg athlete at 195 cm is not carrying the same
+-- load as a 95 kg athlete at 170 cm. With height known, the factor compares
+-- mass to what that height predicts instead, so the penalty lands on the
+-- athlete who is genuinely heavy FOR THEIR FRAME. Without height the model
+-- falls back to the raw-kg rule exactly as before — nothing regresses, the
+-- estimate just gets better when the measurement exists.
+--
+-- No RLS change is needed — BodyMetric is already owner-scoped, new columns
+-- included. HARD DEPENDENCY: once the Prisma client carries this column, the
+-- owner's /api/body reads and writes error against a DB that lacks it, so run
+-- this BEFORE the change reaches production.
+
+alter table "BodyMetric" add column if not exists "heightCm" double precision;

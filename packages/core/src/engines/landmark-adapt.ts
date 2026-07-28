@@ -344,7 +344,7 @@ const FATIGUE_HIGH = 4.2;
 const FATIGUE_OK = 3.5;
 /** Cost below which a week reads as absorbed. A hard session logged in the gym
  *  (fatigue 4 at ~1 h ≈ 0.83) clears it; the same 4 ten hours later does not. */
-const COST_OK = 0.9;
+export const COST_OK = 0.9;
 /** Soreness (5 = very sore, already converted from the check-in's freshness). */
 const SORENESS_HIGH = 4.2;
 /** Reported energy (1–5) that low says the week was not absorbed, whatever the

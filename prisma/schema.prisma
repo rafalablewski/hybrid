@@ -451,6 +451,13 @@ model BodyMetric {
   userId     String
   measuredAt DateTime @default(now())
   weightKg   Float?
+  // Standing height. Effectively static for an adult, but it lives here with
+  // the other tape measurements rather than on User because it genuinely does
+  // change for a growing athlete, and the latest reading is what any consumer
+  // wants. Used to normalise the volume model's body-mass factor: comparing an
+  // athlete's mass to what their height predicts is fairer than comparing raw
+  // kilos, which penalise a tall lean lifter and a short heavy one alike.
+  heightCm   Float?
   bodyFatPct Float?
   neckCm     Float?
   chestCm    Float?

@@ -2,6 +2,7 @@ import type { MuscleGroup } from "./types";
 import type { Experience } from "../onboarding";
 import { VOLUME_LANDMARKS, type VolumeLandmark } from "./landmarks";
 import { ALL_MUSCLES } from "./movements";
+import { frameAdjustedMassKg } from "./athlete-profile";
 
 /**
  * PERSONALIZED VOLUME LANDMARKS.
@@ -50,6 +51,10 @@ export interface AthleteVolumeProfile {
   ageYears?: number;
   /** Body mass in kg. */
   bodyweightKg?: number;
+  /** Standing height. Not a factor of its own — it makes the BODY MASS factor
+   *  fairer, by reading mass against the frame carrying it rather than as raw
+   *  kilos. See engines/athlete-profile.ts. */
+  heightCm?: number;
   /** Typical sleep, 1–5 (5 = consistently great). Matches the check-in scale. */
   sleep?: number;
   /** Life stress, 1–5 (5 = very stressed). Matches the check-in scale. */
@@ -172,7 +177,11 @@ export function personalizeLandmarks(
     if (m !== 1) factors.push({ key: "age", affects: "recovery", multiplier: m, value: `${Math.round(age)} yr` });
   }
 
-  const bw = num(profile.bodyweightKg);
+  const rawBw = num(profile.bodyweightKg);
+  // Read mass against frame where height is known — a 95 kg athlete at 195 cm
+  // is not carrying what a 95 kg athlete at 170 cm is. Without height this
+  // returns the raw mass and the rule is exactly as it was.
+  const bw = rawBw === undefined ? undefined : frameAdjustedMassKg(rawBw, num(profile.heightCm) ?? null);
   if (bw !== undefined && bw > 0) {
     // More body mass = more absolute load moved per set and more tissue to
     // repair, so the SET ceiling comes down even as the loads go up. A lighter
@@ -181,7 +190,7 @@ export function personalizeLandmarks(
       ? clamp(1 - (bw - BODYWEIGHT_REF_KG) * MASS_PENALTY_PER_KG, MASS_FLOOR, 1)
       : clamp(1 + (BODYWEIGHT_REF_KG - bw) * MASS_CREDIT_PER_KG, 1, MASS_CEILING);
     recovery *= m;
-    if (m !== 1) factors.push({ key: "bodyweight", affects: "recovery", multiplier: m, value: `${Math.round(bw)} kg` });
+    if (m !== 1) factors.push({ key: "bodyweight", affects: "recovery", multiplier: m, value: `${Math.round(rawBw!)} kg` });
   }
 
   const sleep = num(profile.sleep);
@@ -284,6 +293,8 @@ export function sanitizeVolumeProfile(raw: unknown): AthleteVolumeProfile {
   if (age !== undefined) out.ageYears = Math.round(age);
   const bw = range(r.bodyweightKg, 25, 300);
   if (bw !== undefined) out.bodyweightKg = Math.round(bw * 10) / 10;
+  const ht = range(r.heightCm, 120, 230);
+  if (ht !== undefined) out.heightCm = Math.round(ht);
   const sleep = range(r.sleep, 1, 5);
   if (sleep !== undefined) out.sleep = Math.round(sleep);
   const stress = range(r.stress, 1, 5);
