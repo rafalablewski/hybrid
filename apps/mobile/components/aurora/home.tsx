@@ -15,6 +15,11 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  quickCheckinMetrics,
+  checkinCompleteness,
+  firstOutstandingStep,
+  CHECKIN_METRICS,
+  type CheckinMetrics,
   readinessContext,
   readinessNoteKey,
   hoursSince,
@@ -816,6 +821,7 @@ export default function AuroraHome() {
           <FeelingCard
             C={C}
             feeling={feeling}
+            dayMetrics={dayCheckin}
             loggedAt={feelingAt}
             lastSessionEnd={lastSessionEnd}
             cooldownFrom={lastCheckinAt}
@@ -1105,9 +1111,11 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   feeling: ReadinessFeeling | null;
+  /** The viewed day's stored metrics — which of the four are actually answered. */
+  dayMetrics: Partial<CheckinMetrics> | null;
   loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
@@ -1121,10 +1129,15 @@ function FeelingCard({ C, feeling, loggedAt, lastSessionEnd, cooldownFrom, isTod
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
-  // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
-  // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
-  // details without ever leaving Today.
-  const [logMoreOpen, setLogMoreOpen] = useState(false);
+  // The rest of the check-in, in a POP-UP rather than expanded inline: the card
+  // stays one glanceable row of faces, and the follow-up gets the whole screen
+  // it needs to ask three questions properly.
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  // What today's check-in actually carries. The one-tap face answers Energy;
+  // until the follow-up runs, the other three are genuinely unknown and the
+  // card says so instead of implying one tap was the full picture.
+  const done = checkinCompleteness(dayMetrics);
+  const startStep = firstOutstandingStep(dayMetrics);
   // The 6h re-log window: while open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -1151,20 +1164,24 @@ function FeelingCard({ C, feeling, loggedAt, lastSessionEnd, cooldownFrom, isTod
     const r = await createCheckin({
       weekOf,
       bodyMassKg: null,
-      energy: rating, sleep: rating, soreness: rating, mood: rating,
+      // ONE tap answers ONE question. This used to write the picked level into
+      // all four metrics, inventing three measurements the athlete never gave —
+      // which the volume profile then showed back to them as "measured sleep".
+      // See core/checkin-flow.ts.
+      ...quickCheckinMetrics(rating),
       adherencePct: null, note: null, sharedWithCoach: false,
     });
     setBusy(false);
     if (r.ok) {
-      // Re-answering the headline question invalidates an open guided flow — its
-      // prefill was read from the PREVIOUS row, so submitting it would write the
-      // old values back. Collapse; re-opening re-reads the row.
-      setLogMoreOpen(false);
       revalidate.recovery();
       // The cached check-in row drives this very card — drop it so the athlete's
       // own pick is never the thing that looks stale.
       revalidate.checkins();
       onPicked();
+      // …and go straight into the rest of the questions. Answering the headline
+      // is the moment the athlete is most willing to answer more, and it's now
+      // the only way the other three ever get real values.
+      if (isToday) setFollowUpOpen(true);
     }
   };
   return (
@@ -1221,26 +1238,42 @@ function FeelingCard({ C, feeling, loggedAt, lastSessionEnd, cooldownFrom, isTod
       {isToday && feeling ? (
         <>
           <Pressable
-            onPress={() => setLogMoreOpen((v) => !v)}
+            onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
-            accessibilityState={{ expanded: logMoreOpen }}
-            accessibilityLabel={t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
+            accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: done.complete ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete ? C.line : `${txt(C, C.lime)}42` }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{logMoreOpen ? t("w.recovery.readiness.logMoreOpenSub") : t("w.recovery.readiness.logMoreSub")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
+                {done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
+                {done.answered} / {done.total} {t("w.home.today.answered")}
+              </Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime), transform: [{ rotate: logMoreOpen ? "90deg" : "0deg" }] }}>→</Text>
+            {/* The outstanding questions, named — a count alone doesn't tell you
+                what you'd be answering. */}
+            <View style={{ flexDirection: "row", gap: 5 }}>
+              {CHECKIN_METRICS.map((m) => (
+                <View key={m.key} style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: (dayMetrics?.[m.key] ?? null) != null ? txt(C, C.lime) : C.line }} />
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete ? C.ash : txt(C, C.lime) }}>→</Text>
           </Pressable>
-          {logMoreOpen ? (
-            <View style={{ marginTop: 14, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+          {followUpOpen ? (
+            <Sheet
+              visible={followUpOpen}
+              scroll
+              onClose={() => setFollowUpOpen(false)}
+              title={t("w.recovery.readiness.followUpTitle")}
+              sub={t("w.recovery.readiness.followUpSub")}
+            >
               <AuroraCheckin
                 embedded
-                startStep={1}
-                onDone={() => { setLogMoreOpen(false); onPicked(); }}
+                startStep={startStep}
+                onDone={() => { setFollowUpOpen(false); onPicked(); }}
               />
-            </View>
+            </Sheet>
           ) : null}
         </>
       ) : null}

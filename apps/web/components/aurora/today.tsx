@@ -20,6 +20,11 @@ import { fs, space,
   ROLE_COLOR,
   readinessRole,
   checkinFeeling,
+  quickCheckinMetrics,
+  checkinCompleteness,
+  firstOutstandingStep,
+  CHECKIN_METRICS,
+  type CheckinMetrics,
   readinessContext,
   readinessNoteKey,
   hoursSince,
@@ -716,6 +721,7 @@ export default function AuroraToday({
       <div ref={railFeelingCard}>
         <FeelingCard
           feeling={feeling}
+          dayMetrics={dayCheckin}
           loggedAt={feelingAt}
           lastSessionEnd={lastSessionEnd}
           cooldownFrom={lastCheckinAt}
@@ -1006,8 +1012,10 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   feeling: ReadinessFeeling | null;
+  /** The viewed day's stored metrics — which of the four are actually answered. */
+  dayMetrics: Partial<CheckinMetrics> | null;
   loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
@@ -1021,10 +1029,15 @@ function FeelingCard({ feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday,
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
-  // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
-  // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
-  // details without ever leaving Today.
-  const [logMoreOpen, setLogMoreOpen] = useState(false);
+  // The rest of the check-in, in a POP-UP rather than expanded inline: the card
+  // stays one glanceable row of faces, and the follow-up gets the whole screen
+  // it needs to ask three questions properly.
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  // What today's check-in actually carries. The one-tap face answers Energy;
+  // until the follow-up runs, the other three are genuinely unknown and the
+  // card says so instead of implying one tap was the full picture.
+  const done = checkinCompleteness(dayMetrics);
+  const startStep = firstOutstandingStep(dayMetrics);
   // The 6h re-log window: while it's open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -1052,17 +1065,21 @@ function FeelingCard({ feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday,
       const res = await fetch("/api/checkins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekOf, energy: rating, sleep: rating, soreness: rating, mood: rating }),
+        // ONE tap answers ONE question. This used to write the picked level
+        // into all four metrics, inventing three measurements the athlete never
+        // gave — which the volume profile then showed back to them as
+        // "measured sleep". See core/checkin-flow.ts.
+        body: JSON.stringify({ weekOf, ...quickCheckinMetrics(rating) }),
       });
       if (res.ok) {
-        // Re-answering the headline question invalidates an open guided flow —
-        // its prefill was read from the PREVIOUS row, so submitting it would
-        // write the old values back. Collapse; re-opening re-reads the row.
-        setLogMoreOpen(false);
         // The cached check-in row drives this very card — drop it so the
         // athlete's own pick is never the thing that looks stale.
         revalidate.checkins();
         onPicked();
+        // …and go straight into the rest of the questions. Answering the
+        // headline is the moment the athlete is most willing to answer more,
+        // and it's now the only way the other three ever get real values.
+        if (isToday) setFollowUpOpen(true);
       }
     } catch {
       // a failed tap simply doesn't set — the athlete can tap again
@@ -1115,36 +1132,55 @@ function FeelingCard({ feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday,
           )}
         </div>
       )}
-      {/* Once today's readiness is set, nudge the athlete to log the fuller
-          picture — and run that guided check-in RIGHT HERE. The one-tap face is
-          step 1 (Energy); the expansion walks the remaining four cards (Sleep,
-          Soreness, Mood, then weight/adherence/note) and refines TODAY's row, so
-          the whole ritual lives on Today — no trip to the More tab, no second
-          entry, no cooldown block. */}
+      {/* THE FOLLOW-UP. Once the headline question is answered the card offers
+          the rest — sleep, freshness, mood — in a pop-up rather than an inline
+          expansion, so the card stays one readable row of faces and the three
+          remaining questions get a surface of their own. The label says what is
+          actually outstanding, because until this runs those metrics are
+          genuinely unknown rather than merely unconfirmed. */}
       {isToday && feeling && (
         <>
           <button
-            onClick={() => setLogMoreOpen((v) => !v)}
-            aria-expanded={logMoreOpen}
-            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 26%, transparent)`, cursor: "pointer", color: C("chalk") }}
+            onClick={() => setFollowUpOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >
             <span style={{ flex: 1 }}>
-              <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>{t("w.recovery.readiness.logMore")}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{logMoreOpen ? t("w.recovery.readiness.logMoreOpenSub") : t("w.recovery.readiness.logMoreSub")}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>
+                {done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
+              </span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>
+                {done.answered} / {done.total} {t("w.home.today.answered")}
+              </span>
             </span>
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: "var(--lime-text)", transform: logMoreOpen ? "rotate(90deg)" : "none", transition: "transform .18s" }}>→</span>
+            {/* The outstanding questions, named — a count alone doesn't tell you
+                what you'd be answering. */}
+            <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+              {CHECKIN_METRICS.map((m) => (
+                <span
+                  key={m.key}
+                  title={t(m.labelKey)}
+                  style={{ width: 7, height: 7, borderRadius: 999, background: (dayMetrics?.[m.key] ?? null) != null ? "var(--lime-text)" : C("line") }}
+                />
+              ))}
+            </span>
+            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete ? C("ash") : "var(--lime-text)" }}>→</span>
           </button>
-          {logMoreOpen && (
-            <div style={{ marginTop: 14, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
-              <AuroraCheckins
-                embedded
-                startStep={1}
-                onDone={() => { setLogMoreOpen(false); onPicked(); }}
-              />
-            </div>
-          )}
+
+          <Sheet
+            open={followUpOpen}
+            onClose={() => setFollowUpOpen(false)}
+            title={t("w.recovery.readiness.followUpTitle")}
+            sub={t("w.recovery.readiness.followUpSub")}
+          >
+            <AuroraCheckins
+              embedded
+              startStep={startStep}
+              onDone={() => { setFollowUpOpen(false); onPicked(); }}
+            />
+          </Sheet>
         </>
       )}
+
     </div>
   );
 }

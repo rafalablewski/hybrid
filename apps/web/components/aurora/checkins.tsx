@@ -10,9 +10,12 @@ import {
   CHECKIN_STEP_COUNT,
   checkinScaleFeeling,
   checkinScaleWordKey,
+  answeredMetrics,
+  localDayKey,
   type CheckinMetricKey,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
+import { useCheckins } from "@/lib/use-checkins";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
@@ -42,7 +45,18 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
   const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // The face each step SHOWS. Neutral until the athlete touches it — which is
+  // not the same as an answer, hence `answered` below.
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
+  // Which metrics the athlete has ACTUALLY answered, here or earlier today.
+  // Everything else is submitted as null: a question walked past without a tap
+  // must not be stored as a middling 3 that the recovery models then read as a
+  // measurement. See core/checkin-flow.ts.
+  const [answered, setAnswered] = useState<Set<CheckinMetricKey>>(new Set());
+  const answer = (k: CheckinMetricKey, v: number) => {
+    setRatings((s) => ({ ...s, [k]: v }));
+    setAnswered((s) => (s.has(k) ? s : new Set(s).add(k)));
+  };
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   const C = (v: string) => `var(--color-${v})`;
 
@@ -50,31 +64,30 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
   // readiness (or a prior full check-in) instead of resetting to neutral — the
   // server upserts the same day, so what's shown here is what gets updated. A
   // fresh "New check-in" (restart) is exempt: it re-arms the neutral defaults.
+  //
+  // Read from the SHARED cache rather than a private fetch: this component used
+  // to issue its own GET and compare days with `new Date().toDateString()`,
+  // giving the same screen two different definitions of "today". One cache, one
+  // day-key helper.
+  const checkins = useCheckins().data;
   useEffect(() => {
-    let alive = true;
-    fetch("/api/checkins")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { checkins?: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null; bodyMassKg?: number | null; adherencePct?: number | null; note?: string | null; sharedWithCoach?: boolean }[] } | null) => {
-        if (!alive || !d?.checkins) return;
-        const today = new Date().toDateString();
-        const c = d.checkins.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
-        if (!c) return;
-        setRatings((s) => ({
-          energy: c.energy ?? s.energy,
-          sleep: c.sleep ?? s.sleep,
-          soreness: c.soreness ?? s.soreness,
-          mood: c.mood ?? s.mood,
-        }));
-        setExtras((s) => ({
-          bodyMassKg: c.bodyMassKg != null ? String(c.bodyMassKg) : s.bodyMassKg,
-          adherencePct: c.adherencePct != null ? String(c.adherencePct) : s.adherencePct,
-          note: c.note ?? s.note,
-          sharedWithCoach: c.sharedWithCoach ?? s.sharedWithCoach,
-        }));
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
+    if (!checkins) return;
+    const today = localDayKey(Date.now());
+    const c = checkins.find((x) => x?.weekOf && localDayKey(x.weekOf) === today);
+    if (!c) return;
+    setRatings((s) => ({
+      energy: c.energy ?? s.energy,
+      sleep: c.sleep ?? s.sleep,
+      soreness: c.soreness ?? s.soreness,
+      mood: c.mood ?? s.mood,
+    }));
+    // A stored value IS an answer — but only the ones actually stored.
+    setAnswered((s) => {
+      const next = new Set(s);
+      for (const k of answeredMetrics(c)) next.add(k);
+      return next;
+    });
+  }, [checkins]);
 
   const detailsStep = CHECKIN_METRICS.length; // index 4
   const isDetails = step === detailsStep;
@@ -87,7 +100,13 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
         body: JSON.stringify({
           weekOf: new Date().toISOString(),
           bodyMassKg: extras.bodyMassKg ? parseFloat(extras.bodyMassKg) : null,
-          energy: ratings.energy, sleep: ratings.sleep, soreness: ratings.soreness, mood: ratings.mood,
+          // Unanswered metrics go as null. The API stores null, every reader
+          // treats it as unknown, and nothing downstream mistakes a default for
+          // a report.
+          energy: answered.has("energy") ? ratings.energy : null,
+          sleep: answered.has("sleep") ? ratings.sleep : null,
+          soreness: answered.has("soreness") ? ratings.soreness : null,
+          mood: answered.has("mood") ? ratings.mood : null,
           adherencePct: extras.adherencePct ? parseInt(extras.adherencePct, 10) : null,
           note: extras.note || null,
           sharedWithCoach: isPaid && extras.sharedWithCoach,
@@ -115,6 +134,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
   const restart = () => {
     setDone(false); setStep(minStep); setError("");
     setRatings({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
+    setAnswered(new Set());
     setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   };
 
@@ -159,12 +179,21 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
             <div style={{ fontWeight: 900, fontSize: fs.title, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</div>
             {/* summary of the four picked faces */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 12 }}>
-              {CHECKIN_METRICS.map((m) => (
-                <div key={m.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 4px" }}>
-                  <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} size={26} />
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(m.labelKey)}</span>
-                </div>
-              ))}
+              {CHECKIN_METRICS.map((m) => {
+                // An unanswered metric shows a dash, not a neutral face — a face
+                // would claim a reading that was never given.
+                const on = answered.has(m.key);
+                return (
+                  <div key={m.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 4px", opacity: on ? 1 : 0.5 }}>
+                    {on ? (
+                      <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} size={26} />
+                    ) : (
+                      <span aria-hidden style={{ display: "grid", placeItems: "center", width: 26, height: 26, fontFamily: "var(--font-mono)", fontSize: 16, color: C("ash") }}>–</span>
+                    )}
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(m.labelKey)}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash2"), margin: "16px 0 8px" }}>{t("w.recovery.checkins.detailsOptional")}</div>
@@ -207,7 +236,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, onDone
                   {CHECKIN_SCALE.map((n) => {
                     const sel = val === n;
                     return (
-                      <button key={n} onClick={() => setRatings((s) => ({ ...s, [m.key]: n }))}
+                      <button key={n} onClick={() => answer(m.key, n)}
                         aria-label={`${t(m.labelKey)}: ${n}`} aria-pressed={sel}
                         style={{ flex: 1, aspectRatio: "1", borderRadius: 16, display: "grid", placeItems: "center", cursor: "pointer", background: sel ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : C("ink"), border: `1px solid ${sel ? C("lime") : C("line")}`, boxShadow: sel ? `0 0 0 3px color-mix(in srgb, ${C("lime")} 14%, transparent)` : "none" }}>
                         <ReadinessFace feeling={checkinScaleFeeling(n)} size={24} />

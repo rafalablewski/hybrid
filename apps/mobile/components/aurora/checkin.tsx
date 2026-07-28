@@ -8,6 +8,8 @@ import {
   checkinScaleWordKey,
   type CheckinMetricKey,
   type ReadinessFeeling,
+  answeredMetrics,
+  localDayKey,
 } from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
@@ -45,7 +47,18 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
   const minStep = Math.min(Math.max(Math.trunc(startStep) || 0, 0), CHECKIN_METRICS.length);
   const [step, setStep] = useState(minStep); // 0..3 metrics, 4 = details
   const [done, setDone] = useState(false);
+  // The face each step SHOWS. Neutral until the athlete touches it — which is
+  // not the same as an answer, hence `answered` below.
   const [ratings, setRatings] = useState<Ratings>({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
+  // Which metrics the athlete has ACTUALLY answered, here or earlier today.
+  // Everything else is submitted as null: a question walked past without a tap
+  // must not be stored as a middling 3 that the recovery models then read as a
+  // measurement. See core/checkin-flow.ts.
+  const [answered, setAnswered] = useState<Set<CheckinMetricKey>>(new Set());
+  const answer = (k: CheckinMetricKey, v: number) => {
+    setRatings((s) => ({ ...s, [k]: v }));
+    setAnswered((s) => (s.has(k) ? s : new Set(s).add(k)));
+  };
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
 
   useEffect(() => { fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {}); }, []);
@@ -59,9 +72,17 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     fetchCheckins()
       .then((list) => {
         if (!alive) return;
-        const today = new Date().toDateString();
-        const c = list.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
+        // One day-key helper, shared with every other surface — this used to
+        // roll its own `toDateString()` comparison.
+        const today = localDayKey(Date.now());
+        const c = list.find((x) => x?.weekOf && localDayKey(x.weekOf) === today);
         if (!c) return;
+        // A stored value IS an answer — but only the ones actually stored.
+        setAnswered((prev) => {
+          const next = new Set(prev);
+          for (const k of answeredMetrics(c)) next.add(k);
+          return next;
+        });
         setRatings((s) => ({
           energy: c.energy ?? s.energy,
           sleep: c.sleep ?? s.sleep,
@@ -87,7 +108,12 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     const r = await createCheckin({
       weekOf: new Date().toISOString(),
       bodyMassKg: extras.bodyMassKg ? parseFloat(extras.bodyMassKg) : null,
-      energy: ratings.energy, sleep: ratings.sleep, soreness: ratings.soreness, mood: ratings.mood,
+      // Unanswered metrics go as null. The API stores null, every reader treats
+      // it as unknown, and nothing downstream mistakes a default for a report.
+      energy: answered.has("energy") ? ratings.energy : null,
+      sleep: answered.has("sleep") ? ratings.sleep : null,
+      soreness: answered.has("soreness") ? ratings.soreness : null,
+      mood: answered.has("mood") ? ratings.mood : null,
       adherencePct: extras.adherencePct ? parseInt(extras.adherencePct, 10) : null,
       note: extras.note || null,
       sharedWithCoach: paid ? extras.sharedWithCoach : false,
@@ -114,6 +140,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
   const restart = () => {
     setDone(false); setStep(minStep);
     setRatings({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
+    setAnswered(new Set());
     setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   };
 
@@ -149,7 +176,13 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
             {CHECKIN_METRICS.map((m) => (
               <View key={m.key} style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 12 }}>
-                <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
+                {answered.has(m.key) ? (
+                  <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
+                ) : (
+                  // An unanswered metric shows a dash, not a neutral face — a
+                  // face would claim a reading that was never given.
+                  <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
+                )}
                 <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{t(m.labelKey)}</Text>
               </View>
             ))}
@@ -208,7 +241,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
                 {CHECKIN_SCALE.map((n) => {
                   const sel = val === n;
                   return (
-                    <Pressable key={n} onPress={() => setRatings((s) => ({ ...s, [m.key]: n }))}
+                    <Pressable key={n} onPress={() => answer(m.key, n)}
                       accessibilityRole="radio" accessibilityLabel={`${t(m.labelKey)}: ${n}`} accessibilityState={{ selected: sel }}
                       style={{ flex: 1, aspectRatio: 1, borderRadius: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1a` : C.ink }}>
                       <ReadinessFace feeling={checkinScaleFeeling(n)} scale={0.7} />
