@@ -215,10 +215,16 @@ export function deriveTissueRisk(
       label: "Absolute load",
       math: `(${fatigue} / 100) × 28 = ${load}`,
     },
-    {
-      label: "Detraining",
-      math: `ramp(0.8 − ${f2(t.acwr)}, 0, 0.6) × 18 = ${detrain}`,
-    },
+    acute > 0
+      ? {
+          label: "Detraining",
+          math: `ramp(0.8 − ${f2(t.acwr)}, 0, 0.6) × 18 = ${detrain}`,
+        }
+      : {
+          label: "Detraining",
+          math: "no acute load — still resting → held at 0 until training resumes",
+          note: "return-from-low is a risk of the return; a quiet week is rest, not risk",
+        },
     {
       label: "Recovery suppression",
       math: recovery > 0 ? `max(0, −bioAdj) × 1.2 = ${recovery}` : "recovery not suppressed → 0",

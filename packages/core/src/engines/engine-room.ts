@@ -271,7 +271,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "0.8", value: "onset", meaning: "ACWR below which detraining registers" },
       { symbol: "18", value: "18 pts", meaning: "max contribution" },
     ],
-    note: "Very low acute load carries a small spike-on-return risk.",
+    note: "Very low acute load carries a small spike-on-return risk — counted only once training resumes (acute load > 0). A collapsed ratio during the layoff itself is rest, not risk.",
   },
   {
     id: "injury-recovery",
