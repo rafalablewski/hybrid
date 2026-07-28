@@ -332,12 +332,16 @@ export function WorkoutWrapped({
         </Panel>
 
         {/* ── HOW DID THAT FEEL? ── */}
+        {/* The immediate read, for a session opened later that was never rated.
+            The card says what a late answer is worth rather than pretending it
+            is the in-the-gym reading. See core/feel-schedule.ts. */}
         <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}12`} top={panelH * 0.05} left={-90} />}>
           <FeelPrompt
             sessionId={session.id}
             minutes={receipt.durationMin}
             initialFeel={session.feel ?? null}
             initialFatigue={session.fatigue ?? null}
+            sessionEnd={session.completedAt ?? session.startedAt ?? null}
             baseline={feelBaseline}
             eyebrow={eyebrow}
           />

@@ -812,11 +812,11 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
 
         {/* Optional rename + private note, as quiet as they were. */}
         <div style={{ textAlign: "center" }}>
-          {/* "How did that feel?" — asked HERE, straight after the last set,
-              which is when the answer is most accurate and the athlete is still
-              at the screen. The Wrapped asks the same question later for a
-              session that was never rated; both read the stored value, so
-              nobody is asked twice. See core/session-feel.ts for why it matters. */}
+          {/* "How did that feel?" — THE IMMEDIATE READ, asked here because this
+              is the only moment it can be asked. Effort is sRPE; spentness now
+              is the anchor the recovery read on Today is measured against hours
+              later. The daily card asks the second half; it does not replace
+              this one. See core/feel-schedule.ts. */}
           <FeelPrompt compact sessionId={sessionId} minutes={minutes} baseline={feelBaseline} />
           <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
           <SessionNote sessionId={sessionId} />

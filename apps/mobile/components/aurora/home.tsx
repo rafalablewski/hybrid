@@ -15,6 +15,18 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  quickCheckinMetrics,
+  dayCompleteness,
+  firstOutstandingIndex,
+  checkinSteps,
+  metricLabelKey,
+  feelSchedule,
+  stepAnswered,
+  type CheckinMetrics,
+  type CheckinSessionRef,
+  readinessContext,
+  readinessNoteKey,
+  hoursSince,
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
@@ -345,7 +357,35 @@ export default function AuroraHome() {
     return checkins.find((c) => c && c.weekOf && localDayKey(c.weekOf) === dstr) ?? null;
   }, [checkins, dayTs, today]);
   const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
-  const feelingAt = dayCheckin?.weekOf ? new Date(dayCheckin.weekOf).getTime() : null;
+  // BUG FIX: this read `weekOf` — the day the check-in COVERS, which for a
+  // back-logged day is that day's NOON. "Logged 4 hours from now" is what that
+  // produced. `createdAt` is when the row was actually written; weekOf is only
+  // the fallback for a row that predates it.
+  const feelingAt = useMemo(() => {
+    const ts = Date.parse(dayCheckin?.createdAt ?? dayCheckin?.weekOf ?? "");
+    return Number.isFinite(ts) ? ts : null;
+  }, [dayCheckin]);
+  // The sessions the athlete trained on the VIEWED day — one effort question
+  // each in the follow-up. Empty on a rest day, which makes the flow exactly
+  // the four daily questions it has always been.
+  const daySessions = useMemo<CheckinSessionRef[]>(() => {
+    const dstr = dayTs == null ? today : localDayKey(dayTs);
+    return sessions
+      .filter((s) => s.startedAt && localDayKey(s.startedAt) === dstr)
+      .map((s) => ({ id: s.id, title: s.title, startedAt: s.startedAt, feel: s.feel ?? null }));
+  }, [sessions, dayTs, today]);
+
+  // How long ago the athlete last finished a session — the lens the day's
+  // answer is read through. "Wrecked" 90 minutes after training is the session
+  // talking; the same tap a day later is a recovery signal. See core/feel-timing.
+  const lastSessionEnd = useMemo(() => {
+    let best: number | null = null;
+    for (const s of sessions) {
+      const ts = Date.parse(s.completedAt ?? s.startedAt ?? "");
+      if (Number.isFinite(ts) && (best == null || ts > best)) best = ts;
+    }
+    return best;
+  }, [sessions]);
   const lastCheckinAt = useMemo(
     () =>
       checkins.reduce<number | null>((m, c) => {
@@ -354,6 +394,26 @@ export default function AuroraHome() {
       }, null),
     [checkins],
   );
+
+  // WHICH READ IS DUE. The app asks about a session twice — once at the end of
+  // it (the finish screen), once hours later, here. This is the second ask: the
+  // one that says whether the session was absorbed, and the only one that can
+  // move a training ceiling. See core/feel-schedule.ts.
+  const recoveryDue = useMemo(() => {
+    const sch = feelSchedule({
+      sessions: sessions.map((x) => ({
+        id: x.id,
+        title: x.title,
+        startedAt: x.startedAt,
+        completedAt: x.completedAt ?? null,
+        feel: x.feel ?? null,
+        fatigue: x.fatigue ?? null,
+        feelLoggedAt: x.feelLoggedAt ?? null,
+      })),
+      lastCheckinAt,
+    });
+    return sch.due.some((p) => p.kind === "recovery");
+  }, [sessions, lastCheckinAt]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -795,7 +855,11 @@ export default function AuroraHome() {
           <FeelingCard
             C={C}
             feeling={feeling}
+            dayMetrics={dayCheckin}
+            daySessions={daySessions}
+            recoveryDue={recoveryDue}
             loggedAt={feelingAt}
+            lastSessionEnd={lastSessionEnd}
             cooldownFrom={lastCheckinAt}
             isToday={dayIsToday}
             isFuture={dayIsFuture}
@@ -1083,10 +1147,19 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   feeling: ReadinessFeeling | null;
+  /** The viewed day's stored metrics — which of the four are actually answered. */
+  dayMetrics: Partial<CheckinMetrics> | null;
+  /** The sessions trained that day — one effort question each. */
+  daySessions: CheckinSessionRef[];
+  /** True when the delayed recovery read on the last session has come due —
+   *  the card leads with WHY it is asking again rather than repeating itself. */
+  recoveryDue: boolean;
   loggedAt: number | null;
+  /** When the athlete last finished training — the lens for today's answer. */
+  lastSessionEnd: number | null;
   cooldownFrom: number | null;
   isToday: boolean;
   isFuture: boolean;
@@ -1097,10 +1170,15 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   const { t } = useLang();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
-  // The guided rest of the check-in, expanded IN PLACE. The one-tap face above
-  // answers Energy (step 1); opening this walks Sleep → Soreness → Mood →
-  // details without ever leaving Today.
-  const [logMoreOpen, setLogMoreOpen] = useState(false);
+  // The rest of the check-in, in a POP-UP rather than expanded inline: the card
+  // stays one glanceable row of faces, and the follow-up gets the whole screen
+  // it needs to ask three questions properly.
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  // What today's check-in actually carries. The one-tap face answers Energy;
+  // until the follow-up runs, the other three are genuinely unknown and the
+  // card says so instead of implying one tap was the full picture.
+  const done = dayCompleteness(dayMetrics, daySessions);
+  const startStep = firstOutstandingIndex(dayMetrics, daySessions);
   // The 6h re-log window: while open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -1113,6 +1191,11 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
+  // The clock's effect on the meaning of today's answer, from core so both
+  // clients say the same thing. `low` is the two negative feelings — the only
+  // ones whose reading genuinely turns on how long ago you trained.
+  const ctxLow = feeling === "flat" || feeling === "wrecked";
+  const ctxNote = readinessNoteKey(readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1122,20 +1205,24 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
     const r = await createCheckin({
       weekOf,
       bodyMassKg: null,
-      energy: rating, sleep: rating, soreness: rating, mood: rating,
+      // ONE tap answers ONE question. This used to write the picked level into
+      // all four metrics, inventing three measurements the athlete never gave —
+      // which the volume profile then showed back to them as "measured sleep".
+      // See core/checkin-flow.ts.
+      ...quickCheckinMetrics(rating),
       adherencePct: null, note: null, sharedWithCoach: false,
     });
     setBusy(false);
     if (r.ok) {
-      // Re-answering the headline question invalidates an open guided flow — its
-      // prefill was read from the PREVIOUS row, so submitting it would write the
-      // old values back. Collapse; re-opening re-reads the row.
-      setLogMoreOpen(false);
       revalidate.recovery();
       // The cached check-in row drives this very card — drop it so the athlete's
       // own pick is never the thing that looks stale.
       revalidate.checkins();
       onPicked();
+      // …and go straight into the rest of the questions. Answering the headline
+      // is the moment the athlete is most willing to answer more, and it's now
+      // the only way the other three ever get real values.
+      if (isToday) setFollowUpOpen(true);
     }
   };
   return (
@@ -1145,6 +1232,17 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
         {/* viewing another day — the date names the scope, no extra copy */}
         {!isToday && dayLabel ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text> : null}
       </View>
+      {/* THE SECOND ASK, NAMED. An athlete who already answered at the end of
+          their session and is asked again a few hours later will read it as the
+          app having forgotten — unless it says what this one is for. It is a
+          different question: not "how hard was that" but "did you absorb it".
+          See core/feel-schedule.ts. */}
+      {isToday && recoveryDue ? (
+        <View style={{ marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}3d` }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.promptRecovery")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 18, color: C.ash, marginTop: 5 }}>{t("session.feel.whyRecovery")}</Text>
+        </View>
+      ) : null}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = feeling === key;
@@ -1158,6 +1256,14 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
           );
         })}
       </View>
+      {/* WHAT THIS ANSWER IS WORTH. The same tap means different things an hour
+          after training and a day after it, so the card says which reading it
+          is looking at instead of leaving the athlete to guess (and instead of
+          the app quietly treating the two as the same number). */}
+      {isToday && feeling && ctxNote && (
+        <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
+      )}
+
       {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
           alone while cooling (it explains why the faces are locked on a day
           without its own check-in). */}
@@ -1184,26 +1290,47 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
       {isToday && feeling ? (
         <>
           <Pressable
-            onPress={() => setLogMoreOpen((v) => !v)}
+            onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
-            accessibilityState={{ expanded: logMoreOpen }}
-            accessibilityLabel={t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: `${txt(C, C.lime)}42` }}
+            accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: done.complete ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete ? C.line : `${txt(C, C.lime)}42` }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.readiness.logMore")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>{logMoreOpen ? t("w.recovery.readiness.logMoreOpenSub") : t("w.recovery.readiness.logMoreSub")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
+                {done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
+                {done.answered} / {done.total} {t("w.home.today.answered")}
+              </Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.lime), transform: [{ rotate: logMoreOpen ? "90deg" : "0deg" }] }}>→</Text>
+            {/* The outstanding questions, named — a count alone doesn't tell you
+                what you'd be answering. */}
+            <View style={{ flexDirection: "row", gap: 5 }}>
+              {checkinSteps(daySessions).filter((st) => st.kind !== "details").map((st, i) => (
+                <View
+                  key={i}
+                  accessibilityLabel={st.kind === "metric" ? t(metricLabelKey(st.key)) : st.session.title}
+                  style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: stepAnswered(st, dayMetrics) ? txt(C, C.lime) : C.line }}
+                />
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete ? C.ash : txt(C, C.lime) }}>→</Text>
           </Pressable>
-          {logMoreOpen ? (
-            <View style={{ marginTop: 14, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+          {followUpOpen ? (
+            <Sheet
+              visible={followUpOpen}
+              scroll
+              onClose={() => setFollowUpOpen(false)}
+              title={t("w.recovery.readiness.followUpTitle")}
+              sub={t("w.recovery.readiness.followUpSub")}
+            >
               <AuroraCheckin
                 embedded
-                startStep={1}
-                onDone={() => { setLogMoreOpen(false); onPicked(); }}
+                startStep={startStep}
+                sessions={daySessions}
+                onDone={() => { setFollowUpOpen(false); onPicked(); }}
               />
-            </View>
+            </Sheet>
           ) : null}
         </>
       ) : null}

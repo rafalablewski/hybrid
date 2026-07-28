@@ -418,7 +418,12 @@ model Checkin {
   bodyMassKg   Float?
   energy       Int? // 1–5 self-report
   sleep        Int? // 1–5
-  soreness     Int? // 1–5 (5 = very sore)
+  // MISLEADING NAME, kept for compatibility: this column stores FRESHNESS, not
+  // soreness. The guided flow asks "How fresh do your muscles feel?" and every
+  // writer follows that sense, so 5 = muscles feel fresh and 1 = wrecked.
+  // Read it through core/checkin-scales.ts (sorenessFromCheckin) — reading it
+  // by its name is how the volume estimator once shipped inverted.
+  soreness     Int? // 1–5 (5 = FRESH, 1 = very sore)
   mood         Int? // 1–5
   adherencePct Int? // self-reported plan adherence 0–100
   note         String? // client free text
@@ -446,6 +451,13 @@ model BodyMetric {
   userId     String
   measuredAt DateTime @default(now())
   weightKg   Float?
+  // Standing height. Effectively static for an adult, but it lives here with
+  // the other tape measurements rather than on User because it genuinely does
+  // change for a growing athlete, and the latest reading is what any consumer
+  // wants. Used to normalise the volume model's body-mass factor: comparing an
+  // athlete's mass to what their height predicts is fairer than comparing raw
+  // kilos, which penalise a tall lean lifter and a short heavy one alike.
+  heightCm   Float?
   bodyFatPct Float?
   neckCm     Float?
   chestCm    Float?
@@ -662,6 +674,13 @@ model Session {
   // owner-only like the note above.
   feel        Int?
   fatigue     Int?
+  // WHEN the athlete answered. Set server-side on every write of feel/fatigue.
+  // The lag between completedAt and this is what makes two identical `fatigue`
+  // values comparable: 4 an hour after training is an ordinary hard session, 4
+  // ten hours later is a recovery problem. See core/feel-timing.ts. Null on
+  // rows written before this column existed — the models degrade to the raw
+  // report rather than inventing a lag.
+  feelLoggedAt DateTime?
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.

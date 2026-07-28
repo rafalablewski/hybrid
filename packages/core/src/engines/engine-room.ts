@@ -36,6 +36,41 @@ import {
   type TrajectoryPoint,
 } from "./performance-state";
 import { enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
+import { COST_OK } from "./landmark-adapt";
+import {
+  EXPERIENCE_STIMULUS,
+  EXPERIENCE_RECOVERY,
+  SLEEP_RECOVERY,
+  STRESS_RECOVERY,
+  NUTRITION_RECOVERY,
+  AGE_REF_YEARS,
+  AGE_PENALTY_PER_YEAR,
+  AGE_FLOOR,
+  MASS_PENALTY_PER_KG,
+  MASS_FLOOR,
+  RECOVERY_BOUNDS,
+} from "./landmark-profile";
+import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS } from "./athlete-profile";
+import { STRENGTH_STANDARDS, ENDURANCE_PACE, ENDURANCE_SEX_FACTOR, RIEGEL_EXPONENT, ENDURANCE_STANDARD_KM, ENDURANCE_MIN_KM } from "./fitness-level";
+import { SETTLED_DRIFT, CONVERGING_DRIFT, SETTLE_WINDOW } from "./landmark-replay";
+import {
+  RESIDUAL_FLOOR,
+  RESIDUAL_TAU_H,
+  MAX_COST,
+  COST_HIGH,
+  MIN_STRAIN_FATIGUE,
+  RECALL_FROM_H,
+  RECALL_TAU_H,
+  WEIGHT_FLOOR,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  CLEARANCE_SLOPE,
+  CLEARANCE_FACTOR_BOUNDS,
+  MIN_PAIR_GAP_H,
+  MIN_PAIR_FATIGUE,
+  MIN_RECOVERY_PAIRS,
+} from "../feel-timing";
+import { IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H } from "../feel-schedule";
 
 export type EngineFormulaGroup =
   | "fatigue"
@@ -45,7 +80,11 @@ export type EngineFormulaGroup =
   | "load"
   | "injury"
   | "calibration"
-  | "effort";
+  | "effort"
+  | "landmarks"
+  | "volumeBlock"
+  | "feelTiming"
+  | "fitnessLevel";
 
 /** One live formula, as data — the console's formula sheet renders these. */
 export interface EngineFormula {
@@ -68,6 +107,10 @@ export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; sou
   { id: "injury", label: "Injury risk", source: "engines/injury.ts" },
   { id: "calibration", label: "p(injury) calibration", source: "engines/injury.ts + datanet.ts" },
   { id: "effort", label: "Reported effort model", source: "engines/effort.ts" },
+  { id: "landmarks", label: "Volume landmarks (MEV/MAV/MRV)", source: "engines/landmark-profile.ts + landmark-adapt.ts + landmark-resolve.ts" },
+  { id: "volumeBlock", label: "Block volume ramp", source: "engines/volume-block.ts" },
+  { id: "feelTiming", label: "Feel timing", source: "feel-timing.ts + checkin-scales.ts" },
+  { id: "fitnessLevel", label: "Training level & profile", source: "engines/fitness-level.ts + athlete-profile.ts" },
 ];
 
 export const ENGINE_FORMULAS: EngineFormula[] = [
@@ -258,6 +301,243 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "b", value: String(PRIOR_COEFFS.slope), meaning: "slope (prior)" },
     ],
     note: "The prior is documented, not fitted: score 50 → ~10%, score 80 → ~35%. Once ≥30 labeled outcomes exist, refitCalibration re-fits (a, b) by gradient descent and a new ModelFit version goes live everywhere risk is read.",
+  },
+
+  // ---- Volume landmarks: the four layers that turn a textbook table into
+  //      one athlete's MEV/MAV/MRV. See engines/landmark-resolve.ts. ----
+  {
+    id: "landmark-layers",
+    engine: "landmarks",
+    name: "Resolution order",
+    expression: "landmarks = manual( observed( profile( population ) ) )",
+    constants: [
+      { symbol: "population", value: "VOLUME_LANDMARKS", meaning: "the textbook table everyone starts on" },
+      { symbol: "profile", value: "stimulus / recovery", meaning: "scaled to who the athlete is" },
+      { symbol: "observed", value: "MRV estimate", meaning: "corrected by what the log showed" },
+      { symbol: "manual", value: "athlete override", meaning: "always wins" },
+    ],
+    note: "Each layer is closer to the individual than the last, and the result carries which layer produced it — so no screen can present a population average as a personal measurement.",
+  },
+  {
+    id: "landmark-stimulus",
+    engine: "landmarks",
+    name: "Stimulus multiplier (MV, MEV)",
+    expression: "mev' = round(mev × stimulus),  stimulus = clamp(experienceStimulus, 0.6, 1.4)",
+    constants: [
+      { symbol: "beginner", value: String(EXPERIENCE_STIMULUS.beginner), meaning: "a novice grows off ~70% of the table" },
+      { symbol: "intermediate", value: String(EXPERIENCE_STIMULUS.intermediate), meaning: "the table as written" },
+      { symbol: "advanced", value: String(EXPERIENCE_STIMULUS.advanced), meaning: "closer to the genetic ceiling, needs more" },
+    ],
+    note: "How much work it takes to GROW. Training age is the only input — sleep and stress do not change the dose required, only what you can absorb.",
+  },
+  {
+    id: "landmark-recovery",
+    engine: "landmarks",
+    name: "Recovery multiplier (MRV)",
+    expression: "mrv' = round(mrv × recovery),  recovery = clamp(∏ factors, " + String(RECOVERY_BOUNDS[0]) + ", " + String(RECOVERY_BOUNDS[1]) + ")",
+    constants: [
+      { symbol: "training age", value: `${EXPERIENCE_RECOVERY.beginner} / ${EXPERIENCE_RECOVERY.intermediate} / ${EXPERIENCE_RECOVERY.advanced}`, meaning: "work capacity is itself trained" },
+      { symbol: "age", value: `−${AGE_PENALTY_PER_YEAR * 100}%/yr past ${AGE_REF_YEARS}, floor ${AGE_FLOOR}`, meaning: "recovery declines with age" },
+      { symbol: "body mass", value: `−${MASS_PENALTY_PER_KG * 100}%/kg past ${BODYWEIGHT_REF_KG} kg, floor ${MASS_FLOOR}`, meaning: "more absolute load moved per set" },
+      { symbol: "sleep 1–5", value: SLEEP_RECOVERY.slice(1).join(" / "), meaning: "self-reported or measured from check-ins" },
+      { symbol: "stress 1–5", value: STRESS_RECOVERY.slice(1).join(" / "), meaning: "5 = very stressed" },
+      { symbol: "energy", value: `${NUTRITION_RECOVERY.deficit} / ${NUTRITION_RECOVERY.maintenance} / ${NUTRITION_RECOVERY.surplus}`, meaning: "deficit / maintenance / surplus, read off the scale" },
+    ],
+    note: "How much work you can ABSORB. The bounds matter: five mildly negative inputs must not multiply into a ceiling nobody could train under.",
+  },
+  {
+    id: "landmark-band",
+    engine: "landmarks",
+    name: "MAV band re-derivation",
+    expression: "mavHigh' = mev' + (mrv' − mev') × pHigh,   pHigh = (mavHigh − mev) / (mrv − mev)",
+    constants: [{ symbol: "pLow, pHigh", value: "from the source table", meaning: "each muscle's own band position" }],
+    note: "The band is never scaled on its own — it keeps its PROPORTIONAL position between the athlete's own MEV and MRV. That preserves each muscle's shape and makes mv ≤ mev ≤ mavLow ≤ mavHigh ≤ mrv true by construction rather than by clamping.",
+  },
+  {
+    id: "landmark-observed",
+    engine: "landmarks",
+    name: "Observed ceiling correction",
+    expression: "mrv = overreached ? min(prior, min(overreachedSets) − 1) : (maxTolerated ≥ prior − 1 ? maxTolerated + 1 : prior)",
+    constants: [
+      { symbol: "±35%", value: "bound vs the prior", meaning: "no window can double or halve a ceiling" },
+      { symbol: "2", value: "qualifying weeks", meaning: "below this the prior is returned untouched at zero confidence" },
+      { symbol: "≥ mavHigh", value: "volume gate", meaning: "a light week proves nothing about a ceiling" },
+    ],
+    note: "A ceiling is only ever found by running into it. Weeks are classed tolerated or overreached from e1RM drift, post-session fatigue, check-in soreness and energy; symptoms set an upper bound and beat 'I got away with it'.",
+  },
+  {
+    id: "landmark-freshness",
+    engine: "feelTiming",
+    name: "Check-in soreness polarity",
+    expression: "soreness = 6 − storedValue",
+    constants: [{ symbol: "stored", value: "1–5, 5 = FRESH", meaning: "the column is named 'soreness' but holds freshness" }],
+    note: "The guided flow asks 'how fresh do your muscles feel?', so 5 means fresh. Reading the column by its NAME gives a plausible, exactly backwards answer — which is how the MRV estimator once punished athletes for reporting they felt good. Converted once, in checkin-scales.ts.",
+  },
+
+  {
+    id: "landmark-frame",
+    engine: "landmarks",
+    name: "Body mass read against frame",
+    expression: `adjusted = (mass / (${REFERENCE_BMI} × height²)) × ${BODYWEIGHT_REF_KG}`,
+    constants: [
+      { symbol: String(REFERENCE_BMI), value: "reference build", meaning: "the mass a height is expected to carry" },
+      { symbol: `${BODYWEIGHT_REF_KG} kg`, value: "reference mass", meaning: "where the recovery penalty starts" },
+    ],
+    note: "The recovery factor docks mass above the reference, but 95 kg at 195 cm and 95 kg at 170 cm are not the same load and the flat per-kilo rule penalised them identically. With height known, mass is read against what the frame predicts. Deliberately NOT a body-composition model — the app cannot see body fat. Without height the raw-kg rule applies unchanged.",
+  },
+
+  {
+    id: "level-ratio",
+    engine: "fitnessLevel",
+    name: "Training level from relative strength",
+    expression: "ratio = bestE1rm / bodyMass   vs   threshold × sexFactor × developmentFraction(age)",
+    constants: [
+      { symbol: "Back Squat", value: STRENGTH_STANDARDS.find((s) => s.key === "Back Squat")!.ratios.join(" / "), meaning: "novice / intermediate / advanced / elite" },
+      { symbol: "Deadlift", value: STRENGTH_STANDARDS.find((s) => s.key === "Deadlift")!.ratios.join(" / "), meaning: "entry ratios, ×bodyweight" },
+      { symbol: "Bench Press", value: STRENGTH_STANDARDS.find((s) => s.key === "Bench Press")!.ratios.join(" / "), meaning: "male, peak training age" },
+      { symbol: "≤12", value: "reps", meaning: "a rep-out is not a max test" },
+      { symbol: "180 d", value: "window", meaning: "current form, not a lifetime best" },
+    ],
+    note: "The BEST lift sets the level, not the average — training age is what you have built, not a number dragged down by the lift you neglect. Confidence rises with how many benchmark lifts are represented and caps at 0.85, because a ratio is a proxy for training age rather than a measurement of it. The athlete's own answer always wins; the estimate fills a gap and any disagreement is shown, never silently applied.",
+  },
+  {
+    id: "profile-completeness",
+    engine: "fitnessLevel",
+    name: "Profile completeness",
+    expression: "score = Σ weight(answered) / Σ weight(all)",
+    constants: VOLUME_PROFILE_FIELDS.slice(0, 4).map((f) => ({
+      symbol: f.key,
+      value: String(f.weight),
+      meaning: f.key === "experience" ? "moves MEV as well as MRV" : "adjusts what can be absorbed",
+    })),
+    note: "Weighted by how much each input actually moves the estimate rather than by counting boxes — a bar that treats training age and stress as equal lies about where the athlete's effort pays off. The weights are a distribution summing to 1.",
+  },
+
+  // ---- The block ramp: landmarks are walls, not targets. ----
+  {
+    id: "block-target",
+    engine: "volumeBlock",
+    name: "This week's target sets",
+    expression: "target = round(mev + (top − mev) × ramp),   ramp = (week − 1) / (loadWeeks − 1)",
+    constants: [
+      { symbol: "top", value: "mavHigh, or max(mavHigh, mrv − 1) when overreaching", meaning: "where the last load week lands" },
+      { symbol: "deload", value: "mv", meaning: "the maintenance floor" },
+    ],
+    note: "Week 1 sits at MEV so there is somewhere to go; the accumulation weeks climb to the top of MAV; the deload drops to MV. Living at MRV every week leaves no room to progress and buries the athlete by week three.",
+  },
+
+  // ---- Feel timing: when you answered changes what the answer means. ----
+  {
+    id: "feel-residual",
+    engine: "feelTiming",
+    name: "Acute fatigue still present",
+    expression: `expectedResidual(h) = ${RESIDUAL_FLOOR} + ${Math.round((1 - RESIDUAL_FLOOR) * 100) / 100} × e^(−h / ${RESIDUAL_TAU_H})`,
+    constants: [
+      { symbol: String(RESIDUAL_TAU_H), value: `${RESIDUAL_TAU_H} h`, meaning: "time constant of the fast component" },
+      { symbol: String(RESIDUAL_FLOOR), value: `${Math.round(RESIDUAL_FLOOR * 100)}%`, meaning: "slow floor — the muscle damage that outlives the day" },
+    ],
+    note: "The fraction of a session's acute fatigue still expected h hours after it ended. Whole at h=0, under half by 10 h, flat on the floor past a day.",
+  },
+  {
+    id: "feel-cost",
+    engine: "feelTiming",
+    name: "Timing-adjusted session cost",
+    expression: `cost = clamp( ((fatigue − 1) / 4) / expectedResidual(h), 0, ${MAX_COST} )`,
+    constants: [
+      { symbol: String(COST_HIGH), value: "strain threshold", meaning: "at/above this the session was not absorbed" },
+      { symbol: String(MIN_STRAIN_FATIGUE), value: "raw floor", meaning: "no lag can inflate 'I feel fine' into strain" },
+      { symbol: String(MAX_COST), value: "bound", meaning: "one tap can never imply a superhuman disturbance" },
+    ],
+    note: "The same tap at a different hour is a different measurement: fatigue 4 at 1 h ≈ 0.83 (a hard session), the same 4 at 10 h ≈ 1.50 (a recovery problem). Thresholds run on cost, not the 1–5 scale, because 5 saturates. Since the one-card merge this runs over the DAILY CHECK-IN too — the lag is measured from the last session that ended before the check-in was written.",
+  },
+  {
+    id: "recovery-pooled",
+    engine: "feelTiming",
+    name: "One recovery reading",
+    expression: "spent = mean( soreness, 6 − energy )   →   recoveryCost = Σ(cost × weight) / Σ(weight)",
+    constants: [
+      { symbol: String(COST_HIGH), value: "strain threshold", meaning: "one threshold for every recovery answer" },
+      { symbol: String(COST_OK), value: "absorbed below", meaning: "a week only reads as tolerated under this" },
+    ],
+    note: "Soreness and energy answer the same question in opposite directions, so they are folded onto ONE spentness scale (5 = wrecked), lag-adjusted, and pooled with any historical post-workout answers into a single number. Before the merge these were two raw thresholds on two code paths, which is how the card could promise a reading was not counted while the estimator counted it.",
+  },
+  {
+    id: "feel-weight",
+    engine: "feelTiming",
+    name: "Recall discount",
+    expression: `weight(h) = h ≤ ${RECALL_FROM_H} ? 1 : ${WEIGHT_FLOOR} + ${Math.round((1 - WEIGHT_FLOOR) * 100) / 100} × e^(−(h − ${RECALL_FROM_H}) / ${RECALL_TAU_H})`,
+    constants: [
+      { symbol: String(RECALL_FROM_H), value: `${RECALL_FROM_H} h`, meaning: "beyond this a report is recall, not measurement" },
+      { symbol: String(WEIGHT_FLOOR), value: String(WEIGHT_FLOOR), meaning: "floor — a late report still counts for something" },
+    ],
+    note: "An unknown lag keeps full weight: we have no reason to distrust it, only no reason to adjust it either.",
+  },
+
+  // ---- Two reads of one session, and what the gap between them measures. ----
+  {
+    id: "feel-schedule",
+    engine: "feelTiming",
+    name: "Which read is due",
+    expression: `immediate: [end, end + ${IMMEDIATE_WINDOW_H} h]   recovery: [end + ${RECOVERY_DUE_H} h, end + ${RECOVERY_WINDOW_H} h]`,
+    constants: [
+      { symbol: `${IMMEDIATE_WINDOW_H} h`, value: "immediate window", meaning: "past this, the answer is a memory of a feeling" },
+      { symbol: `${RECOVERY_DUE_H} h`, value: "recovery opens", meaning: `expectedResidual(${RECOVERY_DUE_H}) ≈ 0.59 — the fast component has largely drained` },
+      { symbol: `${RECOVERY_WINDOW_H} h`, value: "recovery closes", meaning: "the next-day boundary; beyond it, recall" },
+      { symbol: "1 per day", value: "recovery reads", meaning: "anchored to the last session to finish — you do not recover one at a time" },
+    ],
+    note: "The immediate read is per session and cannot be taken later: effort is sRPE, and spentness at the peak is the anchor everything else is measured against. The recovery read is per day and is the one that can move a training ceiling. Two moments, one instrument.",
+  },
+  {
+    id: "recovery-curve",
+    engine: "feelTiming",
+    name: "Measured clearance rate",
+    expression: "ratio = cost(later) / cost(immediate)   —   both against the same population curve",
+    constants: [
+      { symbol: String(CLEARANCE_FAST), value: "fast below", meaning: "drained faster than the curve predicts" },
+      { symbol: String(CLEARANCE_SLOW), value: "slow above", meaning: "still carrying it long after the model says it should have gone" },
+      { symbol: `${MIN_PAIR_GAP_H} h`, value: "minimum gap", meaning: "closer than this and the expected residual barely moves" },
+      { symbol: String(MIN_PAIR_FATIGUE), value: "minimum immediate report", meaning: "a session you walked out of fine has nothing to drain" },
+      { symbol: String(MIN_RECOVERY_PAIRS), value: "minimum pairs", meaning: "one is an anecdote; below this the index is exactly 1" },
+    ],
+    note: "Because cost is timing-normalised, two reads of the same session come out EQUAL when the athlete drains at the population rate — so the ratio is a direct read of their own rate. No personal time constant is fitted: R(h₁)/R(h₂) is not monotone in τ, so a single pair admits two values and picking one would dress an assumption as a measurement. A pair is dropped if a second session lands inside its gap.",
+  },
+  {
+    id: "clearance-factor",
+    engine: "landmarks",
+    name: "Clearance → ceiling multiplier",
+    expression: `recovery ×= clamp(1 + (1 − index) × ${CLEARANCE_SLOPE} × confidence, ${CLEARANCE_FACTOR_BOUNDS[0]}, ${CLEARANCE_FACTOR_BOUNDS[1]})`,
+    constants: [
+      { symbol: String(CLEARANCE_SLOPE), value: "slope", meaning: "how hard a measured rate may move the ceiling" },
+      { symbol: `${CLEARANCE_FACTOR_BOUNDS[0]}–${CLEARANCE_FACTOR_BOUNDS[1]}`, value: "bounds", meaning: "two taps a day is not a blood panel" },
+      { symbol: "×confidence", value: "scaling", meaning: "two pairs nudge, twenty move it" },
+    ],
+    note: "Applied BEFORE the week classifier, so the adaptive estimator bounds itself around a prior that already reflects measured recovery. Scales MRV only — how fast you clear fatigue says nothing about how much work it takes to grow you.",
+  },
+  {
+    id: "level-pace",
+    engine: "fitnessLevel",
+    name: "Training level from running",
+    expression: `T₅ = T × (${ENDURANCE_STANDARD_KM}/D)^${RIEGEL_EXPONENT}   vs   threshold × sexFactor / developmentFraction(age)`,
+    constants: [
+      { symbol: "5 km pace", value: ENDURANCE_PACE.map((p) => `${Math.floor(p / 60)}:${String(p % 60).padStart(2, "0")}`).join(" / "), meaning: "novice / intermediate / advanced / elite, per km" },
+      { symbol: String(RIEGEL_EXPONENT), value: "Riegel exponent", meaning: "normalises any run to a 5 km equivalent" },
+      { symbol: String(ENDURANCE_SEX_FACTOR), value: "female factor", meaning: "thresholds are this much slower" },
+      { symbol: `${ENDURANCE_MIN_KM} km`, value: "minimum distance", meaning: "shorter is not an aerobic test" },
+    ],
+    note: "Running only. Cycling and rowing pace depend on gearing, terrain, drag factor and draft, so a threshold table over raw speed would be a fiction — those are left unread rather than guessed. Whichever half of the athlete is stronger sets the level, and `basis` always names which halves had data.",
+  },
+  {
+    id: "landmark-replay",
+    engine: "landmarks",
+    name: "Has the ceiling settled?",
+    expression: `drift = max |mrv(w) − mrv(w−1)| over the last ${SETTLE_WINDOW} weeks`,
+    constants: [
+      { symbol: `≤ ${SETTLED_DRIFT}`, value: "settled", meaning: "the estimate stopped changing its mind" },
+      { symbol: `≤ ${CONVERGING_DRIFT}`, value: "converging", meaning: "still moving, within a band you can train inside" },
+      { symbol: String(SETTLE_WINDOW), value: "window", meaning: "weeks the verdict looks at" },
+      { symbol: "≠ profile", value: "tested", meaning: "a week only counts if the log moved the ceiling off the profile answer" },
+    ],
+    note: "A diagnostic, not a second estimator — it calls the same resolver the app uses, at every week, with only the data that existed then. A single number cannot say whether to believe it; the shape of its own history can. A flat line at the prior is never reported as settled.",
   },
 ];
 

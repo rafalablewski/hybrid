@@ -7,10 +7,11 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
-import { FeelPrompt } from "../components/feel-prompt";
 import {
   needsBodyweight,
   prescribeSession,
+  feelSamples,
+  loadBaseline,
   personalTrainingLog,
   velocityProfiles,
   planProgramToday,
@@ -71,8 +72,6 @@ import {
   isFullAccess,
   mmss,
   MOODS,
-  feelSamples,
-  loadBaseline,
   SUGGESTED_TAGS,
   MAX_TAGS,
   tagLabelKey,
@@ -96,6 +95,7 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import Sheet from "../components/aurora/sheet";
+import { FeelPrompt } from "../components/feel-prompt";
 import SwipeRow from "../components/swipe-row";
 import DragHandle from "../components/drag-handle";
 import { useDragReorder } from "../lib/use-drag-reorder";
@@ -1964,11 +1964,11 @@ function Summary({
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
 
-        {/* "How did that feel?" — asked HERE, straight after the last set, which
-            is when the answer is most accurate and the athlete is still holding
-            the phone. The Wrapped asks the same question later for a session
-            that was never rated; both read the stored value, so nobody is asked
-            twice. See core/session-feel.ts for why the answer matters. */}
+        {/* "How did that feel?" — THE IMMEDIATE READ, asked here because this is
+            the only moment it can be asked. Effort is sRPE; spentness now is the
+            anchor the recovery read on Today is measured against hours later.
+            The daily card asks the second half; it does not replace this one.
+            See core/feel-schedule.ts. */}
         {!summary.guest && (
           <FeelPrompt compact sessionId={summary.sessionId} minutes={summary.minutes} baseline={feelBaseline} />
         )}

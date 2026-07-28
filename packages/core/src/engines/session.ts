@@ -266,6 +266,15 @@ export interface LoggedSession {
    */
   feel?: number | null;
   fatigue?: number | null;
+  /**
+   * WHEN the athlete answered "how did that feel?" (ISO). Not decoration: the
+   * same `fatigue: 4` means an ordinary hard session an hour after training and
+   * a recovery problem ten hours after it, so the lag between `completedAt` and
+   * this is what makes the two comparable. See feel-timing.ts. Null on rows
+   * written before the column existed — the models degrade to the raw report
+   * rather than guessing a lag.
+   */
+  feelLoggedAt?: string | null;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";

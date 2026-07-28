@@ -468,7 +468,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   {c.adherencePct != null && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
-                  {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.soreness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
+                  {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.freshness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
                   {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
                 </Text>
                 {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{c.note}</Text> : null}

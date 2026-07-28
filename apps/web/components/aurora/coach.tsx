@@ -469,7 +469,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Mono>}
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
-                {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.soreness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
+                {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.freshness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
                 {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
               </Mono>
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
