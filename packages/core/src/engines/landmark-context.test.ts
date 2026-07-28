@@ -124,6 +124,22 @@ describe("measured defaults under the athlete's own answers", () => {
   it("with nothing measured, the stored profile passes through untouched", () => {
     const measured = measuredProfile({ now: NOW });
     expect(measured.measured).toEqual([]);
-    expect(withMeasured({ experience: "beginner" }, measured)).toEqual({ experience: "beginner", sleep: undefined, nutrition: undefined });
+    expect(withMeasured({ experience: "beginner" }, measured)).toEqual({ experience: "beginner", sleep: undefined, nutrition: undefined, heightCm: undefined });
+  });
+
+  it("takes height from the body log rather than asking for it twice", () => {
+    const m = measuredProfile({ heightCm: 183, now: NOW });
+    expect(m.heightCm).toBe(183);
+    expect(m.measured).toContain("heightCm");
+    expect(withMeasured({}, m).heightCm).toBe(183);
+    // …and the athlete's own typed height still wins over the logged one.
+    expect(withMeasured({ heightCm: 179 }, m).heightCm).toBe(179);
+    expect([...measuredFields({ heightCm: 179 }, m)]).not.toContain("heightCm");
+  });
+
+  it("ignores an unset or implausible logged height", () => {
+    expect(measuredProfile({ now: NOW }).measured).not.toContain("heightCm");
+    expect(measuredProfile({ heightCm: null, now: NOW }).measured).not.toContain("heightCm");
+    expect(measuredProfile({ heightCm: 72, now: NOW }).measured).not.toContain("heightCm");
   });
 });

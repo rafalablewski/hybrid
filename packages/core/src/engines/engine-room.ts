@@ -383,7 +383,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(REFERENCE_BMI), value: "reference build", meaning: "the mass a height is expected to carry" },
       { symbol: `${BODYWEIGHT_REF_KG} kg`, value: "reference mass", meaning: "where the recovery penalty starts" },
     ],
-    note: "The recovery factor docks mass above the reference, but 95 kg at 195 cm and 95 kg at 170 cm are not the same load and the flat per-kilo rule penalised them identically. With height known, mass is read against what the frame predicts. Deliberately NOT a body-composition model — the app cannot see body fat. Without height the raw-kg rule applies unchanged.",
+    note: "The recovery factor docks mass above the reference, but 95 kg at 195 cm and 95 kg at 170 cm are not the same load and the flat per-kilo rule penalised them identically. With height known, mass is read against what the frame predicts. Height comes from the athlete's own body log (Profile → Body & progress, BodyMetric.heightCm) — it is never inferred, and the volume profile reads it from there rather than asking twice. Deliberately NOT a body-composition model — the app cannot see body fat. Without height the raw-kg rule applies unchanged.",
   },
 
   {

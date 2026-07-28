@@ -5,8 +5,10 @@ import {
   FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
   fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
+  latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
+import { refreshBodyweight } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/track";
 import { AuroraIcon } from "./icons";
@@ -134,14 +136,15 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
   const has = !!metrics && metrics.length > 0;
   const trends = has ? metricTrends(metrics!) : [];
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
+  const heightCm = metrics ? latestHeightCm(metrics) : null;
   // Collapsed subline — lead with the latest weight when we have one (the big
-  // number the expanded card used to show), then how many metrics are tracked;
-  // otherwise the "what this is" descriptor. A spaced en dash joins the two,
-  // never a middot.
+  // number the expanded card used to show), then the height (it is set once and
+  // otherwise invisible), then how many metrics are tracked; otherwise the
+  // "what this is" descriptor. A spaced en dash joins them, never a middot.
   const wv = report?.latestWeightKg != null ? fmtMetricValue(BODY_METRIC_DEFS[0], report.latestWeightKg, units) : null;
   const subline =
     metrics === undefined ? "…"
-    : has ? [wv ? `${wv.value} ${wv.unit}` : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
+    : has ? [wv ? `${wv.value} ${wv.unit}` : null, heightCm != null ? fmtHeight(heightCm, units) : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
     : t("w.account.profile.priv-body-s");
 
   return (
@@ -164,6 +167,9 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           Today uses for "Add a meal"), then the weekly report, the trends grid
           and the progress-photos link. */}
       <Sheet open={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}>
+        {/* Height leads, and saves on its OWN — it is a standing fact rather
+            than a weigh-in, so it must not have to ride along with one. */}
+        <HeightRow units={units} heightCm={heightCm} onSaved={() => { load(); refreshBodyweight(); }} />
         <LogForm units={units} form={form} setField={setField} onSave={save} busy={busy} />
 
         {metrics !== undefined && has && (
@@ -301,6 +307,82 @@ function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: strin
 // One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
 // mono label up top, a big borderless display-number input, and the unit as a
 // quiet mono suffix. Empty reads as a muted "0" placeholder.
+/**
+ * STANDING HEIGHT — one field, its own save.
+ *
+ * It sits apart from the measurement grid on purpose. The grid is things that
+ * MOVE: you log a weight, a waist, a body-fat reading, and the point is the
+ * trend. Height is a fact you state once, and burying it among the tape lines
+ * would both hide it (nobody scrolls a weigh-in form looking for it) and imply
+ * you should re-enter it every session. So it saves independently: nothing else
+ * on the form has to be filled in for a height to land.
+ *
+ * WHY THE APP ASKS. Bodyweight alone can't tell a 160 cm athlete from a 200 cm
+ * one, and they are not carrying the same frame at the same 80 kg — the volume
+ * model's recovery factor compares mass to what the height predicts rather than
+ * docking raw kilos (core frameAdjustedMassKg). The copy says that, because a
+ * field that doesn't explain itself just reads as one more thing to fill in.
+ *
+ * Unit follows the weight preference (kg → cm, lb → in), with the ft'in"
+ * readback beside the label so an imperial athlete can check the number they
+ * just typed. Mirrors the mobile HeightRow.
+ */
+function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm: number | null; onSaved: () => void }) {
+  const { t } = useLang();
+  const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const unit = heightUnitFor(units);
+  // Null draft = "showing what's stored". Typing takes over; a successful save
+  // hands control back so a unit switch or a fresh load is reflected.
+  const value = draft ?? (heightCm != null ? displayHeight(heightCm, units) : "");
+  const parsed = storeHeightCm(value, units);
+  const dirty = value.trim() !== "" && parsed !== heightCm;
+
+  const save = async () => {
+    if (parsed == null) return;
+    setBusy(true);
+    const res = await j("/api/body", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ heightCm: parsed }) });
+    setBusy(false);
+    if (res?.metric) { setDraft(null); onSaved(); }
+  };
+
+  return (
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 13px 13px", marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-height-t")}</span>
+        <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 11, color: heightCm != null ? LIME : C("ash") }}>
+          {heightCm != null ? fmtHeight(heightCm, units) : t("w.account.profile.priv-height-none")}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+        <input
+          value={value}
+          onChange={(e) => { if (isDecimalInput(e.target.value)) setDraft(e.target.value); }}
+          inputMode="decimal"
+          placeholder="0"
+          aria-label={`${t("w.account.profile.priv-height-t")} (${unit})`}
+          style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }}
+        />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), flex: "none" }}>{unit}</span>
+        {/* The save appears only when there is a CHANGE to save — a stored
+            height shouldn't sit under a button implying unfinished business. */}
+        {dirty && (
+          <button
+            onClick={save}
+            disabled={busy || parsed == null}
+            style={{ flex: "none", background: parsed == null ? "transparent" : C("lime"), border: parsed == null ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "9px 16px", cursor: parsed == null ? "default" : "pointer", fontWeight: 700, fontSize: 13, color: parsed == null ? C("ash") : "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
+          >
+            {t("common.save")}
+          </button>
+        )}
+      </div>
+      <p style={{ margin: "8px 0 0", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: C("ash") }}>
+        {t("w.account.profile.priv-height-why")}
+      </p>
+    </div>
+  );
+}
+
 function MetricInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
     <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "11px 13px 12px" }}>

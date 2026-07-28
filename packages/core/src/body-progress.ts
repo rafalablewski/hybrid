@@ -4,7 +4,7 @@
 // and the weekly "body report" (weight delta, logging cadence, narrative
 // verdict). Pure + unit-tested; the clients only render what these return.
 
-import { kgToUnit, type WeightUnit } from "./units";
+import { kgToUnit, isPlausibleHeightCm, type WeightUnit } from "./units";
 import { localDayKey } from "./day-key";
 
 /** A dated body measurement, as returned newest-first by GET /api/body. Every
@@ -13,6 +13,11 @@ export type BodyMetric = {
   id: string;
   measuredAt: string;
   weightKg?: number | null;
+  /** Standing height. Deliberately NOT one of BODY_METRIC_DEFS: those are the
+   *  things an athlete watches move, and height isn't one of them. It rides on
+   *  the same dated row (a growing athlete's does change) but it is read as a
+   *  standing fact via `latestHeightCm`, not charted as a trend. */
+  heightCm?: number | null;
   bodyFatPct?: number | null;
   neckCm?: number | null;
   chestCm?: number | null;
@@ -54,6 +59,27 @@ export const BODY_METRIC_DEFS = [
   { key: "neckCm",     labelKey: "w.account.profile.priv-m-neck",    unit: "cm",     max: 100 },
   { key: "calfCm",     labelKey: "w.account.profile.priv-m-calf",    unit: "cm",     max: 100 },
 ] as const satisfies readonly BodyMetricDef[];
+
+/**
+ * The athlete's height, from the most recent entry that carries one.
+ *
+ * NOT `metrics[0].heightCm`: height is entered once and every later weigh-in
+ * leaves it blank, so the newest ROW almost never holds it. Reads newest-first
+ * as the API returns it, but sorts defensively rather than trusting the order,
+ * and ignores implausible values so one fat-fingered "18" can't become the
+ * height every downstream model then reasons about.
+ */
+export function latestHeightCm(metrics: BodyMetric[]): number | null {
+  let best: { ts: number; cm: number } | null = null;
+  for (const m of metrics) {
+    const cm = m.heightCm;
+    if (!isPlausibleHeightCm(cm)) continue;
+    const ts = Date.parse(m.measuredAt);
+    if (!Number.isFinite(ts)) continue;
+    if (!best || ts > best.ts) best = { ts, cm };
+  }
+  return best?.cm ?? null;
+}
 
 export type TrendDirection = "up" | "down" | "flat";
 

@@ -88,6 +88,11 @@ export const web_account = {
     "w.account.profile.priv-photos": "Progress photos",
     "w.account.profile.priv-body-empty": "No measurements yet",
     // Body & progress — dashboard redesign
+    // Standing height — a STANDING fact, not one of the tracked measurements,
+    // so it gets its own row above the log grid and its own save.
+    "w.account.profile.priv-height-t": "Standing height",
+    "w.account.profile.priv-height-none": "Not set",
+    "w.account.profile.priv-height-why": "Two athletes at 80 kg with the same 150 kg deadlift are equally strong in absolute terms — but not on the same frame. Your height lets the model read your mass against the body carrying it instead of raw kilos.",
     "w.account.profile.priv-m-weight": "Weight",
     "w.account.profile.priv-m-bodyfat": "Body fat",
     "w.account.profile.priv-m-neck": "Neck",
@@ -555,6 +560,11 @@ export const web_account = {
     "w.account.profile.priv-photos": "Zdjęcia postępów",
     "w.account.profile.priv-body-empty": "Brak pomiarów",
     // Body & progress — dashboard redesign
+    // Standing height — a STANDING fact, not one of the tracked measurements,
+    // so it gets its own row above the log grid and its own save.
+    "w.account.profile.priv-height-t": "Wzrost",
+    "w.account.profile.priv-height-none": "Nie ustawiono",
+    "w.account.profile.priv-height-why": "Dwóch zawodników o wadze 80 kg i tym samym martwym ciągu 150 kg jest tak samo silnych w liczbach bezwzględnych — ale nie na tej samej budowie. Wzrost pozwala modelowi odczytać twoją masę względem ciała, które ją niesie, a nie same kilogramy.",
     "w.account.profile.priv-m-weight": "Waga",
     "w.account.profile.priv-m-bodyfat": "Tłuszcz",
     "w.account.profile.priv-m-neck": "Szyja",
@@ -1022,6 +1032,11 @@ export const web_account = {
     "w.account.profile.priv-photos": "Fortschrittsfotos",
     "w.account.profile.priv-body-empty": "Noch keine Messungen",
     // Body & progress — dashboard redesign
+    // Standing height — a STANDING fact, not one of the tracked measurements,
+    // so it gets its own row above the log grid and its own save.
+    "w.account.profile.priv-height-t": "Körpergröße",
+    "w.account.profile.priv-height-none": "Nicht gesetzt",
+    "w.account.profile.priv-height-why": "Zwei Athleten mit 80 kg und demselben 150-kg-Kreuzheben sind absolut gleich stark — aber nicht gleich gebaut. Mit der Körpergröße liest das Modell deine Masse im Verhältnis zum Körper, der sie trägt, statt reine Kilos zu zählen.",
     "w.account.profile.priv-m-weight": "Gewicht",
     "w.account.profile.priv-m-bodyfat": "Körperfett",
     "w.account.profile.priv-m-neck": "Hals",

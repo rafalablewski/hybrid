@@ -17,10 +17,11 @@
 --
 -- WHY THIS ORDER. It is not the order the files were written in:
 --
---   1. Column adds first. They depend on nothing, and two of them are the
---      urgent ones — the Prisma client already declares Session.feelLoggedAt
---      and BodyMetric.heightCm, so /api/sessions and /api/body error against a
---      database that lacks them the moment the code deploys.
+--   1. Column adds first. They depend on nothing. BodyMetric.heightCm is
+--      already APPLIED in production (run Jul 2026) and is kept here only so
+--      the bundle stays complete and re-runnable; Session.feelLoggedAt is the
+--      urgent one left — the Prisma client already declares it, so
+--      /api/sessions errors against a database that lacks it.
 --   2. sql-all.sql second, because PART 3 of it DEFINES public.app_user_id()
 --      and public.is_active_coach(), which every RLS policy below calls. Run
 --      the later sections first and they fail on an undefined function.
@@ -56,7 +57,8 @@ alter table "Session" add column if not exists "feelLoggedAt" timestamp(3);
 -- BodyMetric.heightCm — there was no athlete height anywhere in the schema
 -- (the existing `height` column is on MediaAsset and means image pixels). Lets
 -- the recovery multiplier read body mass against the frame carrying it instead
--- of as raw kilos. REQUIRED BEFORE DEPLOY (Prisma already declares it).
+-- of as raw kilos. ALREADY APPLIED in production (Jul 2026) — this line is a
+-- no-op there and is kept so the bundle stays a complete, re-runnable set.
 alter table "BodyMetric" add column if not exists "heightCm" double precision;
 
 -- Session private note + mood + tags — owner-only post-workout reflection,

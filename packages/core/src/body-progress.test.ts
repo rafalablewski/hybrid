@@ -6,6 +6,7 @@ import {
   fmtMetricValue,
   fmtMetricDelta,
   BODY_METRIC_DEFS,
+  latestHeightCm,
   type BodyMetric,
 } from "./body-progress";
 
@@ -108,5 +109,35 @@ describe("formatting", () => {
   it("renders tape values in cm and a bare absolute delta", () => {
     expect(fmtMetricValue(waistDef, 81, "kg")).toEqual({ value: "81", unit: "cm" });
     expect(fmtMetricDelta(waistDef, -0.3, "kg")).toBe("0.3");
+  });
+});
+
+describe("latestHeightCm", () => {
+  it("finds the newest row that CARRIES a height, not the newest row", () => {
+    // Height is entered once; every weigh-in after it leaves the field blank.
+    expect(latestHeightCm([at(0, { weightKg: 82 }), at(30, { heightCm: 183 })])).toBe(183);
+  });
+
+  it("prefers the most recent height when there is more than one", () => {
+    expect(latestHeightCm([at(2, { heightCm: 184 }), at(40, { heightCm: 183 })])).toBe(184);
+  });
+
+  it("does not trust the array order — it reads the dates", () => {
+    expect(latestHeightCm([at(40, { heightCm: 183 }), at(2, { heightCm: 184 })])).toBe(184);
+  });
+
+  it("ignores an implausible value rather than handing it to the models", () => {
+    expect(latestHeightCm([at(0, { heightCm: 72 })])).toBeNull();
+    expect(latestHeightCm([at(0, { heightCm: 72 }), at(10, { heightCm: 183 })])).toBe(183);
+  });
+
+  it("is null when nothing has ever been logged", () => {
+    expect(latestHeightCm([])).toBeNull();
+    expect(latestHeightCm([at(0, { weightKg: 82 })])).toBeNull();
+  });
+
+  it("stays out of the trends grid — height is a fact, not a series", () => {
+    const keys = metricTrends([at(0, { weightKg: 82, heightCm: 183 })]).map((t) => t.def.key);
+    expect(keys).toEqual(["weightKg"]);
   });
 });
