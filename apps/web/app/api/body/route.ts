@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { HEIGHT_MIN_CM, HEIGHT_MAX_CM } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -10,6 +11,12 @@ import { prisma } from "@/lib/db";
 // (negative / absurd) value out of the trend without rejecting the whole log.
 const num = (v: unknown, max: number): number | null =>
   typeof v === "number" && Number.isFinite(v) && v > 0 && v <= max ? v : null;
+
+// Height has a FLOOR as well as a ceiling: unlike a tape measurement, a value
+// below ~120 cm is a unit mix-up (inches typed into a cm field) rather than a
+// small athlete, and it would feed the volume model a frame nobody has.
+const heightCm = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) && v >= HEIGHT_MIN_CM && v <= HEIGHT_MAX_CM ? v : null;
 
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
@@ -32,6 +39,7 @@ export async function POST(request: Request) {
     userId: me.id,
     measuredAt,
     weightKg: num(b.weightKg, 500),
+    heightCm: heightCm(b.heightCm),
     bodyFatPct: num(b.bodyFatPct, 75),
     neckCm: num(b.neckCm, 100),
     chestCm: num(b.chestCm, 250),

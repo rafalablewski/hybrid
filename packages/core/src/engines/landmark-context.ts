@@ -1,4 +1,5 @@
 import type { BodyweightPoint } from "../bodyweight";
+import { isPlausibleHeightCm } from "../units";
 import type { RecoveryReport } from "./landmark-adapt";
 import type { AthleteVolumeProfile } from "./landmark-profile";
 
@@ -35,6 +36,10 @@ export interface MeasuredProfile {
   sleep?: number;
   /** Energy availability, read off the bodyweight trend. */
   nutrition?: AthleteVolumeProfile["nutrition"];
+  /** Standing height, from the body log (Profile → Body & progress). Not
+   *  inferred from anything — it is the athlete's own measurement, read from
+   *  where they already entered it so they never type it twice. */
+  heightCm?: number;
   /** Which fields came from measurement — the UI marks these as not-typed. */
   measured: (keyof AthleteVolumeProfile)[];
 }
@@ -136,7 +141,7 @@ export function energyBalanceFromBodyweight(
 
 /** Everything the app can answer on the athlete's behalf, in one call. */
 export function measuredProfile(
-  opts: { checkins?: RecoveryReport[]; bodyweight?: BodyweightPoint[]; now?: number } = {},
+  opts: { checkins?: RecoveryReport[]; bodyweight?: BodyweightPoint[]; heightCm?: number | null; now?: number } = {},
 ): MeasuredProfile {
   const out: MeasuredProfile = { measured: [] };
   const sleep = sleepFromCheckins(opts.checkins ?? [], { now: opts.now });
@@ -148,6 +153,14 @@ export function measuredProfile(
   if (nutrition) {
     out.nutrition = nutrition;
     out.measured.push("nutrition");
+  }
+  // Height is KNOWN rather than derived when the body log holds one — the same
+  // "don't ask for what you already have" rule, applied to a measurement the
+  // athlete typed themselves. Bounds mirror the profile field so an out-of-range
+  // row can never be presented back as a measured value.
+  if (isPlausibleHeightCm(opts.heightCm)) {
+    out.heightCm = Math.round(opts.heightCm);
+    out.measured.push("heightCm");
   }
   return out;
 }
@@ -162,6 +175,7 @@ export function withMeasured(stored: AthleteVolumeProfile, measured: MeasuredPro
     ...stored,
     sleep: stored.sleep ?? measured.sleep,
     nutrition: stored.nutrition ?? measured.nutrition,
+    heightCm: stored.heightCm ?? measured.heightCm,
   };
 }
 

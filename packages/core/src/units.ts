@@ -45,3 +45,61 @@ export function fmtTonnage(kg: number, u: WeightUnit): string {
   if (u === "kg") return `${(kg / 1000).toFixed(1)} t`;
   return `${Math.round(kgToUnit(kg, "lb")).toLocaleString()} lb`;
 }
+
+// ── Height (cm ⇄ in) ─────────────────────────────────────────────────────────
+// Storage is ALWAYS canonical centimetres, exactly like weight is always kg.
+// There is no separate height preference: an athlete who weighs themselves in
+// pounds measures themselves in inches, so the height unit FOLLOWS the weight
+// unit rather than adding a second switch nobody would find.
+
+export type HeightUnit = "cm" | "in";
+
+const CM_PER_IN = 2.54;
+
+/** The height unit that goes with a weight unit. kg → cm, lb → in. */
+export const heightUnitFor = (u: WeightUnit): HeightUnit => (u === "lb" ? "in" : "cm");
+
+/** cm → the chosen height unit (raw, unrounded). */
+export const cmToHeightUnit = (cm: number, h: HeightUnit): number => (h === "in" ? cm / CM_PER_IN : cm);
+/** the chosen height unit → cm (raw, unrounded). */
+export const heightUnitToCm = (v: number, h: HeightUnit): number => (h === "in" ? v * CM_PER_IN : v);
+
+/** A standing height the app will accept — below/above this is a typo, not an
+ *  athlete. Mirrors the /api/body guard and the volume profile's field bounds. */
+export const HEIGHT_MIN_CM = 120;
+export const HEIGHT_MAX_CM = 230;
+
+/** Is this a plausible standing height in cm? */
+export const isPlausibleHeightCm = (cm: unknown): cm is number =>
+  typeof cm === "number" && Number.isFinite(cm) && cm >= HEIGHT_MIN_CM && cm <= HEIGHT_MAX_CM;
+
+/** A STORED height as the string an editable field should hold, in the unit
+ *  that goes with `u`. cm keeps one decimal at most; inches keep one decimal
+ *  (a whole inch is 2.5 cm, which is too coarse to round to). */
+export function displayHeight(cm: number, u: WeightUnit): string {
+  const v = cmToHeightUnit(cm, heightUnitFor(u));
+  return String(Math.round(v * 10) / 10);
+}
+
+/** An INPUT string (typed in the unit that goes with `u`) → stored cm, or null
+ *  when it isn't a plausible height. */
+export function storeHeightCm(input: string, u: WeightUnit): number | null {
+  const n = parseFloat(input.replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const cm = Math.round(heightUnitToCm(n, heightUnitFor(u)) * 10) / 10;
+  return isPlausibleHeightCm(cm) ? cm : null;
+}
+
+/**
+ * Format a stored height for display: `"183 cm"` in metric, `"6'0\""` in
+ * imperial. Feet-and-inches rather than bare inches because "72 in" is not how
+ * anyone says their own height — the INPUT stays a single inches field (two
+ * coupled boxes on two clients buys nothing), and this is the readback.
+ */
+export function fmtHeight(cm: number, u: WeightUnit): string {
+  if (heightUnitFor(u) === "cm") return `${Number(cm.toFixed(1))} cm`;
+  const totalIn = Math.round(cmToHeightUnit(cm, "in"));
+  const ft = Math.floor(totalIn / 12);
+  const inch = totalIn % 12;
+  return `${ft}'${inch}"`;
+}

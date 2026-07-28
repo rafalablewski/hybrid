@@ -6,9 +6,11 @@ import {
   FUNNEL,
   BODY_METRIC_DEFS, metricTrends, sparkHeights, weeklyReport, BODY_VERDICT_KEY,
   fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
+  latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
+import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -140,14 +142,15 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
   const has = !!metrics && metrics.length > 0;
   const trends = has ? metricTrends(metrics!) : [];
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
+  const heightCm = metrics ? latestHeightCm(metrics) : null;
   // Collapsed subline — lead with the latest weight when we have one (the big
-  // number the expanded card used to show), then how many metrics are tracked;
-  // otherwise the "what this is" descriptor. A spaced en dash joins the two,
-  // never a middot.
+  // number the expanded card used to show), then the height (it is set once and
+  // otherwise invisible), then how many metrics are tracked; otherwise the
+  // "what this is" descriptor. A spaced en dash joins them, never a middot.
   const wv = report?.latestWeightKg != null ? fmtMetricValue(BODY_METRIC_DEFS[0], report.latestWeightKg, units) : null;
   const subline =
     metrics === undefined ? "…"
-    : has ? [wv ? `${wv.value} ${wv.unit}` : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
+    : has ? [wv ? `${wv.value} ${wv.unit}` : null, heightCm != null ? fmtHeight(heightCm, units) : null, `${trends.length} ${t("w.account.profile.priv-metrics")}`].filter(Boolean).join(" – ")
     : t("w.account.profile.priv-body-s");
 
   return (
@@ -166,6 +169,9 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
           Today uses for "Add a meal"), then the weekly report, the trends grid
           and the progress-photos link. */}
       <Sheet visible={open} onClose={() => setOpen(false)} title={t("w.account.profile.priv-body-t")} sub={t("w.account.profile.priv-body-s")}>
+        {/* Height leads, and saves on its OWN — it is a standing fact rather
+            than a weigh-in, so it must not have to ride along with one. */}
+        <HeightRow C={C} units={units} heightCm={heightCm} onSaved={() => { load(); refreshBodyweight(); }} />
         <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
 
         {metrics !== undefined && has && (
@@ -308,6 +314,83 @@ function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconNam
 // One measurement tile — mirrors Today's "Add a meal" quadrant: a lime dot +
 // mono label up top, a big borderless display-number input, and the unit as a
 // quiet mono suffix. Empty reads as a muted "0" placeholder.
+/**
+ * STANDING HEIGHT — one field, its own save. Mirrors the web HeightRow.
+ *
+ * It sits apart from the measurement grid on purpose. The grid is things that
+ * MOVE: you log a weight, a waist, a body-fat reading, and the point is the
+ * trend. Height is a fact you state once, and burying it among the tape lines
+ * would both hide it and imply you should re-enter it every session. So it
+ * saves independently: nothing else on the form has to be filled in.
+ *
+ * WHY THE APP ASKS. Bodyweight alone can't tell a 160 cm athlete from a 200 cm
+ * one, and they are not carrying the same frame at the same 80 kg — the volume
+ * model's recovery factor compares mass to what the height predicts rather than
+ * docking raw kilos (core frameAdjustedMassKg).
+ */
+function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | "lb"; heightCm: number | null; onSaved: () => void }) {
+  const { t } = useLang();
+  const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const lime = txt(C, C.lime) as string;
+  const unit = heightUnitFor(units);
+  // Null draft = "showing what's stored". Typing takes over; a successful save
+  // hands control back so a unit switch or a fresh load is reflected.
+  const value = draft ?? (heightCm != null ? displayHeight(heightCm, units) : "");
+  const parsed = storeHeightCm(value, units);
+  const dirty = value.trim() !== "" && parsed !== heightCm;
+
+  const save = async () => {
+    if (parsed == null) return;
+    setBusy(true);
+    try {
+      await sapi("/api/body", "POST", { heightCm: parsed });
+      setDraft(null);
+      onSaved();
+    } catch { /* keep the typed value so it can be retried */ }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 12, paddingBottom: 13, marginBottom: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: heightCm != null ? lime : C.ash }}>
+          {heightCm != null ? fmtHeight(heightCm, units) : t("w.account.profile.priv-height-none")}
+        </Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+        <TextInput
+          value={value}
+          onChangeText={(v) => { if (isDecimalInput(v)) setDraft(v); }}
+          keyboardType="decimal-pad"
+          placeholder="0"
+          placeholderTextColor={C.ash}
+          accessibilityLabel={`${t("w.account.profile.priv-height-t")} (${unit})`}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -0.8, color: C.chalk, paddingVertical: 2 }}
+        />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{unit}</Text>
+        {/* The save appears only when there is a CHANGE to save — a stored
+            height shouldn't sit under a button implying unfinished business. */}
+        {dirty ? (
+          <Pressable
+            onPress={save}
+            disabled={busy || parsed == null}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.save")}
+            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
+          >
+            {busy ? <ActivityIndicator color={parsed == null ? C.ash : C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: parsed == null ? C.ash : C.onAccent }}>{t("common.save")}</Text>}
+          </Pressable>
+        ) : null}
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 8 }}>
+        {t("w.account.profile.priv-height-why")}
+      </Text>
+    </View>
+  );
+}
+
 function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
     <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 11, paddingBottom: 12 }}>

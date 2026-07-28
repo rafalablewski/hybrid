@@ -66,6 +66,15 @@ export const web_recovery = {
     "w.recovery.checkins.reviewMissing": "Tap a dash to answer that one.",
     "w.recovery.checkins.newCheckin": "New check-in",
     "w.recovery.checkins.cooldownTitle": "Once every 6 hours",
+    // SAVED / EDIT — the flow re-opened on a day that is already fully answered
+    // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.savedTitle": "Check-in saved",
+    "w.recovery.checkins.savedSub": "These answers are stored. Edit to change them.",
+    "w.recovery.checkins.edit": "Edit",
+    "w.recovery.checkins.editingSub": "Change any answer, then save.",
+    "w.recovery.checkins.saveChanges": "Save changes",
+    "w.recovery.checkins.updatedTitle": "Check-in updated",
+    "w.recovery.checkins.updatedSub": "Your changes are saved. Today's read is up to date.",
     "w.recovery.checkins.cooldownBody": "You've already checked in — next one in",
 
     // nutrition.tsx
@@ -436,6 +445,15 @@ export const web_recovery = {
     "w.recovery.checkins.reviewMissing": "Dotknij kreski, aby odpowiedzieć na to pytanie.",
     "w.recovery.checkins.newCheckin": "Nowe podsumowanie",
     "w.recovery.checkins.cooldownTitle": "Raz na 6 godzin",
+    // SAVED / EDIT — the flow re-opened on a day that is already fully answered
+    // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.savedTitle": "Check-in zapisany",
+    "w.recovery.checkins.savedSub": "Te odpowiedzi są zapisane. Edytuj, aby je zmienić.",
+    "w.recovery.checkins.edit": "Edytuj",
+    "w.recovery.checkins.editingSub": "Zmień dowolną odpowiedź i zapisz.",
+    "w.recovery.checkins.saveChanges": "Zapisz zmiany",
+    "w.recovery.checkins.updatedTitle": "Check-in zaktualizowany",
+    "w.recovery.checkins.updatedSub": "Zmiany zapisane. Dzisiejszy odczyt jest aktualny.",
     "w.recovery.checkins.cooldownBody": "Masz już podsumowanie — następne za",
 
     // nutrition.tsx
@@ -804,6 +822,15 @@ export const web_recovery = {
     "w.recovery.checkins.reviewMissing": "Tippe auf einen Strich, um die Frage zu beantworten.",
     "w.recovery.checkins.newCheckin": "Neuer Check-in",
     "w.recovery.checkins.cooldownTitle": "Nur alle 6 Stunden",
+    // SAVED / EDIT — the flow re-opened on a day that is already fully answered
+    // and stored. It reads back muted, so nothing looks like an unsent form.
+    "w.recovery.checkins.savedTitle": "Check-in gespeichert",
+    "w.recovery.checkins.savedSub": "Diese Antworten sind gespeichert. Zum Ändern bearbeiten.",
+    "w.recovery.checkins.edit": "Bearbeiten",
+    "w.recovery.checkins.editingSub": "Ändere eine Antwort und speichere.",
+    "w.recovery.checkins.saveChanges": "Änderungen speichern",
+    "w.recovery.checkins.updatedTitle": "Check-in aktualisiert",
+    "w.recovery.checkins.updatedSub": "Deine Änderungen sind gespeichert. Der heutige Wert ist aktuell.",
     "w.recovery.checkins.cooldownBody": "Du hast bereits eingecheckt — nächster in",
 
     // nutrition.tsx

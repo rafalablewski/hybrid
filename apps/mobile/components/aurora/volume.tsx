@@ -18,7 +18,7 @@ import {
 } from "@hybrid/core";
 import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
-import { useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
+import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -62,6 +62,9 @@ export default function AuroraVolume() {
   // Anything stored on the profile itself wins over all of it.
   const bodyweight = useBodyweight();
   const bodyweightPoints = useBodyweightPoints();
+  // Height comes from the body log the athlete already filled in (Profile →
+  // Body & progress) rather than being asked for a second time here.
+  const loggedHeightCm = useAthleteHeight();
   const { data: checkins = [] } = useCheckinsQuery();
   const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
   useEffect(() => {
@@ -84,7 +87,7 @@ export default function AuroraVolume() {
     () => checkins.map((c) => ({ date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null })),
     [checkins],
   );
-  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints }), [recovery, bodyweightPoints]);
+  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm }), [recovery, bodyweightPoints, loggedHeightCm]);
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
     // Body mass is measured too — it comes from the bodyweight log, not this form.
