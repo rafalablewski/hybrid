@@ -4,6 +4,9 @@ import {
   resolveExperience,
   STRENGTH_STANDARDS,
   LEVEL_TO_EXPERIENCE,
+  LEVEL_BASIS_KEY,
+  FITNESS_LEVELS,
+  fiveKmEquivalentSec,
 } from "./fitness-level";
 import type { LoggedSession } from "./session";
 
@@ -130,5 +133,93 @@ describe("what the athlete said versus what the log shows", () => {
 
   it("no disagreement is reported when they agree", () => {
     expect(resolveExperience(strong.experience, strong).disagrees).toBe(false);
+  });
+});
+
+const run = (km: number, minutes: number, day = 3, name = "Run"): LoggedSession => ({
+  id: `run-${km}-${minutes}-${day}`,
+  title: "Run",
+  startedAt: daysAgo(day),
+  blocks: [{ kind: "cardio", name, discipline: "running", distance: km, minutes }],
+});
+
+describe("the endurance half", () => {
+  it("gives a runner a level without ever seeing a barbell", () => {
+    // 5 km in 20:00 (4:00/km) — comfortably inside the advanced band, which
+    // opens at 4:10/km.
+    const r = estimateFitnessLevel([run(5, 20)], { now: NOW });
+    expect(r.basis).toBe("endurance");
+    expect(r.level).toBe("advanced");
+    expect(r.evidence[0]!.kind).toBe("endurance");
+  });
+
+  it("does not need a body mass, because a pace isn't relative to one", () => {
+    const withBw = estimateFitnessLevel([run(5, 22)], { bodyweightKg: 70, now: NOW });
+    const without = estimateFitnessLevel([run(5, 22)], { now: NOW });
+    expect(without.level).toBe(withBw.level);
+  });
+
+  it("THE POINT of the equivalence: a 10 km is not a slow 5 km", () => {
+    // 10 km at 4:30/km is a better performance than 5 km at 4:30/km, and a
+    // model that compared raw pace would call them identical.
+    const ten = estimateFitnessLevel([run(10, 45)], { now: NOW });
+    const five = estimateFitnessLevel([run(5, 22.5)], { now: NOW });
+    // Same raw pace, but the 10 km normalises to a FASTER 5 km equivalent.
+    expect(ten.evidence[0]!.ratio).toBeLessThan(five.evidence[0]!.ratio);
+    expect(fiveKmEquivalentSec(10, 45)).toBeLessThan(45 * 60);
+  });
+
+  it("ignores efforts that aren't aerobic tests", () => {
+    expect(fiveKmEquivalentSec(1, 4)).toBeNull();       // too short
+    expect(fiveKmEquivalentSec(60, 300)).toBeNull();    // past what Riegel is for
+    expect(fiveKmEquivalentSec(5, 0)).toBeNull();       // no time
+    expect(estimateFitnessLevel([run(1, 4)], { now: NOW }).basis).toBe("none");
+  });
+
+  it("reads running only, and says so by declining the rest", () => {
+    const ride: LoggedSession = {
+      id: "ride", title: "Ride", startedAt: daysAgo(3),
+      blocks: [{ kind: "cardio", name: "Cycling", discipline: "cycling", distance: 40, minutes: 80 }],
+    };
+    // A 40 km ride in 80 minutes is a real performance the model cannot score —
+    // gearing, terrain and draft make a pace table a fiction. Declined, not guessed.
+    expect(estimateFitnessLevel([ride], { now: NOW }).basis).toBe("none");
+  });
+
+  it("the stronger half sets the level, and basis names both", () => {
+    // A serious lifter who jogs: the squat should carry the level.
+    const r = estimateFitnessLevel([lift("Back Squat", 190, 1), run(5, 32)], { bodyweightKg: 90, now: NOW });
+    expect(r.basis).toBe("both");
+    expect(r.evidence[0]!.kind).toBe("strength");
+    expect(r.level).toBe("advanced");
+
+    // …and the other way round: a runner who does one light set.
+    const s = estimateFitnessLevel([lift("Back Squat", 60, 5), run(5, 19)], { bodyweightKg: 70, now: NOW });
+    expect(s.basis).toBe("both");
+    expect(s.evidence[0]!.kind).toBe("endurance");
+    expect(s.level).toBe("advanced");
+  });
+
+  it("scales the bar for sex and age the same way the lifts do", () => {
+    const male = estimateFitnessLevel([run(5, 26)], { sex: "M", now: NOW });
+    const female = estimateFitnessLevel([run(5, 26)], { sex: "F", now: NOW });
+    // Same clock time reads as a higher level for a female athlete, because the
+    // standards it is scored against are the female ones.
+    expect(FITNESS_LEVELS.indexOf(female.level)).toBeGreaterThanOrEqual(FITNESS_LEVELS.indexOf(male.level));
+
+    const veteran = estimateFitnessLevel([run(5, 24)], { ageYears: 55, now: NOW });
+    const peak = estimateFitnessLevel([run(5, 24)], { ageYears: 28, now: NOW });
+    expect(FITNESS_LEVELS.indexOf(veteran.level)).toBeGreaterThanOrEqual(FITNESS_LEVELS.indexOf(peak.level));
+  });
+
+  it("keeps the best run, not the most recent one", () => {
+    const r = estimateFitnessLevel([run(5, 30, 3), run(5, 21, 60)], { now: NOW });
+    expect(r.evidence[0]!.equivSec).toBe(21 * 60);
+  });
+
+  it("every basis has a line of copy naming it", () => {
+    for (const b of ["strength", "endurance", "both", "none"] as const) {
+      expect(LEVEL_BASIS_KEY[b].startsWith("w.analyze.vol.")).toBe(true);
+    }
   });
 });

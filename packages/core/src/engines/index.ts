@@ -24,6 +24,8 @@ export * from "./fitness-level";
 export * from "./landmark-profile";
 export * from "./landmark-resolve";
 export * from "./landmark-adapt";
+export * from "./recovery-pairs";
+export * from "./landmark-replay";
 export * from "./landmark-context";
 export * from "./volume-block";
 export * from "./exercise";

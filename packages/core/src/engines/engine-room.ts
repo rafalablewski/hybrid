@@ -51,7 +51,8 @@ import {
   RECOVERY_BOUNDS,
 } from "./landmark-profile";
 import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS } from "./athlete-profile";
-import { STRENGTH_STANDARDS } from "./fitness-level";
+import { STRENGTH_STANDARDS, ENDURANCE_PACE, ENDURANCE_SEX_FACTOR, RIEGEL_EXPONENT, ENDURANCE_STANDARD_KM, ENDURANCE_MIN_KM } from "./fitness-level";
+import { SETTLED_DRIFT, CONVERGING_DRIFT, SETTLE_WINDOW } from "./landmark-replay";
 import {
   RESIDUAL_FLOOR,
   RESIDUAL_TAU_H,
@@ -61,7 +62,15 @@ import {
   RECALL_FROM_H,
   RECALL_TAU_H,
   WEIGHT_FLOOR,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  CLEARANCE_SLOPE,
+  CLEARANCE_FACTOR_BOUNDS,
+  MIN_PAIR_GAP_H,
+  MIN_PAIR_FATIGUE,
+  MIN_RECOVERY_PAIRS,
 } from "../feel-timing";
+import { IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H } from "../feel-schedule";
 
 export type EngineFormulaGroup =
   | "fatigue"
@@ -462,6 +471,73 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(WEIGHT_FLOOR), value: String(WEIGHT_FLOOR), meaning: "floor — a late report still counts for something" },
     ],
     note: "An unknown lag keeps full weight: we have no reason to distrust it, only no reason to adjust it either.",
+  },
+
+  // ---- Two reads of one session, and what the gap between them measures. ----
+  {
+    id: "feel-schedule",
+    engine: "feelTiming",
+    name: "Which read is due",
+    expression: `immediate: [end, end + ${IMMEDIATE_WINDOW_H} h]   recovery: [end + ${RECOVERY_DUE_H} h, end + ${RECOVERY_WINDOW_H} h]`,
+    constants: [
+      { symbol: `${IMMEDIATE_WINDOW_H} h`, value: "immediate window", meaning: "past this, the answer is a memory of a feeling" },
+      { symbol: `${RECOVERY_DUE_H} h`, value: "recovery opens", meaning: `expectedResidual(${RECOVERY_DUE_H}) ≈ 0.59 — the fast component has largely drained` },
+      { symbol: `${RECOVERY_WINDOW_H} h`, value: "recovery closes", meaning: "the next-day boundary; beyond it, recall" },
+      { symbol: "1 per day", value: "recovery reads", meaning: "anchored to the last session to finish — you do not recover one at a time" },
+    ],
+    note: "The immediate read is per session and cannot be taken later: effort is sRPE, and spentness at the peak is the anchor everything else is measured against. The recovery read is per day and is the one that can move a training ceiling. Two moments, one instrument.",
+  },
+  {
+    id: "recovery-curve",
+    engine: "feelTiming",
+    name: "Measured clearance rate",
+    expression: "ratio = cost(later) / cost(immediate)   —   both against the same population curve",
+    constants: [
+      { symbol: String(CLEARANCE_FAST), value: "fast below", meaning: "drained faster than the curve predicts" },
+      { symbol: String(CLEARANCE_SLOW), value: "slow above", meaning: "still carrying it long after the model says it should have gone" },
+      { symbol: `${MIN_PAIR_GAP_H} h`, value: "minimum gap", meaning: "closer than this and the expected residual barely moves" },
+      { symbol: String(MIN_PAIR_FATIGUE), value: "minimum immediate report", meaning: "a session you walked out of fine has nothing to drain" },
+      { symbol: String(MIN_RECOVERY_PAIRS), value: "minimum pairs", meaning: "one is an anecdote; below this the index is exactly 1" },
+    ],
+    note: "Because cost is timing-normalised, two reads of the same session come out EQUAL when the athlete drains at the population rate — so the ratio is a direct read of their own rate. No personal time constant is fitted: R(h₁)/R(h₂) is not monotone in τ, so a single pair admits two values and picking one would dress an assumption as a measurement. A pair is dropped if a second session lands inside its gap.",
+  },
+  {
+    id: "clearance-factor",
+    engine: "landmarks",
+    name: "Clearance → ceiling multiplier",
+    expression: `recovery ×= clamp(1 + (1 − index) × ${CLEARANCE_SLOPE} × confidence, ${CLEARANCE_FACTOR_BOUNDS[0]}, ${CLEARANCE_FACTOR_BOUNDS[1]})`,
+    constants: [
+      { symbol: String(CLEARANCE_SLOPE), value: "slope", meaning: "how hard a measured rate may move the ceiling" },
+      { symbol: `${CLEARANCE_FACTOR_BOUNDS[0]}–${CLEARANCE_FACTOR_BOUNDS[1]}`, value: "bounds", meaning: "two taps a day is not a blood panel" },
+      { symbol: "×confidence", value: "scaling", meaning: "two pairs nudge, twenty move it" },
+    ],
+    note: "Applied BEFORE the week classifier, so the adaptive estimator bounds itself around a prior that already reflects measured recovery. Scales MRV only — how fast you clear fatigue says nothing about how much work it takes to grow you.",
+  },
+  {
+    id: "level-pace",
+    engine: "fitnessLevel",
+    name: "Training level from running",
+    expression: `T₅ = T × (${ENDURANCE_STANDARD_KM}/D)^${RIEGEL_EXPONENT}   vs   threshold × sexFactor / developmentFraction(age)`,
+    constants: [
+      { symbol: "5 km pace", value: ENDURANCE_PACE.map((p) => `${Math.floor(p / 60)}:${String(p % 60).padStart(2, "0")}`).join(" / "), meaning: "novice / intermediate / advanced / elite, per km" },
+      { symbol: String(RIEGEL_EXPONENT), value: "Riegel exponent", meaning: "normalises any run to a 5 km equivalent" },
+      { symbol: String(ENDURANCE_SEX_FACTOR), value: "female factor", meaning: "thresholds are this much slower" },
+      { symbol: `${ENDURANCE_MIN_KM} km`, value: "minimum distance", meaning: "shorter is not an aerobic test" },
+    ],
+    note: "Running only. Cycling and rowing pace depend on gearing, terrain, drag factor and draft, so a threshold table over raw speed would be a fiction — those are left unread rather than guessed. Whichever half of the athlete is stronger sets the level, and `basis` always names which halves had data.",
+  },
+  {
+    id: "landmark-replay",
+    engine: "landmarks",
+    name: "Has the ceiling settled?",
+    expression: `drift = max |mrv(w) − mrv(w−1)| over the last ${SETTLE_WINDOW} weeks`,
+    constants: [
+      { symbol: `≤ ${SETTLED_DRIFT}`, value: "settled", meaning: "the estimate stopped changing its mind" },
+      { symbol: `≤ ${CONVERGING_DRIFT}`, value: "converging", meaning: "still moving, within a band you can train inside" },
+      { symbol: String(SETTLE_WINDOW), value: "window", meaning: "weeks the verdict looks at" },
+      { symbol: "≠ profile", value: "tested", meaning: "a week only counts if the log moved the ceiling off the profile answer" },
+    ],
+    note: "A diagnostic, not a second estimator — it calls the same resolver the app uses, at every week, with only the data that existed then. A single number cannot say whether to believe it; the shape of its own history can. A flat line at the prior is never reported as settled.",
   },
 ];
 

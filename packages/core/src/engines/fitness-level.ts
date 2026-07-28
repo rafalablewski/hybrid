@@ -1,6 +1,7 @@
 import type { LoggedSession } from "./session";
 import { e1rm, setsForVolume } from "./session";
 import { movementFor } from "./movements";
+import { isRunMove } from "./running";
 import { developmentFraction, type Sex } from "../benchmarks";
 import type { Experience } from "../onboarding";
 
@@ -35,9 +36,22 @@ import type { Experience } from "../onboarding";
  * a different question with a different output: which training-age tier should
  * the volume model use. The two share the development curve and nothing else.
  *
- * It is also strength-only for now, and says so in `basis`. An endurance
- * athlete's level does not show up in a squat ratio, and inventing a number
- * for them from a lift they never do would be worse than declining to guess.
+ * BOTH HALVES OF A HYBRID ATHLETE. Relative strength answers the question for
+ * a lifter and says nothing about a runner, so there is a second, independent
+ * read: running performance, normalised to a 5 km equivalent so a 10 km and a
+ * parkrun are comparable, and scored against published pace standards on the
+ * same sex/age-adjusted pattern as the lifts. Whichever half is stronger sets
+ * the level, for the same reason the best lift does — training age is what you
+ * have built, not an average dragged down by what you neglect — and `basis`
+ * always names which halves actually had data.
+ *
+ * WHAT IS STILL MISSING, AND NAMED RATHER THAN GUESSED. The endurance read is
+ * RUNNING only. Cycling and rowing pace depend on gearing, terrain, drag factor
+ * and draft; the same watts produce wildly different splits, and a threshold
+ * table over raw km/h would be a fiction. A cyclist with no runs and no lifts
+ * still gets `basis: "none"` and falls back to what they told us, which is the
+ * honest answer rather than a number invented from a discipline the model
+ * cannot read.
  */
 
 export type FitnessLevel = "untrained" | "novice" | "intermediate" | "advanced" | "elite";
@@ -95,13 +109,78 @@ function thresholdsFor(std: StrengthStandard, sex: Sex, ageYears: number | null)
   return std.ratios.map((r) => r * sexF * devF);
 }
 
-/** One lift's contribution to the estimate. */
+/* ────────────────────────────────────────────────────────────────────────────
+ * THE ENDURANCE HALF.
+ *
+ * Pace at which a MALE athlete of peak training age enters each level over
+ * 5 km, in seconds per kilometre. Published road-running standards territory,
+ * treated as a documented prior exactly like the lifts:
+ *
+ *   novice        6:00/km   → 30:00
+ *   intermediate  5:00/km   → 25:00
+ *   advanced      4:10/km   → 20:50
+ *   elite         3:20/km   → 16:40
+ * ──────────────────────────────────────────────────────────────────────────── */
+export const ENDURANCE_STANDARD_KM = 5;
+/** Entry pace (sec/km) for novice / intermediate / advanced / elite. */
+export const ENDURANCE_PACE: [number, number, number, number] = [360, 300, 250, 200];
+
+/** Female thresholds are this much SLOWER — the pace equivalent of the strength
+ *  table's sex factor, and the same order of magnitude as every published
+ *  standards table's male/female gap over 5 km. */
+export const ENDURANCE_SEX_FACTOR = 1.11;
+
+/**
+ * Riegel's endurance exponent. Any run is normalised to a 5 km-equivalent time
+ * with T₅ = T × (5/D)^1.06, so a 10 km at 4:30/km and a 5 km at 4:20/km are
+ * scored as the performances they actually are rather than by raw pace. Well
+ * established, and the reason a marathoner is not read as a slow 5 km runner.
+ */
+export const RIEGEL_EXPONENT = 1.06;
+
+/** Runs shorter than this aren't aerobic tests; longer than this the model is
+ *  extrapolating past what Riegel is good for. */
+export const ENDURANCE_MIN_KM = 3;
+export const ENDURANCE_MAX_KM = 45;
+
+/** A run's 5 km-equivalent time in seconds, or null when the effort can't be
+ *  read as an aerobic test. */
+export function fiveKmEquivalentSec(distanceKm: number, minutes: number): number | null {
+  if (!Number.isFinite(distanceKm) || !Number.isFinite(minutes)) return null;
+  if (distanceKm < ENDURANCE_MIN_KM || distanceKm > ENDURANCE_MAX_KM || minutes <= 0) return null;
+  const sec = minutes * 60;
+  return Math.round(sec * Math.pow(ENDURANCE_STANDARD_KM / distanceKm, RIEGEL_EXPONENT));
+}
+
+function endurancePaceThresholds(sex: Sex, ageYears: number | null): number[] {
+  const sexF = sex === "F" ? ENDURANCE_SEX_FACTOR : 1;
+  // Mirror of the strength side: a less-developed athlete meets an easier bar,
+  // which for a pace means a SLOWER threshold, so the factor divides.
+  const devF = ageYears == null ? 1 : developmentFraction(ageYears);
+  return ENDURANCE_PACE.map((p) => (p * sexF) / devF);
+}
+
+const levelFromPace = (secPerKm: number, thresholds: number[]): FitnessLevel => {
+  // Faster (lower) is better, so the comparisons run the other way.
+  if (secPerKm <= thresholds[3]!) return "elite";
+  if (secPerKm <= thresholds[2]!) return "advanced";
+  if (secPerKm <= thresholds[1]!) return "intermediate";
+  if (secPerKm <= thresholds[0]!) return "novice";
+  return "untrained";
+};
+
+/** One result's contribution to the estimate. */
 export interface LevelEvidence {
+  /** Which half of the athlete this came from. */
+  kind: "strength" | "endurance";
+  /** Display name — the lift, or the run's distance ("10.0 km"). */
   lift: string;
-  /** Best e1RM seen in the window, kg. */
-  e1rm: number;
-  /** e1RM ÷ body mass. */
+  /** STRENGTH ONLY: best e1RM seen in the window, kg. */
+  e1rm?: number;
+  /** STRENGTH: e1RM ÷ body mass. ENDURANCE: 5 km-equivalent pace, sec/km. */
   ratio: number;
+  /** ENDURANCE ONLY: the 5 km-equivalent time, seconds. */
+  equivSec?: number;
   level: FitnessLevel;
   /** ISO date of the session it came from. */
   at: string;
@@ -113,10 +192,10 @@ export interface FitnessLevelEstimate {
   experience: Experience;
   /** 0…1 — how much the log actually supports this. */
   confidence: number;
-  /** The lifts behind it, strongest first. */
+  /** The results behind it, strongest first. */
   evidence: LevelEvidence[];
-  /** What the estimate could see. Strength-only today — named, not implied. */
-  basis: "strength" | "none";
+  /** What the estimate could actually see — named, not implied. */
+  basis: "strength" | "endurance" | "both" | "none";
 }
 
 const levelFromRatio = (ratio: number, thresholds: number[]): FitnessLevel => {
@@ -142,23 +221,38 @@ export function estimateFitnessLevel(
 ): FitnessLevelEstimate {
   const bw = opts.bodyweightKg;
   const none: FitnessLevelEstimate = { level: "untrained", experience: "beginner", confidence: 0, evidence: [], basis: "none" };
-  if (!bw || !Number.isFinite(bw) || bw <= 0) return none;
 
   const now = opts.now ?? Date.now();
   const since = now - (opts.days ?? 180) * DAY;
   const sex: Sex = opts.sex ?? "M";
   const age = opts.ageYears ?? null;
+  // Relative strength needs a body mass; running does not. A runner who never
+  // told us their weight still gets a level.
+  const haveBw = !!bw && Number.isFinite(bw) && bw > 0;
 
   // Best e1RM per standard lift, resolved through the movement catalog so a
   // library or alias name ("Barbell Back Squat") still counts.
   const best = new Map<string, { e1rm: number; at: string }>();
   const byKey = new Map(STRENGTH_STANDARDS.map((s) => [s.key, s]));
+  // The single best 5 km-equivalent run in the window.
+  let bestRun: { equivSec: number; km: number; at: string } | null = null;
 
   for (const s of sessions) {
     const t = Date.parse(s.startedAt);
     if (!Number.isFinite(t) || t < since || t > now) continue;
     for (const b of s.blocks) {
-      if (b.kind !== "strength") continue;
+      if (b.kind === "cardio") {
+        // Running only — see the header. Everything else is left unread rather
+        // than scored against a table that doesn't describe it.
+        if (!isRunMove(b.name) || (b.discipline && b.discipline !== "running")) continue;
+        const km = b.distance ?? 0;
+        const equivSec = fiveKmEquivalentSec(km, b.minutes ?? 0);
+        if (equivSec != null && (!bestRun || equivSec < bestRun.equivSec)) {
+          bestRun = { equivSec, km, at: s.startedAt };
+        }
+        continue;
+      }
+      if (b.kind !== "strength" || !haveBw) continue;
       // Canonicalize: the athlete's name for the lift may be an alias.
       const resolved = movementFor(b.name);
       const key = STRENGTH_STANDARDS.find((std) => std.key === b.name)?.key
@@ -176,31 +270,51 @@ export function estimateFitnessLevel(
     }
   }
 
-  if (best.size === 0) return none;
+  if (best.size === 0 && !bestRun) return none;
 
   const evidence: LevelEvidence[] = [];
   for (const [key, { e1rm: est, at }] of best) {
     const std = byKey.get(key)!;
-    const ratio = Math.round((est / bw) * 100) / 100;
-    evidence.push({ lift: key, e1rm: Math.round(est), ratio, level: levelFromRatio(ratio, thresholdsFor(std, sex, age)), at });
+    const ratio = Math.round((est / bw!) * 100) / 100;
+    evidence.push({ kind: "strength", lift: key, e1rm: Math.round(est), ratio, level: levelFromRatio(ratio, thresholdsFor(std, sex, age)), at });
   }
-  evidence.sort((a, b) => FITNESS_LEVELS.indexOf(b.level) - FITNESS_LEVELS.indexOf(a.level) || b.ratio - a.ratio);
+  if (bestRun) {
+    const pace = Math.round(bestRun.equivSec / ENDURANCE_STANDARD_KM);
+    evidence.push({
+      kind: "endurance",
+      lift: `${Math.round(bestRun.km * 10) / 10} km`,
+      ratio: pace,
+      equivSec: bestRun.equivSec,
+      level: levelFromPace(pace, endurancePaceThresholds(sex, age)),
+      at: bestRun.at,
+    });
+  }
 
-  // The BEST lift sets the level: training age is what you have built, not an
-  // average dragged down by the lift you never train.
+  // Strongest first. Within a level, strength sorts by ratio (higher is better)
+  // and endurance by pace (LOWER is better), so the two can't be compared on
+  // the raw number — they are only ever compared through their level.
+  evidence.sort(
+    (a, b) =>
+      FITNESS_LEVELS.indexOf(b.level) - FITNESS_LEVELS.indexOf(a.level) ||
+      (a.kind === b.kind ? (a.kind === "endurance" ? a.ratio - b.ratio : b.ratio - a.ratio) : a.kind === "strength" ? -1 : 1),
+  );
+
+  // The BEST result sets the level, across both halves: training age is what you
+  // have built, not an average dragged down by the discipline you never train.
   const level = evidence[0]!.level;
 
-  // Confidence rises with how many standard lifts are represented — one lift is
-  // a data point, three is a picture — and is capped below certainty because a
-  // ratio is still a proxy for training age, not a measurement of it.
+  // Confidence rises with how many independent results back it — one is a data
+  // point, three is a picture — and is capped below certainty because a ratio or
+  // a pace is still a proxy for training age, not a measurement of it.
   const confidence = Math.min(0.85, 0.35 + (evidence.length - 1) * 0.18);
 
+  const hasStrength = best.size > 0;
   return {
     level,
     experience: LEVEL_TO_EXPERIENCE[level],
     confidence: Math.round(confidence * 100) / 100,
     evidence,
-    basis: "strength",
+    basis: hasStrength && bestRun ? "both" : hasStrength ? "strength" : "endurance",
   };
 }
 
@@ -221,6 +335,15 @@ export function resolveExperience(
   if (derived) return { experience: derived, source: "estimated", disagrees: false };
   return { experience: undefined, source: "unknown", disagrees: false };
 }
+
+/** i18n key naming what the estimate could see — so the card says "from your
+ *  lifts and runs" rather than implying it read everything. */
+export const LEVEL_BASIS_KEY: Record<FitnessLevelEstimate["basis"], string> = {
+  strength: "w.analyze.vol.levelFromLifts",
+  endurance: "w.analyze.vol.levelFromRuns",
+  both: "w.analyze.vol.levelFromBoth",
+  none: "w.analyze.vol.levelNoData",
+};
 
 export const LEVEL_KEY: Record<FitnessLevel, string> = {
   untrained: "w.analyze.vol.levelUntrained",

@@ -10,6 +10,8 @@ import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import {
   needsBodyweight,
   prescribeSession,
+  feelSamples,
+  loadBaseline,
   personalTrainingLog,
   velocityProfiles,
   planProgramToday,
@@ -93,6 +95,7 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import Sheet from "../components/aurora/sheet";
+import { FeelPrompt } from "../components/feel-prompt";
 import SwipeRow from "../components/swipe-row";
 import DragHandle from "../components/drag-handle";
 import { useDragReorder } from "../lib/use-drag-reorder";
@@ -1790,6 +1793,7 @@ function Summary({
   const bwLookup = useBodyweightLookup();
   // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
   // last month, from the sessions they'd already rated before this one.
+  const feelBaseline = useMemo(() => loadBaseline(feelSamples(prior, bwLookup)), [prior, bwLookup]);
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
@@ -1960,12 +1964,14 @@ function Summary({
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
 
-        {/* "How did that feel?" used to be asked HERE. It has moved into the one
-            daily card on Today, which now carries an effort question per session
-            trained that day — because the app was asking the same recovery
-            question in two places with two different maths behind them. Effort
-            still lands on Session.feel; only the surface moved.
-            See core/checkin-flow.ts. */}
+        {/* "How did that feel?" — THE IMMEDIATE READ, asked here because this is
+            the only moment it can be asked. Effort is sRPE; spentness now is the
+            anchor the recovery read on Today is measured against hours later.
+            The daily card asks the second half; it does not replace this one.
+            See core/feel-schedule.ts. */}
+        {!summary.guest && (
+          <FeelPrompt compact sessionId={summary.sessionId} minutes={summary.minutes} baseline={feelBaseline} />
+        )}
 
         {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
         {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}

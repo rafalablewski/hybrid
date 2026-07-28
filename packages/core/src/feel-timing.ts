@@ -246,6 +246,160 @@ export function hoursSince(sessionEnd: string | number | null | undefined, now: 
   return h >= 0 ? Math.round(h * 100) / 100 : null;
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * TWO READS ARE WORTH MORE THAN TWICE ONE.
+ *
+ * `expectedResidual` is a POPULATION curve: how fast fatigue drains for people
+ * in general. Divide a single report by it and you get that session's cost,
+ * timing removed. Useful, but it silently assumes this athlete drains at the
+ * population rate — and the whole point of the volume model is that they don't.
+ *
+ * Ask twice about the SAME session, once in the gym and once hours later, and
+ * that assumption becomes measurable. Both reports are converted to a cost
+ * against the same curve, so if the athlete recovers exactly as the model
+ * expects the two costs come out equal. They rarely do:
+ *
+ *   later < immediate   drained FASTER than the curve. Absorbed it.
+ *   later ≈ immediate   on the curve.
+ *   later > immediate   still carrying it long after the model says it should
+ *                       have gone. This is the reading that should lower a
+ *                       ceiling, and no single report can produce it — "4 the
+ *                       next morning" alone can't tell you whether the session
+ *                       was brutal or the recovery was poor. The pair can.
+ *
+ * WHY A RATIO AND NOT A FITTED TIME CONSTANT. Two points can be fitted to the
+ * residual curve for a personal τ, and it is tempting because τ has units and
+ * looks like physiology. It is not identifiable: the ratio R(h1)/R(h2) is not
+ * monotone in τ, so a single pair admits two time constants, and picking the
+ * one nearer the population value would be dressing an assumption up as a
+ * measurement. The ratio is what the data actually supports — one number,
+ * monotone, and directly interpretable as "against the curve".
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** How the athlete's drain compared to the population curve. */
+export type Clearance = "fast" | "onTrack" | "slow";
+
+/** Ratio boundaries. Deliberately the same ±15% band as COST_HIGH: a session
+ *  that reads 15% costlier than expected and an athlete who clears 15% slower
+ *  than expected are the same size of departure, and the app should not have
+ *  two opinions about what "meaningfully worse" means. */
+export const CLEARANCE_FAST = 0.85;
+export const CLEARANCE_SLOW = 1.15;
+
+/** The reads must be far enough apart for the curve to have said anything. At
+ *  a two-hour gap the expected residual barely moves, so the ratio is noise. */
+export const MIN_PAIR_GAP_H = 4;
+
+/**
+ * …and the session must have cost something to drain.
+ *
+ * The IMMEDIATE report has to be at least "worked" — the same MIN_STRAIN_FATIGUE
+ * bar the single-report rule uses, so the app has one idea of what counts as a
+ * disturbance rather than two. Without it the ratio manufactures verdicts out of
+ * nothing: an athlete who taps 2/5 in the gym and 2/5 the next morning divides
+ * 0.26 by 0.61 and comes out at 2.4 — read literally, a badly impaired
+ * recoverer, when in truth nothing happened to them either time.
+ *
+ * The cost floor stays as a second guard for the odd case where a raw 3 lands at
+ * a lag that flattens it.
+ */
+export const MIN_PAIR_FATIGUE = MIN_STRAIN_FATIGUE;
+export const MIN_PAIR_COST = 0.2;
+
+export interface RecoveryCurve {
+  /** later.cost ÷ immediate.cost. 1 means "exactly as the curve predicts". */
+  ratio: number;
+  clearance: Clearance;
+  /** Hours between the two reads. */
+  gapH: number;
+  /** 0…1 — the pair's influence, the lesser of the two reports' weights. */
+  weight: number;
+}
+
+/**
+ * Compare an athlete's own two reads of one session. Null when the pair cannot
+ * support a verdict — reads too close together, either lag unknown, or nothing
+ * there to drain.
+ */
+export function recoveryCurve(immediate: FeelReading | null, later: FeelReading | null): RecoveryCurve | null {
+  if (!immediate || !later) return null;
+  if (immediate.hoursAfter == null || later.hoursAfter == null) return null;
+  const gapH = Math.round((later.hoursAfter - immediate.hoursAfter) * 100) / 100;
+  if (gapH < MIN_PAIR_GAP_H) return null;
+  if (immediate.fatigue < MIN_PAIR_FATIGUE || immediate.cost < MIN_PAIR_COST) return null;
+
+  const ratio = Math.round((later.cost / immediate.cost) * 1000) / 1000;
+  return {
+    ratio,
+    clearance: ratio < CLEARANCE_FAST ? "fast" : ratio > CLEARANCE_SLOW ? "slow" : "onTrack",
+    gapH,
+    weight: Math.min(immediate.weight, later.weight),
+  };
+}
+
+export interface RecoveryIndex {
+  /** Weighted mean ratio across pairs. 1 = on the population curve. */
+  index: number;
+  /** 0…1 — how much the app should lean on it. Zero below two pairs. */
+  confidence: number;
+  /** Pairs behind it. */
+  pairs: number;
+  clearance: Clearance;
+}
+
+/** Two pairs is the floor: one is an anecdote, and a single bad night would
+ *  otherwise move an athlete's recovery model. */
+export const MIN_RECOVERY_PAIRS = 2;
+
+/**
+ * The athlete's recovery rate against the population curve, across every pair
+ * the log holds. Returns a neutral index with zero confidence when there isn't
+ * enough — never a guess dressed as a measurement.
+ */
+export function recoveryIndex(curves: (RecoveryCurve | null)[]): RecoveryIndex {
+  const usable = curves.filter((c): c is RecoveryCurve => !!c && c.weight > 0);
+  if (usable.length < MIN_RECOVERY_PAIRS) {
+    return { index: 1, confidence: 0, pairs: usable.length, clearance: "onTrack" };
+  }
+  let num = 0;
+  let den = 0;
+  for (const c of usable) {
+    num += c.ratio * c.weight;
+    den += c.weight;
+  }
+  const index = Math.round((num / den) * 1000) / 1000;
+  return {
+    index,
+    confidence: Math.round(Math.min(0.8, 0.25 + (usable.length - MIN_RECOVERY_PAIRS) * 0.15) * 100) / 100,
+    pairs: usable.length,
+    clearance: index < CLEARANCE_FAST ? "fast" : index > CLEARANCE_SLOW ? "slow" : "onTrack",
+  };
+}
+
+/** How hard a measured clearance rate may move the recovery multiplier. Kept
+ *  modest and bounded: this is two taps a day, not a blood panel. */
+export const CLEARANCE_SLOPE = 0.35;
+export const CLEARANCE_FACTOR_BOUNDS: [number, number] = [0.85, 1.12];
+
+/**
+ * The recovery multiplier this clearance rate implies — clearing slower than
+ * the curve means less volume is recoverable, and vice versa. Scaled by
+ * confidence so two pairs nudge and twenty pairs move it, and returns exactly 1
+ * when there is nothing to say.
+ */
+export function clearanceFactor(idx: RecoveryIndex): number {
+  if (idx.confidence <= 0) return 1;
+  const raw = 1 + (1 - idx.index) * CLEARANCE_SLOPE * idx.confidence;
+  const [lo, hi] = CLEARANCE_FACTOR_BOUNDS;
+  return Math.round(clamp(raw, lo, hi) * 1000) / 1000;
+}
+
+export const CLEARANCE_KEY: Record<Clearance, string> = {
+  fast: "session.feel.clearanceFast",
+  onTrack: "session.feel.clearanceOnTrack",
+  slow: "session.feel.clearanceSlow",
+};
+
 /**
  * The one-line explanation the UI shows next to a logged feel — which i18n key
  * describes what this report is actually measuring. Pairs with FEEL_READ_KEY.

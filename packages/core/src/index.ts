@@ -17,6 +17,7 @@ export * from "./readiness-feeling";
 export * from "./checkin-flow";
 export * from "./checkin-scales";
 export * from "./feel-timing";
+export * from "./feel-schedule";
 export * from "./day-key";
 export * from "./masthead";
 export * from "./motion";

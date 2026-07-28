@@ -1,8 +1,10 @@
 import type { MuscleGroup } from "./types";
 import type { LoggedSession } from "./session";
 import { VOLUME_LANDMARKS, resolveLandmarks, type LandmarkOverrides, type VolumeLandmark } from "./landmarks";
-import { personalizeLandmarks, isEmptyVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./landmark-profile";
+import { personalizeLandmarks, scaleLandmarks, isEmptyVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./landmark-profile";
 import { adaptLandmarks, type MrvEstimate, type RecoveryReport } from "./landmark-adapt";
+import { athleteClearance, type RecoveryPair } from "./recovery-pairs";
+import { clearanceFactor, type RecoveryIndex } from "../feel-timing";
 
 /**
  * THE ONE PLACE LANDMARKS COME FROM.
@@ -14,7 +16,13 @@ import { adaptLandmarks, type MrvEstimate, type RecoveryReport } from "./landmar
  *   2. PROFILE    — scaled to the athlete's training age, mass, age and
  *                   recovery context. A prior, not a measurement.
  *   3. OBSERVED   — the ceiling corrected by what the training log actually
- *                   showed: volume carried, performance held or lost.
+ *                   showed. Two independent pieces of evidence, applied in
+ *                   order: how fast this athlete CLEARS a session's fatigue
+ *                   (measured by asking twice about the same session — see
+ *                   recovery-pairs.ts), then whether the volume they carried
+ *                   was actually absorbed (landmark-adapt.ts). Clearance goes
+ *                   first deliberately: it corrects the prior that the adaptive
+ *                   estimator then bounds itself around.
  *   4. MANUAL     — whatever the athlete typed in. Always wins; an athlete who
  *                   knows their own numbers should never be argued with.
  *
@@ -40,6 +48,12 @@ export interface ResolvedLandmarks {
   estimates: Partial<Record<MuscleGroup, MrvEstimate>>;
   /** Muscles whose ceiling the log moved. */
   adapted: MuscleGroup[];
+  /** How fast the athlete clears a session's fatigue, measured against the
+   *  population curve. Neutral (index 1, confidence 0) until two clean pairs of
+   *  reads exist. */
+  clearance: RecoveryIndex;
+  /** The pairs behind it — what to show when the athlete asks why. */
+  clearanceSamples: RecoveryPair[];
 }
 
 export interface AthleteLandmarkOptions {
@@ -71,7 +85,27 @@ export function athleteLandmarks(opts: AthleteLandmarkOptions = {}): ResolvedLan
     layers.push("profile");
   }
 
-  // 3 — the observed correction.
+  // 3a — measured clearance. How fast THIS athlete drains a session, from the
+  // pairs of reads (in the gym, then hours later) the log holds. It scales the
+  // recovery end only: clearing slower than the curve means less volume is
+  // recoverable, and it says nothing about how much work it takes to grow you.
+  const factors: LandmarkFactor[] = [...(personal?.factors ?? [])];
+  const clearance = opts.sessions?.length
+    ? athleteClearance(opts.sessions, opts.recovery ?? [], { now: opts.now })
+    : { index: 1, confidence: 0, pairs: 0, clearance: "onTrack" as const, samples: [] };
+  const clearanceMul = opts.adaptive === false ? 1 : clearanceFactor(clearance);
+  if (clearanceMul !== 1) {
+    landmarks = scaleLandmarks(landmarks, 1, clearanceMul);
+    factors.push({
+      key: "clearance",
+      affects: "recovery",
+      multiplier: clearanceMul,
+      value: `${clearance.pairs}×`,
+    });
+    if (!layers.includes("observed")) layers.push("observed");
+  }
+
+  // 3b — the observed correction.
   let estimates: Partial<Record<MuscleGroup, MrvEstimate>> = {};
   let adapted: MuscleGroup[] = [];
   let observedConfidence = 0;
@@ -89,7 +123,7 @@ export function athleteLandmarks(opts: AthleteLandmarkOptions = {}): ResolvedLan
     observedConfidence = a.confidence;
     if (a.adapted.length) {
       landmarks = a.landmarks;
-      layers.push("observed");
+      if (!layers.includes("observed")) layers.push("observed");
     }
   }
 
@@ -98,14 +132,21 @@ export function athleteLandmarks(opts: AthleteLandmarkOptions = {}): ResolvedLan
   landmarks = resolveLandmarks(opts.overrides, landmarks);
   if (hasOverrides) layers.push("manual");
 
+  factors.sort((a, b) => Math.abs(1 - b.multiplier) - Math.abs(1 - a.multiplier));
+
   return {
     landmarks,
     source: layers[layers.length - 1]!,
     layers,
-    factors: personal?.factors ?? [],
+    factors,
     profileConfidence: personal?.confidence ?? 0,
-    observedConfidence,
+    // The observed layer's confidence is the better of its two pieces of
+    // evidence: a measured clearance rate is worth something even before any
+    // week has run high enough to test a ceiling.
+    observedConfidence: Math.max(observedConfidence, clearanceMul === 1 ? 0 : clearance.confidence),
     estimates,
     adapted,
+    clearance,
+    clearanceSamples: clearance.samples,
   };
 }

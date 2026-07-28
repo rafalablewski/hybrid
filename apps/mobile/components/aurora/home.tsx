@@ -19,6 +19,8 @@ import {
   dayCompleteness,
   firstOutstandingIndex,
   checkinSteps,
+  metricLabelKey,
+  feelSchedule,
   stepAnswered,
   type CheckinMetrics,
   type CheckinSessionRef,
@@ -392,6 +394,26 @@ export default function AuroraHome() {
       }, null),
     [checkins],
   );
+
+  // WHICH READ IS DUE. The app asks about a session twice — once at the end of
+  // it (the finish screen), once hours later, here. This is the second ask: the
+  // one that says whether the session was absorbed, and the only one that can
+  // move a training ceiling. See core/feel-schedule.ts.
+  const recoveryDue = useMemo(() => {
+    const sch = feelSchedule({
+      sessions: sessions.map((x) => ({
+        id: x.id,
+        title: x.title,
+        startedAt: x.startedAt,
+        completedAt: x.completedAt ?? null,
+        feel: x.feel ?? null,
+        fatigue: x.fatigue ?? null,
+        feelLoggedAt: x.feelLoggedAt ?? null,
+      })),
+      lastCheckinAt,
+    });
+    return sch.due.some((p) => p.kind === "recovery");
+  }, [sessions, lastCheckinAt]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -835,6 +857,7 @@ export default function AuroraHome() {
             feeling={feeling}
             dayMetrics={dayCheckin}
             daySessions={daySessions}
+            recoveryDue={recoveryDue}
             loggedAt={feelingAt}
             lastSessionEnd={lastSessionEnd}
             cooldownFrom={lastCheckinAt}
@@ -1124,13 +1147,16 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, dayMetrics, daySessions, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   feeling: ReadinessFeeling | null;
   /** The viewed day's stored metrics — which of the four are actually answered. */
   dayMetrics: Partial<CheckinMetrics> | null;
   /** The sessions trained that day — one effort question each. */
   daySessions: CheckinSessionRef[];
+  /** True when the delayed recovery read on the last session has come due —
+   *  the card leads with WHY it is asking again rather than repeating itself. */
+  recoveryDue: boolean;
   loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
@@ -1206,6 +1232,17 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, loggedAt, lastSessio
         {/* viewing another day — the date names the scope, no extra copy */}
         {!isToday && dayLabel ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text> : null}
       </View>
+      {/* THE SECOND ASK, NAMED. An athlete who already answered at the end of
+          their session and is asked again a few hours later will read it as the
+          app having forgotten — unless it says what this one is for. It is a
+          different question: not "how hard was that" but "did you absorb it".
+          See core/feel-schedule.ts. */}
+      {isToday && recoveryDue ? (
+        <View style={{ marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}3d` }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.promptRecovery")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 18, color: C.ash, marginTop: 5 }}>{t("session.feel.whyRecovery")}</Text>
+        </View>
+      ) : null}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = feeling === key;
@@ -1270,7 +1307,11 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, loggedAt, lastSessio
                 what you'd be answering. */}
             <View style={{ flexDirection: "row", gap: 5 }}>
               {checkinSteps(daySessions).filter((st) => st.kind !== "details").map((st, i) => (
-                <View key={i} style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: stepAnswered(st, dayMetrics) ? txt(C, C.lime) : C.line }} />
+                <View
+                  key={i}
+                  accessibilityLabel={st.kind === "metric" ? t(metricLabelKey(st.key)) : st.session.title}
+                  style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: stepAnswered(st, dayMetrics) ? txt(C, C.lime) : C.line }}
+                />
               ))}
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete ? C.ash : txt(C, C.lime) }}>→</Text>

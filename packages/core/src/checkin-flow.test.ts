@@ -21,9 +21,7 @@ describe("checkin cooldown", () => {
     expect(CHECKIN_STEP_COUNT).toBe(CHECKIN_METRICS.length + 1);
   });
 });
-import { describe, it, expect } from "vitest";
 import {
-  CHECKIN_METRICS,
   quickCheckinMetrics,
   answeredMetrics,
   outstandingMetrics,

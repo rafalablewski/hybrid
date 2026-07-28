@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { sorenessFromCheckin, checkinFromSoreness, freshnessFromCheckin } from "./checkin-scales";
 import { checkinRating, feelingFromRating } from "./readiness-feeling";
-import { CHECKIN_METRICS } from "./checkin-flow";
+import { CHECKIN_METRICS, metricLabelKey } from "./checkin-flow";
+import { makeT } from "./i18n";
 
 /**
  * These tests exist to stop the `soreness` column's name from lying its way
@@ -28,8 +29,13 @@ describe("the check-in soreness column stores freshness", () => {
   });
 
   it("agrees with every writer in the app", () => {
-    // 1. The guided flow asks about FRESHNESS, not soreness.
-    expect(CHECKIN_METRICS.find((m) => m.key === "soreness")!.questionKey).toBe("w.recovery.checkins.qSoreness");
+    // 1. The guided flow asks about FRESHNESS, and now SAYS freshness too —
+    //    the storage key is the column, the copy key is the word the athlete
+    //    reads, and they are allowed to differ only in this one direction.
+    const metric = CHECKIN_METRICS.find((m) => m.key === "soreness")!;
+    expect(metric.questionKey).toBe("w.recovery.checkins.qFreshness");
+    expect(metric.labelKey).toBe("w.recovery.checkins.freshness");
+    expect(metricLabelKey("soreness")).toBe("w.recovery.checkins.freshness");
 
     // 2. checkinRating averages all four metrics as higher = better, which is
     //    only correct if the stored soreness value is a freshness reading.
@@ -39,5 +45,26 @@ describe("the check-in soreness column stores freshness", () => {
 
     // 3. …so the athlete who feels PRIMED is the one with the LEAST soreness.
     expect(sorenessFromCheckin(5)).toBeLessThan(sorenessFromCheckin(1)!);
+  });
+
+  it("never SHOWS the athlete the word the column uses", () => {
+    // The label and the stored polarity disagreed for as long as the metric was
+    // called Soreness on screen: the card asked "how fresh do your muscles
+    // feel?" under a heading that meant the opposite, in three languages. The
+    // question was always right, so the heading moved to match it.
+    //
+    // Scoped to the metric's OWN strings — "watch for soreness" elsewhere in the
+    // app is a symptom being described, not this scale being mislabelled.
+    const metric = CHECKIN_METRICS.find((m) => m.key === "soreness")!;
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const key of [metric.labelKey, metric.questionKey, "w.recovery.checkins.freshnessLc", "w.teams.coach.freshness"]) {
+        const s = t(key).toLowerCase();
+        expect(s, `${lang}:${key}`).not.toBe(key); // the key actually resolves
+        for (const banned of ["sore", "bolesn", "zakwas", "ból", "muskelkater"]) {
+          expect(s.includes(banned), `${lang}:${key} = "${s}"`).toBe(false);
+        }
+      }
+    }
   });
 });

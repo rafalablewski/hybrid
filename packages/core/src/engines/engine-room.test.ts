@@ -9,7 +9,14 @@ import {
   personalizeLandmarks,
 } from "./landmark-profile";
 import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS, frameAdjustedMassKg } from "./athlete-profile";
-import { STRENGTH_STANDARDS, estimateFitnessLevel } from "./fitness-level";
+import {
+  STRENGTH_STANDARDS,
+  estimateFitnessLevel,
+  ENDURANCE_PACE,
+  RIEGEL_EXPONENT,
+  fiveKmEquivalentSec,
+} from "./fitness-level";
+import { SETTLED_DRIFT, CONVERGING_DRIFT, SETTLE_WINDOW } from "./landmark-replay";
 import { VOLUME_LANDMARKS } from "./landmarks";
 import { blockWeeks, targetSetsForWeek } from "./volume-block";
 import {
@@ -23,7 +30,16 @@ import {
   WEIGHT_FLOOR,
   expectedResidual,
   feelReading,
+  recoveryCurve,
+  recoveryIndex,
+  clearanceFactor,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  CLEARANCE_SLOPE,
+  CLEARANCE_FACTOR_BOUNDS,
+  MIN_PAIR_FATIGUE,
 } from "../feel-timing";
+import { feelSchedule, IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H } from "../feel-schedule";
 import { sorenessFromCheckin } from "../checkin-scales";
 import {
   computeEngineTrace,
@@ -145,6 +161,100 @@ describe("ENGINE_FORMULAS", () => {
       const r = feelReading(4, h)!;
       expect(r.cost).toBeCloseTo(Math.min(MAX_COST, ((4 - 1) / 4) / expectedResidual(h)), 2);
     }
+  });
+
+  /**
+   * PINNED, NOT DERIVED.
+   *
+   * The formula sheet builds its strings FROM the live constants, so a guard
+   * that compares the sheet to the constant passes no matter what the constant
+   * becomes — both sides move together. These guards therefore assert OUTCOMES
+   * with the numbers written out: change a constant and they fail, which is the
+   * only thing a drift guard is for.
+   */
+  it("the two-read schedule is the one the sheet promises (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "feel-schedule")!;
+    expect(f.expression).toContain("end + 3 h");
+    expect(f.expression).toContain("end + 6 h");
+    expect(f.expression).toContain("end + 36 h");
+    expect([IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H]).toEqual([3, 6, 36]);
+
+    const NOW = Date.parse("2026-07-28T20:00:00Z");
+    const at = (hAgo: number) =>
+      feelSchedule({
+        sessions: [{ id: "s", title: "S", startedAt: new Date(NOW - (hAgo + 1) * 3_600_000).toISOString(), completedAt: new Date(NOW - hAgo * 3_600_000).toISOString() }],
+        now: NOW,
+        lookbackH: 200,
+      }).due.map((p) => p.kind);
+    // Two hours out: still the session's own read, nothing about recovery.
+    expect(at(2)).toEqual(["immediate"]);
+    // Four hours out: the immediate window has closed and recovery hasn't opened.
+    expect(at(4)).toEqual([]);
+    // Seven hours out: the recovery read, and only that.
+    expect(at(7)).toEqual(["recovery"]);
+    // Two days out: past asking.
+    expect(at(40)).toEqual([]);
+  });
+
+  it("the clearance bands are the ones that classify (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "recovery-curve")!;
+    expect(f.constants.map((c) => c.symbol)).toEqual(expect.arrayContaining(["0.85", "1.15", "4 h", "3", "2"]));
+
+    // Pinned pairs. 5/5 in the gym down to 2/5 the next morning is a fast
+    // clearer; 3/5 up to 4/5 twelve hours later is a slow one; and the ratios
+    // are written out so moving a band or the residual curve fails here.
+    const fast = recoveryCurve(feelReading(5, 0.5), feelReading(2, 20))!;
+    expect(fast.ratio).toBeCloseTo(0.635, 2);
+    expect(fast.clearance).toBe("fast");
+
+    const slow = recoveryCurve(feelReading(3, 0.5), feelReading(4, 12))!;
+    expect(slow.ratio).toBeCloseTo(2.846, 2);
+    expect(slow.clearance).toBe("slow");
+
+    // …and an athlete who drains at exactly the modelled rate is neither:
+    // "worked" in the gym down to "good" ten hours later is the curve itself.
+    const onTrack = recoveryCurve(feelReading(3, 0.5), feelReading(2, 10))!;
+    expect(onTrack.ratio).toBeCloseTo(1.004, 2);
+    expect(onTrack.clearance).toBe("onTrack");
+
+    // The multiplier the sheet quotes is the one that runs, pinned end to end.
+    const mul = ENGINE_FORMULAS.find((x) => x.id === "clearance-factor")!;
+    expect(mul.expression).toContain("0.35");
+    expect(mul.expression).toContain("0.85, 1.12");
+    expect(CLEARANCE_FACTOR_BOUNDS).toEqual([0.85, 1.12]);
+    expect(clearanceFactor(recoveryIndex([slow, slow, slow]))).toBeCloseTo(0.85, 3);
+    expect(clearanceFactor(recoveryIndex([fast, fast]))).toBeCloseTo(1.032, 3);
+  });
+
+  it("the running standards are the ones that score (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "level-pace")!;
+    expect(f.expression).toContain("1.06");
+    expect(f.constants.find((c) => c.symbol === "5 km pace")!.value).toBe("6:00 / 5:00 / 4:10 / 3:20");
+
+    const run = (min: number, over: { sex?: "M" | "F"; km?: number } = {}) =>
+      estimateFitnessLevel(
+        [{ id: "r", title: "Run", startedAt: new Date().toISOString(),
+           blocks: [{ kind: "cardio" as const, name: "Run", discipline: "running" as const, distance: over.km ?? 5, minutes: min }] }],
+        { ageYears: 28, sex: over.sex ?? "M" },
+      ).level;
+    // Pinned clock times against the pinned table above.
+    expect(run(31)).toBe("untrained");
+    expect(run(26)).toBe("novice");
+    expect(run(24)).toBe("intermediate");
+    expect(run(20)).toBe("advanced");
+    expect(run(16)).toBe("elite");
+    // The female table is slower, so the same 26:00 is one tier higher.
+    expect(run(26, { sex: "F" })).toBe("intermediate");
+    // Riegel, pinned: 10 km in 50:00 is a 24:00-ish 5 km, not a 50:00 one.
+    expect(fiveKmEquivalentSec(10, 50)).toBe(1439);
+    expect(RIEGEL_EXPONENT).toBe(1.06);
+  });
+
+  it("the replay bands are the ones that judge (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "landmark-replay")!;
+    expect(f.expression).toContain("last 3 weeks");
+    expect([SETTLED_DRIFT, CONVERGING_DRIFT, SETTLE_WINDOW]).toEqual([1, 2, 3]);
+    expect(f.constants.map((c) => c.symbol)).toEqual(expect.arrayContaining(["≤ 1", "≤ 2", "3"]));
   });
 
   it("the level thresholds track the live standards (drift guard)", () => {

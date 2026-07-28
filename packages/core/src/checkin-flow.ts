@@ -8,12 +8,21 @@
  */
 import { feelingFromRating, type ReadinessFeeling } from "./readiness-feeling";
 
+/**
+ * The four daily metrics, keyed by their STORAGE names.
+ *
+ * `soreness` is the Postgres column, and the column stores FRESHNESS (5 = fresh)
+ * — see checkin-scales.ts, which is the one place that flip is named. The key
+ * stays as the column so nothing has to translate on the wire; every human-
+ * visible string calls it Freshness, which is what it has always asked and what
+ * it has always stored. Use `metricLabelKey` rather than building an i18n key
+ * from this value: the two no longer spell the same word, on purpose.
+ */
 export type CheckinMetricKey = "energy" | "sleep" | "soreness" | "mood";
 
 /** The metrics the guided flow steps through, in order, with their i18n keys.
  *  `questionKey` is the big one-per-card prompt; `labelKey` names the metric.
- *  Soreness is phrased as "how fresh" so a higher rating always reads as better
- *  (5 = best), matching how every metric is scored (5 = lime). */
+ *  Every metric reads 5 = best, so one row of faces serves all four. */
 export const CHECKIN_METRICS: {
   key: CheckinMetricKey;
   labelKey: string;
@@ -21,9 +30,15 @@ export const CHECKIN_METRICS: {
 }[] = [
   { key: "energy", labelKey: "w.recovery.checkins.energy", questionKey: "w.recovery.checkins.qEnergy" },
   { key: "sleep", labelKey: "w.recovery.checkins.sleep", questionKey: "w.recovery.checkins.qSleep" },
-  { key: "soreness", labelKey: "w.recovery.checkins.soreness", questionKey: "w.recovery.checkins.qSoreness" },
+  { key: "soreness", labelKey: "w.recovery.checkins.freshness", questionKey: "w.recovery.checkins.qFreshness" },
   { key: "mood", labelKey: "w.recovery.checkins.mood", questionKey: "w.recovery.checkins.qMood" },
 ];
+
+/** The i18n key naming a metric. The ONLY supported way to label one — the
+ *  storage key and the copy key deliberately differ for freshness. */
+export function metricLabelKey(key: CheckinMetricKey): string {
+  return CHECKIN_METRICS.find((m) => m.key === key)?.labelKey ?? `w.recovery.checkins.${key}`;
+}
 
 /** Total steps in the flow: one per metric, plus the final details/submit card. */
 export const CHECKIN_STEP_COUNT = CHECKIN_METRICS.length + 1;

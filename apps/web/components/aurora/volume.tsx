@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, athleteLandmarks,
+  replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
   measuredProfile, withMeasured, measuredFields,
-  volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY,
+  volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
+  formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
@@ -114,6 +116,24 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
     [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
   );
   const lm = resolved.landmarks;
+
+  // HAS THE CEILING SETTLED? The same resolver re-run at every week of the
+  // athlete's own history — a screen-level computation, deliberately memoised
+  // apart from `resolved` because it costs one resolve per replayed week.
+  const replay = useMemo(
+    () =>
+      prefs.adaptiveLandmarks
+        ? testedMuscles(
+            replayLandmarks(sessions, recovery, {
+              profile,
+              overrides: prefs.landmarkOverrides,
+              includeWarmups: prefs.countWarmupsInVolume,
+              fractional: prefs.fractionalVolume,
+            }),
+          )
+        : [],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+  );
 
   const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
   const plan = useMemo(
@@ -265,7 +285,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
+      <SourceCard resolved={resolved} tested={replay} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <section style={card}>
@@ -437,8 +457,9 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
 const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.analyze.vol.nutMaintenance", surplus: "w.analyze.vol.nutSurplus" } as const;
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
 /** Which profile field each personalization factor reads, so a measured field
- *  can be marked wherever its factor is shown. */
-const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = {
+ *  can be marked wherever its factor is shown. Partial on purpose: `clearance`
+ *  is measured from the log and has no field to type into. */
+const FACTOR_FIELD: Partial<Record<LandmarkFactor["key"], keyof AthleteVolumeProfile>> = {
   experience: "experience", age: "ageYears", bodyweight: "bodyweightKg",
   sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
 };
@@ -448,8 +469,10 @@ const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = 
  * moved them, and the profile you can correct. Without this the screen quietly
  * passes off a textbook average as a personal measurement.
  */
-function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience, units }: {
+function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
+  /** The ceiling's own history, muscles the log has actually tested. */
+  tested: LandmarkReplay[];
   profile: AthleteVolumeProfile;
   stored: AthleteVolumeProfile;
   /** Profile fields filled in from measurement rather than typed — marked, so a
@@ -507,16 +530,25 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
         ) : (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 11 }}>
+              {/* Two kinds of evidence, two units. A lift is kg and a multiple
+                  of body mass; a run is a distance and a pace. They share a row
+                  shape but never a number — see core/engines/fitness-level.ts. */}
               {level.evidence.slice(0, 3).map((e) => (
-                <div key={e.lift} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+                <div key={e.kind + e.lift} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
                   <span style={{ fontSize: fs.body, color: C("chalk") }}>{e.lift}</span>
-                  <span style={{ ...mono(fs.caption), color: C("ash") }}>{fmtWeight(e.e1rm, units)}</span>
-                  <span style={{ ...mono(fs.body), fontWeight: 700, minWidth: 74, textAlign: "right" }}>{e.ratio.toFixed(2)} {t("w.analyze.vol.ofBodyweight")}</span>
+                  <span style={{ ...mono(fs.caption), color: C("ash") }}>
+                    {e.kind === "strength" ? fmtWeight(e.e1rm!, units) : `${paceClock(Math.round(e.equivSec! / 5))} ${t("w.analyze.vol.levelEquiv")}`}
+                  </span>
+                  <span style={{ ...mono(fs.body), fontWeight: 700, minWidth: 74, textAlign: "right" }}>
+                    {e.kind === "strength"
+                      ? `${e.ratio.toFixed(2)} ${t("w.analyze.vol.ofBodyweight")}`
+                      : `${formatPace(e.ratio)} ${t("w.analyze.vol.levelPace")}`}
+                  </span>
                 </div>
               ))}
             </div>
             <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>
-              {t("w.analyze.vol.levelFromLifts")} {Math.round(level.confidence * 100)}% {t("w.analyze.vol.confidence")}
+              {t(LEVEL_BASIS_KEY[level.basis])} {Math.round(level.confidence * 100)}% {t("w.analyze.vol.confidence")}
             </p>
             {experience.disagrees && (
               <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
@@ -534,7 +566,7 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
             <div key={f.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontSize: fs.body, color: C("chalk") }}>
                 {t(factorLabelKey(f.key))}
-                {measuredKeys.has(FACTOR_FIELD[f.key]) && (
+                {!!FACTOR_FIELD[f.key] && measuredKeys.has(FACTOR_FIELD[f.key]!) && (
                   <span style={{ ...mono(fs.caption), color: C("ash"), marginLeft: 8 }}>{t("w.analyze.vol.measured")}</span>
                 )}
               </span>
@@ -561,6 +593,38 @@ function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing
             ? `${resolved.adapted.map(ml).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`
             : t("w.analyze.vol.notEnoughEvidence")}
         </p>
+      )}
+
+      {/* HAS IT SETTLED? A ceiling is a claim, and the only evidence for it the
+          app can offer is the shape of its own history: the same estimator, run
+          at every week, with only the data that existed then. A number that
+          stopped moving is worth training against; one that is still jumping
+          says so. See core/engines/landmark-replay.ts. */}
+      {adaptive && (
+        <div style={{ marginTop: 14 }}>
+          <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.replayTitle")}</h3>
+          {tested.length === 0 ? (
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.replayNone")}</p>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
+                {tested.slice(0, 4).map((r) => (
+                  <div key={r.muscle} style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
+                    <span style={{ flex: 1, minWidth: 80, fontSize: fs.body, color: C("chalk") }}>{ml(r.muscle)}</span>
+                    {/* The trajectory itself, not a summary of it. */}
+                    <span style={{ ...mono(fs.caption), color: C("ash"), letterSpacing: ".02em" }}>
+                      {r.points.filter((p) => p.tested).slice(-5).map((p) => p.mrv).join(" → ")}
+                    </span>
+                    <span style={{ ...mono(fs.caption), minWidth: 78, textAlign: "right", color: r.verdict === "settled" ? "var(--lime-text)" : r.verdict === "unsettled" ? "var(--amber-text)" : C("ash") }}>
+                      {t(REPLAY_VERDICT_KEY[r.verdict])}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p style={{ marginTop: 10, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.replayWhy")}</p>
+            </>
+          )}
+        </div>
       )}
 
       {editing && (

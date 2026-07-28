@@ -19,6 +19,16 @@
  * So the polarity is named ONCE, here, and every consumer converts at the
  * boundary instead of remembering. The column can't be renamed without a
  * migration; this is the next best thing, and it is pinned by tests.
+ *
+ * WHAT THE ATHLETE SEES. The metric is called FRESHNESS everywhere a human
+ * reads it — the card, the guided flow, the coach console, all three languages.
+ * That is the direction the question always ran ("how fresh do your muscles
+ * feel?") and the direction the value is stored, so the name now agrees with
+ * both. Only two things still say `soreness`: this Postgres column, and the
+ * metric key that has to match it. Nothing translates on the wire; the copy key
+ * (`w.recovery.checkins.freshness`) simply differs from the storage key, which
+ * is why `metricLabelKey` exists instead of building the i18n key from the
+ * field name.
  */
 
 /** The 1–5 value stored in `Checkin.soreness`: 5 = muscles feel fresh, 1 = wrecked. */

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
   brand,
   prescribeSession,
+  feelSamples,
+  loadBaseline,
   checkinFeeling,
   personalTrainingLog,
   velocityProfiles,
@@ -41,6 +43,7 @@ import { fs, space,
 import { useRouter } from "next/navigation";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import SaveRoutineCard, { SessionRename, SessionNote } from "@/components/save-routine-card";
+import { FeelPrompt } from "./feel-prompt";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useBodyweightLookup, refreshBodyweight } from "@/lib/use-bodyweight";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
@@ -651,6 +654,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
   const bodyweightKg = bwLookup();
   // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
   // last month, from the sessions they'd already rated before this one.
+  const feelBaseline = useMemo(() => loadBaseline(feelSamples(prior, bwLookup)), [prior, bwLookup]);
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(data.title);
@@ -808,12 +812,12 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
 
         {/* Optional rename + private note, as quiet as they were. */}
         <div style={{ textAlign: "center" }}>
-          {/* "How did that feel?" used to be asked HERE. It has moved into the
-              one daily card on Today, which now carries an effort question per
-              session trained that day — because the app was asking the same
-              recovery question in two places with two different maths behind
-              them. Effort still lands on Session.feel; only the surface moved.
-              See core/checkin-flow.ts. */}
+          {/* "How did that feel?" — THE IMMEDIATE READ, asked here because this
+              is the only moment it can be asked. Effort is sRPE; spentness now
+              is the anchor the recovery read on Today is measured against hours
+              later. The daily card asks the second half; it does not replace
+              this one. See core/feel-schedule.ts. */}
+          <FeelPrompt compact sessionId={sessionId} minutes={minutes} baseline={feelBaseline} />
           <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
           <SessionNote sessionId={sessionId} />
         </div>

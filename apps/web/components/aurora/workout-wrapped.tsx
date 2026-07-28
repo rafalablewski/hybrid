@@ -16,6 +16,8 @@ import {
   STAT_FIT_EM,
   liftStanding,
   hasActiveConnection,
+  feelSamples,
+  loadBaseline,
   doneReceipt,
   sessionCelebration,
   isFullAccess,
@@ -47,6 +49,7 @@ import { usePersona } from "@/lib/persona";
 import { useLang } from "@/lib/i18n";
 import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
+import { FeelPrompt } from "./feel-prompt";
 import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
 
 const GOLD = "#e6c34e";
@@ -142,6 +145,12 @@ export function WorkoutWrapped({
   const receipt = doneReceipt(session, { bodyweightKg: bwHere });
   // "vs your usual" compares the athlete to THEMSELVES over the last month —
   // never a cohort, and never until there are enough rated sessions for the
+  // comparison to mean anything (loadBaseline enforces the floor). Memoised:
+  // feelSamples walks every logged session.
+  const feelBaseline = useMemo(
+    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
+    [all, bw, session.id],
+  );
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
@@ -312,9 +321,22 @@ export function WorkoutWrapped({
         {scrollHint}
       </section>
 
-      {/* The "How did that feel?" panel lived here. Both halves of it moved
-          into the one daily card on Today: how you are is the check-in, how
-          hard it was is an effort question per session. See core/checkin-flow. */}
+      {/* ── HOW DID THAT FEEL? ── */}
+      {/* The immediate read, for a session opened later that was never rated.
+          The card says what a late answer is worth rather than pretending it is
+          the in-the-gym reading. See core/feel-schedule.ts. */}
+      <section style={{ ...panelStyle, justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 20% 10%, color-mix(in srgb, ${LIME} 10%, transparent), transparent 60%)` }} />
+        <FeelPrompt
+          sessionId={session.id}
+          minutes={receipt.durationMin}
+          initialFeel={session.feel ?? null}
+          initialFatigue={session.fatigue ?? null}
+          sessionEnd={session.completedAt ?? session.startedAt ?? null}
+          baseline={feelBaseline}
+          eyebrow={eyebrow}
+        />
+      </section>
 
       {/* ── PREMIUM ── */}
       {wrapped.facts.length > 0 && (

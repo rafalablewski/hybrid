@@ -103,7 +103,7 @@ describe("measured defaults under the athlete's own answers", () => {
   it("never derives stress — the check-in never asked", () => {
     const m = measuredProfile({ checkins: checkins(10, 3, { mood: 1, energy: 1 }), now: NOW });
     expect(m.measured).not.toContain("stress");
-    expect((m as Record<string, unknown>).stress).toBeUndefined();
+    expect((m as unknown as Record<string, unknown>).stress).toBeUndefined();
   });
 
   it("what the athlete typed always wins over the measurement", () => {

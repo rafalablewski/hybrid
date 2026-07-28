@@ -67,7 +67,7 @@ export interface AthleteVolumeProfile {
 
 /** One multiplier and why it applies — the audit trail behind the numbers. */
 export interface LandmarkFactor {
-  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "frequency";
+  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "frequency" | "clearance";
   /** Which end of the band it moves. */
   affects: "stimulus" | "recovery" | "both";
   /** The multiplier applied, e.g. 0.88. */
