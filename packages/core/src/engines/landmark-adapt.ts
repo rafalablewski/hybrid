@@ -15,12 +15,18 @@ import { VOLUME_LANDMARKS, weeklySetsByMuscle, type VolumeLandmark } from "./lan
  * The reasoning per muscle, per week:
  *
  *   TOLERATED — high sets, performance held or rose, post-session fatigue and
- *     soreness stayed moderate. That week is a lower bound: the ceiling is at
- *     least that high, so if it sat at/above the current estimate, raise it.
+ *     check-in soreness stayed moderate, energy did not collapse. That week is
+ *     a lower bound: the ceiling is at least that high, so if it sat at/above
+ *     the current estimate, raise it.
  *
- *   OVERREACHED — performance fell week-on-week, or fatigue/soreness spiked.
- *     That week is an upper bound: the ceiling is below that set count, so pull
- *     the estimate under it.
+ *   OVERREACHED — performance fell week-on-week, or fatigue/soreness spiked, or
+ *     reported energy bottomed out. That week is an upper bound: the ceiling is
+ *     below that set count, so pull the estimate under it.
+ *
+ * The subjective measures come from the DAILY CHECK-IN, on the check-in's own
+ * 1–5 scales, averaged over the days inside each window. They are the cheapest
+ * honest signal available: an athlete knows they are buried a week before their
+ * top set does.
  *
  * Everything else is ignored. A week with too few sets tells you nothing about
  * a ceiling, and neither does a week with nothing to compare it to. The
@@ -44,15 +50,28 @@ export interface VolumeWeekObservation {
   performance: number | null;
   /** Mean post-session fatigue (1–5) across sessions that trained it, or null. */
   fatigue: number | null;
-  /** Self-reported soreness (1–5) for that week, if a check-in supplied one. */
+  /** Self-reported soreness (1–5, 5 = very sore) for that week, if checked in. */
   soreness: number | null;
+  /** Self-reported energy (1–5, 5 = high) for that week, if checked in. */
+  energy: number | null;
 }
 
-/** A weekly soreness report — the check-in's 1–5 scale (5 = very sore). */
-export interface SorenessReport {
-  /** Any ISO date inside the week being reported. */
+/**
+ * A daily check-in as this engine reads it. Every measure is optional because
+ * athletes skip fields; the engine uses whatever is there. Scales match the
+ * check-in exactly (1–5), so nothing is being reinterpreted on the way in.
+ */
+export interface RecoveryReport {
+  /** ISO date the report covers. */
   date: string;
-  soreness: number;
+  /** 5 = very sore. */
+  soreness?: number | null;
+  /** 5 = slept great. */
+  sleep?: number | null;
+  /** 5 = high energy. */
+  energy?: number | null;
+  /** 5 = good mood. */
+  mood?: number | null;
 }
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -73,7 +92,7 @@ export function observeVolumeResponse(
     weeks?: number;
     includeWarmups?: boolean;
     fractional?: boolean;
-    soreness?: SorenessReport[];
+    recovery?: RecoveryReport[];
   } = {},
 ): Map<MuscleGroup, VolumeWeekObservation[]> {
   const now = opts.now ?? Date.now();
@@ -120,15 +139,21 @@ export function observeVolumeResponse(
     }
   }
 
-  // Weekly soreness applies to every muscle — it is a whole-athlete report.
+  // Check-in reports apply to every muscle — they are whole-athlete measures,
+  // averaged over the days that fall in each window.
   const sorenessByWeek = new Map<number, number[]>();
-  for (const r of opts.soreness ?? []) {
+  const energyByWeek = new Map<number, number[]>();
+  const scale = (v: number | null | undefined): number | null =>
+    typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5 ? v : null;
+  for (const r of opts.recovery ?? []) {
     const t = new Date(r.date).getTime();
     if (!Number.isFinite(t) || t > now) continue;
     const w = Math.floor((now - t) / WEEK_MS);
     if (w >= weeks) continue;
-    if (!(r.soreness >= 1 && r.soreness <= 5)) continue;
-    sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), r.soreness]);
+    const sore = scale(r.soreness);
+    if (sore !== null) sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), sore]);
+    const energy = scale(r.energy);
+    if (energy !== null) energyByWeek.set(w, [...(energyByWeek.get(w) ?? []), energy]);
   }
 
   const mean = (xs: number[] | undefined): number | null =>
@@ -156,6 +181,7 @@ export function observeVolumeResponse(
         performance: best.get(m)?.get(w) ?? null,
         fatigue: mean(fatigue.get(m)?.get(w)),
         soreness: mean(sorenessByWeek.get(w)),
+        energy: mean(energyByWeek.get(w)),
       });
     }
     out.set(m, rows);
@@ -172,6 +198,7 @@ export interface MrvEvidence {
   performanceDelta: number | null;
   fatigue: number | null;
   soreness: number | null;
+  energy: number | null;
 }
 
 export interface MrvEstimate {
@@ -195,6 +222,10 @@ const FATIGUE_HIGH = 4.2;
 const SORENESS_HIGH = 4.2;
 /** …and below which it reads as tolerated. */
 const FATIGUE_OK = 3.5;
+/** Reported energy (1–5) that low says the week was not absorbed, whatever the
+ *  bar said; a week only reads as tolerated at or above ENERGY_OK. */
+const ENERGY_LOW = 1.8;
+const ENERGY_OK = 2.5;
 
 /**
  * Estimate one muscle's recoverable ceiling from its weekly observations.
@@ -218,18 +249,24 @@ export function estimateMrv(observations: VolumeWeekObservation[], landmark: Vol
         ? Math.round(((o.performance - prev.performance) / prev.performance) * 1000) / 1000
         : null;
 
+    // `!= null` throughout: an observation may arrive from JSON with a field
+    // simply absent, and a missing measure must read as "unknown", not as a
+    // number that fails every comparison and silently disqualifies the week.
     const strained =
-      (delta !== null && delta < PERF_DROP) ||
-      (o.fatigue !== null && o.fatigue >= FATIGUE_HIGH) ||
-      (o.soreness !== null && o.soreness >= SORENESS_HIGH);
+      (delta != null && delta < PERF_DROP) ||
+      (o.fatigue != null && o.fatigue >= FATIGUE_HIGH) ||
+      (o.soreness != null && o.soreness >= SORENESS_HIGH) ||
+      (o.energy != null && o.energy <= ENERGY_LOW);
     const held =
-      delta !== null &&
+      delta != null &&
       delta >= PERF_HELD &&
-      (o.fatigue === null || o.fatigue <= FATIGUE_OK) &&
-      (o.soreness === null || o.soreness <= SORENESS_HIGH);
+      (o.fatigue == null || o.fatigue <= FATIGUE_OK) &&
+      (o.soreness == null || o.soreness <= SORENESS_HIGH) &&
+      (o.energy == null || o.energy >= ENERGY_OK);
 
-    if (strained) evidence.push({ weeksAgo: o.weeksAgo, sets: o.sets, verdict: "overreached", performanceDelta: delta, fatigue: o.fatigue, soreness: o.soreness });
-    else if (held) evidence.push({ weeksAgo: o.weeksAgo, sets: o.sets, verdict: "tolerated", performanceDelta: delta, fatigue: o.fatigue, soreness: o.soreness });
+    const row = { weeksAgo: o.weeksAgo, sets: o.sets, performanceDelta: delta, fatigue: o.fatigue, soreness: o.soreness, energy: o.energy };
+    if (strained) evidence.push({ ...row, verdict: "overreached" });
+    else if (held) evidence.push({ ...row, verdict: "tolerated" });
   }
 
   if (evidence.length < 2) return { mrv: prior, prior, confidence: 0, evidence };
@@ -286,7 +323,7 @@ export function adaptLandmarks(
     weeks?: number;
     includeWarmups?: boolean;
     fractional?: boolean;
-    soreness?: SorenessReport[];
+    recovery?: RecoveryReport[];
   } = {},
 ): AdaptedLandmarks {
   const base = opts.landmarks ?? VOLUME_LANDMARKS;

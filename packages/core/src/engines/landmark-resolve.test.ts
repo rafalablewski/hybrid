@@ -46,6 +46,23 @@ describe("resolving one athlete's landmarks", () => {
     expect(withLog.observedConfidence).toBeGreaterThan(0);
   });
 
+  it("check-ins reach the observed layer — soreness alone can move a ceiling", () => {
+    // Four weeks at 22 quad sets with the bar HOLDING, so the log alone sees
+    // nothing wrong. The check-ins say the athlete is buried.
+    const steady: LoggedSession[] = [0, 1, 2, 3].flatMap((w) => [legs(w * 7 + 1, 11, 100), legs(w * 7 + 3, 11, 100)]);
+    const withoutCheckins = athleteLandmarks({ profile: { experience: "advanced" }, sessions: steady, now: NOW, weeks: 5 });
+    const withCheckins = athleteLandmarks({
+      profile: { experience: "advanced" },
+      sessions: steady,
+      now: NOW,
+      weeks: 5,
+      recovery: [0, 7, 14, 21].map((d) => ({ date: daysAgo(d), soreness: 5, energy: 1 })),
+    });
+    expect(withoutCheckins.adapted).not.toContain("quads");
+    expect(withCheckins.adapted).toContain("quads");
+    expect(withCheckins.landmarks.quads.mrv).toBeLessThan(withoutCheckins.landmarks.quads.mrv);
+  });
+
   it("adaptive: false stops at the profile layer", () => {
     const r = athleteLandmarks({ profile: { experience: "advanced" }, sessions: overreached, now: NOW, adaptive: false });
     expect(r.layers).not.toContain("observed");

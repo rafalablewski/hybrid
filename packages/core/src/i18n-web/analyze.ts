@@ -128,6 +128,8 @@ export const web_analyze = {
     "w.analyze.vol.adaptedCount": "ceilings moved by your log",
     "w.analyze.vol.notEnoughEvidence": "Not enough evidence yet — a ceiling needs a few weeks of real volume before your log can move it.",
     "w.analyze.vol.clearProfile": "Clear profile",
+    "w.analyze.vol.measured": "measured",
+    "w.analyze.vol.measuredWhy": "The green fields are read from your own data — sleep from your check-ins, body mass from your weigh-ins, energy intake from the trend on the scale. Type over any of them and your number wins.",
 
     // volume — the block ramp (MEV → MAV → deload)
     "w.analyze.vol.thisBlock": "This block",
@@ -568,6 +570,8 @@ export const web_analyze = {
     "w.analyze.vol.adaptedCount": "sufitów zmienionych przez Twój dziennik",
     "w.analyze.vol.notEnoughEvidence": "Za mało danych — sufit potrzebuje kilku tygodni realnej objętości, zanim dziennik będzie mógł nim ruszyć.",
     "w.analyze.vol.clearProfile": "Wyczyść profil",
+    "w.analyze.vol.measured": "zmierzone",
+    "w.analyze.vol.measuredWhy": "Zielone pola pochodzą z Twoich danych — sen z check-inów, masa ciała z ważeń, podaż energii z trendu na wadze. Wpisz własną wartość, a Twoja liczba wygrywa.",
 
     // volume — rampa bloku (MEV → MAV → deload)
     "w.analyze.vol.thisBlock": "Ten blok",
@@ -1008,6 +1012,8 @@ export const web_analyze = {
     "w.analyze.vol.adaptedCount": "Decken durch dein Logbuch verschoben",
     "w.analyze.vol.notEnoughEvidence": "Noch zu wenig Evidenz — eine Decke braucht ein paar Wochen echtes Volumen, bevor dein Logbuch sie bewegen kann.",
     "w.analyze.vol.clearProfile": "Profil löschen",
+    "w.analyze.vol.measured": "gemessen",
+    "w.analyze.vol.measuredWhy": "Die grünen Felder stammen aus deinen eigenen Daten — Schlaf aus deinen Check-ins, Körpermasse aus deinen Wiegungen, Energiezufuhr aus dem Trend auf der Waage. Trag etwas ein und deine Zahl gewinnt.",
 
     // volume — die Blockrampe (MEV → MAV → Deload)
     "w.analyze.vol.thisBlock": "Dieser Block",

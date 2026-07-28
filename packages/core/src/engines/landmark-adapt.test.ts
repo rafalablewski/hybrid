@@ -19,6 +19,7 @@ const obs = (o: Partial<VolumeWeekObservation> & { weeksAgo: number; sets: numbe
   performance: null,
   fatigue: null,
   soreness: null,
+  energy: null,
   ...o,
 });
 
@@ -36,14 +37,41 @@ describe("observing the response to volume", () => {
     expect(rows[1]!.fatigue).toBe(4);
   });
 
-  it("attaches weekly soreness reports to the window they fall in", () => {
+  it("averages check-in soreness and energy into the window they fall in", () => {
     const rows = observeVolumeResponse([legs(1, 5, 100)], {
       now: NOW,
       weeks: 2,
-      soreness: [{ date: daysAgo(2), soreness: 5 }, { date: daysAgo(10), soreness: 2 }],
+      recovery: [
+        { date: daysAgo(2), soreness: 5, energy: 2 },
+        { date: daysAgo(4), soreness: 3, energy: 4 },
+        { date: daysAgo(10), soreness: 2, energy: 5 },
+      ],
     }).get("quads")!;
-    expect(rows[0]!.soreness).toBe(5);
+    expect(rows[0]!.soreness).toBe(4); // mean of 5 and 3
+    expect(rows[0]!.energy).toBe(3);   // mean of 2 and 4
     expect(rows[1]!.soreness).toBe(2);
+    expect(rows[1]!.energy).toBe(5);
+  });
+
+  it("skips off-scale and undated check-in values without losing the rest", () => {
+    const rows = observeVolumeResponse([legs(1, 5, 100)], {
+      now: NOW,
+      weeks: 2,
+      recovery: [
+        { date: daysAgo(1), soreness: 4, energy: null },
+        { date: daysAgo(2), soreness: 99 },
+        { date: "not-a-date", soreness: 1 },
+        { date: daysAgo(-2), soreness: 1 }, // the future
+      ],
+    }).get("quads")!;
+    expect(rows[0]!.soreness).toBe(4);
+    expect(rows[0]!.energy).toBeNull();
+  });
+
+  it("leaves the recovery fields null when nobody checked in", () => {
+    const rows = observeVolumeResponse([legs(1, 5, 100)], { now: NOW, weeks: 2 }).get("quads")!;
+    expect(rows[0]!.soreness).toBeNull();
+    expect(rows[0]!.energy).toBeNull();
   });
 });
 
@@ -115,6 +143,30 @@ describe("estimating the recoverable ceiling", () => {
       QUADS,
     );
     expect(e.mrv).toBeLessThan(QUADS.mrv);
+  });
+
+  it("treats a collapse in reported energy as an overreach signal", () => {
+    // The bar says nothing is wrong — the athlete says everything is.
+    const e = estimateMrv(
+      [
+        obs({ weeksAgo: 0, sets: 19, performance: 101, energy: 1.5 }),
+        obs({ weeksAgo: 1, sets: 19, performance: 100, energy: 1.5 }),
+        obs({ weeksAgo: 2, sets: 19, performance: 99 }),
+      ],
+      QUADS,
+    );
+    expect(e.mrv).toBeLessThan(QUADS.mrv);
+    expect(e.evidence.every((x) => x.verdict === "overreached")).toBe(true);
+  });
+
+  it("will not call a week tolerated while energy is on the floor", () => {
+    // Numbers held, but at energy 2 the week is not evidence of a ceiling.
+    const e = estimateMrv(
+      [0, 1, 2].map((w) => obs({ weeksAgo: w, sets: 21, performance: 104 - w, energy: 2 })),
+      QUADS,
+    );
+    expect(e.evidence.filter((x) => x.verdict === "tolerated")).toHaveLength(0);
+    expect(e.mrv).toBe(QUADS.mrv);
   });
 
   it("symptoms beat 'I got away with it' when both appear", () => {

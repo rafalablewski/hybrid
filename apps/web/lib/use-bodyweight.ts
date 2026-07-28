@@ -37,9 +37,10 @@ export function refreshBodyweight(): void {
   listeners.forEach((l) => l());
 }
 
-/** Dated bodyweight lookup — lookup(session.startedAt) → kg at that date;
- *  lookup() → current weight; null-returning until loaded / when empty. */
-export function useBodyweightLookup(): BodyweightLookup {
+/** The raw dated measurements — for consumers that need the TREND rather than
+ *  a point lookup (e.g. the volume profile reading energy availability off the
+ *  scale). Empty until loaded / for guests. Mirrors mobile's useBodyweightPoints. */
+export function useBodyweightPoints(): BodyweightPoint[] {
   const [points, setPoints] = useState<BodyweightPoint[]>([]);
   useEffect(() => {
     let on = true;
@@ -55,6 +56,13 @@ export function useBodyweightLookup(): BodyweightLookup {
       listeners.delete(load);
     };
   }, []);
+  return points;
+}
+
+/** Dated bodyweight lookup — lookup(session.startedAt) → kg at that date;
+ *  lookup() → current weight; null-returning until loaded / when empty. */
+export function useBodyweightLookup(): BodyweightLookup {
+  const points = useBodyweightPoints();
   return useMemo(() => bodyweightLookup(points), [points]);
 }
 

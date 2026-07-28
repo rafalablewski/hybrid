@@ -2,7 +2,7 @@ import type { MuscleGroup } from "./types";
 import type { LoggedSession } from "./session";
 import { VOLUME_LANDMARKS, resolveLandmarks, type LandmarkOverrides, type VolumeLandmark } from "./landmarks";
 import { personalizeLandmarks, isEmptyVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./landmark-profile";
-import { adaptLandmarks, type MrvEstimate, type SorenessReport } from "./landmark-adapt";
+import { adaptLandmarks, type MrvEstimate, type RecoveryReport } from "./landmark-adapt";
 
 /**
  * THE ONE PLACE LANDMARKS COME FROM.
@@ -48,7 +48,8 @@ export interface AthleteLandmarkOptions {
   /** The log, for the observed layer. Omit (or set `adaptive: false`) to skip it. */
   sessions?: LoggedSession[];
   adaptive?: boolean;
-  soreness?: SorenessReport[];
+  /** Daily check-ins — soreness, sleep and energy feed the observed layer. */
+  recovery?: RecoveryReport[];
   now?: number;
   weeks?: number;
   includeWarmups?: boolean;
@@ -81,7 +82,7 @@ export function athleteLandmarks(opts: AthleteLandmarkOptions = {}): ResolvedLan
       weeks: opts.weeks,
       includeWarmups: opts.includeWarmups,
       fractional: opts.fractional,
-      soreness: opts.soreness,
+      recovery: opts.recovery,
     });
     estimates = a.estimates;
     adapted = a.adapted;

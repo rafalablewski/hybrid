@@ -6,13 +6,15 @@ import {
   volumeStatus, athleteLandmarks,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
+  measuredProfile, withMeasured, measuredFields,
   sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type Experience,
+  type RecoveryReport, type LandmarkFactor,
 } from "@hybrid/core";
-import { useSessionsQuery } from "../../lib/queries";
+import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
-import { useBodyweight } from "../../lib/use-bodyweight";
+import { useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -52,8 +54,11 @@ export default function AuroraVolume() {
 
   // What we already know about the athlete elsewhere in the app fills the gaps
   // the volume profile leaves — nobody should have to type their bodyweight
-  // twice. Anything stored on the profile itself wins.
+  // twice, and sleep and energy availability are MEASURED here, not guessed.
+  // Anything stored on the profile itself wins over all of it.
   const bodyweight = useBodyweight();
+  const bodyweightPoints = useBodyweightPoints();
+  const { data: checkins = [] } = useCheckinsQuery();
   const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
   useEffect(() => {
     let alive = true;
@@ -70,23 +75,37 @@ export default function AuroraVolume() {
     return () => { alive = false; };
   }, []);
 
+  // The daily check-in on the engine's own terms: same 1–5 scales, no reinterpretation.
+  const recovery = useMemo<RecoveryReport[]>(
+    () => checkins.map((c) => ({ date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood })),
+    [checkins],
+  );
+  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints }), [recovery, bodyweightPoints]);
+  const measuredKeys = useMemo(() => {
+    const keys = measuredFields(prefs.volumeProfile, measured);
+    // Body mass is measured too — it comes from the bodyweight log, not this form.
+    if (prefs.volumeProfile.bodyweightKg === undefined && bodyweight != null) keys.add("bodyweightKg");
+    return keys;
+  }, [prefs.volumeProfile, measured, bodyweight]);
+
   const profile = useMemo<AthleteVolumeProfile>(() => ({
-    ...prefs.volumeProfile,
+    ...withMeasured(prefs.volumeProfile, measured),
     experience: prefs.volumeProfile.experience ?? intake.experience,
     daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
     bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
-  }), [prefs.volumeProfile, intake, bodyweight]);
+  }), [prefs.volumeProfile, measured, intake, bodyweight]);
 
   const resolved = useMemo(
     () => athleteLandmarks({
       profile,
       overrides: prefs.landmarkOverrides,
       sessions,
+      recovery,
       adaptive: prefs.adaptiveLandmarks,
       includeWarmups: prefs.countWarmupsInVolume,
       fractional: prefs.fractionalVolume,
     }),
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
   );
   const lm = resolved.landmarks;
 
@@ -268,7 +287,7 @@ export default function AuroraVolume() {
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} />
+      <SourceCard resolved={resolved} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <ACard style={{ marginTop: 14 }}>
@@ -447,16 +466,25 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
 
 const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.analyze.vol.nutMaintenance", surplus: "w.analyze.vol.nutSurplus" } as const;
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
+/** Which profile field each personalization factor reads, so a measured field
+ *  can be marked wherever its factor is shown. */
+const FACTOR_FIELD: Record<LandmarkFactor["key"], keyof AthleteVolumeProfile> = {
+  experience: "experience", age: "ageYears", bodyweight: "bodyweightKg",
+  sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
+};
 
 /**
  * WHOSE NUMBERS ARE THESE — the honest label on the landmarks, the factors that
  * moved them, and the profile you can correct. Without this the screen quietly
  * passes off a textbook average as a personal measurement.
  */
-function SourceCard({ resolved, profile, stored, adaptive, editing, setProfile, ml }: {
+function SourceCard({ resolved, profile, stored, measuredKeys, adaptive, editing, setProfile, ml }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   profile: AthleteVolumeProfile;
   stored: AthleteVolumeProfile;
+  /** Profile fields filled in from measurement rather than typed — marked, so a
+   *  derived number never reads as something the athlete claimed. */
+  measuredKeys: Set<keyof AthleteVolumeProfile>;
   adaptive: boolean;
   editing: boolean;
   setProfile: (p: Partial<AthleteVolumeProfile>) => void;
@@ -479,7 +507,12 @@ function SourceCard({ resolved, profile, stored, adaptive, editing, setProfile, 
         <View style={{ gap: 7, marginTop: 14 }}>
           {resolved.factors.map((f) => (
             <View key={f.key} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
-              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t(factorLabelKey(f.key))}</Text>
+              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
+                {t(factorLabelKey(f.key))}
+                {measuredKeys.has(FACTOR_FIELD[f.key]) && (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{"  "}{t("w.analyze.vol.measured")}</Text>
+                )}
+              </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
                 {f.key === "experience" ? t(EXP_KEY[f.value as keyof typeof EXP_KEY] ?? "w.analyze.vol.expBeginner") : f.key === "nutrition" ? t(NUTRITION_KEY[f.value as keyof typeof NUTRITION_KEY]) : f.value}
               </Text>
@@ -508,6 +541,9 @@ function SourceCard({ resolved, profile, stored, adaptive, editing, setProfile, 
       {editing && (
         <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.aboutYou")}</Text>
+          {measuredKeys.size > 0 && (
+            <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.measuredWhy")}</Text>
+          )}
 
           <View style={{ flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
             {(["beginner", "intermediate", "advanced"] as const).map((e) => (
@@ -522,18 +558,21 @@ function SourceCard({ resolved, profile, stored, adaptive, editing, setProfile, 
               ["sleep", t("w.analyze.vol.fieldSleep")],
               ["stress", t("w.analyze.vol.fieldStress")],
               ["daysPerWeek", t("w.analyze.vol.fieldDays")],
-            ] as const).map(([key, label]) => (
-              <View key={key} style={{ width: "31%" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
-                <TextInput
-                  defaultValue={profile[key] !== undefined ? String(profile[key]) : ""}
-                  onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
-                  keyboardType="number-pad"
-                  accessibilityLabel={label}
-                  style={field}
-                />
-              </View>
-            ))}
+            ] as const).map(([key, label]) => {
+              const isMeasured = measuredKeys.has(key);
+              return (
+                <View key={key} style={{ width: "31%" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
+                  <TextInput
+                    defaultValue={profile[key] !== undefined ? String(profile[key]) : ""}
+                    onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
+                    keyboardType="number-pad"
+                    accessibilityLabel={label}
+                    style={{ ...field, color: isMeasured ? C.ash : C.chalk, borderColor: isMeasured ? withAlpha(C.lime, 0.35) : C.line }}
+                  />
+                </View>
+              );
+            })}
           </View>
 
           <View style={{ flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" }}>

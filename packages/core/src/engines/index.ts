@@ -22,6 +22,7 @@ export * from "./landmarks";
 export * from "./landmark-profile";
 export * from "./landmark-resolve";
 export * from "./landmark-adapt";
+export * from "./landmark-context";
 export * from "./volume-block";
 export * from "./exercise";
 export * from "./exercise-analytics";
