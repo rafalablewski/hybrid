@@ -89,21 +89,34 @@ export interface PersonalizedLandmarks {
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 /** Training-age multipliers. Beginners need LESS work to grow and tolerate LESS
- *  of it; advanced lifters need more and tolerate more. */
-const EXPERIENCE_STIMULUS: Record<Experience, number> = { beginner: 0.7, intermediate: 1, advanced: 1.15 };
-const EXPERIENCE_RECOVERY: Record<Experience, number> = { beginner: 0.75, intermediate: 1, advanced: 1.15 };
+ *  of it; advanced lifters need more and tolerate more. Exported so the admin
+ *  Engine Room renders the LIVE numbers rather than a hand-copied duplicate. */
+export const EXPERIENCE_STIMULUS: Record<Experience, number> = { beginner: 0.7, intermediate: 1, advanced: 1.15 };
+export const EXPERIENCE_RECOVERY: Record<Experience, number> = { beginner: 0.75, intermediate: 1, advanced: 1.15 };
 
 /** Sleep 1–5 → recovery multiplier (index 0 unused). */
-const SLEEP_RECOVERY = [1, 0.78, 0.86, 0.94, 1, 1.05];
+export const SLEEP_RECOVERY = [1, 0.78, 0.86, 0.94, 1, 1.05];
 /** Stress 1–5 (5 = worst) → recovery multiplier (index 0 unused). */
-const STRESS_RECOVERY = [1, 1.04, 1, 0.95, 0.88, 0.8];
-const NUTRITION_RECOVERY = { deficit: 0.85, maintenance: 1, surplus: 1.05 } as const;
+export const STRESS_RECOVERY = [1, 1.04, 1, 0.95, 0.88, 0.8];
+export const NUTRITION_RECOVERY = { deficit: 0.85, maintenance: 1, surplus: 1.05 } as const;
 
 /** Body mass above which extra mass starts costing recovery, and the reference
  *  below which a lighter athlete gets a small credit. */
-const BODYWEIGHT_REF_KG = 80;
+export const BODYWEIGHT_REF_KG = 80;
 /** Age below which there is no recovery penalty. */
-const AGE_REF_YEARS = 30;
+export const AGE_REF_YEARS = 30;
+/** Recovery lost per year past AGE_REF_YEARS, and the floor it stops at. */
+export const AGE_PENALTY_PER_YEAR = 0.012;
+export const AGE_FLOOR = 0.75;
+/** Recovery lost per kg above / gained per kg below BODYWEIGHT_REF_KG. */
+export const MASS_PENALTY_PER_KG = 0.004;
+export const MASS_CREDIT_PER_KG = 0.003;
+export const MASS_FLOOR = 0.85;
+export const MASS_CEILING = 1.08;
+/** Bounds on the COMPOUNDED multipliers — five mildly negative inputs must not
+ *  multiply into a ceiling nobody could train under. */
+export const STIMULUS_BOUNDS: readonly [number, number] = [0.6, 1.4];
+export const RECOVERY_BOUNDS: readonly [number, number] = [0.55, 1.6];
 
 /** Frequency → recovery multiplier: the same weekly sets are easier to absorb
  *  across five sessions than across two. */
@@ -154,7 +167,7 @@ export function personalizeLandmarks(
   if (age !== undefined && age > 0) {
     // Recovery declines gently past ~30: −1.2%/yr, floored so no age erases the
     // athlete's ceiling. Nothing below 30 gets a bonus — youth is the baseline.
-    const m = age <= AGE_REF_YEARS ? 1 : clamp(1 - (age - AGE_REF_YEARS) * 0.012, 0.75, 1);
+    const m = age <= AGE_REF_YEARS ? 1 : clamp(1 - (age - AGE_REF_YEARS) * AGE_PENALTY_PER_YEAR, AGE_FLOOR, 1);
     recovery *= m;
     if (m !== 1) factors.push({ key: "age", affects: "recovery", multiplier: m, value: `${Math.round(age)} yr` });
   }
@@ -165,8 +178,8 @@ export function personalizeLandmarks(
     // repair, so the SET ceiling comes down even as the loads go up. A lighter
     // athlete gets a smaller credit in the other direction.
     const m = bw >= BODYWEIGHT_REF_KG
-      ? clamp(1 - (bw - BODYWEIGHT_REF_KG) * 0.004, 0.85, 1)
-      : clamp(1 + (BODYWEIGHT_REF_KG - bw) * 0.003, 1, 1.08);
+      ? clamp(1 - (bw - BODYWEIGHT_REF_KG) * MASS_PENALTY_PER_KG, MASS_FLOOR, 1)
+      : clamp(1 + (BODYWEIGHT_REF_KG - bw) * MASS_CREDIT_PER_KG, 1, MASS_CEILING);
     recovery *= m;
     if (m !== 1) factors.push({ key: "bodyweight", affects: "recovery", multiplier: m, value: `${Math.round(bw)} kg` });
   }
@@ -201,8 +214,8 @@ export function personalizeLandmarks(
   // Bound the compounded multipliers. Five mildly negative inputs must not
   // multiply into a ceiling nobody could train under, and the estimate should
   // never wander so far from the population table that it stops being sane.
-  stimulus = clamp(stimulus, 0.6, 1.4);
-  recovery = clamp(recovery, 0.55, 1.6);
+  stimulus = clamp(stimulus, STIMULUS_BOUNDS[0], STIMULUS_BOUNDS[1]);
+  recovery = clamp(recovery, RECOVERY_BOUNDS[0], RECOVERY_BOUNDS[1]);
 
   const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days].filter((v) => v !== undefined && v !== null).length;
   const personalized = supplied > 0;

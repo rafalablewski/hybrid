@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  EXPERIENCE_STIMULUS,
+  EXPERIENCE_RECOVERY,
+  SLEEP_RECOVERY,
+  STRESS_RECOVERY,
+  BODYWEIGHT_REF_KG,
+  AGE_REF_YEARS,
+  RECOVERY_BOUNDS,
+  personalizeLandmarks,
+} from "./landmark-profile";
+import { VOLUME_LANDMARKS } from "./landmarks";
+import { blockWeeks, targetSetsForWeek } from "./volume-block";
+import {
+  RESIDUAL_FLOOR,
+  RESIDUAL_TAU_H,
+  MAX_COST,
+  COST_HIGH,
+  MIN_STRAIN_FATIGUE,
+  RECALL_FROM_H,
+  RECALL_TAU_H,
+  WEIGHT_FLOOR,
+  expectedResidual,
+  feelReading,
+} from "../feel-timing";
+import { sorenessFromCheckin } from "../checkin-scales";
+import {
   computeEngineTrace,
   ENGINE_FORMULA_GROUPS,
   ENGINE_FORMULAS,
@@ -55,6 +80,80 @@ describe("ENGINE_FORMULAS", () => {
     const fatigue = computeFatigue(SAMPLE_TRAINING_LOG);
     const total = fatigue.systems.anaerobic + fatigue.systems.threshold + fatigue.systems.aerobic;
     expect(enduranceFatigue(fatigue)).toBe(Math.round(100 * (1 - Math.exp(-total / 90))));
+  });
+
+  it("landmark multipliers track the live ones (drift guard)", () => {
+    const stim = ENGINE_FORMULAS.find((f) => f.id === "landmark-stimulus")!;
+    expect(stim.constants.find((c) => c.symbol === "beginner")!.value).toBe(String(EXPERIENCE_STIMULUS.beginner));
+    expect(stim.constants.find((c) => c.symbol === "advanced")!.value).toBe(String(EXPERIENCE_STIMULUS.advanced));
+
+    const rec = ENGINE_FORMULAS.find((f) => f.id === "landmark-recovery")!;
+    expect(rec.expression).toContain(String(RECOVERY_BOUNDS[0]));
+    expect(rec.expression).toContain(String(RECOVERY_BOUNDS[1]));
+    expect(rec.constants.find((c) => c.symbol === "age")!.value).toContain(String(AGE_REF_YEARS));
+    expect(rec.constants.find((c) => c.symbol === "body mass")!.value).toContain(String(BODYWEIGHT_REF_KG));
+    expect(rec.constants.find((c) => c.symbol === "sleep 1–5")!.value).toBe(SLEEP_RECOVERY.slice(1).join(" / "));
+    expect(rec.constants.find((c) => c.symbol === "stress 1–5")!.value).toBe(STRESS_RECOVERY.slice(1).join(" / "));
+  });
+
+  it("landmark stimulus/recovery formulas reproduce the live engine (drift guard)", () => {
+    // The sheet claims mev' = round(mev × stimulus) and mrv' = round(mrv × recovery).
+    const p = personalizeLandmarks({ experience: "advanced" });
+    expect(p.stimulus).toBe(EXPERIENCE_STIMULUS.advanced);
+    expect(p.recovery).toBe(EXPERIENCE_RECOVERY.advanced);
+    // Every muscle, not one — Back's 10 × 1.15 = 11.5 is the case that tells
+    // round from floor, and a sheet that says "round" must mean it.
+    for (const [m, d] of Object.entries(VOLUME_LANDMARKS)) {
+      const got = p.landmarks[m as keyof typeof VOLUME_LANDMARKS];
+      expect(got.mev).toBe(Math.round(d.mev * p.stimulus));
+      expect(got.mrv).toBe(Math.round(d.mrv * p.recovery));
+    }
+  });
+
+  it("the block-ramp formula reproduces the live engine (drift guard)", () => {
+    const l = VOLUME_LANDMARKS.back;
+    const weeks = blockWeeks({ week: 1, weeks: 4 });
+    // Week 1 = MEV, last load week = top of MAV, deload = MV — as the sheet says.
+    expect(targetSetsForWeek(l, weeks[0]!)).toBe(l.mev);
+    expect(targetSetsForWeek(l, weeks[2]!)).toBe(l.mavHigh);
+    expect(targetSetsForWeek(l, weeks[3]!)).toBe(l.mv);
+    // …and the interpolation in between is the documented one.
+    const w = weeks[1]!;
+    expect(targetSetsForWeek(l, w)).toBe(Math.round(l.mev + (l.mavHigh - l.mev) * w.ramp));
+  });
+
+  it("feel-timing constants track the live ones (drift guard)", () => {
+    const res = ENGINE_FORMULAS.find((f) => f.id === "feel-residual")!;
+    expect(res.expression).toContain(String(RESIDUAL_FLOOR));
+    expect(res.expression).toContain(String(RESIDUAL_TAU_H));
+
+    const cost = ENGINE_FORMULAS.find((f) => f.id === "feel-cost")!;
+    expect(cost.expression).toContain(String(MAX_COST));
+    expect(cost.constants.find((c) => c.symbol === String(COST_HIGH))).toBeTruthy();
+    expect(cost.constants.find((c) => c.symbol === String(MIN_STRAIN_FATIGUE))).toBeTruthy();
+
+    const weight = ENGINE_FORMULAS.find((f) => f.id === "feel-weight")!;
+    expect(weight.expression).toContain(String(RECALL_FROM_H));
+    expect(weight.expression).toContain(String(RECALL_TAU_H));
+    expect(weight.expression).toContain(String(WEIGHT_FLOOR));
+  });
+
+  it("the feel-timing formulas reproduce the live engine (drift guard)", () => {
+    for (const h of [0, 1, 6, 10, 24]) {
+      expect(expectedResidual(h)).toBeCloseTo(RESIDUAL_FLOOR + (1 - RESIDUAL_FLOOR) * Math.exp(-h / RESIDUAL_TAU_H), 10);
+      const r = feelReading(4, h)!;
+      expect(r.cost).toBeCloseTo(Math.min(MAX_COST, ((4 - 1) / 4) / expectedResidual(h)), 2);
+    }
+  });
+
+  it("the soreness-polarity note matches the live conversion (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((f) => f.id === "landmark-freshness")!;
+    expect(f.expression).toBe("soreness = 6 − storedValue");
+    // The sheet says 5 stored = fresh = least sore. If a writer ever flips, this
+    // and checkin-scales.test.ts both fail rather than the model silently
+    // inverting again.
+    expect(sorenessFromCheckin(5)).toBe(1);
+    expect(sorenessFromCheckin(1)).toBe(5);
   });
 });
 
