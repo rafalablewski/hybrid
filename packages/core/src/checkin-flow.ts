@@ -52,6 +52,26 @@ export function checkinScaleWordKey(value: number): string {
   return `w.recovery.checkins.scale${v}`;
 }
 
+/**
+ * The word a metric card puts under its face.
+ *
+ * The QUICK metric — the one Today's "how ready do you feel?" tap writes — is
+ * named in the READINESS vocabulary (Wrecked / Flat / Good / Primed), because
+ * Today already names it that way and the same stored number must not have two
+ * names on two surfaces. A 4 that Today calls "Good" was called "Good" in the
+ * wizard too, but a 5 was "Primed" there and "Great" here, and a 3 was "Flat"
+ * there and "Okay" here — the same tap, reported back in a word the athlete
+ * never chose. The face was ALREADY the readiness face on both (see
+ * checkinScaleFeeling), so this only makes the word agree with the picture.
+ *
+ * The other three metrics keep the generic scale words: "How did you sleep?"
+ * is not a readiness question, and "Wrecked" is not an answer to it.
+ */
+export function checkinMetricWordKey(key: CheckinMetricKey, value: number): string {
+  if (key === QUICK_CHECKIN_METRIC) return `w.recovery.readiness.${feelingFromRating(value)}`;
+  return checkinScaleWordKey(value);
+}
+
 /** The readiness face a 1–5 rating maps to — shared with the quick picker so the
  *  same value always draws the same expression + accent on both clients. */
 export function checkinScaleFeeling(value: number): ReadinessFeeling {
@@ -98,6 +118,88 @@ export const QUICK_CHECKIN_METRIC: CheckinMetricKey = "energy";
 export function quickCheckinMetrics(rating: number): CheckinMetrics {
   const v = Math.max(1, Math.min(5, Math.round(rating)));
   return { energy: v, sleep: null, soreness: null, mood: null };
+}
+
+/**
+ * The feeling the READINESS QUESTION itself carries — the answer to "how ready
+ * do you feel?", which is stored in exactly one metric.
+ *
+ * Distinct from `checkinFeeling`, which averages every metric present. Today's
+ * picker used the average, so finishing the rest of the check-in silently moved
+ * the highlighted face off the one the athlete had tapped: tap Primed, answer
+ * sleep 3 / freshness 2 / mood 4, and the card came back saying Good — the app
+ * overwriting the athlete's own answer with a number they never gave. The
+ * average is still the right input for the load model (more signal is better);
+ * it is the wrong thing to draw under the question it did not answer.
+ */
+export function quickCheckinFeeling(
+  c: Partial<CheckinMetrics> | null | undefined,
+): ReadinessFeeling | null {
+  const v = c?.[QUICK_CHECKIN_METRIC];
+  return typeof v === "number" && Number.isFinite(v) ? feelingFromRating(v) : null;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * WHAT A WRITE MAY TOUCH.
+ *
+ * POST /api/checkins upserts the day's row, and it used to write EVERY column
+ * from the request body — so any field the sender left out was stored as null.
+ * Both clients left fields out constantly, and each write quietly deleted the
+ * others' answers:
+ *
+ *   - Re-tapping readiness in the afternoon sent {energy, sleep: null,
+ *     soreness: null, mood: null} and wiped the morning's three answers.
+ *   - Submitting the follow-up sent whatever its own form held, so the web
+ *     wizard — which never prefilled weight / adherence / note — erased all
+ *     three every time it saved.
+ *
+ * The route now patches an existing day: a key that is ABSENT is left alone, a
+ * key that is explicitly null is cleared. These builders are what the clients
+ * put on the wire, so "I only answered this" and "leave the rest alone" are the
+ * same statement.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** The wire payload for one readiness tap: the metric it answered, nothing
+ *  else. `quickCheckinMetrics` is what the tap CLAIMS; this is what it SENDS. */
+export function quickCheckinPatch(rating: number): Partial<CheckinMetrics> {
+  return { [QUICK_CHECKIN_METRIC]: quickCheckinMetrics(rating)[QUICK_CHECKIN_METRIC] };
+}
+
+/** The wire payload for the guided flow: the metrics actually answered, and no
+ *  key at all for the ones walked past — so a question left blank neither
+ *  invents a middling 3 nor deletes an answer given earlier today. */
+export function checkinMetricPatch(
+  ratings: Partial<Record<CheckinMetricKey, number>>,
+  answered: Iterable<CheckinMetricKey>,
+): Partial<CheckinMetrics> {
+  const out: Partial<CheckinMetrics> = {};
+  for (const k of answered) {
+    const v = ratings[k];
+    if (typeof v === "number" && Number.isFinite(v)) out[k] = Math.max(1, Math.min(5, Math.round(v)));
+  }
+  return out;
+}
+
+/**
+ * Narrow a fully-prepared check-in row to the fields the REQUEST actually
+ * carried — the server half of the rule above, kept here so the two halves are
+ * one decision rather than two that have to agree.
+ *
+ * `weekOf` always writes (it identifies the day being refined). Everything else
+ * writes only if the sender named it: absent leaves the stored value alone,
+ * present-and-null clears it deliberately. Applies to UPDATES only — creating a
+ * brand-new day writes the whole prepared row, where an absent field genuinely
+ * does mean unknown.
+ */
+export function checkinPatchFields<T extends Record<string, unknown>>(
+  prepared: T,
+  body: Record<string, unknown>,
+): Partial<T> {
+  const out: Partial<T> = {};
+  for (const k of Object.keys(prepared) as (keyof T & string)[]) {
+    if (k === "weekOf" || Object.prototype.hasOwnProperty.call(body, k)) out[k] = prepared[k];
+  }
+  return out;
 }
 
 /** Which metrics a stored check-in actually carries an answer for. */

@@ -80,17 +80,24 @@ import {
   type PrHit,
   type CardioPrHit,
   type ExerciseUse,
-  checkinFeeling,
+  quickCheckinFeeling,
+  localDayKey,
+  localTodayKey,
   type ReadinessFeeling,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
 // session's load so a Started session matches the readout on Home.
+//
+// The readiness ANSWER, through the shared day-key helper. This read
+// `checkinFeeling` (the average of four different questions) against its own
+// `toDateString()` comparison, so the session an athlete actually started could
+// be scaled off a different feeling, on a different definition of "today", than
+// the one Home was showing them.
 function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: number | null; soreness: number | null; mood: number | null }[]): ReadinessFeeling | null {
-  const today = new Date().toDateString();
-  const c = list.find((x) => x?.weekOf && new Date(x.weekOf).toDateString() === today);
-  return c ? checkinFeeling(c) : null;
+  const today = localTodayKey();
+  return quickCheckinFeeling(list.find((x) => x?.weekOf && localDayKey(x.weekOf) === today) ?? null);
 }
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";

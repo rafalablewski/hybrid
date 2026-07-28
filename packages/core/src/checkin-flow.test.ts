@@ -32,8 +32,14 @@ import {
   firstOutstandingIndex,
   stepAnswered,
   QUICK_CHECKIN_METRIC,
+  quickCheckinFeeling,
+  quickCheckinPatch,
+  checkinMetricPatch,
+  checkinMetricWordKey,
+  checkinPatchFields,
+  checkinScaleFeeling,
 } from "./checkin-flow";
-import { checkinFeeling, checkinRating } from "./readiness-feeling";
+import { checkinFeeling, checkinRating, readinessLoadFactor, READINESS_LOAD_FACTOR } from "./readiness-feeling";
 
 describe("one tap answers one question", () => {
   it("writes ONLY the metric it asked about", () => {
@@ -142,5 +148,163 @@ describe("one card — the day and its sessions", () => {
   it("an off-scale stored effort counts as unanswered", () => {
     const sessions = [S("a", "Squats", 7, 0 as unknown as number)];
     expect(stepAnswered(checkinSteps(sessions)[4]!, {})).toBe(false);
+  });
+});
+
+describe("the readiness question answers itself", () => {
+  it("reports the tap, not the average of four different questions", () => {
+    // THE REGRESSION: Today's picker drew `checkinFeeling` — the mean of every
+    // metric present — under "how ready do you feel?". Tap Primed, then answer
+    // the other three honestly, and the card came back highlighting a face the
+    // athlete never chose and captioning it "you logged Good".
+    const day = { energy: 5, sleep: 3, soreness: 2, mood: 4 };
+    expect(checkinFeeling(day)).toBe("good"); // the day, averaged — a different question
+    expect(quickCheckinFeeling(day)).toBe("primed"); // what was actually tapped
+  });
+
+  it("round-trips every level of the picker", () => {
+    for (const [rating, feeling] of [[5, "primed"], [4, "good"], [3, "flat"], [2, "wrecked"]] as const) {
+      expect(quickCheckinFeeling(quickCheckinMetrics(rating))).toBe(feeling);
+    }
+  });
+
+  it("is null when the readiness question itself is unanswered", () => {
+    // A day whose sleep and mood are logged has NOT answered "how ready do you
+    // feel" — the card must show no selection rather than infer one.
+    expect(quickCheckinFeeling({ energy: null, sleep: 4, soreness: 4, mood: 4 })).toBeNull();
+    expect(quickCheckinFeeling(null)).toBeNull();
+    expect(quickCheckinFeeling({})).toBeNull();
+  });
+
+  it("names the quick metric in the picker's own vocabulary", () => {
+    // Same stored number, same face, so it must not have two names: Today said
+    // "Primed" for a 5 while the wizard's own card said "Great".
+    expect(checkinMetricWordKey("energy", 5)).toBe("w.recovery.readiness.primed");
+    expect(checkinMetricWordKey("energy", 3)).toBe("w.recovery.readiness.flat");
+    // The other three are not readiness questions — "Wrecked" is not an answer
+    // to "how did you sleep?".
+    expect(checkinMetricWordKey("sleep", 5)).toBe("w.recovery.checkins.scale5");
+    expect(checkinMetricWordKey("mood", 3)).toBe("w.recovery.checkins.scale3");
+  });
+
+  it("agrees with the face drawn beside it", () => {
+    for (const v of [1, 2, 3, 4, 5]) {
+      expect(checkinMetricWordKey("energy", v)).toBe(`w.recovery.readiness.${checkinScaleFeeling(v)}`);
+    }
+  });
+});
+
+describe("a write may only touch what it answered", () => {
+  it("a readiness tap sends one metric and no nulls", () => {
+    // THE REGRESSION: this sent {energy, sleep: null, soreness: null, mood:
+    // null}, which the route wrote over the day's row — so re-tapping readiness
+    // in the afternoon deleted the sleep, freshness and mood logged that
+    // morning. An omitted key leaves the stored value alone.
+    expect(quickCheckinPatch(4)).toEqual({ energy: 4 });
+    expect(Object.keys(quickCheckinPatch(4))).toEqual(["energy"]);
+    expect(quickCheckinPatch(9)).toEqual({ energy: 5 });
+  });
+
+  it("the guided flow sends only the questions actually answered", () => {
+    const ratings = { energy: 3, sleep: 5, soreness: 3, mood: 3 };
+    // Sleep tapped; the rest walked past on their neutral default.
+    expect(checkinMetricPatch(ratings, ["sleep"])).toEqual({ sleep: 5 });
+    // A skipped question is absent, NOT a middling 3 — nothing downstream may
+    // read a default as a measurement.
+    expect("soreness" in checkinMetricPatch(ratings, ["sleep"])).toBe(false);
+    expect(checkinMetricPatch(ratings, ["energy", "sleep", "soreness", "mood"])).toEqual(ratings);
+    expect(checkinMetricPatch(ratings, [])).toEqual({});
+  });
+
+  it("clamps and rounds whatever it does send", () => {
+    expect(checkinMetricPatch({ mood: 7.6 }, ["mood"])).toEqual({ mood: 5 });
+    expect(checkinMetricPatch({ mood: Number.NaN }, ["mood"])).toEqual({});
+    expect(checkinMetricPatch({}, ["mood"])).toEqual({});
+  });
+});
+
+describe("one question, one number, every surface", () => {
+  // The readiness pick drives four separate things: the picker's own
+  // highlight, the week rail's readiness pill, the load multiplier, and the
+  // nudge that QUOTES it back ("you're feeling flat today"). Each of them read
+  // `checkinFeeling` — the average — so on any day whose four answers weren't
+  // equal, the app told the athlete they had said something they hadn't.
+  const day = { energy: 5, sleep: 2, soreness: 2, mood: 3 };
+
+  it("the average and the answer genuinely disagree", () => {
+    expect(checkinFeeling(day)).toBe("flat");
+    expect(quickCheckinFeeling(day)).toBe("primed");
+  });
+
+  it("the load factor follows the answer, not the average", () => {
+    // Reading the average here deloaded an athlete who had just said they were
+    // primed, and captioned it with their own supposed words.
+    expect(readinessLoadFactor(quickCheckinFeeling(day))).toBe(READINESS_LOAD_FACTOR.primed);
+    expect(readinessLoadFactor(quickCheckinFeeling(day))).not.toBe(readinessLoadFactor(checkinFeeling(day)));
+  });
+
+  it("no answer means no nudge, rather than one inferred from sleep and mood", () => {
+    const noReadiness = { energy: null, sleep: 2, soreness: 2, mood: 2 };
+    expect(quickCheckinFeeling(noReadiness)).toBeNull();
+    expect(readinessLoadFactor(quickCheckinFeeling(noReadiness))).toBe(1);
+  });
+});
+
+describe("what a same-day write is allowed to touch", () => {
+  // The server half of the rule. `prepared` is the row the route builds from a
+  // request body — every column, with anything the body didn't carry already
+  // coerced to null. Writing THAT is what deleted the athlete's answers; the
+  // patch is what the route writes instead.
+  const prepare = (b: Record<string, unknown>) => ({
+    weekOf: "2026-07-28T09:00:00.000Z",
+    bodyMassKg: typeof b.bodyMassKg === "number" ? b.bodyMassKg : null,
+    energy: typeof b.energy === "number" ? b.energy : null,
+    sleep: typeof b.sleep === "number" ? b.sleep : null,
+    soreness: typeof b.soreness === "number" ? b.soreness : null,
+    mood: typeof b.mood === "number" ? b.mood : null,
+    adherencePct: typeof b.adherencePct === "number" ? b.adherencePct : null,
+    note: typeof b.note === "string" && b.note.trim() ? b.note : null,
+    sharedWithCoach: b.sharedWithCoach === true,
+  });
+  const patchFor = (b: Record<string, unknown>) => checkinPatchFields(prepare(b), b);
+
+  it("an afternoon re-tap touches readiness and nothing else", () => {
+    // THE REGRESSION: the morning had sleep/freshness/mood in it, and this
+    // write set all three to null.
+    const body = { weekOf: "x", ...quickCheckinPatch(4) };
+    expect(patchFor(body)).toEqual({ weekOf: "2026-07-28T09:00:00.000Z", energy: 4 });
+    for (const k of ["sleep", "soreness", "mood", "note", "adherencePct", "bodyMassKg"]) {
+      expect(k in patchFor(body)).toBe(false);
+    }
+  });
+
+  it("the guided flow's submit leaves the day's details alone", () => {
+    // THE REGRESSION: the web wizard never loaded weight / adherence / note, so
+    // submitting the follow-up erased all three.
+    const body = {
+      weekOf: "x",
+      ...checkinMetricPatch({ energy: 3, sleep: 4, soreness: 2, mood: 5 }, ["sleep", "soreness", "mood"]),
+      sharedWithCoach: false,
+    };
+    const p = patchFor(body);
+    expect(p).toEqual({ weekOf: "2026-07-28T09:00:00.000Z", sleep: 4, soreness: 2, mood: 5, sharedWithCoach: false });
+    expect("bodyMassKg" in p).toBe(false);
+    expect("note" in p).toBe(false);
+    expect("energy" in p).toBe(false); // walked past, so not this write's business
+  });
+
+  it("an explicit null still clears — absent and null are different answers", () => {
+    const p = patchFor({ weekOf: "x", note: null });
+    expect(p.note).toBeNull();
+    expect("note" in p).toBe(true);
+  });
+
+  it("weekOf always writes: it names the day being refined", () => {
+    expect(patchFor({}).weekOf).toBe("2026-07-28T09:00:00.000Z");
+  });
+
+  it("a full submit writes everything it carried", () => {
+    const body = { weekOf: "x", bodyMassKg: 82, energy: 5, sleep: 4, soreness: 3, mood: 4, adherencePct: 90, note: "solid", sharedWithCoach: true };
+    expect(patchFor(body)).toEqual({ ...prepare(body) });
   });
 });

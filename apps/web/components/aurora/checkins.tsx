@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import {
   fs,
@@ -8,11 +8,13 @@ import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
   checkinScaleFeeling,
-  checkinScaleWordKey,
+  checkinMetricWordKey,
+  checkinMetricPatch,
   answeredMetrics,
   localDayKey,
   checkinSteps,
   FEELS,
+  READINESS_FACE,
   type CheckinMetricKey,
   type CheckinSessionRef,
 } from "@hybrid/core";
@@ -34,15 +36,21 @@ type Ratings = Record<CheckinMetricKey, number>;
  *  run inline inside another card — Today's feeling card hosts it so the full
  *  check-in never leaves the homepage. `startStep` opens on a later question
  *  (Today's one-tap face already answers Energy, so it starts at Sleep) and
- *  becomes the floor the Back button can't go under. `onDone` fires on a
- *  successful submit so the host can collapse + refresh. */
-export default function AuroraCheckins({ embedded = false, startStep = 0, sessions = [], onDone }: {
+ *  becomes the floor the Back button can't go under.
+ *
+ *  `onDone` fires on a successful submit so the host can REFRESH. It must not
+ *  dismiss: the host used to close the sheet the instant the POST returned, so
+ *  the "Check-in logged" confirmation this flow renders was never once seen and
+ *  finishing the check-in looked exactly like the app dropping it. `onClose` is
+ *  the dismissal, and the athlete presses it. */
+export default function AuroraCheckins({ embedded = false, startStep = 0, sessions = [], onDone, onClose }: {
   embedded?: boolean;
   startStep?: number;
   /** The day's sessions — one effort question each. Empty on a rest day, which
    *  makes the flow exactly the four daily questions it has always been. */
   sessions?: CheckinSessionRef[];
   onDone?: () => void;
+  onClose?: () => void;
 } = {}) {
   const revalidate = useRevalidate();
   const { t } = useLang();
@@ -96,6 +104,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
   // giving the same screen two different definitions of "today". One cache, one
   // day-key helper.
   const checkins = useCheckins().data;
+  const extrasSeeded = useRef(false);
   useEffect(() => {
     if (!checkins) return;
     const today = localDayKey(Date.now());
@@ -113,10 +122,41 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
       for (const k of answeredMetrics(c)) next.add(k);
       return next;
     });
+    // …and so are the day's EXTRAS. This screen didn't load them (mobile did),
+    // so every submit sent three empty fields and the server dutifully wrote
+    // them as null — the follow-up silently deleted the weight, adherence and
+    // note the athlete had entered earlier. Blank inputs on a form that never
+    // read what it was editing.
+    //
+    // SEEDED ONCE, unlike the ratings above. This effect re-runs on every cache
+    // change (it has to — the sheet opens before the readiness tap's refetch
+    // lands, and that refetch is what tells it Energy is answered), but these
+    // are text fields the athlete may be editing. Re-merging them would undo a
+    // note they had just cleared the moment any refetch arrived.
+    if (!extrasSeeded.current) {
+      extrasSeeded.current = true;
+      setExtras((s) => ({
+        bodyMassKg: s.bodyMassKg || (c.bodyMassKg != null ? String(c.bodyMassKg) : ""),
+        adherencePct: s.adherencePct || (c.adherencePct != null ? String(c.adherencePct) : ""),
+        note: s.note || c.note || "",
+        sharedWithCoach: s.sharedWithCoach || !!c.sharedWithCoach,
+      }));
+    }
   }, [checkins]);
 
   const current = steps[step];
   const isDetails = current?.kind === "details";
+
+  // Whether THIS run has an answer for a step — the local sets, not the stored
+  // row, so the progress bar and the review reflect what the athlete has
+  // actually done rather than how far they have scrolled.
+  const isAnswered = (st: (typeof steps)[number]) =>
+    st.kind === "metric" ? answered.has(st.key) : st.kind === "effort" ? effortAnswered.has(st.session.id) : false;
+  const questions = steps.filter((st) => st.kind !== "details");
+  const answeredCount = questions.filter(isAnswered).length;
+  const allAnswered = answeredCount === questions.length;
+  /** The step index a metric lives at — the review's dashes jump back to it. */
+  const stepOf = (key: CheckinMetricKey) => steps.findIndex((st) => st.kind === "metric" && st.key === key);
 
   const submit = async () => {
     setSaving(true); setError("");
@@ -125,16 +165,15 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           weekOf: new Date().toISOString(),
-          bodyMassKg: extras.bodyMassKg ? parseFloat(extras.bodyMassKg) : null,
-          // Unanswered metrics go as null. The API stores null, every reader
-          // treats it as unknown, and nothing downstream mistakes a default for
-          // a report.
-          energy: answered.has("energy") ? ratings.energy : null,
-          sleep: answered.has("sleep") ? ratings.sleep : null,
-          soreness: answered.has("soreness") ? ratings.soreness : null,
-          mood: answered.has("mood") ? ratings.mood : null,
-          adherencePct: extras.adherencePct ? parseInt(extras.adherencePct, 10) : null,
-          note: extras.note || null,
+          // ONLY what this flow actually holds. A metric the athlete walked
+          // past is OMITTED, not sent as null: omitted leaves whatever is
+          // stored alone, which matters because this flow usually opens
+          // mid-day on a row that already has answers in it. Nothing is
+          // invented either — the server writes null for a genuinely new day.
+          ...checkinMetricPatch(ratings, answered),
+          ...(extras.bodyMassKg ? { bodyMassKg: parseFloat(extras.bodyMassKg) } : {}),
+          ...(extras.adherencePct ? { adherencePct: parseInt(extras.adherencePct, 10) } : {}),
+          ...(extras.note.trim() ? { note: extras.note } : {}),
           sharedWithCoach: isPaid && extras.sharedWithCoach,
         }),
       });
@@ -200,10 +239,25 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
       )}
 
       <div style={{ ...card, marginTop: embedded ? 0 : 18 }}>
-        {/* progress */}
+        {/* PROGRESS = ANSWERS, NOT POSITION. This filled every bar up to the
+            current step, so walking to the end without tapping anything drew a
+            complete bar over a check-in that held one answer — the screen
+            asserting "done" while the review card underneath showed dashes.
+            A bar is solid when its question is answered, faint while you're on
+            it, and empty otherwise. */}
         <div style={{ display: "flex", gap: 6 }} aria-hidden>
-          {steps.map((_, i) => (
-            <span key={i} style={{ flex: 1, height: 5, borderRadius: 999, background: done || i <= step ? C("lime") : C("line") }} />
+          {steps.map((st, i) => (
+            <span
+              key={i}
+              style={{
+                flex: 1, height: 5, borderRadius: 999,
+                background: done || isAnswered(st)
+                  ? C("lime")
+                  : i === step
+                    ? `color-mix(in srgb, ${C("lime")} 34%, ${C("line")})`
+                    : C("line"),
+              }}
+            />
           ))}
         </div>
 
@@ -211,8 +265,39 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "22px 6px 8px" }}>
             <AuroraIcon name="check-circle" size={54} color={C("lime")} />
             <div style={{ fontWeight: 900, fontSize: fs.heading, marginTop: 14 }}>{t("w.recovery.checkins.loggedTitle")}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5, maxWidth: 300 }}>{t("w.recovery.checkins.loggedSub")}</div>
-            <button onClick={restart} style={{ ...btnPrimary, flex: "none", marginTop: 20, padding: "13px 26px" }}>{t("w.recovery.checkins.newCheckin")}</button>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5, maxWidth: 300 }}>
+              {t(allAnswered ? "w.recovery.checkins.loggedSub" : "w.recovery.checkins.loggedPartialSub")}
+            </div>
+            {/* What actually landed. The count is the same one the Today card
+                shows, so the two can't tell different stories about the same
+                check-in. */}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: allAnswered ? "var(--lime-text)" : C("ash2"), marginTop: 10 }}>
+              {answeredCount} / {questions.length} {t("w.home.today.answered")}
+            </div>
+            <div style={{ display: "flex", gap: space.ms, marginTop: 20, flexWrap: "wrap", justifyContent: "center" }}>
+              {/* Still blank? Go straight back to the first one — the day is
+                  upserted, so answering more is an edit, not a second check-in. */}
+              {!allAnswered && (
+                <button
+                  onClick={() => { setDone(false); setStep(Math.max(minStep, steps.findIndex((st) => st.kind !== "details" && !isAnswered(st)))); }}
+                  style={{ ...btnPrimary, flex: "none", padding: "13px 26px" }}
+                >
+                  {t("w.recovery.checkins.answerRest")}
+                </button>
+              )}
+              {/* Embedded, the host is a sheet the athlete now dismisses
+                  themselves — it no longer vanishes out from under the
+                  confirmation. */}
+              {embedded && onClose ? (
+                <button onClick={onClose} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "13px 26px" } : { ...btnGhost, padding: "13px 26px" }}>
+                  {t("w.recovery.checkins.doneClose")}
+                </button>
+              ) : (
+                <button onClick={restart} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "13px 26px" } : { ...btnGhost, padding: "13px 26px" }}>
+                  {t("w.recovery.checkins.newCheckin")}
+                </button>
+              )}
+            </div>
           </div>
         ) : isDetails ? (
           <>
@@ -224,20 +309,35 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 12 }}>
               {CHECKIN_METRICS.map((m) => {
                 // An unanswered metric shows a dash, not a neutral face — a face
-                // would claim a reading that was never given.
+                // would claim a reading that was never given. The dash is a
+                // BUTTON back to that question, because a review that can only
+                // report the gap leaves the athlete to guess how to close it.
                 const on = answered.has(m.key);
+                const to = stepOf(m.key);
                 return (
-                  <div key={m.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 4px", opacity: on ? 1 : 0.5 }}>
+                  <button
+                    key={m.key}
+                    onClick={() => to >= 0 && setStep(to)}
+                    aria-label={`${t(m.labelKey)} – ${on ? t(checkinMetricWordKey(m.key, ratings[m.key])) : t("w.recovery.checkins.notAnswered")}`}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px ${on ? "solid" : "dashed"} ${C("line")}`, borderRadius: 14, padding: "12px 4px", opacity: on ? 1 : 0.6, cursor: "pointer", color: C("chalk"), font: "inherit" }}
+                  >
                     {on ? (
                       <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} size={26} />
                     ) : (
                       <span aria-hidden style={{ display: "grid", placeItems: "center", width: 26, height: 26, fontFamily: "var(--font-mono)", fontSize: 16, color: C("ash") }}>–</span>
                     )}
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(m.labelKey)}</span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+            {/* Say what the dashes are for. Without this the review reads as a
+                verdict on a check-in that is already over. */}
+            {!allAnswered && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10 }}>
+                {answeredCount} / {questions.length} {t("w.home.today.answered")} – {t("w.recovery.checkins.reviewMissing")}
+              </div>
+            )}
 
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash2"), margin: "16px 0 8px" }}>{t("w.recovery.checkins.detailsOptional")}</div>
             <div style={{ display: "flex", gap: space.ms }}>
@@ -295,7 +395,9 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 </div>
                 <div style={{ display: "flex", gap: space.ms, width: "100%", marginTop: 24 }}>
                   {step > minStep && <button onClick={() => setStep((v) => v - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
-                  <button onClick={() => setStep((v) => v + 1)} style={btnPrimary}>{t("w.recovery.checkins.next")}</button>
+                  <button onClick={() => setStep((v) => v + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
+                    {touched ? t("w.recovery.checkins.next") : t("w.recovery.checkins.skip")}
+                  </button>
                 </div>
               </div>
             );
@@ -305,21 +407,34 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
             const m = current?.kind === "metric" ? CHECKIN_METRICS.find((x) => x.key === current.key) : null;
             if (!m) return null;
             const val = ratings[m.key];
+            // WHY THE REVIEW WAS FULL OF DASHES. `ratings` defaults to a neutral
+            // 3, and this card used to render that default as a SELECTED tile
+            // under a confident word — so an athlete who pressed Next was told,
+            // twice, that they had answered. Nothing was stored (correctly: a
+            // default is not a report), and the summary two cards later showed a
+            // dash for every question they thought they had just answered.
+            // The effort card already got this right; this now matches it.
+            const touched = answered.has(m.key);
+            const feel = checkinScaleFeeling(val);
             return (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash"), marginTop: 18, alignSelf: "flex-start" }}>
                   {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
                 </div>
                 <div style={{ fontWeight: 900, fontSize: 24, letterSpacing: "-.02em", lineHeight: 1.15, marginTop: 14, maxWidth: 300 }}>{t(m.questionKey)}</div>
-                <div style={{ margin: "22px 0 4px" }}><ReadinessFace feeling={checkinScaleFeeling(val)} size={84} /></div>
-                <div className="word" style={{ fontWeight: 800, fontSize: fs.title, color: `var(--${checkinScaleFeeling(val) === "primed" ? "lime" : checkinScaleFeeling(val) === "good" ? "blue" : checkinScaleFeeling(val) === "flat" ? "amber" : "red"}-text)` }}>{t(checkinScaleWordKey(val))}</div>
+                {/* Untouched, the face is a placeholder, not a reading — dimmed,
+                    and captioned "Not answered" rather than "Okay". */}
+                <div style={{ margin: "22px 0 4px", opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feel} size={84} /></div>
+                <div className="word" style={{ fontWeight: 800, fontSize: fs.title, minHeight: 28, color: touched ? `var(--${READINESS_FACE[feel].accent}-text)` : C("ash") }}>
+                  {touched ? t(checkinMetricWordKey(m.key, val)) : t("w.recovery.checkins.notAnswered")}
+                </div>
 
                 <div style={{ display: "flex", gap: 9, width: "100%", marginTop: 22 }}>
                   {CHECKIN_SCALE.map((n) => {
-                    const sel = val === n;
+                    const sel = touched && val === n;
                     return (
                       <button key={n} onClick={() => answer(m.key, n)}
-                        aria-label={`${t(m.labelKey)}: ${n}`} aria-pressed={sel}
+                        aria-label={`${t(m.labelKey)}: ${t(checkinMetricWordKey(m.key, n))}`} aria-pressed={sel}
                         style={{ flex: 1, aspectRatio: "1", borderRadius: 16, display: "grid", placeItems: "center", cursor: "pointer", background: sel ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : C("ink"), border: `1px solid ${sel ? C("lime") : C("line")}`, boxShadow: sel ? `0 0 0 3px color-mix(in srgb, ${C("lime")} 14%, transparent)` : "none" }}>
                         <ReadinessFace feeling={checkinScaleFeeling(n)} size={24} />
                       </button>
@@ -329,7 +444,12 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
 
                 <div style={{ display: "flex", gap: space.ms, width: "100%", marginTop: 24 }}>
                   {step > minStep && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
-                  <button onClick={() => setStep((s) => s + 1)} style={btnPrimary}>{t("w.recovery.checkins.next")}</button>
+                  {/* Moving on without answering is called Skip. It was called
+                      Next, which is how a skipped question came to feel like an
+                      answered one. */}
+                  <button onClick={() => setStep((s) => s + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
+                    {touched ? t("w.recovery.checkins.next") : t("w.recovery.checkins.skip")}
+                  </button>
                 </div>
               </div>
             );
