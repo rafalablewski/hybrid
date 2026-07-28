@@ -1,0 +1,28 @@
+-- HYBRID — when the post-workout feel was answered.
+-- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma model Session.
+-- Idempotent.
+--
+-- Adds `feelLoggedAt` to Session: the moment the athlete answered "how did that
+-- feel?". Set server-side on every write of feel/fatigue (POST /api/sessions
+-- and PATCH /api/sessions/[id]), never by the client.
+--
+-- WHY A TIMESTAMP MATTERS. `fatigue` is a 1-5 tap, and the same tap means
+-- completely different things depending on how long after training it was
+-- given. "Wrecked" ten minutes after a heavy squat session describes the
+-- session. "Wrecked" ten hours later, showered and back at a desk, describes a
+-- recovery problem. Without this column the two are the same row, and the
+-- adaptive-MRV estimator treats them identically. With it, the lag between
+-- `completedAt` and `feelLoggedAt` lets core/feel-timing.ts divide the report
+-- by the acute fatigue still expected at that hour and compare sessions
+-- honestly. See the `feel-timing` capability.
+--
+-- No RLS change is needed — Session is already owner-scoped, new columns
+-- included. HARD DEPENDENCY: once the Prisma client carries this column, the
+-- owner's GET /api/sessions (which returns the full row) and POST error against
+-- a DB that lacks it — so run this BEFORE the change reaches production.
+--
+-- Existing rows keep NULL. That is deliberate and safe: a null lag makes the
+-- model fall back to the raw 1-5 rule it used before, so nothing is
+-- retroactively re-interpreted on evidence that was never collected.
+
+alter table "Session" add column if not exists "feelLoggedAt" timestamp(3);

@@ -8,6 +8,10 @@ import {
   loadBand,
   LOAD_BAND_KEY,
   relativeEffort,
+  feelReading,
+  hoursAfterSession,
+  readNoteKey,
+  FEEL_READ_KEY,
 } from "@hybrid/core";
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
@@ -39,6 +43,7 @@ export function FeelPrompt({
   initialFeel = null,
   initialFatigue = null,
   baseline = null,
+  sessionEnd = null,
   compact = false,
   eyebrow,
 }: {
@@ -50,6 +55,9 @@ export function FeelPrompt({
   initialFatigue?: number | null;
   /** the athlete's own recent load baseline, for the "vs your usual" line. */
   baseline?: number | null;
+  /** when the session ENDED — the lag from here to the tap is what makes two
+   *  identical fatigue answers comparable (feel-timing.ts). */
+  sessionEnd?: string | null;
   /** card chrome for the finish screen instead of the Wrapped's panel chrome. */
   compact?: boolean;
   eyebrow?: (label: string) => ReactNode;
@@ -70,6 +78,10 @@ export function FeelPrompt({
     if (ok) void qc.invalidateQueries({ queryKey: qk.sessions });
   };
 
+  // The lag is measured at the moment of the tap, which is exactly what the
+  // server stamps into `feelLoggedAt` — so what the athlete is shown here and
+  // what the recovery model later reads are the same number.
+  const reading = fatigue != null ? feelReading(fatigue, hoursAfterSession(sessionEnd, Date.now())) : null;
   const load = feltSessionLoad(feel, minutes);
   const rel = load != null ? relativeEffort(load, baseline) : null;
 
@@ -126,6 +138,18 @@ export function FeelPrompt({
         <View style={{ marginTop: 18 }}>
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
+          {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
+              session describes the session; the same tap ten hours later
+              describes a recovery problem. The app now reads them differently,
+              so it says which one this is rather than scoring in silence. */}
+          {reading && (
+            <View style={{ marginTop: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
+                {t(FEEL_READ_KEY[reading.read])}
+              </Text>
+              <Text numberOfLines={3} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, lineHeight: 15, color: C.ash }}>{t(readNoteKey(reading.read, reading.fatigue))}</Text>
+            </View>
+          )}
         </View>
       )}
 

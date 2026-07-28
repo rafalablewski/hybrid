@@ -338,6 +338,7 @@ export function WorkoutWrapped({
             minutes={receipt.durationMin}
             initialFeel={session.feel ?? null}
             initialFatigue={session.fatigue ?? null}
+            sessionEnd={session.completedAt ?? session.startedAt ?? null}
             baseline={feelBaseline}
             eyebrow={eyebrow}
           />

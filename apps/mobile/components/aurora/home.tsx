@@ -15,6 +15,9 @@ import {
   velocityProfiles,
   readinessRole,
   checkinFeeling,
+  readinessContext,
+  readinessNoteKey,
+  hoursSince,
   checkinCooldownRemainingMs,
   relativeTime,
   planSchedule,
@@ -345,7 +348,25 @@ export default function AuroraHome() {
     return checkins.find((c) => c && c.weekOf && localDayKey(c.weekOf) === dstr) ?? null;
   }, [checkins, dayTs, today]);
   const feeling = dayCheckin ? checkinFeeling(dayCheckin) : null;
-  const feelingAt = dayCheckin?.weekOf ? new Date(dayCheckin.weekOf).getTime() : null;
+  // BUG FIX: this read `weekOf` — the day the check-in COVERS, which for a
+  // back-logged day is that day's NOON. "Logged 4 hours from now" is what that
+  // produced. `createdAt` is when the row was actually written; weekOf is only
+  // the fallback for a row that predates it.
+  const feelingAt = useMemo(() => {
+    const ts = Date.parse(dayCheckin?.createdAt ?? dayCheckin?.weekOf ?? "");
+    return Number.isFinite(ts) ? ts : null;
+  }, [dayCheckin]);
+  // How long ago the athlete last finished a session — the lens the day's
+  // answer is read through. "Wrecked" 90 minutes after training is the session
+  // talking; the same tap a day later is a recovery signal. See core/feel-timing.
+  const lastSessionEnd = useMemo(() => {
+    let best: number | null = null;
+    for (const s of sessions) {
+      const ts = Date.parse(s.completedAt ?? s.startedAt ?? "");
+      if (Number.isFinite(ts) && (best == null || ts > best)) best = ts;
+    }
+    return best;
+  }, [sessions]);
   const lastCheckinAt = useMemo(
     () =>
       checkins.reduce<number | null>((m, c) => {
@@ -796,6 +817,7 @@ export default function AuroraHome() {
             C={C}
             feeling={feeling}
             loggedAt={feelingAt}
+            lastSessionEnd={lastSessionEnd}
             cooldownFrom={lastCheckinAt}
             isToday={dayIsToday}
             isFuture={dayIsFuture}
@@ -1083,10 +1105,12 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   feeling: ReadinessFeeling | null;
   loggedAt: number | null;
+  /** When the athlete last finished training — the lens for today's answer. */
+  lastSessionEnd: number | null;
   cooldownFrom: number | null;
   isToday: boolean;
   isFuture: boolean;
@@ -1113,6 +1137,11 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
   const coolMin = Math.ceil(coolMs / 60000);
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
+  // The clock's effect on the meaning of today's answer, from core so both
+  // clients say the same thing. `low` is the two negative feelings — the only
+  // ones whose reading genuinely turns on how long ago you trained.
+  const ctxLow = feeling === "flat" || feeling === "wrecked";
+  const ctxNote = readinessNoteKey(readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1158,6 +1187,14 @@ function FeelingCard({ C, feeling, loggedAt, cooldownFrom, isToday, isFuture, da
           );
         })}
       </View>
+      {/* WHAT THIS ANSWER IS WORTH. The same tap means different things an hour
+          after training and a day after it, so the card says which reading it
+          is looking at instead of leaving the athlete to guess (and instead of
+          the app quietly treating the two as the same number). */}
+      {isToday && feeling && ctxNote && (
+        <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
+      )}
+
       {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
           alone while cooling (it explains why the faces are locked on a day
           without its own check-in). */}

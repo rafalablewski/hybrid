@@ -3,6 +3,8 @@ import type { LoggedSession } from "./session";
 import { e1rm, setsForVolume } from "./session";
 import { musclesFor, ALL_MUSCLES } from "./movements";
 import { VOLUME_LANDMARKS, weeklySetsByMuscle, type VolumeLandmark } from "./landmarks";
+import { sorenessFromCheckin } from "../checkin-scales";
+import { feelReading, hoursAfterSession, COST_HIGH, MIN_STRAIN_FATIGUE } from "../feel-timing";
 
 /**
  * ADAPTIVE RECOVERABLE VOLUME — the estimate that corrects the prior.
@@ -48,9 +50,18 @@ export interface VolumeWeekObservation {
   sets: number;
   /** Best e1RM across that muscle's movements, or null if nothing comparable. */
   performance: number | null;
-  /** Mean post-session fatigue (1–5) across sessions that trained it, or null. */
+  /** Mean post-session fatigue (1–5) across sessions that trained it, or null.
+   *  The raw taps, for display. */
   fatigue: number | null;
-  /** Self-reported soreness (1–5, 5 = very sore) for that week, if checked in. */
+  /**
+   * Mean TIMING-ADJUSTED fatigue cost across those sessions, or null when no
+   * session carried a feel timestamp. This is the number the strain rules use
+   * where it exists, because a raw 4 means different things at 1 h and 10 h
+   * after training — see feel-timing.ts.
+   */
+  fatigueCost: number | null;
+  /** Soreness (1–5, 5 = VERY SORE) for that week, if checked in. Converted from
+   *  the check-in's freshness sense on the way in — see checkin-scales.ts. */
   soreness: number | null;
   /** Self-reported energy (1–5, 5 = high) for that week, if checked in. */
   energy: number | null;
@@ -64,7 +75,12 @@ export interface VolumeWeekObservation {
 export interface RecoveryReport {
   /** ISO date the report covers. */
   date: string;
-  /** 5 = very sore. */
+  /**
+   * The check-in's `soreness` column AS STORED, which is FRESHNESS: 5 = muscles
+   * feel fresh, 1 = wrecked. Named for the column so callers can hand the row
+   * straight over; converted to real soreness inside. See checkin-scales.ts —
+   * reading this field by its name is how the estimator shipped inverted.
+   */
   soreness?: number | null;
   /** 5 = slept great. */
   sleep?: number | null;
@@ -79,6 +95,37 @@ const numOf = (s: string | undefined): number => {
   const n = parseFloat(s ?? "");
   return Number.isFinite(n) ? n : NaN;
 };
+
+/** One session's post-workout fatigue report, placed in time. */
+interface FatigueSample {
+  /** The raw 1–5 tap. */
+  raw: number;
+  /** Timing-adjusted cost (feel-timing.ts). Equals the raw fraction when the
+   *  lag is unknown, so an untimed row is never inflated. */
+  cost: number;
+  /** How much the report counts — long lags are recall, not measurement. */
+  weight: number;
+  /** Whether a lag was actually known for this report. */
+  timed: boolean;
+}
+
+/** Weighted mean of the raw taps — what the athlete literally reported. */
+function meanFatigue(xs: FatigueSample[] | undefined): number | null {
+  if (!xs?.length) return null;
+  const w = xs.reduce((n, x) => n + x.weight, 0);
+  if (!(w > 0)) return null;
+  return Math.round((xs.reduce((n, x) => n + x.raw * x.weight, 0) / w) * 100) / 100;
+}
+
+/** Weighted mean cost — null unless at least one report carried a timestamp,
+ *  because a cost built only from untimed rows says nothing the raw mean
+ *  doesn't already say, and pretending otherwise would double-count it. */
+function meanCost(xs: FatigueSample[] | undefined): number | null {
+  if (!xs?.length || !xs.some((x) => x.timed)) return null;
+  const w = xs.reduce((n, x) => n + x.weight, 0);
+  if (!(w > 0)) return null;
+  return Math.round((xs.reduce((n, x) => n + x.cost * x.weight, 0) / w) * 1000) / 1000;
+}
 
 /**
  * Bucket the log into 7-day windows and, for each muscle, record the sets, the
@@ -98,16 +145,24 @@ export function observeVolumeResponse(
   const now = opts.now ?? Date.now();
   const weeks = clamp(Math.round(opts.weeks ?? 8), 2, 26);
 
-  // Per muscle, per window: the best e1RM seen and the fatigue reports.
+  // Per muscle, per window: the best e1RM seen and the fatigue reports. A
+  // report is kept as {raw, cost, weight} rather than a bare number, so the
+  // window mean can respect BOTH how long after the session it was given and
+  // how much a report at that lag deserves to count.
   const best = new Map<MuscleGroup, Map<number, number>>();
-  const fatigue = new Map<MuscleGroup, Map<number, number[]>>();
+  const fatigue = new Map<MuscleGroup, Map<number, FatigueSample[]>>();
 
   for (const s of sessions) {
     const t = new Date(s.startedAt).getTime();
     if (!Number.isFinite(t) || t > now) continue;
     const w = Math.floor((now - t) / WEEK_MS);
     if (w >= weeks) continue;
-    const sessionFatigue = typeof s.fatigue === "number" && s.fatigue >= 1 && s.fatigue <= 5 ? s.fatigue : null;
+    // The lag is measured from the END of the session where we know it.
+    const lag = hoursAfterSession(s.completedAt ?? s.startedAt, s.feelLoggedAt);
+    const reading = typeof s.fatigue === "number" ? feelReading(s.fatigue, lag) : null;
+    const sessionFatigue: FatigueSample | null = reading
+      ? { raw: reading.fatigue, cost: reading.cost, weight: reading.weight, timed: reading.hoursAfter != null }
+      : null;
 
     for (const b of s.blocks) {
       if (b.kind !== "strength") continue;
@@ -129,7 +184,7 @@ export function observeVolumeResponse(
           best.set(m, byWeek);
         }
         if (sessionFatigue !== null) {
-          const byWeek = fatigue.get(m) ?? new Map<number, number[]>();
+          const byWeek = fatigue.get(m) ?? new Map<number, FatigueSample[]>();
           const arr = byWeek.get(w) ?? [];
           arr.push(sessionFatigue);
           byWeek.set(w, arr);
@@ -150,7 +205,8 @@ export function observeVolumeResponse(
     if (!Number.isFinite(t) || t > now) continue;
     const w = Math.floor((now - t) / WEEK_MS);
     if (w >= weeks) continue;
-    const sore = scale(r.soreness);
+    // The column stores freshness; the model wants soreness. Convert HERE, once.
+    const sore = sorenessFromCheckin(r.soreness);
     if (sore !== null) sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), sore]);
     const energy = scale(r.energy);
     if (energy !== null) energyByWeek.set(w, [...(energyByWeek.get(w) ?? []), energy]);
@@ -179,7 +235,8 @@ export function observeVolumeResponse(
         weeksAgo: w,
         sets: countsByWeek[w]!.get(m) ?? 0,
         performance: best.get(m)?.get(w) ?? null,
-        fatigue: mean(fatigue.get(m)?.get(w)),
+        fatigue: meanFatigue(fatigue.get(m)?.get(w)),
+        fatigueCost: meanCost(fatigue.get(m)?.get(w)),
         soreness: mean(sorenessByWeek.get(w)),
         energy: mean(energyByWeek.get(w)),
       });
@@ -197,6 +254,8 @@ export interface MrvEvidence {
   /** Week-on-week performance change as a fraction, e.g. −0.04, or null. */
   performanceDelta: number | null;
   fatigue: number | null;
+  /** The timing-adjusted cost behind the verdict, when the week had one. */
+  fatigueCost: number | null;
   soreness: number | null;
   energy: number | null;
 }
@@ -217,11 +276,21 @@ export interface MrvEstimate {
  *  percent, so the bands sit outside that. */
 const PERF_DROP = -0.03;
 const PERF_HELD = -0.015;
-/** Post-session fatigue / soreness (1–5) above which a week reads as overreach. */
+/**
+ * Post-session fatigue thresholds. TWO rules, because a fatigue report is only
+ * comparable across sessions once you know how long after training it was
+ * given: where the week carries a timing-adjusted cost, that is what decides;
+ * where it doesn't (rows written before feel timestamps existed), the raw 1–5
+ * rule is kept exactly as it was rather than silently loosening. `COST_HIGH`
+ * lives in feel-timing.ts next to the model it was calibrated against.
+ */
 const FATIGUE_HIGH = 4.2;
-const SORENESS_HIGH = 4.2;
-/** …and below which it reads as tolerated. */
 const FATIGUE_OK = 3.5;
+/** Cost below which a week reads as absorbed. A hard session logged in the gym
+ *  (fatigue 4 at ~1 h ≈ 0.83) clears it; the same 4 ten hours later does not. */
+const COST_OK = 0.9;
+/** Soreness (5 = very sore, already converted from the check-in's freshness). */
+const SORENESS_HIGH = 4.2;
 /** Reported energy (1–5) that low says the week was not absorbed, whatever the
  *  bar said; a week only reads as tolerated at or above ENERGY_OK. */
 const ENERGY_LOW = 1.8;
@@ -249,22 +318,34 @@ export function estimateMrv(observations: VolumeWeekObservation[], landmark: Vol
         ? Math.round(((o.performance - prev.performance) / prev.performance) * 1000) / 1000
         : null;
 
+    // Fatigue is judged on the TIMING-ADJUSTED cost where the week has one, and
+    // on the raw 1–5 only where it doesn't. The two are never mixed: a cost
+    // exists exactly when at least one report in that week was timestamped, and
+    // it already accounts for the raw value, so consulting both would count the
+    // same report twice. MIN_STRAIN_FATIGUE keeps a long lag from inflating a
+    // "fresh" report into evidence of strain.
+    const timed = o.fatigueCost != null;
+    const fatigueStrained = timed
+      ? o.fatigueCost! >= COST_HIGH && (o.fatigue == null || o.fatigue >= MIN_STRAIN_FATIGUE)
+      : o.fatigue != null && o.fatigue >= FATIGUE_HIGH;
+    const fatigueOk = timed ? o.fatigueCost! < COST_OK : o.fatigue == null || o.fatigue <= FATIGUE_OK;
+
     // `!= null` throughout: an observation may arrive from JSON with a field
     // simply absent, and a missing measure must read as "unknown", not as a
     // number that fails every comparison and silently disqualifies the week.
     const strained =
       (delta != null && delta < PERF_DROP) ||
-      (o.fatigue != null && o.fatigue >= FATIGUE_HIGH) ||
+      fatigueStrained ||
       (o.soreness != null && o.soreness >= SORENESS_HIGH) ||
       (o.energy != null && o.energy <= ENERGY_LOW);
     const held =
       delta != null &&
       delta >= PERF_HELD &&
-      (o.fatigue == null || o.fatigue <= FATIGUE_OK) &&
+      fatigueOk &&
       (o.soreness == null || o.soreness <= SORENESS_HIGH) &&
       (o.energy == null || o.energy >= ENERGY_OK);
 
-    const row = { weeksAgo: o.weeksAgo, sets: o.sets, performanceDelta: delta, fatigue: o.fatigue, soreness: o.soreness, energy: o.energy };
+    const row = { weeksAgo: o.weeksAgo, sets: o.sets, performanceDelta: delta, fatigue: o.fatigue, fatigueCost: o.fatigueCost, soreness: o.soreness, energy: o.energy };
     if (strained) evidence.push({ ...row, verdict: "overreached" });
     else if (held) evidence.push({ ...row, verdict: "tolerated" });
   }

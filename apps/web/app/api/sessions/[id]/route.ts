@@ -49,6 +49,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(hasTags ? { tags: sanitizeTags(body.tags) } : {}),
       ...(hasFeel ? { feel: sanitizeFeelLevel(body.feel) } : {}),
       ...(hasFatigue ? { fatigue: sanitizeFeelLevel(body.fatigue) } : {}),
+      // Stamp WHEN the answer was given — server-side, because the lag between
+      // the session ending and this moment is what the recovery model reads,
+      // and a client clock is neither trustworthy nor necessary here. Clearing
+      // both answers clears the stamp with them; re-answering later re-stamps,
+      // which is correct — a report edited the next day IS a next-day report.
+      ...(hasFeel || hasFatigue
+        ? {
+            feelLoggedAt:
+              (hasFeel ? sanitizeFeelLevel(body.feel) : undefined) == null && (hasFatigue ? sanitizeFeelLevel(body.fatigue) : undefined) == null && hasFeel && hasFatigue
+                ? null
+                : new Date(),
+          }
+        : {}),
     },
   });
   return NextResponse.json({ session });

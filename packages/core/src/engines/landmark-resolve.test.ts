@@ -56,7 +56,8 @@ describe("resolving one athlete's landmarks", () => {
       sessions: steady,
       now: NOW,
       weeks: 5,
-      recovery: [0, 7, 14, 21].map((d) => ({ date: daysAgo(d), soreness: 5, energy: 1 })),
+      // freshness 1 = "wrecked" in the column's stored sense.
+      recovery: [0, 7, 14, 21].map((d) => ({ date: daysAgo(d), soreness: 1, energy: 1 })),
     });
     expect(withoutCheckins.adapted).not.toContain("quads");
     expect(withCheckins.adapted).toContain("quads");

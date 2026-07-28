@@ -9,6 +9,10 @@ import {
   loadBand,
   LOAD_BAND_KEY,
   relativeEffort,
+  feelReading,
+  hoursAfterSession,
+  readNoteKey,
+  FEEL_READ_KEY,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { sessionsKey } from "@/lib/use-sessions";
@@ -38,6 +42,7 @@ export function FeelPrompt({
   initialFeel = null,
   initialFatigue = null,
   baseline = null,
+  sessionEnd = null,
   compact = false,
   eyebrow,
 }: {
@@ -49,6 +54,9 @@ export function FeelPrompt({
   initialFatigue?: number | null;
   /** the athlete's own recent load baseline, for the "vs your usual" line. */
   baseline?: number | null;
+  /** when the session ENDED — the lag from here to the tap is what makes two
+   *  identical fatigue answers comparable (feel-timing.ts). */
+  sessionEnd?: string | null;
   /** card chrome for the finish screen instead of the Wrapped's panel chrome. */
   compact?: boolean;
   eyebrow?: (label: string) => ReactNode;
@@ -77,6 +85,10 @@ export function FeelPrompt({
     }
   };
 
+  // The lag is measured at the moment of the tap, which is exactly what the
+  // server stamps into `feelLoggedAt` — so what the athlete is shown here and
+  // what the recovery model later reads are the same number.
+  const reading = fatigue != null ? feelReading(fatigue, hoursAfterSession(sessionEnd, Date.now())) : null;
   const load = feltSessionLoad(feel, minutes);
   const rel = load != null ? relativeEffort(load, baseline) : null;
 
@@ -125,6 +137,18 @@ export function FeelPrompt({
         <div style={{ marginTop: 18 }}>
           <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }}>{t("session.fatigue.q")}</Mono>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
+          {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
+              session describes the session; the same tap ten hours later
+              describes a recovery problem. The app now reads them differently,
+              so it says which one this is rather than scoring in silence. */}
+          {reading && (
+            <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={reading.read === "nextDay" || reading.read === "sameDay" ? LIME_HEX : undefined}>
+                {t(FEEL_READ_KEY[reading.read])}
+              </Mono>
+              <Mono s={{ flex: 1, minWidth: 180, fontSize: fs.caption, lineHeight: 1.5 }}>{t(readNoteKey(reading.read, reading.fatigue))}</Mono>
+            </div>
+          )}
         </div>
       )}
 

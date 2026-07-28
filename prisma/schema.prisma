@@ -418,7 +418,12 @@ model Checkin {
   bodyMassKg   Float?
   energy       Int? // 1–5 self-report
   sleep        Int? // 1–5
-  soreness     Int? // 1–5 (5 = very sore)
+  // MISLEADING NAME, kept for compatibility: this column stores FRESHNESS, not
+  // soreness. The guided flow asks "How fresh do your muscles feel?" and every
+  // writer follows that sense, so 5 = muscles feel fresh and 1 = wrecked.
+  // Read it through core/checkin-scales.ts (sorenessFromCheckin) — reading it
+  // by its name is how the volume estimator once shipped inverted.
+  soreness     Int? // 1–5 (5 = FRESH, 1 = very sore)
   mood         Int? // 1–5
   adherencePct Int? // self-reported plan adherence 0–100
   note         String? // client free text
@@ -662,6 +667,13 @@ model Session {
   // owner-only like the note above.
   feel        Int?
   fatigue     Int?
+  // WHEN the athlete answered. Set server-side on every write of feel/fatigue.
+  // The lag between completedAt and this is what makes two identical `fatigue`
+  // values comparable: 4 an hour after training is an ordinary hard session, 4
+  // ten hours later is a recovery problem. See core/feel-timing.ts. Null on
+  // rows written before this column existed — the models degrade to the raw
+  // report rather than inventing a lag.
+  feelLoggedAt DateTime?
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.

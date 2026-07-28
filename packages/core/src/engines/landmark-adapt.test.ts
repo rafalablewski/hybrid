@@ -18,6 +18,7 @@ const legs = (day: number, sets: number, load: number, fatigue?: number): Logged
 const obs = (o: Partial<VolumeWeekObservation> & { weeksAgo: number; sets: number }): VolumeWeekObservation => ({
   performance: null,
   fatigue: null,
+  fatigueCost: null,
   soreness: null,
   energy: null,
   ...o,
@@ -38,6 +39,8 @@ describe("observing the response to volume", () => {
   });
 
   it("averages check-in soreness and energy into the window they fall in", () => {
+    // `soreness` on the report is the COLUMN, which stores freshness (5 = fresh);
+    // the observation carries real soreness, so the values invert on the way in.
     const rows = observeVolumeResponse([legs(1, 5, 100)], {
       now: NOW,
       weeks: 2,
@@ -47,10 +50,24 @@ describe("observing the response to volume", () => {
         { date: daysAgo(10), soreness: 2, energy: 5 },
       ],
     }).get("quads")!;
-    expect(rows[0]!.soreness).toBe(4); // mean of 5 and 3
+    expect(rows[0]!.soreness).toBe(2); // mean of soreness 1 and 3
     expect(rows[0]!.energy).toBe(3);   // mean of 2 and 4
-    expect(rows[1]!.soreness).toBe(2);
+    expect(rows[1]!.soreness).toBe(4); // freshness 2 → soreness 4
     expect(rows[1]!.energy).toBe(5);
+  });
+
+  it("reads the freshness column in the right direction", () => {
+    // THE REGRESSION. An athlete reporting fresh muscles every day must not be
+    // read as an athlete who is constantly wrecked.
+    const fresh = observeVolumeResponse([legs(1, 5, 100)], {
+      now: NOW, weeks: 2, recovery: [{ date: daysAgo(1), soreness: 5 }],
+    }).get("quads")![0]!;
+    const wrecked = observeVolumeResponse([legs(1, 5, 100)], {
+      now: NOW, weeks: 2, recovery: [{ date: daysAgo(1), soreness: 1 }],
+    }).get("quads")![0]!;
+    expect(fresh.soreness).toBe(1);
+    expect(wrecked.soreness).toBe(5);
+    expect(fresh.soreness!).toBeLessThan(wrecked.soreness!);
   });
 
   it("skips off-scale and undated check-in values without losing the rest", () => {
@@ -64,7 +81,7 @@ describe("observing the response to volume", () => {
         { date: daysAgo(-2), soreness: 1 }, // the future
       ],
     }).get("quads")!;
-    expect(rows[0]!.soreness).toBe(4);
+    expect(rows[0]!.soreness).toBe(2); // freshness 4 → soreness 2
     expect(rows[0]!.energy).toBeNull();
   });
 
@@ -203,6 +220,65 @@ describe("estimating the recoverable ceiling", () => {
       QUADS,
     );
     expect(e.mrv).toBeGreaterThanOrEqual(QUADS.mev + 2);
+  });
+});
+
+describe("WHEN the feel was logged changes the ceiling", () => {
+  /** Four weeks of 20 quad sets, all logged `fatigue`, with the top set holding
+   *  steady — so nothing but the fatigue report can move the estimate. */
+  const weeksOf = (fatigue: number, loggedAfterH: number | null): LoggedSession[] =>
+    [0, 1, 2, 3].flatMap((w) =>
+      [1, 3].map((d) => {
+        const day = w * 7 + d;
+        const start = NOW - day * 86_400_000;
+        const end = start + 60 * 60_000; // a one-hour session
+        return {
+          id: `w${w}d${d}`,
+          title: "Legs",
+          startedAt: new Date(start).toISOString(),
+          completedAt: new Date(end).toISOString(),
+          fatigue,
+          feelLoggedAt: loggedAfterH == null ? null : new Date(end + loggedAfterH * 3_600_000).toISOString(),
+          blocks: [{ kind: "strength" as const, name: "Back Squat", sets: Array.from({ length: 10 }, () => ({ load: "100", reps: "5" })) }],
+        };
+      }),
+    );
+
+  it("the same 'tired' logged in the gym reads as a session ABSORBED", () => {
+    // 20 sets a week, numbers holding, tired only in the gym — that is not a
+    // ceiling being hit, it is a week that was tolerated. The estimate may rise
+    // off it; what it must never do is fall.
+    const a = adaptLandmarks(weeksOf(4, 0.5), { now: NOW, weeks: 5 });
+    expect(a.estimates.quads.evidence.every((e) => e.verdict === "tolerated")).toBe(true);
+    expect(a.landmarks.quads.mrv).toBeGreaterThanOrEqual(VOLUME_LANDMARKS.quads.mrv);
+  });
+
+  it("…and logged ten hours later pulls it down", () => {
+    const a = adaptLandmarks(weeksOf(4, 10), { now: NOW, weeks: 5 });
+    expect(a.adapted).toContain("quads");
+    expect(a.landmarks.quads.mrv).toBeLessThan(VOLUME_LANDMARKS.quads.mrv);
+  });
+
+  it("still wrecked the next morning is the strongest read of the three", () => {
+    const gym = adaptLandmarks(weeksOf(4, 0.5), { now: NOW, weeks: 5 }).landmarks.quads.mrv;
+    const evening = adaptLandmarks(weeksOf(4, 10), { now: NOW, weeks: 5 }).landmarks.quads.mrv;
+    const morning = adaptLandmarks(weeksOf(4, 20), { now: NOW, weeks: 5 }).landmarks.quads.mrv;
+    expect(evening).toBeLessThan(gym);
+    expect(morning).toBeLessThanOrEqual(evening);
+  });
+
+  it("without a timestamp the old raw rule still applies, unloosened", () => {
+    // fatigue 4 with no lag is below the raw 4.2 threshold, exactly as before.
+    expect(adaptLandmarks(weeksOf(4, null), { now: NOW, weeks: 5 }).adapted).not.toContain("quads");
+    // …and a raw 5 still trips it.
+    expect(adaptLandmarks(weeksOf(5, null), { now: NOW, weeks: 5 }).adapted).toContain("quads");
+  });
+
+  it("carries the cost that produced the verdict, for the athlete to see", () => {
+    const a = adaptLandmarks(weeksOf(4, 10), { now: NOW, weeks: 5 });
+    const ev = a.estimates.quads.evidence.find((e) => e.verdict === "overreached")!;
+    expect(ev.fatigueCost).not.toBeNull();
+    expect(ev.fatigueCost!).toBeGreaterThan(ev.fatigue! / 5);
   });
 });
 

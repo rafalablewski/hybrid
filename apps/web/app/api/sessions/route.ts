@@ -79,6 +79,10 @@ export async function POST(request: Request) {
       // (an import, or a finish flow that asked first) doesn't need two calls.
       feel: sanitizeFeelLevel(b.feel),
       fatigue: sanitizeFeelLevel(b.fatigue),
+      // Stamped only when an answer actually arrived with the create — see the
+      // PATCH route for why the server, not the client, owns this timestamp.
+      feelLoggedAt:
+        sanitizeFeelLevel(b.feel) != null || sanitizeFeelLevel(b.fatigue) != null ? new Date() : null,
     },
   });
 
