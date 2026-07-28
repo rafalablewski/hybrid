@@ -96,8 +96,12 @@ export const CONVERGING_DRIFT = 2;
 export const SETTLE_WINDOW = 3;
 
 function verdictFor(points: ReplayPoint[]): { verdict: ReplayVerdict; drift: number } {
-  if (points.filter((p) => p.tested).length < SETTLE_WINDOW) return { verdict: "insufficient", drift: 0 };
+  // Every week the verdict reads must itself carry evidence. Tested weeks that
+  // have since aged back onto the profile answer are history, not a
+  // measurement — without this, an athlete whose evidence expired flattens
+  // onto the prior and the flat tail would read as "settled".
   const recent = points.slice(-SETTLE_WINDOW);
+  if (recent.length < SETTLE_WINDOW || recent.some((p) => !p.tested)) return { verdict: "insufficient", drift: 0 };
   let drift = 0;
   for (let i = 1; i < recent.length; i++) drift = Math.max(drift, Math.abs(recent[i]!.mrv - recent[i - 1]!.mrv));
   if (drift <= SETTLED_DRIFT) return { verdict: "settled", drift };

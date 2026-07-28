@@ -123,6 +123,40 @@ describe("computeInjuryRisk", () => {
     expect(r.minHistoryDays).toBe(MIN_HISTORY_DAYS);
   });
 
+  // Regression: the detraining driver used to fire DURING a layoff — an athlete
+  // resting for ten days watched 18 points of "injury risk" appear before they
+  // had lifted anything. Return-from-low is a risk of the RETURN, so it waits
+  // for acute load to reappear on the tissue.
+  describe("detraining fires on the return, not during the rest", () => {
+    const beforeLayoff: TrainingLog = [
+      { daysAgo: 9, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+      { daysAgo: 12, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+      { daysAgo: 16, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+      { daysAgo: 20, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+    ];
+
+    it("a quiet week mid-layoff carries no detraining risk", () => {
+      const r = computeInjuryRisk(beforeLayoff);
+      const quads = r.tissues.find((t) => t.tissue === "quads")!;
+      // The baseline is real — this is not the not-enough-history case…
+      expect(quads.enoughHistory).toBe(true);
+      expect(quads.acwr).toBe(0);
+      // …but nothing was trained this week, so there is nothing to spike on.
+      expect(quads.drivers.some((d) => d.kind === "detrain")).toBe(false);
+    });
+
+    it("the first session back lights it up", () => {
+      const firstSessionBack: TrainingLog = [
+        { daysAgo: 0, items: [{ move: "Back Squat", topRpe: 6, hardSets: 2 }] },
+        ...beforeLayoff,
+      ];
+      const r = computeInjuryRisk(firstSessionBack);
+      const quads = r.tissues.find((t) => t.tissue === "quads")!;
+      expect(quads.acwr).toBeLessThan(0.8);
+      expect(quads.drivers.some((d) => d.kind === "detrain")).toBe(true);
+    });
+  });
+
   it("only asks for the explainer about tissues the athlete actually trained", () => {
     const log: TrainingLog = [
       { daysAgo: 1, items: [{ move: "Bench Press", topRpe: 8, hardSets: 4 }] },

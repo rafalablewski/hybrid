@@ -181,6 +181,27 @@ describe("when there isn't enough to say anything", () => {
     expect(testedMuscles(r)).toEqual([]);
   });
 
+  it("evidence that has aged out cannot certify the current estimate", () => {
+    // The absorbed block, replayed 11 weeks after the athlete stopped training.
+    // The early replay points still see the ramp inside their own lookback, so
+    // stale tested weeks exist — but both observed layers have expired at the
+    // recent points and the line has flattened back onto the profile prior.
+    // That flat tail must read "insufficient", never "settled".
+    const absorbed = block({
+      weeks: 12,
+      sets: (w) => Math.min(9 + w * 2, 22),
+      load: (w) => 120 + w * 2.5,
+      gymSpent: () => 3,
+      morningSpent: () => 2,
+    });
+    const later = NOW + 11 * WEEK;
+    const r = replayLandmarks(absorbed.sessions, absorbed.recovery, { profile: PROFILE, now: later, replayWeeks: 8 });
+    const quads = r.find((x) => x.muscle === "quads")!;
+    expect(quads.testedWeeks).toBeGreaterThanOrEqual(SETTLE_WINDOW);
+    expect(quads.points[quads.points.length - 1]!.tested).toBe(false);
+    expect(quads.verdict).toBe("insufficient");
+  });
+
   it("a flat line at the prior is never called evidence", () => {
     // Three sets a week forever: real training, but nowhere near a ceiling.
     const light = block({ weeks: 10, sets: () => 3, load: () => 100, gymSpent: () => 2, morningSpent: () => 2 });

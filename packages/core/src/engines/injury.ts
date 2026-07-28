@@ -171,7 +171,9 @@ export const MIN_HISTORY_DAYS = 14;
  *     per-tissue). The onset defaults to the population 1.3 and can be the
  *     athlete's PERSONAL onset learned from their outcome history (personal.ts)
  *   • absolute load  — a hammered tissue carries baseline risk even in balance
- *   • detraining     — very low ACWR (<0.8) carries a small spike-on-return risk
+ *   • detraining     — very low ACWR (<0.8) carries a small spike-on-return
+ *     risk, counted only once training resumes (acute load > 0) — never while
+ *     the athlete is still resting
  *   • recovery       — suppressed HRV/sleep / elevated resting HR raises all tissues
  *
  * The two ratio-derived components (spike, detraining) only fire when the
@@ -223,7 +225,11 @@ export function computeInjuryRisk(
     if (absolute > 1)
       drivers.push({ kind: "load", label: `High tissue load (${tissueFatigue}/100)`, contribution: Math.round(absolute) });
 
-    const detrain = enoughHistory ? ramp(0.8 - acwr, 0, 0.6) * 18 : 0;
+    // …and detraining additionally waits for the athlete to actually be BACK:
+    // a collapsed ratio during the layoff itself is rest, not risk — the danger
+    // this driver names is the first hard sessions after the lull, so it fires
+    // only once acute load reappears on the tissue.
+    const detrain = enoughHistory && acuteLoad > 0 ? ramp(0.8 - acwr, 0, 0.6) * 18 : 0;
     if (detrain > 1)
       drivers.push({ kind: "detrain", label: `Return-from-low (ACWR ${acwr.toFixed(2)})`, contribution: Math.round(detrain), acwr });
 
