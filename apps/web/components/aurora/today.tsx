@@ -21,10 +21,12 @@ import { fs, space,
   readinessRole,
   checkinFeeling,
   quickCheckinMetrics,
-  checkinCompleteness,
-  firstOutstandingStep,
-  CHECKIN_METRICS,
+  dayCompleteness,
+  firstOutstandingIndex,
+  checkinSteps,
+  stepAnswered,
   type CheckinMetrics,
+  type CheckinSessionRef,
   readinessContext,
   readinessNoteKey,
   hoursSince,
@@ -315,6 +317,16 @@ export default function AuroraToday({
     const ts = Date.parse(dayCheckin?.createdAt ?? dayCheckin?.weekOf ?? "");
     return Number.isFinite(ts) ? ts : null;
   }, [dayCheckin]);
+  // The sessions the athlete trained on the VIEWED day — one effort question
+  // each in the follow-up. Empty on a rest day, which makes the flow exactly
+  // the four daily questions it has always been.
+  const daySessions = useMemo<CheckinSessionRef[]>(() => {
+    const dstr = dayTs == null ? today : localDayKey(dayTs);
+    return sessions
+      .filter((s) => s.startedAt && localDayKey(s.startedAt) === dstr)
+      .map((s) => ({ id: s.id, title: s.title, startedAt: s.startedAt, feel: s.feel ?? null }));
+  }, [sessions, dayTs, today]);
+
   // How long ago the athlete last finished a session — the lens the day's
   // answer is read through. "Wrecked" 90 minutes after training is the session
   // talking; the same tap a day later is a recovery signal. See core/feel-timing.
@@ -722,6 +734,7 @@ export default function AuroraToday({
         <FeelingCard
           feeling={feeling}
           dayMetrics={dayCheckin}
+          daySessions={daySessions}
           loggedAt={feelingAt}
           lastSessionEnd={lastSessionEnd}
           cooldownFrom={lastCheckinAt}
@@ -1012,10 +1025,12 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
 // cooldown mirrors the server's — global across days (keyed on the last WRITE),
 // so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ feeling, dayMetrics, daySessions, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   feeling: ReadinessFeeling | null;
   /** The viewed day's stored metrics — which of the four are actually answered. */
   dayMetrics: Partial<CheckinMetrics> | null;
+  /** The sessions trained that day — one effort question each. */
+  daySessions: CheckinSessionRef[];
   loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
@@ -1036,8 +1051,8 @@ function FeelingCard({ feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFr
   // What today's check-in actually carries. The one-tap face answers Energy;
   // until the follow-up runs, the other three are genuinely unknown and the
   // card says so instead of implying one tap was the full picture.
-  const done = checkinCompleteness(dayMetrics);
-  const startStep = firstOutstandingStep(dayMetrics);
+  const done = dayCompleteness(dayMetrics, daySessions);
+  const startStep = firstOutstandingIndex(dayMetrics, daySessions);
   // The 6h re-log window: while it's open, show "next in Xh Ym". The faces lock
   // while cooling (the server would reject the write anyway) and on future days.
   const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
@@ -1155,11 +1170,11 @@ function FeelingCard({ feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFr
             {/* The outstanding questions, named — a count alone doesn't tell you
                 what you'd be answering. */}
             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-              {CHECKIN_METRICS.map((m) => (
+              {checkinSteps(daySessions).filter((st) => st.kind !== "details").map((st, i) => (
                 <span
-                  key={m.key}
-                  title={t(m.labelKey)}
-                  style={{ width: 7, height: 7, borderRadius: 999, background: (dayMetrics?.[m.key] ?? null) != null ? "var(--lime-text)" : C("line") }}
+                  key={i}
+                  title={st.kind === "metric" ? t(`w.recovery.checkins.${st.key}`) : st.session.title}
+                  style={{ width: 7, height: 7, borderRadius: 999, background: stepAnswered(st, dayMetrics) ? "var(--lime-text)" : C("line") }}
                 />
               ))}
             </span>
@@ -1175,6 +1190,7 @@ function FeelingCard({ feeling, dayMetrics, loggedAt, lastSessionEnd, cooldownFr
             <AuroraCheckins
               embedded
               startStep={startStep}
+              sessions={daySessions}
               onDone={() => { setFollowUpOpen(false); onPicked(); }}
             />
           </Sheet>

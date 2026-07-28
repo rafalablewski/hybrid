@@ -65,6 +65,13 @@ export interface VolumeWeekObservation {
   soreness: number | null;
   /** Self-reported energy (1–5, 5 = high) for that week, if checked in. */
   energy: number | null;
+  /**
+   * THE recovery reading for the week: every "how spent are you" report —
+   * from the check-in now, from a session's post-workout answer on historical
+   * rows — put on one scale, placed in time, and averaged by weight. This is
+   * what the strain rules read. One question, one number, one threshold.
+   */
+  recoveryCost: number | null;
 }
 
 /**
@@ -88,6 +95,14 @@ export interface RecoveryReport {
   energy?: number | null;
   /** 5 = good mood. */
   mood?: number | null;
+  /**
+   * WHEN the check-in was written (Checkin.createdAt). The lag from the last
+   * session that finished before it is what makes this reading comparable to
+   * any other: "wrecked" ninety minutes after squats and "wrecked" the next
+   * morning are not the same measurement. Null falls back to the raw reading —
+   * never a guessed lag. See feel-timing.ts.
+   */
+  loggedAt?: string | null;
 }
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -194,10 +209,29 @@ export function observeVolumeResponse(
     }
   }
 
-  // Check-in reports apply to every muscle — they are whole-athlete measures,
-  // averaged over the days that fall in each window.
+  // Session end times, so a check-in can be placed relative to the training it
+  // is reporting on. Sorted once; each report binary-walks back to the most
+  // recent session that finished BEFORE it was written.
+  const ends = sessions
+    .map((s) => Date.parse(s.completedAt ?? s.startedAt ?? ""))
+    .filter((t) => Number.isFinite(t))
+    .sort((a, b) => a - b);
+  const lastEndBefore = (t: number): number | null => {
+    let lo = 0, hi = ends.length - 1, best: number | null = null;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (ends[mid]! <= t) { best = ends[mid]!; lo = mid + 1; } else { hi = mid - 1; }
+    }
+    return best;
+  };
+
+  // Check-in reports apply to every muscle — they are whole-athlete measures.
+  // Soreness and energy both answer "how spent are you"; they are put on ONE
+  // spentness scale (5 = wrecked), placed in time against the last session, and
+  // pooled with the session-side reports so a single threshold reads them all.
   const sorenessByWeek = new Map<number, number[]>();
   const energyByWeek = new Map<number, number[]>();
+  const recoveryByWeek = new Map<number, FatigueSample[]>();
   const scale = (v: number | null | undefined): number | null =>
     typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5 ? v : null;
   for (const r of opts.recovery ?? []) {
@@ -210,6 +244,23 @@ export function observeVolumeResponse(
     if (sore !== null) sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), sore]);
     const energy = scale(r.energy);
     if (energy !== null) energyByWeek.set(w, [...(energyByWeek.get(w) ?? []), energy]);
+
+    // Both measures point the same way once inverted: high = spent.
+    const spentParts: number[] = [];
+    if (sore !== null) spentParts.push(sore);
+    if (energy !== null) spentParts.push(6 - energy);
+    if (!spentParts.length) continue;
+    const spent = spentParts.reduce((a, b) => a + b, 0) / spentParts.length;
+
+    const writtenAt = r.loggedAt ? Date.parse(r.loggedAt) : t;
+    const prevEnd = Number.isFinite(writtenAt) ? lastEndBefore(writtenAt) : null;
+    const lag = prevEnd == null ? null : hoursAfterSession(prevEnd, writtenAt);
+    const reading = feelReading(spent, lag);
+    if (!reading) continue;
+    recoveryByWeek.set(w, [
+      ...(recoveryByWeek.get(w) ?? []),
+      { raw: reading.fatigue, cost: reading.cost, weight: reading.weight, timed: reading.hoursAfter != null },
+    ]);
   }
 
   const mean = (xs: number[] | undefined): number | null =>
@@ -239,6 +290,9 @@ export function observeVolumeResponse(
         fatigueCost: meanCost(fatigue.get(m)?.get(w)),
         soreness: mean(sorenessByWeek.get(w)),
         energy: mean(energyByWeek.get(w)),
+        // The check-in reports for the week pooled with this muscle's own
+        // session-side reports — one number, one threshold.
+        recoveryCost: meanCost([...(recoveryByWeek.get(w) ?? []), ...(fatigue.get(m)?.get(w) ?? [])]),
       });
     }
     out.set(m, rows);
@@ -256,6 +310,8 @@ export interface MrvEvidence {
   fatigue: number | null;
   /** The timing-adjusted cost behind the verdict, when the week had one. */
   fatigueCost: number | null;
+  /** The pooled recovery cost the verdict actually read. */
+  recoveryCost: number | null;
   soreness: number | null;
   energy: number | null;
 }
@@ -318,34 +374,40 @@ export function estimateMrv(observations: VolumeWeekObservation[], landmark: Vol
         ? Math.round(((o.performance - prev.performance) / prev.performance) * 1000) / 1000
         : null;
 
-    // Fatigue is judged on the TIMING-ADJUSTED cost where the week has one, and
-    // on the raw 1–5 only where it doesn't. The two are never mixed: a cost
-    // exists exactly when at least one report in that week was timestamped, and
-    // it already accounts for the raw value, so consulting both would count the
-    // same report twice. MIN_STRAIN_FATIGUE keeps a long lag from inflating a
-    // "fresh" report into evidence of strain.
-    const timed = o.fatigueCost != null;
-    const fatigueStrained = timed
-      ? o.fatigueCost! >= COST_HIGH && (o.fatigue == null || o.fatigue >= MIN_STRAIN_FATIGUE)
-      : o.fatigue != null && o.fatigue >= FATIGUE_HIGH;
-    const fatigueOk = timed ? o.fatigueCost! < COST_OK : o.fatigue == null || o.fatigue <= FATIGUE_OK;
+    // ONE recovery reading, ONE threshold. Every "how spent are you" answer —
+    // the check-in's freshness and energy now, a session's post-workout answer
+    // on historical rows — is already pooled into `recoveryCost` on the same
+    // scale, lag-adjusted and weighted. Where a week has that, it decides.
+    //
+    // Only where it doesn't (rows predating the timestamps) do the old raw 1–5
+    // rules apply, unchanged rather than silently loosened. The two are never
+    // mixed: the cost already contains the raw values, so consulting both would
+    // count the same report twice.
+    const cost = o.recoveryCost ?? o.fatigueCost;
+    const rawSpent = Math.max(
+      o.fatigue ?? 0,
+      o.soreness ?? 0,
+      o.energy != null ? 6 - o.energy : 0,
+    ) || null;
+
+    const recoveryStrained = cost != null
+      ? cost >= COST_HIGH && (rawSpent == null || rawSpent >= MIN_STRAIN_FATIGUE)
+      : (o.fatigue != null && o.fatigue >= FATIGUE_HIGH) ||
+        (o.soreness != null && o.soreness >= SORENESS_HIGH) ||
+        (o.energy != null && o.energy <= ENERGY_LOW);
+    const recoveryOk = cost != null
+      ? cost < COST_OK
+      : (o.fatigue == null || o.fatigue <= FATIGUE_OK) &&
+        (o.soreness == null || o.soreness <= SORENESS_HIGH) &&
+        (o.energy == null || o.energy >= ENERGY_OK);
 
     // `!= null` throughout: an observation may arrive from JSON with a field
     // simply absent, and a missing measure must read as "unknown", not as a
     // number that fails every comparison and silently disqualifies the week.
-    const strained =
-      (delta != null && delta < PERF_DROP) ||
-      fatigueStrained ||
-      (o.soreness != null && o.soreness >= SORENESS_HIGH) ||
-      (o.energy != null && o.energy <= ENERGY_LOW);
-    const held =
-      delta != null &&
-      delta >= PERF_HELD &&
-      fatigueOk &&
-      (o.soreness == null || o.soreness <= SORENESS_HIGH) &&
-      (o.energy == null || o.energy >= ENERGY_OK);
+    const strained = (delta != null && delta < PERF_DROP) || recoveryStrained;
+    const held = delta != null && delta >= PERF_HELD && recoveryOk;
 
-    const row = { weeksAgo: o.weeksAgo, sets: o.sets, performanceDelta: delta, fatigue: o.fatigue, fatigueCost: o.fatigueCost, soreness: o.soreness, energy: o.energy };
+    const row = { weeksAgo: o.weeksAgo, sets: o.sets, performanceDelta: delta, fatigue: o.fatigue, fatigueCost: o.fatigueCost, recoveryCost: cost, soreness: o.soreness, energy: o.energy };
     if (strained) evidence.push({ ...row, verdict: "overreached" });
     else if (held) evidence.push({ ...row, verdict: "tolerated" });
   }

@@ -64,6 +64,67 @@ describe("resolving one athlete's landmarks", () => {
     expect(withCheckins.landmarks.quads.mrv).toBeLessThan(withoutCheckins.landmarks.quads.mrv);
   });
 
+  it("THE CONTRADICTION FIX: a check-in is now read against the clock too", () => {
+    // Four weeks of 22 quad sets with the bar HOLDING. Each week the athlete
+    // checks in feeling wrecked — the only difference is WHEN.
+    const sessionEnd = (day: number) => NOW - day * 86_400_000 + 60 * 60_000;
+    const steady: LoggedSession[] = [0, 1, 2, 3].flatMap((w) => [legs(w * 7 + 1, 11, 100), legs(w * 7 + 3, 11, 100)]);
+    // Freshness 2 / energy 2 — "flat", the everyday reading. NOT the floor of
+    // the scale: reporting the worst possible value on every metric 90 minutes
+    // after training is past what the session alone explains, and flags either
+    // way (see the extreme case below).
+    const flat = { soreness: 2, energy: 2 };
+
+    const rightAfter = athleteLandmarks({
+      profile: { experience: "advanced" }, sessions: steady, now: NOW, weeks: 5,
+      // logged 90 minutes after the session ended — that is the session talking
+      recovery: [1, 8, 15, 22].map((d) => ({
+        date: daysAgo(d), ...flat,
+        loggedAt: new Date(sessionEnd(d) + 1.5 * 3_600_000).toISOString(),
+      })),
+    });
+
+    const nextMorning = athleteLandmarks({
+      profile: { experience: "advanced" }, sessions: steady, now: NOW, weeks: 5,
+      // logged 20 hours after — still wrecked, with a night in between
+      recovery: [1, 8, 15, 22].map((d) => ({
+        date: daysAgo(d), ...flat,
+        loggedAt: new Date(sessionEnd(d) + 20 * 3_600_000).toISOString(),
+      })),
+    });
+
+    // The card has always SAID the early one shouldn't count against recovery.
+    // Now the estimator agrees with the card.
+    expect(rightAfter.adapted).not.toContain("quads");
+    expect(nextMorning.adapted).toContain("quads");
+    expect(nextMorning.landmarks.quads.mrv).toBeLessThan(rightAfter.landmarks.quads.mrv);
+  });
+
+  it("the floor of the scale still flags, even soon after training", () => {
+    // The discount explains an ordinary post-session slump. It does not explain
+    // the worst possible answer on every metric — that stays evidence.
+    const sessionEnd = (day: number) => NOW - day * 86_400_000 + 60 * 60_000;
+    const steady: LoggedSession[] = [0, 1, 2, 3].flatMap((w) => [legs(w * 7 + 1, 11, 100), legs(w * 7 + 3, 11, 100)]);
+    const r = athleteLandmarks({
+      profile: { experience: "advanced" }, sessions: steady, now: NOW, weeks: 5,
+      recovery: [1, 8, 15, 22].map((d) => ({
+        date: daysAgo(d), soreness: 1, energy: 1,
+        loggedAt: new Date(sessionEnd(d) + 1.5 * 3_600_000).toISOString(),
+      })),
+    });
+    expect(r.adapted).toContain("quads");
+  });
+
+  it("a check-in with no write time falls back to the raw rule, never a guessed lag", () => {
+    const steady: LoggedSession[] = [0, 1, 2, 3].flatMap((w) => [legs(w * 7 + 1, 11, 100), legs(w * 7 + 3, 11, 100)]);
+    const r = athleteLandmarks({
+      profile: { experience: "advanced" }, sessions: steady, now: NOW, weeks: 5,
+      recovery: [0, 7, 14, 21].map((d) => ({ date: daysAgo(d), soreness: 1, energy: 1 })),
+    });
+    // Wrecked every week with no timestamp still reads as strain.
+    expect(r.adapted).toContain("quads");
+  });
+
   it("adaptive: false stops at the profile layer", () => {
     const r = athleteLandmarks({ profile: { experience: "advanced" }, sessions: overreached, now: NOW, adaptive: false });
     expect(r.layers).not.toContain("observed");

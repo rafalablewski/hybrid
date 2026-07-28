@@ -9,8 +9,6 @@ import {
   STAT_FIT_EM,
   liftStanding,
   hasActiveConnection,
-  feelSamples,
-  loadBaseline,
   doneReceipt,
   sessionCelebration,
   isFullAccess,
@@ -40,7 +38,6 @@ import {
   type BodyweightLookup,
 } from "@hybrid/core";
 import { fetchTalent, fetchConnections } from "../lib/api";
-import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
@@ -146,12 +143,6 @@ export function WorkoutWrapped({
   const receipt = doneReceipt(session, { bodyweightKg: bwHere });
   // "vs your usual" compares the athlete to THEMSELVES over the last month —
   // never a cohort, and never until there are enough rated sessions for the
-  // comparison to mean anything (loadBaseline enforces the floor). Memoised:
-  // feelSamples walks every logged session.
-  const feelBaseline = useMemo(
-    () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
-    [all, bw, session.id],
-  );
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
@@ -331,18 +322,9 @@ export function WorkoutWrapped({
           {scrollHint}
         </Panel>
 
-        {/* ── HOW DID THAT FEEL? ── */}
-        <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}12`} top={panelH * 0.05} left={-90} />}>
-          <FeelPrompt
-            sessionId={session.id}
-            minutes={receipt.durationMin}
-            initialFeel={session.feel ?? null}
-            initialFatigue={session.fatigue ?? null}
-            sessionEnd={session.completedAt ?? session.startedAt ?? null}
-            baseline={feelBaseline}
-            eyebrow={eyebrow}
-          />
-        </Panel>
+        {/* The "How did that feel?" panel lived here. Both halves of it moved
+            into the one daily card on Today: how you are is the check-in, how
+            hard it was is an effort question per session. See core/checkin-flow. */}
 
         {/* ── PREMIUM ── */}
         {wrapped.facts.length > 0 && (

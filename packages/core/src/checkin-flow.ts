@@ -100,10 +100,99 @@ export function outstandingMetrics(c: Partial<CheckinMetrics> | null | undefined
   return CHECKIN_METRICS.map((m) => m.key).filter((k) => !done.has(k));
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * ONE CARD.
+ *
+ * There used to be two places a feeling was logged: this daily check-in, and a
+ * separate post-workout prompt. They asked the same question — "how are you
+ * right now", on the same 1–5 scale, drawn with the same faces — through two
+ * code paths with different maths, which is why the card could tell an athlete
+ * a reading "isn't counted against your recovery" while the estimator counted
+ * it anyway. One question, two implementations, already disagreeing.
+ *
+ * So the post-workout prompt is gone and this is the only card. It carries:
+ *
+ *   THE DAY      energy, sleep, freshness, mood — how you are, once a day.
+ *   THE SESSIONS how hard each one was — asked only on days you trained, once
+ *                per session, because effort is per-session and a hard lift
+ *                and an easy jog on the same day are not one number.
+ *
+ * The two halves land in different places, both of which already existed: the
+ * daily metrics on Checkin, the effort answers on each Session's `feel`, which
+ * is where the effort model, fatigue, readiness, ACWR and injury risk have
+ * always read them from. No migration, no second source of truth.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** One session the card may ask about, as the clients supply it. */
+export interface CheckinSessionRef {
+  id: string;
+  title: string;
+  /** ISO — orders the questions the way the day happened. */
+  startedAt: string;
+  /** The effort already recorded for it (Session.feel), if any. */
+  feel?: number | null;
+}
+
+/** A step in the flow. Daily metrics first, then one per session, then details. */
+export type CheckinStep =
+  | { kind: "metric"; key: CheckinMetricKey }
+  | { kind: "effort"; session: CheckinSessionRef }
+  | { kind: "details" };
+
+/**
+ * The whole flow for one day. With no sessions this is exactly the four daily
+ * questions plus details — i.e. unchanged for a rest day.
+ */
+export function checkinSteps(sessions: CheckinSessionRef[] = []): CheckinStep[] {
+  const ordered = [...sessions].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+  return [
+    ...CHECKIN_METRICS.map((m) => ({ kind: "metric" as const, key: m.key })),
+    ...ordered.map((session) => ({ kind: "effort" as const, session })),
+    { kind: "details" as const },
+  ];
+}
+
+/** Whether a given step already has an answer. */
+export function stepAnswered(step: CheckinStep, stored: Partial<CheckinMetrics> | null | undefined): boolean {
+  if (step.kind === "metric") {
+    const v = stored?.[step.key];
+    return typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5;
+  }
+  if (step.kind === "effort") {
+    const v = step.session.feel;
+    return typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5;
+  }
+  return false; // details is never "answered"; it's the submit card
+}
+
+/** How complete the whole day is — daily metrics AND every session's effort. */
+export function dayCompleteness(
+  stored: Partial<CheckinMetrics> | null | undefined,
+  sessions: CheckinSessionRef[] = [],
+): { answered: number; total: number; complete: boolean } {
+  const steps = checkinSteps(sessions).filter((s) => s.kind !== "details");
+  const answered = steps.filter((s) => stepAnswered(s, stored)).length;
+  return { answered, total: steps.length, complete: answered === steps.length };
+}
+
+/** The index the follow-up should OPEN on: the first step still unanswered, or
+ *  the details card when everything is in. */
+export function firstOutstandingIndex(
+  stored: Partial<CheckinMetrics> | null | undefined,
+  sessions: CheckinSessionRef[] = [],
+): number {
+  const steps = checkinSteps(sessions);
+  const i = steps.findIndex((s) => s.kind !== "details" && !stepAnswered(s, stored));
+  return i === -1 ? steps.length - 1 : i;
+}
+
 /**
  * The step the follow-up should OPEN on: the first question still unanswered,
  * or the details card when all four are in. Beats hardcoding "start at Sleep",
  * which was only right while the quick tap pretended to answer Energy.
+ *
+ * Daily metrics only — `firstOutstandingIndex` is the version that also walks
+ * the day's sessions.
  */
 export function firstOutstandingStep(c: Partial<CheckinMetrics> | null | undefined): number {
   const next = outstandingMetrics(c)[0];

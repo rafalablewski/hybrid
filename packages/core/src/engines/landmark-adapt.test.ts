@@ -19,6 +19,7 @@ const obs = (o: Partial<VolumeWeekObservation> & { weeksAgo: number; sets: numbe
   performance: null,
   fatigue: null,
   fatigueCost: null,
+  recoveryCost: null,
   soreness: null,
   energy: null,
   ...o,

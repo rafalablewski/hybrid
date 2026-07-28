@@ -63,7 +63,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
 
   // The daily check-in on the engine's own terms: same 1–5 scales, no reinterpretation.
   const recovery = useMemo<RecoveryReport[]>(
-    () => (checkins.data ?? []).map((c) => ({ date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood })),
+    () => (checkins.data ?? []).map((c) => ({ date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null })),
     [checkins.data],
   );
   const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints }), [recovery, bodyweightPoints]);

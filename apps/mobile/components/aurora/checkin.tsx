@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import {
   CHECKIN_METRICS,
@@ -10,8 +10,11 @@ import {
   type ReadinessFeeling,
   answeredMetrics,
   localDayKey,
+  checkinSteps,
+  FEELS,
+  type CheckinSessionRef,
 } from "@hybrid/core";
-import { createCheckin, fetchBillingStatus, fetchCheckins } from "../../lib/api";
+import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -36,7 +39,14 @@ const feelingColor = (C: Palette, feeling: ReadinessFeeling) => txt(C, C[ACCENT[
  *  question (Today's one-tap face already answers Energy, so it starts at
  *  Sleep) and becomes the floor the Back button can't go under. `onDone` fires
  *  on a successful submit so the host can collapse + refresh. */
-export default function AuroraCheckin({ embedded = false, startStep = 0, onDone }: { embedded?: boolean; startStep?: number; onDone?: () => void } = {}) {
+export default function AuroraCheckin({ embedded = false, startStep = 0, sessions = [], onDone }: {
+  embedded?: boolean;
+  startStep?: number;
+  /** The day's sessions — one effort question each. Empty on a rest day, which
+   *  makes the flow exactly the four daily questions it has always been. */
+  sessions?: CheckinSessionRef[];
+  onDone?: () => void;
+} = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const revalidate = useRevalidate();
@@ -44,7 +54,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
   const [paid, setPaid] = useState(false);
   // The first question this instance owns — also the Back floor, so an embedded
   // flow can't reverse into a step its host already answered.
-  const minStep = Math.min(Math.max(Math.trunc(startStep) || 0, 0), CHECKIN_METRICS.length);
+  // The flow is the four daily questions, then one effort question per session
+  // the athlete trained that day, then details — see core/checkin-flow.ts.
+  const steps = useMemo(() => checkinSteps(sessions), [sessions]);
+  const minStep = Math.min(Math.max(Math.trunc(startStep) || 0, 0), steps.length - 1);
   const [step, setStep] = useState(minStep); // 0..3 metrics, 4 = details
   const [done, setDone] = useState(false);
   // The face each step SHOWS. Neutral until the athlete touches it — which is
@@ -58,6 +71,20 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
   const answer = (k: CheckinMetricKey, v: number) => {
     setRatings((s) => ({ ...s, [k]: v }));
     setAnswered((s) => (s.has(k) ? s : new Set(s).add(k)));
+  };
+  // Per-session effort — "how hard was THAT", which is a different question
+  // from "how are you", is per session rather than per day, and is what the
+  // effort model, fatigue, ACWR and injury risk have always read off
+  // Session.feel. Seeded from whatever is already recorded.
+  const [efforts, setEfforts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(sessions.filter((x) => typeof x.feel === "number").map((x) => [x.id, x.feel as number])),
+  );
+  const [effortAnswered, setEffortAnswered] = useState<Set<string>>(
+    () => new Set(sessions.filter((x) => typeof x.feel === "number").map((x) => x.id)),
+  );
+  const answerEffort = (id: string, v: number) => {
+    setEfforts((s) => ({ ...s, [id]: v }));
+    setEffortAnswered((s) => (s.has(id) ? s : new Set(s).add(id)));
   };
   const [extras, setExtras] = useState({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
 
@@ -100,8 +127,8 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     return () => { alive = false; };
   }, []);
 
-  const detailsStep = CHECKIN_METRICS.length; // index 4
-  const isDetails = step === detailsStep;
+  const current = steps[step];
+  const isDetails = current?.kind === "details";
 
   const submit = async () => {
     setSaving(true);
@@ -128,6 +155,14 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
       }
       return;
     }
+    // Effort answers go where every engine already reads them: each session's
+    // own `feel`. Best effort and in parallel — a failed effort write must not
+    // discard the daily check-in that already succeeded.
+    if (effortAnswered.size) {
+      await Promise.all([...effortAnswered].map((id) => patchSessionFeel(id, { feel: efforts[id]! }).catch(() => false)));
+      revalidate.sessions();
+    }
+
     setDone(true);
     revalidate.recovery();
     // The check-in row itself is cached now (qk.checkins) and drives today's
@@ -141,6 +176,8 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     setDone(false); setStep(minStep);
     setRatings({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
     setAnswered(new Set());
+    setEfforts({});
+    setEffortAnswered(new Set());
     setExtras({ bodyMassKg: "", adherencePct: "", note: "", sharedWithCoach: false });
   };
 
@@ -155,7 +192,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
     <>
       {/* progress */}
       <View style={{ flexDirection: "row", gap: 6 }}>
-        {Array.from({ length: CHECKIN_STEP_COUNT }).map((_, i) => (
+        {steps.map((_, i) => (
           <View key={i} style={{ flex: 1, height: 5, borderRadius: 999, backgroundColor: done || i <= step ? C.lime : C.line }} />
         ))}
       </View>
@@ -170,7 +207,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
       ) : isDetails ? (
         <>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
-            {t("w.recovery.checkins.step")} {CHECKIN_STEP_COUNT} / {CHECKIN_STEP_COUNT} — {t("w.recovery.checkins.detailsStep")}
+            {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
@@ -222,16 +259,57 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, onDone 
             <APill label={saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")} onPress={submit} disabled={saving} style={{ flex: 1 }} />
           </View>
         </>
+      ) : current?.kind === "effort" ? (
+        (() => {
+          // HOW HARD WAS THAT — the one question that is genuinely per session
+          // rather than per day. Same card, same 1–5 row; the words are the
+          // effort scale (Easy … All out) because it is not asking how you are,
+          // it is asking what the session cost.
+          const sess = current.session;
+          const val = efforts[sess.id];
+          const touched = effortAnswered.has(sess.id);
+          const def = FEELS.find((f) => f.value === val);
+          return (
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
+                {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t("w.recovery.checkins.effort")}
+              </Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
+              <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, maxWidth: 260 }}>{sess.title}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.title, marginTop: 20, color: def && touched ? txt(C, C[def.tone as "lime"] ?? C.chalk) : C.ash }}>
+                {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
+              </Text>
+
+              <View style={{ flexDirection: "row", gap: 9, marginTop: 18, alignSelf: "stretch" }}>
+                {FEELS.map((f) => {
+                  const sel = touched && val === f.value;
+                  return (
+                    <Pressable key={f.value} onPress={() => answerEffort(sess.id, f.value)}
+                      accessibilityRole="radio" accessibilityLabel={`${sess.title}: ${t(f.labelKey)}`} accessibilityState={{ selected: sel }}
+                      style={{ flex: 1, aspectRatio: 1, borderRadius: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1a` : C.ink }}>
+                      <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={{ flexDirection: "row", gap: space.ms, marginTop: 24, alignSelf: "stretch" }}>
+                {step > minStep ? backBtn : null}
+                <APill label={t("w.recovery.checkins.next")} onPress={() => setStep((s) => s + 1)} style={{ flex: 1 }} />
+              </View>
+            </View>
+          );
+        })()
       ) : (
         (() => {
-          const m = CHECKIN_METRICS[step];
+          const m = current?.kind === "metric" ? CHECKIN_METRICS.find((x) => x.key === current.key) : null;
           if (!m) return null;
           const val = ratings[m.key];
           const feeling = checkinScaleFeeling(val);
           return (
             <View style={{ alignItems: "center" }}>
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
-                {t("w.recovery.checkins.step")} {step + 1} / {CHECKIN_STEP_COUNT} — {t(m.labelKey)}
+                {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
               </Text>
               <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t(m.questionKey)}</Text>
               <View style={{ marginTop: 22, marginBottom: 4 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>

@@ -29,6 +29,10 @@ import {
   outstandingMetrics,
   checkinCompleteness,
   firstOutstandingStep,
+  checkinSteps,
+  dayCompleteness,
+  firstOutstandingIndex,
+  stepAnswered,
   QUICK_CHECKIN_METRIC,
 } from "./checkin-flow";
 import { checkinFeeling, checkinRating } from "./readiness-feeling";
@@ -89,5 +93,56 @@ describe("one tap answers one question", () => {
     expect(firstOutstandingStep({ energy: 4, sleep: 3, soreness: null, mood: null })).toBe(2);
     // All four in → the details/submit card.
     expect(firstOutstandingStep({ energy: 4, sleep: 3, soreness: 5, mood: 4 })).toBe(CHECKIN_METRICS.length);
+  });
+});
+
+describe("one card — the day and its sessions", () => {
+  const S = (id: string, title: string, h: number, feel?: number | null) => ({
+    id, title, startedAt: new Date(Date.UTC(2026, 6, 16, h)).toISOString(), feel: feel ?? null,
+  });
+
+  it("a rest day is exactly the four daily questions plus details", () => {
+    const steps = checkinSteps([]);
+    expect(steps.map((s) => s.kind)).toEqual(["metric", "metric", "metric", "metric", "details"]);
+  });
+
+  it("a training day asks once per session, in the order the day happened", () => {
+    const steps = checkinSteps([S("b", "Evening intervals", 18), S("a", "Morning squats", 7)]);
+    expect(steps.map((s) => s.kind)).toEqual(["metric", "metric", "metric", "metric", "effort", "effort", "details"]);
+    const efforts = steps.filter((s): s is Extract<typeof s, { kind: "effort" }> => s.kind === "effort");
+    // Sorted by start time, not by the order the client happened to pass them.
+    expect(efforts.map((e) => e.session.title)).toEqual(["Morning squats", "Evening intervals"]);
+  });
+
+  it("a hard lift and an easy jog are two questions, not one", () => {
+    const sessions = [S("a", "Squats", 7), S("b", "Jog", 18)];
+    const { total } = dayCompleteness({ energy: 4, sleep: 4, soreness: 4, mood: 4 }, sessions);
+    expect(total).toBe(6); // four daily + two sessions
+  });
+
+  it("counts completeness across both halves", () => {
+    const sessions = [S("a", "Squats", 7, 4), S("b", "Jog", 18)];
+    const done = dayCompleteness({ energy: 4, sleep: null, soreness: null, mood: null }, sessions);
+    expect(done).toEqual({ answered: 2, total: 6, complete: false }); // energy + the rated session
+    const all = dayCompleteness({ energy: 4, sleep: 3, soreness: 5, mood: 4 }, [S("a", "Squats", 7, 4), S("b", "Jog", 18, 2)]);
+    expect(all.complete).toBe(true);
+  });
+
+  it("resumes at the first genuinely unanswered step, daily or session", () => {
+    const sessions = [S("a", "Squats", 7), S("b", "Jog", 18)];
+    // Only energy in → resume at Sleep (index 1).
+    expect(firstOutstandingIndex(quickCheckinMetrics(4), sessions)).toBe(1);
+    // All four daily in → resume at the FIRST session's effort (index 4).
+    expect(firstOutstandingIndex({ energy: 4, sleep: 3, soreness: 5, mood: 4 }, sessions)).toBe(4);
+    // First session rated → resume at the second (index 5).
+    expect(firstOutstandingIndex({ energy: 4, sleep: 3, soreness: 5, mood: 4 }, [S("a", "Squats", 7, 4), S("b", "Jog", 18)])).toBe(5);
+    // Everything in → the details card (the last index).
+    const full = [S("a", "Squats", 7, 4), S("b", "Jog", 18, 2)];
+    expect(firstOutstandingIndex({ energy: 4, sleep: 3, soreness: 5, mood: 4 }, full)).toBe(checkinSteps(full).length - 1);
+  });
+
+  it("an off-scale stored effort counts as unanswered", () => {
+    const sessions = [S("a", "Squats", 7, 0 as unknown as number)];
+    expect(stepAnswered(checkinSteps(sessions)[4]!, {})).toBe(false);
   });
 });

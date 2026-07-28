@@ -7,7 +7,6 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
-import { FeelPrompt } from "../components/feel-prompt";
 import {
   needsBodyweight,
   prescribeSession,
@@ -71,8 +70,6 @@ import {
   isFullAccess,
   mmss,
   MOODS,
-  feelSamples,
-  loadBaseline,
   SUGGESTED_TAGS,
   MAX_TAGS,
   tagLabelKey,
@@ -1793,7 +1790,6 @@ function Summary({
   const bwLookup = useBodyweightLookup();
   // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
   // last month, from the sessions they'd already rated before this one.
-  const feelBaseline = useMemo(() => loadBaseline(feelSamples(prior, bwLookup)), [prior, bwLookup]);
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
@@ -1964,14 +1960,12 @@ function Summary({
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
 
-        {/* "How did that feel?" — asked HERE, straight after the last set, which
-            is when the answer is most accurate and the athlete is still holding
-            the phone. The Wrapped asks the same question later for a session
-            that was never rated; both read the stored value, so nobody is asked
-            twice. See core/session-feel.ts for why the answer matters. */}
-        {!summary.guest && (
-          <FeelPrompt compact sessionId={summary.sessionId} minutes={summary.minutes} baseline={feelBaseline} />
-        )}
+        {/* "How did that feel?" used to be asked HERE. It has moved into the one
+            daily card on Today, which now carries an effort question per session
+            trained that day — because the app was asking the same recovery
+            question in two places with two different maths behind them. Effort
+            still lands on Session.feel; only the surface moved.
+            See core/checkin-flow.ts. */}
 
         {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
         {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
