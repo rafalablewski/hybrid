@@ -300,7 +300,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "a", value: String(PRIOR_COEFFS.intercept), meaning: "intercept (prior)" },
       { symbol: "b", value: String(PRIOR_COEFFS.slope), meaning: "slope (prior)" },
     ],
-    note: "The prior is documented, not fitted: score 50 → ~10%, score 80 → ~35%. Once ≥30 labeled outcomes exist, refitCalibration re-fits (a, b) by gradient descent and a new ModelFit version goes live everywhere risk is read.",
+    note: "The prior is expert-elicited and documented, not fitted: score 50 → ~10%, score 80 → ~35%, versioned (RISK_MODEL_VERSION) so a fitted model is always distinguishable from the prior it replaced. Once ≥30 labeled outcomes exist, refitCalibration re-fits (a, b) by gradient descent and a new ModelFit version goes live everywhere risk is read — and the fit is graded, not just trusted: brierScore and reliabilityBuckets (datanet.ts) score any coefficients against the outcomes they claim to predict.",
   },
 
   // ---- Volume landmarks: the four layers that turn a textbook table into
@@ -311,12 +311,12 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     name: "Resolution order",
     expression: "landmarks = manual( observed( profile( population ) ) )",
     constants: [
-      { symbol: "population", value: "VOLUME_LANDMARKS", meaning: "the textbook table everyone starts on" },
+      { symbol: "population", value: "VOLUME_LANDMARKS", meaning: "the Renaissance-Periodization volume-landmark table everyone starts on" },
       { symbol: "profile", value: "stimulus / recovery", meaning: "scaled to who the athlete is" },
       { symbol: "observed", value: "MRV estimate", meaning: "corrected by what the log showed" },
       { symbol: "manual", value: "athlete override", meaning: "always wins" },
     ],
-    note: "Each layer is closer to the individual than the last, and the result carries which layer produced it — so no screen can present a population average as a personal measurement.",
+    note: "Each layer is closer to the individual than the last, and the result carries which layer produced it — so no screen can present a population average as a personal measurement. The base table is the RP volume-landmark model mapped onto HYBRID's seven muscle groups (landmarks.ts) — a deliberate starting point, not a hidden dependency: the observed layer exists precisely to correct it against this athlete's own log, bounded ±35% per window so a poor prior can't be amplified without evidence.",
   },
   {
     id: "landmark-stimulus",
