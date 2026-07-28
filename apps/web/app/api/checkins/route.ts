@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CHECKIN_COOLDOWN_MS } from "@hybrid/core";
+import { CHECKIN_COOLDOWN_MS, checkinPatchFields } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -86,10 +86,9 @@ export async function POST(request: Request) {
   // So an ABSENT key now leaves the stored value alone; only a key that is
   // explicitly present may change it (present-and-null clears it deliberately).
   // A new day still writes the full row, where absent genuinely means unknown.
-  const has = (k: string) => Object.prototype.hasOwnProperty.call(b, k);
-  const patch = Object.fromEntries(
-    Object.entries(full).filter(([k]) => k === "weekOf" || has(k)),
-  ) as Partial<typeof full>;
+  // The rule lives in core beside the builders that produce these payloads, so
+  // what the clients send and what the server honours are one decision.
+  const patch = checkinPatchFields(full, b);
 
   const checkin = sameDay
     ? await prisma.checkin.update({ where: { id: sameDay.id }, data: patch })

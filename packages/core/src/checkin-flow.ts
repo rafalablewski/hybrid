@@ -180,6 +180,28 @@ export function checkinMetricPatch(
   return out;
 }
 
+/**
+ * Narrow a fully-prepared check-in row to the fields the REQUEST actually
+ * carried — the server half of the rule above, kept here so the two halves are
+ * one decision rather than two that have to agree.
+ *
+ * `weekOf` always writes (it identifies the day being refined). Everything else
+ * writes only if the sender named it: absent leaves the stored value alone,
+ * present-and-null clears it deliberately. Applies to UPDATES only — creating a
+ * brand-new day writes the whole prepared row, where an absent field genuinely
+ * does mean unknown.
+ */
+export function checkinPatchFields<T extends Record<string, unknown>>(
+  prepared: T,
+  body: Record<string, unknown>,
+): Partial<T> {
+  const out: Partial<T> = {};
+  for (const k of Object.keys(prepared) as (keyof T & string)[]) {
+    if (k === "weekOf" || Object.prototype.hasOwnProperty.call(body, k)) out[k] = prepared[k];
+  }
+  return out;
+}
+
 /** Which metrics a stored check-in actually carries an answer for. */
 export function answeredMetrics(c: Partial<CheckinMetrics> | null | undefined): CheckinMetricKey[] {
   if (!c) return [];

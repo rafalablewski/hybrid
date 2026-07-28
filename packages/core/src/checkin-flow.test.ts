@@ -36,6 +36,7 @@ import {
   quickCheckinPatch,
   checkinMetricPatch,
   checkinMetricWordKey,
+  checkinPatchFields,
   checkinScaleFeeling,
 } from "./checkin-flow";
 import { checkinFeeling, checkinRating, readinessLoadFactor, READINESS_LOAD_FACTOR } from "./readiness-feeling";
@@ -246,5 +247,64 @@ describe("one question, one number, every surface", () => {
     const noReadiness = { energy: null, sleep: 2, soreness: 2, mood: 2 };
     expect(quickCheckinFeeling(noReadiness)).toBeNull();
     expect(readinessLoadFactor(quickCheckinFeeling(noReadiness))).toBe(1);
+  });
+});
+
+describe("what a same-day write is allowed to touch", () => {
+  // The server half of the rule. `prepared` is the row the route builds from a
+  // request body — every column, with anything the body didn't carry already
+  // coerced to null. Writing THAT is what deleted the athlete's answers; the
+  // patch is what the route writes instead.
+  const prepare = (b: Record<string, unknown>) => ({
+    weekOf: "2026-07-28T09:00:00.000Z",
+    bodyMassKg: typeof b.bodyMassKg === "number" ? b.bodyMassKg : null,
+    energy: typeof b.energy === "number" ? b.energy : null,
+    sleep: typeof b.sleep === "number" ? b.sleep : null,
+    soreness: typeof b.soreness === "number" ? b.soreness : null,
+    mood: typeof b.mood === "number" ? b.mood : null,
+    adherencePct: typeof b.adherencePct === "number" ? b.adherencePct : null,
+    note: typeof b.note === "string" && b.note.trim() ? b.note : null,
+    sharedWithCoach: b.sharedWithCoach === true,
+  });
+  const patchFor = (b: Record<string, unknown>) => checkinPatchFields(prepare(b), b);
+
+  it("an afternoon re-tap touches readiness and nothing else", () => {
+    // THE REGRESSION: the morning had sleep/freshness/mood in it, and this
+    // write set all three to null.
+    const body = { weekOf: "x", ...quickCheckinPatch(4) };
+    expect(patchFor(body)).toEqual({ weekOf: "2026-07-28T09:00:00.000Z", energy: 4 });
+    for (const k of ["sleep", "soreness", "mood", "note", "adherencePct", "bodyMassKg"]) {
+      expect(k in patchFor(body)).toBe(false);
+    }
+  });
+
+  it("the guided flow's submit leaves the day's details alone", () => {
+    // THE REGRESSION: the web wizard never loaded weight / adherence / note, so
+    // submitting the follow-up erased all three.
+    const body = {
+      weekOf: "x",
+      ...checkinMetricPatch({ energy: 3, sleep: 4, soreness: 2, mood: 5 }, ["sleep", "soreness", "mood"]),
+      sharedWithCoach: false,
+    };
+    const p = patchFor(body);
+    expect(p).toEqual({ weekOf: "2026-07-28T09:00:00.000Z", sleep: 4, soreness: 2, mood: 5, sharedWithCoach: false });
+    expect("bodyMassKg" in p).toBe(false);
+    expect("note" in p).toBe(false);
+    expect("energy" in p).toBe(false); // walked past, so not this write's business
+  });
+
+  it("an explicit null still clears — absent and null are different answers", () => {
+    const p = patchFor({ weekOf: "x", note: null });
+    expect(p.note).toBeNull();
+    expect("note" in p).toBe(true);
+  });
+
+  it("weekOf always writes: it names the day being refined", () => {
+    expect(patchFor({}).weekOf).toBe("2026-07-28T09:00:00.000Z");
+  });
+
+  it("a full submit writes everything it carried", () => {
+    const body = { weekOf: "x", bodyMassKg: 82, energy: 5, sleep: 4, soreness: 3, mood: 4, adherencePct: 90, note: "solid", sharedWithCoach: true };
+    expect(patchFor(body)).toEqual({ ...prepare(body) });
   });
 });
