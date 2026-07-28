@@ -54,7 +54,10 @@ export const VOLUME_PROFILE_FIELDS: VolumeProfileField[] = [
   { key: "daysPerWeek", weight: 0.12, derivable: true, unlocksKey: "w.analyze.vol.unlocksDays" },
   { key: "sleep", weight: 0.10, derivable: true, unlocksKey: "w.analyze.vol.unlocksSleep" },
   { key: "nutrition", weight: 0.08, derivable: true, unlocksKey: "w.analyze.vol.unlocksNutrition" },
-  { key: "heightCm", weight: 0.05, derivable: false, unlocksKey: "w.analyze.vol.unlocksHeight" },
+  // Derivable NOT because the app infers a height — it never would — but
+  // because the athlete already gave it once in Profile → Body & progress, and
+  // measuredProfile reads it from there rather than asking a second time.
+  { key: "heightCm", weight: 0.05, derivable: true, unlocksKey: "w.analyze.vol.unlocksHeight" },
   { key: "stress", weight: 0.03, derivable: false, unlocksKey: "w.analyze.vol.unlocksStress" },
 ];
 
