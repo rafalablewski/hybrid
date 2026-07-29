@@ -121,6 +121,10 @@ jobs:
           BUILD=$(( $(date -u +%s) - 1704067200 ))
           echo "Setting CFBundleVersion to $BUILD"
           agvtool new-version -all "$BUILD"
+          # Carried forward so the post-upload steps can find THIS build in App
+          # Store Connect (the version string never changes, so the build number
+          # is the only thing that identifies a run).
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
 
       - name: Build the IPA
         working-directory: apps/mobile/ios
@@ -136,3 +140,119 @@ jobs:
         run: |
           app-store-connect publish \
             --path "$(find apps/mobile/ios/build -name '*.ipa' | head -n 1)"
+
+      # ── Green must mean INSTALLABLE, not "handed to Apple" ──────────────────
+      # `publish` returns as soon as altool finishes the transfer, which is not
+      # the same thing as the build being available in TestFlight: App Store
+      # Connect then PROCESSES it (validation, entitlements, encryption), which
+      # takes anywhere from a few minutes to the better part of an hour, and can
+      # fail afterwards — by email, never back to this run. So a green run used
+      # to tell you nothing about whether the build had actually landed, and the
+      # only way to find out was to keep opening TestFlight.
+      #
+      # This step closes that gap: it polls until Apple finishes, reports the
+      # state TestFlight itself shows, and FAILS if processing fails or never
+      # completes. It also names the exact build to look for, because the
+      # version string never changes between releases — every build is 1.0.0,
+      # and the build NUMBER is the only thing that tells two of them apart.
+      - name: Wait for App Store Connect to finish processing
+        run: |
+          set -euo pipefail
+
+          APP_ID=$(app-store-connect apps list \
+            --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json \
+            | jq -r '.[0].id')
+          if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
+            echo "::error::No app in App Store Connect for $BUNDLE_ID"
+            exit 1
+          fi
+
+          # Apple needs a moment before a freshly uploaded build is even
+          # queryable, so "not found yet" is a normal early state, not an error.
+          DEADLINE=$(( $(date -u +%s) + 45 * 60 ))
+          BUILD_ID=""
+          STATE=""
+          while :; do
+            BUILD_JSON=$(app-store-connect builds list \
+              --app-id "$APP_ID" --build-version-number "$BUILD" --json 2>/dev/null || echo '[]')
+            BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id // empty')
+            STATE=$(echo "$BUILD_JSON" | jq -r '.[0].attributes.processingState // "NOT_FOUND"')
+
+            case "$STATE" in
+              VALID)
+                echo "Processing finished: $STATE"
+                break
+                ;;
+              INVALID|FAILED)
+                echo "::error::App Store Connect rejected build $BUILD ($STATE). \
+          Check the email from Apple for the reason — this never comes back through the API."
+                exit 1
+                ;;
+            esac
+
+            if [ "$(date -u +%s)" -ge "$DEADLINE" ]; then
+              echo "::error::Build $BUILD still '$STATE' after 45 minutes. \
+          It may still land on its own; check App Store Connect."
+              exit 1
+            fi
+            echo "  $STATE — waiting…"
+            sleep 30
+          done
+
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+
+          # What TestFlight itself will show. READY_FOR_BETA_TESTING is the one
+          # that means "installable"; anything else is worth seeing in the log.
+          INTERNAL=$(app-store-connect builds beta-details "$BUILD_ID" --json 2>/dev/null \
+            | jq -r '.attributes.internalBuildState // "UNKNOWN"')
+          echo "Internal build state: $INTERNAL"
+          echo "INTERNAL_STATE=$INTERNAL" >> "$GITHUB_ENV"
+
+      # "What to Test" in TestFlight, set from the commit that triggered the
+      # build. Without it every entry is an unlabelled 1.0.0 and the only way to
+      # tell which one you are installing is to decode the build number.
+      - name: Label the build in TestFlight
+        continue-on-error: true
+        run: |
+          # printf, not a multi-line quoted literal: the latter would carry this
+          # file's YAML indentation into the note TestFlight actually displays.
+          NOTES=$(printf '%s\n\n%s on %s' \
+            "$(git log -1 --pretty=%s)" "${GITHUB_SHA:0:7}" "$GITHUB_REF_NAME")
+          app-store-connect builds add-beta-test-info "$BUILD_ID" \
+            --locale en-US --whats-new "$NOTES"
+
+      # A build that processes cleanly but is never added to a tester group
+      # looks EXACTLY like a build that never arrived. If the group is named in
+      # repo variables (Settings → Secrets and variables → Actions → Variables →
+      # TESTFLIGHT_GROUP), attach it here; if it is not set, say so plainly
+      # rather than leaving a silent gap.
+      - name: Add the build to the internal tester group
+        if: ${{ vars.TESTFLIGHT_GROUP != '' }}
+        run: |
+          app-store-connect beta-groups add-build \
+            --beta-group "${{ vars.TESTFLIGHT_GROUP }}" "$BUILD_ID"
+          echo "Added build $BUILD to group '${{ vars.TESTFLIGHT_GROUP }}'."
+
+      - name: Summary
+        run: |
+          {
+            echo "### TestFlight"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Install | **HYBRID 1.0.0 (${BUILD})** |"
+            echo "| Internal state | \`${INTERNAL_STATE}\` |"
+            echo "| Commit | \`${GITHUB_SHA:0:7}\` on \`${GITHUB_REF_NAME}\` |"
+            echo
+            if [ "${INTERNAL_STATE}" != "READY_FOR_BETA_TESTING" ]; then
+              echo "> Processing finished, but the internal state is \`${INTERNAL_STATE}\`"
+              echo "> rather than \`READY_FOR_BETA_TESTING\`. If it does not appear for"
+              echo "> testers, check that the build is assigned to an internal group."
+            fi
+            if [ -z "${{ vars.TESTFLIGHT_GROUP }}" ]; then
+              echo "> No \`TESTFLIGHT_GROUP\` repo variable set, so this run did not assign"
+              echo "> the build to a tester group. If your internal group does not add new"
+              echo "> builds automatically, set that variable to its name."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
