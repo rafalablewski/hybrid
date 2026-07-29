@@ -24,6 +24,7 @@
 
 import { type NutritionFacts, atwaterKcal, auditFacts, factsCompleteness, kj } from "./food-facts";
 import type { FoodHit } from "./nutrition-off";
+import { MAX_MARK } from "./source-marks";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -103,10 +104,8 @@ export const VERIFIED_SOURCES: VerifiedSource[] = [
     kind: "restaurant",
     country: "PL",
     note: "The Polish arm of MAX, the Swedish burger chain (founded 1968). Nutrition per the operator's published per-item table.",
-    trademark: "MAX is a trademark of Max Burgers AB. Shown to identify the source of these figures, not as an endorsement.",
-    // mark: MAX_MARK,  ← drop the operator's SVG in here; see SOURCE MARKS below.
-    //   Until then both clients render the wordmark fallback, which is our own
-    //   typography and therefore never misrepresents their brand.
+    trademark: "MAX is a registered trademark of Max Burgers AB. Shown to identify the source of these figures, not as an endorsement.",
+    mark: MAX_MARK,
   },
 ];
 
@@ -272,23 +271,12 @@ export function mergeFoodHits(verified: FoodHit[], community: FoodHit[], limit =
 
 // ── Source marks ───────────────────────────────────────────────────────────
 //
-// HOW TO ADD ONE. Paste the operator's SVG as a template literal, set `aspect`
-// from its viewBox, and attach it to the source as `mark`. Two rules:
-//   1. the SVG must be SELF-CONTAINED — strip <image>, external <use>, @font-face
-//      and any http(s) reference; convert text to paths so it can't silently
-//      fall back to a font the device lacks;
-//   2. record in `credit` where the artwork came from and on what terms, so the
-//      claim is auditable later rather than folklore.
-// Only add a mark for artwork we are actually entitled to display. When in
-// doubt, leave it out: the wordmark fallback costs the user nothing.
-//
-// e.g.
-//   const MAX_MARK: SourceMark = {
-//     svg: `<svg viewBox="0 0 1024 656" xmlns="http://www.w3.org/2000/svg">…</svg>`,
-//     aspect: 1024 / 656,
-//     alt: "MAX",
-//     credit: "Wikimedia Commons, File:Max (Restaurant) logo.svg — verify the tag before shipping.",
-//   };
+// The artwork itself lives in source-marks.ts — one enumerable place for every
+// third-party mark in the app. Adding one is a `SourceMark` there plus `mark:`
+// on the source here; see reference/verified-source-marks.md for the SVG
+// hygiene rules (which auditVerifiedCatalog enforces) and the licensing note.
+// A source WITHOUT artwork is a supported state, not a broken one: the clients
+// fall back to a wordmark in our own type, which costs the athlete nothing.
 
 /** The mark for a source, or null when we render the wordmark instead. */
 export function sourceMark(sourceId: string): SourceMark | null {
@@ -341,7 +329,12 @@ export function auditVerifiedCatalog(): string[] {
     const m = src.mark;
     if (!m) continue;
     if (!/^\s*<svg[\s>]/.test(m.svg)) problems.push(`${src.id}: mark must be inline <svg> markup`);
-    if (/https?:|<image\b|xlink:href|@font-face/i.test(m.svg)) problems.push(`${src.id}: mark must be self-contained (no remote refs, images or webfonts)`);
+    // An `xmlns` value is a NAMESPACE NAME, not a URL the renderer fetches — it
+    // is required markup on a standalone SVG. Drop those before looking for a
+    // real remote reference, or the rule would reject every valid mark.
+    const refs = m.svg.replace(/\sxmlns(:[a-z]+)?="[^"]*"/gi, "");
+    if (/https?:|<image\b|xlink:href|@font-face|url\(/i.test(refs))
+      problems.push(`${src.id}: mark must be self-contained (no remote refs, images or webfonts)`);
     if (!(m.aspect > 0)) problems.push(`${src.id}: mark needs a positive aspect ratio`);
     if (!m.alt) problems.push(`${src.id}: mark needs alt text`);
     if (!m.credit) problems.push(`${src.id}: mark needs a credit line`);

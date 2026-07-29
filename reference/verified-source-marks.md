@@ -5,11 +5,15 @@ from. The provenance card in the portion editor can show that business's own
 **mark** next to the name, so an athlete recognises the source at a glance
 instead of reading it.
 
-Until a source has artwork, both clients render a **wordmark fallback**: the
-business's name set in our own display face inside a hairline chip. That is
-deliberate — visibly our typography, so it can never be mistaken for an
-approximation of someone's logo. Shipping a hand-drawn "close enough" version of
-a real brand mark would undermine the exact thing the card exists to establish.
+MAX ships with its real wordmark (`packages/core/src/source-marks.ts`), traced
+to vector paths from the operator's own artwork.
+
+A source **without** artwork is a supported state, not a broken one: both clients
+fall back to the business's name set in our own display face inside a hairline
+chip. That is deliberate — visibly our typography, so it can never be mistaken
+for an approximation of someone's logo. Shipping a hand-drawn "close enough"
+version of a real brand mark would undermine the exact thing the card exists to
+establish.
 
 ## What the mark claims
 
@@ -39,6 +43,10 @@ logo per row turns a food list into an advertising rail, and it starts to read a
    `trademarked` — read the actual tag on the file page rather than assuming,
    and note that the trademark restriction survives the copyright tag.
 
+   MAX's mark was traced from artwork supplied by the HYBRID team. That is fine
+   for an internal build; **confirm redistribution terms with the operator
+   before a public release**, and record the outcome in the mark's `credit`.
+
 2. **Make the SVG self-contained.** Strip anything that would reach the network
    or the device's font stack:
    - no `http(s):` references, no `<image>`, no external `<use>`/`xlink:href`
@@ -50,26 +58,36 @@ logo per row turns a food list into an advertising rail, and it starts to read a
    mark that would render as a broken box fails CI rather than an athlete's
    screen.
 
-3. **Attach it** in `packages/core/src/verified-foods.ts`:
+3. **Trace it to paths** — do not embed a raster. A PNG inside an `<svg>`
+   defeats the point: it cannot take the card's background through its
+   knockouts, it blurs on a Retina phone, and it is an order of magnitude
+   larger. `potrace` (or `potracer`, its pure-Python port) run on the **alpha
+   channel** of a transparent-background PNG gives one path whose counters are
+   true holes:
 
-   ```ts
-   const MAX_MARK: SourceMark = {
-     svg: `<svg viewBox="0 0 1024 656" xmlns="http://www.w3.org/2000/svg">…</svg>`,
-     aspect: 1024 / 656,
-     alt: "MAX",
-     credit: "Wikimedia Commons, File:Max (Restaurant) logo.svg — PD-textlogo + trademarked (checked 2026-07-29).",
-   };
+   ```python
+   mask = numpy.array(img.getchannel("A")) > 127     # the ink
+   path = potrace.Bitmap(~mask).trace(turdsize=8)     # ctor inverts — pass the complement
    ```
 
-   then set `mark: MAX_MARK` on the source. That is the whole change: both
-   clients pick it up with no further edit — web renders it through a data URI on
-   an `<img>` (never `innerHTML`, so a mark can't become an injection surface),
-   mobile through `react-native-svg`'s `SvgXml`.
+   Check the result numerically rather than by eye alone: rasterize the trace
+   back at source resolution and compare it with the mask. MAX's came out at an
+   intersection-over-union of 0.9994 (0.034 % of pixels disagreeing), which is
+   the bar to aim for.
 
-4. **Check both themes.** The card sits on a chartreuse-tinted panel on AURORA
-   and a pine-tinted one on Kyoto Hour. A mark with a white knockout will vanish
-   on one of them — prefer a version that carries its own background, or one
-   that is legible on both.
+4. **Add it** to `packages/core/src/source-marks.ts`, then set `mark:` on the
+   source in `verified-foods.ts`. That is the whole change: both clients pick it
+   up with no further edit — web renders it through a data URI on an `<img>`
+   (never `innerHTML`, so a mark can't become an injection surface), mobile
+   through `react-native-svg`'s `SvgXml`.
+
+5. **Check both themes.** The card sits on a chartreuse-tinted panel on AURORA
+   and a pine-tinted one on Kyoto Hour. This is where a raster, or a mark whose
+   keylines are *painted* white, fails: it leaves white slabs on the charcoal
+   card. Traced as **holes** they take the card's own colour and the mark reads
+   on both grounds — which is why MAX's is a single `fill-rule="evenodd"` path
+   rather than a red shape stacked under white strokes. Render it on `#1a1e17`
+   and `#f7f6ec` and look before shipping.
 
 ## Credits
 

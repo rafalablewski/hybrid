@@ -104,10 +104,24 @@ describe("source marks", () => {
     expect(verifiedSource("max-premium-burgers")!.trademark).toMatch(/Max Burgers AB/);
   });
 
-  it("falls back to the wordmark until real artwork is dropped in", () => {
-    // Nothing fabricated: we ship no approximation of someone's logo.
-    expect(sourceMark("max-premium-burgers")).toBeNull();
-    expect(sourceMarkCredits()).toEqual([]);
+  it("carries MAX's own wordmark, self-contained and credited", () => {
+    const m = sourceMark("max-premium-burgers")!;
+    expect(m).not.toBeNull();
+    expect(m.svg).toMatch(/^<svg/);
+    expect(m.alt).toBe("MAX");
+    // Traced from the operator's artwork — 1000 × 627.6, so a 26px-high mark
+    // lays out at ~41px wide without the renderer having to measure anything.
+    expect(m.aspect).toBeCloseTo(1.593, 2);
+    // The keylines between the letterforms are HOLES, not painted white: that
+    // is what keeps the mark legible on the charcoal card and the washi one.
+    expect(m.svg).toContain('fill-rule="evenodd"');
+    const credit = sourceMarkCredits();
+    expect(credit).toHaveLength(1);
+    expect(credit[0]!.credit).toMatch(/Max Burgers AB/);
+  });
+
+  it("keeps a source without artwork a supported state, not a broken one", () => {
+    expect(sourceMark("no-such-source")).toBeNull();
   });
 
   it("renders a mark as a data URI, so no markup is ever injected", () => {
