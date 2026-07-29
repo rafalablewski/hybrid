@@ -11,6 +11,7 @@ import type { LoggedSession } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionVolume } from "./session";
 import { bestE1rmMap, lifetimePrCount } from "./records";
+import { deviceTrueSessions } from "../device-truth";
 
 const DAY = 86_400_000;
 
@@ -47,7 +48,8 @@ export function longestWeekStreak(sessions: LoggedSession[]): number {
 /** Furthest single cardio effort ever logged, in km. */
 function longestRunKm(sessions: LoggedSession[]): number {
   let max = 0;
-  for (const s of sessions)
+  // The furthest you actually went — the device's distance when it measured it.
+  for (const s of deviceTrueSessions(sessions))
     for (const b of s.blocks)
       if (b.kind === "cardio" && typeof b.distance === "number") max = Math.max(max, b.distance);
   return max;

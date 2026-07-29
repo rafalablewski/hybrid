@@ -65,6 +65,8 @@ describe("mergeDoneReceipts", () => {
     tonnageKg: 0,
     sets: 0,
     distanceKm: 0,
+    elevationM: 0,
+    measured: false,
     ...over,
   });
 

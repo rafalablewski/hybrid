@@ -25,7 +25,8 @@ import {
   formatCardioPr,
   cardioPrsForSession,
   sessionShape,
-  sessionCardioTotals,
+  sessionCardioSummary,
+  deviceTrueSession,
   formatSportDistance,
   headlineRunMove,
   mmss,
@@ -117,7 +118,7 @@ export default function SessionDetail() {
   // as Duration · Distance · Pace; a lift keeps Minutes · Sets · Volume; a mixed
   // session shows both. (#4 — per-session, sport-specific stats.)
   const shape = sessionShape(session);
-  const cardio = sessionCardioTotals(session.blocks);
+  const cardio = sessionCardioSummary(session);
   const cardioMin = cardio.minutes || minutes || 0;
 
   // Manage this workout — lives on the breakdown since the classic History
@@ -154,7 +155,9 @@ export default function SessionDetail() {
       <MuscleFocus blocks={session.blocks} bodyweightKg={bwHere} t={t} />
 
       <View style={{ marginTop: 16 }}>
-        {session.blocks.map((b, i) => (
+        {/* The breakdown reads the session as the DEVICE measured it — the typed
+            figures live on the summary's comparison panel and nowhere else. */}
+        {deviceTrueSession(session).blocks.map((b, i) => (
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>

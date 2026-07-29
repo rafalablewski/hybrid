@@ -44,7 +44,7 @@ import {
   todayDoneState,
   sessionsOnDay,
   sessionShape,
-  sessionCardioTotals,
+  sessionCardioSummary,
   sessionVolume,
   fmtTonnage,
   type LoggedSession,
@@ -1044,7 +1044,8 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
 // as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
 function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
   if (sessionShape(s) !== "strength") {
-    const ct = sessionCardioTotals(s.blocks);
+    // Measured where a device recorded it (see core/device-truth.ts).
+    const ct = sessionCardioSummary(s);
     const p: string[] = [];
     if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
     if (ct.minutes) p.push(`${ct.minutes} min`);

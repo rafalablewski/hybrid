@@ -1,4 +1,5 @@
 import { cardioDiscipline, type LoggedSession, type CardioBlock, type CardioDiscipline } from "./session";
+import { deviceTrueSessions } from "../device-truth";
 
 // Running / cardio analytics — pure aggregates over logged cardio blocks, so the
 // web/mobile Running screens (and anything else) read one source of truth. A
@@ -24,7 +25,10 @@ export const blockDiscipline = (b: CardioBlock): CardioDiscipline => b.disciplin
  *  strength/other blocks pass through untouched (the aggregates ignore them).
  *  Pure — one shallow copy per session. The building block for the filters below. */
 function filterCardio(sessions: LoggedSession[], keep: (d: CardioDiscipline) => boolean): LoggedSession[] {
-  return sessions.map((s) => ({
+  // Project the device's measurement BEFORE narrowing: attribution reads the
+  // session as it was logged, and dropping blocks first could hand a recording
+  // to the wrong effort (see device-truth.ts).
+  return deviceTrueSessions(sessions).map((s) => ({
     ...s,
     blocks: s.blocks.filter((b) => !isCardio(b) || keep(blockDiscipline(b))),
   }));

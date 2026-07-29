@@ -24,6 +24,7 @@ import { loadLevel } from "./calendar";
 import { localDayKey, localTodayKey, localMondayMs, addLocalDays, dayKeyDiff } from "../day-key";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import type { PlanScheduleResult } from "../plan-schedule";
+import { deviceTrueSession } from "../device-truth";
 
 const dayKey = localDayKey;
 const todayKeyOf = (now: number) => localTodayKey(now);
@@ -110,7 +111,10 @@ export interface SessionHeadline {
  * when untracked; the block count is the last honest resort. Shared by both
  * clients so the card and the weeks-view rows can't drift.
  */
-export function sessionHeadline(s: LoggedSession, units: WeightUnit, bwKg?: number | null): SessionHeadline {
+export function sessionHeadline(session: LoggedSession, units: WeightUnit, bwKg?: number | null): SessionHeadline {
+  // The row an athlete scans reads what their device measured (94 min, not the
+  // 90 they typed) wherever one recorded the session — see device-truth.ts.
+  const s = deviceTrueSession(session);
   const lifts = s.blocks.reduce((n, b) => n + (b.kind === "strength" ? 1 : 0), 0);
   const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
   if (sessionShape(s) === "cardio") {

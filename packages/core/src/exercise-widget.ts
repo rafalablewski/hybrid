@@ -31,6 +31,7 @@ import {
   type BlockCompare,
 } from "./engines/exercise-analytics";
 import type { BodyweightInput } from "./bodyweight";
+import { deviceTrueSessions } from "./device-truth";
 
 // The Today-tab EXERCISES widget + the individual exercise page ("variant B"):
 // favourite movements as swipeable cards (headline value + stock-ticker delta +
@@ -106,7 +107,9 @@ export function weeklyMinutes(
     weekStart: new Date(now - (weeks - w) * 7 * DAY).toISOString().slice(0, 10),
     minutes: 0,
   }));
-  for (const s of sessions) {
+  // Minutes measured beat minutes typed wherever a device recorded the session
+  // (paceSeries below is device-true for the same reason — see device-truth.ts).
+  for (const s of deviceTrueSessions(sessions)) {
     const t = ts(s.startedAt);
     if (t > now) continue;
     const weeksAgo = Math.floor((now - t) / (7 * DAY));

@@ -12,6 +12,13 @@
  * lie that poisons every other number on the card. A duration below the
  * plausibility floor is therefore dropped, falling back to the athlete's own
  * entered minutes (cardio/conditioning blocks) when present, else to nothing.
+ *
+ * And above all of that sits the MEASUREMENT: when the session is matched to
+ * the athlete's device (Apple Watch — see session-device.ts), the device's
+ * recording is the duration, the distance and the climb. Nothing typed in
+ * outranks a wrist that was there. The logged figures aren't lost — they stay
+ * one `ignoreDevice: true` read away, which is exactly what the summary's
+ * comparison panel does.
  */
 import type { LoggedSession } from "./engines/session";
 import { sessionCardioTotals, sessionClockTime } from "./engines/session";
@@ -29,6 +36,13 @@ export interface DoneReceipt {
   sets: number;
   /** total cardio distance, km. */
   distanceKm: number;
+  /** total elevation gain, m (0 when nothing climbed or nothing recorded it). */
+  elevationM: number;
+  /** true when a matched device supplied the figures above (duration, and the
+   *  distance/climb it recorded) — i.e. they are MEASURED, not typed or
+   *  modelled. False for a purely logged session, and for any read taken with
+   *  `ignoreDevice`. */
+  measured: boolean;
 }
 
 /**
@@ -38,13 +52,20 @@ export interface DoneReceipt {
  */
 const MIN_MINUTES_PER_SET = 1;
 
-/** Build the receipt for the logged session that fulfilled a plan day. */
+/**
+ * Build the receipt for the logged session that fulfilled a plan day.
+ *
+ * `ignoreDevice` reads the session as if it had never been matched — the
+ * athlete's own logged figures. Exactly one caller wants that (the summary's
+ * logged-vs-measured panel); everything else gets the measurement.
+ */
 export function doneReceipt(
   session: LoggedSession,
-  opts: { bodyweightKg?: number | null } = {},
+  opts: { bodyweightKg?: number | null; ignoreDevice?: boolean } = {},
 ): DoneReceipt {
   const stats = liveSessionStats(session.blocks, [], opts);
   const cardio = sessionCardioTotals(session.blocks);
+  const device = opts.ignoreDevice ? null : (session.device ?? null);
 
   // Athlete-entered minutes are trusted as-is: cardio blocks plus conditioning
   // blocks (which carry their own `minutes`) — entered, not clock-derived.
@@ -63,14 +84,22 @@ export function doneReceipt(
   // The larger trusted candidate wins: a live-logged clock span covers rest and
   // everything entered within it, while for an after-the-fact log the athlete's
   // entered minutes dwarf (and outrank) the minute the typing took.
-  const durationMin = Math.max(spanPlausible ? spanMin! : 0, enteredMin > 0 ? Math.round(enteredMin) : 0);
+  const loggedMin = Math.max(spanPlausible ? spanMin! : 0, enteredMin > 0 ? Math.round(enteredMin) : 0);
+
+  // …and a device that recorded the workout outranks every one of them.
+  const measured = device != null && device.durationMin > 0;
+  const durationMin = measured ? device!.durationMin : loggedMin;
+  const distanceKm = device?.distanceKm != null ? device.distanceKm : cardio.distanceKm;
+  const elevationM = device?.elevationM != null ? device.elevationM : cardio.elevationM;
 
   return {
     finishedClock: session.completedAt ? sessionClockTime(session.completedAt) : null,
     durationMin: durationMin > 0 ? durationMin : null,
     tonnageKg: stats.volume,
     sets: stats.sets,
-    distanceKm: Math.round(cardio.distanceKm * 10) / 10,
+    distanceKm: Math.round(distanceKm * 10) / 10,
+    elevationM: Math.round(elevationM),
+    measured,
   };
 }
 

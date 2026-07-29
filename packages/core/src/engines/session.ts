@@ -5,6 +5,7 @@ import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
 import { fmtWeight, type WeightUnit } from "../units";
 import type { DeviceWorkout } from "../session-device";
+import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -441,7 +442,8 @@ export interface PacePoint {
 
 /** Pace (sec/km) over time for one cardio move, oldest → newest. Lower is faster. */
 export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[] {
-  const sorted = [...sessions].sort(
+  // Pace off the device's distance + time when it measured the effort.
+  const sorted = [...deviceTrueSessions(sessions)].sort(
     (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
   );
   const pts: PacePoint[] = [];
@@ -569,28 +571,41 @@ export function sessionIcon(session: LoggedSession): string {
 }
 
 /**
- * Totals across a session's CARDIO blocks — distance (km), minutes, and a
- * derived overall pace (sec/km, distance-weighted). Powers the non-gym session
- * headline (Duration, Distance, Pace) so cardio/sport logs get their own
- * summary instead of the gym Sets/Volume framing.
+ * Totals across a session's CARDIO blocks — distance (km), minutes, elevation
+ * gain (m), and a derived overall pace (sec/km, distance-weighted). Powers the
+ * non-gym session headline (Duration, Distance, Pace) so cardio/sport logs get
+ * their own summary instead of the gym Sets/Volume framing.
  */
 export function sessionCardioTotals(blocks: SessionBlock[]): {
   distanceKm: number;
   minutes: number;
+  elevationM: number;
   secPerKm: number | null;
   count: number;
 } {
   let distanceKm = 0;
   let minutes = 0;
+  let elevationM = 0;
   let count = 0;
   for (const b of blocks)
     if (isCardio(b)) {
       count++;
       if (b.distance) distanceKm += b.distance;
       if (b.minutes) minutes += b.minutes;
+      if (b.elevation) elevationM += b.elevation;
     }
   const secPerKm = distanceKm > 0 && minutes > 0 ? Math.round((minutes * 60) / distanceKm) : null;
-  return { distanceKm, minutes, secPerKm, count };
+  return { distanceKm, minutes, elevationM, secPerKm, count };
+}
+
+/**
+ * `sessionCardioTotals` for a whole SESSION rather than a loose block list —
+ * reading the DEVICE's measurement when one recorded it (see device-truth.ts).
+ * Prefer this everywhere a session's distance/time is shown: a matched session
+ * must never print the typed figures beside the summary's measured ones.
+ */
+export function sessionCardioSummary(session: LoggedSession): ReturnType<typeof sessionCardioTotals> {
+  return sessionCardioTotals(deviceTrueSession(session).blocks);
 }
 
 /**
@@ -1011,7 +1026,10 @@ export function toTrainingLog(
   now = Date.now(),
   feelRpe?: (s: LoggedSession) => number | null,
 ): TrainingLog {
-  return sessions.map((s) => {
+  // Every fatigue / injury / readiness engine downstream reads this log, so the
+  // measurement is projected in HERE — one call, and a matched session's real
+  // minutes and distance reach all of them (see device-truth.ts).
+  return deviceTrueSessions(sessions).map((s) => {
     const daysAgo = Math.max(0, Math.round((now - new Date(s.startedAt).getTime()) / 86_400_000));
     // The athlete's own answer for this session, when there is one.
     const felt = feelRpe?.(s) ?? null;

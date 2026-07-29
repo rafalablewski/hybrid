@@ -5,6 +5,7 @@ import {
   toBiometrics,
   personalTrainingLog,
   migrateBlocks,
+  sanitizeDeviceWorkout,
   type LoggedSession,
   type Signal,
 } from "@hybrid/core";
@@ -40,6 +41,10 @@ export async function athleteInputs(userId: string) {
     // the clients (which get the full row) used the real thing, so the AI coach
     // would reason about a different athlete than the app shows.
     feel: r.feel,
+    // The device's read of this workout, when it was matched — dropped here,
+    // every server-side engine would fall back to the typed minutes/distance
+    // while the clients used the measurement (see core/device-truth.ts).
+    device: sanitizeDeviceWorkout(r.device),
   }));
 
   const signals: Signal[] = sigRows.map((r) => ({

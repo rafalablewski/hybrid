@@ -41,6 +41,9 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceSourceLabel,
+  deviceTrueSession,
+  sessionEnergy,
   type DeviceWorkout,
   type StoryStyleId,
   type LoggedSession,
@@ -148,8 +151,14 @@ export function WorkoutWrapped({
   }, [onBack, sheetOpen]);
 
   const bwHere = bw(session.startedAt);
-  const wrapped = sessionWrapped(session, all, { units, bw });
-  const receipt = doneReceipt(session, { bodyweightKg: bwHere });
+  // The session AS THE APP NOW READS IT: an unlink done on this screen takes
+  // effect immediately, without waiting for the refetch to land.
+  const view = useMemo(() => ({ ...session, device }), [session, device]);
+  const wrapped = sessionWrapped(view, all, { units, bw });
+  // Device-first (every figure on this screen) and the logged-only read, which
+  // exists solely for the comparison panel's left column.
+  const receipt = doneReceipt(view, { bodyweightKg: bwHere });
+  const logged = doneReceipt(session, { bodyweightKg: bwHere, ignoreDevice: true });
   // "vs your usual" compares the athlete to THEMSELVES over the last month —
   // never a cohort, and never until there are enough rated sessions for the
   // comparison to mean anything (loadBaseline enforces the floor). Memoised:
@@ -161,7 +170,9 @@ export function WorkoutWrapped({
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
-  const minutes = session.completedAt ? Math.max(1, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60000)) : 0;
+  // The share card's minutes: the trusted (device-first) duration, falling back
+  // to the wall-clock span for a session with nothing better.
+  const minutes = receipt.durationMin ?? (session.completedAt ? Math.max(1, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60000)) : 0);
   const volume = sessionVolume(session.blocks, false, bwHere);
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const signature = sessionSignature(session);
@@ -200,7 +211,9 @@ export function WorkoutWrapped({
   // ── story slides for the share sheet (trophy + signature lead) ──
   const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(session.blocks, bwHere);
+  // The fun fact is a distance/tonnage comparison — measured where a device
+  // measured it.
+  const funFact = sessionFunFact(deviceTrueSession(view).blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
     // The shared cardio formatter, same as the post-workout PR slide — raw km
@@ -263,9 +276,18 @@ export function WorkoutWrapped({
   // panel shows the measured read next to the logged one; until then (and only
   // when nothing is measuring this athlete) it is the connect-a-device prompt.
   const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // Both columns come from the LOGGED read — the device's own figures are the
+  // other column, and passing the effective ones would print them twice.
   const comparison = device
-    ? deviceComparisonRows({ device, durationMin: receipt.durationMin, estimatedKcal: wrapped.energy?.kcal ?? null, distanceKm: receipt.distanceKm })
+    ? deviceComparisonRows({
+        device,
+        durationMin: logged.durationMin,
+        estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
+        distanceKm: logged.distanceKm,
+        elevationM: logged.elevationM,
+      })
     : [];
+  const deviceName = deviceSourceLabel(device);
   const unlinkDevice = async () => {
     if (unlinking) return;
     setUnlinking(true);
@@ -348,7 +370,7 @@ export function WorkoutWrapped({
         {device && (
           <div style={{ marginTop: 14, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 6, border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", position: "relative" }}>
             <span aria-hidden style={{ fontSize: 12 }}>⌚</span>
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={LIME_HEX}>{device.source ?? t("session.device.matchedChip")} ✓</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={LIME_HEX}>{deviceName ?? t("session.device.matchedChip")} ✓</Mono>
           </div>
         )}
         {scrollHint}
@@ -401,7 +423,7 @@ export function WorkoutWrapped({
             <div style={{ display: "flex", padding: "10px 14px", background: "#0e0f0d" }}>
               <div style={{ flex: 1.1 }} />
               <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Mono>
-              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={LIME_HEX}>{device.source ?? t("session.device.deviceCol")}</Mono>
+              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={LIME_HEX}>{deviceName ?? t("session.device.deviceCol")}</Mono>
             </div>
             {comparison.map((r) => (
               <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
@@ -412,6 +434,7 @@ export function WorkoutWrapped({
               </div>
             ))}
           </div>
+          <Mono s={{ fontSize: fs.micro, marginTop: 12, lineHeight: 1.5, position: "relative", display: "block" }}>{t("session.device.truth")}</Mono>
           <div style={{ display: "flex", gap: 16, marginTop: 18, position: "relative" }}>
             <button onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
           </div>

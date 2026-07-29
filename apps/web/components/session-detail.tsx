@@ -50,6 +50,7 @@ import {
   paceClock,
   formatCardioPr,
   cardioPrsForSession,
+  deviceTrueSession,
   type CardioPrHit,
   type LoggedSession,
 } from "@hybrid/core";
@@ -207,9 +208,10 @@ export function SessionDetail({
         </ChartFrame>
       )}
 
-      {/* Per-exercise breakdown */}
+      {/* Per-exercise breakdown — read as the DEVICE measured it; the typed
+          figures live on the summary's comparison panel and nowhere else. */}
       <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
-        {session.blocks.map((b, i) => (
+        {deviceTrueSession(session).blocks.map((b, i) => (
           <Card key={i}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>

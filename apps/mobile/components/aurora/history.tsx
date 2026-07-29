@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, PanResponder, FlatList, RefreshControl
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioTotals, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -151,7 +151,7 @@ export default function AuroraHistory() {
               agrees with the layouts). */}
           {sessionShape(s) === "cardio"
             ? (() => {
-                const ct = sessionCardioTotals(s.blocks);
+                const ct = sessionCardioSummary(s);
                 const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
                 if (parts.length) return chip(C.blue, parts.join(" – "));
                 const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);

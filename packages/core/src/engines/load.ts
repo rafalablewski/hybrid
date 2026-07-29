@@ -21,34 +21,49 @@ const num = (s: string | undefined) => {
  * sRPE-style session load in arbitrary units: each block's duration (min) ×
  * its RPE. Strength duration is approximated from set count (~3.5 min/set incl.
  * rest) and the top set RPE; conditioning uses its minutes × RPE.
+ *
+ * When a device recorded the session (see session-device.ts), its MEASURED
+ * duration replaces the heuristic total: the per-block minutes are scaled to
+ * sum to it, keeping each block's share of the session and its RPE weight. The
+ * intensity is still the athlete's — only the clock comes from the wrist.
  */
 export function sessionLoad(s: LoggedSession): number {
   let load = 0;
+  let minutes = 0;
   for (const b of s.blocks) {
-    if (b.kind === "strength") {
-      const rpes = b.sets.map((x) => num(x.rpe)).filter((n) => Number.isFinite(n));
-      const rpe = rpes.length ? Math.max(...rpes) : 7;
-      load += b.sets.length * 3.5 * rpe;
-    } else if (b.kind === "cardio") {
-      load += (b.minutes ?? 30) * (b.rpe ?? 6);
-    } else {
-      const minutes =
-        b.minutes ?? (b.work && b.rest && b.rounds ? ((b.work + b.rest) * b.rounds) / 60 : 12);
-      load += minutes * (b.rpe ?? 7);
-    }
+    const m = blockMinutes(b);
+    load += m * blockRpe(b);
+    minutes += m;
   }
+  const measured = s.device?.durationMin;
+  if (measured != null && measured > 0 && minutes > 0) load *= measured / minutes;
   return Math.round(load);
 }
 
+/** The RPE the load model reads off a block — the top logged set RPE for
+ *  strength, the block's own for cardio/conditioning, each with the default
+ *  the sRPE model has always assumed when none was entered. */
+function blockRpe(b: LoggedSession["blocks"][number]): number {
+  if (b.kind === "strength") {
+    const rpes = b.sets.map((x) => num(x.rpe)).filter((n) => Number.isFinite(n));
+    return rpes.length ? Math.max(...rpes) : 7;
+  }
+  if (b.kind === "cardio") return b.rpe ?? 6;
+  return b.rpe ?? 7;
+}
+
 /**
- * Total approximate MINUTES of a session, on the same duration heuristic
- * sessionLoad uses. Exported because sessionLoad is Σ (minutes × RPE), so
- * load ÷ minutes is exactly the minutes-weighted mean RPE — the OBJECTIVE
- * session effort the effort model compares the athlete's own answer against
- * (see engines/effort.ts). Deriving it here rather than re-deriving it there
- * keeps the two from drifting.
+ * Total MINUTES of a session: the device's measurement when one recorded it,
+ * else the same duration heuristic sessionLoad uses. Exported because
+ * sessionLoad is Σ (minutes × RPE), so load ÷ minutes is exactly the
+ * minutes-weighted mean RPE — the OBJECTIVE session effort the effort model
+ * compares the athlete's own answer against (see engines/effort.ts). Deriving
+ * it here rather than re-deriving it there keeps the two from drifting, and
+ * scaling the load by the same measured total keeps that identity exact.
  */
 export function sessionMinutes(s: LoggedSession): number {
+  const measured = s.device?.durationMin;
+  if (measured != null && measured > 0) return measured;
   let m = 0;
   for (const b of s.blocks) m += blockMinutes(b);
   return m;
@@ -79,8 +94,13 @@ function blockMinutes(b: LoggedSession["blocks"][number]): number {
  * shown to the athlete must not present a 75 kg stranger's calories as theirs,
  * so `estimateSessionEnergy` returns null instead. Same model, different honesty
  * budget — a target that must exist vs a figure that may be omitted.
+ *
+ * A session matched to a device skips the model entirely: eat for the work the
+ * watch actually measured, not for the work a MET table guessed at.
  */
 export function sessionEnergyKcal(s: LoggedSession, bodyMassKg = 75): number {
+  const measured = s.device?.kcal;
+  if (measured != null && measured > 0) return Math.round(measured);
   const kg = bodyMassKg > 0 ? bodyMassKg : 75;
   const est = estimateSessionEnergy(s.blocks, {
     bodyweightKg: kg,

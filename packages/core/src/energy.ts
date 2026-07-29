@@ -1,9 +1,12 @@
 /**
- * ENERGY — the estimated calorie cost of a logged session, for athletes with no
- * wearable on their wrist.
+ * ENERGY — the calorie cost of a logged session: MEASURED when a device
+ * recorded the workout, estimated from the log when nothing did.
  *
- * A watch measures energy from heart rate; we don't have one, so the ONLY
- * honest thing to do is estimate it from what the athlete actually logged —
+ * A watch measures energy from heart rate. When the session is matched to one
+ * (see session-device.ts) that measurement IS the session's energy — the model
+ * below doesn't get a vote, and the figure stops wearing the "~" that marks an
+ * estimate. Without a device, the ONLY honest thing left is to estimate it from
+ * what the athlete actually logged —
  * activity, duration, and (when present) pace or RPE — and say out loud that
  * it's an estimate. That's what this module does, using the standard MET model
  * from the Compendium of Physical Activities (Ainsworth et al., 2011):
@@ -26,20 +29,27 @@ import type { SessionBlock, CardioBlock, StrengthBlock, ConditioningBlock, Logge
 import { cardioDiscipline } from "./engines/session";
 import { olympicSport } from "./olympic-sports";
 
-/** What the estimate leant on, strongest → weakest. */
-export type EnergyBasis = "pace" | "rpe" | "sport" | "duration";
+/** What the figure leant on, strongest → weakest. "device" is not an estimate
+ *  at all — it's the wearable's own measurement, which outranks every model
+ *  input below it. */
+export type EnergyBasis = "device" | "pace" | "rpe" | "sport" | "duration";
 
 export interface EnergyEstimate {
-  /** estimated gross energy cost, kcal (rounded to 5 for anything ≥ 100 — the
-   *  model isn't precise to the calorie and shouldn't pretend to be). */
+  /** gross energy cost, kcal — measured when `basis` is "device", else the
+   *  model's estimate (rounded to 5 for anything ≥ 100 — the model isn't
+   *  precise to the calorie and shouldn't pretend to be). */
   kcal: number;
-  /** the strongest input the estimate could use across the session's blocks. */
+  /** the strongest input the figure could use across the session's blocks. */
   basis: EnergyBasis;
   /** MET-minutes — the intensity × time product behind the number, and a
-   *  bodyweight-free training-load figure in its own right. */
+   *  bodyweight-free training-load figure in its own right. 0 when a measured
+   *  reading carries no intensity and none can be derived. */
   metMinutes: number;
-  /** minutes of activity the estimate covers. */
+  /** minutes of activity the figure covers. */
   minutes: number;
+  /** true when a device measured this energy — the UI must NOT mark it as an
+   *  estimate (no "~"), because it isn't one. */
+  measured: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +221,7 @@ function blockRpe(b: StrengthBlock): number | undefined {
   return top > 0 ? top : undefined;
 }
 
-const BASIS_RANK: Record<EnergyBasis, number> = { pace: 3, rpe: 2, sport: 1, duration: 0 };
+const BASIS_RANK: Record<EnergyBasis, number> = { device: 4, pace: 3, rpe: 2, sport: 1, duration: 0 };
 
 /**
  * Minutes attributable to a block for the energy model. Cardio/conditioning
@@ -285,18 +295,54 @@ export function estimateSessionEnergy(
     basis: basis ?? "duration",
     metMinutes: Math.round(metMinutes),
     minutes: Math.round(minutes),
+    measured: false,
   };
 }
 
 /**
- * The convenience wrapper for a whole LoggedSession: works out how much of the
- * trusted duration the cardio/conditioning blocks already claim, and hands the
- * remainder to the strength blocks.
+ * The energy a matched device measured for this session, or null when the
+ * session isn't matched (or the recording carried no energy).
+ *
+ * MET-minutes come from the device's own average METs when it reported them —
+ * a measured intensity — and are otherwise inverted back out of the measured
+ * kcal at the athlete's bodyweight, so the intensity figure stays consistent
+ * with the calories beside it. With neither, it degrades to 0 rather than
+ * inventing an intensity.
+ *
+ * Unlike the model, this needs NO bodyweight: the device already weighed the
+ * effort, so the "no bodyweight, no number" rule doesn't apply.
+ */
+function measuredEnergy(session: LoggedSession, bodyweightKg?: number | null): EnergyEstimate | null {
+  const d = session.device;
+  if (!d || d.kcal == null || !(d.kcal > 0)) return null;
+  const minutes = d.durationMin > 0 ? d.durationMin : 0;
+  const kg = bodyweightKg != null && bodyweightKg > 0 ? bodyweightKg : null;
+  const metMinutes =
+    d.avgMets != null && d.avgMets > 0 && minutes > 0
+      ? Math.round(d.avgMets * minutes)
+      : kg != null
+        ? Math.round((d.kcal * 200) / (3.5 * kg))
+        : 0;
+  return { kcal: Math.round(d.kcal), basis: "device", metMinutes, minutes, measured: true };
+}
+
+/**
+ * The convenience wrapper for a whole LoggedSession: the DEVICE's measured
+ * energy when the session is matched to one, else the model — working out how
+ * much of the trusted duration the cardio/conditioning blocks already claim and
+ * handing the remainder to the strength blocks.
+ *
+ * `ignoreDevice` forces the model even on a matched session; the summary's
+ * logged-vs-measured panel is the one caller that wants that.
  */
 export function sessionEnergy(
   session: LoggedSession,
-  opts: { bodyweightKg?: number | null; durationMin?: number | null },
+  opts: { bodyweightKg?: number | null; durationMin?: number | null; ignoreDevice?: boolean },
 ): EnergyEstimate | null {
+  if (!opts.ignoreDevice) {
+    const measured = measuredEnergy(session, opts.bodyweightKg);
+    if (measured) return measured;
+  }
   let logged = 0;
   for (const b of session.blocks)
     if ((b.kind === "cardio" || b.kind === "conditioning") && b.minutes && b.minutes > 0) logged += b.minutes;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sessionLoad, computeLoad, sessionEnergyKcal, trainingEnergyOnDay } from "./load";
+import { sessionLoad, sessionMinutes, computeLoad, sessionEnergyKcal, trainingEnergyOnDay } from "./load";
 import type { LoggedSession } from "./session";
 
 const DAY = 86_400_000;
@@ -24,6 +24,18 @@ describe("sessionLoad (sRPE)", () => {
     const s: LoggedSession = { id: "c", title: "C", startedAt: ago(0), blocks: [{ kind: "conditioning", name: "Row", minutes: 30, rpe: 7 }] };
     expect(sessionLoad(s)).toBe(210);
   });
+  it("scales to the device's measured duration, keeping load ÷ minutes = mean RPE", () => {
+    const s: LoggedSession = {
+      id: "d",
+      title: "Tennis",
+      startedAt: ago(0),
+      blocks: [{ kind: "cardio", name: "Tennis", minutes: 90, rpe: 7 }],
+      device: { provider: "apple", uuid: "hk-1", activityLabel: "Tennis", start: ago(0), end: ago(0), durationMin: 94 },
+    };
+    expect(sessionMinutes(s)).toBe(94);
+    expect(sessionLoad(s)).toBe(658); // 94 × 7, not 90 × 7
+    expect(sessionLoad(s) / sessionMinutes(s)).toBe(7);
+  });
 });
 
 describe("sessionEnergyKcal (training fuel estimate)", () => {
@@ -42,6 +54,21 @@ describe("sessionEnergyKcal (training fuel estimate)", () => {
   it("defaults to a 75 kg athlete when weight is unknown", () => {
     const s = strengthSession("a", 0, 6, "8");
     expect(sessionEnergyKcal(s)).toBe(sessionEnergyKcal(s, 75));
+  });
+});
+
+describe("sessionEnergyKcal — measured", () => {
+  it("eats for what the watch measured, not what the MET table guessed", () => {
+    const s: LoggedSession = {
+      id: "m",
+      title: "Tennis",
+      startedAt: ago(0),
+      blocks: [{ kind: "cardio", name: "Tennis", minutes: 90 }],
+      device: { provider: "apple", uuid: "hk-1", activityLabel: "Tennis", start: ago(0), end: ago(0), durationMin: 94, kcal: 677 },
+    };
+    expect(sessionEnergyKcal(s, 75)).toBe(677);
+    // …and the bodyweight default no longer moves it, because nothing is modelled.
+    expect(sessionEnergyKcal(s, 95)).toBe(677);
   });
 });
 

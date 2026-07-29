@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { migrateBlocks, type FollowEdge, type LoggedSession, type FeedPostInput } from "@hybrid/core";
+import { migrateBlocks, sanitizeDeviceWorkout, type FollowEdge, type LoggedSession, type FeedPostInput } from "@hybrid/core";
 import { sanitizeProgramWeeks, programAssignments } from "@/lib/coach-program";
 
 /** A social/marketplace table hasn't been migrated yet (run reference/sql-social.sql). */
@@ -92,11 +92,11 @@ export async function recentSessionsByUsers(
   const out = new Map<string, LoggedSession[]>();
   if (!userIds.length) return out;
   const since = new Date(sinceMs);
-  type Row = { id: string; userId: string; title: string; startedAt: Date; completedAt: Date | null; blocks: unknown };
+  type Row = { id: string; userId: string; title: string; startedAt: Date; completedAt: Date | null; blocks: unknown; device: unknown };
   const rows = await prisma.$queryRaw<Row[]>`
-    SELECT "id", "userId", "title", "startedAt", "completedAt", "blocks"
+    SELECT "id", "userId", "title", "startedAt", "completedAt", "blocks", "device"
     FROM (
-      SELECT "id", "userId", "title", "startedAt", "completedAt", "blocks",
+      SELECT "id", "userId", "title", "startedAt", "completedAt", "blocks", "device",
              ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "startedAt" DESC) AS rn
       FROM "Session"
       WHERE "userId" IN (${Prisma.join(userIds)})
@@ -111,6 +111,9 @@ export async function recentSessionsByUsers(
       startedAt: r.startedAt.toISOString(),
       completedAt: r.completedAt ? r.completedAt.toISOString() : null,
       blocks: migrateBlocks(r.blocks),
+      // The measurement rides along — a weekly distance compared between two
+      // athletes must be what their devices measured (see core/device-truth.ts).
+      device: sanitizeDeviceWorkout(r.device),
     };
     const arr = out.get(r.userId);
     if (arr) arr.push(s);
@@ -154,7 +157,7 @@ export async function allSessionsFor(userId: string, cap = 400): Promise<LoggedS
     where: { userId, archivedAt: null },
     orderBy: { startedAt: "desc" },
     take: cap,
-    select: { id: true, title: true, startedAt: true, completedAt: true, blocks: true },
+    select: { id: true, title: true, startedAt: true, completedAt: true, blocks: true, device: true },
   });
   return rows.map((r) => ({
     id: r.id,
@@ -162,6 +165,7 @@ export async function allSessionsFor(userId: string, cap = 400): Promise<LoggedS
     startedAt: r.startedAt.toISOString(),
     completedAt: r.completedAt ? r.completedAt.toISOString() : null,
     blocks: migrateBlocks(r.blocks),
+    device: sanitizeDeviceWorkout(r.device),
   }));
 }
 
