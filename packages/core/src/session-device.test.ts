@@ -44,11 +44,22 @@ describe("sanitizeDeviceWorkout", () => {
   });
 
   it("drops out-of-bounds optionals instead of failing the whole row", () => {
-    const out = sanitizeDeviceWorkout({ ...watchTennis, kcal: 999999, maxHr: 400 });
+    const out = sanitizeDeviceWorkout({ ...watchTennis, kcal: 999999, maxHr: 400, steps: -5, avgMets: 99 });
     expect(out).not.toBeNull();
     expect(out!.kcal).toBeUndefined();
     expect(out!.maxHr).toBeUndefined();
+    expect(out!.steps).toBeUndefined();
+    expect(out!.avgMets).toBeUndefined();
     expect(out!.avgHr).toBe(132);
+  });
+
+  it("carries the extended device read through", () => {
+    const out = sanitizeDeviceWorkout({
+      ...watchTennis,
+      minHr: 78.6, steps: 4812.4, elevationM: 12.7, strokes: 240, flights: 3,
+      avgMets: 7.24, indoor: false, tempC: 24.36,
+    });
+    expect(out).toMatchObject({ minHr: 79, steps: 4812, elevationM: 13, strokes: 240, flights: 3, avgMets: 7.2, indoor: false, tempC: 24.4 });
   });
 
   it("normalises timestamps to ISO and caps label length", () => {
@@ -110,7 +121,19 @@ describe("deviceComparisonRows", () => {
   it("drops rows with nothing on either side and formats short distances in metres", () => {
     const noHr: DeviceWorkout = { ...watchTennis, avgHr: undefined, maxHr: undefined, kcal: undefined, distanceKm: 0.4 };
     const rows = deviceComparisonRows({ device: noHr, durationMin: null, estimatedKcal: null });
-    expect(rows.map((r) => r.labelKey)).toEqual(["session.device.duration", "session.device.distance"]);
+    expect(rows.map((r) => r.labelKey)).toEqual(["session.device.duration", "session.device.distance", "session.pace"]);
     expect(rows[1]!.device).toBe("400 m");
+  });
+
+  it("derives each column's pace from its OWN distance and time, and surfaces the extended read", () => {
+    const run: DeviceWorkout = { ...watchTennis, activityLabel: "Running", distanceKm: 10.2, durationMin: 55, steps: 8890, elevationM: 84, avgMets: 9.8 };
+    const rows = deviceComparisonRows({ device: run, durationMin: 60, estimatedKcal: 600, distanceKm: 10 });
+    const paceRow = rows.find((r) => r.labelKey === "session.pace")!;
+    expect(paceRow.app).toBe("6:00 /km");
+    expect(paceRow.device).toBe("5:24 /km");
+    expect(rows.find((r) => r.labelKey === "session.device.steps")!.device).toBe("8,890");
+    expect(rows.find((r) => r.labelKey === "session.wrapped.elevation")!.device).toBe("84 m");
+    expect(rows.find((r) => r.labelKey === "session.device.avgMets")!.device).toBe("9.8");
+    expect(rows.some((r) => r.labelKey === "session.device.strokes")).toBe(false);
   });
 });

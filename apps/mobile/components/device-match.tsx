@@ -91,6 +91,15 @@ export function DeviceMatchSheet({
       ...(w.avgHr != null ? [`♥ ${w.avgHr}`] : []),
       ...(w.source ? [w.source] : []),
     ].join(" – ");
+  // The best card earns a richer second line — everything the recording holds.
+  const metaFull = (w: DeviceWorkout) =>
+    [
+      ...(w.avgHr != null ? [`♥ ${w.avgHr}${w.maxHr != null ? `–${w.maxHr}` : ""} bpm`] : []),
+      ...(w.distanceKm != null ? [w.distanceKm < 1 ? `${Math.round(w.distanceKm * 1000)} m` : `${w.distanceKm} km`] : []),
+      ...(w.steps != null ? [`${w.steps.toLocaleString()} steps`] : []),
+      ...(w.elevationM != null ? [`↗ ${w.elevationM} m`] : []),
+      ...(w.avgMets != null ? [`${w.avgMets} METs`] : []),
+    ].join(" – ");
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -127,25 +136,53 @@ export function DeviceMatchSheet({
             <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
               {ranked.map((r, i) => {
                 const linked = session.device?.uuid === r.workout.uuid;
+                const best = i === 0;
+                // The best candidate is THE card — lime-washed, tagged, with its
+                // own match affordance — the rest read as quiet alternatives.
                 return (
                   <Pressable
                     key={r.workout.uuid}
                     onPress={() => void pick(r.workout)}
                     disabled={busyUuid != null}
-                    style={{ borderWidth: 1, borderColor: i === 0 || linked ? C.lime : C.line, borderRadius: 16, padding: 14, marginBottom: 10, backgroundColor: "#0e0f0d", opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1 }}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: best || linked ? C.lime : C.line,
+                      borderRadius: best ? 20 : 16,
+                      padding: best ? 18 : 13,
+                      marginBottom: best ? 14 : 10,
+                      backgroundColor: best ? `${C.lime}14` : "#0e0f0d",
+                      opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
+                    }}
                   >
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{r.workout.activityLabel}</Text>
-                      {(i === 0 || linked) && (
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        {r.workout.activityLabel}
+                      </Text>
+                      {best && (
+                        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
+                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 1, color: C.onAccent, textTransform: "uppercase" }}>
+                            ✓ {t("session.device.best")}
+                          </Text>
+                        </View>
+                      )}
+                      {!best && linked && (
                         <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase" }}>
-                          {linked ? t("session.device.matchedChip") : t("session.device.best")}
+                          {t("session.device.matchedChip")}
                         </Text>
                       )}
                     </View>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: best ? C.chalk : C.ash, marginTop: best ? 8 : 5 }}>
                       {day(r.workout.start)} – {meta(r.workout)}
                     </Text>
-                    {busyUuid === r.workout.uuid && <ActivityIndicator color={C.lime} size="small" style={{ marginTop: 8 }} />}
+                    {best && metaFull(r.workout) !== "" && (
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{metaFull(r.workout)}</Text>
+                    )}
+                    {best && busyUuid == null && (
+                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>
+                        <Text style={{ fontFamily: F.black, fontSize: 13, color: C.onAccent }}>{t("session.device.matchCta")} →</Text>
+                      </View>
+                    )}
+                    {busyUuid === r.workout.uuid && <ActivityIndicator color={C.lime} size="small" style={{ marginTop: 10 }} />}
                   </Pressable>
                 );
               })}

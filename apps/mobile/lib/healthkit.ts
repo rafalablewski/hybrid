@@ -199,11 +199,12 @@ function nightlySleep(segments: Reading[]): RelaySample[] {
 // ---- workout matching (the summary's "match a device workout") ------------
 
 /** What the match flow reads beyond the daily biometrics: the workout list
- *  itself plus the per-workout heart-rate / active-energy statistics. */
+ *  itself plus the per-workout heart-rate / active-energy / step statistics. */
 const WORKOUT_READ_TYPES = [
   "HKWorkoutTypeIdentifier",
   "HKQuantityTypeIdentifierHeartRate",
   "HKQuantityTypeIdentifierActiveEnergyBurned",
+  "HKQuantityTypeIdentifierStepCount",
 ] as const;
 
 /** Sheet the workout read permissions (idempotent — iOS only shows the sheet
@@ -243,6 +244,35 @@ const qtyKm = (q?: { unit: string; quantity: number } | null): number | null => 
   if (q.unit === "yd") return q.quantity * 0.0009144;
   return null;
 };
+const qtyCount = (q?: { unit: string; quantity: number } | null): number | null =>
+  q && Number.isFinite(q.quantity) ? q.quantity : null;
+
+/** A metadata value that may arrive as a bare number or a serialized HK
+ *  quantity ({unit, quantity}) — normalize to the latter. */
+const metaQty = (v: unknown): { unit: string; quantity: number } | null => {
+  if (typeof v === "number" && Number.isFinite(v)) return { unit: "", quantity: v };
+  if (typeof v === "object" && v !== null) {
+    const o = v as { unit?: unknown; quantity?: unknown };
+    if (typeof o.quantity === "number" && Number.isFinite(o.quantity))
+      return { unit: typeof o.unit === "string" ? o.unit : "", quantity: o.quantity };
+  }
+  return null;
+};
+const metaMetres = (v: unknown): number | null => {
+  const q = metaQty(v);
+  if (!q) return null;
+  if (q.unit === "cm") return q.quantity / 100;
+  if (q.unit === "" || q.unit === "m") return q.quantity;
+  if (q.unit === "km") return q.quantity * 1000;
+  if (q.unit === "ft") return q.quantity * 0.3048;
+  return null;
+};
+const metaCelsius = (v: unknown): number | null => {
+  const q = metaQty(v);
+  if (!q) return null;
+  if (q.unit === "degF") return ((q.quantity - 32) * 5) / 9;
+  return q.quantity; // degC or already-bare
+};
 
 /** "functionalStrengthTraining" (the enum's name) → "Functional Strength
  *  Training" — resolved here so no other client ever needs the HK enum. */
@@ -275,9 +305,16 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
       const end = iso(w.endDate);
       const durationMin =
         qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
-      const hr = await w
-        .getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min")
-        .catch(() => undefined);
+      // Everything the recording carries, each read degrading to absent on its
+      // own: per-workout statistics (HR incl. the floor, steps), the workout's
+      // own totals (strokes/flights), and the metadata extras (climb, average
+      // METs, indoor flag, weather).
+      const [hr, stepStat] = await Promise.all([
+        w.getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min").catch(() => undefined),
+        w.getStatistic("HKQuantityTypeIdentifierStepCount", "count").catch(() => undefined),
+      ]);
+      const meta = (w.metadata ?? {}) as Record<string, unknown>;
+      const indoorRaw = meta["HKIndoorWorkout"];
       const candidate = sanitizeDeviceWorkout({
         provider: "apple",
         uuid: w.uuid,
@@ -289,6 +326,16 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
         distanceKm: qtyKm(w.totalDistance) ?? undefined,
         avgHr: hr?.averageQuantity?.quantity,
         maxHr: hr?.maximumQuantity?.quantity,
+        minHr: hr?.minimumQuantity?.quantity,
+        steps: qtyCount(stepStat?.sumQuantity) ?? undefined,
+        strokes: qtyCount(w.totalSwimmingStrokeCount) ?? undefined,
+        flights: qtyCount(w.totalFlightsClimbed) ?? undefined,
+        elevationM: metaMetres(meta["HKElevationAscended"]) ?? undefined,
+        avgMets: metaQty(meta["HKAverageMETs"])?.quantity,
+        tempC: metaCelsius(meta["HKWeatherTemperature"]) ?? undefined,
+        ...(typeof indoorRaw === "boolean" || indoorRaw === 0 || indoorRaw === 1
+          ? { indoor: Boolean(indoorRaw) }
+          : {}),
         source: w.sourceRevision?.source?.name,
       });
       if (candidate) out.push(candidate);

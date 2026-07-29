@@ -34,9 +34,23 @@ export interface DeviceWorkout {
   kcal?: number;
   /** Measured distance, km. */
   distanceKm?: number;
-  /** Mean / peak heart rate over the workout, bpm. */
+  /** Mean / peak / floor heart rate over the workout, bpm. */
   avgHr?: number;
   maxHr?: number;
+  minHr?: number;
+  /** Steps taken during the workout. */
+  steps?: number;
+  /** Elevation ascended, metres. */
+  elevationM?: number;
+  /** Swimming strokes / flights climbed — the workout's own totals. */
+  strokes?: number;
+  flights?: number;
+  /** The device's own intensity read (average METs over the workout). */
+  avgMets?: number;
+  /** Indoor session, when the device says. */
+  indoor?: boolean;
+  /** Outdoor temperature at the workout, °C. */
+  tempC?: number;
   /** What recorded it ("Apple Watch"), when the store says. */
   source?: string;
   /** When the athlete confirmed the match (ISO) — server-stamped. */
@@ -76,6 +90,14 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
   const distanceKm = boundedNum(o.distanceKm, 0.01, 300);
   const avgHr = boundedNum(o.avgHr, 20, 260);
   const maxHr = boundedNum(o.maxHr, 20, 260);
+  const minHr = boundedNum(o.minHr, 20, 260);
+  const steps = boundedNum(o.steps, 1, 200000);
+  const elevationM = boundedNum(o.elevationM, 1, 10000);
+  const strokes = boundedNum(o.strokes, 1, 100000);
+  const flights = boundedNum(o.flights, 1, 10000);
+  const avgMets = boundedNum(o.avgMets, 0.1, 30);
+  const tempC = boundedNum(o.tempC, -40, 60);
+  const indoor = typeof o.indoor === "boolean" ? o.indoor : null;
   const provider = typeof o.provider === "string" && o.provider.trim() ? o.provider.trim().slice(0, 24) : "apple";
   const source = typeof o.source === "string" && o.source.trim() ? o.source.trim().slice(0, MAX_LABEL) : null;
   const matchedAt = isoOrNull(o.matchedAt);
@@ -91,6 +113,14 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
     ...(distanceKm != null ? { distanceKm: Math.round(distanceKm * 100) / 100 } : {}),
     ...(avgHr != null ? { avgHr: Math.round(avgHr) } : {}),
     ...(maxHr != null ? { maxHr: Math.round(maxHr) } : {}),
+    ...(minHr != null ? { minHr: Math.round(minHr) } : {}),
+    ...(steps != null ? { steps: Math.round(steps) } : {}),
+    ...(elevationM != null ? { elevationM: Math.round(elevationM) } : {}),
+    ...(strokes != null ? { strokes: Math.round(strokes) } : {}),
+    ...(flights != null ? { flights: Math.round(flights) } : {}),
+    ...(avgMets != null ? { avgMets: Math.round(avgMets * 10) / 10 } : {}),
+    ...(tempC != null ? { tempC: Math.round(tempC * 10) / 10 } : {}),
+    ...(indoor != null ? { indoor } : {}),
     ...(source ? { source } : {}),
     ...(matchedAt ? { matchedAt } : {}),
   };
@@ -182,9 +212,17 @@ export function deviceComparisonRows(opts: {
   durationMin?: number | null;
   estimatedKcal?: number | null;
   distanceKm?: number | null;
+  /** Elevation gain the athlete logged, metres (cardio blocks). */
+  elevationM?: number | null;
 }): DeviceComparisonRow[] {
   const d = opts.device;
   const km = (v: number) => (v < 1 ? `${Math.round(v * 1000)} m` : `${Math.round(v * 100) / 100} km`);
+  // Each column derives pace from ITS OWN distance + time — never mixed.
+  const pace = (distKm?: number | null, min?: number | null): string | null => {
+    if (distKm == null || min == null || !(distKm > 0) || !(min > 0)) return null;
+    const sec = Math.round((min * 60) / distKm);
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} /km`;
+  };
   const rows: DeviceComparisonRow[] = [
     {
       labelKey: "session.device.duration",
@@ -203,6 +241,11 @@ export function deviceComparisonRows(opts: {
       device: d.distanceKm != null ? km(d.distanceKm) : null,
     },
     {
+      labelKey: "session.pace",
+      app: pace(opts.distanceKm, opts.durationMin),
+      device: pace(d.distanceKm, d.durationMin),
+    },
+    {
       labelKey: "session.device.avgHr",
       app: null,
       device: d.avgHr != null ? `${d.avgHr} bpm` : null,
@@ -211,6 +254,31 @@ export function deviceComparisonRows(opts: {
       labelKey: "session.device.maxHr",
       app: null,
       device: d.maxHr != null ? `${d.maxHr} bpm` : null,
+    },
+    {
+      labelKey: "session.wrapped.elevation",
+      app: opts.elevationM != null && opts.elevationM > 0 ? `${Math.round(opts.elevationM)} m` : null,
+      device: d.elevationM != null ? `${d.elevationM} m` : null,
+    },
+    {
+      labelKey: "session.device.steps",
+      app: null,
+      device: d.steps != null ? d.steps.toLocaleString("en-US") : null,
+    },
+    {
+      labelKey: "session.device.strokes",
+      app: null,
+      device: d.strokes != null ? d.strokes.toLocaleString("en-US") : null,
+    },
+    {
+      labelKey: "session.device.flights",
+      app: null,
+      device: d.flights != null ? `${d.flights}` : null,
+    },
+    {
+      labelKey: "session.device.avgMets",
+      app: null,
+      device: d.avgMets != null ? `${d.avgMets}` : null,
     },
   ];
   return rows.filter((r) => r.app != null || r.device != null);
