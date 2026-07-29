@@ -153,6 +153,8 @@ export const web_recovery = {
     "w.recovery.nutrition.energy": "Energy",
     // HYBRID Verified + the nutrition-facts panel (food-facts.ts / verified-foods.ts)
     // Verified product page + source page
+    "w.recovery.nutrition.verifiedStale": "This check is over a year old — we'll look at it again. The numbers were accurate when we made it.",
+    "w.recovery.nutrition.markCredit": "Logo:",
     "w.recovery.nutrition.onTheMenu": "On the menu:",
     "w.recovery.nutrition.noServingWeight": "This item's serving weight isn't published, so there's no per-100 g column to compare it on.",
     "w.recovery.nutrition.moreFrom": "More from {source}",
@@ -550,6 +552,8 @@ export const web_recovery = {
     "w.recovery.nutrition.yourCoach": "Twojego trenera",
     "w.recovery.nutrition.readOnly": "tylko do odczytu",
     "w.recovery.nutrition.energy": "Energia",
+    "w.recovery.nutrition.verifiedStale": "To sprawdzenie ma ponad rok — wrócimy do niego. W chwili sprawdzenia dane były zgodne.",
+    "w.recovery.nutrition.markCredit": "Logo:",
     "w.recovery.nutrition.onTheMenu": "W menu:",
     "w.recovery.nutrition.noServingWeight": "Producent nie podaje masy porcji, więc nie ma kolumny na 100 g do porównania.",
     "w.recovery.nutrition.moreFrom": "Więcej z {source}",
@@ -945,6 +949,8 @@ export const web_recovery = {
     "w.recovery.nutrition.yourCoach": "deinem Coach",
     "w.recovery.nutrition.readOnly": "schreibgeschützt",
     "w.recovery.nutrition.energy": "Energie",
+    "w.recovery.nutrition.verifiedStale": "Diese Prüfung ist über ein Jahr alt — wir sehen sie uns erneut an. Zum Prüfzeitpunkt stimmten die Werte.",
+    "w.recovery.nutrition.markCredit": "Logo:",
     "w.recovery.nutrition.onTheMenu": "Auf der Karte:",
     "w.recovery.nutrition.noServingWeight": "Das Portionsgewicht wird nicht angegeben, daher gibt es keine Spalte pro 100 g zum Vergleich.",
     "w.recovery.nutrition.moreFrom": "Mehr von {source}",

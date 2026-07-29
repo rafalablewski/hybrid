@@ -358,6 +358,41 @@ export function auditVerifiedCatalog(): string[] {
   return problems;
 }
 
+// ── Freshness ──────────────────────────────────────────────────────────────
+
+/**
+ * How long a check stands before we call it due for another look. A year is the
+ * honest interval for a restaurant menu: recipes get reformulated quietly and
+ * nobody announces it, but a burger's macros don't drift month to month.
+ */
+export const VERIFIED_STALE_AFTER_DAYS = 365;
+
+export interface VerifiedFreshness {
+  /** days since the team last checked this item */
+  ageDays: number;
+  /** true once the check is older than VERIFIED_STALE_AFTER_DAYS */
+  stale: boolean;
+}
+
+/**
+ * Age a verified item's check. Every item already carries a date; without this
+ * NOTHING acted on it, so a five-year-old transcription looked exactly as
+ * confident as one made this morning. A stale item keeps its ✓ — the numbers
+ * were true when we checked, and pretending otherwise would be its own
+ * dishonesty — but the page says out loud that it is due a re-check.
+ */
+export function verifiedFreshness(f: VerifiedFood, now = Date.now()): VerifiedFreshness {
+  const checked = Date.parse(`${f.verifiedOn}T00:00:00Z`);
+  if (!Number.isFinite(checked)) return { ageDays: 0, stale: false };
+  const ageDays = Math.max(0, Math.floor((now - checked) / 86_400_000));
+  return { ageDays, stale: ageDays > VERIFIED_STALE_AFTER_DAYS };
+}
+
+/** Every item whose check has aged out — the re-check worklist. */
+export function staleVerifiedFoods(now = Date.now()): VerifiedFood[] {
+  return VERIFIED_FOODS.filter((f) => verifiedFreshness(f, now).stale);
+}
+
 /** Energy in kJ for a verified item — the second unit EU labels must state. */
 export function verifiedKj(f: VerifiedFood): number {
   return kj(f.facts.kcal);

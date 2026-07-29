@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   VERIFIED_FOODS, VERIFIED_SOURCES, auditVerifiedCatalog, mergeFoodHits, searchVerifiedFoods,
   relatedVerifiedFoods, sourceCheckedOn, sourceMark, sourceMarkCredits, sourceMarkDataUri,
+  verifiedFreshness, staleVerifiedFoods, VERIFIED_STALE_AFTER_DAYS,
   verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, verifiedHits, verifiedKj, verifiedSource,
   type SourceMark, type VerifiedSource,
 } from "./verified-foods";
@@ -164,5 +165,29 @@ describe("source marks", () => {
 
   it("keeps the catalog clean with the mark checks in place", () => {
     expect(auditVerifiedCatalog()).toEqual([]);
+  });
+});
+
+describe("freshness — the date finally does something", () => {
+  const DAY = 86_400_000;
+  const checkedAt = Date.parse("2026-07-29T00:00:00Z");
+
+  it("ages a check in days", () => {
+    expect(verifiedFreshness(verifiedFood("mpb-cheeseburger")!, checkedAt + 10 * DAY).ageDays).toBe(10);
+  });
+
+  it("holds a check good for a year", () => {
+    const f = verifiedFood("mpb-cheeseburger")!;
+    expect(verifiedFreshness(f, checkedAt + VERIFIED_STALE_AFTER_DAYS * DAY).stale).toBe(false);
+    expect(verifiedFreshness(f, checkedAt + (VERIFIED_STALE_AFTER_DAYS + 1) * DAY).stale).toBe(true);
+  });
+
+  it("never reports a negative age for a check dated today", () => {
+    expect(verifiedFreshness(verifiedFood("mpb-cheeseburger")!, checkedAt - DAY).ageDays).toBe(0);
+  });
+
+  it("lists the re-check worklist once items age out", () => {
+    expect(staleVerifiedFoods(checkedAt)).toEqual([]);
+    expect(staleVerifiedFoods(checkedAt + 400 * DAY)).toHaveLength(3);
   });
 });

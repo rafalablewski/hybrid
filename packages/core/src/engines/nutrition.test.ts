@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -321,6 +321,45 @@ describe("derived diary entries (rebuilt from Signals)", () => {
     expect(parseDerivedEntryId("sig:")).toBeNull();
     expect(parseDerivedEntryId("sig:a.b")).toEqual(["a", "b"]);
     expect(parseDerivedEntryId("sig:a/../b")).toBeNull();
-    expect(parseDerivedEntryId(`sig:${["a", "b", "c", "d", "e", "f", "g", "h", "i"].join(".")}`)).toBeNull();
+    // Over-long ids are still refused — the cap just moved, because one log now
+    // writes eight readings rather than four (see MAX_DERIVED_SIGNALS).
+    expect(parseDerivedEntryId(`sig:${Array.from({ length: 40 }, (_, i) => `x${i}`).join(".")}`)).toBeNull();
+  });
+});
+
+describe("derived entry ids survive the label panel", () => {
+  it("addresses all EIGHT signals one log now writes", () => {
+    // The regression this guards: a log used to write 4 readings and the id cap
+    // was 8. With the label panel a log writes 8, so a cap of 8 left no room —
+    // and an id over the cap parses as null, which makes that Diary entry
+    // permanently uneditable and undeletable.
+    const ids = ["a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8"];
+    expect(parseDerivedEntryId(`sig:${ids.join(".")}`)).toEqual(ids);
+  });
+
+  it("addresses several foods that collided on one exact instant", () => {
+    const ids = Array.from({ length: 24 }, (_, i) => `id${i}`);
+    expect(parseDerivedEntryId(`sig:${ids.join(".")}`)).toHaveLength(24);
+  });
+
+  it("still refuses an id long enough to be junk", () => {
+    const ids = Array.from({ length: 40 }, (_, i) => `id${i}`);
+    expect(parseDerivedEntryId(`sig:${ids.join(".")}`)).toBeNull();
+  });
+
+  it("round-trips a full panel log end to end", () => {
+    // foodLogSignals → Signals → derivedFoodEntries → parseDerivedEntryId
+    const ts = "2026-07-29T12:00:00.000Z";
+    const written = foodLogSignals(
+      { kcal: 327, protein: 14.2, carbs: 22.9, fat: 19.6, satFat: 7.3, sugar: 4.1, fiber: null, salt: 1.7 },
+      1,
+    );
+    expect(written).toHaveLength(7); // fibre wasn't stated, so it writes nothing
+    const rows = written.map((w, i) => ({ id: `s${i}`, kind: w.kind, value: w.value, source: "lunch", ts }));
+    const [entry] = derivedFoodEntries(rows);
+    expect(entry).toBeDefined();
+    expect(entry!.satFat).toBe(7.3);
+    expect(entry!.fiber).toBeNull();
+    expect(parseDerivedEntryId(entry!.id)).toHaveLength(7);
   });
 });

@@ -613,8 +613,23 @@ export function derivedFoodEntries(
   return out.sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
 }
 
-/** How many Signals one derived entry may address (kcal + the three macros). */
-const MAX_DERIVED_SIGNALS = 8;
+/**
+ * How many Signals one derived entry id may address.
+ *
+ * A single log now writes up to EIGHT readings (energyIntake + the three macros
+ * + the four label-panel fields), where it used to write four. Derived entries
+ * group by (exact ts, source), so two foods logged at the same instant on the
+ * same part of the day land in ONE group — which used to fit inside a cap of 8
+ * and no longer does. An id over the cap parses as null, and the Diary entry it
+ * names becomes permanently uneditable and undeletable.
+ *
+ * So the cap is stated as the arithmetic rather than a magic number: eight kinds
+ * with room for a few colliding logs. It only bounds how long an id we are
+ * willing to parse — there is no cost to the headroom.
+ */
+const MAX_FOOD_SIGNAL_KINDS = 8; // energyIntake + protein/carbs/fat + satFat/sugar/fiber/salt
+const MAX_COLLIDING_LOGS = 4; // foods sharing one exact ts + source
+const MAX_DERIVED_SIGNALS = MAX_FOOD_SIGNAL_KINDS * MAX_COLLIDING_LOGS;
 
 /**
  * The Signal ids behind a derived entry id, or null when the id addresses a

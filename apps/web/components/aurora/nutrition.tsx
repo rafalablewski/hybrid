@@ -10,9 +10,9 @@ import {
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
-  nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
+  nutritionPanel, per100g, scaleFacts, emptyNutritionDay,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods, kj,
-  sourceCheckedOn, sourceMarkDataUri, type VerifiedFood, type SourceMark,
+  sourceCheckedOn, sourceMarkDataUri, verifiedFreshness, type SourceMark,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
@@ -170,7 +170,10 @@ function FactsPanel({ C, facts, per100, scale = 1 }: {
   C: (v: string) => string; facts: NutritionFacts; per100?: NutritionFacts | null; scale?: number;
 }) {
   const { t } = useLang();
-  const rows = nutritionPanel(scale === 1 ? facts : { ...facts, kcal: facts.kcal * scale, protein: facts.protein * scale, carbs: facts.carbs * scale, fat: facts.fat * scale, satFat: notStated(facts.satFat) ? null : (facts.satFat as number) * scale, sugar: notStated(facts.sugar) ? null : (facts.sugar as number) * scale, fiber: notStated(facts.fiber) ? null : (facts.fiber as number) * scale, salt: notStated(facts.salt) ? null : (facts.salt as number) * scale });
+  // Scale through CORE, never by hand: scaleFacts is the one place that knows a
+  // scaled unknown stays unknown, and a second copy of that rule here would be
+  // free to drift from the one the log actually writes.
+  const rows = nutritionPanel(scale === 1 ? facts : scaleFacts(facts, scale));
   const p100 = per100 ? nutritionPanel(per100) : null;
   return (
     <div style={{ marginTop: 18, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "4px 14px 8px" }}>
@@ -1467,6 +1470,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const related = relatedVerifiedFoods(f.id);
     const p100 = per100g(f.facts, f.servingGrams);
     const hit = verifiedFoodToHit(f);
+    // Every item was already dated and NOTHING acted on the date, so a
+    // five-year-old transcription looked exactly as confident as this morning's.
+    const fresh = verifiedFreshness(f);
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark size={15} /> })}
@@ -1528,6 +1534,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 7, lineHeight: 1.6 }}>{f.provenance}</div>
+              {/* A stale item KEEPS its tick — the numbers were true when we
+                  checked, and withdrawing the claim would be its own dishonesty.
+                  It says out loud that it is due another look. */}
+              {fresh.stale && (
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: "var(--amber-text)", marginTop: 8, lineHeight: 1.6 }}>
+                  {t("w.recovery.nutrition.verifiedStale")}
+                </div>
+              )}
             </div>
           </div>
           {src?.trademark && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10, lineHeight: 1.5, opacity: .85 }}>{src.trademark}</div>}
@@ -1615,7 +1629,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </button>
         ))}
 
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 20, lineHeight: 1.6, opacity: .85, paddingBottom: 20 }}>{src.trademark}</div>
+        <div style={{ marginTop: 20, paddingBottom: 20 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.6, opacity: .85 }}>{src.trademark}</div>
+          {/* Where the artwork came from. sourceMarkCredits() had no surface at
+              all until now, which made "third-party artwork stays enumerable"
+              a claim with nowhere to read it. */}
+          {src.mark && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.6, opacity: .7, marginTop: 8 }}>
+              {t("w.recovery.nutrition.markCredit")} {src.mark.credit}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -2105,11 +2129,20 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             ) : foodResults.length === 0 ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "6px 0", lineHeight: 1.5 }}>{t("w.recovery.nutrition.foodNoResults")}</div>
             ) : foodResults.map((food, i) => (
-              <div key={`${food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 11, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{food.name}</div>
+              <div key={`${food.id || food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 11, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+                {/* A verified row opens its page from the name, exactly as in the
+                    picker — the same food must not be a dead end on one screen
+                    and a doorway on another. */}
+                <button
+                  onClick={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
+                  style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{food.name}</span>
+                    {food.verified && <VerifiedMark size={12} />}
+                  </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</div>
-                </div>
+                </button>
                 <button onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
                 <button onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
               </div>

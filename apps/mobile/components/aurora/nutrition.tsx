@@ -34,9 +34,9 @@ import {
   type NutritionGlyphName,
   type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
-  nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
+  nutritionPanel, per100g, scaleFacts, emptyNutritionDay,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
-  sourceCheckedOn, kj, type SourceMark, 
+  sourceCheckedOn, kj, verifiedFreshness, type SourceMark, 
   type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
@@ -187,11 +187,10 @@ function FactsPanel({ C, facts, per100, scale = 1 }: {
   C: ReturnType<typeof useTheme>["palette"]; facts: NutritionFacts; per100?: NutritionFacts | null; scale?: number;
 }) {
   const { t } = useLang();
-  const sc = (v: number | null | undefined) => (notStated(v) ? null : (v as number) * scale);
-  const rows = nutritionPanel({
-    kcal: facts.kcal * scale, protein: facts.protein * scale, carbs: facts.carbs * scale, fat: facts.fat * scale,
-    satFat: sc(facts.satFat), sugar: sc(facts.sugar), fiber: sc(facts.fiber), salt: sc(facts.salt),
-  });
+  // Scale through CORE, never by hand: scaleFacts is the one place that knows a
+  // scaled unknown stays unknown, and a second copy of that rule here would be
+  // free to drift from the one the log actually writes.
+  const rows = nutritionPanel(scale === 1 ? facts : scaleFacts(facts, scale));
   const p100 = per100 ? nutritionPanel(per100) : null;
   return (
     <View style={{ marginTop: 18, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingBottom: 8 }}>
@@ -1332,6 +1331,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     const related = relatedVerifiedFoods(f.id);
     const p100 = per100g(f.facts, f.servingGrams);
     const hit = verifiedFoodToHit(f);
+    // Every item was already dated and NOTHING acted on the date, so a
+    // five-year-old transcription looked exactly as confident as this morning's.
+    const fresh = verifiedFreshness(f);
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark C={C} size={15} /> })}
@@ -1387,6 +1389,11 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
               </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 7, lineHeight: 16 }}>{f.provenance}</Text>
+              {/* A stale item KEEPS its tick — the numbers were true when we
+                  checked. It says out loud that it is due another look. */}
+              {fresh.stale ? (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), marginTop: 8, lineHeight: 16 }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
+              ) : null}
             </View>
           </View>
           {src?.trademark ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15, opacity: 0.85 }}>{src.trademark}</Text> : null}
@@ -1483,7 +1490,14 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </Pressable>
         ))}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: 16, opacity: 0.85, marginBottom: 20 }}>{src.trademark}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: 16, opacity: 0.85 }}>{src.trademark}</Text>
+        {/* Where the artwork came from — sourceMarkCredits() had no surface at
+            all until now. */}
+        {src.mark ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: 16, opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
+            {t("w.recovery.nutrition.markCredit")} {src.mark.credit}
+          </Text>
+        ) : <View style={{ marginBottom: 20 }} />}
       </AuroraScreen>
     );
   }
@@ -1917,13 +1931,19 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 6, lineHeight: 16 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
             ) : foodResults.map((food, i) => (
               <View key={`${food.id || food.code}-${i}`} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <View style={{ flex: 1 }}>
+                {/* A verified row opens its page from the name, exactly as in the
+                    picker — the same food must not be a dead end on one screen
+                    and a doorway on another. */}
+                <Pressable
+                  onPress={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
+                  style={{ flex: 1 }}
+                >
                   <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }} numberOfLines={1}>{food.name}</Text>
                     {food.verified ? <VerifiedMark C={C} size={12} /> : null}
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</Text>
-                </View>
+                </Pressable>
                 <Pressable onPress={() => saveFood(food)} accessibilityLabel={t("w.recovery.nutrition.saveToFoods")} style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="bookmark" size={15} color={C.ash} /></Pressable>
                 <Pressable onPress={() => logFood(food)} accessibilityRole="button" style={{ borderRadius: 999, backgroundColor: C.lime, paddingVertical: 9, paddingHorizontal: 16 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: C.onAccent }}>{t("w.recovery.nutrition.log")}</Text></Pressable>
               </View>
