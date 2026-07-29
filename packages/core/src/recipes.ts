@@ -14,6 +14,8 @@
  * ingredient quantities are stored for `baseServes` and scale linearly.
  */
 
+import { colors } from "./theme/tokens";
+
 export type RecipeMeal = "breakfast" | "lunch" | "dinner" | "snack";
 
 /** Hero tint — recipes have no photo assets, so the hero is a warm gradient
@@ -49,6 +51,11 @@ export interface Recipe {
   id: string;
   name: string;
   meal: RecipeMeal;
+  /** ONE line saying what the dish actually is — the cover's blurb slot, the
+   *  same job `GoalPlan.desc` does on a plan cover. Plain text like the rest of
+   *  the recipe content (names, ingredients, method), not an i18n key. Keep it
+   *  to a sentence: it sits under the hem, not in a description panel. */
+  note: string;
   /** total active time in minutes */
   timeMins: number;
   emoji: string;
@@ -68,6 +75,7 @@ export const RECIPES: Recipe[] = [
     id: "ramen",
     name: "Ramen",
     meal: "lunch",
+    note: "A fast weeknight bowl — seared chicken and soft eggs in a gingered stock, built while the noodles boil.",
     timeMins: 15,
     emoji: "🍜",
     tint: "amber",
@@ -95,6 +103,7 @@ export const RECIPES: Recipe[] = [
     id: "power-salad",
     name: "Power Salad",
     meal: "lunch",
+    note: "Chicken, feta and leaves dressed at the table, for when lunch has to be quick and still carry protein.",
     timeMins: 10,
     emoji: "🥗",
     tint: "blue",
@@ -120,6 +129,7 @@ export const RECIPES: Recipe[] = [
     id: "shakshuka",
     name: "Shakshuka",
     meal: "breakfast",
+    note: "Eggs poached straight into a spiced tomato and pepper base, cooked and served in one pan.",
     timeMins: 20,
     emoji: "🍳",
     tint: "red",
@@ -146,6 +156,7 @@ export const RECIPES: Recipe[] = [
     id: "avocado-toast",
     name: "Avocado Toast",
     meal: "breakfast",
+    note: "The eight-minute breakfast, on sourdough, with enough salt and acid to stop it tasting flat.",
     timeMins: 8,
     emoji: "🥑",
     tint: "lime",
@@ -168,6 +179,7 @@ export const RECIPES: Recipe[] = [
     id: "chicken-wrap",
     name: "Chicken Wrap",
     meal: "dinner",
+    note: "Paprika thighs, yoghurt and crunch rolled into a wrap — the highest-protein thing here that still eats like fast food.",
     timeMins: 18,
     emoji: "🌯",
     tint: "red",
@@ -194,6 +206,7 @@ export const RECIPES: Recipe[] = [
     id: "lentil-stew",
     name: "Lentil Stew",
     meal: "dinner",
+    note: "A pot of green lentils and root vegetables that gets better on day two, so it doubles as the week's lunches.",
     timeMins: 30,
     emoji: "🍲",
     tint: "amber",
@@ -219,6 +232,7 @@ export const RECIPES: Recipe[] = [
     id: "overnight-oats",
     name: "Overnight Oats",
     meal: "breakfast",
+    note: "Assembled the night before and eaten cold, with whey and berries doing the work while you sleep.",
     timeMins: 5,
     emoji: "🥣",
     tint: "lime",
@@ -243,6 +257,7 @@ export const RECIPES: Recipe[] = [
     id: "salmon-bowl",
     name: "Salmon Rice Bowl",
     meal: "dinner",
+    note: "Roast salmon over seasoned rice with edamame and cucumber — the biggest plate in the library, and the one to eat after a hard session.",
     timeMins: 22,
     emoji: "🍚",
     tint: "blue",
@@ -309,6 +324,84 @@ export function recipeMacrosForServes(recipe: Recipe, serves: number): RecipeMac
     protein: Math.round(recipe.macros.protein * s),
     carbs: Math.round(recipe.macros.carbs * s),
     fat: Math.round(recipe.macros.fat * s),
+  };
+}
+
+// ── The recipe COVER ────────────────────────────────────────────────────────
+
+/** The tint as a real accent colour, so the cover's duotone wash is driven by
+ *  the same hex on both clients (the gradient stops are mixed from it). */
+export const RECIPE_TINT_COLOR: Record<RecipeTint, string> = {
+  amber: colors.amber,
+  blue: colors.blue,
+  red: colors.red,
+  lime: colors.lime,
+};
+
+/** What a cover scaffold needs to draw. Structurally the same subset the plan
+ *  cover uses (see plan-program.ts `planCoverView`), so the recipe detail rides
+ *  the EXACT scaffold the plan detail does rather than a lookalike. */
+export interface RecipeCoverView {
+  accent: string;
+  /** the dish emoji — cover art, not a ghosted mark (see the `recipe` variant) */
+  glyph: string;
+  chip: string;
+  duration: string;
+  title: string;
+  metaParts: (string | null)[];
+  stats: { value: string; unit: string | null; label: string }[];
+  blurb: string;
+  variant: "recipe";
+}
+
+/**
+ * The recipe detail's cover — one shared view-model, so web and mobile can't
+ * drift and neither can re-decide what belongs on it.
+ *
+ * FOUR hem columns, not the plan's three: a recipe's headline numbers are its
+ * four macros, and dropping one to fit a borrowed grid would be the layout
+ * choosing what the athlete gets to see. They are PER SERVE and stay per serve
+ * as the stepper moves (that is what `macros` means here), which is why the
+ * serve count is stated on the meta line rather than implied by the hem.
+ *
+ * `chip`/`duration`/labels are CALLER-LOCALIZED: the meal name and the "min" /
+ * "serves" / macro labels are UI chrome that must speak the athlete's language,
+ * while the recipe's own content (name, note) is plain text like the rest of
+ * the library. Pass `t` from the client.
+ */
+export function recipeCoverView(
+  recipe: Recipe,
+  t: {
+    meal: (meal: RecipeMeal) => string;
+    mins: (n: number) => string;
+    serves: (n: number) => string;
+    ingredients: (n: number) => string;
+    highProtein: string;
+    energy: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  },
+): RecipeCoverView {
+  return {
+    accent: RECIPE_TINT_COLOR[recipe.tint],
+    glyph: recipe.emoji,
+    chip: t.meal(recipe.meal),
+    duration: t.mins(recipe.timeMins).toUpperCase(),
+    title: recipe.name,
+    metaParts: [
+      t.serves(recipe.baseServes),
+      t.ingredients(recipe.ingredients.length),
+      recipe.highProtein ? t.highProtein : null,
+    ],
+    stats: [
+      { value: String(recipe.macros.kcal), unit: null, label: t.energy },
+      { value: String(recipe.macros.protein), unit: "g", label: t.protein },
+      { value: String(recipe.macros.carbs), unit: "g", label: t.carbs },
+      { value: String(recipe.macros.fat), unit: "g", label: t.fat },
+    ],
+    blurb: recipe.note,
+    variant: "recipe",
   };
 }
 

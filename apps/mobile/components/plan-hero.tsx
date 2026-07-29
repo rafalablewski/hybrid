@@ -111,8 +111,14 @@ export interface CoverSpec {
    *  "library" is the SHELF — the Plans root. Emblem-sized glyph like the goal,
    *  but the wash comes from the right like the plan AND runs at a softer mix:
    *  its accent is the theme's own primary (no discipline owns "Plans"), and
-   *  the container must not out-shout the nineteen goal accents it holds. */
-  variant?: "plan" | "goal" | "library";
+   *  the container must not out-shout the nineteen goal accents it holds.
+   *  "recipe" is the PLATE — the dish emoji at emblem scale and FULL COLOUR
+   *  (a ghosted 7%-white emoji is a grey smudge, not a dish), which is why it
+   *  is also the one variant that fades to NOTHING rather than to a residue:
+   *  a monochrome mark can drift into the pinned bar as texture, a colour
+   *  emoji only smears behind the bar title. Meta line + blurb-below like the
+   *  plan, because a recipe has both and a poster is the right object. */
+  variant?: "plan" | "goal" | "library" | "recipe";
 }
 
 /** Imperative handle onto the scaffold's scroll, for a `rail` that navigates
@@ -195,10 +201,16 @@ export function CoverScreen({
   const { palette: C, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const library = cover.variant === "library";
-  // Both non-plan levels blow the glyph up as cover art; only the goal mirrors
+  const plate = cover.variant === "recipe";
+  // Every non-plan level blows the glyph up as cover art; only the goal mirrors
   // the light source to the left.
-  const emblem = cover.variant === "goal" || library;
+  const emblem = cover.variant === "goal" || library || plate;
   const mirrored = cover.variant === "goal";
+  // The goal puts its blurb ON the cover face; plan and recipe put it under the
+  // hem and keep the mono meta line on the face.
+  const blurbOnFace = cover.variant === "goal";
+  // Four hem columns (a recipe's four macros) need tighter type than three.
+  const wide = cover.stats.length > 3;
   const heroH = insets.top + COVER_CONTENT;
   const barH = insets.top + BAR_CONTENT;
   const delta = heroH - barH;
@@ -254,7 +266,9 @@ export function CoverScreen({
   const heroShift = clamp([0, delta], [0, -delta]);
   const counter = clamp([0, delta], [0, delta]);
   const glyphCounter = clamp([0, delta], [0, delta * (emblem ? 0.66 : 0.55)]);
-  const glyphFade = clamp([0, delta], [1, 0.4]);
+  // A monochrome ghost can survive into the pinned bar as texture; the recipe
+  // plate is a full-colour emoji, so it has to be gone by the time the bar is.
+  const glyphFade = plate ? clamp([0, delta * 0.77], [1, 0]) : clamp([0, delta], [1, 0.4]);
   const scrimFade = clamp([0, delta], [1, 0]);
   const bigFade = clamp([0, delta * 0.5], [1, 0]);
   const compactFade = clamp([delta * 0.62, delta], [0, 1]);
@@ -318,19 +332,19 @@ export function CoverScreen({
                 the first content to slide under the pinned cover. */}
             <View style={{ paddingHorizontal: 16 }}>
               {cover.stats.length > 0 && (
-                <View style={{ flexDirection: "row", gap: 18, marginTop: 18, marginBottom: 14 }}>
+                <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 18, marginBottom: 14 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 27, lineHeight: 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
-                        {!!s.unit && <Text style={{ fontSize: 14, color: C.ash }}>{s.unit}</Text>}
+                        {!!s.unit && <Text style={{ fontSize: wide ? 12 : 14, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: wide ? 8.5 : fs.nano, letterSpacing: wide ? 0.8 : 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>
               )}
-              {!emblem && !!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
+              {!blurbOnFace && !!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
               {top}
             </View>
 
@@ -389,7 +403,17 @@ export function CoverScreen({
                 On the goal emblem it IS the subject: bigger, brighter, deeper. */}
             <Animated.Text
               pointerEvents="none"
-              style={{ position: "absolute", top: insets.top - (emblem ? 4 : 26), right: emblem ? -30 : -10, fontSize: emblem ? 214 : 150, lineHeight: emblem ? 222 : 158, color: `rgba(255,255,255,${emblem ? 0.09 : 0.07})`, opacity: glyphFade, transform: [{ translateY: glyphCounter }] }}
+              style={{
+                position: "absolute",
+                top: insets.top - (plate ? 0 : emblem ? 4 : 26),
+                right: plate ? -18 : emblem ? -30 : -10,
+                fontSize: emblem ? 214 : 150,
+                lineHeight: emblem ? 222 : 158,
+                // the dish keeps its own colour; every other cover art is a ghost
+                ...(plate ? null : { color: `rgba(255,255,255,${emblem ? 0.09 : 0.07})` }),
+                opacity: glyphFade,
+                transform: [{ translateY: glyphCounter }],
+              }}
             >
               {cover.glyph}
             </Animated.Text>
@@ -422,7 +446,7 @@ export function CoverScreen({
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
-              {emblem && !library ? (
+              {blurbOnFace ? (
                 <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 9 }}>
