@@ -6,6 +6,7 @@ import {
   personalTrainingLog,
   toBiometrics,
   migrateBlocks,
+  sanitizeDeviceWorkout,
   type LoggedSession,
   type Signal,
 } from "@hybrid/core";
@@ -79,6 +80,10 @@ export async function GET(request: Request) {
         // coach (coach/links/[id]/sessions) keeps its explicit select, which
         // excludes feel/fatigue along with the private note.
         feel: s.feel,
+        // The device's read of this workout, when it was matched — dropped here,
+        // every server-side engine would fall back to the typed minutes/distance
+        // while the clients used the measurement (see core/device-truth.ts).
+        device: sanitizeDeviceWorkout(s.device),
       }));
       const signals: Signal[] = sigRows.map((r) => ({
         athleteId: r.userId, kind: r.kind as Signal["kind"], value: r.value, unit: r.unit, source: r.source, ts: r.ts.toISOString(),

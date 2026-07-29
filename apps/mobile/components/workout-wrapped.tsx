@@ -36,6 +36,7 @@ import {
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
   deviceSourceLabel,
+  deviceTrueSession,
   sessionEnergy,
   type DeviceWorkout,
   type StoryStyleId,
@@ -219,7 +220,9 @@ export function WorkoutWrapped({
   // ── story slides for the share sheet (trophy + signature lead) ──
   const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
   const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(session.blocks, bwHere);
+  // The fun fact is a distance/tonnage comparison — measured where a device
+  // measured it.
+  const funFact = sessionFunFact(deviceTrueSession(view).blocks, bwHere);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
     ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
     // The shared cardio formatter, same as the post-workout PR slide — raw km

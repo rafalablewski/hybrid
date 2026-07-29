@@ -18,6 +18,7 @@ import {
   paceClock,
   type LoggedSession,
   migrateBlocks,
+  sanitizeDeviceWorkout,
   type Signal,
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
@@ -60,6 +61,10 @@ export async function POST(request: Request) {
     // the clients (which get the full row) used the real thing, so the AI coach
     // would reason about a different athlete than the app shows.
     feel: r.feel,
+    // The device's read of this workout, when it was matched — dropped here,
+    // every server-side engine would fall back to the typed minutes/distance
+    // while the clients used the measurement (see core/device-truth.ts).
+    device: sanitizeDeviceWorkout(r.device),
   }));
 
   // Recovery from the Signal ontology (manual check-in + wearables write here).

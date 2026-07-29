@@ -4,6 +4,7 @@ import { bwAt, type BodyweightInput } from "../bodyweight";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { musclesFor } from "./movements";
 import type { MuscleGroup } from "./types";
+import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
 
 // Personal-record detection. Pure helpers shared by the post-workout summary
 // (celebrate a PR the moment it's set) and the session-detail screen (badge the
@@ -185,9 +186,11 @@ function cardioEfforts(session: LoggedSession): CardioEffort[] {
  * short jog can't fake a long-run pace record). Distance PRs come first.
  */
 export function newCardioPrsInSession(session: LoggedSession, prior: LoggedSession[]): CardioPrHit[] {
-  const priorEfforts = prior.flatMap(cardioEfforts);
+  // A record is set by what you DID, so both sides read the device's distance
+  // and time wherever it measured them (see device-truth.ts).
+  const priorEfforts = deviceTrueSessions(prior).flatMap(cardioEfforts);
   const hits: CardioPrHit[] = [];
-  for (const e of cardioEfforts(session)) {
+  for (const e of cardioEfforts(deviceTrueSession(session))) {
     const sameMove = priorEfforts.filter((p) => p.move === e.move);
     const prevMaxDist = sameMove.length ? Math.max(...sameMove.map((p) => p.distance)) : null;
     if (prevMaxDist == null || e.distance > prevMaxDist) {

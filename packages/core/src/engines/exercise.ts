@@ -4,6 +4,7 @@ import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { runStats } from "./running";
 import { velocityProfileFor } from "./velocity";
+import { deviceTrueSessions } from "../device-truth";
 
 // Per-exercise dashboard: everything about ONE movement over a chosen time
 // window. Pure aggregation over the existing session helpers (e1rmSeries,
@@ -104,7 +105,9 @@ export function exerciseDashboard(
   bw?: BodyweightInput,
 ): ExerciseStats {
   const cutoff = periodCutoff(period, now);
-  const win = inWindow(sessions, cutoff, now);
+  // Project once, at the window: everything below (runStats, paceSeries, the
+  // cardio totals) then reads the device's distance and time.
+  const win = deviceTrueSessions(inWindow(sessions, cutoff, now));
   const kind = exerciseKind(sessions, name);
 
   if (kind === "cardio") {

@@ -4,6 +4,7 @@ import { movementFor } from "./movements";
 import { isRunMove } from "./running";
 import { developmentFraction, type Sex } from "../benchmarks";
 import type { Experience } from "../onboarding";
+import { deviceTrueSessions } from "../device-truth";
 
 /**
  * WHAT LEVEL IS THIS ATHLETE, ACTUALLY.
@@ -237,7 +238,9 @@ export function estimateFitnessLevel(
   // The single best 5 km-equivalent run in the window.
   let bestRun: { equivSec: number; km: number; at: string } | null = null;
 
-  for (const s of sessions) {
+  // A 5 km-equivalent is only as good as the distance and time behind it —
+  // take the device's when it measured them (see device-truth.ts).
+  for (const s of deviceTrueSessions(sessions)) {
     const t = Date.parse(s.startedAt);
     if (!Number.isFinite(t) || t < since || t > now) continue;
     for (const b of s.blocks) {

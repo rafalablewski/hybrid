@@ -2,6 +2,7 @@ import type { LoggedSession, SessionBlock } from "./session";
 import { localDayKey } from "../day-key";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
+import { deviceTrueSessions } from "../device-truth";
 import {
   newPrsInSession,
   newCardioPrsInSession,
@@ -97,8 +98,11 @@ export function weekAdherence(sessions: LoggedSession[], target = 3, now = Date.
 
 export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): WeeklyRecap {
   const within = (s: LoggedSession, from: number, to: number) => ms(s.startedAt) >= from && ms(s.startedAt) < to;
-  const thisWeek = sessions.filter((s) => within(s, now - WEEK, now + 1));
-  const prevWeek = sessions.filter((s) => within(s, now - 2 * WEEK, now - WEEK));
+  // The week's distance and minutes are the measured ones wherever a device
+  // recorded the session (see device-truth.ts).
+  const measured = deviceTrueSessions(sessions);
+  const thisWeek = measured.filter((s) => within(s, now - WEEK, now + 1));
+  const prevWeek = measured.filter((s) => within(s, now - 2 * WEEK, now - WEEK));
 
   let volume = 0;
   let sets = 0;

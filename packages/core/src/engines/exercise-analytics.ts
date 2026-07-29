@@ -17,6 +17,7 @@ import { bwAt, type BodyweightInput } from "../bodyweight";
 import { periodCutoff, exerciseKind, type ExercisePeriod } from "./exercise";
 import { trainingHeatmap, type HeatCell } from "./calendar";
 import { localMondayMs, addLocalDays, localDayKey } from "../day-key";
+import { deviceTrueSessions } from "../device-truth";
 
 const DAY = 86_400_000;
 /** "Recent" everywhere below = the last 8 weeks (matches the 8w period). */
@@ -70,7 +71,8 @@ function liftSets(sessions: LoggedSession[], name: string, bw?: BodyweightInput)
 /** Every cardio effort of `name` with a derivable pace, oldest → newest. */
 function cardioEfforts(sessions: LoggedSession[], name: string): { t: number; date: string; km: number; secPerKm: number }[] {
   const out: { t: number; date: string; km: number; secPerKm: number }[] = [];
-  for (const s of sessions) {
+  // Distance + pace per effort, measured where a device measured them.
+  for (const s of deviceTrueSessions(sessions)) {
     const t = new Date(s.startedAt).getTime();
     for (const b of s.blocks)
       if (isCardio(b) && b.name === name && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
