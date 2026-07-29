@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -23,7 +23,7 @@ import {
   localTodayKey,
   NUTRITION_GLYPHS,
   sumMealComponents, recipeToMeal,
-  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById,
+  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, recipeCoverView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
   type NutritionGoal,
@@ -55,7 +55,8 @@ import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring } from "./kit";
+import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
+import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -117,9 +118,6 @@ const IBolt = (p: IconProps) => <SvgIcon {...p} d="M13 2L4 14h7l-1 8 9-12h-7z" s
 function IStar({ size = 20, color = "#fff", strokeWidth = 1.8, fill = false }: IconProps) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 }
-function IRestart({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M3 12a9 9 0 1 0 3-6.7L3 8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /><Path d="M3 3v5h5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
 function IClock({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="13" r="8" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 9v4l2.5 2.5M9 2h6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
 }
@@ -139,6 +137,25 @@ function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: 
       <LinearGradient pointerEvents="none" colors={[`${accent}5c`, `${accent}12`, "transparent"]} start={{ x: 0.45, y: 0.35 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize }}>{emoji}</Text>
       {children}
+    </View>
+  );
+}
+
+// The head above a screen-level rail — the Explore SectionHead anatomy: a bold
+// display-face title with the action as small mono uppercase on the RIGHT of
+// the same row. No marker before the title (the no-decorative-dot rule).
+function RailHead({ C, title, actionLabel, actionColor, onAction }: {
+  C: ReturnType<typeof useTheme>["palette"]; title: string; actionLabel: string; actionColor: string; onAction: () => void;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
+      {/* F.black (not serifIf) — every other section head on this screen
+          ("Today's meals", "Checked items") is set in it, and one serif head
+          among them would read as a different screen. */}
+      <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{title}</Text>
+      <Pressable onPress={onAction} accessibilityRole="button" hitSlop={8}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: actionColor }}>{actionLabel}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -178,6 +195,41 @@ function SourceMarkView({ C, src, height }: {
     );
   }
   return <SvgXml xml={src.mark.svg} height={height} width={Math.min(168, height * src.mark.aspect)} accessibilityLabel={src.mark.alt} />;
+}
+
+/**
+ * MARK PLATE — the operator's own logo on a card, given a field to sit on.
+ *
+ * A logo dropped straight onto the app's charcoal is at the mercy of whatever
+ * the artwork assumes: MAX's wordmark is one evenodd path whose keylines are
+ * true HOLES, so on ink they fill with ink and the letterforms close up. Real
+ * brand sheets solve this the same way we do here — give the mark a neutral
+ * plate and let it own that rectangle. The plate is a hairlined tile a touch
+ * lighter than the card, deliberately NOT white: a white slab in a dark UI
+ * reads as a broken image, and on the Kyoto Hour washi it would read as a
+ * sticker. Parity with web aurora/nutrition.tsx MarkPlate.
+ */
+function MarkPlate({ C, src, height = 34, full }: {
+  C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height?: number; full?: boolean;
+}) {
+  return (
+    <View
+      style={{
+        alignSelf: full ? "stretch" : "flex-start",
+        height: height + 22,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 14,
+        borderRadius: 14,
+        backgroundColor: withAlpha(C.chalk, 0.07),
+        borderWidth: 1,
+        borderColor: C.line,
+        overflow: "hidden",
+      }}
+    >
+      <SourceMarkView C={C} src={src} height={height} />
+    </View>
+  );
 }
 
 // The nutrition-facts panel — rendered from the SAME core function the web
@@ -263,6 +315,11 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const full = isFullAccess(persona);
   // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
   const recipesUnlocked = canUseRecipes(persona);
+  // Card widths for the two bottom-of-screen rails, so the next card always
+  // peeks in from the right (the exercise-widget rail's proportions).
+  const { width: winW } = useWindowDimensions();
+  const recipeCardW = Math.min(196, Math.round(winW * 0.52));
+  const sourceCardW = Math.min(268, Math.round(winW * 0.72));
   const { data: signals = [], isFetching: refreshing, refetch, isError: signalsError } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -939,7 +996,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                     accessibilityRole="button"
                     style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
                   >
-                    {src ? <SourceMarkView C={C} src={src} height={26} /> : null}
+                    {src ? <MarkPlate C={C} src={src} height={24} /> : null}
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
                       <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
@@ -1379,7 +1436,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label. */}
         {src ? (
           <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 6 }}>
-            <SourceMarkView C={C} src={src} height={30} />
+            <MarkPlate C={C} src={src} height={26} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
               <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{src.name}</Text>
@@ -1498,7 +1555,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             const n = vfBySource(src.id).length;
             return (
               <Pressable key={src.id} onPress={() => openSourcePage(src.id, "sources")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 16, marginBottom: 10 }}>
-                <SourceMarkView C={C} src={src} height={32} />
+                <MarkPlate C={C} src={src} height={28} />
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{src.name}</Text>
@@ -1527,8 +1584,8 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
 
-        <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingVertical: 28, paddingHorizontal: 20, marginTop: 6 }}>
-          <SourceMarkView C={C} src={src} height={46} />
+        <View style={{ marginTop: 6 }}>
+          <MarkPlate C={C} src={src} height={52} full />
         </View>
 
         <Text style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.7, color: C.chalk, marginTop: 20 }}>{src.name}</Text>
@@ -1603,52 +1660,76 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   }
 
   // ============ RECIPE — detail ============
+  // Opens with the PLAN DETAIL'S COVER (components/plan-hero.tsx CoverScreen),
+  // not a lookalike — one scaffold, driven by core's recipeCoverView, so the
+  // two covers can't drift. The old boxed macro strip is now the cover's HEM,
+  // and the METHOD moved onto this page: you could previously read a recipe end
+  // to end without seeing how it's made, which made Start cooking a decision
+  // taken blind. Parity with web aurora/nutrition.tsx RecipeDetail.
   if (view === "recipe" && recipe) {
+    const rc = recipe;
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} padding={0}>
-        <RecipeHero tint={recipe.tint} emoji={recipe.emoji} height={240} fontSize={92}>
-          <Pressable onPress={() => setView("recipes")} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ position: "absolute", top: 14, left: 14, width: 42, height: 42, borderRadius: 999, backgroundColor: "rgba(12,13,12,0.5)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={20} color={C.chalk} /></Pressable>
-        </RecipeHero>
-        <View style={{ marginTop: -28, backgroundColor: C.ink, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 16, paddingTop: 18, paddingBottom: 24 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 4 }}>
-            <View style={{ position: "absolute", left: 0 }}><IRestart size={22} color={C.chalk} /></View>
-            <Text style={{ fontFamily: F.black, fontSize: 30, letterSpacing: -0.6, color: C.chalk }}>{recipe.name}</Text>
-          </View>
-          <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, color: C.ash, marginTop: 5 }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}  –  {recipe.timeMins} {t("w.recovery.nutrition.mins")}</Text>
-
-          <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 6, marginTop: 18 }}>
-            {([["w.recovery.nutrition.energy", recipe.macros.kcal, txt(C, C.lime), false], ["w.recovery.nutrition.protein", recipe.macros.protein, txt(C, C.blue), true], ["w.recovery.nutrition.carbs", recipe.macros.carbs, txt(C, C.amber), true], ["w.recovery.nutrition.fat", recipe.macros.fat, txt(C, C.violet), true]] as const).map(([lab, val, col, g]) => (
-              <View key={lab} style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>{g ? "g" : ""}</Text></Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", marginTop: 5, color: col }}>{t(lab)}</Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 6 }}>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 9 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.ingredients")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recipeServes} {t("w.recovery.nutrition.serves")}</Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
-              <Pressable onPress={() => setRecipeServes((x) => Math.max(1, x - 1))} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>–</Text></Pressable>
-              <Text style={{ width: 40, textAlign: "center", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line, lineHeight: 38 }}>{recipeServes}</Text>
-              <Pressable onPress={() => setRecipeServes((x) => Math.min(12, x + 1))} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>+</Text></Pressable>
-            </View>
-          </View>
-          {recipe.ingredients.map((ing, i) => (
-            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: ing.optional ? C.ash : C.chalk }}>{ing.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>{formatIngredient(ing, recipe.baseServes, recipeServes)}</Text>
-            </View>
-          ))}
-          {recipeMsg ? <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 20 }}><AuroraIcon name="check" size={13} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{recipeMsg}</Text></View> : null}
-          <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
-            <Pressable onPress={() => saveRecipeAsMeal(recipe)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 17, paddingHorizontal: 22 }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
-            <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+      <CoverScreen
+        cover={recipeCoverView(rc, {
+          meal: (m) => t(`w.recovery.nutrition.meal.${m}`),
+          mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`,
+          serves: (n) => `${n} ${t("w.recovery.nutrition.serves")}`,
+          ingredients: (n) => t("w.recovery.nutrition.ingredientsN").replace("{n}", String(n)),
+          highProtein: t("w.recovery.nutrition.recipeFilter.highProtein"),
+          energy: t("w.recovery.nutrition.energy"),
+          protein: t("w.recovery.nutrition.protein"),
+          carbs: t("w.recovery.nutrition.carbs"),
+          fat: t("w.recovery.nutrition.fat"),
+        })}
+        backLabel={t("w.recovery.nutrition.recipes")}
+        back={() => setView("recipes")}
+      >
+        {/* Ingredients — the stepper scales every quantity live. */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 2 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.ingredients")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
+            <Pressable onPress={() => setRecipeServes((x) => Math.max(1, x - 1))} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>–</Text></Pressable>
+            <Text style={{ width: 52, textAlign: "center", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderLeftWidth: 1, borderRightWidth: 1, borderColor: C.line, lineHeight: 38 }}>{recipeServes}</Text>
+            <Pressable onPress={() => setRecipeServes((x) => Math.min(12, x + 1))} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 38, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 20, color: txt(C, C.lime) }}>+</Text></Pressable>
           </View>
         </View>
-      </AuroraScreen>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash, marginBottom: 4 }}>{recipeServes} {t("w.recovery.nutrition.serves")}</Text>
+        {rc.ingredients.map((ing, i) => (
+          <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: ing.optional ? C.ash : C.chalk }}>{ing.name}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>{formatIngredient(ing, rc.baseServes, recipeServes)}</Text>
+          </View>
+        ))}
+
+        {/* METHOD — readable before you commit, not only once you're cooking.
+            The cook view is still the hands-free step-through; this is the read. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 26, marginBottom: 2 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.method")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepsN").replace("{n}", String(rc.steps.length))}</Text>
+        </View>
+        {rc.steps.map((s, i) => (
+          <View key={i} style={{ flexDirection: "row", gap: 12, paddingVertical: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            {/* The number is the STEP ORDER — method is genuinely a sequence, so
+                this encodes something true rather than decorating the list. */}
+            <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 22 }}>{i + 1}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 22, color: C.chalk }}>{s.text}</Text>
+              {s.timerSec != null ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 }}>
+                  <IClock size={12} color={txt(C, C.amber)} />
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber) }}>{Math.floor(s.timerSec / 60)}:{String(s.timerSec % 60).padStart(2, "0")}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        ))}
+
+        {recipeMsg ? <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 20 }}><AuroraIcon name="check" size={13} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{recipeMsg}</Text></View> : null}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
+          <Pressable onPress={() => saveRecipeAsMeal(rc)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 17, paddingHorizontal: 22 }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
+          <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 17, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+        </View>
+      </CoverScreen>
     );
   }
 
@@ -1794,28 +1875,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </Pressable>
           ) : null}
 
-          {/* Recipes — the cook-along library (Full-only; free users route to
-              upgrade). */}
-          <Pressable onPress={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 24 }}>
-            <Glyph name="bowl" size={20} color={C.ash} strokeWidth={5} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.recipes")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.recipesSub")}</Text>
-            </View>
-            {!recipesUnlocked ? <Text style={{ color: pa.text, fontSize: 12 }}>✦</Text> : null}
-            <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
-          </Pressable>
-
-          {/* Menu — the deliberate way into every deeper feature. */}
+          {/* Menu — the deliberate way into every deeper feature. Recipes and
+              the verified tier are NOT here: both are libraries you browse, so
+              they ride their own rails at the very bottom of this screen. */}
           {([
             ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C.ash} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
             ["insights", <Glyph key="i" name="spark" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
-            // The verified tier was previously only reachable by stumbling into
-            // one of its foods through search. This is the front door.
-            ["sources", <VerifiedMark key="v" C={C} size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
               {icon}
@@ -1827,6 +1895,51 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
             </Pressable>
           ))}
+
+          {/* ── The two libraries, at the very bottom, as left/right rails —
+              the "Train your way" idiom. A list of recipes and a list of the
+              businesses we've verified are things you BROWSE, so they read as
+              cards you swipe through rather than two more menu rows that hide
+              their contents behind a chevron. Both are FULL-BLEED like every
+              screen-level rail: negative margins the width of AuroraScreen's
+              16dp gutter pull the scroll clip to the true screen edge, with
+              matching internal padding so resting cards stay on the column. */}
+          <RailHead C={C} title={t("w.recovery.nutrition.recipes")} actionLabel={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} actionColor={recipesUnlocked ? C.ash : pa.text} onAction={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+            {RECIPES.map((r) => (
+              <Pressable key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, overflow: "hidden", backgroundColor: C.ink2 }}>
+                <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
+                <View style={{ paddingHorizontal: 12, paddingTop: 11, paddingBottom: 13 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 7 }}>{r.macros.kcal} kcal</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {/* Verified foods — the BUSINESSES, one card each. The verified tier
+              was previously only reachable by stumbling into one of its foods
+              through search; the rail puts the companies themselves on the
+              screen. */}
+          <RailHead C={C} title={t("w.recovery.nutrition.verifiedFoods")} actionLabel={`${t("w.explore.seeAll")} →`} actionColor={C.ash} onAction={() => setView("sources")} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+            {VERIFIED_SOURCES.map((src) => {
+              const n = vfBySource(src.id).length;
+              return (
+                <Pressable key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 14 }}>
+                  {/* The business's own logo leads the card — this rail IS the
+                      businesses, so recognising one at a glance is its whole job. */}
+                  <MarkPlate C={C} src={src} height={34} full />
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7, marginTop: 12, paddingHorizontal: 2 }}>
+                    <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{src.name}</Text>
+                    <VerifiedMark C={C} size={12} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, paddingHorizontal: 2 }}>{t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
       </>
       ))}
 
