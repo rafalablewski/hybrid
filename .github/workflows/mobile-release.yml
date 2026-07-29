@@ -204,6 +204,7 @@ jobs:
           done
 
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
 
           # What TestFlight itself will show. READY_FOR_BETA_TESTING is the one
           # that means "installable"; anything else is worth seeing in the log.
@@ -239,17 +240,31 @@ jobs:
           app-store-connect builds add-beta-test-info "$BUILD_ID" \
             --locale en-US --whats-new "$NOTES"
 
-      # A build that processes cleanly but is never added to a tester group
-      # looks EXACTLY like a build that never arrived. If the group is named in
-      # repo variables (Settings → Secrets and variables → Actions → Variables →
-      # TESTFLIGHT_GROUP), attach it here; if it is not set, say so plainly
-      # rather than leaving a silent gap.
-      - name: Add the build to the internal tester group
-        if: ${{ vars.TESTFLIGHT_GROUP != '' }}
+      # ── The step that actually gets it onto a phone ────────────────────────
+      # A build that is VALID but attached to no beta group is INVISIBLE in
+      # TestFlight and indistinguishable from one that never arrived: green run,
+      # healthy API, build list simply does not grow. That is the state builds
+      # 81278222 and 81281267 landed in while every earlier build appeared
+      # normally — so this is not hypothetical, it is what went wrong.
+      #
+      # The codemagic CLI can add a build to a group BY NAME but cannot LIST
+      # groups, and a name we have to be told in advance is precisely what makes
+      # this fail silently. So this talks to the REST API: it prints every group
+      # with the two attributes that decide visibility (isInternalGroup,
+      # hasAccessToAllBuilds) — that listing is the diagnosis — and attaches the
+      # build to each internal group that does not already have it.
+      - name: Distribute to the internal testers
+        env:
+          APPLE_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
+          APPLE_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+          APPLE_ASC_API_KEY_P8: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
         run: |
-          app-store-connect beta-groups add-build \
-            --beta-group "${{ vars.TESTFLIGHT_GROUP }}" "$BUILD_ID"
-          echo "Added build $BUILD to group '${{ vars.TESTFLIGHT_GROUP }}'."
+          # Own venv: PyJWT lives inside the pipx install of the signing helper,
+          # not on the runner's python, and installing into the system one is
+          # both fragile and rude.
+          python3 -m venv /tmp/ascvenv
+          /tmp/ascvenv/bin/pip install --quiet --disable-pip-version-check pyjwt cryptography
+          /tmp/ascvenv/bin/python .github/scripts/testflight-distribute.py
 
       - name: Summary
         if: always()
@@ -267,11 +282,6 @@ jobs:
               echo "> Processing finished, but the internal state is \`${INTERNAL_STATE:-unknown}\`"
               echo "> rather than \`READY_FOR_BETA_TESTING\`. If it does not appear for"
               echo "> testers, check that the build is assigned to an internal group."
-            fi
-            if [ -z "${{ vars.TESTFLIGHT_GROUP }}" ]; then
-              echo "> No \`TESTFLIGHT_GROUP\` repo variable set, so this run did not assign"
-              echo "> the build to a tester group. If your internal group does not add new"
-              echo "> builds automatically, set that variable to its name."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
