@@ -33,6 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
+import { readDeepLink, writeDeepLink, onDeepLinkChange } from "@/lib/deep-link";
 import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
@@ -172,6 +173,20 @@ export default function AppShell() {
   // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
   const [screen, setScreenRaw] = useState("today");
   const setScreen = useScreenTransition(screen, setScreenRaw);
+  // DEEP LINKS. The screen is mirrored into `?s=`, so a screen finally has an
+  // address: it can be bookmarked, sent to someone, or landed on from an email,
+  // and a refresh no longer dumps you back on Today. The URL MIRRORS the state
+  // rather than driving it — we read it on mount and on Back/Forward, and write
+  // it after the fact with replaceState so tapping through five tabs doesn't
+  // cost five Back presses to leave. See lib/deep-link.ts.
+  useEffect(() => {
+    const p = readDeepLink();
+    // setScreenRaw, not setScreen: landing on a link should not play a
+    // directional transition from a screen the user was never on.
+    if (p.s) setScreenRaw(p.s);
+    return onDeepLinkChange((next) => setScreenRaw(next.s || "today"));
+  }, []);
+  useEffect(() => { writeDeepLink({ s: screen === "today" ? undefined : screen }); }, [screen]);
   // ONE scroll signal for the whole shell, published as a CSS custom property.
   // The web twin of the mobile NavScrollProvider; see lib/use-scroll-collapse.
   useScrollCollapse();

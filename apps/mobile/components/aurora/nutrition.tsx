@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, Alert, ScrollView, StyleSheet } from "react-native";
-import Svg, { Path, Rect, Circle } from "react-native-svg";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -32,7 +32,12 @@ import {
   type NutritionNudge,
   type NutritionSummary,
   type NutritionGlyphName,
-  type OffFood,
+  type FoodHit,
+  type MicroFacts, type NutritionFacts, type VerifiedStamp,
+  nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
+  VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
+  verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
+  sourceCheckedOn, kj, verifiedFreshness, type SourceMark, 
   type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
@@ -82,7 +87,7 @@ const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((p
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source" | "sources";
 // The part of the day a log is attributed to, carried into the Signal `source`.
 // The four built-ins plus any custom parts a Full user added — a plain key
 // string, not a closed union.
@@ -93,7 +98,7 @@ const UNIT_OPTIONS = ["gram", "ml", "oz", "piece", "serving"];
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
-type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
+type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
 
 // Small stroke icons for the redesigned flows (close, chevron, barcode, trash,
 // restart, star, bolt, plus-box) — inline react-native-svg so the mockup chrome
@@ -141,16 +146,88 @@ function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: 
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a trash affordance (a personal item).
 // The row body + the add-circle both open the portion editor.
-function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete }: {
+// The Create Food form's blank state — one constant, so the reset paths can
+// never fall out of step with the fields the form actually has.
+const BLANK_CREATE_FORM = {
+  name: "", subname: "", serving: "", unit: "gram",
+  kcal: "", carbs: "", protein: "", fat: "",
+  satFat: "", sugar: "", fiber: "", salt: "",
+};
+
+// The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
+// uses, so "checked by us" reads identically wherever it appears in the app.
+function VerifiedMark({ C, size = 13 }: { C: ReturnType<typeof useTheme>["palette"]; size?: number }) {
+  const { t } = useLang();
+  return (
+    <Text accessibilityLabel={t("w.recovery.nutrition.verified")} style={{ fontFamily: F.mono, fontSize: size, lineHeight: size + 2, color: txt(C, C.lime) }}>✓</Text>
+  );
+}
+
+// The operator's mark, or — when we hold no artwork for them — their name set
+// in OUR display face inside a hairline chip. The fallback is deliberately
+// typographic: visibly ours, so it can never be taken for an approximation of
+// somebody's logo. One renderer for the product page and the provenance card.
+function SourceMarkView({ C, src, height }: {
+  C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height: number;
+}) {
+  if (!src.mark) {
+    return (
+      <Text style={{ fontFamily: F.black, fontSize: Math.round(height * 0.48), letterSpacing: 0.8, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 9 }}>
+        {src.name}
+      </Text>
+    );
+  }
+  return <SvgXml xml={src.mark.svg} height={height} width={Math.min(168, height * src.mark.aspect)} accessibilityLabel={src.mark.alt} />;
+}
+
+// The nutrition-facts panel — rendered from the SAME core function the web
+// screen uses (nutritionPanel), so the two clients can never disagree about
+// what a food says. A field the food never stated shows an em dash, NEVER
+// "0 g": an unstated sugar content is not a sugar-free food.
+function FactsPanel({ C, facts, per100, scale = 1 }: {
+  C: ReturnType<typeof useTheme>["palette"]; facts: NutritionFacts; per100?: NutritionFacts | null; scale?: number;
+}) {
+  const { t } = useLang();
+  // Scale through CORE, never by hand: scaleFacts is the one place that knows a
+  // scaled unknown stays unknown, and a second copy of that rule here would be
+  // free to drift from the one the log actually writes.
+  const rows = nutritionPanel(scale === 1 ? facts : scaleFacts(facts, scale));
+  const p100 = per100 ? nutritionPanel(per100) : null;
+  return (
+    <View style={{ marginTop: 18, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingBottom: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingTop: 12, paddingBottom: 8 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.facts.title")}</Text>
+        {p100 ? <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
+      </View>
+      {rows.map((r, i) => (
+        <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
+          {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.note}</Text> : null}
+          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
+          {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, minWidth: 62, textAlign: "right" }}>{p100[i]!.value ?? "—"}</Text> : null}
+        </View>
+      ))}
+      {rows.some((r) => !r.value) ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, paddingTop: 8, lineHeight: 15 }}>{t("w.recovery.nutrition.facts.notStatedNote")}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
-  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void;
+  /** tapping the row BODY, when that means something different from the ⊕ —
+   *  a verified item opens its page; everything else just adds. */
+  onOpen?: () => void;
+  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
       <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
-      <Pressable onPress={onAdd} style={{ flex: 1, minWidth: 0 }}>
+      <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
           <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
+          {verified ? <VerifiedMark C={C} /> : null}
           {subname ? <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
@@ -167,7 +244,15 @@ function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDe
  *  macros read as hairline lines, iconography is one monoline voice, and colour
  *  appears only where it means something. Same engine + Signal logging + personal
  *  library. `compact` renders the focused Today "Add a meal" sheet. */
-export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade }: { compact?: boolean; onNavigateFull?: () => void; onUpgrade?: () => void } = {}) {
+export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade, openFood, openSource }: {
+  compact?: boolean;
+  onNavigateFull?: () => void;
+  onUpgrade?: () => void;
+  /** land directly on a verified product page — the deep-link entry (app/food/[id]) */
+  openFood?: string;
+  /** land directly on a verified source page (app/source/[id]) */
+  openSource?: string;
+} = {}) {
   const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
@@ -197,7 +282,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // MEAL. Name + the personal Subname on the plate; serving + unit (products
   // only) compose the stored servingLabel, e.g. 100 + "gram" → "100 gram".
   const [createMode, setCreateMode] = useState<"product" | "meal">("product");
-  const [createForm, setCreateForm] = useState({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+  const [createForm, setCreateForm] = useState(BLANK_CREATE_FORM);
+  // The label panel is OPTIONAL and folded away by default — most foods a user
+  // types in have only the four macros (parity with web).
+  const [showPanelFields, setShowPanelFields] = useState(false);
   const [unitPicker, setUnitPicker] = useState(false);
   // A meal can be composed FROM saved products: each component is a product with
   // a serving count; the meal's macros are the summed total (sumMealComponents).
@@ -206,7 +294,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [mealComps, setMealComps] = useState<MealComp[]>([]);
   const [compPicker, setCompPicker] = useState(false); // the "Add product" sheet
   const [compQuery, setCompQuery] = useState("");
-  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setMealComps([]); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
+  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setMealComps([]); setCreateForm(BLANK_CREATE_FORM); setView("create"); };
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
@@ -315,7 +403,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   useEffect(() => { loadLogs(); }, [loadLogs]);
   // Log one food/meal → creates the editable entry AND the mirrored Signals the
   // engines read (one round-trip). Per-serving macros + qty so it stays editable.
-  const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number }): Promise<boolean> => {
+  const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
     const { ok } = await createFoodLog(e);
     if (!ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
     return true;
@@ -349,12 +437,33 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   //    serving × quantity stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
   //    saved meal, so scaling isn't just for the database.
-  const [portion, setPortion] = useState<{ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: OffFood } | null>(null);
+  const [portion, setPortion] = useState<
+    ({ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: FoodHit; servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null } & MicroFacts) | null
+  >(null);
   const [qty, setQty] = useState(1);
   const openPortion = (base: NonNullable<typeof portion>) => { setQty(1); setPortion(base); };
 
+  // ── Product pages (parity with web). A verified item gets its OWN screen and
+  //    its business gets one too. The portion SHEET stays the fast path to
+  //    logging: a sheet is for adding a food you already trust, a page is for
+  //    deciding whether to trust it. `pageBack` remembers where we came from.
+  const [foodPageId, setFoodPageId] = useState<string | null>(null);
+  const [sourcePageId, setSourcePageId] = useState<string | null>(null);
+  const [pageBack, setPageBack] = useState<NutView>("add");
+  const openFoodPage = (id: string, from: NutView) => { setFoodPageId(id); setPageBack(from); setView("food"); };
+  const openSourcePage = (id: string, from: NutView) => { setSourcePageId(id); setPageBack(from); setView("source"); };
+
+  // DEEP LINK ENTRY. `hybrid://food/<id>` (and the https universal-link twin,
+  // once the entitlement ships) lands here via app/food/[id].tsx. An id that
+  // isn't in the catalog falls through to the hub rather than showing a broken
+  // page — a link from an older build must never dead-end.
+  useEffect(() => {
+    if (openFood && verifiedFood(openFood)) { setFoodPageId(openFood); setPageBack("home"); setView("food"); }
+    else if (openSource && verifiedSource(openSource)) { setSourcePageId(openSource); setPageBack("home"); setView("source"); }
+  }, [openFood, openSource]);
+
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
-  const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+  const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat, sugar: m.sugar, fiber: m.fiber, salt: m.salt });
 
   // Write the scaled macros for the open portion, then close. The log is
   // attributed to the current meal (source = mealType) so the hub can group
@@ -363,26 +472,36 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     if (!portion) return;
     const q = qty > 0 ? qty : 1;
     setMealMsg(""); setFoodMsg("");
-    if (!(await logEntry({ name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, qty: q }))) return;
-    pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
+    if (!(await logEntry({
+      name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType,
+      kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
+      satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
+      verifiedId: portion.verifiedId ?? null, qty: q,
+    }))) return;
+    pushRecent({
+      key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving,
+      kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
+      satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
+      servingGrams: portion.servingGrams, verified: portion.verified, verifiedId: portion.verifiedId ?? null,
+    });
     setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
     setPortion(null);
     load(); loadLogs(); revalidate.recovery();
   };
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
-  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat });
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, verified: q.verified, verifiedId: q.verifiedId });
   // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
     setMealMsg("");
-    if (!(await logEntry({ name: q.name, subname: q.subname ?? null, source: mealType, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, qty: 1 }))) return;
+    if (!(await logEntry({ name: q.name, subname: q.subname ?? null, source: mealType, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, verifiedId: q.verifiedId ?? null, qty: 1 }))) return;
     pushRecent(q);
     setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
     load(); loadLogs(); revalidate.recovery();
   };
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProductRow) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat });
+  const logProduct = (p: FoodProductRow) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId });
 
   // Save the Create form → products OR meals API (one blend form, two targets),
   // carrying the personal subname, then return to the picker Personal tab.
@@ -399,12 +518,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       ? { kcal: compTotals.kcal || undefined, protein: compTotals.protein, carbs: compTotals.carbs, fat: compTotals.fat }
       : { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
     const serving = createForm.serving.trim();
+    // A BLANK panel field stays undefined, not 0 — leaving "sugars" empty means
+    // "I don't know", and writing a zero there would invent a fact.
+    const opt = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : undefined; };
+    const panelFields = { satFat: opt(createForm.satFat), sugar: opt(createForm.sugar), fiber: opt(createForm.fiber), salt: opt(createForm.salt) };
+    const servingGrams = createForm.unit === "gram" ? opt(serving) : undefined;
     const res = isMeal
-      ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros })
-      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, ...macros });
+      ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
+      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, servingGrams, ...macros, ...panelFields });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+    setCreateForm(BLANK_CREATE_FORM);
+    setShowPanelFields(false);
     setMealComps([]);
     loadLibrary();
     setFoodTab("personal"); setView("add");
@@ -480,7 +605,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   //    /api/nutrition/search proxy. One box takes text OR a barcode; debounced; a
   //    hit can be logged to today or saved to the library.
   const [foodQuery, setFoodQuery] = useState("");
-  const [foodResults, setFoodResults] = useState<OffFood[]>([]);
+  const [foodResults, setFoodResults] = useState<FoodHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [foodMsg, setFoodMsg] = useState("");
   useEffect(() => {
@@ -497,13 +622,24 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
   // Log a database food → opens the portion editor (serving × quantity), which
   // also offers to save it into the library.
-  const logFood = (food: OffFood) => openPortion({ name: food.name, subtitle: food.brand ?? undefined, serving: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat, offFood: food });
+  const logFood = (food: FoodHit) => openPortion({
+    name: food.name, subtitle: food.brand ?? undefined, serving: food.serving,
+    kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+    satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+    servingGrams: food.servingGrams, verified: food.verified, verifiedId: food.id ?? null,
+    offFood: food,
+  });
 
   // Save a database food into the personal library (respects the free cap).
-  const saveFood = async (food: OffFood) => {
+  const saveFood = async (food: FoodHit) => {
     if (!canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     setFoodMsg("");
-    const res = await createFoodProduct({ name: food.name, servingLabel: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat });
+    const res = await createFoodProduct({
+      name: food.name, subname: food.brand, servingLabel: food.serving, servingGrams: food.servingGrams ?? undefined,
+      kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+      satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+      verifiedId: food.id ?? null,
+    });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setFoodMsg(`${food.name} ${t("w.recovery.nutrition.savedToFoods")}`);
@@ -551,7 +687,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // The selected day's TOTALS — read from the always-on Signals (dailyNutrition),
   // so the summary + per-part breakdown work for any past day even before the
   // FoodLog table exists (the per-entry edit/delete list still needs FoodLog).
-  const daySummary = useMemo(() => dailyNutrition(sig).find((d) => d.date === diaryDay) ?? { date: diaryDay, kcal: 0, protein: 0, carbs: 0, fat: 0 }, [signals, diaryDay]);
+  const daySummary = useMemo(() => dailyNutrition(sig).find((d) => d.date === diaryDay) ?? emptyNutritionDay(diaryDay), [signals, diaryDay]);
   const dayPartKcal = useMemo(() => {
     const totals: Record<string, number> = {};
     for (const s of signals) {
@@ -780,13 +916,51 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   );
 
   const renderPortionSheet = () => (
-    <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle} scroll={false}>
+    // Scrollable: the sheet now carries the full label panel under the macro
+    // tiles, which is taller than a small phone's sheet on its own.
+    <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle}>
       {portion ? (() => {
         const q = qty > 0 ? qty : 1;
         const sc = (v: number) => Math.round(v * q);
         const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
         return (
           <View>
+            {portion.verified ? (() => {
+              const src = verifiedSource(portion.verified!.sourceId);
+              return (
+                <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12 }}>
+                  {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
+                      hold artwork, their name set in OUR type — visibly ours, so
+                      it can never pass as an approximation of their logo). It
+                      sits under a "published by" label and above the trademark
+                      line: this is attribution, not a partnership badge. */}
+                  <Pressable
+                    onPress={() => { const id = portion.verifiedId; setPortion(null); if (id) openFoodPage(id, view); else if (src) openSourcePage(src.id, view); }}
+                    accessibilityRole="button"
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                  >
+                    {src ? <SourceMarkView C={C} src={src} height={26} /> : null}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
+                    </View>
+                    <IChevRight size={16} color={C.ash} />
+                  </Pressable>
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTopWidth: 1, borderTopColor: `${C.lime}38` }}>
+                    <VerifiedMark C={C} size={14} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, lineHeight: 15 }}>
+                        {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified!.sourceName).replace("{date}", portion.verified!.verifiedOn)}
+                      </Text>
+                    </View>
+                  </View>
+                  {src?.trademark ? (
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9, lineHeight: 15, opacity: 0.85 }}>{src.trademark}</Text>
+                  ) : null}
+                </View>
+              );
+            })() : null}
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 }}>
               <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
@@ -808,6 +982,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 </View>
               ))}
             </View>
+            {/* The label panel — saturates, sugars, fibre, salt and the kJ figure
+                the three macro tiles above can't carry. Same core function as
+                the web screen, scaled by the same quantity. */}
+            <FactsPanel
+              C={C}
+              scale={q}
+              facts={{ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }}
+              per100={per100g({ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }, portion.servingGrams)}
+            />
             <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
               {portion.offFood ? <Pressable onPress={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.saveToFoods")}</Text></Pressable> : null}
               <Pressable onPress={commitPortion} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", partLabel(mealType))}</Text></Pressable>
@@ -919,7 +1102,16 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             ) : foodResults.length === 0 ? (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14, lineHeight: 18 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
             ) : foodResults.map((food, i) => (
-              <FoodRow key={`${food.code}-${i}`} C={C} name={food.name} meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`} onAdd={() => logFood(food)} chevron />
+              <FoodRow
+                key={`${food.id || food.code}-${i}`} C={C}
+                name={food.name}
+                subname={food.brand}
+                meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
+                onAdd={() => logFood(food)}
+                onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
+                verified={food.verified}
+                chevron
+              />
             ))}
           </View>
         ) : foodTab === "meals" ? (
@@ -1023,6 +1215,39 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           {tile(t("w.recovery.nutrition.fat"), txt(C, C.violet), createForm.fat, (v) => setCF({ fat: v }), fromComps ? compTotals.fat : undefined)}
         </View>
 
+        {/* The label panel — optional, folded away. Anything left blank stays
+            NOT STATED rather than becoming a zero the diary would believe. */}
+        <Pressable
+          onPress={() => setShowPanelFields((x) => !x)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showPanelFields }}
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 18, paddingVertical: 6, paddingHorizontal: 2 }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.nutrition.facts.moreDetail")}</Text>
+          <IChevDown size={13} color={C.ash} />
+        </Pressable>
+        {showPanelFields ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 }}>
+            {([["satFat", "w.recovery.nutrition.facts.satFat"], ["sugar", "w.recovery.nutrition.facts.sugar"], ["fiber", "w.recovery.nutrition.facts.fiber"], ["salt", "w.recovery.nutrition.facts.salt"]] as const).map(([key, lab]) => (
+              <View key={key} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 13 }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t(lab)}</Text>
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+                  <TextInput
+                    value={createForm[key]}
+                    onChangeText={(v) => setCF({ [key]: v } as Partial<typeof createForm>)}
+                    keyboardType="decimal-pad"
+                    placeholder="—"
+                    placeholderTextColor={C.line}
+                    accessibilityLabel={t(lab)}
+                    style={{ flex: 1, fontFamily: F.black, fontSize: 20, color: C.chalk, padding: 0, paddingTop: 3 }}
+                  />
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>g</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         {/* Products — compose a meal from your saved products (meal only). Each
             component carries a serving count; the macros above are their sum. */}
         {isMeal ? (
@@ -1102,6 +1327,248 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           })}
           <Pressable onPress={() => setCompPicker(false)} style={{ marginTop: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.done")}</Text></Pressable>
         </Sheet>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ FOOD — a verified product's own page ============
+  // A page, not a sheet. The sheet exists to log a food you already trust; this
+  // exists to decide whether to trust it — so it leads with WHO published the
+  // numbers, states them in full (both energy units, per-100 g where the serving
+  // weight is known), and ends with what we did and when. Scoped to VERIFIED
+  // items: a community hit has no stable id, no provenance and no sibling menu,
+  // so a page for one would be an empty frame around four numbers. Parity: the
+  // web screen is the same surface in the same order.
+  // Guard on the RESOLVED item, not just the id: an id that no longer matches a
+  // catalog entry (an app update dropped it) must fall through to the hub, not
+  // set state during render.
+  const foodPage = foodPageId ? verifiedFood(foodPageId) : null;
+  if (view === "food" && foodPage) {
+    const f = foodPage;
+    const src = verifiedSource(f.sourceId);
+    const related = relatedVerifiedFoods(f.id);
+    const p100 = per100g(f.facts, f.servingGrams);
+    const hit = verifiedFoodToHit(f);
+    // Every item was already dated and NOTHING acted on the date, so a
+    // five-year-old transcription looked exactly as confident as this morning's.
+    const fresh = verifiedFreshness(f);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
+          icon: "back",
+          right: (
+            <Pressable
+              onPress={() => {
+                // The https form, not hybrid:// — a link is only worth sharing
+                // if it opens for someone who hasn't installed the app. The
+                // universal-link entitlement is what makes it open IN the app;
+                // until that ships it lands on the web page, which is the right
+                // fallback rather than a dead scheme.
+                Share.share({ message: `https://hybrid.app/app?s=nutrition&food=${f.id}` }).catch(() => {});
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t("w.recovery.nutrition.shareLink")}
+              hitSlop={8}
+              style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+            >
+              <AuroraIcon name="share" size={17} color={C.ash} />
+            </Pressable>
+          ),
+        })}
+
+        {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label. */}
+        {src ? (
+          <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 6 }}>
+            <SourceMarkView C={C} src={src} height={30} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{src.name}</Text>
+            </View>
+            <IChevRight size={17} color={C.ash} />
+          </Pressable>
+        ) : null}
+
+        <Text style={{ fontFamily: F.black, fontSize: 32, letterSpacing: -0.9, lineHeight: 35, color: C.chalk, marginTop: 22 }}>{f.name}</Text>
+        {f.menuName ? (
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.onTheMenu")} {f.menuName}</Text>
+        ) : null}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</Text>
+
+        {/* Energy hero — both units, because a label states both and we finally can. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 20 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 56, letterSpacing: -2.4, lineHeight: 58, color: C.chalk }}>{f.facts.kcal}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
+          <View style={{ flex: 1 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{kj(f.facts.kcal)} kJ</Text>
+        </View>
+
+        {/* Macro strip — the same idiom the recipe detail uses. */}
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 6, marginTop: 18 }}>
+          {([["w.recovery.nutrition.protein", f.facts.protein, C.blue], ["w.recovery.nutrition.carbs", f.facts.carbs, C.amber], ["w.recovery.nutrition.fat", f.facts.fat, C.violet]] as const).map(([lab, val, col]) => (
+            <View key={lab} style={{ flex: 1, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.black, fontSize: 21, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>g</Text></Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", marginTop: 5, color: txt(C, col) }}>{t(lab)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <FactsPanel C={C} facts={f.facts} per100={p100} />
+        {!p100 ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9, lineHeight: 15 }}>{t("w.recovery.nutrition.noServingWeight")}</Text>
+        ) : null}
+
+        {/* WHAT WE DID, AND WHEN. */}
+        <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, marginTop: 22 }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 9 }}>
+            <VerifiedMark C={C} size={15} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, lineHeight: 16 }}>
+                {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 7, lineHeight: 16 }}>{f.provenance}</Text>
+              {/* A stale item KEEPS its tick — the numbers were true when we
+                  checked. It says out loud that it is due another look. */}
+              {fresh.stale ? (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), marginTop: 8, lineHeight: 16 }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
+              ) : null}
+            </View>
+          </View>
+          {src?.trademark ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15, opacity: 0.85 }}>{src.trademark}</Text> : null}
+        </View>
+
+        {/* MORE FROM THIS BUSINESS — a checked item is a way into a checked menu. */}
+        {related.length > 0 ? (
+          <View style={{ marginTop: 26 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</Text>
+              {src ? (
+                <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button">
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {related.map((r) => (
+              <Pressable key={r.id} onPress={() => openFoodPage(r.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 13, paddingHorizontal: 2 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
+                    <VerifiedMark C={C} size={11} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{r.facts.kcal} kcal  –  {r.servingLabel}</Text>
+                </View>
+                <IChevRight size={16} color={C.ash} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        {mealMsg ? (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 18 }}>
+            <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+          </View>
+        ) : null}
+
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 22, marginBottom: 12 }}>
+          <Pressable onPress={() => saveFood(hit)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 20 }}>
+            <IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} />
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveToFoods")}</Text>
+          </Pressable>
+          <Pressable onPress={() => logFood(hit)} accessibilityRole="button" style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16 }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logThis")}</Text>
+          </Pressable>
+        </View>
+        {renderPortionSheet()}
+      </AuroraScreen>
+    );
+  }
+
+  // ============ SOURCES — every business we've checked ============
+  // The source page used to be reachable ONLY by opening one of its foods,
+  // which made the verified tier something you stumbled into rather than
+  // something you could look at. This is the way in.
+  if (view === "sources") {
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 6 }}>{t("w.recovery.nutrition.verifiedIntro")}</Text>
+        <View style={{ marginTop: 20 }}>
+          {VERIFIED_SOURCES.map((src) => {
+            const n = vfBySource(src.id).length;
+            return (
+              <Pressable key={src.id} onPress={() => openSourcePage(src.id, "sources")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 16, marginBottom: 10 }}>
+                <SourceMarkView C={C} src={src} height={32} />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{src.name}</Text>
+                    <VerifiedMark C={C} size={12} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>
+                    {t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}
+                  </Text>
+                </View>
+                <IChevRight size={17} color={C.ash} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ SOURCE — the business's own page ============
+  const sourcePage = sourcePageId ? verifiedSource(sourcePageId) : null;
+  if (view === "source" && sourcePage) {
+    const src = sourcePage;
+    const items = verifiedFoodsBySource(src.id);
+    const checked = sourceCheckedOn(src.id);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
+
+        <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingVertical: 28, paddingHorizontal: 20, marginTop: 6 }}>
+          <SourceMarkView C={C} src={src} height={46} />
+        </View>
+
+        <Text style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.7, color: C.chalk, marginTop: 20 }}>{src.name}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 9 }}>{src.note}</Text>
+
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 18 }}>
+          {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
+            <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{lab}</Text>
+              <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{val}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 26, marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.checkedItems")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{items.length}</Text>
+        </View>
+        {items.map((f) => (
+          <Pressable key={f.id} onPress={() => openFoodPage(f.id, "source")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 14, paddingHorizontal: 2 }}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{f.name}</Text>
+                <VerifiedMark C={C} size={12} />
+              </View>
+              {f.menuName ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{f.menuName}</Text> : null}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{f.facts.kcal} kcal  –  {f.servingLabel}</Text>
+            </View>
+            <IChevRight size={17} color={C.ash} />
+          </Pressable>
+        ))}
+
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: 16, opacity: 0.85 }}>{src.trademark}</Text>
+        {/* Where the artwork came from — sourceMarkCredits() had no surface at
+            all until now. */}
+        {src.mark ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: 16, opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
+            {t("w.recovery.nutrition.markCredit")} {src.mark.credit}
+          </Text>
+        ) : <View style={{ marginBottom: 20 }} />}
       </AuroraScreen>
     );
   }
@@ -1346,6 +1813,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
+            // The verified tier was previously only reachable by stumbling into
+            // one of its foods through search. This is the front door.
+            ["sources", <VerifiedMark key="v" C={C} size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
               {icon}
@@ -1534,11 +2004,20 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             ) : foodResults.length === 0 ? (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 6, lineHeight: 16 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
             ) : foodResults.map((food, i) => (
-              <View key={`${food.code}-${i}`} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{food.name}</Text>
+              <View key={`${food.id || food.code}-${i}`} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                {/* A verified row opens its page from the name, exactly as in the
+                    picker — the same food must not be a dead end on one screen
+                    and a doorway on another. */}
+                <Pressable
+                  onPress={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
+                  style={{ flex: 1 }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }} numberOfLines={1}>{food.name}</Text>
+                    {food.verified ? <VerifiedMark C={C} size={12} /> : null}
+                  </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</Text>
-                </View>
+                </Pressable>
                 <Pressable onPress={() => saveFood(food)} accessibilityLabel={t("w.recovery.nutrition.saveToFoods")} style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="bookmark" size={15} color={C.ash} /></Pressable>
                 <Pressable onPress={() => logFood(food)} accessibilityRole="button" style={{ borderRadius: 999, backgroundColor: C.lime, paddingVertical: 9, paddingHorizontal: 16 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: C.onAccent }}>{t("w.recovery.nutrition.log")}</Text></Pressable>
               </View>
@@ -1663,6 +2142,34 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </View>
           ))}
         </View>
+        {/* The label panel for the whole day. It is a FLOOR, not a total — only
+            the foods that stated a value contribute one, so the caption says so
+            rather than letting a partial number read as a complete one. */}
+        {daySummary.satFat > 0 || daySummary.sugar > 0 || daySummary.salt > 0 || daySummary.fiber > 0 ? (
+          <View style={{ marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            {/* Measured against WHO/EFSA REFERENCE intakes, not a personal
+                target — saturates and sugars scale with the athlete's energy,
+                salt doesn't, and fibre is a floor to reach. */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+              {panelStatus(daySummary, targets.kcal ?? 2000)
+                .filter((r) => r.value > 0)
+                .map((r) => (
+                  <View key={r.key} style={{ minWidth: 74 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(`w.recovery.nutrition.facts.${r.key}`)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: r.over ? txt(C, C.red) : C.chalk, marginTop: 3 }}>
+                      {r.value} g<Text style={{ fontWeight: "400", fontSize: fs.nano, color: C.ash }}> {r.floor ? "/" : "of"} {r.reference}</Text>
+                    </Text>
+                    <View style={{ height: 3, borderRadius: 999, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
+                      <View style={{ width: `${Math.min(100, r.pct * 100)}%`, height: "100%", borderRadius: 999, backgroundColor: r.over ? C.red : r.floor ? C.lime : C.ash }} />
+                    </View>
+                  </View>
+                ))}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 16 }}>
+              {t("w.recovery.nutrition.facts.dayPartial")} {t("w.recovery.nutrition.facts.referenceNote")}
+            </Text>
+          </View>
+        ) : null}
       </ACard>
 
       {/* PER-PART BREAKDOWN — each part's total, then its individual editable

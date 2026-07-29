@@ -15,6 +15,16 @@ const int = (v: unknown, max: number): number | null => {
   return Math.min(Math.round(n), max);
 };
 
+// A LABEL-PANEL field (saturates / sugars / fibre / salt), in grams. Absence
+// survives as null — an unstated value is NOT a zero, and the clients render
+// "—" for null. Kept to 1 dp, the precision food labels are stated at.
+const panel = (v: unknown): number | null => {
+  if (v === undefined || v === null || v === "") return null;
+  const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) : NaN;
+  return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n * 10) / 10, 1000) : null;
+};
+
+
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -46,7 +56,11 @@ export async function POST(request: Request) {
 
   const parsed = await readJsonLimited<Record<string, unknown>>(request, 8 * 1024);
   if (parsed.error) return parsed.error;
-  const b = parsed.data as { name?: unknown; subname?: unknown; emoji?: unknown; kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown };
+  const b = parsed.data as {
+    name?: unknown; subname?: unknown; emoji?: unknown;
+    kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown;
+    satFat?: unknown; sugar?: unknown; fiber?: unknown; salt?: unknown;
+  };
 
   if (typeof b.name !== "string" || !b.name.trim())
     return NextResponse.json({ error: "name is required" }, { status: 400 });
@@ -57,17 +71,25 @@ export async function POST(request: Request) {
   // meal's stored total always matches what it logs.
   const kcal = int(b.kcal, 10000) ?? protein * 4 + carbs * 4 + fat * 9;
 
-  const meal = await prisma.savedMeal.create({
-    data: {
-      userId: me.id,
-      name: b.name.trim().slice(0, 80),
-      subname: typeof b.subname === "string" && b.subname.trim() ? b.subname.trim().slice(0, 60) : null,
-      emoji: typeof b.emoji === "string" && b.emoji ? [...b.emoji][0] : null,
-      kcal,
-      protein,
-      carbs,
-      fat,
-    },
-  });
+  const base = {
+    userId: me.id,
+    name: b.name.trim().slice(0, 80),
+    subname: typeof b.subname === "string" && b.subname.trim() ? b.subname.trim().slice(0, 60) : null,
+    emoji: typeof b.emoji === "string" && b.emoji ? [...b.emoji][0] : null,
+    kcal,
+    protein,
+    carbs,
+    fat,
+  };
+  // Panel fields are a later migration — same two-attempt fallback as products,
+  // so saving a meal never fails on a database that predates the columns.
+  let meal;
+  try {
+    meal = await prisma.savedMeal.create({
+      data: { ...base, satFat: panel(b.satFat), sugar: panel(b.sugar), fiber: panel(b.fiber), salt: panel(b.salt) },
+    });
+  } catch {
+    meal = await prisma.savedMeal.create({ data: base });
+  }
   return NextResponse.json({ meal }, { status: 201 });
 }
