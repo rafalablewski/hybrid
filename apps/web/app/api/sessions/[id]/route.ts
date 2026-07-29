@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel } from "@hybrid/core";
+import { sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel, sanitizeDeviceWorkout } from "@hybrid/core";
+import { Prisma } from "@prisma/client";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -7,20 +8,22 @@ import { prisma } from "@/lib/db";
 // Every query is scoped to the authenticated user's id — a user can only
 // archive/restore/delete their OWN Session rows.
 
-// PATCH { archived?, title?, note?, mood?, tags?, feel?, fatigue? } —
+// PATCH { archived?, title?, note?, mood?, tags?, feel?, fatigue?, device? } —
 // soft-archive (hide from History, recoverable) / restore, rename the workout,
-// set the private post-workout reflection (note + mood + tags), and/or record
-// the post-workout self-report (feel = perceived effort 1..5, fatigue = how
-// spent 1..5 — the Wrapped's "How did that feel?"). All of these back
-// affordances that happen AFTER saving (opt-in), and all are owner-only: they
-// stay off every non-owner view.
+// set the private post-workout reflection (note + mood + tags), record the
+// post-workout self-report (feel = perceived effort 1..5, fatigue = how
+// spent 1..5 — the Wrapped's "How did that feel?"), and/or attach the device's
+// read of the same workout (the summary's Apple Watch match — a frozen
+// DeviceWorkout object, null to unlink; see core/session-device.ts). All of
+// these back affordances that happen AFTER saving (opt-in), and all are
+// owner-only: they stay off every non-owner view.
 // Archived rows stay in the DB but drop out of the default History list + engines.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const body = (await request.json().catch(() => ({}))) as { archived?: unknown; title?: unknown; note?: unknown; mood?: unknown; tags?: unknown; feel?: unknown; fatigue?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { archived?: unknown; title?: unknown; note?: unknown; mood?: unknown; tags?: unknown; feel?: unknown; fatigue?: unknown; device?: unknown };
   const has = (k: string) => Object.prototype.hasOwnProperty.call(body, k);
   const hasArchived = typeof body.archived === "boolean";
   const hasTitle = typeof body.title === "string" && body.title.trim().length > 0;
@@ -32,8 +35,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const hasTags = has("tags");
   const hasFeel = has("feel");
   const hasFatigue = has("fatigue");
-  if (!hasArchived && !hasTitle && !hasNote && !hasMood && !hasTags && !hasFeel && !hasFatigue)
+  const hasDevice = has("device");
+  if (!hasArchived && !hasTitle && !hasNote && !hasMood && !hasTags && !hasFeel && !hasFatigue && !hasDevice)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
+
+  // The device match: null unlinks; anything else must sanitize to a real
+  // DeviceWorkout (a malformed object is a 400, never a silent clear). The
+  // match moment is stamped HERE — same reasoning as feelLoggedAt: the client
+  // clock is neither trustworthy nor necessary.
+  let deviceValue: Prisma.InputJsonValue | typeof Prisma.DbNull | undefined;
+  if (hasDevice) {
+    if (body.device === null) deviceValue = Prisma.DbNull;
+    else {
+      const clean = sanitizeDeviceWorkout(body.device);
+      if (!clean) return NextResponse.json({ error: "invalid device workout" }, { status: 400 });
+      deviceValue = { ...clean, matchedAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue;
+    }
+  }
 
   const existing = await prisma.session.findUnique({ where: { id }, select: { userId: true } });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -49,6 +67,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(hasTags ? { tags: sanitizeTags(body.tags) } : {}),
       ...(hasFeel ? { feel: sanitizeFeelLevel(body.feel) } : {}),
       ...(hasFatigue ? { fatigue: sanitizeFeelLevel(body.fatigue) } : {}),
+      ...(deviceValue !== undefined ? { device: deviceValue } : {}),
       // Stamp WHEN the answer was given — server-side, because the lag between
       // the session ending and this moment is what the recovery model reads,
       // and a client clock is neither trustworthy nor necessary here. Clearing

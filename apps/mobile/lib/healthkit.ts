@@ -21,6 +21,7 @@
  */
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DEVICE_MATCH_WINDOW_H, sanitizeDeviceWorkout, type DeviceWorkout } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 import { API_BASE } from "./api";
@@ -110,6 +111,9 @@ export async function connectHealthKit(): Promise<{ ok: boolean; error?: string 
         "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
         "HKQuantityTypeIdentifierRestingHeartRate",
         "HKCategoryTypeIdentifierSleepAnalysis",
+        // The summary's workout match reads the workout list + its HR/energy.
+        // Asked here too so a fresh connect sheets everything ONCE.
+        ...WORKOUT_READ_TYPES,
       ],
     });
     if (!ok) return { ok: false, error: "authorization did not complete" };
@@ -190,6 +194,156 @@ function nightlySleep(segments: Reading[]): RelaySample[] {
     value: Math.round(d.hours * 100) / 100,
     end: d.end,
   }));
+}
+
+// ---- workout matching (the summary's "match a device workout") ------------
+
+/** What the match flow reads beyond the daily biometrics: the workout list
+ *  itself plus the per-workout heart-rate / active-energy / step statistics. */
+const WORKOUT_READ_TYPES = [
+  "HKWorkoutTypeIdentifier",
+  "HKQuantityTypeIdentifierHeartRate",
+  "HKQuantityTypeIdentifierActiveEnergyBurned",
+  "HKQuantityTypeIdentifierStepCount",
+] as const;
+
+/** Sheet the workout read permissions (idempotent — iOS only shows the sheet
+ *  for types it hasn't asked about yet, so an athlete who connected before this
+ *  feature existed gets exactly one extra prompt). */
+export async function requestWorkoutReadAuth(): Promise<boolean> {
+  const hk = loadHealthKit();
+  if (!hk) return false;
+  try {
+    return await hk.requestAuthorization({ toRead: [...WORKOUT_READ_TYPES] });
+  } catch {
+    return false;
+  }
+}
+
+/** A HealthKit Quantity ({unit, quantity}) → the unit the shared model wants,
+ *  defensively: the store answers in whatever unit it holds. */
+const qtyMinutes = (q?: { unit: string; quantity: number } | null): number | null => {
+  if (!q || !Number.isFinite(q.quantity)) return null;
+  if (q.unit === "min") return q.quantity;
+  if (q.unit === "s") return q.quantity / 60;
+  if (q.unit === "hr" || q.unit === "h") return q.quantity * 60;
+  return null;
+};
+const qtyKcal = (q?: { unit: string; quantity: number } | null): number | null => {
+  if (!q || !Number.isFinite(q.quantity)) return null;
+  if (q.unit === "kcal" || q.unit === "Cal") return q.quantity;
+  if (q.unit === "kJ") return q.quantity / 4.184;
+  if (q.unit === "J") return q.quantity / 4184;
+  return null;
+};
+const qtyKm = (q?: { unit: string; quantity: number } | null): number | null => {
+  if (!q || !Number.isFinite(q.quantity)) return null;
+  if (q.unit === "m") return q.quantity / 1000;
+  if (q.unit === "km") return q.quantity;
+  if (q.unit === "mi") return q.quantity * 1.609344;
+  if (q.unit === "yd") return q.quantity * 0.0009144;
+  return null;
+};
+const qtyCount = (q?: { unit: string; quantity: number } | null): number | null =>
+  q && Number.isFinite(q.quantity) ? q.quantity : null;
+
+/** A metadata value that may arrive as a bare number or a serialized HK
+ *  quantity ({unit, quantity}) — normalize to the latter. */
+const metaQty = (v: unknown): { unit: string; quantity: number } | null => {
+  if (typeof v === "number" && Number.isFinite(v)) return { unit: "", quantity: v };
+  if (typeof v === "object" && v !== null) {
+    const o = v as { unit?: unknown; quantity?: unknown };
+    if (typeof o.quantity === "number" && Number.isFinite(o.quantity))
+      return { unit: typeof o.unit === "string" ? o.unit : "", quantity: o.quantity };
+  }
+  return null;
+};
+const metaMetres = (v: unknown): number | null => {
+  const q = metaQty(v);
+  if (!q) return null;
+  if (q.unit === "cm") return q.quantity / 100;
+  if (q.unit === "" || q.unit === "m") return q.quantity;
+  if (q.unit === "km") return q.quantity * 1000;
+  if (q.unit === "ft") return q.quantity * 0.3048;
+  return null;
+};
+const metaCelsius = (v: unknown): number | null => {
+  const q = metaQty(v);
+  if (!q) return null;
+  if (q.unit === "degF") return ((q.quantity - 32) * 5) / 9;
+  return q.quantity; // degC or already-bare
+};
+
+/** "functionalStrengthTraining" (the enum's name) → "Functional Strength
+ *  Training" — resolved here so no other client ever needs the HK enum. */
+const activityLabel = (hk: HK, type: number): string => {
+  const raw = (hk.WorkoutActivityType as Record<number, string | undefined>)[type];
+  if (!raw) return "Workout";
+  const words = raw.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+/**
+ * Read the workouts the device recorded around a logged session (±the shared
+ * match window) and normalize each to the stored DeviceWorkout shape. Heart
+ * rate comes from a per-workout statistics query and degrades to absent —
+ * a workout without a strap is still matchable on time/energy. Returns null
+ * when HealthKit itself is unreachable (vs [] = reachable but nothing there).
+ */
+export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWorkout[] | null> {
+  const hk = loadHealthKit();
+  if (!hk) return null;
+  const t = Date.parse(aroundIso);
+  if (!Number.isFinite(t)) return null;
+  const windowMs = DEVICE_MATCH_WINDOW_H * 3600000;
+  const filter = { date: { startDate: new Date(t - windowMs), endDate: new Date(t + windowMs) } };
+  try {
+    const proxies = await hk.queryWorkoutSamples({ limit: 0, ascending: false, filter });
+    const out: DeviceWorkout[] = [];
+    for (const w of proxies) {
+      const start = iso(w.startDate);
+      const end = iso(w.endDate);
+      const durationMin =
+        qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
+      // Everything the recording carries, each read degrading to absent on its
+      // own: per-workout statistics (HR incl. the floor, steps), the workout's
+      // own totals (strokes/flights), and the metadata extras (climb, average
+      // METs, indoor flag, weather).
+      const [hr, stepStat] = await Promise.all([
+        w.getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min").catch(() => undefined),
+        w.getStatistic("HKQuantityTypeIdentifierStepCount", "count").catch(() => undefined),
+      ]);
+      const meta = (w.metadata ?? {}) as Record<string, unknown>;
+      const indoorRaw = meta["HKIndoorWorkout"];
+      const candidate = sanitizeDeviceWorkout({
+        provider: "apple",
+        uuid: w.uuid,
+        activityLabel: activityLabel(hk, w.workoutActivityType as unknown as number),
+        start,
+        end,
+        durationMin: Math.round(durationMin),
+        kcal: qtyKcal(w.totalEnergyBurned) ?? undefined,
+        distanceKm: qtyKm(w.totalDistance) ?? undefined,
+        avgHr: hr?.averageQuantity?.quantity,
+        maxHr: hr?.maximumQuantity?.quantity,
+        minHr: hr?.minimumQuantity?.quantity,
+        steps: qtyCount(stepStat?.sumQuantity) ?? undefined,
+        strokes: qtyCount(w.totalSwimmingStrokeCount) ?? undefined,
+        flights: qtyCount(w.totalFlightsClimbed) ?? undefined,
+        elevationM: metaMetres(meta["HKElevationAscended"]) ?? undefined,
+        avgMets: metaQty(meta["HKAverageMETs"])?.quantity,
+        tempC: metaCelsius(meta["HKWeatherTemperature"]) ?? undefined,
+        ...(typeof indoorRaw === "boolean" || indoorRaw === 0 || indoorRaw === 1
+          ? { indoor: Boolean(indoorRaw) }
+          : {}),
+        source: w.sourceRevision?.source?.name,
+      });
+      if (candidate) out.push(candidate);
+    }
+    return out;
+  } catch {
+    return null;
+  }
 }
 
 /** Read the last 30 days of HRV / resting HR / sleep from HealthKit and relay

@@ -1,6 +1,10 @@
 -- ===========================================================================
 -- HYBRID — every outstanding migration, in one script, in dependency order.
 --
+-- STATUS: APPLIED in production (the whole bundle was run in the Supabase SQL
+-- Editor, Jul 2026). Kept because it is idempotent and re-runnable — future
+-- migrations append here, and re-running the applied parts is a no-op.
+--
 -- Paste the WHOLE file into the Supabase SQL Editor and Run once.
 --
 -- Safe to re-run: every statement is idempotent (ADD COLUMN IF NOT EXISTS /
@@ -17,11 +21,10 @@
 --
 -- WHY THIS ORDER. It is not the order the files were written in:
 --
---   1. Column adds first. They depend on nothing. BodyMetric.heightCm is
---      already APPLIED in production (run Jul 2026) and is kept here only so
---      the bundle stays complete and re-runnable; Session.feelLoggedAt is the
---      urgent one left — the Prisma client already declares it, so
---      /api/sessions errors against a database that lacks it.
+--   1. Column adds first. They depend on nothing. All of section 1 (including
+--      Session.feelLoggedAt, which the Prisma client declares and /api/sessions
+--      depends on, and Session.device) is APPLIED in production (run Jul 2026)
+--      and kept so the bundle stays complete and re-runnable.
 --   2. sql-all.sql second, because PART 3 of it DEFINES public.app_user_id()
 --      and public.is_active_coach(), which every RLS policy below calls. Run
 --      the later sections first and they fail on an undefined function.
@@ -40,7 +43,7 @@
 -- ===========================================================================
 -- SECTION 1 / 6 — COLUMN ADDS
 -- Sources: sql-feel-logged-at.sql, sql-body-height.sql, sql-session-notes.sql,
---          sql-routine-favourite.sql
+--          sql-routine-favourite.sql, sql-session-device.sql
 --
 -- No dependencies, no RLS change — all four tables are already owner-scoped and
 -- new columns inherit that. Existing rows keep NULL/default, which every model
@@ -71,6 +74,12 @@ alter table "Session" add column if not exists "tags" text[] not null default '{
 -- this exists the sheet still works; favourites just don't persist.
 alter table "WorkoutTemplate"
   add column if not exists "favourite" boolean not null default false;
+
+-- Session.device — the device's read of the same workout (Apple Watch match):
+-- one frozen JSON object written by the summary's match flow. REQUIRED BEFORE
+-- DEPLOY once the Prisma client declares it (same full-row read as
+-- feelLoggedAt). Source: sql-session-device.sql.
+alter table "Session" add column if not exists "device" jsonb;
 
 
 -- ===========================================================================

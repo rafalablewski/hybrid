@@ -79,6 +79,7 @@ export * from "./done-receipt";
 export * from "./session-celebration";
 export * from "./session-wrapped";
 export * from "./session-feel";
+export * from "./session-device";
 export * from "./energy";
 export * from "./session-signature";
 export * from "./guidance";

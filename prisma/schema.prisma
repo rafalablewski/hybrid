@@ -681,6 +681,11 @@ model Session {
   // rows written before this column existed — the models degrade to the raw
   // report rather than inventing a lag.
   feelLoggedAt DateTime?
+  // The SAME workout as the athlete's device recorded it (Apple Watch via
+  // HealthKit today), attached by the summary's match flow: measured duration,
+  // kcal, avg/max HR, distance, frozen at match time. Shape + sanitisation in
+  // core/session-device.ts (sanitizeDeviceWorkout); owner-only like the note.
+  device      Json?
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.

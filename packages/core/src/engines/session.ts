@@ -4,6 +4,7 @@ import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
 import { fmtWeight, type WeightUnit } from "../units";
+import type { DeviceWorkout } from "../session-device";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -275,6 +276,13 @@ export interface LoggedSession {
    * rather than guessing a lag.
    */
   feelLoggedAt?: string | null;
+  /**
+   * The SAME workout as the athlete's device recorded it (Apple Watch via
+   * HealthKit today), attached by the summary's match flow — measured duration,
+   * kcal, heart rate next to the logged/estimated figures. Owner-only, frozen
+   * at match time; see core/session-device.ts. Null/absent = never matched.
+   */
+  device?: DeviceWorkout | null;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";

@@ -1,0 +1,195 @@
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  rankDeviceWorkouts,
+  type DeviceWorkout,
+  type LoggedSession,
+  type RankedDeviceWorkout,
+} from "@hybrid/core";
+import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
+import { patchSessionDevice } from "../lib/api";
+import { useLang } from "../lib/i18n";
+import { F, fs } from "../lib/ui";
+import { useTheme, txt } from "../lib/theme";
+
+/**
+ * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
+ * watch": read the workouts HealthKit recorded around this session, rank them
+ * (core rankDeviceWorkouts — time proximity + duration similarity), let the
+ * athlete pick the one that IS this session, and PATCH it onto the row. Opening
+ * the sheet IS the re-sync — every open queries the store live, and iOS sheets
+ * the extra read permissions exactly once. Web parity: the web summary renders
+ * the matched result (and can unlink) but only the phone can read HealthKit —
+ * see core/session-device.ts.
+ */
+export function DeviceMatchSheet({
+  session,
+  sessionDurationMin,
+  visible,
+  onClose,
+  onMatched,
+}: {
+  session: LoggedSession;
+  /** the app-side duration (doneReceipt), for candidate ranking */
+  sessionDurationMin: number | null;
+  visible: boolean;
+  onClose: () => void;
+  /** fired after the server accepted the match (or the unlink) */
+  onMatched: (device: DeviceWorkout | null) => void;
+}) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  const insets = useSafeAreaInsets();
+  const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable">("loading");
+  const [ranked, setRanked] = useState<RankedDeviceWorkout[]>([]);
+  const [busyUuid, setBusyUuid] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (healthKitAvailability() !== "ready") {
+      setPhase("unavailable");
+      return;
+    }
+    setPhase("loading");
+    // The permission ask doubles as "connect": iOS only shows the sheet for
+    // types it hasn't asked about, so a returning athlete goes straight to the
+    // query. A denial is invisible by design (Apple) — it surfaces as an empty
+    // list, same as a watch that recorded nothing.
+    await requestWorkoutReadAuth();
+    const workouts = await queryDeviceWorkouts(session.startedAt);
+    if (workouts == null) {
+      setPhase("error");
+      return;
+    }
+    setRanked(rankDeviceWorkouts({ ...session, durationMin: sessionDurationMin }, workouts));
+    setPhase("list");
+  }, [session, sessionDurationMin]);
+
+  useEffect(() => {
+    if (visible) void load();
+  }, [visible, load]);
+
+  const pick = async (w: DeviceWorkout) => {
+    if (busyUuid) return;
+    setBusyUuid(w.uuid);
+    const ok = await patchSessionDevice(session.id, w);
+    setBusyUuid(null);
+    if (!ok) {
+      setPhase("error");
+      return;
+    }
+    onMatched({ ...w, matchedAt: new Date().toISOString() });
+    onClose();
+  };
+
+  const day = (isoTs: string) =>
+    new Date(isoTs).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  const meta = (w: DeviceWorkout) =>
+    [
+      `${w.durationMin} min`,
+      ...(w.kcal != null ? [`${w.kcal} kcal`] : []),
+      ...(w.avgHr != null ? [`♥ ${w.avgHr}`] : []),
+      ...(w.source ? [w.source] : []),
+    ].join(" – ");
+  // The best card earns a richer second line — everything the recording holds.
+  const metaFull = (w: DeviceWorkout) =>
+    [
+      ...(w.avgHr != null ? [`♥ ${w.avgHr}${w.maxHr != null ? `–${w.maxHr}` : ""} bpm`] : []),
+      ...(w.distanceKm != null ? [w.distanceKm < 1 ? `${Math.round(w.distanceKm * 1000)} m` : `${w.distanceKm} km`] : []),
+      ...(w.steps != null ? [`${w.steps.toLocaleString()} steps`] : []),
+      ...(w.elevationM != null ? [`↗ ${w.elevationM} m`] : []),
+      ...(w.avgMets != null ? [`${w.avgMets} METs`] : []),
+    ].join(" – ");
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
+        <Pressable
+          style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
+          onPress={() => {}}
+        >
+          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>⌚ {t("session.device.pickTitle")}</Text>
+            {phase === "list" && (
+              <Pressable onPress={() => void load()}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("session.device.refresh")}</Text>
+              </Pressable>
+            )}
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
+
+          {phase === "unavailable" && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>{t("session.device.unavailable")}</Text>
+          )}
+          {phase === "loading" && <ActivityIndicator color={C.lime} style={{ marginVertical: 30 }} />}
+          {phase === "error" && (
+            <Pressable onPress={() => void load()} style={{ marginVertical: 22 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber }}>{t("session.device.error")}</Text>
+            </Pressable>
+          )}
+          {phase === "list" && ranked.length === 0 && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>{t("session.device.none")}</Text>
+          )}
+
+          {phase === "list" && ranked.length > 0 && (
+            <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
+              {ranked.map((r, i) => {
+                const linked = session.device?.uuid === r.workout.uuid;
+                const best = i === 0;
+                // The best candidate is THE card — lime-washed, tagged, with its
+                // own match affordance — the rest read as quiet alternatives.
+                return (
+                  <Pressable
+                    key={r.workout.uuid}
+                    onPress={() => void pick(r.workout)}
+                    disabled={busyUuid != null}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: best || linked ? C.lime : C.line,
+                      borderRadius: best ? 20 : 16,
+                      padding: best ? 18 : 13,
+                      marginBottom: best ? 14 : 10,
+                      backgroundColor: best ? `${C.lime}14` : "#0e0f0d",
+                      opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        {r.workout.activityLabel}
+                      </Text>
+                      {best && (
+                        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
+                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 1, color: C.onAccent, textTransform: "uppercase" }}>
+                            ✓ {t("session.device.best")}
+                          </Text>
+                        </View>
+                      )}
+                      {!best && linked && (
+                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                          {t("session.device.matchedChip")}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: best ? C.chalk : C.ash, marginTop: best ? 8 : 5 }}>
+                      {day(r.workout.start)} – {meta(r.workout)}
+                    </Text>
+                    {best && metaFull(r.workout) !== "" && (
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{metaFull(r.workout)}</Text>
+                    )}
+                    {best && busyUuid == null && (
+                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>
+                        <Text style={{ fontFamily: F.black, fontSize: 13, color: C.onAccent }}>{t("session.device.matchCta")} →</Text>
+                      </View>
+                    )}
+                    {busyUuid === r.workout.uuid && <ActivityIndicator color={C.lime} size="small" style={{ marginTop: 10 }} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}

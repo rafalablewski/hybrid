@@ -34,12 +34,17 @@ import {
   storyStyle,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
+  deviceComparisonRows,
+  type DeviceWorkout,
   type StoryStyleId,
   type LoggedSession,
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
-import { fetchTalent, fetchConnections } from "../lib/api";
+import { fetchTalent, fetchConnections, patchSessionDevice } from "../lib/api";
+import { healthKitAvailability } from "../lib/healthkit";
+import { useRevalidate } from "../lib/queries";
+import { DeviceMatchSheet } from "./device-match";
 import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
@@ -126,6 +131,14 @@ export function WorkoutWrapped({
   // null = not known yet (don't flash a "connect a device" prompt at someone
   // who already has one connected).
   const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
+  // The device's read of THIS workout (Apple Watch match) — seeded from the
+  // session, kept locally so a match/unlink reflects without a refetch.
+  const [device, setDevice] = useState<DeviceWorkout | null>(session.device ?? null);
+  const [matchOpen, setMatchOpen] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
+  const revalidate = useRevalidate();
+  // Only a binary with the native module can read the watch's workouts.
+  const canMatch = healthKitAvailability() === "ready";
   const pagerRef = useRef<ScrollView>(null);
   const storyRefs = useRef<Record<number, View | null>>({});
 
@@ -252,10 +265,25 @@ export function WorkoutWrapped({
     return () => loop.stop();
   }, [cel, scale, burst, spin]);
 
-  // The post-workout self-report ("How did that feel?") and — when nothing is
-  // measuring this athlete — the device prompt that would replace the estimates
-  // with measurements. Both ride in the scroll sequence, before the standing.
-  const showDevice = deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // The post-workout self-report ("How did that feel?") and the device panel:
+  // once this session is MATCHED to a watch workout the panel shows the
+  // measured read next to the logged one; until then (and only when nothing is
+  // measuring this athlete) it is the connect-a-device prompt.
+  const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  const comparison = device
+    ? deviceComparisonRows({ device, durationMin: receipt.durationMin, estimatedKcal: wrapped.energy?.kcal ?? null, distanceKm: receipt.distanceKm })
+    : [];
+  const onMatched = (d: DeviceWorkout | null) => {
+    setDevice(d);
+    void revalidate.sessions();
+  };
+  const unlinkDevice = async () => {
+    if (unlinking) return;
+    setUnlinking(true);
+    const ok = await patchSessionDevice(session.id, null);
+    setUnlinking(false);
+    if (ok) onMatched(null);
+  };
 
   // Which panels exist (dots + snap offsets), details rides after them.
   const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "standing")[] = [
@@ -263,7 +291,7 @@ export function WorkoutWrapped({
     "hero" as const,
     "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
-    ...(showDevice ? ["device" as const] : []),
+    ...(device || showDeviceAd ? ["device" as const] : []),
     "standing" as const,
   ];
   const detailsIndex = keys.length;
@@ -328,6 +356,19 @@ export function WorkoutWrapped({
               </View>
             ))}
           </View>
+          {/* The first thing after the numbers: pull the watch's read of this
+              exact workout onto the row (or show that it's already there). */}
+          {device ? (
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
+              <Text style={{ fontSize: 12 }}>⌚</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: txt(C, C.lime) }}>{device.source ?? t("session.device.matchedChip")} ✓</Text>
+            </Pressable>
+          ) : canMatch ? (
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
+              <Text style={{ fontSize: 13 }}>⌚</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>{t("session.device.matchCta")}</Text>
+            </Pressable>
+          ) : null}
           {scrollHint}
         </Panel>
 
@@ -366,8 +407,40 @@ export function WorkoutWrapped({
           </Panel>
         )}
 
+        {/* ── THE DEVICE'S READ (matched) ── */}
+        {device && (
+          <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}14`} top={panelH * 0.06} right={-90} />}>
+            {eyebrow(t("session.device.panelTitle"))}
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t("session.device.lead")}</Text>
+            <View style={{ marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+              <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#0e0f0d" }}>
+                <View style={{ flex: 1.1 }} />
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase", textAlign: "right" }}>{device.source ?? t("session.device.deviceCol")}</Text>
+              </View>
+              {comparison.map((r) => (
+                <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
+                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
+                  {/* A modelled figure wears a "~" — never presented as a measurement. */}
+                  <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.black, fontSize: 14, color: txt(C, C.lime), textAlign: "right" }}>{r.device ?? "—"}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", gap: 16, marginTop: 20 }}>
+              <Pressable onPress={() => setMatchOpen(true)}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{t("session.device.rematch")}</Text>
+              </Pressable>
+              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? 0.5 : 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{t("session.device.unlink")}</Text>
+              </Pressable>
+            </View>
+          </Panel>
+        )}
+
         {/* ── CONNECT A DEVICE ── */}
-        {showDevice && (
+        {showDeviceAd && (
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
@@ -443,6 +516,15 @@ export function WorkoutWrapped({
           </Pressable>
         </View>
       )}
+
+      {/* ── DEVICE MATCH SHEET ── */}
+      <DeviceMatchSheet
+        session={session}
+        sessionDurationMin={receipt.durationMin}
+        visible={matchOpen}
+        onClose={() => setMatchOpen(false)}
+        onMatched={onMatched}
+      />
 
       {/* ── SHARE SHEET ── */}
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
