@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -143,6 +143,25 @@ function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: 
   );
 }
 
+// The head above a screen-level rail — the Explore SectionHead anatomy: a bold
+// display-face title with the action as small mono uppercase on the RIGHT of
+// the same row. No marker before the title (the no-decorative-dot rule).
+function RailHead({ C, title, actionLabel, actionColor, onAction }: {
+  C: ReturnType<typeof useTheme>["palette"]; title: string; actionLabel: string; actionColor: string; onAction: () => void;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
+      {/* F.black (not serifIf) — every other section head on this screen
+          ("Today's meals", "Checked items") is set in it, and one serif head
+          among them would read as a different screen. */}
+      <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{title}</Text>
+      <Pressable onPress={onAction} accessibilityRole="button" hitSlop={8}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: actionColor }}>{actionLabel}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a trash affordance (a personal item).
 // The row body + the add-circle both open the portion editor.
@@ -263,6 +282,11 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const full = isFullAccess(persona);
   // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
   const recipesUnlocked = canUseRecipes(persona);
+  // Card widths for the two bottom-of-screen rails, so the next card always
+  // peeks in from the right (the exercise-widget rail's proportions).
+  const { width: winW } = useWindowDimensions();
+  const recipeCardW = Math.min(196, Math.round(winW * 0.52));
+  const sourceCardW = Math.min(268, Math.round(winW * 0.72));
   const { data: signals = [], isFetching: refreshing, refetch, isError: signalsError } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -1794,28 +1818,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             </Pressable>
           ) : null}
 
-          {/* Recipes — the cook-along library (Full-only; free users route to
-              upgrade). */}
-          <Pressable onPress={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 24 }}>
-            <Glyph name="bowl" size={20} color={C.ash} strokeWidth={5} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.recipes")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.recipesSub")}</Text>
-            </View>
-            {!recipesUnlocked ? <Text style={{ color: pa.text, fontSize: 12 }}>✦</Text> : null}
-            <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
-          </Pressable>
-
-          {/* Menu — the deliberate way into every deeper feature. */}
+          {/* Menu — the deliberate way into every deeper feature. Recipes and
+              the verified tier are NOT here: both are libraries you browse, so
+              they ride their own rails at the very bottom of this screen. */}
           {([
             ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C.ash} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
             ["insights", <Glyph key="i" name="spark" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
-            // The verified tier was previously only reachable by stumbling into
-            // one of its foods through search. This is the front door.
-            ["sources", <VerifiedMark key="v" C={C} size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
               {icon}
@@ -1827,6 +1838,49 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
             </Pressable>
           ))}
+
+          {/* ── The two libraries, at the very bottom, as left/right rails —
+              the "Train your way" idiom. A list of recipes and a list of the
+              businesses we've verified are things you BROWSE, so they read as
+              cards you swipe through rather than two more menu rows that hide
+              their contents behind a chevron. Both are FULL-BLEED like every
+              screen-level rail: negative margins the width of AuroraScreen's
+              16dp gutter pull the scroll clip to the true screen edge, with
+              matching internal padding so resting cards stay on the column. */}
+          <RailHead C={C} title={t("w.recovery.nutrition.recipes")} actionLabel={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} actionColor={recipesUnlocked ? C.ash : pa.text} onAction={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+            {RECIPES.map((r) => (
+              <Pressable key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, overflow: "hidden", backgroundColor: C.ink2 }}>
+                <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
+                <View style={{ paddingHorizontal: 12, paddingTop: 11, paddingBottom: 13 }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 7 }}>{r.macros.kcal} kcal</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {/* Verified foods — the BUSINESSES, one card each. The verified tier
+              was previously only reachable by stumbling into one of its foods
+              through search; the rail puts the companies themselves on the
+              screen. */}
+          <RailHead C={C} title={t("w.recovery.nutrition.verifiedFoods")} actionLabel={`${t("w.explore.seeAll")} →`} actionColor={C.ash} onAction={() => setView("sources")} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+            {VERIFIED_SOURCES.map((src) => {
+              const n = vfBySource(src.id).length;
+              return (
+                <Pressable key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 16 }}>
+                  <View style={{ height: 46, justifyContent: "center", alignItems: "flex-start" }}><SourceMarkView C={C} src={src} height={30} /></View>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7, marginTop: 12 }}>
+                    <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{src.name}</Text>
+                    <VerifiedMark C={C} size={12} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
       </>
       ))}
 

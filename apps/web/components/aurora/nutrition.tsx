@@ -126,6 +126,36 @@ function recipeHeroBg(tint: string): React.CSSProperties {
   return { background: map[tint] ?? map.amber };
 }
 
+// A screen-level left/right rail — the exercise-widget / "Train your way"
+// idiom. FULL-BLEED: negative margins the width of the shell gutter
+// (--page-pad-x) pull the scroll clip to the true screen edge so cards slide
+// under it, and the MATCHING internal padding keeps a resting card aligned with
+// the content column.
+const railScroller: React.CSSProperties = {
+  display: "flex",
+  gap: 12,
+  overflowX: "auto",
+  scrollSnapType: "x mandatory",
+  scrollbarWidth: "none",
+  margin: "0 calc(-1 * var(--page-pad-x, 16px))",
+  padding: "4px var(--page-pad-x, 16px) 6px",
+};
+
+// The head above a rail — the Explore SectionHead anatomy: a bold display-face
+// title with the action as small mono uppercase on the RIGHT of the same row.
+// No marker before the title (the no-decorative-dot rule).
+function RailHead({ title, action }: { title: string; action: { label: string; onClick: () => void; premium?: boolean } }) {
+  const C = (v: string) => `var(--color-${v})`;
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
+      <button onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
+        {action.label}
+      </button>
+    </div>
+  );
+}
+
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
 // uses, so "checked by us" reads identically wherever it appears in the app.
 // Not decoration: it only ever renders when a `VerifiedStamp` is present.
@@ -2012,29 +2042,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </button>
           )}
 
-          {/* Recipes — the cook-along library (Full-only; free users route to
-              upgrade). */}
-          <button onClick={() => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade"))} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: 24, cursor: "pointer", color: C("chalk") }}>
-            <Glyph name="bowl" size={20} color={C("ash")} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.body }}>{t("w.recovery.nutrition.recipes")}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{t("w.recovery.nutrition.recipesSub")}</div>
-            </div>
-            {!recipesUnlocked && <span style={{ color: "var(--premium-accent-text)", fontSize: 12 }} aria-hidden>✦</span>}
-            <Glyph name="chevron" size={16} color={C("ash")} />
-          </button>
-
           {/* Menu — the deliberate way into every deeper feature, so the daily
-              essentials above aren't buried under one long scroll. */}
+              essentials above aren't buried under one long scroll. Recipes and
+              the verified tier are NOT here: both are libraries you browse, so
+              they ride their own rails at the very bottom of this screen. */}
           {([
             ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
             ["insights", <Glyph key="i" name="spark" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
-            // The verified tier was previously only reachable by stumbling into
-            // one of its foods through search. This is the front door.
-            ["sources", <VerifiedMark key="v" size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <button key={key} onClick={() => setView(key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
               {icon}
@@ -2046,6 +2063,49 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               <Glyph name="chevron" size={16} color={C("ash")} />
             </button>
           ))}
+
+          {/* ── The two libraries, at the very bottom, as left/right rails —
+              the "Train your way" idiom. A list of recipes and a list of the
+              businesses we've verified are things you BROWSE, so they read as
+              cards you swipe through rather than two more menu rows that hide
+              their contents behind a chevron. Both are FULL-BLEED like every
+              screen-level rail: negative margins the width of the shell gutter
+              (--page-pad-x) pull the scroll clip to the true screen edge, with
+              matching internal padding so resting cards stay on the column. */}
+          <RailHead title={t("w.recovery.nutrition.recipes")} action={{ label: `${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`, onClick: () => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade")), premium: !recipesUnlocked }} />
+          <div style={railScroller}>
+            {RECIPES.map((r) => (
+              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
+                <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
+                <div style={{ padding: "11px 12px 13px" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 7 }}>{r.macros.kcal} kcal</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Verified foods — the BUSINESSES, one card each. The verified tier
+              was previously only reachable by stumbling into one of its foods
+              through search; the rail puts the companies themselves on the
+              screen. */}
+          <RailHead title={t("w.recovery.nutrition.verifiedFoods")} action={{ label: `${t("w.explore.seeAll")} →`, onClick: () => setView("sources") }} />
+          <div style={railScroller}>
+            {VERIFIED_SOURCES.map((src) => {
+              const n = vfBySource(src.id).length;
+              return (
+                <button key={src.id} onClick={() => openSourcePage(src.id, "home")} style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 16 }}>
+                  <div style={{ height: 46, display: "flex", alignItems: "center" }}><SourceMarkView C={C} src={src} height={30} /></div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 12, maxWidth: "100%" }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</span>
+                    <VerifiedMark size={12} />
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}</div>
+                </button>
+              );
+            })}
+          </div>
         </>
       ))}
 
