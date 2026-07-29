@@ -1,0 +1,21 @@
+-- HYBRID — the device's read of a logged workout (Apple Watch match).
+-- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma model Session.
+-- Idempotent.
+--
+-- Adds `device` to Session: the SAME workout as the athlete's device recorded
+-- it, attached by the summary's "match a device workout" flow on the iPhone —
+-- one frozen JSON object (provider, workout uuid, activity label, interval,
+-- measured duration/kcal/avg+max HR/distance, source, matchedAt). The summary
+-- then shows the logged/estimated figures next to the measured ones on BOTH
+-- clients. Shape + input sanitisation live in core/session-device.ts
+-- (sanitizeDeviceWorkout) — the API never writes an unvalidated object.
+--
+-- No RLS change is needed — Session is already owner-scoped, new columns
+-- included. HARD DEPENDENCY: once the Prisma client carries this column, the
+-- owner's GET /api/sessions (which returns the full row) and POST error against
+-- a DB that lacks it — so run this BEFORE the change reaches production.
+--
+-- Existing rows keep NULL. That is deliberate and safe: null means "never
+-- matched", which is true of every session logged before the feature existed.
+
+alter table "Session" add column if not exists "device" jsonb;

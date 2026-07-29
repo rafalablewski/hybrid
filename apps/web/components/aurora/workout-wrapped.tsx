@@ -40,6 +40,8 @@ import {
   storyStyle,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
+  deviceComparisonRows,
+  type DeviceWorkout,
   type StoryStyleId,
   type LoggedSession,
   type WeightUnit,
@@ -117,6 +119,11 @@ export function WorkoutWrapped({
   // null = not known yet (don't flash a "connect a device" prompt at someone
   // who already has one connected).
   const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
+  // The device's read of THIS workout (Apple Watch match). Matching is a
+  // HealthKit read only the phone can perform — the web renders the result and
+  // can unlink it; the panel points the unmatched case at the iPhone app.
+  const [device, setDevice] = useState<DeviceWorkout | null>(session.device ?? null);
+  const [unlinking, setUnlinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pagerRef = useRef<HTMLDivElement>(null);
 
@@ -251,10 +258,28 @@ export function WorkoutWrapped({
   const onPagerScroll = () => { const el = pagerRef.current; if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); };
   const goTo = (i: number) => { const el = pagerRef.current; if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" }); };
 
-  // The post-workout self-report ("How did that feel?") and — when nothing is
-  // measuring this athlete — the device prompt that would replace the estimates
-  // with measurements. Both ride in the scroll sequence, before the standing.
-  const showDevice = deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // The post-workout self-report ("How did that feel?") and the device panel:
+  // once this session is MATCHED to a watch workout (done on the phone) the
+  // panel shows the measured read next to the logged one; until then (and only
+  // when nothing is measuring this athlete) it is the connect-a-device prompt.
+  const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  const comparison = device
+    ? deviceComparisonRows({ device, durationMin: receipt.durationMin, estimatedKcal: wrapped.energy?.kcal ?? null, distanceKm: receipt.distanceKm })
+    : [];
+  const unlinkDevice = async () => {
+    if (unlinking) return;
+    setUnlinking(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device: null }),
+      });
+      if (res.ok) setDevice(null);
+    } finally {
+      setUnlinking(false);
+    }
+  };
 
   // Which panels exist (dots + active tracking); details rides after them.
   const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "standing")[] = [
@@ -262,7 +287,7 @@ export function WorkoutWrapped({
     "hero" as const,
     "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
-    ...(showDevice ? ["device" as const] : []),
+    ...(device || showDeviceAd ? ["device" as const] : []),
     "standing" as const,
   ];
   const onScroll = () => { const el = scrollRef.current; if (el) setPanel(Math.round(el.scrollTop / Math.max(1, el.clientHeight))); };
@@ -318,6 +343,14 @@ export function WorkoutWrapped({
             </div>
           ))}
         </div>
+        {/* The watch's read of this exact workout rides on the row — matched on
+            the phone (HealthKit is native-only); here it shows as synced. */}
+        {device && (
+          <div style={{ marginTop: 14, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 6, border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", position: "relative" }}>
+            <span aria-hidden style={{ fontSize: 12 }}>⌚</span>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={LIME_HEX}>{device.source ?? t("session.device.matchedChip")} ✓</Mono>
+          </div>
+        )}
         {scrollHint}
       </section>
 
@@ -357,8 +390,36 @@ export function WorkoutWrapped({
         </section>
       )}
 
+      {/* ── THE DEVICE'S READ (matched) ── */}
+      {device && (
+        <section style={{ ...panelStyle, justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 90% 15%, color-mix(in srgb, ${LIME} 12%, transparent), transparent 60%)` }} />
+          {eyebrow(t("session.device.panelTitle"))}
+          <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{device.activityLabel}</div>
+          <Mono s={{ fontSize: fs.caption, marginTop: 10, lineHeight: 1.5, position: "relative", display: "block" }}>{t("session.device.lead")}</Mono>
+          <div style={{ marginTop: 20, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
+            <div style={{ display: "flex", padding: "10px 14px", background: "#0e0f0d" }}>
+              <div style={{ flex: 1.1 }} />
+              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Mono>
+              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={LIME_HEX}>{device.source ?? t("session.device.deviceCol")}</Mono>
+            </div>
+            {comparison.map((r) => (
+              <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
+                <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
+                {/* A modelled figure wears a "~" — never presented as a measurement. */}
+                <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
+                <span style={{ ...disp, flex: 1, fontWeight: 900, fontSize: fs.caption, textAlign: "right", color: txt(LIME), fontVariantNumeric: "tabular-nums" }}>{r.device ?? "—"}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 18, position: "relative" }}>
+            <button onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
+          </div>
+        </section>
+      )}
+
       {/* ── CONNECT A DEVICE ── */}
-      {showDevice && (
+      {showDeviceAd && (
         <section style={{ ...panelStyle, justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 90% 15%, color-mix(in srgb, ${VIOLET} 18%, transparent), transparent 60%)` }} />
           {eyebrow(t("session.wrapped.device.title"))}
@@ -380,6 +441,9 @@ export function WorkoutWrapped({
           <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
             {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
           </Mono>
+          {/* HealthKit is native-only, so the workout match itself lives on the
+              phone — say so instead of dead-ending the web athlete. */}
+          <Mono s={{ fontSize: fs.caption, marginTop: 8, lineHeight: 1.5, position: "relative", display: "block" }}>{t("session.device.matchOnPhone")}</Mono>
         </section>
       )}
 

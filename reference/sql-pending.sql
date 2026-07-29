@@ -40,7 +40,7 @@
 -- ===========================================================================
 -- SECTION 1 / 6 — COLUMN ADDS
 -- Sources: sql-feel-logged-at.sql, sql-body-height.sql, sql-session-notes.sql,
---          sql-routine-favourite.sql
+--          sql-routine-favourite.sql, sql-session-device.sql
 --
 -- No dependencies, no RLS change — all four tables are already owner-scoped and
 -- new columns inherit that. Existing rows keep NULL/default, which every model
@@ -71,6 +71,12 @@ alter table "Session" add column if not exists "tags" text[] not null default '{
 -- this exists the sheet still works; favourites just don't persist.
 alter table "WorkoutTemplate"
   add column if not exists "favourite" boolean not null default false;
+
+-- Session.device — the device's read of the same workout (Apple Watch match):
+-- one frozen JSON object written by the summary's match flow. REQUIRED BEFORE
+-- DEPLOY once the Prisma client declares it (same full-row read as
+-- feelLoggedAt). Source: sql-session-device.sql.
+alter table "Session" add column if not exists "device" jsonb;
 
 
 -- ===========================================================================

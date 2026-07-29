@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
+import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -261,6 +261,22 @@ export async function patchSessionFeel(
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Attach (or, with null, unlink) the device's read of a saved workout — the
+// summary's Apple Watch match. The server re-sanitises and stamps matchedAt;
+// see core/session-device.ts. Owner-only; best effort.
+export async function patchSessionDevice(id: string, device: DeviceWorkout | null): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ device }),
     });
     return res.ok;
   } catch {
