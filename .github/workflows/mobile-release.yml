@@ -159,9 +159,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          # `|| true` on every API pipeline in this step: under `set -e` +
+          # `pipefail` a non-zero CLI aborts before the explicit check below can
+          # give a useful message, turning a diagnosable state into a bare
+          # "exit code 1".
           APP_ID=$(app-store-connect apps list \
-            --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json \
-            | jq -r '.[0].id')
+            --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json 2>/dev/null \
+            | jq -r '.[0].id // empty' || true)
           if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
             echo "::error::No app in App Store Connect for $BUNDLE_ID"
             exit 1
@@ -200,11 +204,26 @@ jobs:
           done
 
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
 
           # What TestFlight itself will show. READY_FOR_BETA_TESTING is the one
           # that means "installable"; anything else is worth seeing in the log.
-          INTERNAL=$(app-store-connect builds beta-details "$BUILD_ID" --json 2>/dev/null \
-            | jq -r '.attributes.internalBuildState // "UNKNOWN"')
+          #
+          # DIAGNOSTIC ONLY — it must never fail the step. The build reaching
+          # VALID above IS the result; this is commentary on it. Apple publishes
+          # a build's beta detail slightly AFTER the build itself goes valid, so
+          # a lookup fired straight out of the loop can 404 — and the first cut
+          # of this let that non-zero exit kill an otherwise perfect run
+          # (job 90665506474: "Processing finished: VALID" then exit 1). Retry
+          # briefly for the eventual consistency, then report UNKNOWN and move
+          # on rather than failing a build that is sitting in App Store Connect.
+          INTERNAL=UNKNOWN
+          for _ in 1 2 3 4 5 6; do
+            BETA_JSON=$(app-store-connect builds beta-details "$BUILD_ID" --json 2>/dev/null || true)
+            FOUND=$(printf '%s' "$BETA_JSON" | jq -r '.attributes.internalBuildState // empty' 2>/dev/null || true)
+            if [ -n "$FOUND" ]; then INTERNAL="$FOUND"; break; fi
+            sleep 10
+          done
           echo "Internal build state: $INTERNAL"
           echo "INTERNAL_STATE=$INTERNAL" >> "$GITHUB_ENV"
 
@@ -221,38 +240,48 @@ jobs:
           app-store-connect builds add-beta-test-info "$BUILD_ID" \
             --locale en-US --whats-new "$NOTES"
 
-      # A build that processes cleanly but is never added to a tester group
-      # looks EXACTLY like a build that never arrived. If the group is named in
-      # repo variables (Settings → Secrets and variables → Actions → Variables →
-      # TESTFLIGHT_GROUP), attach it here; if it is not set, say so plainly
-      # rather than leaving a silent gap.
-      - name: Add the build to the internal tester group
-        if: ${{ vars.TESTFLIGHT_GROUP != '' }}
+      # ── The step that actually gets it onto a phone ────────────────────────
+      # A build that is VALID but attached to no beta group is INVISIBLE in
+      # TestFlight and indistinguishable from one that never arrived: green run,
+      # healthy API, build list simply does not grow. That is the state builds
+      # 81278222 and 81281267 landed in while every earlier build appeared
+      # normally — so this is not hypothetical, it is what went wrong.
+      #
+      # The codemagic CLI can add a build to a group BY NAME but cannot LIST
+      # groups, and a name we have to be told in advance is precisely what makes
+      # this fail silently. So this talks to the REST API: it prints every group
+      # with the two attributes that decide visibility (isInternalGroup,
+      # hasAccessToAllBuilds) — that listing is the diagnosis — and attaches the
+      # build to each internal group that does not already have it.
+      - name: Distribute to the internal testers
+        env:
+          APPLE_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
+          APPLE_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+          APPLE_ASC_API_KEY_P8: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
         run: |
-          app-store-connect beta-groups add-build \
-            --beta-group "${{ vars.TESTFLIGHT_GROUP }}" "$BUILD_ID"
-          echo "Added build $BUILD to group '${{ vars.TESTFLIGHT_GROUP }}'."
+          # Own venv: PyJWT lives inside the pipx install of the signing helper,
+          # not on the runner's python, and installing into the system one is
+          # both fragile and rude.
+          python3 -m venv /tmp/ascvenv
+          /tmp/ascvenv/bin/pip install --quiet --disable-pip-version-check pyjwt cryptography
+          /tmp/ascvenv/bin/python .github/scripts/testflight-distribute.py
 
       - name: Summary
+        if: always()
         run: |
           {
             echo "### TestFlight"
             echo
             echo "| | |"
             echo "|---|---|"
-            echo "| Install | **HYBRID 1.0.0 (${BUILD})** |"
-            echo "| Internal state | \`${INTERNAL_STATE}\` |"
+            echo "| Install | **HYBRID 1.0.0 (${BUILD:-?})** |"
+            echo "| Internal state | \`${INTERNAL_STATE:-unknown}\` |"
             echo "| Commit | \`${GITHUB_SHA:0:7}\` on \`${GITHUB_REF_NAME}\` |"
             echo
-            if [ "${INTERNAL_STATE}" != "READY_FOR_BETA_TESTING" ]; then
-              echo "> Processing finished, but the internal state is \`${INTERNAL_STATE}\`"
+            if [ "${INTERNAL_STATE:-}" != "READY_FOR_BETA_TESTING" ]; then
+              echo "> Processing finished, but the internal state is \`${INTERNAL_STATE:-unknown}\`"
               echo "> rather than \`READY_FOR_BETA_TESTING\`. If it does not appear for"
               echo "> testers, check that the build is assigned to an internal group."
-            fi
-            if [ -z "${{ vars.TESTFLIGHT_GROUP }}" ]; then
-              echo "> No \`TESTFLIGHT_GROUP\` repo variable set, so this run did not assign"
-              echo "> the build to a tester group. If your internal group does not add new"
-              echo "> builds automatically, set that variable to its name."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
