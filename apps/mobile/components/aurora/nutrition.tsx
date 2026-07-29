@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, Alert, ScrollView, StyleSheet } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -34,7 +34,8 @@ import {
   type NutritionGlyphName,
   type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
-  nutritionPanel, per100g, scaleFacts, emptyNutritionDay,
+  nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
+  VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
   sourceCheckedOn, kj, verifiedFreshness, type SourceMark, 
   type Recipe, type RecipeFilter,
@@ -86,7 +87,7 @@ const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((p
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source" | "sources";
 // The part of the day a log is attributed to, carried into the Signal `source`.
 // The four built-ins plus any custom parts a Full user added — a plain key
 // string, not a closed union.
@@ -243,7 +244,15 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
  *  macros read as hairline lines, iconography is one monoline voice, and colour
  *  appears only where it means something. Same engine + Signal logging + personal
  *  library. `compact` renders the focused Today "Add a meal" sheet. */
-export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade }: { compact?: boolean; onNavigateFull?: () => void; onUpgrade?: () => void } = {}) {
+export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade, openFood, openSource }: {
+  compact?: boolean;
+  onNavigateFull?: () => void;
+  onUpgrade?: () => void;
+  /** land directly on a verified product page — the deep-link entry (app/food/[id]) */
+  openFood?: string;
+  /** land directly on a verified source page (app/source/[id]) */
+  openSource?: string;
+} = {}) {
   const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
@@ -443,6 +452,15 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [pageBack, setPageBack] = useState<NutView>("add");
   const openFoodPage = (id: string, from: NutView) => { setFoodPageId(id); setPageBack(from); setView("food"); };
   const openSourcePage = (id: string, from: NutView) => { setSourcePageId(id); setPageBack(from); setView("source"); };
+
+  // DEEP LINK ENTRY. `hybrid://food/<id>` (and the https universal-link twin,
+  // once the entitlement ships) lands here via app/food/[id].tsx. An id that
+  // isn't in the catalog falls through to the hub rather than showing a broken
+  // page — a link from an older build must never dead-end.
+  useEffect(() => {
+    if (openFood && verifiedFood(openFood)) { setFoodPageId(openFood); setPageBack("home"); setView("food"); }
+    else if (openSource && verifiedSource(openSource)) { setSourcePageId(openSource); setPageBack("home"); setView("source"); }
+  }, [openFood, openSource]);
 
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
   const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat, sugar: m.sugar, fiber: m.fiber, salt: m.salt });
@@ -1336,7 +1354,27 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     const fresh = verifiedFreshness(f);
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark C={C} size={15} /> })}
+        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
+          icon: "back",
+          right: (
+            <Pressable
+              onPress={() => {
+                // The https form, not hybrid:// — a link is only worth sharing
+                // if it opens for someone who hasn't installed the app. The
+                // universal-link entitlement is what makes it open IN the app;
+                // until that ships it lands on the web page, which is the right
+                // fallback rather than a dead scheme.
+                Share.share({ message: `https://hybrid.app/app?s=nutrition&food=${f.id}` }).catch(() => {});
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t("w.recovery.nutrition.shareLink")}
+              hitSlop={8}
+              style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+            >
+              <AuroraIcon name="share" size={17} color={C.ash} />
+            </Pressable>
+          ),
+        })}
 
         {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label. */}
         {src ? (
@@ -1442,6 +1480,39 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </Pressable>
         </View>
         {renderPortionSheet()}
+      </AuroraScreen>
+    );
+  }
+
+  // ============ SOURCES — every business we've checked ============
+  // The source page used to be reachable ONLY by opening one of its foods,
+  // which made the verified tier something you stumbled into rather than
+  // something you could look at. This is the way in.
+  if (view === "sources") {
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 6 }}>{t("w.recovery.nutrition.verifiedIntro")}</Text>
+        <View style={{ marginTop: 20 }}>
+          {VERIFIED_SOURCES.map((src) => {
+            const n = vfBySource(src.id).length;
+            return (
+              <Pressable key={src.id} onPress={() => openSourcePage(src.id, "sources")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 16, marginBottom: 10 }}>
+                <SourceMarkView C={C} src={src} height={32} />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{src.name}</Text>
+                    <VerifiedMark C={C} size={12} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>
+                    {t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}
+                  </Text>
+                </View>
+                <IChevRight size={17} color={C.ash} />
+              </Pressable>
+            );
+          })}
+        </View>
       </AuroraScreen>
     );
   }
@@ -1742,6 +1813,9 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
+            // The verified tier was previously only reachable by stumbling into
+            // one of its foods through search. This is the front door.
+            ["sources", <VerifiedMark key="v" C={C} size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
               {icon}
@@ -2073,17 +2147,27 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
             rather than letting a partial number read as a complete one. */}
         {daySummary.satFat > 0 || daySummary.sugar > 0 || daySummary.salt > 0 || daySummary.fiber > 0 ? (
           <View style={{ marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            {/* Measured against WHO/EFSA REFERENCE intakes, not a personal
+                target — saturates and sugars scale with the athlete's energy,
+                salt doesn't, and fibre is a floor to reach. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-              {([["w.recovery.nutrition.facts.satFat", daySummary.satFat], ["w.recovery.nutrition.facts.sugar", daySummary.sugar], ["w.recovery.nutrition.facts.fiber", daySummary.fiber], ["w.recovery.nutrition.facts.salt", daySummary.salt]] as const)
-                .filter(([, v]) => v > 0)
-                .map(([lab, v]) => (
-                  <View key={lab}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(lab)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk, marginTop: 3 }}>{Math.round(v * 10) / 10} g</Text>
+              {panelStatus(daySummary, targets.kcal ?? 2000)
+                .filter((r) => r.value > 0)
+                .map((r) => (
+                  <View key={r.key} style={{ minWidth: 74 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(`w.recovery.nutrition.facts.${r.key}`)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: r.over ? txt(C, C.red) : C.chalk, marginTop: 3 }}>
+                      {r.value} g<Text style={{ fontWeight: "400", fontSize: fs.nano, color: C.ash }}> {r.floor ? "/" : "of"} {r.reference}</Text>
+                    </Text>
+                    <View style={{ height: 3, borderRadius: 999, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
+                      <View style={{ width: `${Math.min(100, r.pct * 100)}%`, height: "100%", borderRadius: 999, backgroundColor: r.over ? C.red : r.floor ? C.lime : C.ash }} />
+                    </View>
                   </View>
                 ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>{t("w.recovery.nutrition.facts.dayPartial")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 16 }}>
+              {t("w.recovery.nutrition.facts.dayPartial")} {t("w.recovery.nutrition.facts.referenceNote")}
+            </Text>
           </View>
         ) : null}
       </ACard>

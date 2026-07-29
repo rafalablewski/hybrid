@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -361,5 +361,64 @@ describe("derived entry ids survive the label panel", () => {
     expect(entry!.satFat).toBe(7.3);
     expect(entry!.fiber).toBeNull();
     expect(parseDerivedEntryId(entry!.id)).toHaveLength(7);
+  });
+});
+
+describe("reference intakes for the label panel", () => {
+  it("scales saturates and sugars with the athlete's energy, and salt not at all", () => {
+    // A 4 000 kcal training day does NOT earn more salt — that is a flat
+    // physiological ceiling, not a share of energy. Saturates and sugars are
+    // shares, so an athlete eating for training is not "over" at the same grams
+    // a sedentary adult would be.
+    const small = referenceIntakes(2000);
+    const big = referenceIntakes(4000);
+    expect(small.satFat).toBe(22); // 10% of 2000 kcal ÷ 9
+    expect(big.satFat).toBe(44);
+    expect(small.sugar).toBe(50); // 10% of 2000 kcal ÷ 4
+    expect(big.sugar).toBe(100);
+    expect(small.salt).toBe(5);
+    expect(big.salt).toBe(5);
+  });
+
+  it("treats fibre as a floor to reach, at a flat 30 g", () => {
+    expect(referenceIntakes(2000).fiber).toBe(30);
+    expect(referenceIntakes(4000).fiber).toBe(30);
+  });
+
+  it("falls back to 2 000 kcal rather than dividing by a nonsense target", () => {
+    expect(referenceIntakes(0)).toEqual(referenceIntakes(2000));
+    expect(referenceIntakes(Number.NaN)).toEqual(referenceIntakes(2000));
+  });
+});
+
+describe("panelStatus", () => {
+  const day = { ...emptyNutritionDay("2026-07-29"), satFat: 30, sugar: 20, fiber: 12, salt: 7 };
+
+  it("flags the three ceilings only once passed", () => {
+    const st = panelStatus(day, 2000);
+    const by = Object.fromEntries(st.map((r) => [r.key, r]));
+    expect(by.satFat!.over).toBe(true); // 30 g against a 22 g reference
+    expect(by.salt!.over).toBe(true); // 7 g against 5 g
+    expect(by.sugar!.over).toBe(false); // 20 g against 50 g
+  });
+
+  it("never flags fibre as a breach — it is the one to reach", () => {
+    const fiber = panelStatus(day, 2000).find((r) => r.key === "fiber")!;
+    expect(fiber.floor).toBe(true);
+    expect(fiber.over).toBe(false);
+    expect(fiber.pct).toBeCloseTo(0.4); // 12 of 30 g
+  });
+
+  it("moves the ceiling when the athlete eats more", () => {
+    const at4k = panelStatus(day, 4000).find((r) => r.key === "satFat")!;
+    expect(at4k.reference).toBe(44);
+    expect(at4k.over).toBe(false); // the same 30 g is fine on a 4 000 kcal day
+  });
+
+  it("reports zeros without dividing by zero", () => {
+    for (const r of panelStatus(emptyNutritionDay("2026-07-29"), 2000)) {
+      expect(r.pct).toBe(0);
+      expect(r.over).toBe(false);
+    }
   });
 });

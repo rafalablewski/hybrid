@@ -399,6 +399,88 @@ export function fuelToday(
   return { state, trained, trainingKcal, today, targets, kcalLeft, kcalPct, proteinGap, macros, allMacrosHit };
 }
 
+// ── Reference intakes for the label panel ──────────────────────────────────
+//
+// The four panel fields are recorded and rolled up, but they had no yardstick,
+// so a day's 24 g of saturates meant nothing on screen. These give them one.
+//
+// THEY ARE NOT PERSONAL TARGETS, and the UI must never present them as such.
+// The adaptive macro targets are computed from THIS athlete's own maintenance
+// and bodyweight; these are POPULATION REFERENCE INTAKES published by the WHO
+// and EFSA for adults, scaled to the athlete's energy target where the guidance
+// itself is expressed as a share of energy. An athlete eating 4 000 kcal to
+// support training is not "over" on sugar the way a sedentary adult would be at
+// the same grams — which is exactly why saturates and sugars scale with energy
+// while salt does not. Salt is a flat physiological ceiling; a big training day
+// doesn't earn more of it (if anything a sweaty one earns more, but that is a
+// hydration question we don't have the data to answer).
+//
+// Fibre is the odd one out and is stored here as a FLOOR: the number to reach,
+// not to stay under. `over` is meaningless for it and callers must not colour it
+// as a breach.
+export interface ReferenceIntakes {
+  /** ≤ 10 % of energy (WHO/EFSA), grams */
+  satFat: number;
+  /** free sugars ≤ 10 % of energy (WHO), grams */
+  sugar: number;
+  /** ≤ 5 g/day (WHO) — flat, not scaled by energy */
+  salt: number;
+  /** ≥ 30 g/day (EFSA adequate intake) — a FLOOR, not a ceiling */
+  fiber: number;
+}
+
+/** WHO/EFSA adult reference intakes, scaled to an energy target where the
+ *  guidance is expressed as a share of energy. */
+export function referenceIntakes(kcalTarget: number): ReferenceIntakes {
+  const kcal = Number.isFinite(kcalTarget) && kcalTarget > 0 ? kcalTarget : 2000;
+  return {
+    satFat: Math.round((kcal * 0.10) / 9), // 9 kcal per gram of fat
+    sugar: Math.round((kcal * 0.10) / 4), // 4 kcal per gram of carbohydrate
+    salt: 5,
+    fiber: 30,
+  };
+}
+
+export interface PanelStatus {
+  key: "satFat" | "sugar" | "fiber" | "salt";
+  /** the day's running total, grams */
+  value: number;
+  /** the reference figure this is measured against, grams */
+  reference: number;
+  /** 0–1+, the share of the reference this day has reached */
+  pct: number;
+  /** true only for the three CEILINGS, and only once passed */
+  over: boolean;
+  /** true for fibre — the one field where more is the goal */
+  floor: boolean;
+}
+
+/**
+ * Measure a day's label panel against the reference intakes.
+ *
+ * The totals are a FLOOR by construction — only foods that stated a field
+ * contribute one — so `over` here means "already over on what we can see",
+ * never "definitely over". A caller showing this must carry that caveat; the
+ * Diary already does.
+ */
+export function panelStatus(day: NutritionDay, kcalTarget: number): PanelStatus[] {
+  const ref = referenceIntakes(kcalTarget);
+  const row = (key: PanelStatus["key"], value: number, reference: number, floor = false): PanelStatus => ({
+    key,
+    value: Math.round(value * 10) / 10,
+    reference,
+    pct: reference > 0 ? value / reference : 0,
+    over: !floor && value > reference,
+    floor,
+  });
+  return [
+    row("satFat", day.satFat, ref.satFat),
+    row("sugar", day.sugar, ref.sugar),
+    row("fiber", day.fiber, ref.fiber, true),
+    row("salt", day.salt, ref.salt),
+  ];
+}
+
 /**
  * A premade meal preset — a saved, reusable meal a Full user can log with ONE
  * tap. The manual macro path (kcal/protein/carbs/fat inputs) stays free for

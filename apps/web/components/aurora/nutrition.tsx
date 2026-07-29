@@ -10,7 +10,8 @@ import {
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
-  nutritionPanel, per100g, scaleFacts, emptyNutritionDay,
+  nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
+  VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods, kj,
   sourceCheckedOn, sourceMarkDataUri, verifiedFreshness, type SourceMark,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
@@ -23,6 +24,7 @@ import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
+import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -41,7 +43,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source" | "sources";
 // The part of the day a log is attributed to, carried into the Signal `source`
 // so the hub can group today's intake. The four built-ins plus any custom parts
 // a Full user added — so it's a plain key string, not a closed union.
@@ -481,6 +483,29 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [pageBack, setPageBack] = useState<NutView>("add");
   const openFoodPage = (id: string, from: NutView) => { setFoodPageId(id); setPageBack(from); setView("food"); };
   const openSourcePage = (id: string, from: NutView) => { setSourcePageId(id); setPageBack(from); setView("source"); };
+
+  // DEEP LINKS. A verified page is the one thing in this screen worth an
+  // address — it's a fact about a real product, so it can be sent to someone,
+  // bookmarked, or landed on from a push. `?food=` / `?source=` mirror the open
+  // page; every other view stays local state, because "the diary, scrolled to
+  // Tuesday" is not a thing anyone shares.
+  useEffect(() => {
+    const apply = (p: { food?: string; source?: string }) => {
+      if (p.food) { setFoodPageId(p.food); setPageBack("add"); setView("food"); }
+      else if (p.source) { setSourcePageId(p.source); setPageBack("home"); setView("source"); }
+    };
+    apply(readDeepLink());
+    return onDeepLinkChange(apply);
+  }, []);
+  useEffect(() => {
+    // Mirror only while a verified page is actually open, and clear on the way
+    // out — a stale ?food= pointing at a screen you left is a worse link than
+    // no link at all.
+    writeDeepLink({
+      food: view === "food" ? foodPageId ?? undefined : undefined,
+      source: view === "source" ? sourcePageId ?? undefined : undefined,
+    });
+  }, [view, foodPageId, sourcePageId]);
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
 
@@ -1475,7 +1500,28 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const fresh = verifiedFreshness(f);
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark size={15} /> })}
+        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
+          icon: "back",
+          right: (
+            <button
+              onClick={async () => {
+                const url = verifiedFoodUrl(f.id);
+                // navigator.share where the browser has it (mobile web), the
+                // clipboard otherwise. Both can be refused — a denied permission
+                // is not an error worth shouting about, so it just says nothing.
+                try {
+                  if (typeof navigator !== "undefined" && navigator.share) await navigator.share({ title: f.name, url });
+                  else { await navigator.clipboard.writeText(url); setMealMsg(t("w.recovery.nutrition.linkCopied")); }
+                } catch { /* dismissed or blocked */ }
+              }}
+              aria-label={t("w.recovery.nutrition.shareLink")}
+              title={t("w.recovery.nutrition.shareLink")}
+              style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", color: C("ash"), cursor: "pointer", display: "grid", placeItems: "center" }}
+            >
+              <AuroraIcon name="share" size={17} color={C("ash")} />
+            </button>
+          ),
+        })}
 
         {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label.
             Tapping it opens the business's own page. */}
@@ -1581,6 +1627,39 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </button>
         </div>
         {renderPortionSheet()}
+      </div>
+    );
+  }
+
+  // ============ SOURCES — every business we've checked ============
+  // The source page used to be reachable ONLY by opening one of its foods,
+  // which made the verified tier something you stumbled into rather than
+  // something you could look at. This is the way in.
+  if (view === "sources") {
+    return (
+      <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+        {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
+        <p style={{ fontFamily: "var(--font-display)", fontSize: fs.bodyLg, color: C("ash"), lineHeight: 1.55, margin: "6px 0 0" }}>{t("w.recovery.nutrition.verifiedIntro")}</p>
+        <div style={{ marginTop: 20 }}>
+          {VERIFIED_SOURCES.map((src) => {
+            const n = vfBySource(src.id).length;
+            return (
+              <button key={src.id} onClick={() => openSourcePage(src.id, "sources")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "16px 16px", marginBottom: 10, cursor: "pointer" }}>
+                <SourceMarkView C={C} src={src} height={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{src.name}</span>
+                    <VerifiedMark size={12} />
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>
+                    {t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}
+                  </div>
+                </div>
+                <IChevRight size={17} color={C("ash")} />
+              </button>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -1934,6 +2013,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             ["body", <AuroraIcon key="b" name="heart" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
             ["meals", <Glyph key="m" name="bowl" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
+            // The verified tier was previously only reachable by stumbling into
+            // one of its foods through search. This is the front door.
+            ["sources", <VerifiedMark key="v" size={18} />, t("w.recovery.nutrition.verifiedFoods"), t("w.recovery.nutrition.menuVerifiedSub"), String(VERIFIED_SOURCES.length)],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
             <button key={key} onClick={() => setView(key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
               {icon}
@@ -2270,17 +2352,29 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             rather than letting a partial number read as a complete one. */}
         {(daySummary.satFat > 0 || daySummary.sugar > 0 || daySummary.salt > 0 || daySummary.fiber > 0) && (
           <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+            {/* Measured against WHO/EFSA REFERENCE intakes, not against a
+                personal target — saturates and sugars scale with the athlete's
+                energy, salt doesn't, and fibre is a floor to reach rather than
+                a ceiling. The label says which it is. */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-              {([["w.recovery.nutrition.facts.satFat", daySummary.satFat], ["w.recovery.nutrition.facts.sugar", daySummary.sugar], ["w.recovery.nutrition.facts.fiber", daySummary.fiber], ["w.recovery.nutrition.facts.salt", daySummary.salt]] as const)
-                .filter(([, v]) => v > 0)
-                .map(([lab, v]) => (
-                  <div key={lab}>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t(lab)}</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), fontVariantNumeric: "tabular-nums", marginTop: 3 }}>{Math.round(v * 10) / 10} g</div>
+              {panelStatus(daySummary, targets.kcal ?? 2000)
+                .filter((r) => r.value > 0)
+                .map((r) => (
+                  <div key={r.key} style={{ minWidth: 74 }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t(`w.recovery.nutrition.facts.${r.key}`)}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: r.over ? "var(--red-text)" : C("chalk"), fontVariantNumeric: "tabular-nums", marginTop: 3 }}>
+                      {r.value} g
+                      <span style={{ fontWeight: 400, fontSize: fs.nano, color: C("ash") }}> {r.floor ? "/" : "of"} {r.reference}</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 999, background: C("line"), overflow: "hidden", marginTop: 5 }}>
+                      <div style={{ width: `${Math.min(100, r.pct * 100)}%`, height: "100%", borderRadius: 999, background: r.over ? "var(--color-red)" : r.floor ? "var(--color-lime)" : C("ash") }} />
+                    </div>
                   </div>
                 ))}
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10 }}>{t("w.recovery.nutrition.facts.dayPartial")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.6 }}>
+              {t("w.recovery.nutrition.facts.dayPartial")} {t("w.recovery.nutrition.facts.referenceNote")}
+            </div>
           </div>
         )}
       </div>
