@@ -1,9 +1,11 @@
 -- ===========================================================================
 -- HYBRID — every outstanding migration, in one script, in dependency order.
 --
--- STATUS: APPLIED in production (the whole bundle was run in the Supabase SQL
--- Editor, Jul 2026). Kept because it is idempotent and re-runnable — future
--- migrations append here, and re-running the applied parts is a no-op.
+-- STATUS: applied in production up to and including Session.device (the bundle
+-- was run in the Supabase SQL Editor, Jul 2026). The NUTRITION LABEL PANEL at
+-- the end of section 1 is APPENDED BUT NOT YET RUN — re-running the whole file
+-- is a no-op for everything already applied and adds only that, so the safe
+-- move is to paste the whole thing again. Future migrations append here.
 --
 -- Paste the WHOLE file into the Supabase SQL Editor and Run once.
 --
@@ -43,7 +45,8 @@
 -- ===========================================================================
 -- SECTION 1 / 6 — COLUMN ADDS
 -- Sources: sql-feel-logged-at.sql, sql-body-height.sql, sql-session-notes.sql,
---          sql-routine-favourite.sql, sql-session-device.sql
+--          sql-routine-favourite.sql, sql-session-device.sql,
+--          sql-nutrition-label-panel.sql
 --
 -- No dependencies, no RLS change — all four tables are already owner-scoped and
 -- new columns inherit that. Existing rows keep NULL/default, which every model
@@ -80,6 +83,52 @@ alter table "WorkoutTemplate"
 -- DEPLOY once the Prisma client declares it (same full-row read as
 -- feelLoggedAt). Source: sql-session-device.sql.
 alter table "Session" add column if not exists "device" jsonb;
+
+-- ── Nutrition: the LABEL PANEL. Source: sql-nutrition-label-panel.sql ────────
+-- A logged food was four numbers (kcal + protein/carbs/fat), which is not what
+-- a food label states: it cannot say how much of that fat is SATURATED, how
+-- much of those carbs is SUGAR, or whether the day is over on salt.
+--
+-- NULL MEANS NOT STATED — it is NOT zero. An unstated sugar content is not a
+-- sugar-free food, and the clients render an em dash for NULL, never "0 g".
+-- Every column is therefore nullable with NO default, so existing rows keep
+-- saying nothing, which is the truthful answer for a food logged before this.
+--
+-- NOT REQUIRED BEFORE DEPLOY: every write is soft-guarded (it tries with the
+-- panel, then retries without), so an un-migrated database still logs and still
+-- saves — it just doesn't persist the panel. The mirrored Signals need no
+-- migration at all (Signal.kind is a plain text column), so day totals work
+-- either way; this is what makes an individual food remember its own label.
+--
+-- No kJ column and no sodium column, deliberately: both are exact conversions
+-- of values already stored (1 kcal = 4.184 kJ; sodium = salt × 0.4), so a
+-- column would be a second copy of one fact, free to drift from the first. The
+-- clients derive them at read time (packages/core/src/food-facts.ts).
+alter table "SavedMeal"   add column if not exists "satFat" double precision;
+alter table "SavedMeal"   add column if not exists "sugar"  double precision;
+alter table "SavedMeal"   add column if not exists "fiber"  double precision;
+alter table "SavedMeal"   add column if not exists "salt"   double precision;
+
+alter table "FoodProduct" add column if not exists "satFat" double precision;
+alter table "FoodProduct" add column if not exists "sugar"  double precision;
+alter table "FoodProduct" add column if not exists "fiber"  double precision;
+alter table "FoodProduct" add column if not exists "salt"   double precision;
+
+alter table "FoodLog"     add column if not exists "satFat" double precision;
+alter table "FoodLog"     add column if not exists "sugar"  double precision;
+alter table "FoodLog"     add column if not exists "fiber"  double precision;
+alter table "FoodLog"     add column if not exists "salt"   double precision;
+
+-- The serving WEIGHT — the divisor that makes a fair per-100 g comparison
+-- possible between two foods with different serving sizes. NULL where the
+-- operator never published one (we do not guess a weight).
+alter table "FoodProduct" add column if not exists "servingGrams" double precision;
+
+-- Provenance: which HYBRID Verified catalog item a saved food or logged entry
+-- came from, so it can be traced back to the business and the date we checked
+-- it. NULL for anything the user created or took from the community database.
+alter table "FoodProduct" add column if not exists "verifiedId" text;
+alter table "FoodLog"     add column if not exists "verifiedId" text;
 
 
 -- ===========================================================================
