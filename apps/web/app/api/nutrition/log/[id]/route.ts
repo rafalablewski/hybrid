@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { parseDerivedEntryId } from "@hybrid/core";
+import { foodLogSignals, parseDerivedEntryId } from "@hybrid/core";
 
 // Edit (quantity) or delete a single logged entry. Both keep the mirrored
 // Signals in lock-step: a quantity edit rescales them, a delete removes them.
@@ -70,15 +70,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (existing.userId !== me.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   // Rescale the mirror: drop the old Signals and re-create at the new quantity.
+  // The SAME core builder the POST uses, so a quantity edit re-writes exactly
+  // the Signals the original log wrote — including the label panel, where the
+  // food stated one (a row from before the panel migration simply has nulls).
   await deleteMirror(me.id, existing.signalIds);
-  const jobs: [string, number, string][] = [
-    ["energyIntake", Math.round(existing.kcal * qty), "kcal"],
-    ["protein", Math.round(existing.protein * qty), "g"],
-    ["carbs", Math.round(existing.carbs * qty), "g"],
-    ["fat", Math.round(existing.fat * qty), "g"],
-  ];
+  const jobs = foodLogSignals(
+    {
+      kcal: existing.kcal, protein: existing.protein, carbs: existing.carbs, fat: existing.fat,
+      satFat: (existing as { satFat?: number | null }).satFat ?? null,
+      sugar: (existing as { sugar?: number | null }).sugar ?? null,
+      fiber: (existing as { fiber?: number | null }).fiber ?? null,
+      salt: (existing as { salt?: number | null }).salt ?? null,
+    },
+    qty,
+  );
   const signalIds: string[] = [];
-  for (const [kind, value, unit] of jobs) {
+  for (const { kind, value, unit } of jobs) {
     if (value <= 0) continue;
     try {
       const sig = await prisma.signal.create({ data: { userId: me.id, kind, value, unit, source: existing.source, ts: existing.ts } });

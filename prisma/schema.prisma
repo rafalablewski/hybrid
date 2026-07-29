@@ -545,6 +545,12 @@ model SavedMeal {
   protein   Int // grams
   carbs     Int // grams
   fat       Int // grams
+  // The LABEL PANEL (packages/core/src/food-facts.ts) — optional because most
+  // foods never state it. NULL means NOT STATED and must never render as 0 g.
+  satFat    Float? // "of which saturates", grams
+  sugar     Float? // "of which sugars", grams
+  fiber     Float? // dietary fibre, grams
+  salt      Float? // grams (the EU label unit; sodium is derived)
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
@@ -561,10 +567,19 @@ model FoodProduct {
   name         String
   subname      String? // the user's personal label ("w/ sushi rice", "the usual way")
   servingLabel String   @default("1 serving")
+  /** the serving's weight in grams when known — enables per-100 g comparison */
+  servingGrams Float?
   kcal         Int
   protein      Int // grams per serving
   carbs        Int // grams per serving
   fat          Int // grams per serving
+  // The LABEL PANEL (packages/core/src/food-facts.ts) — NULL = not stated.
+  satFat       Float?
+  sugar        Float?
+  fiber        Float?
+  salt         Float?
+  /** the HYBRID Verified catalog id this was saved from (provenance), if any */
+  verifiedId   String?
   createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
@@ -588,6 +603,14 @@ model FoodLog {
   protein   Float // grams per serving
   carbs     Float // grams per serving
   fat       Float // grams per serving
+  // The LABEL PANEL, per single serving (packages/core/src/food-facts.ts).
+  // NULL = the food never stated it — the diary shows "—", not "0 g".
+  satFat    Float?
+  sugar     Float?
+  fiber     Float?
+  salt      Float?
+  /** the HYBRID Verified catalog id this entry came from (provenance), if any */
+  verifiedId String?
   qty       Float    @default(1) // number of servings logged
   signalIds Json     @default("[]") // string[] of the mirrored Signal ids
   ts        DateTime // the log instant — the client groups these into local days

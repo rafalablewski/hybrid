@@ -11,6 +11,7 @@
 
 import type { Signal } from "./signals";
 import { localDayKey, localTodayKey } from "../day-key";
+import { type NutritionFacts, scaleFacts, unknown } from "../food-facts";
 
 const DAY = 86_400_000;
 const KCAL_PER_KG = 7700; // ~energy in 1 kg of body mass
@@ -23,6 +24,15 @@ export interface NutritionDay {
   carbs: number; // g
   fat: number; // g
   water: number; // ml
+  // The label panel (food-facts.ts). These are PARTIAL by nature: they only
+  // count the foods that stated them, so a day's sugar total is a floor, never
+  // a claim of completeness. `stated` says how many of the day's entries
+  // carried each field, so the UI can qualify the number instead of implying
+  // the day was fully described.
+  satFat: number; // g
+  sugar: number; // g
+  fiber: number; // g
+  salt: number; // g
 }
 
 const FIELD: Partial<Record<Signal["kind"], keyof Omit<NutritionDay, "date">>> = {
@@ -31,7 +41,17 @@ const FIELD: Partial<Record<Signal["kind"], keyof Omit<NutritionDay, "date">>> =
   carbs: "carbs",
   fat: "fat",
   water: "water",
+  satFat: "satFat",
+  sugar: "sugar",
+  fiber: "fiber",
+  salt: "salt",
 };
+
+/** A zeroed day — one place, so a new field can never be forgotten in one of
+ *  the two constructors below (both clients use it for their own fallbacks). */
+export const emptyNutritionDay = (date: string): NutritionDay => ({
+  date, kcal: 0, protein: 0, carbs: 0, fat: 0, water: 0, satFat: 0, sugar: 0, fiber: 0, salt: 0,
+});
 
 /** Aggregate nutrition signals into per-day totals, newest day first. */
 export function dailyNutrition(signals: Signal[]): NutritionDay[] {
@@ -40,7 +60,7 @@ export function dailyNutrition(signals: Signal[]): NutritionDay[] {
     const field = FIELD[s.kind];
     if (!field) continue;
     const d = dayKey(s.ts);
-    const row = map.get(d) ?? { date: d, kcal: 0, protein: 0, carbs: 0, fat: 0, water: 0 };
+    const row = map.get(d) ?? emptyNutritionDay(d);
     row[field] += s.value;
     map.set(d, row);
   }
@@ -50,11 +70,7 @@ export function dailyNutrition(signals: Signal[]): NutritionDay[] {
 /** Today's running totals (zeros if nothing logged yet). */
 export function todayNutrition(signals: Signal[], now = Date.now()): NutritionDay {
   const today = localTodayKey(now);
-  return (
-    dailyNutrition(signals).find((d) => d.date === today) ?? {
-      date: today, kcal: 0, protein: 0, carbs: 0, fat: 0, water: 0,
-    }
-  );
+  return dailyNutrition(signals).find((d) => d.date === today) ?? emptyNutritionDay(today);
 }
 
 export interface MaintenanceEstimate {
@@ -421,6 +437,36 @@ export function mealPresetSignals(p: MealPreset): { kind: Signal["kind"]; value:
 }
 
 /**
+ * Every Signal one logged food writes, for a given serving count — the four
+ * macros ALWAYS, plus one reading per label field the food actually states.
+ * ONE builder so the server, the presets and any future logging path agree on
+ * what a log means (and so adding a field is a one-line change here, not four).
+ *
+ * A field that isn't stated writes NO Signal: absence in the stream is how the
+ * day-rollup knows the day is only partially described. Zeros would lie.
+ */
+export function foodLogSignals(
+  facts: NutritionFacts,
+  qty = 1,
+): { kind: Signal["kind"]; value: number; unit: string }[] {
+  const s = scaleFacts(facts, qty);
+  const out: { kind: Signal["kind"]; value: number; unit: string }[] = [
+    { kind: "energyIntake", value: Math.round(s.kcal), unit: "kcal" },
+    { kind: "protein", value: Math.round(s.protein), unit: "g" },
+    { kind: "carbs", value: Math.round(s.carbs), unit: "g" },
+    { kind: "fat", value: Math.round(s.fat), unit: "g" },
+  ];
+  const panel: [Signal["kind"], number | null | undefined][] = [
+    ["satFat", s.satFat], ["sugar", s.sugar], ["fiber", s.fiber], ["salt", s.salt],
+  ];
+  for (const [kind, v] of panel) {
+    if (unknown(v)) continue;
+    out.push({ kind, value: Math.round((v as number) * 10) / 10, unit: "g" });
+  }
+  return out.filter((r) => r.value > 0);
+}
+
+/**
  * One component of a meal being composed from saved products — a product's
  * single-serving macros plus how many servings of it the meal includes. Shared
  * by both clients so the "create a meal FROM products" builder sums identically.
@@ -491,17 +537,31 @@ export interface DerivedFoodEntry {
   protein: number;
   carbs: number;
   fat: number;
+  /** The label panel, when the log wrote it — null means not stated. */
+  satFat: number | null;
+  sugar: number | null;
+  fiber: number | null;
+  salt: number | null;
   /** Always 1 — a derived entry has no per-serving base to multiply. */
   qty: number;
   ts: string;
   derived: true;
 }
 
-const DERIVED_FIELD: Record<string, "kcal" | "protein" | "carbs" | "fat"> = {
+type DerivedField = "kcal" | "protein" | "carbs" | "fat" | "satFat" | "sugar" | "fiber" | "salt";
+
+// The label-panel kinds are grouped too — not only so a derived entry can SHOW
+// them, but so their Signal ids join the entry's id and a delete removes the
+// whole log rather than orphaning four readings the diary can no longer reach.
+const DERIVED_FIELD: Record<string, DerivedField> = {
   energyIntake: "kcal",
   protein: "protein",
   carbs: "carbs",
   fat: "fat",
+  satFat: "satFat",
+  sugar: "sugar",
+  fiber: "fiber",
+  salt: "salt",
 };
 
 /**
@@ -515,7 +575,7 @@ export function derivedFoodEntries(
   opts?: { exclude?: Iterable<string> },
 ): DerivedFoodEntry[] {
   const skip = new Set(opts?.exclude ?? []);
-  type Group = { ids: string[]; source: string; ts: string; kcal: number; protein: number; carbs: number; fat: number };
+  type Group = { ids: string[]; source: string; ts: string } & Record<DerivedField, number>;
   const groups = new Map<string, Group>();
   for (const s of signals) {
     const field = DERIVED_FIELD[s.kind];
@@ -523,7 +583,7 @@ export function derivedFoodEntries(
     const ts = typeof s.ts === "string" ? s.ts : s.ts.toISOString();
     const key = `${ts}|${s.source}`;
     let g = groups.get(key);
-    if (!g) { g = { ids: [], source: s.source, ts, kcal: 0, protein: 0, carbs: 0, fat: 0 }; groups.set(key, g); }
+    if (!g) { g = { ids: [], source: s.source, ts, kcal: 0, protein: 0, carbs: 0, fat: 0, satFat: 0, sugar: 0, fiber: 0, salt: 0 }; groups.set(key, g); }
     g.ids.push(s.id);
     g[field] += Number.isFinite(s.value) ? s.value : 0;
   }
@@ -539,6 +599,12 @@ export function derivedFoodEntries(
       protein: g.protein,
       carbs: g.carbs,
       fat: g.fat,
+      // A panel field is only real when the log actually wrote it — a zero here
+      // means "no such Signal", which is NOT STATED, not zero grams.
+      satFat: g.satFat > 0 ? g.satFat : null,
+      sugar: g.sugar > 0 ? g.sugar : null,
+      fiber: g.fiber > 0 ? g.fiber : null,
+      salt: g.salt > 0 ? g.salt : null,
       qty: 1,
       ts: g.ts,
       derived: true,

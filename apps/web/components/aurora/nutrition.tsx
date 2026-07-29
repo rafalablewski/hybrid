@@ -10,7 +10,9 @@ import {
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
-  type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type OffFood,
+  nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
+  type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
+  type MicroFacts, type NutritionFacts, type VerifiedStamp,
   type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
@@ -19,6 +21,14 @@ import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
+
+// The Create Food form's blank state — one constant, so the reset paths can
+// never fall out of step with the fields the form actually has.
+const BLANK_CREATE_FORM = {
+  name: "", subname: "", serving: "", unit: "gram",
+  kcal: "", carbs: "", protein: "", fat: "",
+  satFat: "", sugar: "", fiber: "", salt: "",
+};
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "w.recovery.nutrition.goalLose" }, { id: "maintain", label: "w.recovery.nutrition.goalMaintain" }, { id: "gain", label: "w.recovery.nutrition.goalGain" },
@@ -39,15 +49,15 @@ const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunris
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
-type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number };
+type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 // One editable logged entry (per-serving macros + qty) the Diary lists.
 // `derived` marks an entry the server rebuilt from its Signals because no
 // FoodLog row exists for it (logged before the table shipped, or the migration
 // hasn't run) — it edits by a relative scale instead of an absolute quantity.
-type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean };
-type SavedMeal = { id: string; name: string; subname?: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
-type FoodProduct = { id: string; name: string; subname?: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
+type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean } & MicroFacts;
+type SavedMeal = { id: string; name: string; subname?: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts;
+type FoodProduct = { id: string; name: string; subname?: string | null; servingLabel: string; servingGrams?: number | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
 
 // Recent / Favorites persistence — a tiny per-device MRU + starred list so the
 // picker's tabs work without a backend (best-effort; ignores private-mode).
@@ -112,12 +122,70 @@ function recipeHeroBg(tint: string): React.CSSProperties {
   return { background: map[tint] ?? map.amber };
 }
 
+// The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
+// uses, so "checked by us" reads identically wherever it appears in the app.
+// Not decoration: it only ever renders when a `VerifiedStamp` is present.
+function VerifiedMark({ size = 13 }: { size?: number }) {
+  const { t } = useLang();
+  return (
+    <span
+      title={t("w.recovery.nutrition.verified")}
+      aria-label={t("w.recovery.nutrition.verified")}
+      style={{ display: "inline-flex", alignItems: "center", color: "var(--lime-text)", fontSize: size, lineHeight: 1, flexShrink: 0 }}
+    >
+      ✓
+    </span>
+  );
+}
+
+// The nutrition-facts panel — the EU label, rendered from ONE core function
+// (nutritionPanel) so web and mobile can never disagree about what a food says.
+// A field the food never stated shows an em dash, NEVER "0 g": an unstated sugar
+// content is not a sugar-free food, and quietly printing a zero would be the
+// single most misleading thing this surface could do.
+function FactsPanel({ C, facts, per100, scale = 1 }: {
+  C: (v: string) => string; facts: NutritionFacts; per100?: NutritionFacts | null; scale?: number;
+}) {
+  const { t } = useLang();
+  const rows = nutritionPanel(scale === 1 ? facts : { ...facts, kcal: facts.kcal * scale, protein: facts.protein * scale, carbs: facts.carbs * scale, fat: facts.fat * scale, satFat: notStated(facts.satFat) ? null : (facts.satFat as number) * scale, sugar: notStated(facts.sugar) ? null : (facts.sugar as number) * scale, fiber: notStated(facts.fiber) ? null : (facts.fiber as number) * scale, salt: notStated(facts.salt) ? null : (facts.salt as number) * scale });
+  const p100 = per100 ? nutritionPanel(per100) : null;
+  return (
+    <div style={{ marginTop: 18, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "4px 14px 8px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "12px 0 8px" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.facts.title")}</span>
+        {p100 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.facts.per100")}</span>}
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.key} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "7px 0", borderTop: i === 0 ? "none" : `1px solid ${C("line")}` }}>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontWeight: r.sub ? 500 : 700, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C("ash") : C("chalk"), paddingLeft: r.sub ? 14 : 0 }}>
+            {t(r.labelKey)}
+          </span>
+          {r.note && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), whiteSpace: "nowrap" }}>{r.note}</span>}
+          <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", minWidth: 64, textAlign: "right" }}>
+            {r.value ?? "—"}
+          </span>
+          {p100 && (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", minWidth: 62, textAlign: "right" }}>
+              {p100[i]!.value ?? "—"}
+            </span>
+          )}
+        </div>
+      ))}
+      {rows.some((r) => !r.value) && (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), paddingTop: 8, lineHeight: 1.5 }}>
+          {t("w.recovery.nutrition.facts.notStatedNote")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a swipe-left-to-reveal delete (a
 // personal item). The row body opens the portion editor; the trash sits behind.
-function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete }: {
+function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete, verified }: {
   C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
-  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void;
+  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
   const [dx, setDx] = useState(0);
   const start = useRef<number | null>(null);
@@ -140,6 +208,7 @@ function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDe
         <button onClick={onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
+            {verified && <VerifiedMark />}
             {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
@@ -187,7 +256,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // MEAL. Name + the personal Subname sit on the title plate; serving + unit
   // (products only) compose the stored servingLabel, e.g. 100 + "gram".
   const [createMode, setCreateMode] = useState<"product" | "meal">("product");
-  const [createForm, setCreateForm] = useState({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+  const [createForm, setCreateForm] = useState(BLANK_CREATE_FORM);
+  // The label panel is OPTIONAL and folded away by default — most foods a user
+  // types in have only the four macros, and four more always-visible fields
+  // would make the common case worse to serve the rarer one.
+  const [showPanelFields, setShowPanelFields] = useState(false);
   const [unitPicker, setUnitPicker] = useState(false);
   // A meal can be composed FROM saved products: each component is a product with
   // a serving count; the meal's macros are the summed total (sumMealComponents).
@@ -196,7 +269,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [mealComps, setMealComps] = useState<MealComp[]>([]);
   const [compPicker, setCompPicker] = useState(false); // the "Add product" sheet
   const [compQuery, setCompQuery] = useState("");
-  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setLibMsg(""); setMealComps([]); setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" }); setView("create"); };
+  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setLibMsg(""); setMealComps([]); setCreateForm(BLANK_CREATE_FORM); setShowPanelFields(false); setView("create"); };
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProduct) => setMealComps((xs) => {
@@ -320,7 +393,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   useEffect(() => { loadLogs(); }, [loadLogs]);
   // Log one food/meal → creates the editable entry AND the mirrored Signals the
   // engines read (one round-trip). Returns false (with an error set) on failure.
-  const logEntry = useCallback(async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number }): Promise<boolean> => {
+  const logEntry = useCallback(async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
     const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(e) });
     if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return false; }
     if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return false; }
@@ -356,14 +429,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   //    serving × quantity stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
   //    saved meal, so scaling isn't just for the database.
-  type PortionBase = { name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; source: string; offFood?: OffFood };
+  // Everything the portion editor needs to show a full label and log it back:
+  // the four macros, the LABEL PANEL (satFat/sugar/fiber/salt — null where the
+  // food never stated it), the serving weight for a per-100 g comparison, and
+  // the HYBRID Verified stamp when the item came from our checked catalog.
+  type PortionBase = {
+    name: string; subname?: string | null; subtitle?: string; serving: string;
+    kcal: number; protein: number; carbs: number; fat: number;
+    source: string; offFood?: FoodHit;
+    servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null;
+  } & MicroFacts;
   const [portion, setPortion] = useState<PortionBase | null>(null);
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
 
   // Log a saved meal → opens the portion editor (default 1×); the SAME
   // energyIntake/protein/carbs/fat signals as a manual add, scaled by quantity.
-  const logMeal = (m: SavedMeal) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, source: "meal" });
+  const logMeal = (m: SavedMeal) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat, sugar: m.sugar, fiber: m.fiber, salt: m.salt, source: "meal" });
 
   // Write the scaled macros for the open portion, then close. The log is
   // attributed to the current meal (source = mealType) so the hub can group
@@ -375,9 +457,19 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     try {
       // Store per-serving macros + qty so the entry stays editable (a later qty
       // change rescales it). Attributed to the current part of the day.
-      const ok = await logEntry({ name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, qty: q });
+      const ok = await logEntry({
+        name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType,
+        kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
+        satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
+        verifiedId: portion.verifiedId ?? null, qty: q,
+      });
       if (!ok) return;
-      pushRecent({ key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving, kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat });
+      pushRecent({
+        key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving,
+        kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
+        satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
+        servingGrams: portion.servingGrams, verified: portion.verified, verifiedId: portion.verifiedId ?? null,
+      });
       setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
       setPortion(null);
       await load(); await loadLogs(); revalidate.recovery();
@@ -385,7 +477,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   };
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
-  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, source: mealType });
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, verified: q.verified, verifiedId: q.verifiedId, source: mealType });
   // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
@@ -415,15 +507,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       ? { kcal: compTotals.kcal || undefined, protein: compTotals.protein, carbs: compTotals.carbs, fat: compTotals.fat }
       : { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
     const serving = createForm.serving.trim();
+    // A BLANK panel field stays undefined, not 0 — leaving "sugars" empty means
+    // "I don't know", and writing a zero there would invent a fact.
+    const opt = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : undefined; };
+    const panelFields = { satFat: opt(createForm.satFat), sugar: opt(createForm.sugar), fiber: opt(createForm.fiber), salt: opt(createForm.salt) };
+    const servingGrams = createForm.unit === "gram" ? opt(serving) : undefined;
     const body = isMeal
-      ? { name: createForm.name.trim(), subname, ...macros }
-      : { name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, ...macros };
+      ? { name: createForm.name.trim(), subname, ...macros, ...panelFields }
+      : { name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, servingGrams, ...macros, ...panelFields };
     try {
       const res = await fetch(isMeal ? "/api/nutrition/meals" : "/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 403) { onNavigate?.("upgrade"); return; }
       if (res.status === 401) { setLibMsg(t("w.recovery.nutrition.errSignIn")); return; }
       if (!res.ok) { setLibMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      setCreateForm({ name: "", subname: "", serving: "", unit: "gram", kcal: "", carbs: "", protein: "", fat: "" });
+      setCreateForm(BLANK_CREATE_FORM);
+      setShowPanelFields(false);
       setMealComps([]);
       await loadLibrary();
       setFoodTab("personal"); setView("add");
@@ -431,7 +529,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   };
 
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProduct) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, source: mealType });
+  const logProduct = (p: FoodProduct) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId, source: mealType });
 
   const saveMeal = async () => {
     if (!mealForm.name.trim()) return;
@@ -513,7 +611,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   //    proxy. The single box takes text OR a barcode (the server auto-detects a
   //    number). Debounced; a hit can be LOGGED to today or SAVED to the library.
   const [foodQuery, setFoodQuery] = useState("");
-  const [foodResults, setFoodResults] = useState<OffFood[]>([]);
+  const [foodResults, setFoodResults] = useState<FoodHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [foodMsg, setFoodMsg] = useState("");
   useEffect(() => {
@@ -523,7 +621,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const id = setTimeout(async () => {
       try {
         const res = await fetch(`/api/nutrition/search?q=${encodeURIComponent(q)}`);
-        const data = (await res.json()) as { foods?: OffFood[] };
+        const data = (await res.json()) as { foods?: FoodHit[] };
         setFoodResults(data.foods ?? []);
       } catch { setFoodResults([]); }
       finally { setSearching(false); }
@@ -534,13 +632,26 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Log a database food → opens the portion editor (serving × quantity), which
   // also offers to save it into the library. The write is the SAME signals as a
   // manual add, scaled by quantity.
-  const logFood = (food: OffFood) => openPortion({ name: food.name, subtitle: food.brand ?? undefined, serving: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat, source: "off", offFood: food });
+  const logFood = (food: FoodHit) => openPortion({
+    name: food.name, subtitle: food.brand ?? undefined, serving: food.serving,
+    kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+    satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+    servingGrams: food.servingGrams, verified: food.verified, verifiedId: food.id ?? null,
+    // A verified item is attributed to the part of the day like any other food;
+    // only a community hit keeps the generic "off" source.
+    source: food.verified ? mealType : "off", offFood: food,
+  });
 
   // Save a database food into the personal library (respects the free cap).
-  const saveFood = async (food: OffFood) => {
+  const saveFood = async (food: FoodHit) => {
     if (!canSaveAnotherProduct) { onNavigate?.("upgrade"); return; }
     setFoodMsg("");
-    const body = { name: food.name, servingLabel: food.serving, kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat };
+    const body = {
+      name: food.name, subname: food.brand, servingLabel: food.serving, servingGrams: food.servingGrams,
+      kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+      satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+      verifiedId: food.id ?? null,
+    };
     try {
       const res = await fetch("/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 403) { onNavigate?.("upgrade"); return; }
@@ -604,7 +715,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // The selected day's TOTALS — read from the always-on Signals (dailyNutrition),
   // so the summary + per-part breakdown work for any past day even before the
   // FoodLog table exists (the per-entry edit/delete list still needs FoodLog).
-  const daySummary = useMemo(() => dailyNutrition(signals).find((d) => d.date === diaryDay) ?? { date: diaryDay, kcal: 0, protein: 0, carbs: 0, fat: 0 }, [signals, diaryDay]);
+  const daySummary = useMemo(() => dailyNutrition(signals).find((d) => d.date === diaryDay) ?? emptyNutritionDay(diaryDay), [signals, diaryDay]);
   const dayPartKcal = useMemo(() => {
     const totals: Record<string, number> = {};
     for (const s of signals) {
@@ -876,6 +987,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const stepBtn = { width: 44, height: 44, borderRadius: 14, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
         return (
           <div style={{ paddingBottom: 6 }}>
+            {portion.verified && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 14, padding: "10px 12px", marginTop: 12 }}>
+                <VerifiedMark size={14} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3, lineHeight: 1.5 }}>
+                    {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified.sourceName).replace("{date}", portion.verified.verifiedOn)}
+                  </div>
+                </div>
+              </div>
+            )}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", marginTop: 14 }}>
               <button onClick={() => setQty((x) => Math.max(0.5, Math.round((x - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={stepBtn}>–</button>
@@ -897,6 +1019,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 </div>
               ))}
             </div>
+            {/* The label panel — saturates, sugars, fibre, salt and the kJ figure
+                the four macro tiles above can't carry. Scaled by the same
+                quantity, and per-100 g alongside when the serving weight is
+                known (the only fair way to compare two different servings). */}
+            <FactsPanel
+              C={C}
+              scale={q}
+              facts={{ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }}
+              per100={per100g({ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }, portion.servingGrams)}
+            />
             {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
             <div style={{ display: "grid", gridTemplateColumns: portion.offFood ? "1fr 1fr" : "1fr", gap: 10, marginTop: 16 }}>
               {portion.offFood && <button onClick={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 13, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
@@ -1022,7 +1154,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             ) : foodResults.length === 0 ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "14px 2px", lineHeight: 1.5 }}>{t("w.recovery.nutrition.foodNoResults")}</div>
             ) : foodResults.map((food, i) => (
-              <FoodRow key={`${food.code}-${i}`} C={C} name={food.name} meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`} onAdd={() => logFood(food)} chevron />
+              <FoodRow
+                key={`${food.id || food.code}-${i}`} C={C}
+                name={food.name}
+                subname={food.brand}
+                meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
+                onAdd={() => logFood(food)}
+                verified={food.verified}
+                chevron
+              />
             ))}
           </div>
         ) : foodTab === "meals" ? (
@@ -1127,6 +1267,37 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {tile(t("w.recovery.nutrition.carbs"), "var(--amber-text)", createForm.carbs, (v) => setCF({ carbs: v }), fromComps ? compTotals.carbs : undefined)}
           {tile(t("w.recovery.nutrition.fat"), "var(--violet-text)", createForm.fat, (v) => setCF({ fat: v }), fromComps ? compTotals.fat : undefined)}
         </div>
+
+        {/* The label panel — optional, folded away. Anything left blank stays
+            NOT STATED rather than becoming a zero the diary would believe. */}
+        <button
+          onClick={() => setShowPanelFields((x) => !x)}
+          aria-expanded={showPanelFields}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginTop: 18, background: "transparent", border: "none", padding: "6px 2px", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.caption }}
+        >
+          <span>{t("w.recovery.nutrition.facts.moreDetail")}</span>
+          <span style={{ transform: showPanelFields ? "rotate(180deg)" : "none", transition: "transform .2s", display: "inline-flex" }}><IChevDown size={13} color={C("ash")} /></span>
+        </button>
+        {showPanelFields && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+            {([["satFat", "w.recovery.nutrition.facts.satFat"], ["sugar", "w.recovery.nutrition.facts.sugar"], ["fiber", "w.recovery.nutrition.facts.fiber"], ["salt", "w.recovery.nutrition.facts.salt"]] as const).map(([key, lab]) => (
+              <label key={key} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 13px" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t(lab)}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                  <input
+                    value={createForm[key]}
+                    onChange={(e) => setCF({ [key]: e.target.value } as Partial<typeof createForm>)}
+                    inputMode="decimal"
+                    placeholder="—"
+                    aria-label={t(lab)}
+                    style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, padding: "3px 0 0" }}
+                  />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>g</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
 
         {/* Products — compose a meal from your saved products (meal only). Each
             component carries a serving count; the macros above are their sum. */}
@@ -1828,6 +1999,24 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
           ))}
         </div>
+        {/* The label panel for the whole day. It is a FLOOR, not a total — only
+            the foods that stated a value contribute one, so the caption says so
+            rather than letting a partial number read as a complete one. */}
+        {(daySummary.satFat > 0 || daySummary.sugar > 0 || daySummary.salt > 0 || daySummary.fiber > 0) && (
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+              {([["w.recovery.nutrition.facts.satFat", daySummary.satFat], ["w.recovery.nutrition.facts.sugar", daySummary.sugar], ["w.recovery.nutrition.facts.fiber", daySummary.fiber], ["w.recovery.nutrition.facts.salt", daySummary.salt]] as const)
+                .filter(([, v]) => v > 0)
+                .map(([lab, v]) => (
+                  <div key={lab}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t(lab)}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), fontVariantNumeric: "tabular-nums", marginTop: 3 }}>{Math.round(v * 10) / 10} g</div>
+                  </div>
+                ))}
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10 }}>{t("w.recovery.nutrition.facts.dayPartial")}</div>
+          </div>
+        )}
       </div>
 
       {/* PER-PART BREAKDOWN — each part's total, then its individual editable

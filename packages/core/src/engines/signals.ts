@@ -34,12 +34,19 @@ export type SignalKind =
   // composition / physiology
   | "bodyMass"
   | "bloodMarker"
-  // nutrition (manual macro logging; food DB is a separate, blocked layer)
+  // nutrition — the four macros the engines read…
   | "energyIntake"
   | "protein"
   | "carbs"
   | "fat"
-  | "water";
+  | "water"
+  // …plus the LABEL panel (food-facts.ts). Logged whenever the food states
+  // them, so a day can answer "how much of that fat was saturated?" — these
+  // are recorded and rolled up, they do not (yet) drive a target.
+  | "satFat"
+  | "sugar"
+  | "fiber"
+  | "salt";
 
 /** Whether a higher reading is good ("high") or bad ("low") for the athlete. */
 export type SignalDirection = "high" | "low";
@@ -82,6 +89,12 @@ const META: Record<SignalKind, { unit: string; better: SignalDirection }> = {
   carbs: { unit: "g", better: "high" },
   fat: { unit: "g", better: "high" },
   water: { unit: "ml", better: "high" },
+  // Label panel: "better: low" is the honest direction for these — they are
+  // things to keep under a ceiling, not totals to chase.
+  satFat: { unit: "g", better: "low" },
+  sugar: { unit: "g", better: "low" },
+  fiber: { unit: "g", better: "high" },
+  salt: { unit: "g", better: "low" },
 };
 
 /** Every known signal kind — the single source of truth (API allow-lists derive from this). */

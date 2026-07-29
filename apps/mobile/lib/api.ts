@@ -1,4 +1,4 @@
-import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, OffFood, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
+import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -353,8 +353,12 @@ export async function favouriteRoutine(id: string, favourite: boolean): Promise<
 }
 
 // ── Nutrition library — the user's own saved meals + custom products ──────────
-export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number };
-export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; kcal: number; protein: number; carbs: number; fat: number };
+// Every food row carries the optional LABEL PANEL (@hybrid/core MicroFacts —
+// satFat/sugar/fiber/salt, null where the food never stated it) alongside the
+// four macros, so the panel survives the whole round-trip: search → portion
+// editor → log → diary, and library → log.
+export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts;
+export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
 
 export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
   try {
@@ -369,7 +373,7 @@ export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
 // Status-aware so the caller can tell the free meal limit (403) from a missing
 // sign-in (401) or a network failure (status null) and route to upgrade on 403.
 export async function createSavedMeal(
-  meal: { name: string; subname?: string; emoji?: string; kcal?: number; protein: number; carbs: number; fat: number },
+  meal: { name: string; subname?: string; emoji?: string; kcal?: number; protein: number; carbs: number; fat: number } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/meals`, {
@@ -427,7 +431,7 @@ export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
 }
 
 export async function createFoodProduct(
-  product: { name: string; subname?: string; servingLabel?: string; kcal?: number; protein: number; carbs: number; fat: number },
+  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {
@@ -454,7 +458,7 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
 // `derived` marks an entry the server rebuilt from its Signals because no
 // FoodLog row exists for it (logged before the table shipped, or the migration
 // hasn't run) — it edits by a relative scale instead of an absolute quantity.
-export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean };
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean } & MicroFacts;
 export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
@@ -467,7 +471,7 @@ export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
 // Log one food/meal → creates the editable entry AND the mirrored Signals the
 // engines read. Macros are PER SERVING; qty scales them.
 export async function createFoodLog(
-  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number },
+  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, {
@@ -517,15 +521,15 @@ export async function deleteFoodLog(id: string): Promise<boolean> {
 
 // Search the Open Food Facts database (via our /api/nutrition/search proxy).
 // `query` is text or a barcode number; returns normalized foods (empty on any
-// failure so the UI can fall back to manual entry). See @hybrid/core OffFood.
-export async function searchFoods(query: string, opts?: { barcode?: boolean }): Promise<OffFood[]> {
+// failure so the UI can fall back to manual entry). See @hybrid/core FoodHit.
+export async function searchFoods(query: string, opts?: { barcode?: boolean }): Promise<FoodHit[]> {
   const q = query.trim();
   if (!q) return [];
   const param = opts?.barcode ? `barcode=${encodeURIComponent(q)}` : `q=${encodeURIComponent(q)}`;
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/search?${param}`, { headers: await authHeaders() });
     if (!res.ok) return [];
-    return ((await res.json()) as { foods?: OffFood[] }).foods ?? [];
+    return ((await res.json()) as { foods?: FoodHit[] }).foods ?? [];
   } catch {
     return [];
   }
