@@ -50,3 +50,7 @@ pnpm-debug.log*
 # vercel
 .vercel
 .claude/worktrees/
+
+# Python bytecode (the TestFlight helper script)
+__pycache__/
+*.pyc

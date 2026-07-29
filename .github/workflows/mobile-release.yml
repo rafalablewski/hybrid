@@ -206,26 +206,13 @@ jobs:
           echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
           echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
 
-          # What TestFlight itself will show. READY_FOR_BETA_TESTING is the one
-          # that means "installable"; anything else is worth seeing in the log.
-          #
-          # DIAGNOSTIC ONLY — it must never fail the step. The build reaching
-          # VALID above IS the result; this is commentary on it. Apple publishes
-          # a build's beta detail slightly AFTER the build itself goes valid, so
-          # a lookup fired straight out of the loop can 404 — and the first cut
-          # of this let that non-zero exit kill an otherwise perfect run
-          # (job 90665506474: "Processing finished: VALID" then exit 1). Retry
-          # briefly for the eventual consistency, then report UNKNOWN and move
-          # on rather than failing a build that is sitting in App Store Connect.
-          INTERNAL=UNKNOWN
-          for _ in 1 2 3 4 5 6; do
-            BETA_JSON=$(app-store-connect builds beta-details "$BUILD_ID" --json 2>/dev/null || true)
-            FOUND=$(printf '%s' "$BETA_JSON" | jq -r '.attributes.internalBuildState // empty' 2>/dev/null || true)
-            if [ -n "$FOUND" ]; then INTERNAL="$FOUND"; break; fi
-            sleep 10
-          done
-          echo "Internal build state: $INTERNAL"
-          echo "INTERNAL_STATE=$INTERNAL" >> "$GITHUB_ENV"
+          # NOTE: the internal (TestFlight-visible) state is NOT read here.
+          # `app-store-connect builds beta-details` returned nothing within its
+          # retries on every run, so this step always reported UNKNOWN — which
+          # is how three builds could process cleanly and still never appear to
+          # a tester with nothing in the log to say so. The REST call that does
+          # work lives in the distribution step below, which now owns both
+          # reading that state and failing the run when it is not installable.
 
       # "What to Test" in TestFlight, set from the commit that triggered the
       # build. Without it every entry is an unlabelled 1.0.0 and the only way to
@@ -241,7 +228,7 @@ jobs:
             --locale en-US --whats-new "$NOTES"
 
       # ── The step that actually gets it onto a phone ────────────────────────
-      # A build that is VALID but attached to no beta group is INVISIBLE in
+      # A build that is VALID but not released to a beta group is INVISIBLE in
       # TestFlight and indistinguishable from one that never arrived: green run,
       # healthy API, build list simply does not grow. That is the state builds
       # 81278222 and 81281267 landed in while every earlier build appeared
@@ -249,11 +236,12 @@ jobs:
       #
       # The codemagic CLI can add a build to a group BY NAME but cannot LIST
       # groups, and a name we have to be told in advance is precisely what makes
-      # this fail silently. So this talks to the REST API: it prints every group
-      # with the two attributes that decide visibility (isInternalGroup,
-      # hasAccessToAllBuilds) — that listing is the diagnosis — and attaches the
-      # build to each internal group that does not already have it.
-      - name: Distribute to the internal testers
+      # this fail silently. So this talks to the REST API: it prints the app's
+      # recent builds and every beta group, attaches this build where it is
+      # missing, and then WAITS for internalBuildState to reach
+      # READY_FOR_BETA_TESTING — failing the run if it never does, because a
+      # green run that does not put the build on a phone is worse than a red one.
+      - name: Distribute to the internal testers and verify it is installable
         env:
           APPLE_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
           APPLE_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
@@ -278,10 +266,13 @@ jobs:
             echo "| Internal state | \`${INTERNAL_STATE:-unknown}\` |"
             echo "| Commit | \`${GITHUB_SHA:0:7}\` on \`${GITHUB_REF_NAME}\` |"
             echo
-            if [ "${INTERNAL_STATE:-}" != "READY_FOR_BETA_TESTING" ]; then
-              echo "> Processing finished, but the internal state is \`${INTERNAL_STATE:-unknown}\`"
-              echo "> rather than \`READY_FOR_BETA_TESTING\`. If it does not appear for"
-              echo "> testers, check that the build is assigned to an internal group."
+            if [ "${INTERNAL_STATE:-}" = "READY_FOR_BETA_TESTING" ]; then
+              echo "> Confirmed installable — this build is released to the internal"
+              echo "> group. Every build is \`1.0.0\`, so match on the number above."
+            else
+              echo "> **This build did NOT reach testers.** Internal state:"
+              echo "> \`${INTERNAL_STATE:-unknown}\`. The build list printed in the"
+              echo "> distribution step shows how far it got and what stalled it."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
