@@ -37,28 +37,41 @@ export type DeepLinkParams = {
 
 const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source"];
 
-/** Read the current link params. Empty object during SSR. */
-export function readDeepLink(): DeepLinkParams {
-  if (typeof window === "undefined") return {};
-  const q = new URLSearchParams(window.location.search);
+// ── The pure half ──────────────────────────────────────────────────────────
+// Parsing and serialising are plain string functions so they can be tested
+// without a DOM — the same pure-core / thin-shell split the rest of the
+// codebase uses. The DOM wrappers below are the only part that touches
+// `window`, and they contain no logic worth testing.
+
+/**
+ * Parse a query string into the params we own.
+ *
+ * This is the ONE place in the app where an attacker-controlled string — the
+ * contents of somebody's URL bar — is read into screen state, so every value is
+ * bounded and pattern-checked before it can reach a catalog lookup or the
+ * screen. Anything that isn't a plain id is dropped rather than rejected
+ * loudly: a link from an older build must degrade to "the app opened", never to
+ * an error page.
+ */
+export function parseDeepLink(search: string): DeepLinkParams {
+  const q = new URLSearchParams(search);
   const out: DeepLinkParams = {};
   for (const k of KEYS) {
     const v = q.get(k);
-    // Bound the value: these end up in lookups and, in the worst case, on
-    // screen. A link is attacker-controlled input like any other.
     if (v && v.length <= 64 && /^[A-Za-z0-9_-]+$/.test(v)) out[k] = v;
   }
   return out;
 }
 
 /**
- * Mirror state into the URL. Keys set to `undefined`/`null` are removed, so
- * leaving a product page drops `?food=` rather than leaving a stale address
- * pointing at a screen the user is no longer on.
+ * Apply a patch to a query string. Keys set to `undefined`/`null` are REMOVED,
+ * so leaving a product page drops `?food=` rather than leaving a stale address
+ * pointing at a screen the user is no longer on. Keys absent from the patch are
+ * left alone, so the shell and a screen can each own their own params without
+ * clobbering each other.
  */
-export function writeDeepLink(patch: DeepLinkParams, opts?: { push?: boolean }): void {
-  if (typeof window === "undefined") return;
-  const q = new URLSearchParams(window.location.search);
+export function applyDeepLink(search: string, patch: DeepLinkParams): string {
+  const q = new URLSearchParams(search);
   for (const k of KEYS) {
     if (!(k in patch)) continue;
     const v = patch[k];
@@ -66,7 +79,22 @@ export function writeDeepLink(patch: DeepLinkParams, opts?: { push?: boolean }):
     else q.delete(k);
   }
   const qs = q.toString();
-  const url = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+  return qs ? `?${qs}` : "";
+}
+
+// ── The DOM half ───────────────────────────────────────────────────────────
+
+/** Read the current link params. Empty object during SSR. */
+export function readDeepLink(): DeepLinkParams {
+  if (typeof window === "undefined") return {};
+  return parseDeepLink(window.location.search);
+}
+
+/** Mirror state into the URL. `push` only for real destinations — see the note
+ *  at the top of this file about not costing five Back presses to leave. */
+export function writeDeepLink(patch: DeepLinkParams, opts?: { push?: boolean }): void {
+  if (typeof window === "undefined") return;
+  const url = `${window.location.pathname}${applyDeepLink(window.location.search, patch)}${window.location.hash}`;
   try {
     if (opts?.push) window.history.pushState(null, "", url);
     else window.history.replaceState(null, "", url);

@@ -489,23 +489,42 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // bookmarked, or landed on from a push. `?food=` / `?source=` mirror the open
   // page; every other view stays local state, because "the diary, scrolled to
   // Tuesday" is not a thing anyone shares.
+  // A product page is a DESTINATION, so it gets a history entry (pushState) —
+  // unlike a tab switch, which only replaces. That is what makes Back close the
+  // page rather than leave the app.
+  const viewRef = useRef<NutView>(view);
+  viewRef.current = view;
   useEffect(() => {
     const apply = (p: { food?: string; source?: string }) => {
       if (p.food) { setFoodPageId(p.food); setPageBack("add"); setView("food"); }
       else if (p.source) { setSourcePageId(p.source); setPageBack("home"); setView("source"); }
+      // Back popped PAST the page: the param is gone, so the page must close.
+      // Without this the URL and the screen disagree and Back looks broken on
+      // the one screen we just gave history support to.
+      else if (viewRef.current === "food" || viewRef.current === "source") setView("add");
     };
     apply(readDeepLink());
     return onDeepLinkChange(apply);
   }, []);
+
+  const mirrored = useRef(false);
   useEffect(() => {
-    // Mirror only while a verified page is actually open, and clear on the way
-    // out — a stale ?food= pointing at a screen you left is a worse link than
-    // no link at all.
-    writeDeepLink({
-      food: view === "food" ? foodPageId ?? undefined : undefined,
-      source: view === "source" ? sourcePageId ?? undefined : undefined,
-    });
+    const open = view === "food" ? { food: foodPageId ?? undefined, source: undefined }
+      : view === "source" ? { food: undefined, source: sourcePageId ?? undefined }
+      : { food: undefined, source: undefined };
+    // Skip the very first run: on a cold landing the deep-link effect above has
+    // set state that hasn't flushed yet, so mirroring now would wipe the param
+    // we just arrived on and immediately write it back — URL churn for nothing.
+    if (!mirrored.current) { mirrored.current = true; if (readDeepLink().food || readDeepLink().source) return; }
+    // Opening a page PUSHES (so Back closes it); closing one replaces.
+    writeDeepLink(open, { push: !!(open.food || open.source) });
   }, [view, foodPageId, sourcePageId]);
+
+  // Leaving Nutrition entirely unmounts this screen, and its mirror never runs
+  // again — so without this the URL keeps `?food=` pointing at a page the user
+  // left. Worse, coming back to Nutrition later would re-read it and dump them
+  // on the burger instead of their hub.
+  useEffect(() => () => { writeDeepLink({ food: undefined, source: undefined }); }, []);
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
 
