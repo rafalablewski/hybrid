@@ -125,4 +125,52 @@ describe("sessionEnergy", () => {
     };
     expect(sessionEnergy(session, { bodyweightKg: 80, durationMin: 45 })!.minutes).toBe(45);
   });
+
+  // ── the device measured it; the model doesn't get a vote ───────────────────
+  const matched: LoggedSession = {
+    id: "s3",
+    title: "Tennis",
+    startedAt: "2026-07-29T10:00:00.000Z",
+    blocks: [{ kind: "cardio", name: "Tennis", minutes: 90 }],
+    device: {
+      provider: "apple",
+      uuid: "hk-1",
+      activityLabel: "Tennis",
+      start: "2026-07-29T10:00:00.000Z",
+      end: "2026-07-29T11:34:00.000Z",
+      durationMin: 94,
+      kcal: 677,
+      avgMets: 7.5,
+      source: "Apple Watch",
+    },
+  };
+
+  it("returns the device's measured energy, flagged as measured", () => {
+    const e = sessionEnergy(matched, { bodyweightKg: 80, durationMin: 94 })!;
+    expect(e.kcal).toBe(677);
+    expect(e.basis).toBe("device");
+    expect(e.measured).toBe(true);
+    expect(e.minutes).toBe(94);
+    // measured intensity: 7.5 METs across 94 min
+    expect(e.metMinutes).toBe(705);
+  });
+
+  it("needs no bodyweight for a measured burn — the device already weighed it", () => {
+    const e = sessionEnergy(matched, { bodyweightKg: null, durationMin: 94 })!;
+    expect(e.kcal).toBe(677);
+    expect(e.metMinutes).toBe(705);
+    // …and with no METs reported, intensity inverts out of the kcal (or is 0).
+    const noMets = { ...matched, device: { ...matched.device!, avgMets: undefined } };
+    expect(sessionEnergy(noMets, { bodyweightKg: null, durationMin: 94 })!.metMinutes).toBe(0);
+    expect(sessionEnergy(noMets, { bodyweightKg: 80, durationMin: 94 })!.metMinutes).toBe(484);
+  });
+
+  it("falls back to the model when the recording carried no energy, or when asked to ignore it", () => {
+    const noKcal = { ...matched, device: { ...matched.device!, kcal: undefined } };
+    expect(sessionEnergy(noKcal, { bodyweightKg: 80, durationMin: 94 })!.measured).toBe(false);
+    const modelled = sessionEnergy(matched, { bodyweightKg: 80, durationMin: 90, ignoreDevice: true })!;
+    expect(modelled.measured).toBe(false);
+    expect(modelled.basis).not.toBe("device");
+    expect(modelled.kcal).not.toBe(677);
+  });
 });

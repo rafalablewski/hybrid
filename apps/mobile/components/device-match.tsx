@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  deviceSourceLabel,
   rankDeviceWorkouts,
   type DeviceWorkout,
   type LoggedSession,
@@ -89,7 +90,8 @@ export function DeviceMatchSheet({
       `${w.durationMin} min`,
       ...(w.kcal != null ? [`${w.kcal} kcal`] : []),
       ...(w.avgHr != null ? [`♥ ${w.avgHr}`] : []),
-      ...(w.source ? [w.source] : []),
+      // Always the resolved device name — never the raw stored string.
+      ...(deviceSourceLabel(w) ? [deviceSourceLabel(w)!] : []),
     ].join(" – ");
   // The best card earns a richer second line — everything the recording holds.
   const metaFull = (w: DeviceWorkout) =>

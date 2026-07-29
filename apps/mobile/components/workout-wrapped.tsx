@@ -35,6 +35,8 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceSourceLabel,
+  sessionEnergy,
   type DeviceWorkout,
   type StoryStyleId,
   type LoggedSession,
@@ -155,8 +157,14 @@ export function WorkoutWrapped({
   }, []);
 
   const bwHere = bw(session.startedAt);
-  const wrapped = sessionWrapped(session, all, { units, bw });
-  const receipt = doneReceipt(session, { bodyweightKg: bwHere });
+  // The session AS THE APP NOW READS IT: a match made on this screen is the
+  // truth immediately, without waiting for the refetch to land.
+  const view = useMemo(() => ({ ...session, device }), [session, device]);
+  const wrapped = sessionWrapped(view, all, { units, bw });
+  // Device-first (every figure on this screen) and the logged-only read, which
+  // exists solely for the comparison panel's left column.
+  const receipt = doneReceipt(view, { bodyweightKg: bwHere });
+  const logged = doneReceipt(session, { bodyweightKg: bwHere, ignoreDevice: true });
   // "vs your usual" compares the athlete to THEMSELVES over the last month —
   // never a cohort, and never until there are enough rated sessions for the
   // comparison to mean anything (loadBaseline enforces the floor). Memoised:
@@ -168,7 +176,9 @@ export function WorkoutWrapped({
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
-  const minutes = session.completedAt ? Math.max(1, Math.round((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 60000)) : 0;
+  // The share card's minutes: the trusted (device-first) duration, falling back
+  // to the wall-clock span for a session with nothing better.
+  const minutes = receipt.durationMin ?? (session.completedAt ? Math.max(1, Math.round((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 60000)) : 0);
   const volume = sessionVolume(session.blocks, false, bwHere);
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const signature = sessionSignature(session);
@@ -270,9 +280,18 @@ export function WorkoutWrapped({
   // measured read next to the logged one; until then (and only when nothing is
   // measuring this athlete) it is the connect-a-device prompt.
   const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // Both columns come from the LOGGED read — the device's own figures are the
+  // other column, and passing the effective ones would print them twice.
   const comparison = device
-    ? deviceComparisonRows({ device, durationMin: receipt.durationMin, estimatedKcal: wrapped.energy?.kcal ?? null, distanceKm: receipt.distanceKm })
+    ? deviceComparisonRows({
+        device,
+        durationMin: logged.durationMin,
+        estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
+        distanceKm: logged.distanceKm,
+        elevationM: logged.elevationM,
+      })
     : [];
+  const deviceName = deviceSourceLabel(device);
   const onMatched = (d: DeviceWorkout | null) => {
     setDevice(d);
     void revalidate.sessions();
@@ -361,7 +380,7 @@ export function WorkoutWrapped({
           {device ? (
             <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
               <Text style={{ fontSize: 12 }}>⌚</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: txt(C, C.lime) }}>{device.source ?? t("session.device.matchedChip")} ✓</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: txt(C, C.lime) }}>{deviceName ?? t("session.device.matchedChip")} ✓</Text>
             </Pressable>
           ) : canMatch ? (
             <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
@@ -417,7 +436,7 @@ export function WorkoutWrapped({
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#0e0f0d" }}>
                 <View style={{ flex: 1.1 }} />
                 <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
-                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase", textAlign: "right" }}>{device.source ?? t("session.device.deviceCol")}</Text>
+                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
               </View>
               {comparison.map((r) => (
                 <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
@@ -428,6 +447,7 @@ export function WorkoutWrapped({
                 </View>
               ))}
             </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 16, color: C.ash, marginTop: 12 }}>{t("session.device.truth")}</Text>
             <View style={{ flexDirection: "row", gap: 16, marginTop: 20 }}>
               <Pressable onPress={() => setMatchOpen(true)}>
                 <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{t("session.device.rematch")}</Text>
@@ -520,7 +540,9 @@ export function WorkoutWrapped({
       {/* ── DEVICE MATCH SHEET ── */}
       <DeviceMatchSheet
         session={session}
-        sessionDurationMin={receipt.durationMin}
+        /* Ranking compares candidates against what the athlete LOGGED — scoring
+           against an already-matched device duration would just re-elect it. */
+        sessionDurationMin={logged.durationMin}
         visible={matchOpen}
         onClose={() => setMatchOpen(false)}
         onMatched={onMatched}

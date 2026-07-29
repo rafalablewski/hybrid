@@ -3,14 +3,25 @@
 //
 // The athlete logs "Tennis, 60 min" in HYBRID while the watch records the real
 // thing — measured calories, heart rate, precise moving time. Matching attaches
-// the watch's read to the session (Session.device, one JSON column) so the
-// summary can show both readings side by side: what the athlete logged (+ the
-// MET-model estimate) next to what the device measured. ONE source of truth for
-// both clients: the stored shape, the API sanitisation, the candidate ranking
-// (which device workout is probably THIS session) and the comparison rows the
-// summary panel renders. Pure + unit-tested; nothing here touches HealthKit —
-// the native read lives in apps/mobile/lib/healthkit.ts and only the phone can
-// perform a match (web renders the result and can unlink).
+// the watch's read to the session (Session.device, one JSON column).
+//
+// THE MEASUREMENT WINS. Once a session is matched, the device's read IS the
+// session's duration / energy / distance / climb everywhere in the app — the
+// summary hero, the week + logbook rails, the training-load model, the
+// nutrition fuel bump. What the athlete typed in stays as the SECONDARY
+// reading, shown only on the summary's comparison panel (logged next to
+// measured). A wrist strap measuring heart rate beats a number typed from
+// memory, so nothing downstream should ever prefer the typed one. The rule
+// itself lives in done-receipt.ts (`durationMin`, `distanceKm`, `elevationM`)
+// and energy.ts (`kcal`); both take an `ignoreDevice` escape hatch used by
+// exactly one caller — the comparison panel, which needs the logged column.
+//
+// ONE source of truth for both clients: the stored shape, the API sanitisation,
+// the candidate ranking (which device workout is probably THIS session), the
+// device's display name and the comparison rows the summary panel renders.
+// Pure + unit-tested; nothing here touches HealthKit — the native read lives in
+// apps/mobile/lib/healthkit.ts and only the phone can perform a match (web
+// renders the result and can unlink).
 
 /** A workout as read from the athlete's device, frozen at match time. Stored
  *  verbatim on Session.device — deliberately self-contained (label, not an HK
@@ -51,13 +62,72 @@ export interface DeviceWorkout {
   indoor?: boolean;
   /** Outdoor temperature at the workout, °C. */
   tempC?: number;
-  /** What recorded it ("Apple Watch"), when the store says. */
+  /** The DEVICE that recorded it, as the athlete would name it ("Apple Watch",
+   *  "Rafał's Apple Watch") — resolved on-device at match time. Read it through
+   *  `deviceSourceLabel`, never raw: rows matched before the native read was
+   *  fixed carry the bridge's class name instead of a device name. */
   source?: string;
   /** When the athlete confirmed the match (ISO) — server-stamped. */
   matchedAt?: string;
 }
 
 const MAX_LABEL = 60;
+
+/**
+ * Strings a health store can hand back in place of a device name, all of which
+ * must read as "no name": the native bridge's own class names (HealthKit's
+ * source object arrives as a Nitro hybrid object whose `name` is the CLASS —
+ * "SourceProxy" — shadowing the source's real name), and the usual stringified
+ * junk. Filtered on write AND on read, because sessions matched before the
+ * native read was fixed already carry "SourceProxy" in the database.
+ */
+const NON_DEVICE_NAMES = new Set([
+  "sourceproxy",
+  "workoutproxy",
+  "hybridobject",
+  "[object object]",
+  "object object",
+  "undefined",
+  "null",
+  "(null)",
+  "nan",
+  "unknown",
+]);
+
+/** True when `v` is a name an athlete would recognise as their device — i.e. a
+ *  non-empty string that isn't one of the bridge/junk placeholders above. */
+export function isDeviceName(v: unknown): v is string {
+  return typeof v === "string" && v.trim().length > 0 && !NON_DEVICE_NAMES.has(v.trim().toLowerCase());
+}
+
+/** The device a provider means when the recording didn't name one. Apple's
+ *  workout store is reached through the Watch, so "Apple Watch" is the honest
+ *  fallback there; other connectors name their own hardware. */
+const PROVIDER_DEVICE: Record<string, string> = {
+  apple: "Apple Watch",
+  whoop: "WHOOP",
+  oura: "Oura",
+  garmin: "Garmin",
+  polar: "Polar",
+  fitbit: "Fitbit",
+  suunto: "Suunto",
+  coros: "COROS",
+};
+
+/**
+ * What to CALL the device on screen: the recording's own device name when it
+ * has a real one, else the provider's device. Null when neither is known — the
+ * caller then renders its own translated "Device" label.
+ *
+ * Every surface that names the device goes through here, so a stored junk name
+ * ("SourceProxy" — see NON_DEVICE_NAMES) can never reach the athlete.
+ */
+export function deviceSourceLabel(d: { provider?: string; source?: string } | null | undefined): string | null {
+  if (!d) return null;
+  if (isDeviceName(d.source)) return d.source.trim();
+  const provider = typeof d.provider === "string" ? d.provider.trim().toLowerCase() : "";
+  return PROVIDER_DEVICE[provider] ?? null;
+}
 
 const isoOrNull = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
@@ -99,7 +169,9 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
   const tempC = boundedNum(o.tempC, -40, 60);
   const indoor = typeof o.indoor === "boolean" ? o.indoor : null;
   const provider = typeof o.provider === "string" && o.provider.trim() ? o.provider.trim().slice(0, 24) : "apple";
-  const source = typeof o.source === "string" && o.source.trim() ? o.source.trim().slice(0, MAX_LABEL) : null;
+  // A bridge class name is not a device name — drop it here so it is never
+  // stored, and `deviceSourceLabel` catches the rows written before this.
+  const source = isDeviceName(o.source) ? (o.source as string).trim().slice(0, MAX_LABEL) : null;
   const matchedAt = isoOrNull(o.matchedAt);
 
   return {
@@ -200,11 +272,16 @@ export interface DeviceComparisonRow {
 }
 
 /**
- * Build the comparison the summary renders once a session is matched: the
- * athlete's own numbers (+ the MET estimate) in one column, the device's
- * measurements in the other. Rows where NEITHER side has anything to say are
- * dropped; a device-only row (heart rate) keeps its null app side — the gap is
- * the point of the panel.
+ * Build the comparison the summary renders once a session is matched: what the
+ * athlete logged (+ the MET estimate) in one column, what the device measured
+ * in the other. Rows where NEITHER side has anything to say are dropped; a
+ * device-only row (heart rate) keeps its null app side — the gap is the point
+ * of the panel.
+ *
+ * This is the ONE surface that still shows the logged figures once a session is
+ * matched (everywhere else the measurement wins), so callers must pass the
+ * app-side values read with `ignoreDevice: true` — passing the effective ones
+ * would print the device's numbers in both columns.
  */
 export function deviceComparisonRows(opts: {
   device: DeviceWorkout;

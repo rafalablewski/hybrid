@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   deviceComparisonRows,
   deviceMatchScore,
+  deviceSourceLabel,
+  isDeviceName,
   rankDeviceWorkouts,
   sanitizeDeviceWorkout,
   type DeviceWorkout,
@@ -135,5 +137,34 @@ describe("deviceComparisonRows", () => {
     expect(rows.find((r) => r.labelKey === "session.wrapped.elevation")!.device).toBe("84 m");
     expect(rows.find((r) => r.labelKey === "session.device.avgMets")!.device).toBe("9.8");
     expect(rows.some((r) => r.labelKey === "session.device.strokes")).toBe(false);
+  });
+});
+
+describe("device names", () => {
+  it("reads a real device name and rejects the bridge's class name", () => {
+    expect(isDeviceName("Apple Watch")).toBe(true);
+    expect(isDeviceName("Rafał's Apple Watch")).toBe(true);
+    // The Nitro hybrid object's own `name` — what shipped before the fix.
+    expect(isDeviceName("SourceProxy")).toBe(false);
+    expect(isDeviceName("sourceproxy")).toBe(false);
+    expect(isDeviceName("[object Object]")).toBe(false);
+    expect(isDeviceName("   ")).toBe(false);
+    expect(isDeviceName(undefined)).toBe(false);
+  });
+
+  it("names the device, falling back to the provider's hardware", () => {
+    expect(deviceSourceLabel(watchTennis)).toBe("Apple Watch");
+    expect(deviceSourceLabel({ ...watchTennis, source: "Rafał's Apple Watch" })).toBe("Rafał's Apple Watch");
+    // A row matched before the native read was fixed still carries the junk.
+    expect(deviceSourceLabel({ ...watchTennis, source: "SourceProxy" })).toBe("Apple Watch");
+    expect(deviceSourceLabel({ ...watchTennis, source: undefined })).toBe("Apple Watch");
+    expect(deviceSourceLabel({ provider: "whoop" })).toBe("WHOOP");
+    expect(deviceSourceLabel({ provider: "mystery-band" })).toBeNull();
+    expect(deviceSourceLabel(null)).toBeNull();
+  });
+
+  it("never stores a bridge class name as the source", () => {
+    expect(sanitizeDeviceWorkout({ ...watchTennis, source: "SourceProxy" })!.source).toBeUndefined();
+    expect(sanitizeDeviceWorkout({ ...watchTennis, source: "Apple Watch" })!.source).toBe("Apple Watch");
   });
 });

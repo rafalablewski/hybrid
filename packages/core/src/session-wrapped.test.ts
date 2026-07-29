@@ -147,6 +147,56 @@ describe("sessionWrapped — discipline shapes", () => {
   });
 });
 
+describe("sessionWrapped — a matched device", () => {
+  const tennis: LoggedSession = {
+    id: "t1",
+    title: "Tennis",
+    startedAt: "2026-07-29T10:00:00.000Z",
+    completedAt: "2026-07-29T10:02:00.000Z",
+    blocks: [{ kind: "cardio", name: "Tennis", discipline: "sport", minutes: 90 }],
+    device: {
+      provider: "apple",
+      uuid: "hk-1",
+      activityLabel: "Tennis",
+      start: "2026-07-29T10:00:00.000Z",
+      end: "2026-07-29T11:34:00.000Z",
+      durationMin: 94,
+      kcal: 677,
+      avgHr: 134,
+      maxHr: 165,
+      avgMets: 7.5,
+      source: "Apple Watch",
+    },
+  };
+
+  it("headlines the measured duration and the measured burn, with no '~'", () => {
+    const w = sessionWrapped(tennis, [tennis], { units: "kg", bw: 80 });
+    expect(w.measured).toBe(true);
+    expect(w.headline.value).toBe("94 min");
+    const minutes = w.basics.find((b) => b.labelKey === "summary.minutes")!;
+    expect(minutes.value).toBe("94");
+    const kcal = w.basics.find((b) => b.labelKey === "session.wrapped.kcal")!;
+    expect(kcal.value).toBe("677");
+    expect(kcal.estimate).toBeFalsy();
+    expect(w.energy!.basis).toBe("device");
+    expect(w.sparse).toBe(false);
+  });
+
+  it("shows the wrist's heart rate — a figure no log can produce", () => {
+    const w = sessionWrapped(tennis, [tennis], { units: "kg", bw: 80 });
+    expect(w.basics.find((b) => b.labelKey === "session.device.avgHr")!.value).toBe("134");
+    expect(w.facts.find((f) => f.labelKey === "session.device.maxHr")!.value).toBe("165 bpm");
+  });
+
+  it("falls back to the logged figures when nothing was matched", () => {
+    const { device: _device, ...logged } = tennis;
+    const w = sessionWrapped(logged, [logged], { units: "kg", bw: 80 });
+    expect(w.measured).toBe(false);
+    expect(w.headline.value).toBe("90 min");
+    expect(w.basics.find((b) => b.labelKey === "session.wrapped.kcal")!.estimate).toBe(true);
+  });
+});
+
 describe("liftStanding", () => {
   const cohort = { sport: "Hybrid", sex: "M" as const, age: 26 };
 

@@ -113,6 +113,10 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   let tonnageKg = 0;
   let sets = 0;
   let distanceKm = 0;
+  let elevationM = 0;
+  // The day counts as measured when ANY of its sessions was matched to a device
+  // — that part of the day's totals came off a wrist.
+  let measured = false;
   for (const r of receipts) {
     if (r.finishedClock) finishedClock = r.finishedClock;
     if (r.durationMin != null) {
@@ -122,6 +126,8 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     tonnageKg += r.tonnageKg;
     sets += r.sets;
     distanceKm += r.distanceKm;
+    elevationM += r.elevationM;
+    measured = measured || r.measured;
   }
   return {
     finishedClock,
@@ -129,5 +135,7 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     tonnageKg,
     sets,
     distanceKm: Math.round(distanceKm * 10) / 10,
+    elevationM: Math.round(elevationM),
+    measured,
   };
 }

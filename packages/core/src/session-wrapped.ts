@@ -8,7 +8,11 @@
  * here — no fabricated "power/energy/percentile". A fact that can't be computed
  * from the logged session + history is simply omitted, never invented. The one
  * modelled figure, the calorie estimate, is flagged as an estimate (see
- * energy.ts) so a client can never present it as a measurement.
+ * energy.ts) so a client can never present it as a measurement — and when a
+ * device measured the session, that flag drops because the figure came off a
+ * wrist instead of a table. Matched sessions read MEASURED throughout: the
+ * duration, distance, climb and energy here are the device's (done-receipt +
+ * energy resolve that), with heart rate joining the facts.
  *
  * DISCIPLINE-SHAPED, not one-size-fits-all. A swim has no sets and a lift has
  * no pace, so the panels are built per discipline rather than pouring every
@@ -60,8 +64,11 @@ export interface SessionWrapped {
   basics: WrappedStat[];
   /** premium (Full) — real derived analytics, each present only when computable */
   facts: WrappedFact[];
-  /** the modelled calorie cost, or null when it can't be estimated honestly */
+  /** the session's calorie cost — measured when a device recorded it, else the
+   *  model's estimate, or null when neither can say anything honest */
   energy: EnergyEstimate | null;
+  /** true when a matched device supplied this session's figures */
+  measured: boolean;
   /**
    * True when the session's numbers are thin — no measured pace, no heart rate,
    * no RPE — i.e. exactly the case a connected watch would fix. Drives the
@@ -246,13 +253,6 @@ function totalRounds(blocks: SessionBlock[]): number {
   return n;
 }
 
-/** Total elevation gain, metres, across the session's cardio blocks. */
-function totalElevation(blocks: SessionBlock[]): number {
-  let m = 0;
-  for (const b of blocks) if (isCardio(b) && b.elevation) m += b.elevation;
-  return m;
-}
-
 const MUSCLE_LABEL_KEY = (m: string) => `muscle.${m}`;
 
 /**
@@ -275,7 +275,9 @@ export function sessionWrapped(
   const lead = headlineCardio(session.blocks);
   const effort = meanEffort(session.blocks);
   const rounds = totalRounds(session.blocks);
-  const elevation = totalElevation(session.blocks);
+  // Duration, distance and climb all arrive through the receipt, which already
+  // prefers the matched device's recording over the logged figures.
+  const elevation = receipt.elevationM;
   const secPerKm =
     receipt.distanceKm > 0 && receipt.durationMin != null && receipt.durationMin > 0
       ? Math.round((receipt.durationMin * 60) / receipt.distanceKm)
@@ -289,8 +291,12 @@ export function sessionWrapped(
       : null;
   const pace: WrappedStat | null =
     secPerKm != null ? { labelKey: "session.pace", value: formatSportPace(secPerKm, lead?.name) } : null;
+  // A measured burn is NOT an estimate — it loses the "~" the model's figure
+  // wears, because the device counted it.
   const kcal: WrappedStat | null =
-    energy ? { labelKey: "session.wrapped.kcal", value: `${energy.kcal}`, estimate: true } : null;
+    energy ? { labelKey: "session.wrapped.kcal", value: `${energy.kcal}`, estimate: !energy.measured } : null;
+  const avgHr: WrappedStat | null =
+    session.device?.avgHr != null ? { labelKey: "session.device.avgHr", value: `${session.device.avgHr}` } : null;
   const effortStat: WrappedStat | null =
     effort != null ? { labelKey: "session.wrapped.effort", value: `${effort}` } : null;
   const volume: WrappedStat | null =
@@ -307,14 +313,14 @@ export function sessionWrapped(
   // say win, so a swim never falls back to "1 set" just to fill a slot.
   const wanted: (WrappedStat | null)[] =
     discipline === "strength"
-      ? [sets, repsStat, volume, minutes, kcal]
+      ? [sets, repsStat, volume, minutes, kcal, avgHr]
       : discipline === "endurance"
-        ? [distance, minutes, pace, kcal, elevationStat, effortStat]
+        ? [distance, minutes, pace, kcal, avgHr, elevationStat, effortStat]
         : discipline === "sport"
-          ? [minutes, kcal, effortStat, distance]
+          ? [minutes, kcal, avgHr, effortStat, distance]
           : discipline === "conditioning"
-            ? [minutes, roundsStat, kcal, effortStat]
-            : [minutes, distance, volume, kcal, pace, sets];
+            ? [minutes, roundsStat, kcal, avgHr, effortStat]
+            : [minutes, distance, volume, kcal, avgHr, pace, sets];
   const basics = wanted.filter((s): s is WrappedStat => s != null).slice(0, 4);
 
   // ---- HEADLINE — the one number the hero shows. --------------------------
@@ -351,8 +357,13 @@ export function sessionWrapped(
   if (discipline !== "strength") {
     if (pace) facts.push({ labelKey: "session.pace", value: pace.value, tone: "neutral" });
     if (elevationStat) facts.push({ labelKey: "session.wrapped.elevation", value: elevationStat.value, tone: "neutral" });
-    if (energy) facts.push({ labelKey: "session.wrapped.intensity", value: `${energy.metMinutes}`, tone: "neutral" });
+    if (energy && energy.metMinutes > 0)
+      facts.push({ labelKey: "session.wrapped.intensity", value: `${energy.metMinutes}`, tone: "neutral" });
   }
+  // The peak the wrist saw — a fact no log can produce, so it rides on every
+  // discipline (a matched lifting session has a heart rate too).
+  if (session.device?.maxHr != null)
+    facts.push({ labelKey: "session.device.maxHr", value: `${session.device.maxHr} bpm`, tone: "neutral" });
   // Muscle split — the session's most-trained muscle and its tonnage
   // (bodyweight-aware via this session's weight, so dips/pull-ups count).
   const muscles = volumeByMuscle(session.blocks, false, bwHereKg);
@@ -370,8 +381,10 @@ export function sessionWrapped(
   }
 
   // A session is "sparse" when nothing measured its intensity: no pace, no RPE,
-  // and no calorie estimate worth the name. That's the device-shaped hole.
+  // and no calorie estimate worth the name. That's the device-shaped hole — and
+  // a matched session can never be in it, since a device is exactly what fills
+  // it (`basis: "device"`).
   const sparse = pace == null && effort == null && (energy == null || energy.basis === "duration");
 
-  return { discipline, headline, basics, facts, energy, sparse };
+  return { discipline, headline, basics, facts, energy, sparse, measured: receipt.measured };
 }

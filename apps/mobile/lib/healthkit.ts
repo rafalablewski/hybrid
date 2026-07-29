@@ -21,7 +21,7 @@
  */
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEVICE_MATCH_WINDOW_H, sanitizeDeviceWorkout, type DeviceWorkout } from "@hybrid/core";
+import { DEVICE_MATCH_WINDOW_H, isDeviceName, sanitizeDeviceWorkout, type DeviceWorkout } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 import { API_BASE } from "./api";
@@ -283,6 +283,50 @@ const activityLabel = (hk: HK, type: number): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
+/** Apple product-type families ("Watch6,18", "iPhone16,2") → the hardware an
+ *  athlete would name, for a recording that carries no device name of its own. */
+const PRODUCT_FAMILY: [RegExp, string][] = [
+  [/^watch/i, "Apple Watch"],
+  [/^iphone/i, "iPhone"],
+  [/^ipad/i, "iPad"],
+];
+
+/**
+ * WHAT RECORDED IT — the device name to show beside the workout.
+ *
+ * Not as simple as `sourceRevision.source.name`: this library hands the source
+ * back as a Nitro hybrid object, and EVERY hybrid object carries its own `name`
+ * property holding the native class name. That shadows HealthKit's source name,
+ * so the naive read returns the literal string "SourceProxy" — which is what
+ * shipped, and what athletes saw on the summary. The real source name is only
+ * reachable through `toJSON()`, which serialises the underlying Source.
+ *
+ * Preference order: the HKDevice that produced the samples ("Apple Watch"),
+ * then the source's true name (the app or paired device, e.g. "Strava"), then
+ * the product type's family. Each step degrades on its own; returning undefined
+ * lets core name the provider's device instead.
+ */
+const recordingDevice = (w: {
+  device?: { name?: string; model?: string } | null;
+  sourceRevision?: { source?: { name?: string; toJSON?: (key?: string) => { name?: string } }; productType?: string } | null;
+}): string | undefined => {
+  const rev = w.sourceRevision ?? undefined;
+  let sourceName: string | undefined;
+  try {
+    // toJSON() first — `source.name` on the proxy is the CLASS name, not the
+    // recording's source. isDeviceName() is the belt to that braces.
+    sourceName = rev?.source?.toJSON?.()?.name ?? rev?.source?.name;
+  } catch {
+    sourceName = undefined;
+  }
+  const family = rev?.productType
+    ? PRODUCT_FAMILY.find(([re]) => re.test(rev.productType!))?.[1]
+    : undefined;
+  for (const candidate of [w.device?.name, sourceName, family, w.device?.model])
+    if (isDeviceName(candidate)) return candidate.trim();
+  return undefined;
+};
+
 /**
  * Read the workouts the device recorded around a logged session (±the shared
  * match window) and normalize each to the stored DeviceWorkout shape. Heart
@@ -336,7 +380,7 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
         ...(typeof indoorRaw === "boolean" || indoorRaw === 0 || indoorRaw === 1
           ? { indoor: Boolean(indoorRaw) }
           : {}),
-        source: w.sourceRevision?.source?.name,
+        source: recordingDevice(w),
       });
       if (candidate) out.push(candidate);
     }

@@ -569,28 +569,31 @@ export function sessionIcon(session: LoggedSession): string {
 }
 
 /**
- * Totals across a session's CARDIO blocks — distance (km), minutes, and a
- * derived overall pace (sec/km, distance-weighted). Powers the non-gym session
- * headline (Duration, Distance, Pace) so cardio/sport logs get their own
- * summary instead of the gym Sets/Volume framing.
+ * Totals across a session's CARDIO blocks — distance (km), minutes, elevation
+ * gain (m), and a derived overall pace (sec/km, distance-weighted). Powers the
+ * non-gym session headline (Duration, Distance, Pace) so cardio/sport logs get
+ * their own summary instead of the gym Sets/Volume framing.
  */
 export function sessionCardioTotals(blocks: SessionBlock[]): {
   distanceKm: number;
   minutes: number;
+  elevationM: number;
   secPerKm: number | null;
   count: number;
 } {
   let distanceKm = 0;
   let minutes = 0;
+  let elevationM = 0;
   let count = 0;
   for (const b of blocks)
     if (isCardio(b)) {
       count++;
       if (b.distance) distanceKm += b.distance;
       if (b.minutes) minutes += b.minutes;
+      if (b.elevation) elevationM += b.elevation;
     }
   const secPerKm = distanceKm > 0 && minutes > 0 ? Math.round((minutes * 60) / distanceKm) : null;
-  return { distanceKm, minutes, secPerKm, count };
+  return { distanceKm, minutes, elevationM, secPerKm, count };
 }
 
 /**

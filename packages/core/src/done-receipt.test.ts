@@ -64,6 +64,58 @@ describe("doneReceipt", () => {
   it("stamps the local finish clock", () => {
     expect(doneReceipt(session()).finishedClock).toMatch(/\d{1,2}[:.]\d{2}/);
   });
+
+  // ── the device is the source of truth ──────────────────────────────────────
+  const tennis = (over: Partial<LoggedSession> = {}): LoggedSession =>
+    session({
+      title: "Tennis",
+      blocks: [{ kind: "cardio", name: "Tennis", minutes: 90 }],
+      device: {
+        provider: "apple",
+        uuid: "hk-1",
+        activityLabel: "Tennis",
+        start: "2026-07-16T10:30:00.000Z",
+        end: "2026-07-16T12:04:00.000Z",
+        durationMin: 94,
+        kcal: 677,
+        source: "Apple Watch",
+      },
+      ...over,
+    });
+
+  it("takes the matched device's duration over the logged one", () => {
+    const r = doneReceipt(tennis());
+    expect(r.durationMin).toBe(94);
+    expect(r.measured).toBe(true);
+  });
+
+  it("keeps the logged reading available for the comparison panel", () => {
+    const r = doneReceipt(tennis(), { ignoreDevice: true });
+    expect(r.durationMin).toBe(90);
+    expect(r.measured).toBe(false);
+  });
+
+  it("takes the device's distance and climb, and keeps the logged ones when it recorded none", () => {
+    const logged: LoggedSession = tennis({
+      blocks: [{ kind: "cardio", name: "Trail Run", distance: 10, minutes: 55, elevation: 120 }],
+    });
+    const withDistance = doneReceipt({
+      ...logged,
+      device: { ...logged.device!, distanceKm: 10.42, elevationM: 137 },
+    });
+    expect(withDistance.distanceKm).toBe(10.4);
+    expect(withDistance.elevationM).toBe(137);
+    // A tennis recording carries no distance — the logged figures stand.
+    const noDistance = doneReceipt(logged);
+    expect(noDistance.distanceKm).toBe(10);
+    expect(noDistance.elevationM).toBe(120);
+  });
+
+  it("ignores a device row that measured no duration", () => {
+    const r = doneReceipt(tennis({ device: { provider: "apple", uuid: "hk-2", activityLabel: "Tennis", start: "x", end: "y", durationMin: 0 } as LoggedSession["device"] }));
+    expect(r.durationMin).toBe(90);
+    expect(r.measured).toBe(false);
+  });
 });
 
 describe("doneReceiptStats", () => {
