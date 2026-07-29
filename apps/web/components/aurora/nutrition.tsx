@@ -11,6 +11,7 @@ import {
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
+  verifiedSource, sourceMarkDataUri,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
@@ -987,17 +988,45 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const stepBtn = { width: 44, height: 44, borderRadius: 14, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
         return (
           <div style={{ paddingBottom: 6 }}>
-            {portion.verified && (
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 14, padding: "10px 12px", marginTop: 12 }}>
-                <VerifiedMark size={14} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3, lineHeight: 1.5 }}>
-                    {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified.sourceName).replace("{date}", portion.verified.verifiedOn)}
+            {portion.verified && (() => {
+              const src = verifiedSource(portion.verified.sourceId);
+              const mark = src?.mark;
+              return (
+                <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 14, padding: "12px 14px", marginTop: 12 }}>
+                  {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
+                      hold artwork, their name set in OUR type — visibly ours, so
+                      it can never pass as an approximation of their logo). It
+                      sits under a "published by" label and above the trademark
+                      line: this is attribution, not a partnership badge. */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {mark ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={sourceMarkDataUri(mark)} alt={mark.alt} style={{ height: 26, width: 26 * mark.aspect, maxWidth: 132, objectFit: "contain", flexShrink: 0 }} />
+                    ) : (
+                      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, letterSpacing: ".06em", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "5px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {portion.verified.sourceName}
+                      </span>
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.publishedBy")}</div>
+                      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), marginTop: 2 }}>{portion.verified.sourceName}</div>
+                    </div>
                   </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTop: `1px solid color-mix(in srgb, var(--color-lime) 22%, ${C("line")})` }}>
+                    <VerifiedMark size={14} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3, lineHeight: 1.5 }}>
+                        {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified.sourceName).replace("{date}", portion.verified.verifiedOn)}
+                      </div>
+                    </div>
+                  </div>
+                  {src?.trademark && (
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9, lineHeight: 1.5, opacity: .85 }}>{src.trademark}</div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", marginTop: 14 }}>
               <button onClick={() => setQty((x) => Math.max(0.5, Math.round((x - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={stepBtn}>–</button>

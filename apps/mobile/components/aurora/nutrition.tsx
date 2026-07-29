@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, Alert, ScrollView, StyleSheet } from "react-native";
-import Svg, { Path, Rect, Circle } from "react-native-svg";
+import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -35,6 +35,7 @@ import {
   type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
+  verifiedSource, 
   type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
@@ -876,17 +877,44 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
         return (
           <View>
-            {portion.verified ? (
-              <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, marginTop: 12 }}>
-                <VerifiedMark C={C} size={14} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, lineHeight: 15 }}>
-                    {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified.sourceName).replace("{date}", portion.verified.verifiedOn)}
-                  </Text>
+            {portion.verified ? (() => {
+              const src = verifiedSource(portion.verified!.sourceId);
+              const mark = src?.mark;
+              return (
+                <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12 }}>
+                  {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
+                      hold artwork, their name set in OUR type — visibly ours, so
+                      it can never pass as an approximation of their logo). It
+                      sits under a "published by" label and above the trademark
+                      line: this is attribution, not a partnership badge. */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    {mark ? (
+                      <SvgXml xml={mark.svg} height={26} width={Math.min(132, 26 * mark.aspect)} accessibilityLabel={mark.alt} />
+                    ) : (
+                      <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: 0.8, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 9 }}>
+                        {portion.verified!.sourceName}
+                      </Text>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
+                      <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTopWidth: 1, borderTopColor: `${C.lime}38` }}>
+                    <VerifiedMark C={C} size={14} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, lineHeight: 15 }}>
+                        {t("w.recovery.nutrition.verifiedSub").replace("{source}", portion.verified!.sourceName).replace("{date}", portion.verified!.verifiedOn)}
+                      </Text>
+                    </View>
+                  </View>
+                  {src?.trademark ? (
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9, lineHeight: 15, opacity: 0.85 }}>{src.trademark}</Text>
+                  ) : null}
                 </View>
-              </View>
-            ) : null}
+              );
+            })() : null}
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 }}>
               <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>

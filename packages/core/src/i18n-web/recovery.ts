@@ -152,6 +152,7 @@ export const web_recovery = {
     "w.recovery.nutrition.readOnly": "read-only",
     "w.recovery.nutrition.energy": "Energy",
     // HYBRID Verified + the nutrition-facts panel (food-facts.ts / verified-foods.ts)
+    "w.recovery.nutrition.publishedBy": "Nutrition data published by",
     "w.recovery.nutrition.verified": "HYBRID Verified",
     "w.recovery.nutrition.verifiedSub": "Checked by our team against {source}'s published nutrition, {date}.",
     "w.recovery.nutrition.facts.title": "Nutrition",
@@ -540,6 +541,7 @@ export const web_recovery = {
     "w.recovery.nutrition.yourCoach": "Twojego trenera",
     "w.recovery.nutrition.readOnly": "tylko do odczytu",
     "w.recovery.nutrition.energy": "Energia",
+    "w.recovery.nutrition.publishedBy": "Wartości odżywcze opublikowane przez",
     "w.recovery.nutrition.verified": "Zweryfikowane przez HYBRID",
     "w.recovery.nutrition.verifiedSub": "Sprawdzone przez nasz zespół na podstawie danych opublikowanych przez {source}, {date}.",
     "w.recovery.nutrition.facts.title": "Wartości odżywcze",
@@ -926,6 +928,7 @@ export const web_recovery = {
     "w.recovery.nutrition.yourCoach": "deinem Coach",
     "w.recovery.nutrition.readOnly": "schreibgeschützt",
     "w.recovery.nutrition.energy": "Energie",
+    "w.recovery.nutrition.publishedBy": "Nährwerte veröffentlicht von",
     "w.recovery.nutrition.verified": "HYBRID-geprüft",
     "w.recovery.nutrition.verifiedSub": "Von unserem Team anhand der veröffentlichten Nährwerte von {source} geprüft, {date}.",
     "w.recovery.nutrition.facts.title": "Nährwerte",

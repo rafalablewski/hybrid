@@ -27,6 +27,33 @@ import type { FoodHit } from "./nutrition-off";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/**
+ * A business's own mark, carried as SELF-CONTAINED inline SVG.
+ *
+ * Not a URL. A remote logo would break the moment we're offline, would hotlink
+ * someone else's bandwidth, and — on the published-artifact surface — would be
+ * blocked outright. Same convention the rest of the app already follows: the
+ * nutrition glyphs and recipe heroes are vectors in code, never fetched assets.
+ *
+ * WHAT THE MARK CLAIMS. It identifies WHOSE food this is — nothing more. It is
+ * attribution, not endorsement: the operator has not partnered with us and has
+ * not reviewed our app. That is why the mark is rendered under a "nutrition data
+ * published by" label with the trademark line beneath it, and why the HYBRID ✓
+ * stays visually OURS and separate. Presenting a third-party logo as though it
+ * were a badge the business granted us would be the one dishonest move available
+ * on a screen whose whole purpose is honesty about where numbers come from.
+ */
+export interface SourceMark {
+  /** one self-contained `<svg>…</svg>` — no external refs, no <image>, no fonts */
+  svg: string;
+  /** width ÷ height, so a renderer can size it without measuring */
+  aspect: number;
+  /** alt text for screen readers */
+  alt: string;
+  /** where the artwork came from and under what terms — shown on the credits screen */
+  credit: string;
+}
+
 /** The business behind a verified food — a chain, a brand, a producer. */
 export interface VerifiedSource {
   id: string;
@@ -37,6 +64,13 @@ export interface VerifiedSource {
   country: string;
   /** one line of context, shown under the name on the source sheet */
   note: string;
+  /** the legal entity + trademark line, shown under the mark. Factual, not i18n:
+   *  it names a specific company and must not be paraphrased per locale. */
+  trademark: string;
+  /** the operator's own mark, when we hold artwork we are entitled to show.
+   *  Absent → the clients fall back to a WORDMARK set in our own type, which is
+   *  honest (visibly ours) rather than an approximation of someone's logo. */
+  mark?: SourceMark;
 }
 
 /** One verified item. `facts` are PER `servingLabel`. */
@@ -65,10 +99,14 @@ export interface VerifiedFood {
 export const VERIFIED_SOURCES: VerifiedSource[] = [
   {
     id: "max-premium-burgers",
-    name: "Max Premium Burgers",
+    name: "MAX Premium Burgers",
     kind: "restaurant",
     country: "PL",
-    note: "Polish premium burger chain. Nutrition per the operator's published per-item table.",
+    note: "The Polish arm of MAX, the Swedish burger chain (founded 1968). Nutrition per the operator's published per-item table.",
+    trademark: "MAX is a trademark of Max Burgers AB. Shown to identify the source of these figures, not as an endorsement.",
+    // mark: MAX_MARK,  ← drop the operator's SVG in here; see SOURCE MARKS below.
+    //   Until then both clients render the wordmark fallback, which is our own
+    //   typography and therefore never misrepresents their brand.
   },
 ];
 
@@ -232,6 +270,50 @@ export function mergeFoodHits(verified: FoodHit[], community: FoodHit[], limit =
   return out.slice(0, limit);
 }
 
+// ── Source marks ───────────────────────────────────────────────────────────
+//
+// HOW TO ADD ONE. Paste the operator's SVG as a template literal, set `aspect`
+// from its viewBox, and attach it to the source as `mark`. Two rules:
+//   1. the SVG must be SELF-CONTAINED — strip <image>, external <use>, @font-face
+//      and any http(s) reference; convert text to paths so it can't silently
+//      fall back to a font the device lacks;
+//   2. record in `credit` where the artwork came from and on what terms, so the
+//      claim is auditable later rather than folklore.
+// Only add a mark for artwork we are actually entitled to display. When in
+// doubt, leave it out: the wordmark fallback costs the user nothing.
+//
+// e.g.
+//   const MAX_MARK: SourceMark = {
+//     svg: `<svg viewBox="0 0 1024 656" xmlns="http://www.w3.org/2000/svg">…</svg>`,
+//     aspect: 1024 / 656,
+//     alt: "MAX",
+//     credit: "Wikimedia Commons, File:Max (Restaurant) logo.svg — verify the tag before shipping.",
+//   };
+
+/** The mark for a source, or null when we render the wordmark instead. */
+export function sourceMark(sourceId: string): SourceMark | null {
+  return verifiedSource(sourceId)?.mark ?? null;
+}
+
+/**
+ * A mark as a data URI, for renderers that take an image source (the web `<img>`
+ * — no innerHTML, so a mark can never become an injection surface). Mobile
+ * renders the same string through react-native-svg instead.
+ */
+export function sourceMarkDataUri(mark: SourceMark): string {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(mark.svg)}`;
+}
+
+/**
+ * Every mark we display, with its credit line — the data behind an attribution
+ * screen, so third-party artwork in the app is enumerable rather than scattered.
+ */
+export function sourceMarkCredits(): { sourceId: string; name: string; credit: string; trademark: string }[] {
+  return VERIFIED_SOURCES.filter((s) => s.mark).map((s) => ({
+    sourceId: s.id, name: s.name, credit: s.mark!.credit, trademark: s.trademark,
+  }));
+}
+
 // ── Catalog integrity ──────────────────────────────────────────────────────
 
 /**
@@ -249,6 +331,20 @@ export function auditVerifiedCatalog(): string[] {
     if (!verifiedSource(f.sourceId)) problems.push(`${f.id}: unknown source "${f.sourceId}"`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.verifiedOn)) problems.push(`${f.id}: verifiedOn must be YYYY-MM-DD`);
     for (const p of auditFacts(f.facts)) problems.push(`${f.id}: ${p}`);
+  }
+  // A mark must be self-contained and credited. An SVG that reaches out to the
+  // network would break offline, leak a request to a third party, and be blocked
+  // outright on the published-artifact surface — so it fails the audit here
+  // rather than rendering as a broken box in front of an athlete.
+  for (const src of VERIFIED_SOURCES) {
+    if (!src.trademark) problems.push(`${src.id}: a source must carry a trademark line`);
+    const m = src.mark;
+    if (!m) continue;
+    if (!/^\s*<svg[\s>]/.test(m.svg)) problems.push(`${src.id}: mark must be inline <svg> markup`);
+    if (/https?:|<image\b|xlink:href|@font-face/i.test(m.svg)) problems.push(`${src.id}: mark must be self-contained (no remote refs, images or webfonts)`);
+    if (!(m.aspect > 0)) problems.push(`${src.id}: mark needs a positive aspect ratio`);
+    if (!m.alt) problems.push(`${src.id}: mark needs alt text`);
+    if (!m.credit) problems.push(`${src.id}: mark needs a credit line`);
   }
   return problems;
 }
