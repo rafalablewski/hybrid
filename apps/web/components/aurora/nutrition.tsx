@@ -11,7 +11,8 @@ import {
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
-  verifiedSource, sourceMarkDataUri,
+  verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods, kj,
+  sourceCheckedOn, sourceMarkDataUri, type VerifiedFood, type SourceMark,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
@@ -40,7 +41,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source";
 // The part of the day a log is attributed to, carried into the Signal `source`
 // so the hub can group today's intake. The four built-ins plus any custom parts
 // a Full user added — so it's a plain key string, not a closed union.
@@ -139,6 +140,27 @@ function VerifiedMark({ size = 13 }: { size?: number }) {
   );
 }
 
+// The operator's mark, or — when we hold no artwork for them — their name set
+// in OUR display face inside a hairline chip. The fallback is deliberately
+// typographic: visibly ours, so it can never be taken for an approximation of
+// somebody's logo. One renderer for the product page and the provenance card,
+// so the two can't drift apart.
+function SourceMarkView({ C, src, height }: {
+  C: (v: string) => string; src: { name: string; mark?: SourceMark }; height: number;
+}) {
+  if (!src.mark) {
+    return (
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: Math.round(height * 0.48), letterSpacing: ".06em", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "5px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
+        {src.name}
+      </span>
+    );
+  }
+  // A data URI on an <img>, never innerHTML — a mark can't become an injection
+  // surface even though every mark in the catalog is ours.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={sourceMarkDataUri(src.mark)} alt={src.mark.alt} style={{ height, width: height * src.mark.aspect, maxWidth: 168, objectFit: "contain", flexShrink: 0 }} />;
+}
+
 // The nutrition-facts panel — the EU label, rendered from ONE core function
 // (nutritionPanel) so web and mobile can never disagree about what a food says.
 // A field the food never stated shows an em dash, NEVER "0 g": an unstated sugar
@@ -184,8 +206,11 @@ function FactsPanel({ C, facts, per100, scale = 1 }: {
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a swipe-left-to-reveal delete (a
 // personal item). The row body opens the portion editor; the trash sits behind.
-function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete, verified }: {
+function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  /** tapping the row BODY, when that means something different from the ⊕ —
+   *  a verified item opens its page; everything else just adds. */
+  onOpen?: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
   const [dx, setDx] = useState(0);
@@ -206,7 +231,7 @@ function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDe
         style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, padding: "13px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}`, transform: `translateX(${dx}px)`, transition: start.current == null ? "transform .22s cubic-bezier(.4,0,.2,1)" : "none", touchAction: "pan-y" }}
       >
         <button onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
-        <button onClick={onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+        <button onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
             {verified && <VerifiedMark />}
@@ -441,6 +466,18 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null;
   } & MicroFacts;
   const [portion, setPortion] = useState<PortionBase | null>(null);
+
+  // ── Product pages. A verified item gets its OWN screen (view "food") and its
+  //    business gets one too (view "source"). The portion SHEET stays what it
+  //    always was — the fast path to logging — because a sheet and a page do
+  //    different jobs: the sheet is for adding a food you already trust, the
+  //    page is for deciding whether to trust it. `pageBack` remembers where the
+  //    athlete came from so Back never dumps them somewhere they didn't start.
+  const [foodPageId, setFoodPageId] = useState<string | null>(null);
+  const [sourcePageId, setSourcePageId] = useState<string | null>(null);
+  const [pageBack, setPageBack] = useState<NutView>("add");
+  const openFoodPage = (id: string, from: NutView) => { setFoodPageId(id); setPageBack(from); setView("food"); };
+  const openSourcePage = (id: string, from: NutView) => { setSourcePageId(id); setPageBack(from); setView("source"); };
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
 
@@ -990,7 +1027,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ paddingBottom: 6 }}>
             {portion.verified && (() => {
               const src = verifiedSource(portion.verified.sourceId);
-              const mark = src?.mark;
               return (
                 <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 14, padding: "12px 14px", marginTop: 12 }}>
                   {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
@@ -998,20 +1034,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                       it can never pass as an approximation of their logo). It
                       sits under a "published by" label and above the trademark
                       line: this is attribution, not a partnership badge. */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {mark ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={sourceMarkDataUri(mark)} alt={mark.alt} style={{ height: 26, width: 26 * mark.aspect, maxWidth: 132, objectFit: "contain", flexShrink: 0 }} />
-                    ) : (
-                      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, letterSpacing: ".06em", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "5px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        {portion.verified.sourceName}
-                      </span>
-                    )}
-                    <div style={{ minWidth: 0 }}>
+                  <button
+                    onClick={() => { const id = portion.verifiedId; setPortion(null); if (id) openFoodPage(id, view); else if (src) openSourcePage(src.id, view); }}
+                    style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                  >
+                    {src ? <SourceMarkView C={C} src={src} height={26} /> : null}
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.publishedBy")}</div>
                       <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), marginTop: 2 }}>{portion.verified.sourceName}</div>
                     </div>
-                  </div>
+                    <IChevRight size={16} color={C("ash")} />
+                  </button>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTop: `1px solid color-mix(in srgb, var(--color-lime) 22%, ${C("line")})` }}>
                     <VerifiedMark size={14} />
                     <div style={{ minWidth: 0 }}>
@@ -1189,6 +1222,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 subname={food.brand}
                 meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
                 onAdd={() => logFood(food)}
+                onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
                 verified={food.verified}
                 chevron
               />
@@ -1412,6 +1446,176 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
           <button onClick={() => setCompPicker(false)} style={{ width: "100%", marginTop: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 14, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.done")}</button>
         </Sheet>
+      </div>
+    );
+  }
+
+  // ============ FOOD — a verified product's own page ============
+  // A page, not a sheet. The sheet exists to log a food you already trust; this
+  // exists to decide whether to trust it — so it leads with WHO published the
+  // numbers, states them in full (both energy units, per-100 g where the serving
+  // weight is known), and ends with what we did and when. Scoped to VERIFIED
+  // items on purpose: a community hit has no stable id, no provenance and no
+  // sibling menu, so a page for one would be an empty frame around four numbers.
+  // Guard on the RESOLVED item, not just the id: an id that no longer matches a
+  // catalog entry (an app update dropped it) must fall through to the hub, not
+  // set state during render.
+  const foodPage = foodPageId ? verifiedFood(foodPageId) : null;
+  if (view === "food" && foodPage) {
+    const f = foodPage;
+    const src = verifiedSource(f.sourceId);
+    const related = relatedVerifiedFoods(f.id);
+    const p100 = per100g(f.facts, f.servingGrams);
+    const hit = verifiedFoodToHit(f);
+    return (
+      <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark size={15} /> })}
+
+        {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label.
+            Tapping it opens the business's own page. */}
+        {src && (
+          <button
+            onClick={() => openSourcePage(src.id, "food")}
+            style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "13px 15px", marginTop: 6, cursor: "pointer" }}
+          >
+            <SourceMarkView C={C} src={src} height={30} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.publishedBy")}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), marginTop: 2 }}>{src.name}</div>
+            </div>
+            <IChevRight size={17} color={C("ash")} />
+          </button>
+        )}
+
+        <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 32, letterSpacing: "-.03em", lineHeight: 1.08, margin: "22px 0 0" }}>{f.name}</h2>
+        {f.menuName && (
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.bodyLg, color: C("ash"), marginTop: 5 }}>
+            {t("w.recovery.nutrition.onTheMenu")} {f.menuName}
+          </div>
+        )}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".06em", color: C("ash"), marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</div>
+
+        {/* Energy hero — both units, because a label states both and we finally can. */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 20 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 56, letterSpacing: "-.045em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{f.facts.kcal}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>kcal</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{kj(f.facts.kcal)} kJ</span>
+        </div>
+
+        {/* Macro strip — the same four-tile idiom the recipe detail uses. */}
+        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 6px", marginTop: 18 }}>
+          {([["w.recovery.nutrition.protein", f.facts.protein, "var(--blue-text)"], ["w.recovery.nutrition.carbs", f.facts.carbs, "var(--amber-text)"], ["w.recovery.nutrition.fat", f.facts.fat, "var(--violet-text)"]] as const).map(([lab, val, col]) => (
+            <div key={lab} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 21, letterSpacing: "-.01em", fontVariantNumeric: "tabular-nums" }}>{val}<span style={{ fontSize: 12, color: C("ash") }}>g</span></div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", marginTop: 5, color: col }}>{t(lab)}</div>
+            </div>
+          ))}
+        </div>
+
+        <FactsPanel C={C} facts={f.facts} per100={p100} />
+        {!p100 && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9, lineHeight: 1.5 }}>{t("w.recovery.nutrition.noServingWeight")}</div>
+        )}
+
+        {/* WHAT WE DID, AND WHEN. The claim, dated, with the operator's own
+            wording of where the numbers came from, then the trademark line. */}
+        <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 16, padding: "14px 16px", marginTop: 22 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 9 }}>
+            <VerifiedMark size={15} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>
+                {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 7, lineHeight: 1.6 }}>{f.provenance}</div>
+            </div>
+          </div>
+          {src?.trademark && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10, lineHeight: 1.5, opacity: .85 }}>{src.trademark}</div>}
+        </div>
+
+        {/* MORE FROM THIS BUSINESS — a checked item is a way into a checked
+            menu, not a dead end. */}
+        {related.length > 0 && (
+          <div style={{ marginTop: 26 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</span>
+              {src && <button onClick={() => openSourcePage(src.id, "food")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</button>}
+            </div>
+            {related.map((r) => (
+              <button key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "13px 2px", cursor: "pointer" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{r.name}</span>
+                    <VerifiedMark size={11} />
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{r.facts.kcal} kcal  –  {r.servingLabel}</div>
+                </div>
+                <IChevRight size={16} color={C("ash")} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {mealMsg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 18 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
+
+        <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 10, display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
+          <button onClick={() => saveFood(hit)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+            <IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.saveToFoods")}
+          </button>
+          <button onClick={() => logFood(hit)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+            {t("w.recovery.nutrition.logThis")}
+          </button>
+        </div>
+        {renderPortionSheet()}
+      </div>
+    );
+  }
+
+  // ============ SOURCE — the business's own page ============
+  const sourcePage = sourcePageId ? verifiedSource(sourcePageId) : null;
+  if (view === "source" && sourcePage) {
+    const src = sourcePage;
+    const items = verifiedFoodsBySource(src.id);
+    const checked = sourceCheckedOn(src.id);
+    return (
+      <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+        {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
+
+        <div style={{ display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, padding: "28px 20px", marginTop: 6 }}>
+          <SourceMarkView C={C} src={src} height={46} />
+        </div>
+
+        <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 27, letterSpacing: "-.025em", margin: "20px 0 0" }}>{src.name}</h2>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: fs.bodyLg, color: C("ash"), lineHeight: 1.55, margin: "9px 0 0" }}>{src.note}</p>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
+            <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{lab}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk"), marginTop: 5, fontVariantNumeric: "tabular-nums" }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "26px 0 6px" }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.checkedItems")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{items.length}</span>
+        </div>
+        {items.map((f) => (
+          <button key={f.id} onClick={() => openFoodPage(f.id, "source")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "14px 2px", cursor: "pointer" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{f.name}</span>
+                <VerifiedMark size={12} />
+              </div>
+              {f.menuName && <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{f.menuName}</div>}
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{f.facts.kcal} kcal  –  {f.servingLabel}</div>
+            </div>
+            <IChevRight size={17} color={C("ash")} />
+          </button>
+        ))}
+
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 20, lineHeight: 1.6, opacity: .85, paddingBottom: 20 }}>{src.trademark}</div>
       </div>
     );
   }

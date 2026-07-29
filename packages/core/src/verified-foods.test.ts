@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   VERIFIED_FOODS, VERIFIED_SOURCES, auditVerifiedCatalog, mergeFoodHits, searchVerifiedFoods,
-  sourceMark, sourceMarkCredits, sourceMarkDataUri,
+  relatedVerifiedFoods, sourceCheckedOn, sourceMark, sourceMarkCredits, sourceMarkDataUri,
   verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, verifiedHits, verifiedKj, verifiedSource,
   type SourceMark, type VerifiedSource,
 } from "./verified-foods";
@@ -92,6 +92,20 @@ describe("mergeFoodHits", () => {
   });
   it("respects the result cap", () => {
     expect(mergeFoodHits(verifiedHits("max premium"), community, 2)).toHaveLength(2);
+  });
+});
+
+describe("the product page's data", () => {
+  it("offers the other items from the same business, never the item itself", () => {
+    const rel = relatedVerifiedFoods("mpb-cheeseburger");
+    expect(rel.map((f) => f.id).sort()).toEqual(["mpb-chicken-jr", "mpb-fries-small"]);
+  });
+  it("returns nothing for an unknown item rather than throwing", () => {
+    expect(relatedVerifiedFoods("nope")).toEqual([]);
+  });
+  it("dates a source by its most recently checked item", () => {
+    expect(sourceCheckedOn("max-premium-burgers")).toBe("2026-07-29");
+    expect(sourceCheckedOn("nope")).toBeNull();
   });
 });
 

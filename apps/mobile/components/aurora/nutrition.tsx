@@ -35,7 +35,8 @@ import {
   type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   nutritionPanel, per100g, emptyNutritionDay, unknown as notStated,
-  verifiedSource, 
+  verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
+  sourceCheckedOn, kj, type SourceMark, 
   type Recipe, type RecipeFilter,
 } from "@hybrid/core";
 import {
@@ -85,7 +86,7 @@ const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((p
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source";
 // The part of the day a log is attributed to, carried into the Signal `source`.
 // The four built-ins plus any custom parts a Full user added — a plain key
 // string, not a closed union.
@@ -161,6 +162,23 @@ function VerifiedMark({ C, size = 13 }: { C: ReturnType<typeof useTheme>["palett
   );
 }
 
+// The operator's mark, or — when we hold no artwork for them — their name set
+// in OUR display face inside a hairline chip. The fallback is deliberately
+// typographic: visibly ours, so it can never be taken for an approximation of
+// somebody's logo. One renderer for the product page and the provenance card.
+function SourceMarkView({ C, src, height }: {
+  C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height: number;
+}) {
+  if (!src.mark) {
+    return (
+      <Text style={{ fontFamily: F.black, fontSize: Math.round(height * 0.48), letterSpacing: 0.8, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 9 }}>
+        {src.name}
+      </Text>
+    );
+  }
+  return <SvgXml xml={src.mark.svg} height={height} width={Math.min(168, height * src.mark.aspect)} accessibilityLabel={src.mark.alt} />;
+}
+
 // The nutrition-facts panel — rendered from the SAME core function the web
 // screen uses (nutritionPanel), so the two clients can never disagree about
 // what a food says. A field the food never stated shows an em dash, NEVER
@@ -196,14 +214,17 @@ function FactsPanel({ C, facts, per100, scale = 1 }: {
   );
 }
 
-function FoodRow({ C, name, subname, meta, onAdd, chevron, starred, onStar, onDelete, verified }: {
+function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  /** tapping the row BODY, when that means something different from the ⊕ —
+   *  a verified item opens its page; everything else just adds. */
+  onOpen?: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
       <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
-      <Pressable onPress={onAdd} style={{ flex: 1, minWidth: 0 }}>
+      <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
           <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
           {verified ? <VerifiedMark C={C} /> : null}
@@ -413,6 +434,16 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   >(null);
   const [qty, setQty] = useState(1);
   const openPortion = (base: NonNullable<typeof portion>) => { setQty(1); setPortion(base); };
+
+  // ── Product pages (parity with web). A verified item gets its OWN screen and
+  //    its business gets one too. The portion SHEET stays the fast path to
+  //    logging: a sheet is for adding a food you already trust, a page is for
+  //    deciding whether to trust it. `pageBack` remembers where we came from.
+  const [foodPageId, setFoodPageId] = useState<string | null>(null);
+  const [sourcePageId, setSourcePageId] = useState<string | null>(null);
+  const [pageBack, setPageBack] = useState<NutView>("add");
+  const openFoodPage = (id: string, from: NutView) => { setFoodPageId(id); setPageBack(from); setView("food"); };
+  const openSourcePage = (id: string, from: NutView) => { setSourcePageId(id); setPageBack(from); setView("source"); };
 
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
   const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat, sugar: m.sugar, fiber: m.fiber, salt: m.salt });
@@ -879,7 +910,6 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           <View>
             {portion.verified ? (() => {
               const src = verifiedSource(portion.verified!.sourceId);
-              const mark = src?.mark;
               return (
                 <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12 }}>
                   {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
@@ -887,19 +917,18 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                       it can never pass as an approximation of their logo). It
                       sits under a "published by" label and above the trademark
                       line: this is attribution, not a partnership badge. */}
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    {mark ? (
-                      <SvgXml xml={mark.svg} height={26} width={Math.min(132, 26 * mark.aspect)} accessibilityLabel={mark.alt} />
-                    ) : (
-                      <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: 0.8, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 9 }}>
-                        {portion.verified!.sourceName}
-                      </Text>
-                    )}
+                  <Pressable
+                    onPress={() => { const id = portion.verifiedId; setPortion(null); if (id) openFoodPage(id, view); else if (src) openSourcePage(src.id, view); }}
+                    accessibilityRole="button"
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+                  >
+                    {src ? <SourceMarkView C={C} src={src} height={26} /> : null}
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
                       <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{portion.verified!.sourceName}</Text>
                     </View>
-                  </View>
+                    <IChevRight size={16} color={C.ash} />
+                  </Pressable>
                   <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTopWidth: 1, borderTopColor: `${C.lime}38` }}>
                     <VerifiedMark C={C} size={14} />
                     <View style={{ flex: 1 }}>
@@ -1062,6 +1091,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 subname={food.brand}
                 meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
                 onAdd={() => logFood(food)}
+                onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
                 verified={food.verified}
                 chevron
               />
@@ -1280,6 +1310,180 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           })}
           <Pressable onPress={() => setCompPicker(false)} style={{ marginTop: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 14, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.done")}</Text></Pressable>
         </Sheet>
+      </AuroraScreen>
+    );
+  }
+
+  // ============ FOOD — a verified product's own page ============
+  // A page, not a sheet. The sheet exists to log a food you already trust; this
+  // exists to decide whether to trust it — so it leads with WHO published the
+  // numbers, states them in full (both energy units, per-100 g where the serving
+  // weight is known), and ends with what we did and when. Scoped to VERIFIED
+  // items: a community hit has no stable id, no provenance and no sibling menu,
+  // so a page for one would be an empty frame around four numbers. Parity: the
+  // web screen is the same surface in the same order.
+  // Guard on the RESOLVED item, not just the id: an id that no longer matches a
+  // catalog entry (an app update dropped it) must fall through to the hub, not
+  // set state during render.
+  const foodPage = foodPageId ? verifiedFood(foodPageId) : null;
+  if (view === "food" && foodPage) {
+    const f = foodPage;
+    const src = verifiedSource(f.sourceId);
+    const related = relatedVerifiedFoods(f.id);
+    const p100 = per100g(f.facts, f.servingGrams);
+    const hit = verifiedFoodToHit(f);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), { icon: "back", right: <VerifiedMark C={C} size={15} /> })}
+
+        {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label. */}
+        {src ? (
+          <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 6 }}>
+            <SourceMarkView C={C} src={src} height={30} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.publishedBy")}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 2 }}>{src.name}</Text>
+            </View>
+            <IChevRight size={17} color={C.ash} />
+          </Pressable>
+        ) : null}
+
+        <Text style={{ fontFamily: F.black, fontSize: 32, letterSpacing: -0.9, lineHeight: 35, color: C.chalk, marginTop: 22 }}>{f.name}</Text>
+        {f.menuName ? (
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.onTheMenu")} {f.menuName}</Text>
+        ) : null}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</Text>
+
+        {/* Energy hero — both units, because a label states both and we finally can. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 20 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 56, letterSpacing: -2.4, lineHeight: 58, color: C.chalk }}>{f.facts.kcal}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>kcal</Text>
+          <View style={{ flex: 1 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{kj(f.facts.kcal)} kJ</Text>
+        </View>
+
+        {/* Macro strip — the same idiom the recipe detail uses. */}
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 6, marginTop: 18 }}>
+          {([["w.recovery.nutrition.protein", f.facts.protein, C.blue], ["w.recovery.nutrition.carbs", f.facts.carbs, C.amber], ["w.recovery.nutrition.fat", f.facts.fat, C.violet]] as const).map(([lab, val, col]) => (
+            <View key={lab} style={{ flex: 1, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.black, fontSize: 21, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>g</Text></Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", marginTop: 5, color: txt(C, col) }}>{t(lab)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <FactsPanel C={C} facts={f.facts} per100={p100} />
+        {!p100 ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9, lineHeight: 15 }}>{t("w.recovery.nutrition.noServingWeight")}</Text>
+        ) : null}
+
+        {/* WHAT WE DID, AND WHEN. */}
+        <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, marginTop: 22 }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 9 }}>
+            <VerifiedMark C={C} size={15} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, lineHeight: 16 }}>
+                {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 7, lineHeight: 16 }}>{f.provenance}</Text>
+            </View>
+          </View>
+          {src?.trademark ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15, opacity: 0.85 }}>{src.trademark}</Text> : null}
+        </View>
+
+        {/* MORE FROM THIS BUSINESS — a checked item is a way into a checked menu. */}
+        {related.length > 0 ? (
+          <View style={{ marginTop: 26 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</Text>
+              {src ? (
+                <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button">
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {related.map((r) => (
+              <Pressable key={r.id} onPress={() => openFoodPage(r.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 13, paddingHorizontal: 2 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
+                    <VerifiedMark C={C} size={11} />
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{r.facts.kcal} kcal  –  {r.servingLabel}</Text>
+                </View>
+                <IChevRight size={16} color={C.ash} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        {mealMsg ? (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 18 }}>
+            <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+          </View>
+        ) : null}
+
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 22, marginBottom: 12 }}>
+          <Pressable onPress={() => saveFood(hit)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 20 }}>
+            <IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} />
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveToFoods")}</Text>
+          </Pressable>
+          <Pressable onPress={() => logFood(hit)} accessibilityRole="button" style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16 }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logThis")}</Text>
+          </Pressable>
+        </View>
+        {renderPortionSheet()}
+      </AuroraScreen>
+    );
+  }
+
+  // ============ SOURCE — the business's own page ============
+  const sourcePage = sourcePageId ? verifiedSource(sourcePageId) : null;
+  if (view === "source" && sourcePage) {
+    const src = sourcePage;
+    const items = verifiedFoodsBySource(src.id);
+    const checked = sourceCheckedOn(src.id);
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
+
+        <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingVertical: 28, paddingHorizontal: 20, marginTop: 6 }}>
+          <SourceMarkView C={C} src={src} height={46} />
+        </View>
+
+        <Text style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.7, color: C.chalk, marginTop: 20 }}>{src.name}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 9 }}>{src.note}</Text>
+
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 18 }}>
+          {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
+            <View key={lab} style={{ flex: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{lab}</Text>
+              <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{val}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 26, marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.checkedItems")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{items.length}</Text>
+        </View>
+        {items.map((f) => (
+          <Pressable key={f.id} onPress={() => openFoodPage(f.id, "source")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 14, paddingHorizontal: 2 }}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 7 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{f.name}</Text>
+                <VerifiedMark C={C} size={12} />
+              </View>
+              {f.menuName ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{f.menuName}</Text> : null}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{f.facts.kcal} kcal  –  {f.servingLabel}</Text>
+            </View>
+            <IChevRight size={17} color={C.ash} />
+          </Pressable>
+        ))}
+
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: 16, opacity: 0.85, marginBottom: 20 }}>{src.trademark}</Text>
       </AuroraScreen>
     );
   }

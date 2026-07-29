@@ -122,7 +122,7 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     // the usual rounding of a label computed from unrounded gram values.
     facts: { kcal: 327, protein: 14.2, carbs: 22.9, fat: 19.6, satFat: 7.3, sugar: 4.1, fiber: null, salt: 1.7 },
     verifiedOn: "2026-07-29",
-    provenance: "Max Premium Burgers published nutrition table (PL), per 121 g portion.",
+    provenance: "MAX Premium Burgers published nutrition table (PL), per 121 g portion.",
   },
   {
     id: "mpb-chicken-jr",
@@ -135,7 +135,7 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     // Saturates, sugars and salt are NOT stated for this item — null, not zero.
     facts: { kcal: 311, protein: 10.5, carbs: 33.9, fat: 14.5, satFat: null, sugar: null, fiber: null, salt: null },
     verifiedOn: "2026-07-29",
-    provenance: "Max Premium Burgers published nutrition table (PL), per 123 g portion.",
+    provenance: "MAX Premium Burgers published nutrition table (PL), per 123 g portion.",
   },
   {
     id: "mpb-fries-small",
@@ -149,7 +149,7 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     servingGrams: null,
     facts: { kcal: 172, protein: 1.9, carbs: 25.4, fat: 6.9, satFat: 0.7, sugar: 0.2, fiber: null, salt: 0.6 },
     verifiedOn: "2026-07-29",
-    provenance: "Max Premium Burgers published nutrition table (PL), per small portion.",
+    provenance: "MAX Premium Burgers published nutrition table (PL), per small portion.",
   },
 ];
 
@@ -210,9 +210,25 @@ export function searchVerifiedFoods(query: string, limit = 8): VerifiedFood[] {
   return scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name)).slice(0, limit).map((s) => s.f);
 }
 
-/** Every verified item a business sells. */
+/** Every verified item a business sells, in catalog order. */
 export function verifiedFoodsBySource(sourceId: string): VerifiedFood[] {
   return VERIFIED_FOODS.filter((f) => f.sourceId === sourceId);
+}
+
+/** The OTHER items from the same business — the "more from MAX" rail on a
+ *  product page, so a checked item is a way into the rest of a checked menu
+ *  rather than a dead end. */
+export function relatedVerifiedFoods(id: string, limit = 6): VerifiedFood[] {
+  const f = verifiedFood(id);
+  if (!f) return [];
+  return verifiedFoodsBySource(f.sourceId).filter((x) => x.id !== f.id).slice(0, limit);
+}
+
+/** The date a source was last checked — the newest verifiedOn across its items,
+ *  which is what a source page states rather than repeating a date per row. */
+export function sourceCheckedOn(sourceId: string): string | null {
+  const dates = verifiedFoodsBySource(sourceId).map((f) => f.verifiedOn).sort();
+  return dates.length ? dates[dates.length - 1]! : null;
 }
 
 // ── Adapter into the shared search row ─────────────────────────────────────
