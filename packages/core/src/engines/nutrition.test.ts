@@ -140,7 +140,12 @@ describe("nutritionSummary", () => {
 
 describe("nutritionNudge", () => {
   const targets = { kcal: 2400, protein: 160, carbs: 300, fat: 70, maintenance: 2400, goal: "maintain" as const, basis: "x", trainingKcal: 0 };
-  const day = (kcalV: number, proteinV: number): ReturnType<typeof todayNutrition> => ({ date: "2026-06-03", kcal: kcalV, protein: proteinV, carbs: 0, fat: 0, water: 0 });
+  // Built from emptyNutritionDay so a new NutritionDay field can never leave
+  // this fixture behind — which is exactly what happened when the label panel
+  // landed: vitest strips types rather than checking them, so the suite stayed
+  // green while `tsc --noEmit` failed.
+  const day = (kcalV: number, proteinV: number): ReturnType<typeof todayNutrition> =>
+    ({ ...emptyNutritionDay("2026-06-03"), kcal: kcalV, protein: proteinV });
 
   it("flags a cold start when nothing is logged", () => {
     expect(nutritionNudge(day(0, 0), targets).kind).toBe("cold-start");
