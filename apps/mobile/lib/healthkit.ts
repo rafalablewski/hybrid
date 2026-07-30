@@ -198,13 +198,50 @@ function nightlySleep(segments: Reading[]): RelaySample[] {
 
 // ---- workout matching (the summary's "match a device workout") ------------
 
+/** HealthKit has no one "distance" — it keeps a separate quantity type per
+ *  travel mode, and a workout carries a statistic only for its own. */
+const DISTANCE_TYPES = [
+  "HKQuantityTypeIdentifierDistanceWalkingRunning",
+  "HKQuantityTypeIdentifierDistanceCycling",
+  "HKQuantityTypeIdentifierDistanceSwimming",
+  "HKQuantityTypeIdentifierDistanceRowing",
+  "HKQuantityTypeIdentifierDistancePaddleSports",
+  "HKQuantityTypeIdentifierDistanceCrossCountrySkiing",
+  "HKQuantityTypeIdentifierDistanceDownhillSnowSports",
+  "HKQuantityTypeIdentifierDistanceSkatingSports",
+  "HKQuantityTypeIdentifierDistanceWheelchair",
+] as const;
+
+type DistanceType = (typeof DISTANCE_TYPES)[number];
+
+/** The distance type an activity records in, keyed off the HK activity enum's
+ *  own name ("swimming", "crossCountrySkiing"). Most specific first — "swimBikeRun"
+ *  (a triathlon) has no single mode, so it falls through to the generic probe. */
+const ACTIVITY_DISTANCE: [RegExp, DistanceType][] = [
+  [/swim|waterFitness|waterSports|underwaterDiving/i, "HKQuantityTypeIdentifierDistanceSwimming"],
+  [/crossCountrySkiing/i, "HKQuantityTypeIdentifierDistanceCrossCountrySkiing"],
+  [/downhillSkiing|snowboarding|snowSports/i, "HKQuantityTypeIdentifierDistanceDownhillSnowSports"],
+  [/skating|skatingSports/i, "HKQuantityTypeIdentifierDistanceSkatingSports"],
+  [/rowing/i, "HKQuantityTypeIdentifierDistanceRowing"],
+  [/paddle|surfing|sailing|kayak|canoe/i, "HKQuantityTypeIdentifierDistancePaddleSports"],
+  [/wheelchair/i, "HKQuantityTypeIdentifierDistanceWheelchair"],
+  [/cycling|handCycling/i, "HKQuantityTypeIdentifierDistanceCycling"],
+  [/running|walking|hiking|elliptical|stairs|stepTraining/i, "HKQuantityTypeIdentifierDistanceWalkingRunning"],
+];
+
 /** What the match flow reads beyond the daily biometrics: the workout list
- *  itself plus the per-workout heart-rate / active-energy / step statistics. */
+ *  itself plus the per-workout heart-rate / active-energy / step / distance
+ *  statistics. */
 const WORKOUT_READ_TYPES = [
   "HKWorkoutTypeIdentifier",
   "HKQuantityTypeIdentifierHeartRate",
   "HKQuantityTypeIdentifierActiveEnergyBurned",
   "HKQuantityTypeIdentifierStepCount",
+  // Every distance flavour HealthKit records, because `workout.statistics(for:)`
+  // only answers for types the app may read — and the workout's own
+  // `totalDistance` is nil for recordings whose distance lives in the
+  // per-activity statistics instead (see `workoutDistanceKm`).
+  ...DISTANCE_TYPES,
 ] as const;
 
 /** Sheet the workout read permissions (idempotent — iOS only shows the sheet
@@ -236,13 +273,42 @@ const qtyKcal = (q?: { unit: string; quantity: number } | null): number | null =
   if (q.unit === "J") return q.quantity / 4184;
   return null;
 };
+/**
+ * A length quantity → km.
+ *
+ * The unit strings are NOT all HKUnit.unitString: the bridge serializes a
+ * workout's `totalDistance` with the hard-coded literal "meters" while the
+ * statistics path answers in HealthKit's own "m". Accepting only the latter is
+ * what made every matched workout show "—" for distance (and therefore for
+ * pace, which is derived from it) — a 510 m pool swim read as no distance at
+ * all. Spelled-out names are matched alongside the symbols for that reason.
+ */
+const KM_PER_UNIT: Record<string, number> = {
+  m: 0.001,
+  meter: 0.001,
+  meters: 0.001,
+  metre: 0.001,
+  metres: 0.001,
+  km: 1,
+  kilometer: 1,
+  kilometers: 1,
+  kilometre: 1,
+  kilometres: 1,
+  mi: 1.609344,
+  mile: 1.609344,
+  miles: 1.609344,
+  yd: 0.0009144,
+  yard: 0.0009144,
+  yards: 0.0009144,
+  ft: 0.0003048,
+  foot: 0.0003048,
+  feet: 0.0003048,
+  cm: 0.00001,
+};
 const qtyKm = (q?: { unit: string; quantity: number } | null): number | null => {
   if (!q || !Number.isFinite(q.quantity)) return null;
-  if (q.unit === "m") return q.quantity / 1000;
-  if (q.unit === "km") return q.quantity;
-  if (q.unit === "mi") return q.quantity * 1.609344;
-  if (q.unit === "yd") return q.quantity * 0.0009144;
-  return null;
+  const factor = KM_PER_UNIT[q.unit.trim().toLowerCase()];
+  return factor == null ? null : q.quantity * factor;
 };
 const qtyCount = (q?: { unit: string; quantity: number } | null): number | null =>
   q && Number.isFinite(q.quantity) ? q.quantity : null;
@@ -276,12 +342,48 @@ const metaCelsius = (v: unknown): number | null => {
 
 /** "functionalStrengthTraining" (the enum's name) → "Functional Strength
  *  Training" — resolved here so no other client ever needs the HK enum. */
+const activityRawName = (hk: HK, type: number): string =>
+  (hk.WorkoutActivityType as Record<number, string | undefined>)[type] ?? "";
+
 const activityLabel = (hk: HK, type: number): string => {
-  const raw = (hk.WorkoutActivityType as Record<number, string | undefined>)[type];
+  const raw = activityRawName(hk, type);
   if (!raw) return "Workout";
   const words = raw.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
+
+/** One workout proxy as the library hands it back. */
+type WorkoutProxyLike = Awaited<ReturnType<HK["queryWorkoutSamples"]>>[number];
+
+/**
+ * HOW FAR the recording says it went, km.
+ *
+ * `totalDistance` first — but it is nil for workouts whose distance is only
+ * kept as per-activity statistics, so an absent total falls back to the
+ * statistic for the activity's own distance type (an unmapped activity probes
+ * the three common modes rather than all nine). Explicitly requesting metres
+ * sidesteps the store's locale-preferred unit. Null when nothing measured a
+ * distance — a gym session genuinely has none.
+ */
+async function workoutDistanceKm(w: WorkoutProxyLike, rawActivity: string): Promise<number | null> {
+  const total = qtyKm(w.totalDistance);
+  if (total != null && total > 0) return total;
+  const primary = ACTIVITY_DISTANCE.find(([re]) => re.test(rawActivity))?.[1];
+  const probes: DistanceType[] = primary
+    ? [primary]
+    : [
+        "HKQuantityTypeIdentifierDistanceWalkingRunning",
+        "HKQuantityTypeIdentifierDistanceCycling",
+        "HKQuantityTypeIdentifierDistanceSwimming",
+      ];
+  const stats = await Promise.all(probes.map((type) => w.getStatistic(type, "m").catch(() => undefined)));
+  let best = 0;
+  for (const s of stats) {
+    const km = qtyKm(s?.sumQuantity);
+    if (km != null && km > best) best = km;
+  }
+  return best > 0 ? best : null;
+}
 
 /** Apple product-type families ("Watch6,18", "iPhone16,2") → the hardware an
  *  athlete would name, for a recording that carries no device name of its own. */
@@ -347,15 +449,17 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
     for (const w of proxies) {
       const start = iso(w.startDate);
       const end = iso(w.endDate);
+      const rawActivity = activityRawName(hk, w.workoutActivityType as unknown as number);
       const durationMin =
         qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
       // Everything the recording carries, each read degrading to absent on its
-      // own: per-workout statistics (HR incl. the floor, steps), the workout's
-      // own totals (strokes/flights), and the metadata extras (climb, average
-      // METs, indoor flag, weather).
-      const [hr, stepStat] = await Promise.all([
+      // own: per-workout statistics (HR incl. the floor, steps), the measured
+      // distance, the workout's own totals (strokes/flights), and the metadata
+      // extras (climb, average METs, indoor flag, weather).
+      const [hr, stepStat, distanceKm] = await Promise.all([
         w.getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min").catch(() => undefined),
         w.getStatistic("HKQuantityTypeIdentifierStepCount", "count").catch(() => undefined),
+        workoutDistanceKm(w, rawActivity).catch(() => null),
       ]);
       const meta = (w.metadata ?? {}) as Record<string, unknown>;
       const indoorRaw = meta["HKIndoorWorkout"];
@@ -366,8 +470,9 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
         start,
         end,
         durationMin: Math.round(durationMin),
+        durationSec: Math.round(durationMin * 60),
         kcal: qtyKcal(w.totalEnergyBurned) ?? undefined,
-        distanceKm: qtyKm(w.totalDistance) ?? undefined,
+        distanceKm: distanceKm ?? undefined,
         avgHr: hr?.averageQuantity?.quantity,
         maxHr: hr?.maximumQuantity?.quantity,
         minHr: hr?.minimumQuantity?.quantity,
