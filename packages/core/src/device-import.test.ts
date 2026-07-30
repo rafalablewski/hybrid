@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   DEVICE_IMPORT_MIN_MIN,
+  DEVICE_IMPORT_PROVIDERS,
   deviceImportCounts,
   deviceImportMeta,
   deviceWorkoutBlocks,
@@ -8,7 +9,8 @@ import {
   planDeviceImport,
   sportForDeviceActivity,
 } from "./device-import";
-import type { DeviceWorkout } from "./session-device";
+import { deviceMarkFor } from "./device-marks";
+import { deviceSourceLabel, type DeviceWorkout } from "./session-device";
 import type { LoggedSession } from "./engines/session";
 
 const T = (h: number, m = 0) => new Date(Date.UTC(2026, 6, 20, h, m)).toISOString();
@@ -195,6 +197,29 @@ describe("planDeviceImport", () => {
       [],
     );
     expect(items.map((i) => i.workout.uuid)).toEqual(["new", "old"]);
+  });
+});
+
+describe("DEVICE_IMPORT_PROVIDERS", () => {
+  it("names every provider the strip offers, and only one is readable today", () => {
+    expect(DEVICE_IMPORT_PROVIDERS.map((p) => p.id)).toEqual(["apple", "garmin"]);
+    expect(DEVICE_IMPORT_PROVIDERS.filter((p) => p.status === "live").map((p) => p.id)).toEqual(["apple"]);
+  });
+
+  it("can name AND draw every provider it lists — a placeholder is not an excuse", () => {
+    for (const p of DEVICE_IMPORT_PROVIDERS) {
+      expect(deviceSourceLabel({ provider: p.id }), p.id).toBeTruthy();
+      expect(deviceMarkFor(p.id), p.id).not.toBeNull();
+    }
+  });
+
+  it("plans a placeholder provider's recording exactly like a live one", () => {
+    // The point of the placeholder: nothing downstream branches on the
+    // provider, so the day Garmin gains a reader no planning code changes.
+    const g = workout({ uuid: "g1", provider: "garmin", activityLabel: "Cycling" });
+    const items = planDeviceImport([g], []);
+    expect(items[0]).toMatchObject({ action: "create", title: "Cycling" });
+    expect(deviceWorkoutBlocks(g)[0]).toMatchObject({ kind: "cardio", discipline: "cycling" });
   });
 });
 

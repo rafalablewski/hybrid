@@ -136,6 +136,33 @@ export function deviceWorkoutBlocks(w: DeviceWorkout): SessionBlock[] {
   ];
 }
 
+/**
+ * WHERE a recording can come from.
+ *
+ * `live` — the app can actually read this device today.
+ * `placeholder` — the shape is wired end to end (the plan, the route, the mark,
+ *   the row rendering all take it unchanged) but there is no data source yet,
+ *   because the connector needs credentials nobody has set. Listed anyway, and
+ *   labelled as such: an athlete looking for their Garmin should find out where
+ *   it stands here, not by importing nothing and guessing why.
+ *
+ * Nothing downstream branches on this — it drives the provider strip's copy and
+ * nothing else. A provider goes `live` by gaining a reader, not by being
+ * special-cased.
+ */
+export type DeviceImportProviderStatus = "live" | "placeholder";
+
+export interface DeviceImportProvider {
+  /** Matches DeviceWorkout.provider, PROVIDER_DEVICE and the mark registry. */
+  id: string;
+  status: DeviceImportProviderStatus;
+}
+
+export const DEVICE_IMPORT_PROVIDERS: DeviceImportProvider[] = [
+  { id: "apple", status: "live" },
+  { id: "garmin", status: "placeholder" },
+];
+
 /** What an import will DO with one recording. */
 export type DeviceImportAction = "create" | "attach" | "linked";
 

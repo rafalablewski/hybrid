@@ -17,6 +17,10 @@ import { contrastRatio, WCAG } from "./contrast";
 // them once here rather than at each use.
 const APPLE = DEVICE_MARKS.apple!;
 const GARMIN = DEVICE_MARKS.garmin!;
+// Still a silhouette (one drawing, no compact form) — the fixture for the
+// fall-back-to-lockup behaviour, which Garmin used to stand for before its own
+// artwork landed.
+const POLAR = DEVICE_MARKS.polar!;
 
 const every = (fn: (art: DeviceMarkArt, name: string) => void) => {
   for (const [provider, set] of Object.entries(DEVICE_MARKS)) {
@@ -40,8 +44,21 @@ describe("deviceMarkFor", () => {
 
   it("gives the compact mark when asked, and the lockup when there isn't one", () => {
     expect(deviceMarkFor("apple", "mark")).toBe(APPLE.mark);
+    // A real logo ships both forms: the wordmark to name the device, the glyph
+    // to count it.
+    expect(deviceMarkFor("garmin", "mark")).toBe(GARMIN.mark);
+    expect(deviceMarkFor("garmin")).toBe(GARMIN.lockup);
     // A silhouette provider ships one drawing — asking for `mark` still draws.
-    expect(deviceMarkFor("garmin", "mark")).toBe(GARMIN.lockup);
+    expect(POLAR.mark).toBeUndefined();
+    expect(deviceMarkFor("polar", "mark")).toBe(POLAR.lockup);
+  });
+
+  it("draws Garmin's wordmark wide and its delta near-square", () => {
+    // The two forms exist because they solve different problems: a 352-wide
+    // wordmark cannot sit in a row that only has room to say "this came off a
+    // device", and the delta alone cannot name the manufacturer.
+    expect(GARMIN.lockup.width).toBeGreaterThan(300);
+    expect(GARMIN.mark!.width).toBeLessThan(130);
   });
 
   it("draws every provider session-device.ts can name", () => {
