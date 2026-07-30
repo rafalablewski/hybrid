@@ -240,7 +240,7 @@ export function DeviceImportSheet({
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (
                 <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}>
-                  <DeviceMark provider={p.id} form="lockup" height={15} on="dark" label={deviceSourceLabel({ provider: p.id }) ?? undefined} />
+                  <DeviceMark provider={p.id} form="lockup" height={16} on="dark" label={deviceSourceLabel({ provider: p.id }) ?? undefined} />
                   <View style={{ flex: 1 }} />
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: p.status === "live" ? txt(C, C.lime) : C.ash }}>
                     {t(p.status === "live" ? "device.import.live" : "device.import.placeholder")}

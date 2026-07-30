@@ -102,7 +102,7 @@ export default function DeviceImportPanel({
           </Mono>
           {DEVICE_IMPORT_PROVIDERS.map((p) => (
             <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-              <DeviceMark provider={p.id} form="lockup" height={15} on="dark" label={deviceSourceLabel({ provider: p.id }) ?? undefined} />
+              <DeviceMark provider={p.id} form="lockup" height={16} on="dark" label={deviceSourceLabel({ provider: p.id }) ?? undefined} />
               <span style={{ flex: 1 }} />
               <Mono s={{ fontSize: fs.caption }} c={p.status === "live" ? "var(--lime-text)" : ASH}>
                 {t(p.status === "live" ? "device.import.live" : "device.import.placeholder")}
