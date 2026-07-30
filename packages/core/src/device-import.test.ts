@@ -91,8 +91,8 @@ describe("planDeviceImport", () => {
   it("creates a session for a recording nothing in the log accounts for", () => {
     const items = planDeviceImport([workout()], []);
     expect(items).toHaveLength(1);
-    expect(items[0].action).toBe("create");
-    expect(items[0].title).toBe("Running");
+    expect(items[0]!.action).toBe("create");
+    expect(items[0]!.title).toBe("Running");
   });
 
   it("drops recordings too short to be a session", () => {
@@ -103,21 +103,21 @@ describe("planDeviceImport", () => {
   it("does nothing to a recording already carried by a session", () => {
     const s = session({ device: workout() });
     const items = planDeviceImport([workout()], [s]);
-    expect(items[0]).toMatchObject({ action: "linked", sessionId: "s1" });
+    expect(items[0]!).toMatchObject({ action: "linked", sessionId: "s1" });
   });
 
   it("attaches to a session whose interval the recording overlaps", () => {
     // Logged 07:10–08:10 in the app, recorded 07:00–08:00 on the watch.
     const s = session({ startedAt: T(7, 10), completedAt: T(8, 10) });
     const items = planDeviceImport([workout()], [s]);
-    expect(items[0]).toMatchObject({ action: "attach", sessionId: "s1", sessionTitle: "Running" });
+    expect(items[0]!).toMatchObject({ action: "attach", sessionId: "s1", sessionTitle: "Running" });
   });
 
   it("leaves a barely-overlapping recording as its own session", () => {
     // The watch's hour ends 6 minutes into the logged session — that is two
     // different pieces of training, not one.
     const s = session({ startedAt: T(7, 54), completedAt: T(9) });
-    expect(planDeviceImport([workout()], [s])[0].action).toBe("create");
+    expect(planDeviceImport([workout()], [s])[0]!.action).toBe("create");
   });
 
   it("attaches to a POINT log with an agreeing duration", () => {
@@ -127,7 +127,7 @@ describe("planDeviceImport", () => {
       completedAt: T(9),
       blocks: [{ kind: "cardio", name: "Running", minutes: 55 }],
     });
-    expect(planDeviceImport([workout()], [s])[0]).toMatchObject({ action: "attach", sessionId: "s1" });
+    expect(planDeviceImport([workout()], [s])[0]!).toMatchObject({ action: "attach", sessionId: "s1" });
   });
 
   it("will not attach a point log whose duration disagrees", () => {
@@ -137,7 +137,7 @@ describe("planDeviceImport", () => {
       completedAt: T(9),
       blocks: [{ kind: "cardio", name: "Walking", minutes: 12 }],
     });
-    expect(planDeviceImport([workout()], [s])[0].action).toBe("create");
+    expect(planDeviceImport([workout()], [s])[0]!.action).toBe("create");
   });
 
   it("will not attach a point log stamped days from the recording", () => {
@@ -146,12 +146,12 @@ describe("planDeviceImport", () => {
       completedAt: new Date(Date.UTC(2026, 6, 25, 9)).toISOString(),
       blocks: [{ kind: "cardio", name: "Running", minutes: 60 }],
     });
-    expect(planDeviceImport([workout()], [s])[0].action).toBe("create");
+    expect(planDeviceImport([workout()], [s])[0]!.action).toBe("create");
   });
 
   it("will not attach a point log with no duration to go on", () => {
     const s = session({ startedAt: T(9), completedAt: T(9), blocks: [] });
-    expect(planDeviceImport([workout()], [s])[0].action).toBe("create");
+    expect(planDeviceImport([workout()], [s])[0]!.action).toBe("create");
   });
 
   it("pairs one-to-one — two recordings can't both claim one session", () => {
@@ -173,21 +173,21 @@ describe("planDeviceImport", () => {
     );
     expect(items.filter((i) => i.action === "attach")).toHaveLength(1);
     // The exact-interval session (b) wins over the 5-minutes-off one.
-    expect(items[0].sessionId).toBe("b");
+    expect(items[0]!.sessionId).toBe("b");
   });
 
   it("never re-attaches a recording to a session that already carries another", () => {
     const s = session({ device: workout({ uuid: "other" }) });
-    expect(planDeviceImport([workout()], [s])[0].action).toBe("create");
+    expect(planDeviceImport([workout()], [s])[0]!.action).toBe("create");
   });
 
   it("is idempotent — replanning after an import finds nothing left to do", () => {
     const w = workout();
     const first = planDeviceImport([w], []);
-    expect(first[0].action).toBe("create");
+    expect(first[0]!.action).toBe("create");
     // …the import wrote a session carrying the recording; the next sync sees it.
     const after = planDeviceImport([w], [session({ device: w })]);
-    expect(after[0].action).toBe("linked");
+    expect(after[0]!.action).toBe("linked");
     expect(deviceImportCounts(after).pending).toBe(0);
   });
 
@@ -218,7 +218,7 @@ describe("DEVICE_IMPORT_PROVIDERS", () => {
     // provider, so the day Garmin gains a reader no planning code changes.
     const g = workout({ uuid: "g1", provider: "garmin", activityLabel: "Cycling" });
     const items = planDeviceImport([g], []);
-    expect(items[0]).toMatchObject({ action: "create", title: "Cycling" });
+    expect(items[0]!).toMatchObject({ action: "create", title: "Cycling" });
     expect(deviceWorkoutBlocks(g)[0]).toMatchObject({ kind: "cardio", discipline: "cycling" });
   });
 });
