@@ -19,6 +19,9 @@ import { fs, space, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
 import { RADIUS } from "./aurora/kit";
+import { DeviceMark } from "./aurora/device-mark";
+import { DeviceImportSheet } from "./device-import";
+import { healthKitAvailability } from "../lib/healthkit";
 
 /**
  * Home quick-log — a horizontal CAROUSEL of one-tap sport cards (likely sports +
@@ -43,7 +46,14 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 
   const [sheetSport, setSheetSport] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // The bar is offered wherever a health store can be read; the sheet itself
+  // explains the miss (Expo Go / Android) rather than the bar hiding silently.
+  // A guest is the one real exclusion: an import writes through the backend, so
+  // there is nowhere to put it until they have an account.
+  const { session: account } = useSession();
+  const canImport = !!account && healthKitAvailability() !== "wrong-platform";
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +66,29 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 
   return (
     <>
+      {/* IMPORT FROM THE WATCH — first, above the typing. If the training was
+          already recorded on the wrist there is nothing to type at all. */}
+      {canImport && (
+        <Pressable
+          onPress={() => setImportOpen(true)}
+          style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 10 }}
+        >
+          <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("device.import.cardTitle")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("device.import.cardSub")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
+      <DeviceImportSheet
+        sessions={sessions}
+        visible={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => onSaved?.()}
+      />
+
       {/* 2×2 grid of one-tap sport cards */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {suggested.map((name) => (

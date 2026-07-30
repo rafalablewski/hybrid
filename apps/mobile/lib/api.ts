@@ -284,6 +284,29 @@ export async function patchSessionDevice(id: string, device: DeviceWorkout | nul
   }
 }
 
+/** What an import changed, as the server counted it. */
+export type DeviceImportResult = { created: number; attached: number; linked: number; skipped: number };
+
+// Hand the device's recordings to the backend, which decides what each one
+// means against the database and writes the sessions — see the route's header
+// and core/device-import.ts. Null on any failure so a silent auto-sync can tell
+// "nothing to do" (zeros) from "didn't happen".
+export async function importDeviceWorkouts(workouts: DeviceWorkout[]): Promise<DeviceImportResult | null> {
+  if (workouts.length === 0) return { created: 0, attached: 0, linked: 0, skipped: 0 };
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/import-device`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ workouts }),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json().catch(() => ({}))) as Partial<DeviceImportResult>;
+    return { created: d.created ?? 0, attached: d.attached ?? 0, linked: d.linked ?? 0, skipped: d.skipped ?? 0 };
+  } catch {
+    return null;
+  }
+}
+
 // Reusable workout routines (WorkoutTemplate) the user owns — save a workout,
 // then load it to start a live session.
 export type Routine = {

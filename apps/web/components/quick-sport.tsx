@@ -15,6 +15,8 @@ import {
 } from "@hybrid/core";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, ON_ACCENT, disp, mono, Mono } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { DeviceMark } from "./aurora/device-mark";
+import DeviceImportPanel from "./device-import";
 
 // Carousel cards use punchy short labels (the sheet/log keeps the real sport
 // name) — "Running" → "Run", "Cycling" → "Ride", etc.
@@ -52,9 +54,26 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 
   const [sheetSport, setSheetSport] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <>
+      {/* IMPORT FROM THE WATCH — first, above the typing. If the training was
+          already recorded on the wrist there is nothing to type at all. */}
+      <button
+        onClick={() => setImportOpen(true)}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: INK2, border: `1px solid ${LIME}`, borderRadius: 18, padding: "13px 16px", marginBottom: 10, cursor: "pointer", color: CHALK, textAlign: "left" }}
+      >
+        <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "block" }}>{t("device.import.cardTitle")}</span>
+          <span style={{ ...mono, fontSize: fs.micro, color: ASH, display: "block", marginTop: 2 }}>{t("device.import.cardSub")}</span>
+        </span>
+        <span style={{ ...disp, fontWeight: 900, fontSize: fs.body, color: "var(--lime-text)" }}>→</span>
+      </button>
+
+      {importOpen && <DeviceImportPanel sessions={sessions} onClose={() => setImportOpen(false)} />}
+
       {/* 2×2 grid of one-tap sport cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {suggested.map((name) => (

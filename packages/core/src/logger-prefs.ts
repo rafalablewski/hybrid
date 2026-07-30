@@ -62,6 +62,14 @@ export interface LoggerPrefs {
   volumeBlock: VolumeBlock;
   /** Show the block's weekly target on the Volume screen (off = landmarks only). */
   periodizeVolume: boolean;
+  /**
+   * Pull new workouts off the athlete's watch by themselves — no sheet, no tap.
+   * Off by default: the first import should be one the athlete watched happen,
+   * so they can see what the plan does before it runs unattended. The read is
+   * phone-only (a health store is native), but the preference lives here so the
+   * toggle reads the same on both clients. See core/device-import.ts.
+   */
+  deviceAutoImport: boolean;
 }
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
@@ -88,6 +96,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   adaptiveLandmarks: true,
   volumeBlock: DEFAULT_BLOCK,
   periodizeVolume: false,
+  deviceAutoImport: false,
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
@@ -141,5 +150,6 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     adaptiveLandmarks: bool(r.adaptiveLandmarks, DEFAULT_LOGGER_PREFS.adaptiveLandmarks),
     volumeBlock: resolveBlock(r.volumeBlock as Partial<VolumeBlock> | null | undefined),
     periodizeVolume: bool(r.periodizeVolume, DEFAULT_LOGGER_PREFS.periodizeVolume),
+    deviceAutoImport: bool(r.deviceAutoImport, DEFAULT_LOGGER_PREFS.deviceAutoImport),
   };
 }

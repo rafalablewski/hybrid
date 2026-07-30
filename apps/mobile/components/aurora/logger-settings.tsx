@@ -26,6 +26,9 @@ const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "carryOver", titleKey: "loggerPrefs.carryOver", descKey: "loggerPrefs.carryOverDesc" },
   { key: "keepAwake", titleKey: "loggerPrefs.keepAwake", descKey: "loggerPrefs.keepAwakeDesc" },
   { key: "haptics", titleKey: "loggerPrefs.haptics", descKey: "loggerPrefs.hapticsDesc" },
+  // Pull workouts off the watch on open — the read is native, the switch is
+  // shared with web (see components/device-import.tsx on both clients).
+  { key: "deviceAutoImport", titleKey: "device.import.autoTitle", descKey: "device.import.autoDesc" },
 ];
 
 /** AURORA Logger settings — the rounded, segmented-control take on the logger
