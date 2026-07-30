@@ -3,15 +3,23 @@
 import { useMemo, useState } from "react";
 import {
   fuelToday,
+  fuelPlate,
+  mealPartEmoji,
+  mealPartLabelFromKey,
   trainingEnergyOnDay,
+  DEFAULT_MEAL_PART_KEYS,
+  FUEL_PLATE_OTHER,
   MEAL_PRESETS,
   isFullAccess,
   type FuelToday,
   type FuelMacro,
+  type FuelPlateGroup,
   type LoggedSession,
   type MealPreset,
 } from "@hybrid/core";
 import { useSignals } from "@/lib/use-signals";
+import { useFoodLogs } from "@/lib/use-food-logs";
+import { useRevalidate } from "@/lib/use-invalidate";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 
@@ -34,8 +42,15 @@ const MACRO_FILL: Record<FuelMacro["key"], string> = {
  * exactly how the week rail flips done / missed / today: the client reads meaning
  * from the tick-ring + a single headline, not a different card per case. State,
  * targets and macros all come from @hybrid/core's fuelToday() so web + mobile
- * render identically (parity rule). The quick-log rail is carried through every
- * state, so a meal is one tap from anywhere. Mirrored on mobile (aurora/fuel.tsx).
+ * render identically (parity rule).
+ *
+ * It answers BOTH questions a day's fuel raises: how much (the ring + macros)
+ * and WHAT (the plate — the day's logged meals grouped by part of the day, from
+ * core's fuelPlate), so seeing what you ate never means digging into Nutrition.
+ * The quick-log rail rides OUTSIDE the card, full-bleed to the screen edge (the
+ * golden slider rule) — it's an action bar for the whole widget, not a row of
+ * the summary, and it's carried through every state so a meal is one tap from
+ * anywhere. Mirrored on mobile (aurora/fuel.tsx).
  */
 export default function AuroraFuel({
   sessions,
@@ -47,7 +62,9 @@ export default function AuroraFuel({
   onOpen: () => void;
 }) {
   const { t } = useLang();
-  const { signals, loading, refresh } = useSignals();
+  const { signals, loading } = useSignals();
+  const { logs } = useFoodLogs();
+  const revalidate = useRevalidate();
   const full = isFullAccess(usePersona());
   // One-tap preset logging: the chip being written (busy) and the one that just
   // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
@@ -67,7 +84,8 @@ export default function AuroraFuel({
       const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
       const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, source: p.id.split("-")[0] || "snack", kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 }) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await refresh();
+      // Drops the signals the totals read AND the diary entries the plate lists.
+      await revalidate.recovery();
       setDone(p.id);
       window.setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);
     } catch {
@@ -82,6 +100,12 @@ export default function AuroraFuel({
     const trainingKcal = trainingEnergyOnDay(sessions, bodyMassKg ?? 75);
     return fuelToday(signals, { trainingKcal, bodyMassKg });
   }, [signals, sessions]);
+
+  // The day's logged items, grouped by part of the day. The athlete's CUSTOM
+  // parts live in the nutrition prefs this widget doesn't load, so an entry
+  // logged under one falls into "Other" and is labelled from its own key —
+  // visible either way, which is the point of the summary.
+  const plate = useMemo(() => fuelPlate(logs), [logs]);
 
   const { state, targets, kcalLeft, kcalPct, proteinGap, trainingKcal, today, macros } = fuel;
   const nf = (n: number) => Math.round(n).toLocaleString();
@@ -102,6 +126,7 @@ export default function AuroraFuel({
   if (loading) return null;
 
   return (
+    <>
     <div style={{ ...card, ...goalGlow, marginTop: 12 }}>
       {/* header — title + a state-coloured right meta (calendar's "colour = attention") */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
@@ -128,49 +153,88 @@ export default function AuroraFuel({
         </span>
       </button>
 
-      {/* quick-log rail — persistent across every state; presets ARE the meal
-          types (breakfast / lunch / dinner / snack), and the trailing dashed
-          "＋ Quick log" card (styled like the exercise rail's "All exercises &
-          favourites" card) opens the full quick-add. Full-bleed to the card edge
-          (rail inside a card respects the card's padding — the golden rule's
-          in-card exception). */}
-      <div style={{ marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-        <div style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", margin: "0 -20px", padding: "0 20px 4px" }}>
-          {/* ＋ Quick log — the entry to the full sheet, first so it's always
-              reachable. Bare ＋ glyph + lime label (not a boxed tile), echoing
-              the exercise rail's "All exercises & favourites" card. */}
-          <button
-            onClick={onOpen}
-            aria-label={t("w.home.fuel.quickLog")}
-            style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 10, background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 14, padding: "9px 17px", cursor: "pointer" }}
-          >
-            <span aria-hidden style={{ fontSize: 20, lineHeight: 1, color: C("ash") }}>＋</span>
-            <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap", color: "var(--lime-text)" }}>{t("w.home.fuel.quickLog")}</span>
-          </button>
-          {MEAL_PRESETS.map((p) => {
-            const isDone = done === p.id;
-            const isBusy = busy === p.id;
-            return (
+      {/* THE PLATE — what was actually eaten today, grouped by part of the day.
+          The macros above say how much; this says what, so the answer to "have
+          I had lunch" never costs a trip into Nutrition. Every row opens the
+          diary, where it can be edited. Hidden when nothing is logged (the
+          empty state already speaks for the day). */}
+      {plate.count > 0 && (
+        <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 13 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 14, color: C("chalk") }}>{t("w.recovery.nutrition.todaysMeals")}</span>
+            <button onClick={onOpen} style={{ ...mono, color: "var(--lime-text)", background: "none", border: "none", padding: 0, cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.home.fuel.allMeals")}</button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", marginTop: 6 }}>
+            {plate.groups.slice(0, PLATE_ROWS).map((g) => (
               <button
-                key={p.id}
-                onClick={() => logPreset(p)}
-                disabled={isBusy}
-                aria-label={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
-                style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, borderRadius: 14, padding: "9px 13px 9px 9px", cursor: isBusy ? "default" : "pointer", color: C("chalk"), opacity: isBusy ? 0.55 : 1, transition: "opacity .15s ease, background .2s ease, border-color .2s ease" }}
+                key={g.key}
+                onClick={onOpen}
+                style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", background: "none", border: "none", padding: "7px 0", cursor: "pointer", textAlign: "left", color: C("chalk") }}
               >
-                <span style={{ width: 32, height: 32, borderRadius: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 20%, transparent)` : C("ink2"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0, color: "var(--lime-text)" }}>
-                  {isDone ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5 10 17.5 19.5 7" /></svg> : p.emoji}
+                <span aria-hidden style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{mealPartEmoji(g.key)}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em" }}>{partLabel(g.key, t)}</span>
+                  <span style={{ display: "block", fontSize: 11.5, color: C("ash"), marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{groupLine(g, t)}</span>
                 </span>
-                <span style={{ textAlign: "left" }}>
-                  <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{presetShort(t(p.labelKey))}</span>
-                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: isDone ? "var(--lime-text)" : C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</span>
+                <span style={{ flexShrink: 0, textAlign: "right" }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11.5, fontVariantNumeric: "tabular-nums" }}>{nf(g.kcal)} kcal</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--blue-text)", marginTop: 1, fontVariantNumeric: "tabular-nums" }}>{nf(g.protein)}P</span>
                 </span>
               </button>
-            );
-          })}
+            ))}
+            {plate.groups.length > PLATE_ROWS && (
+              <button onClick={onOpen} style={{ ...mono, color: C("ash"), background: "none", border: "none", padding: "7px 0 0", cursor: "pointer", textAlign: "left" }}>
+                {t("w.home.fuel.plateMore").replace("{n}", nf(plate.groups.slice(PLATE_ROWS).reduce((s, g) => s + g.items.length, 0)))}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
+
+    {/* QUICK-LOG rail — outside the card and FULL-BLEED to the screen edge (the
+        golden slider rule: negative margins the width of the shell gutter pull
+        the scroll clip to the true edge, with matching padding so resting cards
+        still line up with the content column). It's the widget's action bar, not
+        a row of the summary: presets ARE the meal types (breakfast / lunch /
+        dinner / snack), and the leading dashed "＋ Quick log" card (styled like
+        the exercise rail's "All exercises & favourites" card) opens the full
+        quick-add. Persistent across every state. */}
+    <div style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", margin: "12px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px) 4px" }}>
+      {/* ＋ Quick log — the entry to the full sheet, first so it's always
+          reachable. Bare ＋ glyph + lime label (not a boxed tile), echoing
+          the exercise rail's "All exercises & favourites" card. */}
+      <button
+        onClick={onOpen}
+        aria-label={t("w.home.fuel.quickLog")}
+        style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 10, background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 14, padding: "9px 17px", cursor: "pointer" }}
+      >
+        <span aria-hidden style={{ fontSize: 20, lineHeight: 1, color: C("ash") }}>＋</span>
+        <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap", color: "var(--lime-text)" }}>{t("w.home.fuel.quickLog")}</span>
+      </button>
+      {MEAL_PRESETS.map((p) => {
+        const isDone = done === p.id;
+        const isBusy = busy === p.id;
+        return (
+          <button
+            key={p.id}
+            onClick={() => logPreset(p)}
+            disabled={isBusy}
+            aria-label={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+            style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, borderRadius: 14, padding: "9px 13px 9px 9px", cursor: isBusy ? "default" : "pointer", color: C("chalk"), opacity: isBusy ? 0.55 : 1, transition: "opacity .15s ease, background .2s ease, border-color .2s ease" }}
+          >
+            <span style={{ width: 32, height: 32, borderRadius: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 20%, transparent)` : C("ink2"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0, color: "var(--lime-text)" }}>
+              {isDone ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5 10 17.5 19.5 7" /></svg> : p.emoji}
+            </span>
+            <span style={{ textAlign: "left" }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{presetShort(t(p.labelKey))}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: isDone ? "var(--lime-text)" : C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+    </>
   );
 }
 
@@ -178,6 +242,29 @@ export default function AuroraFuel({
 // name, so trim at the en-dash separator.
 function presetShort(label: string): string {
   return label.split(" – ")[0] ?? label;
+}
+
+/** How many plate rows the widget shows before deferring to "+N more". Five
+ *  covers the four built-in parts plus "Other"; only custom parts overflow. */
+const PLATE_ROWS = 5;
+
+/** A part-of-day row label: the built-ins are i18n, "Other" mirrors the Diary's
+ *  own group, and a custom part (whose authored label lives in prefs this
+ *  widget doesn't load) reads from its key. Mirrored on mobile. */
+function partLabel(key: string, t: (k: string) => string): string {
+  if (key === FUEL_PLATE_OTHER) return t("w.recovery.nutrition.otherEntries");
+  if ((DEFAULT_MEAL_PART_KEYS as readonly string[]).includes(key)) return t(`w.recovery.nutrition.meal.${key}`);
+  return mealPartLabelFromKey(key);
+}
+
+/** The row's line: the items eaten in that part. An entry logged before names
+ *  were stored has none to show, so it's counted rather than invented.
+ *  Mirrored on mobile. */
+function groupLine(g: FuelPlateGroup, t: (k: string) => string): string {
+  const parts = [...g.names];
+  if (g.unnamed === 1) parts.push(t("w.recovery.nutrition.loggedEntry"));
+  else if (g.unnamed > 1) parts.push(`${g.unnamed} × ${t("w.recovery.nutrition.loggedEntry")}`);
+  return parts.join(", ");
 }
 
 function StateMeta({ state, trainingKcal, today, targets, t, nf, mono }: { state: FuelToday["state"]; trainingKcal: number; today: FuelToday["today"]; targets: FuelToday["targets"]; t: (k: string) => string; nf: (n: number) => string; mono: React.CSSProperties }) {

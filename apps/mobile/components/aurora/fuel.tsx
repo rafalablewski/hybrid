@@ -4,18 +4,24 @@ import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   fuelToday,
+  fuelPlate,
+  mealPartEmoji,
+  mealPartLabelFromKey,
   trainingEnergyOnDay,
+  DEFAULT_MEAL_PART_KEYS,
+  FUEL_PLATE_OTHER,
   MEAL_PRESETS,
   isFullAccess,
   type FuelToday,
   type FuelMacro,
+  type FuelPlateGroup,
   type LoggedSession,
   type MealPreset,
   type Signal,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { useSignalsQuery, useRevalidate } from "../../lib/queries";
+import { useSignalsQuery, useFoodLogsQuery, useRevalidate } from "../../lib/queries";
 import { usePersona } from "../../lib/persona";
 import { createFoodLog } from "../../lib/api";
 import { F, serifIf } from "../../lib/ui";
@@ -29,14 +35,22 @@ type P = ReturnType<typeof useTheme>["palette"];
  * exactly how the week rail flips done / missed / today: meaning reads from the
  * tick-ring + a single headline, not a different card per case. State, targets
  * and macros come from @hybrid/core's fuelToday() so mobile matches web exactly
- * (parity rule). The quick-log rail is carried through every state, so a meal is
- * one tap from anywhere. Mirror of apps/web aurora/fuel.tsx.
+ * (parity rule).
+ *
+ * It answers BOTH questions a day's fuel raises: how much (the ring + macros)
+ * and WHAT (the plate — the day's logged meals grouped by part of the day, from
+ * core's fuelPlate), so seeing what you ate never means digging into Nutrition.
+ * The quick-log rail rides OUTSIDE the card, full-bleed to the screen edge (the
+ * golden slider rule) — it's an action bar for the whole widget, not a row of
+ * the summary, and it's carried through every state so a meal is one tap from
+ * anywhere. Mirror of apps/web aurora/fuel.tsx.
  */
 export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const { data: rawSignals = [], isLoading } = useSignalsQuery();
   const signals = rawSignals as unknown as Signal[];
+  const { data: logs = [] } = useFoodLogsQuery();
   const revalidate = useRevalidate();
   const full = isFullAccess(usePersona());
   // One-tap preset logging: the chip being written (busy) and the one that just
@@ -67,6 +81,12 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
     const trainingKcal = trainingEnergyOnDay(sessions, bodyMassKg ?? 75);
     return fuelToday(signals, { trainingKcal, bodyMassKg });
   }, [signals, sessions]);
+
+  // The day's logged items, grouped by part of the day. The athlete's CUSTOM
+  // parts live in the nutrition prefs this widget doesn't load, so an entry
+  // logged under one falls into "Other" and is labelled from its own key —
+  // visible either way, which is the point of the summary.
+  const plate = useMemo(() => fuelPlate(logs), [logs]);
 
   const { state, targets, kcalLeft, kcalPct, proteinGap, trainingKcal, today, macros } = fuel;
   const nf = (n: number) => Math.round(n).toLocaleString();
@@ -118,6 +138,7 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
   if (isLoading) return null;
 
   return (
+    <>
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: glow ? withAlpha(C.lime, 0.3) : C.line, borderRadius: RADIUS.card, padding: 20, marginTop: 12, overflow: "hidden" }}>
       {glow && (
         <LinearGradient
@@ -202,43 +223,84 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
         </View>
       </Pressable>
 
-      {/* quick-log rail — persistent across every state; presets ARE the meal
-          types. Full-bleed to the card edge (a rail inside a card respects the
-          card's padding — the golden rule's in-card exception). */}
-      <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingBottom: 4 }}>
-          {/* ＋ Quick log — the entry to the full sheet, echoing the exercise
-              rail's "All exercises & favourites" card: a bare ＋ glyph + lime
-              label (not a boxed tile); first so it's always reachable. */}
-          <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t("w.home.fuel.quickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4), borderRadius: 14, paddingVertical: 9, paddingHorizontal: 17 }}>
-            <Text style={{ fontSize: 20, color: C.ash, marginTop: -2 }}>＋</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: txt(C, C.lime) }}>{t("w.home.fuel.quickLog")}</Text>
-          </Pressable>
-          {MEAL_PRESETS.map((p) => {
-            const isDone = done === p.id;
-            const isBusy = busy === p.id;
-            return (
-              <Pressable
-                key={p.id}
-                onPress={() => logPreset(p)}
-                disabled={isBusy}
-                accessibilityRole="button"
-                accessibilityLabel={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
-                style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.14) : C.ink, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 13, opacity: isBusy ? 0.55 : 1 }}
-              >
-                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.2) : C.ink2, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, alignItems: "center", justifyContent: "center" }}>
-                  {isDone ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : <Text style={{ fontSize: 16 }}>{p.emoji}</Text>}
+      {/* THE PLATE — what was actually eaten today, grouped by part of the day.
+          The macros above say how much; this says what, so the answer to "have
+          I had lunch" never costs a trip into Nutrition. Every row opens the
+          diary, where it can be edited. Hidden when nothing is logged (the
+          empty state already speaks for the day). */}
+      {plate.count > 0 && (
+        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 13 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+            <Text style={{ fontFamily: heading, fontSize: 14, color: C.chalk }}>{t("w.recovery.nutrition.todaysMeals")}</Text>
+            <Pressable onPress={onOpen} accessibilityRole="button" hitSlop={8}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: txt(C, C.lime) }}>{t("w.home.fuel.allMeals")}</Text>
+            </Pressable>
+          </View>
+          <View style={{ marginTop: 6 }}>
+            {plate.groups.slice(0, PLATE_ROWS).map((g) => (
+              <Pressable key={g.key} onPress={onOpen} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 7 }}>
+                <Text style={{ fontSize: 15 }}>{mealPartEmoji(g.key)}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{partLabel(g.key, t)}</Text>
+                  <Text numberOfLines={1} style={{ fontSize: 11.5, color: C.ash, marginTop: 1 }}>{groupLine(g, t)}</Text>
                 </View>
-                <View>
-                  <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{presetShort(t(p.labelKey))}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: isDone ? txt(C, C.lime) : C.ash, marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</Text>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: C.chalk }}>{nf(g.kcal)} kcal</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: txt(C, C.blue), marginTop: 1 }}>{nf(g.protein)}P</Text>
                 </View>
               </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+            ))}
+            {plate.groups.length > PLATE_ROWS && (
+              <Pressable onPress={onOpen} accessibilityRole="button" style={{ paddingTop: 7 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>
+                  {t("w.home.fuel.plateMore").replace("{n}", nf(plate.groups.slice(PLATE_ROWS).reduce((s, g) => s + g.items.length, 0)))}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
     </View>
+
+    {/* QUICK-LOG rail — outside the card and FULL-BLEED to the screen edge (the
+        golden slider rule: negative margins the width of the screen gutter pull
+        the scroll clip to the true edge, with matching internal padding so
+        resting cards still line up with the content column). It's the widget's
+        action bar, not a row of the summary: presets ARE the meal types, and
+        the leading dashed "＋ Quick log" card opens the full quick-add.
+        Persistent across every state. */}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginTop: 12 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 16, paddingBottom: 4 }}>
+      {/* ＋ Quick log — the entry to the full sheet, echoing the exercise
+          rail's "All exercises & favourites" card: a bare ＋ glyph + lime
+          label (not a boxed tile); first so it's always reachable. */}
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t("w.home.fuel.quickLog")} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4), borderRadius: 14, paddingVertical: 9, paddingHorizontal: 17 }}>
+        <Text style={{ fontSize: 20, color: C.ash, marginTop: -2 }}>＋</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: txt(C, C.lime) }}>{t("w.home.fuel.quickLog")}</Text>
+      </Pressable>
+      {MEAL_PRESETS.map((p) => {
+        const isDone = done === p.id;
+        const isBusy = busy === p.id;
+        return (
+          <Pressable
+            key={p.id}
+            onPress={() => logPreset(p)}
+            disabled={isBusy}
+            accessibilityRole="button"
+            accessibilityLabel={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+            style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.14) : C.ink, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 13, opacity: isBusy ? 0.55 : 1 }}
+          >
+            <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.2) : C.ink2, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, alignItems: "center", justifyContent: "center" }}>
+              {isDone ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : <Text style={{ fontSize: 16 }}>{p.emoji}</Text>}
+            </View>
+            <View>
+              <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{presetShort(t(p.labelKey))}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: isDone ? txt(C, C.lime) : C.ash, marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+    </>
   );
 }
 
@@ -246,4 +308,27 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
 // name, so trim at the en-dash separator.
 function presetShort(label: string): string {
   return label.split(" – ")[0] ?? label;
+}
+
+/** How many plate rows the widget shows before deferring to "+N more". Five
+ *  covers the four built-in parts plus "Other"; only custom parts overflow. */
+const PLATE_ROWS = 5;
+
+/** A part-of-day row label: the built-ins are i18n, "Other" mirrors the Diary's
+ *  own group, and a custom part (whose authored label lives in prefs this
+ *  widget doesn't load) reads from its key. Mirrors web's partLabel. */
+function partLabel(key: string, t: (k: string) => string): string {
+  if (key === FUEL_PLATE_OTHER) return t("w.recovery.nutrition.otherEntries");
+  if ((DEFAULT_MEAL_PART_KEYS as readonly string[]).includes(key)) return t(`w.recovery.nutrition.meal.${key}`);
+  return mealPartLabelFromKey(key);
+}
+
+/** The row's line: the items eaten in that part. An entry logged before names
+ *  were stored has none to show, so it's counted rather than invented.
+ *  Mirrors web's groupLine. */
+function groupLine(g: FuelPlateGroup, t: (k: string) => string): string {
+  const parts = [...g.names];
+  if (g.unnamed === 1) parts.push(t("w.recovery.nutrition.loggedEntry"));
+  else if (g.unnamed > 1) parts.push(`${g.unnamed} × ${t("w.recovery.nutrition.loggedEntry")}`);
+  return parts.join(", ");
 }

@@ -726,3 +726,155 @@ export function parseDerivedEntryId(id: string): string[] | null {
     .filter((x) => x.length > 0 && /^[A-Za-z0-9_-]+$/.test(x));
   return ids.length > 0 && ids.length <= MAX_DERIVED_SIGNALS ? ids : null;
 }
+
+// ── Today's plate — WHAT was eaten, not only how much ───────────────────────
+//
+// The Fuel widget answered "how much energy and protein so far", never "what
+// did I actually eat". Answering the second meant leaving Today and digging
+// into Nutrition → Diary, which is exactly the dig a summary exists to save.
+// fuelPlate folds the day's logged entries (the SAME rows the Diary lists —
+// FoodLog rows and the Signal-derived ones alike) into one compact reading:
+// the items, grouped by part of the day, in the parts' own order.
+//
+// Pure, so web + mobile render the same groups (parity rule). Labels stay with
+// the clients — a part's name is i18n, not data.
+
+/** A logged food/meal as GET /api/nutrition/log returns it. Macros are PER
+ *  SERVING — `qty` scales them (a derived entry is always qty 1). */
+export interface FuelLogRow {
+  id: string;
+  /** empty/absent on an entry logged before the FoodLog table stored names */
+  name?: string | null;
+  subname?: string | null;
+  /** the part of the day it was attributed to (Signal.source) */
+  source: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  qty: number;
+  ts: string | Date;
+  derived?: boolean;
+}
+
+/** One logged item, macros already scaled by its serving count. */
+export interface FuelPlateItem {
+  id: string;
+  /** "" when the entry carries no stored name — the client labels those. */
+  name: string;
+  source: string;
+  kcal: number;
+  protein: number;
+  qty: number;
+  ts: string;
+}
+
+/** The day's items under one part of the day. */
+export interface FuelPlateGroup {
+  /** a part-of-day key, or FUEL_PLATE_OTHER for a source that isn't a part */
+  key: string;
+  items: FuelPlateItem[];
+  /** the named items, in the order they were logged — the row's line */
+  names: string[];
+  /** how many items in the group carry no name (pre-FoodLog entries) */
+  unnamed: number;
+  kcal: number;
+  protein: number;
+}
+
+export interface FuelPlate {
+  /** every item logged that day, oldest first (the day read as a story) */
+  items: FuelPlateItem[];
+  groups: FuelPlateGroup[];
+  count: number;
+  kcal: number;
+  protein: number;
+}
+
+/** The group a log lands in when its source isn't a part of the day (a quick
+ *  log, a food-search hit) — mirrors the Diary's "Other" group. */
+export const FUEL_PLATE_OTHER = "other";
+
+const MEAL_PART_EMOJI: Record<string, string> = {
+  breakfast: "🍳",
+  lunch: "🥗",
+  dinner: "🍽️",
+  snack: "🥤",
+};
+
+/** The glyph for a part of the day — the SAME emoji its quick-log preset uses,
+ *  so a meal reads identically on the rail and in the day's summary. A custom
+ *  part (or "other") gets the neutral cutlery mark. */
+export function mealPartEmoji(key: string): string {
+  return MEAL_PART_EMOJI[key] ?? "🍴";
+}
+
+/** A readable label for a CUSTOM part key ("pre-workout" → "Pre-workout"), for
+ *  surfaces that render a log's part without having loaded the athlete's
+ *  nutrition prefs (where the authored label lives). */
+export function mealPartLabelFromKey(key: string): string {
+  const words = key.replace(/[-_]+/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : key;
+}
+
+const plateNum = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 0);
+
+/**
+ * The day's logged items, grouped by part of the day.
+ *
+ * `logs` is the diary payload (any span — only the requested day is kept).
+ * `parts` is the athlete's ordered part keys when known (built-ins + their
+ * custom parts); anything logged under another source groups under
+ * FUEL_PLATE_OTHER, so nothing eaten is ever invisible.
+ */
+export function fuelPlate(
+  logs: FuelLogRow[] | undefined,
+  opts: { now?: number; day?: string; parts?: readonly string[] } = {},
+): FuelPlate {
+  const wanted = opts.day ?? localTodayKey(opts.now ?? Date.now());
+  const order = opts.parts?.length ? opts.parts : DEFAULT_MEAL_PART_KEYS;
+
+  const items: FuelPlateItem[] = [];
+  for (const l of logs ?? []) {
+    if (!l || !l.id) continue;
+    const ts = typeof l.ts === "string" ? l.ts : l.ts instanceof Date ? l.ts.toISOString() : "";
+    if (!ts || dayKey(ts) !== wanted) continue;
+    const qty = plateNum(l.qty) || 1;
+    items.push({
+      id: l.id,
+      name: (l.name ?? "").trim(),
+      source: typeof l.source === "string" ? l.source : "",
+      kcal: Math.round(plateNum(l.kcal) * qty),
+      protein: Math.round(plateNum(l.protein) * qty),
+      qty,
+      ts,
+    });
+  }
+  items.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+
+  // One group per part that actually has items, in the parts' own order, with
+  // "Other" always last — the Diary's ordering, so the two never disagree.
+  const known = new Set(order);
+  const byKey = new Map<string, FuelPlateGroup>();
+  for (const it of items) {
+    const key = known.has(it.source) ? it.source : FUEL_PLATE_OTHER;
+    let g = byKey.get(key);
+    if (!g) { g = { key, items: [], names: [], unnamed: 0, kcal: 0, protein: 0 }; byKey.set(key, g); }
+    g.items.push(it);
+    if (it.name) g.names.push(it.name); else g.unnamed += 1;
+    g.kcal += it.kcal;
+    g.protein += it.protein;
+  }
+  const groups: FuelPlateGroup[] = [];
+  for (const key of order) { const g = byKey.get(key); if (g) groups.push(g); }
+  const other = byKey.get(FUEL_PLATE_OTHER);
+  if (other) groups.push(other);
+
+  return {
+    items,
+    groups,
+    count: items.length,
+    kcal: items.reduce((s, i) => s + i.kcal, 0),
+    protein: items.reduce((s, i) => s + i.protein, 0),
+  };
+}

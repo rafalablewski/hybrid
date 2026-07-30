@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay, fuelPlate, mealPartEmoji, mealPartLabelFromKey, DEFAULT_MEAL_PART_KEYS, type FuelLogRow } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -425,5 +425,75 @@ describe("panelStatus", () => {
       expect(r.pct).toBe(0);
       expect(r.over).toBe(false);
     }
+  });
+});
+
+describe("fuelPlate", () => {
+  // Local-noon timestamps, so the day key can't drift across a timezone.
+  const at = (h: number, d = 29) => new Date(2026, 6, d, h, 0, 0).toISOString();
+  const now = new Date(2026, 6, 29, 20, 0, 0).getTime();
+  const row = (over: Partial<FuelLogRow>): FuelLogRow => ({
+    id: "x", name: "Item", source: "lunch", kcal: 100, protein: 10, carbs: 10, fat: 5, qty: 1, ts: at(12), ...over,
+  });
+
+  it("keeps only today's entries and scales macros by the serving count", () => {
+    const p = fuelPlate([
+      row({ id: "a", name: "Oats & eggs", source: "breakfast", kcal: 260, protein: 16, qty: 2, ts: at(8) }),
+      row({ id: "b", name: "Yesterday", ts: at(13, 28) }),
+    ], { now });
+    expect(p.count).toBe(1);
+    expect(p.items[0]!.name).toBe("Oats & eggs");
+    expect(p.items[0]!.kcal).toBe(520); // 260 × 2 servings
+    expect(p.items[0]!.protein).toBe(32);
+    expect(p.kcal).toBe(520);
+  });
+
+  it("groups by part of the day, in the parts' own order, oldest item first", () => {
+    const p = fuelPlate([
+      row({ id: "c", name: "Salmon", source: "dinner", ts: at(19) }),
+      row({ id: "a", name: "Oats", source: "breakfast", ts: at(8) }),
+      row({ id: "b", name: "Rice bowl", source: "lunch", ts: at(13) }),
+      row({ id: "b2", name: "Coffee", source: "lunch", ts: at(14) }),
+    ], { now });
+    expect(p.groups.map((g) => g.key)).toEqual(["breakfast", "lunch", "dinner"]);
+    expect(p.groups[1]!.names).toEqual(["Rice bowl", "Coffee"]);
+    expect(p.items.map((i) => i.id)).toEqual(["a", "b", "b2", "c"]);
+  });
+
+  it("sends a source that isn't a part of the day to Other, always last", () => {
+    const p = fuelPlate([
+      row({ id: "q", name: "Quick entry", source: "quick", ts: at(9) }),
+      row({ id: "d", name: "Salmon", source: "dinner", ts: at(19) }),
+    ], { now });
+    expect(p.groups.map((g) => g.key)).toEqual(["dinner", "other"]);
+    expect(p.groups[1]!.kcal).toBe(100);
+  });
+
+  it("honours the athlete's custom parts when they're known", () => {
+    const logs = [row({ id: "p", name: "Gel", source: "pre-workout", ts: at(17) })];
+    expect(fuelPlate(logs, { now }).groups[0]!.key).toBe("other");
+    expect(fuelPlate(logs, { now, parts: [...DEFAULT_MEAL_PART_KEYS, "pre-workout"] }).groups[0]!.key).toBe("pre-workout");
+  });
+
+  it("counts a nameless entry rather than inventing a name for it", () => {
+    const p = fuelPlate([
+      row({ id: "n1", name: "", source: "snack", ts: at(16) }),
+      row({ id: "n2", name: null, source: "snack", ts: at(16) }),
+      row({ id: "n3", name: "Banana", source: "snack", ts: at(17) }),
+    ], { now });
+    const g = p.groups[0]!;
+    expect(g.names).toEqual(["Banana"]);
+    expect(g.unnamed).toBe(2);
+    expect(g.items).toHaveLength(3);
+  });
+
+  it("is empty, not broken, with nothing logged", () => {
+    expect(fuelPlate(undefined, { now })).toEqual({ items: [], groups: [], count: 0, kcal: 0, protein: 0 });
+  });
+
+  it("labels a part with its preset's own glyph, and a custom part readably", () => {
+    expect(mealPartEmoji("breakfast")).toBe("🍳");
+    expect(mealPartEmoji("pre-workout")).toBe("🍴");
+    expect(mealPartLabelFromKey("pre-workout")).toBe("Pre workout");
   });
 });
