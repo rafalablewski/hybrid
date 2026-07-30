@@ -133,6 +133,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
         onNavigate={onNavigate}
         onArchive={() => void setArchivedFlag(open.id, true)}
         onDelete={() => void remove(open.id, open.title)}
+        onEdited={() => onChanged?.()}
         manageBusy={busy === open.id}
       />
     );

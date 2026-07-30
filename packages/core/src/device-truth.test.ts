@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deviceTrueSession, deviceTrueSessions } from "./device-truth";
-import { sessionCardioSummary, toTrainingLog } from "./engines/session";
+import { cardioPace, sessionCardioSummary, toTrainingLog } from "./engines/session";
 import { runTotals, runningSessions, weeklyMileage } from "./engines/running";
 import { newCardioPrsInSession } from "./engines/records";
 import { sessionHeadline } from "./engines/history-views";
@@ -35,6 +35,23 @@ describe("deviceTrueSession", () => {
     expect(b.kind === "cardio" && b.minutes).toBe(55);
     expect(b.kind === "cardio" && b.distance).toBe(10.42);
     expect(b.kind === "cardio" && b.elevation).toBe(100); // the recording had none
+  });
+
+  it("carries the measured clock to the second, so a derived pace matches the watch", () => {
+    const swim = run({
+      blocks: [{ kind: "cardio", name: "Swimming", discipline: "swimming", distance: 0.5, minutes: 20 }],
+      device: watch({ activityLabel: "Swimming", durationMin: 20, durationSec: 1181, distanceKm: 0.51 }),
+    });
+    const b = deviceTrueSession(swim).blocks[0]!;
+    expect(b.kind === "cardio" && b.minutes).toBe(20);
+    expect(b.kind === "cardio" && b.seconds).toBe(1181);
+    // 510 m in 19:41 → 3:52 /100m. Off whole minutes it would read 3:55.
+    expect(cardioPace(b as { name: string; distance?: number; minutes?: number; seconds?: number })).toBe("3:52 /100m");
+  });
+
+  it("leaves the block without seconds when the recording had none", () => {
+    const b = deviceTrueSession(run()).blocks[0]!;
+    expect(b.kind === "cardio" && b.seconds).toBeUndefined();
   });
 
   it("takes the device's climb when it recorded one", () => {
