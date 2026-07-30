@@ -312,6 +312,17 @@ export function deviceComparisonRows(opts: {
   // the same language as the watch beside it: a pool swim is "510 m" at
   // "3:52 /100m", not "0.51 km" at "38:36 /km". The activity label is the
   // device's own ("Swimming", "Rowing"); unknown labels fall back to km.
+  // Seconds → the clock the device itself shows: "19:41", "1:34:12" past the
+  // hour. Only the measured column ever earns this; a typed duration has no
+  // seconds to tell.
+  const clock = (seconds: number): string => {
+    const total = Math.round(seconds);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+    return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
+  };
   const sport = d.activityLabel;
   const metreSport = sportDistanceUnit(sport) === "m";
   const km = (v: number) =>
@@ -327,7 +338,10 @@ export function deviceComparisonRows(opts: {
     {
       labelKey: "session.device.duration",
       app: opts.durationMin != null && opts.durationMin > 0 ? `${opts.durationMin} min` : null,
-      device: `${d.durationMin} min`,
+      // The measured time to the second when the recording carries it: the
+      // watch's own summary reads 0:19:41, so printing "20 min" beside it
+      // invents a disagreement out of our own rounding.
+      device: d.durationSec != null ? clock(d.durationSec) : `${d.durationMin} min`,
     },
     {
       labelKey: "session.device.calories",
@@ -342,7 +356,10 @@ export function deviceComparisonRows(opts: {
     },
     {
       labelKey: "session.pace",
+      // Derived from two typed numbers, so it is a modelled figure exactly like
+      // the kcal above and wears the same "~". Nothing measured this.
       app: pace(opts.distanceKm, opts.durationMin != null ? opts.durationMin * 60 : null),
+      appEstimate: true,
       // To the second when the recording carries it (see `durationSec`).
       device: pace(d.distanceKm, d.durationSec ?? d.durationMin * 60),
     },

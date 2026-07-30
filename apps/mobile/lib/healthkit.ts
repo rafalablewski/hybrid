@@ -25,6 +25,10 @@ import { DEVICE_MATCH_WINDOW_H, isDeviceName, sanitizeDeviceWorkout, type Device
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 import { API_BASE, fetchSessions, patchSessionDevice } from "./api";
+// The bridge's units → ours. Pure + unit-tested (health-quantities.test.ts)
+// because an unrecognised unit here does not throw, it makes a whole metric
+// disappear — see that file's comment for the distance this cost.
+import { metaCelsius, metaMetres, metaQty, qtyCount, qtyKcal, qtyKm, qtyMinutes } from "./health-quantities";
 
 // Apple doesn't expose whether Health *read* access was actually granted (a
 // denial is indistinguishable from "no data" by design), so "connected" is a
@@ -256,89 +260,6 @@ export async function requestWorkoutReadAuth(): Promise<boolean> {
     return false;
   }
 }
-
-/** A HealthKit Quantity ({unit, quantity}) → the unit the shared model wants,
- *  defensively: the store answers in whatever unit it holds. */
-const qtyMinutes = (q?: { unit: string; quantity: number } | null): number | null => {
-  if (!q || !Number.isFinite(q.quantity)) return null;
-  if (q.unit === "min") return q.quantity;
-  if (q.unit === "s") return q.quantity / 60;
-  if (q.unit === "hr" || q.unit === "h") return q.quantity * 60;
-  return null;
-};
-const qtyKcal = (q?: { unit: string; quantity: number } | null): number | null => {
-  if (!q || !Number.isFinite(q.quantity)) return null;
-  if (q.unit === "kcal" || q.unit === "Cal") return q.quantity;
-  if (q.unit === "kJ") return q.quantity / 4.184;
-  if (q.unit === "J") return q.quantity / 4184;
-  return null;
-};
-/**
- * A length quantity → km.
- *
- * The unit strings are NOT all HKUnit.unitString: the bridge serializes a
- * workout's `totalDistance` with the hard-coded literal "meters" while the
- * statistics path answers in HealthKit's own "m". Accepting only the latter is
- * what made every matched workout show "—" for distance (and therefore for
- * pace, which is derived from it) — a 510 m pool swim read as no distance at
- * all. Spelled-out names are matched alongside the symbols for that reason.
- */
-const KM_PER_UNIT: Record<string, number> = {
-  m: 0.001,
-  meter: 0.001,
-  meters: 0.001,
-  metre: 0.001,
-  metres: 0.001,
-  km: 1,
-  kilometer: 1,
-  kilometers: 1,
-  kilometre: 1,
-  kilometres: 1,
-  mi: 1.609344,
-  mile: 1.609344,
-  miles: 1.609344,
-  yd: 0.0009144,
-  yard: 0.0009144,
-  yards: 0.0009144,
-  ft: 0.0003048,
-  foot: 0.0003048,
-  feet: 0.0003048,
-  cm: 0.00001,
-};
-const qtyKm = (q?: { unit: string; quantity: number } | null): number | null => {
-  if (!q || !Number.isFinite(q.quantity)) return null;
-  const factor = KM_PER_UNIT[q.unit.trim().toLowerCase()];
-  return factor == null ? null : q.quantity * factor;
-};
-const qtyCount = (q?: { unit: string; quantity: number } | null): number | null =>
-  q && Number.isFinite(q.quantity) ? q.quantity : null;
-
-/** A metadata value that may arrive as a bare number or a serialized HK
- *  quantity ({unit, quantity}) — normalize to the latter. */
-const metaQty = (v: unknown): { unit: string; quantity: number } | null => {
-  if (typeof v === "number" && Number.isFinite(v)) return { unit: "", quantity: v };
-  if (typeof v === "object" && v !== null) {
-    const o = v as { unit?: unknown; quantity?: unknown };
-    if (typeof o.quantity === "number" && Number.isFinite(o.quantity))
-      return { unit: typeof o.unit === "string" ? o.unit : "", quantity: o.quantity };
-  }
-  return null;
-};
-const metaMetres = (v: unknown): number | null => {
-  const q = metaQty(v);
-  if (!q) return null;
-  if (q.unit === "cm") return q.quantity / 100;
-  if (q.unit === "" || q.unit === "m") return q.quantity;
-  if (q.unit === "km") return q.quantity * 1000;
-  if (q.unit === "ft") return q.quantity * 0.3048;
-  return null;
-};
-const metaCelsius = (v: unknown): number | null => {
-  const q = metaQty(v);
-  if (!q) return null;
-  if (q.unit === "degF") return ((q.quantity - 32) * 5) / 9;
-  return q.quantity; // degC or already-bare
-};
 
 /** "functionalStrengthTraining" (the enum's name) → "Functional Strength
  *  Training" — resolved here so no other client ever needs the HK enum. */
