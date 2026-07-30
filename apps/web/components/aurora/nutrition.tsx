@@ -1624,12 +1624,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </button>
         )}
 
+        {/* ONE name. The operator's own-language name is a search alias only —
+            printing it under the English name put a second name on screen for a
+            food we had already named, which read as clutter, not help. */}
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 32, letterSpacing: "-.03em", lineHeight: 1.08, margin: "22px 0 0" }}>{f.name}</h2>
-        {f.menuName && (
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.bodyLg, color: C("ash"), marginTop: 5 }}>
-            {t("w.recovery.nutrition.onTheMenu")} {f.menuName}
-          </div>
-        )}
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".06em", color: C("ash"), marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</div>
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
@@ -1652,6 +1650,37 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <FactsPanel C={C} facts={f.facts} per100={p100} />
         {!p100 && (
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9, lineHeight: 1.5 }}>{t("w.recovery.nutrition.noServingWeight")}</div>
+        )}
+
+        {/* FROM THE PACK — what a shelf item declares beyond the numbers. A
+            restaurant dish publishes none of this, so the whole card is absent
+            rather than rendered empty. */}
+        {(f.packSize || f.ingredients || f.mayContain) && (
+          <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "15px 17px", marginTop: 18 }}>
+            {f.packSize && (
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.packSize")}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{f.packSize}</span>
+              </div>
+            )}
+            {f.ingredients && (
+              <div style={{ marginTop: f.packSize ? 14 : 0, paddingTop: f.packSize ? 13 : 0, borderTop: f.packSize ? `1px solid ${C("line")}` : "none" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.ingredients")}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: fs.body, color: C("chalk"), marginTop: 6, lineHeight: 1.55 }}>{f.ingredients}</div>
+              </div>
+            )}
+            {f.mayContain && (
+              <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.mayContain")}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: fs.body, color: C("chalk"), marginTop: 6, lineHeight: 1.55 }}>{f.mayContain}</div>
+              </div>
+            )}
+            {/* Say out loud that this is OUR translation of someone else's pack —
+                an allergen line is the last place to imply we quoted verbatim. */}
+            {f.nativeName && (f.ingredients || f.mayContain) && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 12, lineHeight: 1.5, opacity: .85 }}>{t("w.recovery.nutrition.labelTranslated")}</div>
+            )}
+          </div>
         )}
 
         {/* WHAT WE DID, AND WHEN. The claim, dated, with the operator's own
@@ -1786,7 +1815,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{f.name}</span>
                 <VerifiedMark size={12} />
               </div>
-              {f.menuName && <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{f.menuName}</div>}
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{f.facts.kcal} kcal  –  {f.servingLabel}</div>
             </div>
             <IChevRight size={17} color={C("ash")} />

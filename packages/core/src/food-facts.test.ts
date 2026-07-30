@@ -92,6 +92,16 @@ describe("auditFacts", () => {
   it("catches an energy figure that cannot come from the macros", () => {
     expect(auditFacts({ ...full, kcal: 900 })[0]).toMatch(/disagrees/);
   });
+  it("counts fibre's own 2 kcal/g, or a high-fibre label looks mis-transcribed", () => {
+    // A rye sourdough: 4.06 g protein, 39 g carbohydrate, 1.1 g fat, 7.1 g
+    // fibre, published at 196 kcal. On an EU label "carbohydrate" EXCLUDES
+    // fibre, so 4·4·9 alone derives 182 — a 7 % gap that would fail the audit
+    // and block an honestly-transcribed food.
+    const bread: NutritionFacts = { kcal: 196, protein: 4.06, carbs: 39, fat: 1.1, satFat: 0.26, sugar: 2.66, fiber: 7.1, salt: 0.99 };
+    expect(atwaterKcal(bread)).toBe(196);
+    expect(atwaterKcal({ ...bread, fiber: null })).toBe(182);
+    expect(auditFacts(bread)).toEqual([]);
+  });
   it("catches saturates above total fat and sugars above total carbs", () => {
     expect(auditFacts({ ...full, satFat: 25 }).join()).toMatch(/saturates exceed/);
     expect(auditFacts({ ...full, sugar: 30 }).join()).toMatch(/sugars exceed/);

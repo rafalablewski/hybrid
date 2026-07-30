@@ -3,7 +3,8 @@ import {
   VERIFIED_FOODS, VERIFIED_SOURCES, auditVerifiedCatalog, mergeFoodHits, searchVerifiedFoods,
   relatedVerifiedFoods, sourceCheckedOn, sourceMark, sourceMarkCredits, sourceMarkDataUri,
   verifiedFreshness, staleVerifiedFoods, VERIFIED_STALE_AFTER_DAYS,
-  verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, verifiedHits, verifiedKj, verifiedSource,
+  verifiedAtwater, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, verifiedHits, verifiedKj,
+  verifiedSource,
   type SourceMark, type VerifiedSource,
 } from "./verified-foods";
 import type { FoodHit } from "./nutrition-off";
@@ -22,8 +23,56 @@ describe("the catalog itself", () => {
     expect(verifiedFoodsBySource("max-premium-burgers").map((f) => f.name).sort())
       .toEqual(["Cheeseburger", "Chicken Jr", "Fries (small)"]);
   });
+  it("carries Lidl as a RETAILER, not a restaurant", () => {
+    // The catalog's second source is a shelf, not a menu — the kind field is
+    // what lets a client say so without hard-coding the business.
+    expect(verifiedSource("lidl")!.kind).toBe("retailer");
+    expect(verifiedFoodsBySource("lidl").map((f) => f.id)).toEqual(["lidl-rye-sourdough-bread"]);
+  });
   it("states the published energy in both units", () => {
     expect(verifiedKj(verifiedFood("mpb-cheeseburger")!)).toBe(1368);
+    // Lidl's pack states 830 kJ / 196 kcal, and we derive 820. Both are right:
+    // an EU label computes each unit from its OWN factor table (fat 37 kJ/g vs
+    // 9 kcal/g, carbohydrate 17 vs 4, fibre 8 vs 2), and those ratios are not
+    // 4.184. We store the stated kcal and derive kJ from it, so on an item
+    // whose kJ was computed nutrient-by-nutrient we land ~1 % under.
+    expect(verifiedKj(verifiedFood("lidl-rye-sourdough-bread")!)).toBe(820);
+  });
+});
+
+describe("a packaged item states more than a dish does", () => {
+  const bread = () => verifiedFood("lidl-rye-sourdough-bread")!;
+
+  it("reconciles ONLY because fibre carries energy", () => {
+    // 4.06·4 + 39·4 + 1.1·9 = 182 kcal against a published 196 — a 7 % gap that
+    // looked like a mis-transcription until fibre's 2 kcal/g was counted. This
+    // is the test that would fail if that term were ever dropped again.
+    expect(verifiedAtwater(bread())).toBe(196);
+    expect(bread().facts.kcal).toBe(196);
+  });
+
+  it("declares per 100 g and carries the pack weight separately", () => {
+    // A shelf label declares per 100 g. Inventing "1 slice" would be inventing
+    // a slice weight the pack never publishes.
+    expect(bread().servingLabel).toBe("100 g");
+    expect(bread().servingGrams).toBe(100);
+    expect(bread().packSize).toBe("450 g");
+  });
+
+  it("carries the ingredient + allergen statement, in English", () => {
+    expect(bread().ingredients).toMatch(/rye sourdough/);
+    expect(bread().mayContain).toMatch(/sesame/);
+    // The pack is Polish; the app is English. Both must be true at once.
+    expect(bread().nativeLocale).toBe("pl");
+    expect(bread().ingredients).not.toMatch(/[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017c\u017a]/);
+  });
+
+  it("leaves a restaurant dish without pack fields rather than empty ones", () => {
+    // Absent is a fact about the food. A burger has no ingredient panel, so the
+    // whole card is gone on its page — not rendered with blanks in it.
+    const burger = verifiedFood("mpb-cheeseburger")!;
+    expect(burger.ingredients).toBeUndefined();
+    expect(burger.packSize).toBeUndefined();
   });
 });
 
@@ -45,11 +94,14 @@ describe("search", () => {
   it("finds an item by its English name", () => {
     expect(searchVerifiedFoods("cheese").map((f) => f.id)).toContain("mpb-cheeseburger");
   });
-  it("finds an item by the operator's own menu name, accents and all", () => {
-    // The menu is Polish; the app is English. A user who reads the menu must
-    // still find the item they are holding.
+  it("finds an item by the operator's own name, accents and all", () => {
+    // The menu and the pack are Polish; the app is English. A user who reads
+    // either must still find the item they are holding — nativeName is a search
+    // alias for exactly this, and is never rendered.
     expect(searchVerifiedFoods("frytki").map((f) => f.id)).toEqual(["mpb-fries-small"]);
     expect(searchVerifiedFoods("male").map((f) => f.id)).toEqual(["mpb-fries-small"]);
+    expect(searchVerifiedFoods("chleb zytni").map((f) => f.id)).toEqual(["lidl-rye-sourdough-bread"]);
+    expect(searchVerifiedFoods("zakwasie").map((f) => f.id)).toEqual(["lidl-rye-sourdough-bread"]);
   });
   it("lists everything a business sells when the business is searched", () => {
     expect(searchVerifiedFoods("max premium")).toHaveLength(3);
@@ -130,9 +182,28 @@ describe("source marks", () => {
     // The keylines between the letterforms are HOLES, not painted white: that
     // is what keeps the mark legible on the charcoal card and the washi one.
     expect(m.svg).toContain('fill-rule="evenodd"');
-    const credit = sourceMarkCredits();
-    expect(credit).toHaveLength(1);
-    expect(credit[0]!.credit).toMatch(/Max Burgers AB/);
+    expect(sourceMarkCredits().find((c) => c.sourceId === "max-premium-burgers")!.credit)
+      .toMatch(/Max Burgers AB/);
+  });
+
+  it("carries Lidl's roundel in its brand colours, self-contained and credited", () => {
+    const m = sourceMark("lidl")!;
+    expect(m.svg).toMatch(/^<svg/);
+    expect(m.alt).toBe("Lidl");
+    expect(m.aspect).toBe(1); // the roundel is square
+    // A SOLID badge, not knockouts: it carries its own ground, so it reads the
+    // same on the AURORA charcoal card and the Kyoto Hour washi one.
+    for (const hex of ["#0050AA", "#FFF000", "#E60A14"]) expect(m.svg).toContain(hex);
+    // The geometry is not ours, and the credit has to say so — including that
+    // CC0 waives copyright and NOT the trademark.
+    const credit = sourceMarkCredits().find((c) => c.sourceId === "lidl")!;
+    expect(credit.credit).toMatch(/simple-icons/);
+    expect(credit.credit).toMatch(/CC0/);
+    expect(credit.credit).toMatch(/trademark/);
+  });
+
+  it("enumerates a credit for every mark it displays", () => {
+    expect(sourceMarkCredits().map((c) => c.sourceId).sort()).toEqual(["lidl", "max-premium-burgers"]);
   });
 
   it("keeps a source without artwork a supported state, not a broken one", () => {
@@ -188,6 +259,6 @@ describe("freshness — the date finally does something", () => {
 
   it("lists the re-check worklist once items age out", () => {
     expect(staleVerifiedFoods(checkedAt)).toEqual([]);
-    expect(staleVerifiedFoods(checkedAt + 400 * DAY)).toHaveLength(3);
+    expect(staleVerifiedFoods(checkedAt + 400 * DAY)).toHaveLength(4);
   });
 });

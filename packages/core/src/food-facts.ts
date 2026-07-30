@@ -93,9 +93,27 @@ export function saltFromSodiumMg(mg: number): number {
   return Math.round((mg / 1000 / SODIUM_PER_SALT) * 100) / 100;
 }
 
-/** Atwater energy from the macros (4·4·9) — the fallback when kcal is absent. */
-export function atwaterKcal(f: Pick<NutritionFacts, "protein" | "carbs" | "fat">): number {
-  return Math.round(f.protein * 4 + f.carbs * 4 + f.fat * 9);
+/** Fibre carries energy too — 2 kcal/g, per EU 1169/2011 Annex XIV. */
+export const KCAL_PER_G_FIBER = 2;
+
+/**
+ * Energy derived from the macros — the fallback when kcal is absent, and the
+ * cross-check `auditFacts` reconciles a stated label against.
+ *
+ * 4·4·9 on protein/carbohydrate/fat, PLUS fibre at 2 kcal/g when it is stated.
+ * That last term is not decoration: on an EU label "carbohydrate" EXCLUDES
+ * fibre (it is declared on its own line, not as an "of which"), so leaving
+ * fibre out under-reports a fibre-rich food badly enough to fail an honest
+ * label. A rye sourdough at 39 g carbs / 7.1 g fibre derives 182 kcal without
+ * the term against a published 196 — a 7 % gap that read as a transcription
+ * error when it was the arithmetic that was incomplete. Unstated fibre
+ * contributes nothing, so a food that never mentioned it is unaffected.
+ */
+export function atwaterKcal(
+  f: Pick<NutritionFacts, "protein" | "carbs" | "fat"> & Pick<MicroFacts, "fiber">,
+): number {
+  const fiber = unknown(f.fiber) ? 0 : (f.fiber as number);
+  return Math.round(f.protein * 4 + f.carbs * 4 + f.fat * 9 + fiber * KCAL_PER_G_FIBER);
 }
 
 // ── Guards + scaling ───────────────────────────────────────────────────────

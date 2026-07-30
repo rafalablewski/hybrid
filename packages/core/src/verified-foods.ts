@@ -24,7 +24,7 @@
 
 import { type NutritionFacts, atwaterKcal, auditFacts, factsCompleteness, kj } from "./food-facts";
 import type { FoodHit } from "./nutrition-off";
-import { MAX_MARK } from "./source-marks";
+import { LIDL_MARK, MAX_MARK } from "./source-marks";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -78,17 +78,34 @@ export interface VerifiedSource {
 export interface VerifiedFood {
   id: string;
   sourceId: string;
-  /** canonical ENGLISH name — the app is English-first, menus are not */
+  /** canonical ENGLISH name — the app is English-first, menus and packs are not */
   name: string;
-  /** the item's name on the operator's own menu when it differs; also a search alias */
-  menuName?: string;
-  /** BCP-47 tag of `menuName` */
-  menuLocale?: string;
+  /**
+   * The item's name in the operator's own language, when it differs.
+   *
+   * A SEARCH ALIAS ONLY — never rendered. It exists so an athlete holding a
+   * Polish pack can type what is printed on it and find the English entry;
+   * SHOWING it under the English name just put a second name on screen for a
+   * food the app has already named, which read as clutter rather than help.
+   */
+  nativeName?: string;
+  /** BCP-47 tag of `nativeName` */
+  nativeLocale?: string;
   /** what one serving is, e.g. "1 burger (121 g)" */
   servingLabel: string;
   /** the serving's weight in grams when published — enables per-100 g comparison */
   servingGrams: number | null;
   facts: NutritionFacts;
+  /**
+   * The full ingredient statement, in English, exactly as ordered on the pack
+   * (descending by weight). Packaged goods publish one; a restaurant dish
+   * usually doesn't — absent is a fact about the food, not a gap.
+   */
+  ingredients?: string;
+  /** the pack's precautionary "may contain" line, in English */
+  mayContain?: string;
+  /** the pack's net weight, e.g. "450 g" — a shelf item has one, a dish doesn't */
+  packSize?: string;
   /** ISO date (YYYY-MM-DD) the team last checked these numbers */
   verifiedOn: string;
   /** where the numbers came from, in plain words */
@@ -107,6 +124,15 @@ export const VERIFIED_SOURCES: VerifiedSource[] = [
     trademark: "MAX is a registered trademark of Max Burgers AB. Shown to identify the source of these figures, not as an endorsement.",
     mark: MAX_MARK,
   },
+  {
+    id: "lidl",
+    name: "Lidl",
+    kind: "retailer",
+    country: "PL",
+    note: "The German discount grocer's Polish market. Nutrition per the back-of-pack declaration on Lidl's own-brand products.",
+    trademark: "Lidl is a registered trademark of Lidl Stiftung & Co. KG. Shown to identify the source of these figures, not as an endorsement.",
+    mark: LIDL_MARK,
+  },
 ];
 
 export const VERIFIED_FOODS: VerifiedFood[] = [
@@ -114,8 +140,8 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     id: "mpb-cheeseburger",
     sourceId: "max-premium-burgers",
     name: "Cheeseburger",
-    menuName: "Hamburger z serem",
-    menuLocale: "pl",
+    nativeName: "Hamburger z serem",
+    nativeLocale: "pl",
     servingLabel: "1 burger (121 g)",
     servingGrams: 121,
     // 19.6·9 + 22.9·4 + 14.2·4 = 325 kcal vs the stated 327 — inside tolerance,
@@ -128,8 +154,8 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     id: "mpb-chicken-jr",
     sourceId: "max-premium-burgers",
     name: "Chicken Jr",
-    menuName: "Kurczak Burger Junior",
-    menuLocale: "pl",
+    nativeName: "Kurczak Burger Junior",
+    nativeLocale: "pl",
     servingLabel: "1 burger (123 g)",
     servingGrams: 123,
     // Saturates, sugars and salt are NOT stated for this item — null, not zero.
@@ -141,8 +167,8 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     id: "mpb-fries-small",
     sourceId: "max-premium-burgers",
     name: "Fries (small)",
-    menuName: "Frytki małe",
-    menuLocale: "pl",
+    nativeName: "Frytki małe",
+    nativeLocale: "pl",
     // The operator states the portion but not its weight — so we state the
     // portion and leave grams unknown rather than inventing one.
     servingLabel: "1 small portion",
@@ -150,6 +176,36 @@ export const VERIFIED_FOODS: VerifiedFood[] = [
     facts: { kcal: 172, protein: 1.9, carbs: 25.4, fat: 6.9, satFat: 0.7, sugar: 0.2, fiber: null, salt: 0.6 },
     verifiedOn: "2026-07-29",
     provenance: "MAX Premium Burgers published nutrition table (PL), per small portion.",
+  },
+  {
+    id: "lidl-rye-sourdough-bread",
+    sourceId: "lidl",
+    name: "Rye Sourdough Bread (yeast-free)",
+    nativeName: "Chleb żytni bez drożdży na zakwasie",
+    nativeLocale: "pl",
+    // A shelf item declares PER 100 G, not per portion — so that is the serving
+    // we state. Inventing "1 slice" would be inventing a slice weight the pack
+    // never publishes; the 450 g pack size is carried separately.
+    servingLabel: "100 g",
+    servingGrams: 100,
+    packSize: "450 g",
+    // 4.06·4 + 39.0·4 + 1.1·9 + 7.1·2 = 196 kcal against a stated 196 — an exact
+    // reconciliation, and only because fibre carries 2 kcal/g (EU Annex XIV).
+    // Without that term this lands at 182 and looks mis-transcribed.
+    //
+    // The pack's OTHER unit is 830 kJ where kj(196) derives 820. Both are
+    // correct: an EU label computes each unit from its own factor table (fat
+    // 37 kJ/g vs 9 kcal/g, carbohydrate 17 vs 4, fibre 8 vs 2) and those ratios
+    // are not 4.184. We keep energy stored once, in the stated kcal, rather
+    // than carrying a second energy figure that could drift out of step.
+    facts: { kcal: 196, protein: 4.06, carbs: 39.0, fat: 1.1, satFat: 0.26, sugar: 2.66, fiber: 7.1, salt: 0.99 },
+    // Translated from the Polish pack — the app is English-first. "Bonnik" on
+    // the label is a typo for "Błonnik" (fibre); read as fibre, which is what
+    // the energy arithmetic above independently confirms.
+    ingredients: "43 % rye flour, 42 % rye sourdough (rye flour, water), water, salt, wheat malt.",
+    mayContain: "milk, eggs, soy, sesame seeds, other nuts.",
+    verifiedOn: "2026-07-30",
+    provenance: "Lidl back-of-pack nutrition declaration (PL), per 100 g.",
   },
 ];
 
@@ -184,8 +240,9 @@ const norm = (s: string) =>
 
 /**
  * Search the verified catalog. Matches the English name, the operator's own
- * menu name (so a Polish query for "frytki" finds "Fries (small)") and the
- * business name (so "max premium" lists everything they sell).
+ * native name (so a Polish query for "frytki" finds "Fries (small)", and "chleb
+ * żytni" finds the rye sourdough) and the business name (so "max premium" lists
+ * everything they sell).
  *
  * Ranked: a name that STARTS with the query beats one that merely contains it,
  * which beats a business-name-only match; ties break on how label-complete the
@@ -198,13 +255,13 @@ export function searchVerifiedFoods(query: string, limit = 8): VerifiedFood[] {
   const scored: { f: VerifiedFood; score: number }[] = [];
   for (const f of VERIFIED_FOODS) {
     const name = norm(f.name);
-    const menu = f.menuName ? norm(f.menuName) : "";
+    const native = f.nativeName ? norm(f.nativeName) : "";
     const src = norm(verifiedSource(f.sourceId)?.name ?? "");
-    const hay = `${name} ${menu} ${src}`;
+    const hay = `${name} ${native} ${src}`;
     if (!terms.every((t) => hay.includes(t))) continue;
     let score = 1;
-    if (name.includes(q) || menu.includes(q)) score = 2;
-    if (name.startsWith(q) || menu.startsWith(q)) score = 3;
+    if (name.includes(q) || native.includes(q)) score = 2;
+    if (name.startsWith(q) || native.startsWith(q)) score = 3;
     scored.push({ f, score: score + factsCompleteness(f.facts) });
   }
   return scored.sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name)).slice(0, limit).map((s) => s.f);

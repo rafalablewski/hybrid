@@ -33,3 +33,37 @@ export const MAX_MARK: SourceMark = {
     "MAX is a registered trademark of Max Burgers AB; confirm redistribution terms with the " +
     "operator before a public release.",
 };
+
+/**
+ * Lidl (Lidl Stiftung & Co. KG) — the roundel.
+ *
+ * WHERE THE GEOMETRY CAME FROM. Not traced by us: it is the Lidl glyph from the
+ * simple-icons project, whose artwork is released CC0-1.0. Every coordinate
+ * below is that file's, unaltered — nothing here is a hand-drawn approximation
+ * of a real brand mark, which reference/verified-source-marks.md rules out for
+ * exactly the reason it should.
+ *
+ * WHAT WE CHANGED, AND WHY. simple-icons ships one MONOCHROME path: the square
+ * as a hairline frame, the circle as a ring, the wordmark as filled letters.
+ * Rendered in a single colour it is not the mark an athlete recognises on a
+ * bread bag — and a mark that isn't recognised at a glance is doing none of the
+ * job the provenance card added it for. So the one path is split at its
+ * subpath boundaries and each part takes its published brand colour — blue
+ * #0050AA, yellow #FFF000, red #E60A14 — with the square filled rather than
+ * outlined and the ring laid over the disc, which is the logo's real
+ * construction. Coordinates untouched; only `fill` and `fill-rule` are ours.
+ *
+ * Unlike MAX's, this mark is a SOLID BADGE rather than knockouts, so it carries
+ * its own ground: it reads identically on the AURORA charcoal card and the
+ * Kyoto Hour washi one without depending on either.
+ */
+export const LIDL_MARK: SourceMark = {
+  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Lidl"><path fill="#0050AA" d="M0 0v24h24V0z"/><path fill="#FFF000" d="M11.998.834C5.83.834.83 5.834.83 12.002c0 6.168 5 11.168 11.168 11.168 6.167 0 11.167-5 11.168-11.166C23.165 5.837 18.166.837 12 .834z"/><path fill="#E60A14" fill-rule="evenodd" d="M11.998.834C5.83.834.83 5.834.83 12.002c0 6.168 5 11.168 11.168 11.168 6.167 0 11.167-5 11.168-11.166C23.165 5.837 18.166.837 12 .834zM12 1.543c5.777 0 10.46 4.682 10.46 10.459v.004c-.004 5.773-4.686 10.452-10.46 10.453-5.777 0-10.46-4.68-10.46-10.457C1.54 6.225 6.222 1.543 12 1.543z"/><path fill="#0050AA" fill-rule="evenodd" d="M9.229 7.85c-.645 0-1.166.521-1.166 1.166v.004c0 1.044 1.261 1.567 1.999.829.738-.738.215-2-.829-1.999zM2.73 10.059v.71h.551v2.465h-.55v.713h4.644v-.65l.537-.54 1.486 1.491-.55.547.357.36 2.973-2.977v-.713l-.826.83-1.848-1.848-2.129 2.133v-.576l-1.904 1.06V10.77h.549v-.711zM11.635 10.059v.71h.549v2.465h-.555v.713h3.129c2.325 0 2.355-3.888.008-3.888zM16.598 10.059v.71h.55v2.465h-.55v.713h4.648v-1.943l-1.906 1.06V10.77h.55v-.711zM14.168 11.269h.133c.687 0 .685 1.461.023 1.461h-.156v-1.46z"/></svg>`,
+  aspect: 1, // 24 / 24 — the roundel is square
+  alt: "Lidl",
+  credit:
+    "Lidl glyph from the simple-icons project (v16.27.1), released CC0-1.0. Geometry unaltered; " +
+    "split into its subpaths and filled in Lidl's published brand colours by the HYBRID team " +
+    "(2026-07-30). Lidl is a registered trademark of Lidl Stiftung & Co. KG; the CC0 waiver " +
+    "covers copyright only, so confirm trademark use with the operator before a public release.",
+};
