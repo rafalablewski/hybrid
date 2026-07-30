@@ -71,6 +71,12 @@ import {
   MIN_RECOVERY_PAIRS,
 } from "../feel-timing";
 import { IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H } from "../feel-schedule";
+import {
+  MIN_RELOG_GAP_H,
+  POST_SESSION_LOCK_H,
+  MAX_READS_PER_DAY,
+  READINESS_PAIR_WEIGHT,
+} from "../readiness-reads";
 
 export type EngineFormulaGroup =
   | "fatigue"
@@ -109,7 +115,7 @@ export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; sou
   { id: "effort", label: "Reported effort model", source: "engines/effort.ts" },
   { id: "landmarks", label: "Volume landmarks (MEV/MAV/MRV)", source: "engines/landmark-profile.ts + landmark-adapt.ts + landmark-resolve.ts" },
   { id: "volumeBlock", label: "Block volume ramp", source: "engines/volume-block.ts" },
-  { id: "feelTiming", label: "Feel timing", source: "feel-timing.ts + checkin-scales.ts" },
+  { id: "feelTiming", label: "Feel timing", source: "feel-timing.ts + readiness-reads.ts + checkin-scales.ts" },
   { id: "fitnessLevel", label: "Training level & profile", source: "engines/fitness-level.ts + athlete-profile.ts" },
 ];
 
@@ -459,7 +465,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(COST_HIGH), value: "strain threshold", meaning: "one threshold for every recovery answer" },
       { symbol: String(COST_OK), value: "absorbed below", meaning: "a week only reads as tolerated under this" },
     ],
-    note: "Soreness and energy answer the same question in opposite directions, so they are folded onto ONE spentness scale (5 = wrecked), lag-adjusted, and pooled with any historical post-workout answers into a single number. Before the merge these were two raw thresholds on two code paths, which is how the card could promise a reading was not counted while the estimator counted it.",
+    note: "Soreness and energy answer the same question in opposite directions, so they are folded onto ONE spentness scale (5 = wrecked), lag-adjusted, and pooled with any historical post-workout answers into a single number. Before the merge these were two raw thresholds on two code paths, which is how the card could promise a reading was not counted while the estimator counted it. Pooling is now per DAY — see 'One day, one vote'.",
   },
   {
     id: "feel-weight",
@@ -483,9 +489,9 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: `${IMMEDIATE_WINDOW_H} h`, value: "immediate window", meaning: "past this, the answer is a memory of a feeling" },
       { symbol: `${RECOVERY_DUE_H} h`, value: "recovery opens", meaning: `expectedResidual(${RECOVERY_DUE_H}) ≈ 0.59 — the fast component has largely drained` },
       { symbol: `${RECOVERY_WINDOW_H} h`, value: "recovery closes", meaning: "the next-day boundary; beyond it, recall" },
-      { symbol: "1 per day", value: "recovery reads", meaning: "anchored to the last session to finish — you do not recover one at a time" },
+      { symbol: `${MAX_READS_PER_DAY} per day`, value: "readiness reads", meaning: "the recovery read is anchored to the last session to finish — you do not recover one at a time" },
     ],
-    note: "The immediate read is per session and cannot be taken later: effort is sRPE, and spentness at the peak is the anchor everything else is measured against. The recovery read is per day and is the one that can move a training ceiling. Two moments, one instrument.",
+    note: "The immediate read is per session and cannot be taken later: effort is sRPE, and spentness at the peak is the anchor everything else is measured against. The recovery read is the one that can move a training ceiling. Two moments, one instrument. It is ANSWERED BY A READ, not by the row being touched — editing a day's note in the evening is not a statement about how the session drained.",
   },
   {
     id: "recovery-curve",
@@ -500,6 +506,64 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(MIN_RECOVERY_PAIRS), value: "minimum pairs", meaning: "one is an anecdote; below this the index is exactly 1" },
     ],
     note: "Because cost is timing-normalised, two reads of the same session come out EQUAL when the athlete drains at the population rate — so the ratio is a direct read of their own rate. No personal time constant is fitted: R(h₁)/R(h₂) is not monotone in τ, so a single pair admits two values and picking one would dress an assumption as a measurement. A pair is dropped if a second session lands inside its gap.",
+  },
+  {
+    id: "read-gate",
+    engine: "feelTiming",
+    name: "When a new read may be taken",
+    expression: `opensAt = max( lastRead + ${MIN_RELOG_GAP_H} h , sessionEnd + ${POST_SESSION_LOCK_H} h  [while that is still ahead of lastRead] )`,
+    constants: [
+      { symbol: `${MIN_RELOG_GAP_H} h`, value: "cadence floor = MIN_PAIR_GAP_H", meaning: "closer than the pair model can use, so a second answer is not a second measurement" },
+      { symbol: `${POST_SESSION_LOCK_H} h`, value: "post-session lock = RECOVERY_DUE_H", meaning: "the hour the recovery read was already scheduled at" },
+      { symbol: "first read", value: "never gated", meaning: "an answer given walking out of the gym is true about that moment" },
+      { symbol: String(MAX_READS_PER_DAY), value: "reads per day", meaning: "unreachable behind the cadence floor; it exists so one day cannot flood a week" },
+    ],
+    note: "Two clocks, and the later one wins. Session ends 09:00 and the athlete taps at 09:30: cadence alone would open at 13:30, but that session's recovery read is not due until 15:00 — so the gate opens at 15:00 and the second answer lands where it is worth something. Inside the gate a readiness write is a CORRECTION of the read on record (same clock, new value), never a rejection: the guided check-in must not fail a whole submission over one field. It borrows both numbers rather than inventing any, because a re-read the maths would discard is not worth asking for.",
+  },
+  {
+    id: "readiness-spent",
+    engine: "feelTiming",
+    name: "Readiness on the spentness scale",
+    expression: `spent = 6 − readiness   →   cost = clamp( ((spent − 1) / 4) / expectedResidual(h), 0, ${MAX_COST} )`,
+    constants: [
+      { symbol: "6 − v", value: "the reflection", meaning: "5 = primed = nothing to drain; 2 = wrecked = 4/5 spent" },
+      { symbol: String(COST_HIGH), value: "strain threshold", meaning: "the SAME threshold the session answer runs against" },
+    ],
+    note: "The two cards run in opposite directions — 5 means 'primed' on the readiness picker and 'wrecked' on the fatigue question — so one is the other reflected. Inverting means a readiness read is placed by the same residual curve, discounted by the same recall rule and read by the same threshold as a post-workout answer, which is the only way the two surfaces are guaranteed not to disagree. Worked: Flat at 1 h ≈ 0.56 (an ordinary hard morning), the identical tap at 14 h ≈ 1.21 (past the threshold — the session was not absorbed). The picker's four faces write 2…5, so a readiness read tops out at 4/5 spent; the guided check-in's full 1–5 is there for an athlete who means the floor.",
+  },
+  {
+    id: "decisive-read",
+    engine: "feelTiming",
+    name: "Which read governs the day",
+    expression: `decisive = last read with lag ≥ ${IMMEDIATE_WINDOW_H} h  (else the last read)`,
+    constants: [
+      { symbol: `${IMMEDIATE_WINDOW_H} h`, value: "confound window", meaning: "inside it the session is still the loudest thing in the answer" },
+      { symbol: "latest", value: "not the mean", meaning: "averaging 09:30 with 22:00 describes neither moment" },
+    ],
+    note: "What prescribeSession scales today's load off, and what the day's stored column is set to on every write — so every existing reader of Checkin.energy keeps working unchanged. Latest rather than averaged because the second read SUPERSEDES the first as a statement of current state; the first is not discarded, it is what makes the second measurable. The confounded case matters in one direction in particular: an athlete who logged a real recovery read in the evening, trains again late and taps 'wrecked' walking out must not have the evening's reading replaced by the session talking.",
+  },
+  {
+    id: "readiness-pair",
+    engine: "feelTiming",
+    name: "Clearance from two reads",
+    expression: `ratio = cost(later) / cost(immediate),  weight ×= ${READINESS_PAIR_WEIGHT}`,
+    constants: [
+      { symbol: String(READINESS_PAIR_WEIGHT), value: "readiness discount", meaning: "same scale and curve, noisier instrument" },
+      { symbol: `< ${IMMEDIATE_WINDOW_H} h`, value: "immediate side", meaning: "a read taken while the session was still present, when no post-workout answer exists" },
+      { symbol: String(MIN_PAIR_FATIGUE), value: "minimum immediate report", meaning: "a session you walked out of fine has nothing to drain" },
+    ],
+    note: "The clearance model was built for pairs and, until a day could hold more than one read, was fed one report a day — so for most athletes it sat at exactly 1.0 with zero confidence, which is the population curve wearing a measurement's clothes. An athlete who skips the post-workout card but taps the faces twice now measures their own rate. The session's OWN answer is still preferred wherever it exists, at full weight; every guard in recoveryCurve applies unchanged, including dropping any pair with a second session inside its gap.",
+  },
+  {
+    id: "day-one-vote",
+    engine: "landmarks",
+    name: "One day, one vote",
+    expression: "per day:  energy = decisive read,  weight(read) = reportWeight(lag) ÷ readsThatDay",
+    constants: [
+      { symbol: "÷ n", value: "shared weight", meaning: "a day's reads split one unit of influence" },
+      { symbol: "decisive", value: "not the mean", meaning: "the day's energy is the read that governs it" },
+    ],
+    note: "The weekly means pooled report by report. Once a day could carry several reads, a training day logged three times would have outvoted a rest day logged once — and training days are exactly the days that read low, so the ceiling would have come down because the athlete checked in more often. Reports are grouped by day before pooling: one soreness value, one energy value, one unit of weight split across the reads inside it. The extra reads sharpen the TIMING without inflating the sample count.",
   },
   {
     id: "clearance-factor",

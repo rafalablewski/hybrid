@@ -40,6 +40,16 @@ import {
   MIN_PAIR_FATIGUE,
 } from "../feel-timing";
 import { feelSchedule, IMMEDIATE_WINDOW_H, RECOVERY_DUE_H, RECOVERY_WINDOW_H } from "../feel-schedule";
+import {
+  readGate,
+  placeReads,
+  decisiveRead,
+  spentFromReadiness,
+  MIN_RELOG_GAP_H,
+  POST_SESSION_LOCK_H,
+  MAX_READS_PER_DAY,
+  READINESS_PAIR_WEIGHT,
+} from "../readiness-reads";
 import { sorenessFromCheckin } from "../checkin-scales";
 import {
   computeEngineTrace,
@@ -77,6 +87,60 @@ describe("ENGINE_FORMULAS", () => {
     const trend = ENGINE_FORMULAS.find((f) => f.id === "effort-trend")!;
     expect(trend.constants.find((c) => c.symbol === "n")!.value).toBe(String(EFFORT_TREND_MIN_SAMPLES));
     expect(trend.constants.find((c) => c.symbol === "d")!.value).toBe(`${EFFORT_TREND_MIN_DAYS} days`);
+  });
+
+  it("the read gate's constants track the live ones (drift guard)", () => {
+    const gate = ENGINE_FORMULAS.find((f) => f.id === "read-gate")!;
+    expect(gate.expression).toContain(`${MIN_RELOG_GAP_H} h`);
+    expect(gate.expression).toContain(`${POST_SESSION_LOCK_H} h`);
+    expect(gate.constants.find((c) => c.symbol === String(MAX_READS_PER_DAY))!.value).toBe("reads per day");
+    // …and the console's claim that it BORROWS them rather than inventing any.
+    expect(gate.constants.find((c) => c.symbol === `${MIN_RELOG_GAP_H} h`)!.value).toContain("MIN_PAIR_GAP_H");
+    expect(gate.constants.find((c) => c.symbol === `${POST_SESSION_LOCK_H} h`)!.value).toContain("RECOVERY_DUE_H");
+  });
+
+  it("the read gate reproduces the live engine (drift guard)", () => {
+    // The printed formula, evaluated by hand against the case that produced it:
+    // session ends 09:00, read at 09:30 — cadence says 13:30, the session says
+    // 15:00, and the later one is what the engine returns.
+    const end = Date.parse("2026-03-04T09:00:00.000Z");
+    const read = end + 0.5 * 3_600_000;
+    const printed = Math.max(read + MIN_RELOG_GAP_H * 3_600_000, end + POST_SESSION_LOCK_H * 3_600_000);
+    expect(readGate({ lastReadAt: read, lastSessionEnd: end, readsToday: 1, now: end + 3_600_000 }).opensAt).toBe(printed);
+  });
+
+  it("the readiness inversion reproduces the live engine (drift guard)", () => {
+    const spent = ENGINE_FORMULAS.find((f) => f.id === "readiness-spent")!;
+    expect(spent.expression).toContain("6 − readiness");
+    for (const v of [2, 3, 4, 5]) expect(spentFromReadiness(v)).toBe(6 - v);
+    // The two worked numbers the note quotes, to 2dp.
+    const end = Date.parse("2026-03-04T08:00:00.000Z");
+    const [soon, later] = placeReads(
+      [{ value: 3, at: end + 3_600_000 }, { value: 3, at: end + 14 * 3_600_000 }],
+      [end],
+    );
+    const to2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
+    expect(to2(soon!.reading.cost)).toBe("0.56");
+    expect(to2(later!.reading.cost)).toBe("1.21");
+    expect(spent.note).toContain(to2(soon!.reading.cost));
+    expect(spent.note).toContain(to2(later!.reading.cost));
+  });
+
+  it("the decisive read reproduces the live engine (drift guard)", () => {
+    const dec = ENGINE_FORMULAS.find((f) => f.id === "decisive-read")!;
+    expect(dec.expression).toContain(`${IMMEDIATE_WINDOW_H} h`);
+    const end = Date.parse("2026-03-04T08:00:00.000Z");
+    const reads = placeReads(
+      [{ value: 2, at: end + 3_600_000 }, { value: 4, at: end + 14 * 3_600_000 }],
+      [end],
+    );
+    expect(decisiveRead(reads)!.value).toBe(4);
+  });
+
+  it("the readiness pair carries the live discount (drift guard)", () => {
+    const pair = ENGINE_FORMULAS.find((f) => f.id === "readiness-pair")!;
+    expect(pair.expression).toContain(String(READINESS_PAIR_WEIGHT));
+    expect(pair.constants.find((c) => c.symbol === String(MIN_PAIR_FATIGUE))).toBeTruthy();
   });
 
   it("calibration constants track the live prior (drift guard)", () => {

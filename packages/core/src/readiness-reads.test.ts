@@ -225,17 +225,27 @@ describe("what the engine is handed", () => {
     expect(readReports(day, [])).toEqual([day]);
   });
 
-  it("gives the day the decisive read's value and time", () => {
+  it("gives every value the clock it was actually answered on", () => {
     const reads = placeReads([{ value: 2, at: end + 1 * H }, { value: 4, at: end + 14 * H }], [end]);
-    const [base, ...rest] = readReports(day, reads);
-    expect(base!.energy).toBe(4);
-    expect(Date.parse(base!.loggedAt!)).toBe(end + 14 * H);
-    // …and the other read travels on its own, carrying nothing it didn't answer.
-    expect(rest).toHaveLength(1);
-    expect(rest[0]!.energy).toBe(2);
-    expect(rest[0]!.soreness).toBeUndefined();
-    expect(rest[0]!.sleep).toBeUndefined();
-    expect(rest[0]!.mood).toBeUndefined();
+    const [base, ...rest] = readReports({ ...day, loggedAt: new Date(end + 1 * H).toISOString() }, reads);
+    // THE REGRESSION THIS GUARDS: freshness/sleep/mood are answered once, in one
+    // sitting. Stamping them with the newest read would re-read a freshness
+    // answer given an hour after training as one given fourteen hours after it
+    // — and cost divides by the residual expected at that lag, so it would
+    // inflate by ~2x for no reason but bookkeeping.
+    expect(base!.sleep).toBe(4);
+    expect(Date.parse(base!.loggedAt!)).toBe(end + 1 * H);
+    expect(base!.energy).toBeNull();
+    // …and each read travels on its own clock, carrying nothing it didn't answer.
+    expect(rest.map((r) => [r.energy, Date.parse(r.loggedAt!) - end] as const)).toEqual([
+      [2, 1 * H],
+      [4, 14 * H],
+    ]);
+    for (const r of rest) {
+      expect(r.soreness).toBeUndefined();
+      expect(r.sleep).toBeUndefined();
+      expect(r.mood).toBeUndefined();
+    }
   });
 
   it("answers freshness, sleep and mood exactly once however many reads there are", () => {
@@ -244,8 +254,14 @@ describe("what the engine is handed", () => {
       [end],
     );
     const reports = readReports(day, reads);
-    expect(reports).toHaveLength(3);
+    expect(reports).toHaveLength(4); // the day, plus one per read
     expect(reports.filter((r) => r.sleep != null)).toHaveLength(1);
+    expect(reports.filter((r) => r.energy != null)).toHaveLength(3);
+  });
+
+  it("passes a single-read day through exactly as the engine always saw it", () => {
+    const reads = placeReads([{ value: 3, at: end + 9 * H }], [end]);
+    expect(readReports(day, reads)).toEqual([day]);
   });
 });
 

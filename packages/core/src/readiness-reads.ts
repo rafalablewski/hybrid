@@ -341,25 +341,36 @@ export const READ_TREND_KEY: Record<ReadTrend, string> = {
 export const READINESS_PAIR_WEIGHT = 0.7;
 
 /**
- * What two reads around one session say about this athlete's clearance rate.
+ * A pair of READS, on the same curve the session-side pairs use, at the
+ * readiness discount.
  *
- * The pair is the day's first read (taken while the session was still present)
- * against its last (taken once it should have drained), handed to the SAME
- * `recoveryCurve` the session-side pairs use. Every guard there applies
- * unchanged: a four-hour minimum gap, both lags known, and an immediate read of
- * at least 3/5 spent — an athlete who walked out fine has nothing to drain, and
- * dividing a small number by a small number would otherwise manufacture a
- * verdict.
+ * Every guard in `recoveryCurve` applies unchanged: a four-hour minimum gap,
+ * both lags known, and an immediate side of at least 3/5 spent — an athlete who
+ * walked out fine has nothing to drain, and dividing a small number by a small
+ * number would otherwise manufacture a verdict. Null whenever the pair can't
+ * support one, which is most of the time.
+ */
+export function readPairCurve(
+  immediate: FeelReading | null,
+  later: FeelReading | null,
+): RecoveryCurve | null {
+  const curve = recoveryCurve(immediate, later);
+  if (!curve) return null;
+  return { ...curve, weight: Math.round(curve.weight * READINESS_PAIR_WEIGHT * 1000) / 1000 };
+}
+
+/**
+ * What a day's own two reads say about this athlete's clearance rate — its
+ * first read (taken while the session was still present) against its last
+ * (taken once the session should have drained).
  *
- * Returns null whenever the day can't support one, which on most days it can't.
+ * `recovery-pairs.ts` is what actually matches reads to sessions; this is the
+ * day-scoped shorthand, and the one place the rule is stated for a day that has
+ * no post-workout answer at all.
  */
 export function readClearance(reads: PlacedRead[]): RecoveryCurve | null {
   if (reads.length < 2) return null;
-  const first = reads[0]!;
-  const last = reads[reads.length - 1]!;
-  const curve = recoveryCurve(first.reading, last.reading);
-  if (!curve) return null;
-  return { ...curve, weight: Math.round(curve.weight * READINESS_PAIR_WEIGHT * 1000) / 1000 };
+  return readPairCurve(reads[0]!.reading, reads[reads.length - 1]!.reading);
 }
 
 /* ── FEEDING THE ENGINE ───────────────────────────────────────────────────── */
@@ -381,32 +392,35 @@ export interface ReadReport {
 /**
  * A day's check-in expanded into the reports the engine should see.
  *
- * ONE report carries the day: its freshness, sleep and mood — answered once —
- * plus the DECISIVE read's readiness value and the time that read was taken, so
- * the day's canonical answer is the one that should govern it rather than
- * whichever row was written last.
+ * EVERY VALUE KEEPS THE CLOCK IT WAS ANSWERED ON. That is the whole job here,
+ * and it is easy to get subtly wrong: freshness, sleep and mood are answered
+ * ONCE, in one sitting, and the day's readiness may be answered three times
+ * hours apart. Handing the engine a single row stamped with the newest read
+ * would date the morning's freshness answer to the evening — and because cost
+ * divides by the residual expected at that lag, a freshness answer given an
+ * hour after training would be re-read as one given fourteen hours after it,
+ * inflating its cost by 2× for no reason but bookkeeping.
  *
- * Every OTHER read is emitted as a report of its own carrying only readiness
- * and its own timestamp. That is what lets `athleteClearance` see a morning
- * read and an evening read as two reads of one session instead of one row it
- * has to guess about — and it is why the other three metrics are deliberately
- * absent from those extra reports: freshness was answered once, and repeating
- * it per read would count one answer three times.
+ * So a multi-read day is emitted as: ONE report carrying the day's non-readiness
+ * metrics at the row's own write time, plus ONE energy-only report per read at
+ * that read's own time. Nothing is counted twice — freshness appears in exactly
+ * one report — and nothing is dated to a moment it wasn't given at.
+ *
+ * A day with fewer than two reads is passed through untouched: there is no
+ * disagreement to resolve, and it is exactly what the engine saw before.
  *
  * Consumers that average over WINDOWS must still normalize per day (see
- * `adaptLandmarks`, which weights each day to 1 regardless of read count) —
- * a training day with three reads must not outvote a rest day with one.
+ * `adaptLandmarks`, which weights each day to 1 regardless of read count) — a
+ * training day with three reads must not outvote a rest day with one.
  */
 export function readReports(day: ReadReport, reads: PlacedRead[]): ReadReport[] {
-  if (!reads.length) return [day];
-  const decisive = decisiveRead(reads)!;
-  const base: ReadReport = {
-    ...day,
-    energy: decisive.value,
-    loggedAt: new Date(decisive.at).toISOString(),
-  };
-  const others = reads
-    .filter((r) => r.at !== decisive.at)
-    .map<ReadReport>((r) => ({ date: day.date, energy: r.value, loggedAt: new Date(r.at).toISOString() }));
-  return [base, ...others];
+  if (reads.length < 2) return [day];
+  return [
+    { ...day, energy: null },
+    ...reads.map<ReadReport>((r) => ({
+      date: day.date,
+      energy: r.value,
+      loggedAt: new Date(r.at).toISOString(),
+    })),
+  ];
 }
