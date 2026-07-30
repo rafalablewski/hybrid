@@ -114,6 +114,11 @@ const PROVIDER_DEVICE: Record<string, string> = {
   coros: "COROS",
 };
 
+/** Every provider this app can name a device for. Exported so the mark registry
+ *  (device-marks.ts) can be tested for the same coverage — a provider we can
+ *  name is a provider we must be able to draw. */
+export const PROVIDER_DEVICE_KEYS = Object.keys(PROVIDER_DEVICE);
+
 /**
  * What to CALL the device on screen: the recording's own device name when it
  * has a real one, else the provider's device. Null when neither is known — the

@@ -35,6 +35,7 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceMarkFor,
   deviceSourceLabel,
   deviceTrueSession,
   sessionEnergy,
@@ -48,6 +49,7 @@ import { fetchTalent, fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
 import { useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
+import { DeviceMark } from "./aurora/device-mark";
 import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
@@ -295,6 +297,9 @@ export function WorkoutWrapped({
       })
     : [];
   const deviceName = deviceSourceLabel(device);
+  // Whether this connector ships artwork. When it doesn't, every lockup below
+  // falls back to naming the device in text — same sentence, no glyph.
+  const deviceMark = deviceMarkFor(device?.provider) != null;
   const onMatched = (d: DeviceWorkout | null) => {
     setDevice(d);
     void revalidate.sessions();
@@ -381,13 +386,21 @@ export function WorkoutWrapped({
           {/* The first thing after the numbers: pull the watch's read of this
               exact workout onto the row (or show that it's already there). */}
           {device ? (
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
-              <Text style={{ fontSize: 12 }}>⌚</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: txt(C, C.lime) }}>{deviceName ?? t("session.device.matchedChip")} ✓</Text>
+            /* The lockup finishes the sentence, so the copy never repeats the
+               device's name. Chip and mark are both chalk: the artwork can't be
+               tinted, and a white logo next to lime text would read as two
+               claims at once. See core/device-marks.ts. */
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
+              {deviceMark ? (
+                <DeviceMark provider={device.provider} height={11} on="dark" label={deviceName ?? undefined} />
+              ) : (
+                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
+              )}
             </Pressable>
           ) : canMatch ? (
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
-              <Text style={{ fontSize: 13 }}>⌚</Text>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
+              <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
               <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>{t("session.device.matchCta")}</Text>
             </Pressable>
           ) : null}
@@ -439,14 +452,23 @@ export function WorkoutWrapped({
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#0e0f0d" }}>
                 <View style={{ flex: 1.1 }} />
                 <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+                {/* The lockup heads the measured column instead of the device's
+                    name, and the column's figures below are chalk with it — the
+                    whole measured side reads in one ink. */}
+                {deviceMark ? (
+                  <View style={{ flex: 1, alignItems: "flex-end" }}>
+                    <DeviceMark provider={device.provider} height={10} on="dark" label={deviceName ?? undefined} />
+                  </View>
+                ) : (
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+                )}
               </View>
               {comparison.map((r) => (
                 <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
                   <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
                   {/* A modelled figure wears a "~" — never presented as a measurement. */}
                   <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
-                  <Text style={{ flex: 1, fontFamily: F.black, fontSize: 14, color: txt(C, C.lime), textAlign: "right" }}>{r.device ?? "—"}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.black, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.device ?? "—"}</Text>
                 </View>
               ))}
             </View>

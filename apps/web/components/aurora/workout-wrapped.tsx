@@ -41,6 +41,7 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceMarkFor,
   deviceSourceLabel,
   deviceTrueSession,
   sessionEnergy,
@@ -55,6 +56,7 @@ import { useLang } from "@/lib/i18n";
 import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { FeelPrompt } from "./feel-prompt";
+import { DeviceMark } from "./device-mark";
 import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
 
 const GOLD = "#e6c34e";
@@ -288,6 +290,9 @@ export function WorkoutWrapped({
       })
     : [];
   const deviceName = deviceSourceLabel(device);
+  // Whether this connector ships artwork. When it doesn't, every lockup below
+  // falls back to naming the device in text — same sentence, no glyph.
+  const deviceMark = deviceMarkFor(device?.provider) != null;
   const unlinkDevice = async () => {
     if (unlinking) return;
     setUnlinking(true);
@@ -368,9 +373,17 @@ export function WorkoutWrapped({
         {/* The watch's read of this exact workout rides on the row — matched on
             the phone (HealthKit is native-only); here it shows as synced. */}
         {device && (
-          <div style={{ marginTop: 14, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 6, border: `1px solid color-mix(in srgb, ${LIME} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", position: "relative" }}>
-            <span aria-hidden style={{ fontSize: 12 }}>⌚</span>
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={LIME_HEX}>{deviceName ?? t("session.device.matchedChip")} ✓</Mono>
+          <div style={{ marginTop: 14, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8, border: `1px solid color-mix(in srgb, ${CHALK} 32%, transparent)`, borderRadius: 999, padding: "8px 14px", position: "relative" }}>
+            {/* The lockup finishes the sentence, so the copy never repeats the
+                device's name. Chip and mark are both chalk: the artwork can't
+                be tinted, and a white logo next to lime text would read as two
+                claims at once. See core/device-marks.ts. */}
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
+            {deviceMark ? (
+              <DeviceMark provider={device.provider} height={11} on="dark" label={deviceName ?? undefined} />
+            ) : (
+              <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
+            )}
           </div>
         )}
         {scrollHint}
@@ -423,14 +436,23 @@ export function WorkoutWrapped({
             <div style={{ display: "flex", padding: "10px 14px", background: "#0e0f0d" }}>
               <div style={{ flex: 1.1 }} />
               <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Mono>
-              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={LIME_HEX}>{deviceName ?? t("session.device.deviceCol")}</Mono>
+              {/* The lockup heads the measured column instead of the device's
+                  name, and the column's figures below are chalk with it — the
+                  whole measured side reads in one ink. */}
+              {deviceMark ? (
+                <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                  <DeviceMark provider={device.provider} height={10} on="dark" label={deviceName ?? undefined} />
+                </div>
+              ) : (
+                <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={CHALK}>{deviceName ?? t("session.device.deviceCol")}</Mono>
+              )}
             </div>
             {comparison.map((r) => (
               <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
                 <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
                 {/* A modelled figure wears a "~" — never presented as a measurement. */}
                 <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
-                <span style={{ ...disp, flex: 1, fontWeight: 900, fontSize: fs.caption, textAlign: "right", color: txt(LIME), fontVariantNumeric: "tabular-nums" }}>{r.device ?? "—"}</span>
+                <span style={{ ...disp, flex: 1, fontWeight: 900, fontSize: fs.caption, textAlign: "right", color: txt(CHALK), fontVariantNumeric: "tabular-nums" }}>{r.device ?? "—"}</span>
               </div>
             ))}
           </div>
