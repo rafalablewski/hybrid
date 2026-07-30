@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   DEVICE_MARKS,
+  DEVICE_MARK_CAP,
+  DEVICE_MARK_CAP_TOP,
+  DEVICE_MARK_GLYPH,
   DEVICE_MARK_HEIGHT,
   DEVICE_MARK_INK,
   deviceMarkFor,
@@ -17,6 +20,10 @@ import { contrastRatio, WCAG } from "./contrast";
 // them once here rather than at each use.
 const APPLE = DEVICE_MARKS.apple!;
 const GARMIN = DEVICE_MARKS.garmin!;
+// Still a silhouette (one drawing, no compact form) — the fixture for the
+// fall-back-to-lockup behaviour, which Garmin used to stand for before its own
+// artwork landed.
+const POLAR = DEVICE_MARKS.polar!;
 
 const every = (fn: (art: DeviceMarkArt, name: string) => void) => {
   for (const [provider, set] of Object.entries(DEVICE_MARKS)) {
@@ -40,8 +47,41 @@ describe("deviceMarkFor", () => {
 
   it("gives the compact mark when asked, and the lockup when there isn't one", () => {
     expect(deviceMarkFor("apple", "mark")).toBe(APPLE.mark);
+    // A real logo ships both forms: the wordmark to name the device, the glyph
+    // to count it.
+    expect(deviceMarkFor("garmin", "mark")).toBe(GARMIN.mark);
+    expect(deviceMarkFor("garmin")).toBe(GARMIN.lockup);
     // A silhouette provider ships one drawing — asking for `mark` still draws.
-    expect(deviceMarkFor("garmin", "mark")).toBe(GARMIN.lockup);
+    expect(POLAR.mark).toBeUndefined();
+    expect(deviceMarkFor("polar", "mark")).toBe(POLAR.lockup);
+  });
+
+  it("normalises every drawing of a kind onto the SAME optical measure", () => {
+    // The invariant the whole normalisation exists for: two manufacturers' logos
+    // set at one height must read as one size. A new logo added by eye instead
+    // of by measurement fails here.
+    every((art, name) => {
+      expect(art.optical, name).toBe(art.kind === "wordmark" ? DEVICE_MARK_CAP : DEVICE_MARK_GLYPH);
+    });
+    const wordmarks = Object.values(DEVICE_MARKS).map((s) => s.lockup).filter((a) => a.kind === "wordmark");
+    expect(wordmarks.length).toBeGreaterThan(1);
+    expect(new Set(wordmarks.map((a) => a.optical)).size).toBe(1);
+  });
+
+  it("leaves the cap band room for the tallest ascender", () => {
+    // Garmin's delta is the constraint: it sits ~0.95 cap-heights above the
+    // letters, so the band cannot start lower than it needs, nor the caps be
+    // taller than the leftover. If either constant drifts, a logo clips.
+    expect(DEVICE_MARK_CAP_TOP).toBeGreaterThan(DEVICE_MARK_CAP * 0.94);
+    expect(DEVICE_MARK_CAP_TOP + DEVICE_MARK_CAP).toBeLessThan(DEVICE_MARK_HEIGHT);
+  });
+
+  it("draws Garmin's wordmark wide and its delta near-square", () => {
+    // The two forms exist because they solve different problems: a 352-wide
+    // wordmark cannot sit in a row that only has room to say "this came off a
+    // device", and the delta alone cannot name the manufacturer.
+    expect(GARMIN.lockup.width).toBeGreaterThan(300);
+    expect(GARMIN.mark!.width).toBeLessThan(130);
   });
 
   it("draws every provider session-device.ts can name", () => {
@@ -102,7 +142,18 @@ describe("deviceMarkWidth", () => {
     expect(deviceMarkWidth(art, DEVICE_MARK_HEIGHT)).toBeCloseTo(art.width, 2);
     expect(deviceMarkWidth(art, 11)).toBeCloseTo((art.width * 11) / 100, 2);
     // The Apple Watch lockup is a wide horizontal shape; the mark is upright.
-    expect(deviceMarkWidth(APPLE.lockup, 20)).toBeGreaterThan(80);
+    // Stated as a RATIO to the requested height, not a pixel count: the widths
+    // move whenever the optical normalisation is retuned, but a wordmark being
+    // wider than it is tall — and a glyph narrower — is the durable claim.
+    expect(deviceMarkWidth(APPLE.lockup, 20)).toBeGreaterThan(20);
     expect(deviceMarkWidth(APPLE.mark!, 20)).toBeLessThan(20);
+  });
+
+  it("sets every wordmark at one cap height, whatever its own proportions", () => {
+    // The regression this whole normalisation fixes: Apple's caps used to render
+    // 1.39x Garmin's at the same requested height. Now the ratio is exactly 1.
+    const capPx = (art: DeviceMarkArt, height: number) => (art.optical * height) / DEVICE_MARK_HEIGHT;
+    expect(capPx(APPLE.lockup, 16)).toBeCloseTo(capPx(GARMIN.lockup, 16), 5);
+    expect(capPx(APPLE.mark!, 16)).toBeCloseTo(capPx(GARMIN.mark!, 16), 5);
   });
 });

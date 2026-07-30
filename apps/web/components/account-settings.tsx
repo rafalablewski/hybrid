@@ -373,6 +373,9 @@ export default function AccountSettings() {
               <PrefRow title={t("loggerPrefs.carryOver")} desc={t("loggerPrefs.carryOverDesc")} on={prefs.carryOver} onToggle={() => setLoggerPref("carryOver", !prefs.carryOver)} />
               <PrefRow title={t("loggerPrefs.keepAwake")} desc={t("loggerPrefs.keepAwakeDesc")} on={prefs.keepAwake} onToggle={() => setLoggerPref("keepAwake", !prefs.keepAwake)} />
               <PrefRow title={t("loggerPrefs.haptics")} desc={t("loggerPrefs.hapticsDesc")} on={prefs.haptics} onToggle={() => setLoggerPref("haptics", !prefs.haptics)} />
+              {/* The read is phone-only (a health store is native), but the
+                  switch belongs on both clients — see components/device-import. */}
+              <PrefRow title={t("device.import.autoTitle")} desc={t("device.import.autoDesc")} on={prefs.deviceAutoImport} onToggle={() => setLoggerPref("deviceAutoImport", !prefs.deviceAutoImport)} />
             </Section>
             {prefs.restTimer && (
               <Section label={t("loggerPrefs.restDefault")}>

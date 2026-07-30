@@ -21,7 +21,13 @@
  */
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEVICE_MATCH_WINDOW_H, isDeviceName, sanitizeDeviceWorkout, type DeviceWorkout } from "@hybrid/core";
+import {
+  DEVICE_IMPORT_DAYS,
+  DEVICE_MATCH_WINDOW_H,
+  isDeviceName,
+  sanitizeDeviceWorkout,
+  type DeviceWorkout,
+} from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 import { API_BASE, fetchSessions, patchSessionDevice } from "./api";
@@ -406,12 +412,28 @@ async function readWorkout(hk: HK, w: WorkoutProxyLike): Promise<DeviceWorkout |
  * there).
  */
 export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWorkout[] | null> {
-  const hk = loadHealthKit();
-  if (!hk) return null;
   const t = Date.parse(aroundIso);
   if (!Number.isFinite(t)) return null;
   const windowMs = DEVICE_MATCH_WINDOW_H * 3600000;
-  const filter = { date: { startDate: new Date(t - windowMs), endDate: new Date(t + windowMs) } };
+  return readWorkouts(new Date(t - windowMs), new Date(t + windowMs));
+}
+
+/**
+ * Everything the device recorded over the last `days` — the read behind the
+ * IMPORT flow (core/device-import.ts), where the training started on the wrist
+ * and nothing has been logged in the app yet. Same normalizer, same shape; only
+ * the window differs from the per-session match above.
+ */
+export async function queryRecentDeviceWorkouts(days = DEVICE_IMPORT_DAYS): Promise<DeviceWorkout[] | null> {
+  return readWorkouts(new Date(Date.now() - days * 86400000), new Date());
+}
+
+/** The shared read: every workout in [start, end], normalized to DeviceWorkout.
+ *  Null when HealthKit itself is unreachable (vs [] = reachable, nothing there). */
+async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorkout[] | null> {
+  const hk = loadHealthKit();
+  if (!hk) return null;
+  const filter = { date: { startDate, endDate } };
   try {
     const proxies = await hk.queryWorkoutSamples({ limit: 0, ascending: false, filter });
     const out: DeviceWorkout[] = [];

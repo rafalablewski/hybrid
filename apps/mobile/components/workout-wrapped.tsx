@@ -395,7 +395,7 @@ export function WorkoutWrapped({
             <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
-                <DeviceMark provider={device.provider} height={11} on="dark" label={deviceName ?? undefined} />
+                <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
               ) : (
                 <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
               )}
@@ -459,7 +459,7 @@ export function WorkoutWrapped({
                     whole measured side reads in one ink. */}
                 {deviceMark ? (
                   <View style={{ flex: 1, alignItems: "flex-end" }}>
-                    <DeviceMark provider={device.provider} height={10} on="dark" label={deviceName ?? undefined} />
+                    <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
                   </View>
                 ) : (
                   <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>

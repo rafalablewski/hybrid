@@ -76,6 +76,7 @@ import { useNavScroll, useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
+import { useDeviceAutoImport } from "../../lib/use-device-import";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
@@ -202,6 +203,11 @@ export default function AuroraHome() {
     fetchRoutines().then((r) => setRoutines(r)).catch(() => setRoutines([]));
   }, []);
   useFocusEffect(useCallback(() => { load(); loadRoutines(); }, [load, loadRoutines]));
+
+  // Workouts recorded on the watch, pulled in on open when the athlete has
+  // switched auto-import on — the run is simply THERE. Refetch only when
+  // something actually landed. See lib/use-device-import.ts.
+  useDeviceAutoImport(load);
 
   // Optimistic favourite toggle — flip locally, then PATCH; revert on failure.
   const toggleFavourite = useCallback((r: QuickRoutine) => {

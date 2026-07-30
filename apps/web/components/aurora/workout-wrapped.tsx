@@ -382,7 +382,7 @@ export function WorkoutWrapped({
                 claims at once. See core/device-marks.ts. */}
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
             {deviceMark ? (
-              <DeviceMark provider={device.provider} height={11} on="dark" label={deviceName ?? undefined} />
+              <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
             ) : (
               <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
             )}
@@ -443,7 +443,7 @@ export function WorkoutWrapped({
                   whole measured side reads in one ink. */}
               {deviceMark ? (
                 <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-                  <DeviceMark provider={device.provider} height={10} on="dark" label={deviceName ?? undefined} />
+                  <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
                 </div>
               ) : (
                 <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }} c={CHALK}>{deviceName ?? t("session.device.deviceCol")}</Mono>
