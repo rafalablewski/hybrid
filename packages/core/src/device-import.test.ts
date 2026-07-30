@@ -237,4 +237,15 @@ describe("deviceImportCounts / deviceImportMeta", () => {
     expect(meta).toEqual(["60 min", "400 m", "300 kcal", "♥ 148"]);
     expect(meta.join(" – ")).not.toContain("·");
   });
+
+  it("speaks the ACTIVITY's own distance unit, like the summary's device panel", () => {
+    // The import row and the comparison panel describe the SAME recording, so a
+    // pool swim reading in metres on one and kilometres on the other would look
+    // like two different numbers. A 1.2 km swim is 1200 m on both.
+    expect(deviceImportMeta(workout({ activityLabel: "Swimming", distanceKm: 1.2 }))).toContain("1200 m");
+    // A distance sport measured in km keeps km.
+    expect(deviceImportMeta(workout({ activityLabel: "Running", distanceKm: 10.4 }))).toContain("10.4 km");
+    // An activity the catalog doesn't know falls back to km.
+    expect(deviceImportMeta(workout({ activityLabel: "Functional Strength Training", distanceKm: 2.5 }))).toContain("2.5 km");
+  });
 });

@@ -26,7 +26,7 @@
 import { doneReceipt } from "./done-receipt";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 import { cardioDiscipline } from "./engines/session";
-import { olympicSport } from "./olympic-sports";
+import { displaySportDistance, olympicSport, sportDistanceUnit } from "./olympic-sports";
 import type { DeviceWorkout } from "./session-device";
 
 /** How far back an import reads the device store, days. Two weeks covers a
@@ -300,12 +300,26 @@ export function deviceImportCounts(items: DeviceImportItem[]): {
   return { create, attach, linked, pending: create + attach };
 }
 
-/** The measured figures worth showing on an import row, in display order.
- *  Joined by the caller — never with a middot. */
+/**
+ * The measured figures worth showing on an import row, in display order.
+ * Joined by the caller — never with a middot.
+ *
+ * Distance reads in the ACTIVITY's own unit, the same language the summary's
+ * comparison panel speaks (session-device.ts): a pool swim is "510 m", not
+ * "0.51 km". The two surfaces describe the SAME recording, so a swim that reads
+ * in metres on the summary and kilometres on the import sheet would look like
+ * two different numbers. Unknown labels fall back to km.
+ */
 export function deviceImportMeta(w: DeviceWorkout): string[] {
+  const dist = (km: number): string =>
+    sportDistanceUnit(w.activityLabel) === "m"
+      ? `${displaySportDistance(km, w.activityLabel)} m`
+      : km < 1
+        ? `${Math.round(km * 1000)} m`
+        : `${km} km`;
   return [
     `${w.durationMin} min`,
-    ...(w.distanceKm != null ? [w.distanceKm < 1 ? `${Math.round(w.distanceKm * 1000)} m` : `${w.distanceKm} km`] : []),
+    ...(w.distanceKm != null ? [dist(w.distanceKm)] : []),
     ...(w.kcal != null ? [`${w.kcal} kcal`] : []),
     ...(w.avgHr != null ? [`♥ ${w.avgHr}`] : []),
   ];

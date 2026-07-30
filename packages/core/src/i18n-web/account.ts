@@ -165,6 +165,7 @@ export const web_account = {
     "w.account.connections.hk-sync-failed": "Sync failed — check your connection and try again.",
     "w.account.connections.hk-synced": "Synced",
     "w.account.connections.hk-samples": "new samples",
+    "w.account.connections.hk-repaired": "matched workouts re-read from your watch",
 
     // --- upgrade (aurora/upgrade.tsx) ---
     "w.account.upgrade.cat-train": "Train smarter",
@@ -637,6 +638,7 @@ export const web_account = {
     "w.account.connections.hk-sync-failed": "Synchronizacja nie powiodła się — sprawdź połączenie i spróbuj ponownie.",
     "w.account.connections.hk-synced": "Zsynchronizowano",
     "w.account.connections.hk-samples": "nowych próbek",
+    "w.account.connections.hk-repaired": "dopasowanych treningów odczytanych ponownie z zegarka",
 
     // --- upgrade ---
     "w.account.upgrade.cat-train": "Trenuj mądrzej",
