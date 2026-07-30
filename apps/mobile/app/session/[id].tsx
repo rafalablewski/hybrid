@@ -46,6 +46,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
+import { SessionEditSheet } from "../../components/session-edit";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -66,6 +67,8 @@ export default function SessionDetail() {
   const busy = manage.busyId !== null;
   // The "Wrapped" recap + story-share overlay (premium panels + story picker).
   const [wrappedOpen, setWrappedOpen] = useState(false);
+  // "Edit workout" — correcting the figures this session was logged with.
+  const [editOpen, setEditOpen] = useState(false);
   // A session logged seconds ago may not be in a still-fresh cache yet —
   // refetch ONCE when the id is missing before declaring it not found.
   const retriedRef = useRef(false);
@@ -216,10 +219,23 @@ export default function SessionDetail() {
         ))}
       </View>
 
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 24 }}>
+      {/* Correcting what you logged sits with the other manage actions, and
+          leads them: a wrong number is far more common than a workout you want
+          gone (see components/session-edit.tsx). */}
+      <View style={{ marginTop: 24 }}>
+        <Button label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
+      </View>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: space.ms }}>
         <Button label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
         <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
+
+      <SessionEditSheet
+        session={session}
+        visible={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => void q.refetch()}
+      />
     </>
   );
 

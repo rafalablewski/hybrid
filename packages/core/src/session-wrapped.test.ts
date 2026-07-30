@@ -195,6 +195,42 @@ describe("sessionWrapped — a matched device", () => {
     expect(w.headline.value).toBe("90 min");
     expect(w.basics.find((b) => b.labelKey === "session.wrapped.kcal")!.estimate).toBe(true);
   });
+
+  // The reported swim: 500 m / 20 min typed, 510 m in 19:41 measured. The panel
+  // beside this one reads "510 m" and "3:52 /100m" off the recording, so the
+  // Wrapped has to say the same thing — it was printing the typed 500 m at
+  // 4:00 /100m, which looked like the match had simply not landed.
+  const swim: LoggedSession = {
+    id: "sw1",
+    title: "Swimming",
+    startedAt: "2026-07-30T16:00:00.000Z",
+    completedAt: "2026-07-30T16:01:00.000Z",
+    blocks: [{ kind: "cardio", name: "Swimming", discipline: "swimming", distance: 0.5, minutes: 20 }],
+    device: {
+      provider: "apple",
+      uuid: "hk-swim",
+      activityLabel: "Swimming",
+      start: "2026-07-30T16:00:00.000Z",
+      end: "2026-07-30T16:19:41.000Z",
+      durationMin: 20,
+      durationSec: 1181,
+      distanceKm: 0.51,
+      kcal: 211,
+      source: "Apple Watch",
+    },
+  };
+
+  it("headlines the metres the watch measured, not the ones typed", () => {
+    const w = sessionWrapped(swim, [swim], { units: "kg", bw: 80 });
+    expect(w.headline.value).toBe("510 m");
+    expect(w.basics.find((b) => b.labelKey === "session.distance")!.value).toBe("510 m");
+  });
+
+  it("paces off the measured clock to the second, so it agrees with the watch", () => {
+    const w = sessionWrapped(swim, [swim], { units: "kg", bw: 80 });
+    // 510 m in 19:41 — not 20 min (3:55) and not over 500 m (4:00).
+    expect(w.basics.find((b) => b.labelKey === "session.pace")!.value).toBe("3:52 /100m");
+  });
 });
 
 describe("liftStanding", () => {

@@ -31,6 +31,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { WorkoutWrapped } from "@/components/aurora/workout-wrapped";
+import { SessionEditSheet } from "@/components/session-edit";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
@@ -76,6 +77,7 @@ export function SessionDetail({
   onOpenExercise,
   onArchive,
   onDelete,
+  onEdited,
   manageBusy,
   onNavigate,
 }: {
@@ -91,9 +93,13 @@ export function SessionDetail({
    *  caller; `manageBusy` disables the row while a request is in flight. */
   onArchive?: () => void;
   onDelete?: () => void;
+  /** Owner-only too: refetch after an "Edit workout" correction lands. Its
+   *  presence is what puts the Edit action on the manage row. */
+  onEdited?: () => void;
   manageBusy?: boolean;
 }) {
   const { t } = useLang();
+  const [editOpen, setEditOpen] = useState(false);
   const units = useLoggerPrefs().units;
   const isMobile = useIsMobile();
   // Bodyweight-aware tonnage/e1RM — the athlete's weight AT this session's date.
@@ -260,11 +266,18 @@ export function SessionDetail({
 
       {/* Manage this workout — lives here since the classic list (and its swipe
           actions) was retired; only rendered for callers that pass handlers. */}
-      {(onArchive || onDelete) && (
+      {(onArchive || onDelete || onEdited) && (
         <div style={{ display: "flex", gap: space.sm, justifyContent: "flex-end", borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
+          {/* Correcting what you logged leads the row: a wrong number is far
+              more common than a workout you want gone. */}
+          {onEdited && <Button label={t("session.edit.cta")} variant="outline" onClick={() => setEditOpen(true)} disabled={manageBusy} />}
           {onArchive && <Button label={t("w.analyze.hist.archive")} variant="outline" onClick={onArchive} disabled={manageBusy} />}
           {onDelete && <Button label={t("w.analyze.hist.delete")} variant="outline" color={RED} onClick={onDelete} disabled={manageBusy} />}
         </div>
+      )}
+
+      {onEdited && (
+        <SessionEditSheet session={session} open={editOpen} onClose={() => setEditOpen(false)} onSaved={onEdited} />
       )}
     </div>
   );

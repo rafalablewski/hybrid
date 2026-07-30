@@ -59,9 +59,12 @@ describe("logbookWeek", () => {
 });
 
 describe("mergeDoneReceipts", () => {
+  // (the `r` factory below builds a receipt; these two cases cover the measured
+  // clock, which only adds up while every timed session brought seconds)
   const r = (over: Partial<DoneReceipt>): DoneReceipt => ({
     finishedClock: null,
     durationMin: null,
+    durationSec: null,
     tonnageKg: 0,
     sets: 0,
     distanceKm: 0,
@@ -94,5 +97,17 @@ describe("mergeDoneReceipts", () => {
   it("keeps a partial trusted duration (one session tracked, one typed in)", () => {
     const merged = mergeDoneReceipts([r({ durationMin: 45 }), r({})])!;
     expect(merged.durationMin).toBe(45);
+  });
+
+  it("sums the measured clock only while every timed session brought seconds", () => {
+    const bothMeasured = mergeDoneReceipts([
+      r({ durationMin: 20, durationSec: 1181 }),
+      r({ durationMin: 45, durationSec: 2700 }),
+    ])!;
+    expect(bothMeasured.durationSec).toBe(3881);
+    // One typed session in the day has no seconds to give, so the day's second
+    // total would be a lie — it drops rather than under-count.
+    const mixed = mergeDoneReceipts([r({ durationMin: 20, durationSec: 1181 }), r({ durationMin: 45 })])!;
+    expect(mixed.durationSec).toBeNull();
   });
 });

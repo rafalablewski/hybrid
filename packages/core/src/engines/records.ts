@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
-import { blockBestE1rm, blockTopLoad, setsForVolume, effectiveSetLoadKg } from "./session";
+import { blockBestE1rm, blockTopLoad, cardioSeconds, setsForVolume, effectiveSetLoadKg } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { musclesFor } from "./movements";
@@ -171,7 +171,10 @@ function cardioEfforts(session: LoggedSession): CardioEffort[] {
   const best = new Map<string, CardioEffort>();
   for (const b of session.blocks) {
     if (b.kind !== "cardio" || !b.distance || b.distance <= 0) continue;
-    const secPerKm = b.minutes && b.minutes > 0 ? Math.round((b.minutes * 60) / b.distance) : null;
+    // The device's second-accurate clock when it measured the effort, else the
+    // logged minutes — see cardioSeconds.
+    const sec = cardioSeconds(b);
+    const secPerKm = sec != null ? Math.round(sec / b.distance) : null;
     const cur = best.get(b.name);
     if (!cur || b.distance > cur.distance) best.set(b.name, { move: b.name, distance: b.distance, secPerKm });
   }

@@ -30,6 +30,15 @@ export interface DoneReceipt {
   finishedClock: string | null;
   /** trusted training minutes; null when untracked or below the plausibility floor. */
   durationMin: number | null;
+  /**
+   * The SAME trusted time to the second, when a matched device measured it —
+   * null for a typed session, which has no seconds to tell. Every DERIVED rate
+   * (pace above all) reads this in preference to `durationMin`: a 510 m swim in
+   * 19:41 paces 3:52 /100m, and rounding the clock to 20 min before dividing
+   * turns that into 3:55 — a disagreement with the watch made entirely of our
+   * own rounding. Display of the duration itself stays in minutes.
+   */
+  durationSec: number | null;
   /** working tonnage, kg (0 for a cardio-only day). */
   tonnageKg: number;
   /** logged sets (a cardio/conditioning effort counts as 1). */
@@ -95,9 +104,15 @@ export function doneReceipt(
   return {
     finishedClock: session.completedAt ? sessionClockTime(session.completedAt) : null,
     durationMin: durationMin > 0 ? durationMin : null,
+    durationSec: measured && device!.durationSec != null ? device!.durationSec : null,
     tonnageKg: stats.volume,
     sets: stats.sets,
-    distanceKm: Math.round(distanceKm * 10) / 10,
+    // Rounded to the METRE, not to 0.1 km. A 510 m pool swim is 0.51 km, and
+    // rounding it to 0.5 here erased the ten metres the watch measured — the
+    // summary then printed "500 m" beside the device panel's "510 m" and derived
+    // a pace from the wrong distance. Callers that want a coarse "12.3 km"
+    // headline round at the point they render it (see doneReceiptStats).
+    distanceKm: Math.round(distanceKm * 1000) / 1000,
     elevationM: Math.round(elevationM),
     measured,
   };
@@ -120,7 +135,8 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   const out: DoneReceiptStat[] = [];
   if (r.durationMin != null) out.push({ value: `${r.durationMin} min`, labelKey: "w.home.rail.duration" });
   if (r.tonnageKg > 0) out.push({ value: fmtTonnage(r.tonnageKg, units), labelKey: "w.home.today.volume" });
-  if (r.distanceKm > 0) out.push({ value: `${r.distanceKm} km`, labelKey: "w.home.today.distance" });
+  // The receipt keeps metre precision; a rail stat reads in tenths of a km.
+  if (r.distanceKm > 0) out.push({ value: `${Math.round(r.distanceKm * 10) / 10} km`, labelKey: "w.home.today.distance" });
   if (r.sets > 0) out.push({ value: String(r.sets), labelKey: "w.home.today.sets" });
   return out;
 }

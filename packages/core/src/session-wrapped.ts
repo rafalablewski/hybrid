@@ -278,9 +278,13 @@ export function sessionWrapped(
   // Duration, distance and climb all arrive through the receipt, which already
   // prefers the matched device's recording over the logged figures.
   const elevation = receipt.elevationM;
+  // Pace comes off the SECOND-accurate clock when a device measured one, so the
+  // hero's pace and the comparison panel's measured column are the same number
+  // — dividing by whole minutes made them differ by three seconds per 100 m.
+  const trustedSec = receipt.durationSec ?? (receipt.durationMin != null ? receipt.durationMin * 60 : null);
   const secPerKm =
-    receipt.distanceKm > 0 && receipt.durationMin != null && receipt.durationMin > 0
-      ? Math.round((receipt.durationMin * 60) / receipt.distanceKm)
+    receipt.distanceKm > 0 && trustedSec != null && trustedSec > 0
+      ? Math.round(trustedSec / receipt.distanceKm)
       : null;
 
   const minutes: WrappedStat | null =
