@@ -24,7 +24,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DEVICE_MATCH_WINDOW_H, isDeviceName, sanitizeDeviceWorkout, type DeviceWorkout } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
-import { API_BASE } from "./api";
+import { API_BASE, fetchSessions, patchSessionDevice } from "./api";
 
 // Apple doesn't expose whether Health *read* access was actually granted (a
 // denial is indistinguishable from "no data" by design), so "connected" is a
@@ -430,11 +430,59 @@ const recordingDevice = (w: {
 };
 
 /**
+ * ONE recording → the stored DeviceWorkout shape. Every field degrades to
+ * absent on its own, so a workout without a strap (no heart rate) or without a
+ * distance is still a usable read. Null when the result can't be sanitized.
+ *
+ * Shared by the match picker and the refresh pass below, so a fix to what the
+ * bridge reads reaches ALREADY-matched sessions too, not just the next match.
+ */
+async function readWorkout(hk: HK, w: WorkoutProxyLike): Promise<DeviceWorkout | null> {
+  const start = iso(w.startDate);
+  const end = iso(w.endDate);
+  const rawActivity = activityRawName(hk, w.workoutActivityType as unknown as number);
+  const durationMin =
+    qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
+  // Everything the recording carries, each read degrading to absent on its
+  // own: per-workout statistics (HR incl. the floor, steps), the measured
+  // distance, the workout's own totals (strokes/flights), and the metadata
+  // extras (climb, average METs, indoor flag, weather).
+  const [hr, stepStat, distanceKm] = await Promise.all([
+    w.getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min").catch(() => undefined),
+    w.getStatistic("HKQuantityTypeIdentifierStepCount", "count").catch(() => undefined),
+    workoutDistanceKm(w, rawActivity).catch(() => null),
+  ]);
+  const meta = (w.metadata ?? {}) as Record<string, unknown>;
+  const indoorRaw = meta["HKIndoorWorkout"];
+  return sanitizeDeviceWorkout({
+    provider: "apple",
+    uuid: w.uuid,
+    activityLabel: activityLabel(hk, w.workoutActivityType as unknown as number),
+    start,
+    end,
+    durationMin: Math.round(durationMin),
+    durationSec: Math.round(durationMin * 60),
+    kcal: qtyKcal(w.totalEnergyBurned) ?? undefined,
+    distanceKm: distanceKm ?? undefined,
+    avgHr: hr?.averageQuantity?.quantity,
+    maxHr: hr?.maximumQuantity?.quantity,
+    minHr: hr?.minimumQuantity?.quantity,
+    steps: qtyCount(stepStat?.sumQuantity) ?? undefined,
+    strokes: qtyCount(w.totalSwimmingStrokeCount) ?? undefined,
+    flights: qtyCount(w.totalFlightsClimbed) ?? undefined,
+    elevationM: metaMetres(meta["HKElevationAscended"]) ?? undefined,
+    avgMets: metaQty(meta["HKAverageMETs"])?.quantity,
+    tempC: metaCelsius(meta["HKWeatherTemperature"]) ?? undefined,
+    ...(typeof indoorRaw === "boolean" || indoorRaw === 0 || indoorRaw === 1 ? { indoor: Boolean(indoorRaw) } : {}),
+    source: recordingDevice(w),
+  });
+}
+
+/**
  * Read the workouts the device recorded around a logged session (±the shared
- * match window) and normalize each to the stored DeviceWorkout shape. Heart
- * rate comes from a per-workout statistics query and degrades to absent —
- * a workout without a strap is still matchable on time/energy. Returns null
- * when HealthKit itself is unreachable (vs [] = reachable but nothing there).
+ * match window) and normalize each to the stored DeviceWorkout shape. Returns
+ * null when HealthKit itself is unreachable (vs [] = reachable but nothing
+ * there).
  */
 export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWorkout[] | null> {
   const hk = loadHealthKit();
@@ -447,46 +495,7 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
     const proxies = await hk.queryWorkoutSamples({ limit: 0, ascending: false, filter });
     const out: DeviceWorkout[] = [];
     for (const w of proxies) {
-      const start = iso(w.startDate);
-      const end = iso(w.endDate);
-      const rawActivity = activityRawName(hk, w.workoutActivityType as unknown as number);
-      const durationMin =
-        qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
-      // Everything the recording carries, each read degrading to absent on its
-      // own: per-workout statistics (HR incl. the floor, steps), the measured
-      // distance, the workout's own totals (strokes/flights), and the metadata
-      // extras (climb, average METs, indoor flag, weather).
-      const [hr, stepStat, distanceKm] = await Promise.all([
-        w.getStatistic("HKQuantityTypeIdentifierHeartRate", "count/min").catch(() => undefined),
-        w.getStatistic("HKQuantityTypeIdentifierStepCount", "count").catch(() => undefined),
-        workoutDistanceKm(w, rawActivity).catch(() => null),
-      ]);
-      const meta = (w.metadata ?? {}) as Record<string, unknown>;
-      const indoorRaw = meta["HKIndoorWorkout"];
-      const candidate = sanitizeDeviceWorkout({
-        provider: "apple",
-        uuid: w.uuid,
-        activityLabel: activityLabel(hk, w.workoutActivityType as unknown as number),
-        start,
-        end,
-        durationMin: Math.round(durationMin),
-        durationSec: Math.round(durationMin * 60),
-        kcal: qtyKcal(w.totalEnergyBurned) ?? undefined,
-        distanceKm: distanceKm ?? undefined,
-        avgHr: hr?.averageQuantity?.quantity,
-        maxHr: hr?.maximumQuantity?.quantity,
-        minHr: hr?.minimumQuantity?.quantity,
-        steps: qtyCount(stepStat?.sumQuantity) ?? undefined,
-        strokes: qtyCount(w.totalSwimmingStrokeCount) ?? undefined,
-        flights: qtyCount(w.totalFlightsClimbed) ?? undefined,
-        elevationM: metaMetres(meta["HKElevationAscended"]) ?? undefined,
-        avgMets: metaQty(meta["HKAverageMETs"])?.quantity,
-        tempC: metaCelsius(meta["HKWeatherTemperature"]) ?? undefined,
-        ...(typeof indoorRaw === "boolean" || indoorRaw === 0 || indoorRaw === 1
-          ? { indoor: Boolean(indoorRaw) }
-          : {}),
-        source: recordingDevice(w),
-      });
+      const candidate = await readWorkout(hk, w);
       if (candidate) out.push(candidate);
     }
     return out;
@@ -495,12 +504,86 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
   }
 }
 
+/** The stored fields a refresh may legitimately change. `matchedAt` is excluded
+ *  — the server re-stamps it on every write, so comparing it would make every
+ *  session look stale forever. */
+const deviceFingerprint = (d: DeviceWorkout): string =>
+  JSON.stringify(
+    Object.entries(d)
+      .filter(([k]) => k !== "matchedAt")
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+
+/**
+ * REPAIR THE SESSIONS ALREADY MATCHED.
+ *
+ * `Session.device` is a snapshot frozen at match time, so a fix to what the
+ * native read understands (the "meters" unit that dropped every distance, and
+ * the pace that died with it) would otherwise only reach workouts matched from
+ * then on — every session matched before it would keep its damaged read until
+ * the athlete happened to re-match it by hand, one at a time.
+ *
+ * So the sync re-reads them: ask HealthKit for exactly the stored uuids (one
+ * query, no date window — the athlete's whole matched history), re-normalize,
+ * and PATCH back only the sessions whose read actually CHANGED. Workouts the
+ * store no longer holds (deleted on the watch) are left alone rather than
+ * unlinked — a missing recording is not a decision to unmatch.
+ */
+export async function refreshMatchedWorkouts(): Promise<{ checked: number; repaired: number }> {
+  const hk = loadHealthKit();
+  if (!hk) return { checked: 0, repaired: 0 };
+  let matched: { id: string; device: DeviceWorkout }[];
+  try {
+    matched = (await fetchSessions())
+      .filter((s) => s.device?.provider === "apple" && typeof s.device.uuid === "string" && s.device.uuid)
+      .map((s) => ({ id: s.id, device: s.device as DeviceWorkout }));
+  } catch {
+    return { checked: 0, repaired: 0 };
+  }
+  if (matched.length === 0) return { checked: 0, repaired: 0 };
+
+  let fresh: Map<string, DeviceWorkout>;
+  try {
+    const uuids = [...new Set(matched.map((m) => m.device.uuid))];
+    const proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
+    fresh = new Map();
+    for (const w of proxies) {
+      const read = await readWorkout(hk, w);
+      if (read) fresh.set(read.uuid, read);
+    }
+  } catch {
+    return { checked: matched.length, repaired: 0 };
+  }
+
+  let repaired = 0;
+  for (const m of matched) {
+    const read = fresh.get(m.device.uuid);
+    if (!read || deviceFingerprint(read) === deviceFingerprint(m.device)) continue;
+    if (await patchSessionDevice(m.id, read)) repaired += 1;
+  }
+  return { checked: matched.length, repaired };
+}
+
 /** Read the last 30 days of HRV / resting HR / sleep from HealthKit and relay
  *  them to the backend. Returns how many Signal rows the server wrote (already-
- *  synced days dedupe to 0 — that's normal, not a failure). */
-export async function syncHealthKit(): Promise<{ ok: boolean; written: number; error?: "unavailable" | "network" }> {
+ *  synced days dedupe to 0 — that's normal, not a failure), and how many
+ *  already-matched workouts the same pass repaired (see
+ *  refreshMatchedWorkouts — a re-sync fixes the history, not just the future). */
+export async function syncHealthKit(): Promise<{
+  ok: boolean;
+  written: number;
+  repaired: number;
+  error?: "unavailable" | "network";
+}> {
   const hk = loadHealthKit();
-  if (!hk) return { ok: false, written: 0, error: "unavailable" };
+  if (!hk) return { ok: false, written: 0, repaired: 0, error: "unavailable" };
+
+  // Repairing the already-matched workouts rides along with the daily relay:
+  // "sync" is what an athlete reaches for when the app disagrees with the
+  // watch, so it must mend the history rather than only the next match. It
+  // never fails the sync — a repair pass that can't run leaves the rows as
+  // they were.
+  const { repaired } = await refreshMatchedWorkouts().catch(() => ({ repaired: 0 }));
 
   const filter = {
     date: { startDate: new Date(Date.now() - 30 * 86400000), endDate: new Date() },
@@ -534,11 +617,11 @@ export async function syncHealthKit(): Promise<{ ok: boolean; written: number; e
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ samples }),
     });
-    if (!res.ok) return { ok: false, written: 0, error: "network" };
+    if (!res.ok) return { ok: false, written: 0, repaired, error: "network" };
     const d = (await res.json().catch(() => ({}))) as { written?: number };
     await AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString()).catch(() => {});
-    return { ok: true, written: d.written ?? 0 };
+    return { ok: true, written: d.written ?? 0, repaired };
   } catch {
-    return { ok: false, written: 0, error: "network" };
+    return { ok: false, written: 0, repaired, error: "network" };
   }
 }
