@@ -218,6 +218,14 @@ export interface CardioBlock {
   /** distance covered, km — pace is derived from minutes. */
   distance?: number;
   minutes?: number;
+  /**
+   * The SAME moving time to the second. Never typed and never persisted — it is
+   * written only by the device projection (device-truth.ts) from a matched
+   * recording's `durationSec`, so a derived pace can agree with the watch's own
+   * summary: 510 m in 19:41 is 3:52 /100m, but rounded to 20 min it reads 3:55.
+   * Every pace helper prefers it and falls back to `minutes`.
+   */
+  seconds?: number;
   rpe?: number;
   /** Treadmill incline, percent (shown only for treadmill-style activities). */
   incline?: number;
@@ -339,9 +347,22 @@ export function blockTopLoad(b: StrengthBlock, bodyweightKg?: number | null): nu
  * minutes. Null unless both are logged — pace isn't stored, it's computed so it
  * can never disagree with the distance/time it came from.
  */
-export function pacePerKm(b: { distance?: number; minutes?: number }): string | null {
-  if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
-  return `${paceClock((b.minutes * 60) / b.distance)} /km`;
+export function pacePerKm(b: { distance?: number; minutes?: number; seconds?: number }): string | null {
+  const sec = cardioSeconds(b);
+  if (!b.distance || b.distance <= 0 || sec == null) return null;
+  return `${paceClock(sec / b.distance)} /km`;
+}
+
+/**
+ * The moving time of a cardio effort in SECONDS — the device's measured seconds
+ * when a matched recording supplied them, else the logged minutes. One helper so
+ * every derived rate (pace lines, PRs, trends) reads the same clock; deriving
+ * from whole minutes where a second-accurate one exists is how a 19:41 swim came
+ * to disagree with the watch beside it. Null when nothing timed the effort.
+ */
+export function cardioSeconds(b: { minutes?: number; seconds?: number }): number | null {
+  if (typeof b.seconds === "number" && b.seconds > 0) return b.seconds;
+  return typeof b.minutes === "number" && b.minutes > 0 ? b.minutes * 60 : null;
 }
 
 /**
@@ -350,9 +371,10 @@ export function pacePerKm(b: { distance?: number; minutes?: number }): string | 
  * /500m" for rowing). Reads the block NAME to pick the unit; falls back to /km
  * for plain cardio. Distance is always stored in km, so the math is single-unit.
  */
-export function cardioPace(b: { name?: string; distance?: number; minutes?: number }): string | null {
-  if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
-  return formatSportPace((b.minutes * 60) / b.distance, b.name);
+export function cardioPace(b: { name?: string; distance?: number; minutes?: number; seconds?: number }): string | null {
+  const sec = cardioSeconds(b);
+  if (!b.distance || b.distance <= 0 || sec == null) return null;
+  return formatSportPace(sec / b.distance, b.name);
 }
 
 /** Format a seconds-per-km rate as the sport's labelled pace (e.g. "5:42 /km", "1:30 /100m"). */
@@ -448,9 +470,11 @@ export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[]
   );
   const pts: PacePoint[] = [];
   for (const s of sorted)
-    for (const b of s.blocks)
-      if (isCardio(b) && b.name === move && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
-        pts.push({ date: s.startedAt, secPerKm: Math.round((b.minutes * 60) / b.distance) });
+    for (const b of s.blocks) {
+      if (!isCardio(b) || b.name !== move || !b.distance || b.distance <= 0) continue;
+      const sec = cardioSeconds(b);
+      if (sec != null) pts.push({ date: s.startedAt, secPerKm: Math.round(sec / b.distance) });
+    }
   return pts;
 }
 

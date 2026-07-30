@@ -103,7 +103,9 @@ describe("doneReceipt", () => {
       ...logged,
       device: { ...logged.device!, distanceKm: 10.42, elevationM: 137 },
     });
-    expect(withDistance.distanceKm).toBe(10.4);
+    // The measured distance survives to the metre — rounding it to 0.1 km here
+    // is what turned a 510 m pool swim into 500 m on the summary.
+    expect(withDistance.distanceKm).toBe(10.42);
     expect(withDistance.elevationM).toBe(137);
     // A tennis recording carries no distance — the logged figures stand.
     const noDistance = doneReceipt(logged);

@@ -110,6 +110,10 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   let finishedClock: string | null = null;
   let durationMin = 0;
   let hasDuration = false;
+  // Seconds only add up while EVERY measured session brought them; a day mixing
+  // a second-accurate recording with a typed session has no honest second total.
+  let durationSec = 0;
+  let allSec = true;
   let tonnageKg = 0;
   let sets = 0;
   let distanceKm = 0;
@@ -122,6 +126,8 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     if (r.durationMin != null) {
       durationMin += r.durationMin;
       hasDuration = true;
+      if (r.durationSec != null) durationSec += r.durationSec;
+      else allSec = false;
     }
     tonnageKg += r.tonnageKg;
     sets += r.sets;
@@ -132,9 +138,10 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   return {
     finishedClock,
     durationMin: hasDuration ? durationMin : null,
+    durationSec: hasDuration && allSec && durationSec > 0 ? durationSec : null,
     tonnageKg,
     sets,
-    distanceKm: Math.round(distanceKm * 10) / 10,
+    distanceKm: Math.round(distanceKm * 1000) / 1000,
     elevationM: Math.round(elevationM),
     measured,
   };

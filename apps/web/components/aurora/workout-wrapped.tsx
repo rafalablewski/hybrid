@@ -30,7 +30,7 @@ import {
   strengthPrDelta,
   formatCardioPr,
   fmtWeight,
-  paceClock,
+  formatSportPace,
   formatSportDistance,
   prsForSession,
   cardioPrsForSession,
@@ -196,8 +196,10 @@ export function WorkoutWrapped({
   // No PR to celebrate → the hero shows the number that DEFINES this kind of
   // session (distance for a swim, tonnage for a lift, time for a match), not
   // tonnage for everything — which read "0.0 t" on every cardio log.
+  // A pace PR reads in the MOVE's own split — a pool swim is "3:52 /100m", not
+  // the "39:13 /km" a hard-coded per-km label made of it.
   const heroBig = cel
-    ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : `${paceClock(cel.value)} /km`
+    ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : formatSportPace(cel.value, cel.move)
     : wrapped.headline.value;
   // A record isn't always a heavier bar — more reps at the same load is a real
   // PR, and claiming "+0 kg" there would be a lie.

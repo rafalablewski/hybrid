@@ -69,6 +69,11 @@ export function deviceTrueSession(session: LoggedSession): LoggedSession {
       ? {
           ...target,
           minutes: d.durationMin,
+          // The same clock to the second, when the recording carries it: every
+          // pace helper prefers it, so a derived pace matches the watch's own
+          // summary instead of our rounding to whole minutes. Display of the
+          // duration itself stays in minutes.
+          ...(d.durationSec != null ? { seconds: d.durationSec } : {}),
           ...(d.distanceKm != null ? { distance: d.distanceKm } : {}),
           ...(d.elevationM != null ? { elevation: d.elevationM } : {}),
         }

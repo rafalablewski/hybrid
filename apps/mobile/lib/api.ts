@@ -268,6 +268,26 @@ export async function patchSessionFeel(
   }
 }
 
+// Correct a saved workout — the "Edit workout" sheet. Sends the whole block
+// list (the server re-sanitises it; see core/session-edit.ts) plus the title, so
+// a skipped distance or a fat-fingered load can be fixed without deleting the
+// session and losing its records, feel report and device match. Owner-only.
+export async function patchSessionEdit(
+  id: string,
+  patch: { title: string; blocks: SessionBlock[] },
+): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Attach (or, with null, unlink) the device's read of a saved workout — the
 // summary's Apple Watch match. The server re-sanitises and stamps matchedAt;
 // see core/session-device.ts. Owner-only; best effort.

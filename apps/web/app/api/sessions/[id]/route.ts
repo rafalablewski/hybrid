@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel, sanitizeDeviceWorkout } from "@hybrid/core";
+import { sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel, sanitizeDeviceWorkout, sanitizeSessionBlocks } from "@hybrid/core";
 import { Prisma } from "@prisma/client";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
@@ -8,8 +8,11 @@ import { prisma } from "@/lib/db";
 // Every query is scoped to the authenticated user's id — a user can only
 // archive/restore/delete their OWN Session rows.
 
-// PATCH { archived?, title?, note?, mood?, tags?, feel?, fatigue?, device? } —
+// PATCH { archived?, title?, blocks?, note?, mood?, tags?, feel?, fatigue?, device? } —
 // soft-archive (hide from History, recoverable) / restore, rename the workout,
+// CORRECT what was logged (blocks — the "Edit workout" sheet; a skipped distance,
+// a fat-fingered time, a mis-typed load, without deleting the workout and the
+// PRs, feel report and device match attached to it),
 // set the private post-workout reflection (note + mood + tags), record the
 // post-workout self-report (feel = perceived effort 1..5, fatigue = how
 // spent 1..5 — the Wrapped's "How did that feel?"), and/or attach the device's
@@ -23,10 +26,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const body = (await request.json().catch(() => ({}))) as { archived?: unknown; title?: unknown; note?: unknown; mood?: unknown; tags?: unknown; feel?: unknown; fatigue?: unknown; device?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { archived?: unknown; title?: unknown; blocks?: unknown; note?: unknown; mood?: unknown; tags?: unknown; feel?: unknown; fatigue?: unknown; device?: unknown };
   const has = (k: string) => Object.prototype.hasOwnProperty.call(body, k);
   const hasArchived = typeof body.archived === "boolean";
   const hasTitle = typeof body.title === "string" && body.title.trim().length > 0;
+  const hasBlocks = has("blocks");
   // note/mood/tags/feel/fatigue are settable AND clearable, so presence of the
   // key (not a truthy value) is what counts — sending note:"" or mood:null
   // clears them.
@@ -36,8 +40,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const hasFeel = has("feel");
   const hasFatigue = has("fatigue");
   const hasDevice = has("device");
-  if (!hasArchived && !hasTitle && !hasNote && !hasMood && !hasTags && !hasFeel && !hasFatigue && !hasDevice)
+  if (!hasArchived && !hasTitle && !hasBlocks && !hasNote && !hasMood && !hasTags && !hasFeel && !hasFatigue && !hasDevice)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
+
+  // A corrected workout. Unlike the create route — which stores what our own
+  // logger built — this one OVERWRITES an existing session, so the blocks are
+  // validated: a malformed edit must never replace a good workout with junk.
+  // Anything that doesn't sanitize is a 400, never a partial write.
+  let blocksValue: Prisma.InputJsonValue | undefined;
+  if (hasBlocks) {
+    const clean = sanitizeSessionBlocks(body.blocks);
+    if (!clean) return NextResponse.json({ error: "invalid blocks" }, { status: 400 });
+    blocksValue = clean as unknown as Prisma.InputJsonValue;
+  }
 
   // The device match: null unlinks; anything else must sanitize to a real
   // DeviceWorkout (a malformed object is a 400, never a silent clear). The
@@ -62,6 +77,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       ...(hasArchived ? { archivedAt: body.archived ? new Date() : null } : {}),
       ...(hasTitle ? { title: (body.title as string).trim().slice(0, 200) } : {}),
+      ...(blocksValue !== undefined ? { blocks: blocksValue } : {}),
       ...(hasNote ? { note: sanitizeNote(body.note) } : {}),
       ...(hasMood ? { mood: sanitizeMood(body.mood) } : {}),
       ...(hasTags ? { tags: sanitizeTags(body.tags) } : {}),
