@@ -58,6 +58,18 @@ const SLOT_H = 46; // slot content height (icon + label) = lens height
 const BAR_PAD_V = 6;
 const BAR_PAD_H = 8;
 const TRAIN_D = SLOT_H + BAR_PAD_V * 2; // 58 — the circle matches bar height
+// MINI (small) geometry — once the bar has shrunk on scroll it goes ICON-ONLY:
+// the labels collapse away and every slot tightens to the glyph, exactly like
+// the native iOS 26 minimized tab bar. LABEL_H (the 10pt label line + the 2pt
+// gap under the icon) is what animates to 0.
+const MINI_LENS_W = 44;
+const MINI_SLOT_H = 34;
+const MINI_TRAIN_D = MINI_SLOT_H + BAR_PAD_V * 2; // 46
+const LABEL_H = 14;
+// Collapse progress at which the bar flips to icon-only, with hysteresis so it
+// can't flicker while you hover the threshold.
+const MINI_ON = 0.6;
+const MINI_OFF = 0.25;
 
 // Native Liquid Glass (SwiftUI glassEffect) exists from iOS 26. Older iOS and
 // Android keep the frosted BlurView bar + the opaque chalk selection pill, so
@@ -95,7 +107,10 @@ export default function AuroraGlobalNav() {
   const collapse = navScroll?.collapse;
   const routeKey = segments.join("/");
   useEffect(() => { navScroll?.reset(); }, [routeKey, navScroll]);
-  const collapseScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.82] }) : 1;
+  // The residual scale is gentle now that the bar ALSO goes icon-only past the
+  // threshold (see `mini` below) — the geometry does most of the shrinking, so
+  // scaling the rest of the way on top would leave an untappable bar.
+  const collapseScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
   const collapseShift = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) : 0;
   const collapseFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) : 1;
 
@@ -138,6 +153,31 @@ export default function AuroraGlobalNav() {
   // was still waiting on the route. Now the pill leads; the route reconciles it.
   // Seeded from the route so the first paint is already correct (no mount flash).
   const [selectedSeg, setSelectedSeg] = useState<string | null>(focusedSeg);
+
+  // MINI (icon-only) bar: past the collapse threshold the labels collapse away
+  // and every slot tightens to its glyph — the small bar is icons alone, like
+  // the native minimized tab bar. It's a LAYOUT change (width/height/radius,
+  // which the native driver can't carry), so it rides its own JS-driven timing
+  // value off a hysteresis-guarded boolean instead of the continuous ramp.
+  const [mini, setMini] = useState(false);
+  const miniAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!collapse) return;
+    const id = collapse.addListener(({ value }) => { setMini((m) => (m ? value > MINI_OFF : value > MINI_ON)); });
+    return () => collapse.removeListener(id);
+  }, [collapse]);
+  useEffect(() => {
+    if (reduceMotion) { miniAnim.setValue(mini ? 1 : 0); return; }
+    Animated.timing(miniAnim, { toValue: mini ? 1 : 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [mini, reduceMotion, miniAnim]);
+  const lerp = (from: number, to: number) => miniAnim.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
+  const slotW = lerp(LENS_W, MINI_LENS_W);
+  const slotH = lerp(SLOT_H, MINI_SLOT_H);
+  const slotR = lerp(SLOT_H / 2, MINI_SLOT_H / 2);
+  const labelH = lerp(LABEL_H, 0);
+  const labelOp = miniAnim.interpolate({ inputRange: [0, 0.45], outputRange: [1, 0], extrapolate: "clamp" });
+  const trainD = lerp(TRAIN_D, MINI_TRAIN_D);
+  const trainR = lerp(TRAIN_D / 2, MINI_TRAIN_D / 2);
 
   useEffect(() => {
     let alive = true;
@@ -212,6 +252,15 @@ export default function AuroraGlobalNav() {
   // Selected slot index among the 4 side tabs (−1 = none, e.g. Train) — drives
   // which cell of the native glass-morph layer holds the lens.
   const selIdx = selectedSeg ? SIDES.findIndex((s) => s.seg === selectedSeg) : -1;
+  // The label row — height-collapsed + faded out when the bar goes MINI, so the
+  // small bar is glyphs alone. HEIGHT is what animates (not `display`), so the
+  // slot morphs smoothly between the two sizes; the Pressable keeps its
+  // accessibilityLabel either way, so the name never disappears for VoiceOver.
+  const renderLabel = (text: string, color: string) => (
+    <Animated.View pointerEvents="none" style={{ height: labelH, opacity: labelOp, overflow: "hidden" }}>
+      <Text numberOfLines={1} style={{ marginTop: 2, lineHeight: 12, fontFamily: F.semi, fontSize: fs.nano, color }}>{text}</Text>
+    </Animated.View>
+  );
   // A render HELPER, not a nested component: defining a component inside render
   // makes React remount the whole subtree each render. A plain function that
   // returns JSX renders inline with no remount penalty.
@@ -243,24 +292,29 @@ export default function AuroraGlobalNav() {
             (the iOS 26 TabView item), stacked TWICE (ash base + active tint
             overlay) so the tint CROSSFADES in sync with the lens instead of
             flipping instantly on press. */}
-        <View style={{ width: LENS_W, height: SLOT_H, alignItems: "center", justifyContent: "center" }}>
+        <Animated.View style={{ width: slotW, height: slotH, alignItems: "center", justifyContent: "center" }}>
           {!useGlass && (
-            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: SLOT_H / 2, backgroundColor: C.chalk, opacity: lensOp[tab.seg] }]} />
+            // Two nested views on purpose: the opacity crossfade is
+            // NATIVE-driven and the mini radius is JS-driven, and the two
+            // drivers can't share one style object.
+            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: lensOp[tab.seg] }]}>
+              <Animated.View style={{ flex: 1, borderRadius: slotR, backgroundColor: C.chalk }} />
+            </Animated.View>
           )}
           {/* Glyph weight 4.5 (viewBox units, ~1.3px at 21) — the NAV-BAR weight
               shared with web's PillButton, lighter than the design-kit default
               (6) which read too heavy beside a 10pt label on glass. */}
-          <View style={{ alignItems: "center", gap: 2 }}>
+          <View style={{ alignItems: "center" }}>
             <AuroraSvgIcon name={tab.glyph} size={21} color={C.ash} strokeWidth={4} />
-            <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: C.ash }}>{label}</Text>
+            {renderLabel(label, C.ash)}
           </View>
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", opacity: iconOp[tab.seg] }]}>
-            <View style={{ alignItems: "center", gap: 2 }}>
+            <View style={{ alignItems: "center" }}>
               <AuroraSvgIcon name={tab.glyph} size={21} color={activeIconColor} strokeWidth={4} />
-              <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: activeIconColor }}>{label}</Text>
+              {renderLabel(label, activeIconColor)}
             </View>
           </Animated.View>
-        </View>
+        </Animated.View>
       </Pressable>
     );
   };
@@ -327,7 +381,7 @@ export default function AuroraGlobalNav() {
               style={{ flexDirection: "row", alignItems: "center" }}
               onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w && w !== rowW) setRowW(w); }}
             >
-              {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} reduceMotion={reduceMotion} />}
+              {useGlass && rowW > 0 && <GlassMorphSelector rowW={rowW} selectedIndex={selIdx} reduceMotion={reduceMotion} mini={mini} />}
               {SIDES.map(renderSideItem)}
             </View>
           </View>
@@ -343,11 +397,11 @@ export default function AuroraGlobalNav() {
           accessibilityLabel={t("nav.train")}
           hitSlop={8}
         >
-          <View
+          <Animated.View
             style={{
-              width: TRAIN_D,
-              height: TRAIN_D,
-              borderRadius: TRAIN_D / 2,
+              width: trainD,
+              height: trainD,
+              borderRadius: trainR,
               backgroundColor: C.lime,
               alignItems: "center",
               justifyContent: "center",
@@ -359,15 +413,16 @@ export default function AuroraGlobalNav() {
             }}
           >
             {/* Dumbbell — two plate stacks + a connecting handle, drawn from Views
-                (no SVG dep, matching the icon approach). */}
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                (no SVG dep, matching the icon approach). Scales down with the
+                circle when the bar goes MINI. */}
+            <Animated.View style={{ flexDirection: "row", alignItems: "center", transform: [{ scale: lerp(1, 0.85) }] }}>
               <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: C.ink, marginLeft: 1.5 }} />
               <View style={{ width: 11, height: 4, backgroundColor: C.ink }} />
               <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: C.ink, marginRight: 1.5 }} />
               <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
-            </View>
-          </View>
+            </Animated.View>
+          </Animated.View>
         </Pressable>
       </Animated.View>
     </View>
@@ -409,17 +464,30 @@ export default function AuroraGlobalNav() {
  * (i − 1.5)·slotW around the row centre. Rendered behind the RN glyphs,
  * pointer-transparent; the glyphs/taps are all RN so the bar works regardless.
  */
-function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: number; selectedIndex: number; reduceMotion: boolean }) {
+function GlassMorphSelector({ rowW, selectedIndex, reduceMotion, mini }: { rowW: number; selectedIndex: number; reduceMotion: boolean; mini: boolean }) {
   const slotW = rowW / 4;
   const xFor = (i: number) => (i - 1.5) * slotW;
+  // The lens tracks the MINI geometry too — when the bar drops its labels the
+  // glass capsule tightens with the slots (animated natively, like every other
+  // pose change, by bumping the tick the .animation(value:) key watches).
+  const lensW = mini ? MINI_LENS_W : LENS_W;
+  const lensH = mini ? MINI_SLOT_H : SLOT_H;
   const [pose, setPose] = useState(() => ({
     x: selectedIndex >= 0 ? xFor(selectedIndex) : 0,
-    w: LENS_W,
+    w: lensW,
     shown: selectedIndex >= 0,
     tick: 0,
   }));
   const prevIdxRef = useRef(selectedIndex);
   const slotWRef = useRef(slotW);
+  const miniRef = useRef(mini);
+
+  // Resize the lens in place when the bar flips between full and icon-only.
+  useEffect(() => {
+    if (miniRef.current === mini) return;
+    miniRef.current = mini;
+    setPose((p) => ({ ...p, w: lensW, tick: p.tick + 1 }));
+  }, [mini, lensW]);
 
   useEffect(() => {
     const prev = prevIdxRef.current;
@@ -427,19 +495,19 @@ function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: numbe
     if (selectedIndex === prev) return;
     if (selectedIndex < 0) {
       // Train: fade out IN PLACE (staying mounted is what keeps this animatable).
-      setPose((p) => ({ ...p, w: LENS_W, shown: false, tick: p.tick + 1 }));
+      setPose((p) => ({ ...p, w: lensW, shown: false, tick: p.tick + 1 }));
       return;
     }
     const x = xFor(selectedIndex);
     if (prev < 0 || reduceMotion) {
       // Reappear after Train (or reduced motion): settle at the slot, fading in.
-      setPose((p) => ({ x, w: LENS_W, shown: true, tick: p.tick + 1 }));
+      setPose((p) => ({ x, w: lensW, shown: true, tick: p.tick + 1 }));
       return;
     }
     // Travel: stretch toward the target on take-off, contract on arrival.
-    const stretchW = Math.min(LENS_W + Math.abs(x - xFor(prev)) * 0.3, LENS_W * 2);
+    const stretchW = Math.min(lensW + Math.abs(x - xFor(prev)) * 0.3, lensW * 2);
     setPose((p) => ({ x, w: stretchW, shown: true, tick: p.tick + 1 }));
-    const settle = setTimeout(() => setPose((p) => ({ ...p, w: LENS_W, tick: p.tick + 1 })), 150);
+    const settle = setTimeout(() => setPose((p) => ({ ...p, w: lensW, tick: p.tick + 1 })), 150);
     return () => clearTimeout(settle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIndex, reduceMotion]);
@@ -448,7 +516,7 @@ function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: numbe
   useEffect(() => {
     if (slotWRef.current === slotW) return;
     slotWRef.current = slotW;
-    setPose((p) => (prevIdxRef.current >= 0 ? { ...p, x: xFor(prevIdxRef.current), w: LENS_W } : p));
+    setPose((p) => (prevIdxRef.current >= 0 ? { ...p, x: xFor(prevIdxRef.current), w: lensW } : p));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotW]);
 
@@ -457,7 +525,7 @@ function GlassMorphSelector({ rowW, selectedIndex, reduceMotion }: { rowW: numbe
       <ZStack>
         <Capsule
           modifiers={[
-            frame({ width: pose.w, height: SLOT_H }),
+            frame({ width: pose.w, height: lensH }),
             glassEffect({ glass: { variant: "regular" }, shape: "capsule" }),
             offset({ x: pose.x, y: 0 }),
             opacity(pose.shown ? 1 : 0),
