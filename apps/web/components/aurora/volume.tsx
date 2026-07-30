@@ -11,6 +11,7 @@ import {
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
+  readReports, placeReads, QUICK_CHECKIN_METRIC,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type RecoveryReport, type LandmarkFactor, type WeightUnit,
 } from "@hybrid/core";
@@ -69,9 +70,28 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
   useEffect(() => setIntake(readIntake()), []);
 
   // The daily check-in on the engine's own terms: same 1–5 scales, no reinterpretation.
+  //
+  // …and a day is EVERY READ it carries, not one value. The card asks again once
+  // a session has drained, so a day can hold "wrecked at 09:30" and "good at
+  // 22:00" — which is precisely the pair `athleteClearance` needs to measure how
+  // fast this athlete drains a session, and which one stored value could never
+  // express. `readReports` gives the day the DECISIVE read (freshness, sleep and
+  // mood travel with it, answered once) and emits the others as timed reads of
+  // their own; the estimator then weights each DAY to 1 regardless of how many
+  // reads it holds. See core/readiness-reads.ts.
+  const sessionEnds = useMemo(
+    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
+    [sessions],
+  );
   const recovery = useMemo<RecoveryReport[]>(
-    () => (checkins.data ?? []).map((c) => ({ date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null })),
-    [checkins.data],
+    () =>
+      (checkins.data ?? []).flatMap((c) => {
+        const day: RecoveryReport = { date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null };
+        const rows = (c.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+        if (rows.length < 2) return [day];
+        return readReports(day, placeReads(rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) })), sessionEnds)) as RecoveryReport[];
+      }),
+    [checkins.data, sessionEnds],
   );
   const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm }), [recovery, bodyweightPoints, loggedHeightCm]);
   const measuredKeys = useMemo(() => {

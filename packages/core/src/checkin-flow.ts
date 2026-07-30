@@ -78,15 +78,15 @@ export function checkinScaleFeeling(value: number): ReadinessFeeling {
   return feelingFromRating(value);
 }
 
-/** Re-log cadence: a feeling must be logged at least once a day, and may be
- *  re-logged at most once every 6 hours. This is the shared window both clients
- *  read to show "next in …" on the home feeling card. */
-export const CHECKIN_COOLDOWN_MS = 6 * 60 * 60 * 1000;
-
-/** Milliseconds left in the 6h re-log window (0 once it's open again). */
-export function checkinCooldownRemainingMs(lastLoggedMs: number, nowMs = Date.now()): number {
-  return Math.max(0, CHECKIN_COOLDOWN_MS - (nowMs - lastLoggedMs));
-}
+/* RE-LOG CADENCE LIVES IN readiness-reads.ts.
+ *
+ * There used to be a flat 6-hour cooldown here, and it gated the wrong thing in
+ * both directions: inside a day it was exempt (the row already existed), so a
+ * second answer OVERWROTE the first — and across days it blocked an athlete
+ * from logging today because they had back-logged yesterday an hour earlier.
+ * `readGate` replaces it with the two clocks that actually matter: how long
+ * since the last read, and how long since the session that read was taken in
+ * the shadow of. */
 
 /* ────────────────────────────────────────────────────────────────────────────
  * ONE TAP ANSWERS ONE QUESTION.
@@ -159,10 +159,21 @@ export function quickCheckinFeeling(
  * same statement.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/** The wire payload for one readiness tap: the metric it answered, nothing
- *  else. `quickCheckinMetrics` is what the tap CLAIMS; this is what it SENDS. */
-export function quickCheckinPatch(rating: number): Partial<CheckinMetrics> {
-  return { [QUICK_CHECKIN_METRIC]: quickCheckinMetrics(rating)[QUICK_CHECKIN_METRIC] };
+/**
+ * The wire payload for one readiness tap: the metric it answered, nothing else
+ * — plus the statement that this is a NEW READ. `quickCheckinMetrics` is what
+ * the tap CLAIMS; this is what it SENDS.
+ *
+ * `newRead` is the difference between a measurement and a correction, and it
+ * has to be stated rather than inferred. The guided check-in PREFILLS whatever
+ * the day already holds and re-sends it on every save, so a server that treated
+ * any readiness value as a fresh answer would manufacture a second measurement
+ * every time an athlete edited their note. Only a deliberate tap on the faces
+ * carries the flag; the guided flow omits it and corrects the read on record.
+ * See readiness-reads.ts.
+ */
+export function quickCheckinPatch(rating: number): Partial<CheckinMetrics> & { newRead: true } {
+  return { [QUICK_CHECKIN_METRIC]: quickCheckinMetrics(rating)[QUICK_CHECKIN_METRIC], newRead: true };
 }
 
 /** The wire payload for the guided flow: the metrics actually answered, and no

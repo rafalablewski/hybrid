@@ -29,7 +29,15 @@ import {
   readinessContext,
   readinessNoteKey,
   hoursSince,
-  checkinCooldownRemainingMs,
+  readGate,
+  placeReads,
+  decisiveFeeling,
+  decisiveRead,
+  readTrend,
+  READ_GATE_KEY,
+  READ_TREND_KEY,
+  type PlacedRead,
+  type ReadGate,
   relativeTime,
   planSchedule,
   masthead,
@@ -248,9 +256,49 @@ export default function AuroraHome() {
   // pill read "Good" while the card beneath it highlighted the Primed face the
   // athlete had tapped, and what made the load nudge tell them "you're feeling
   // flat today" about a day they never described that way.
-  const todayFeeling = useMemo(
-    () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
+  // Every session end, for placing a read against the training before it.
+  const sessionEnds = useMemo(
+    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
+    [sessions],
+  );
+  // How long ago the athlete last finished a session — the lens the day's
+  // answer is read through. "Wrecked" 90 minutes after training is the session
+  // talking; the same tap a day later is a recovery signal. See core/feel-timing.
+  const lastSessionEnd = useMemo(() => (sessionEnds.length ? Math.max(...sessionEnds) : null), [sessionEnds]);
+  // TODAY's reads (independent of the rail's selected day) — the gate and the
+  // prescription both read these.
+  const todayCheckin = useMemo(
+    () => checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null,
     [checkins, today],
+  );
+  const todayReads = useMemo<PlacedRead[]>(() => {
+    const rows = (todayCheckin?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+    const raw = rows.length
+      ? rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) }))
+      : todayCheckin && typeof todayCheckin[QUICK_CHECKIN_METRIC] === "number"
+        ? [{ value: todayCheckin[QUICK_CHECKIN_METRIC]!, at: Date.parse(todayCheckin.createdAt ?? todayCheckin.weekOf) }]
+        : [];
+    return placeReads(raw, sessionEnds);
+  }, [todayCheckin, sessionEnds]);
+  // MAY THE ATHLETE LOG A NEW READ. Two clocks — four hours since the last read,
+  // six hours since a session that read was taken in the shadow of — and the
+  // later wins. See core/readiness-reads.ts.
+  const readGateNow = useMemo<ReadGate>(
+    () =>
+      readGate({
+        lastReadAt: todayReads.length ? todayReads[todayReads.length - 1]!.at : null,
+        lastSessionEnd,
+        readsToday: todayReads.length,
+      }),
+    [todayReads, lastSessionEnd],
+  );
+  // …and when the day carries more than one answer it is the DECISIVE one — the
+  // latest read not taken minutes after training. Prescribing off the tap an
+  // athlete makes walking out of the gym would deload them for having trained
+  // hard. See core/readiness-reads.ts.
+  const todayFeeling = useMemo(
+    () => decisiveFeeling(todayReads) ?? quickCheckinFeeling(todayCheckin),
+    [todayReads, todayCheckin],
   );
   const rx = useMemo(
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
@@ -396,21 +444,30 @@ export default function AuroraHome() {
       .map((s) => ({ id: s.id, title: s.title, startedAt: s.startedAt, feel: s.feel ?? null }));
   }, [sessions, dayTs, today]);
 
-  // How long ago the athlete last finished a session — the lens the day's
-  // answer is read through. "Wrecked" 90 minutes after training is the session
-  // talking; the same tap a day later is a recovery signal. See core/feel-timing.
-  const lastSessionEnd = useMemo(() => {
-    let best: number | null = null;
-    for (const s of sessions) {
-      const ts = Date.parse(s.completedAt ?? s.startedAt ?? "");
-      if (Number.isFinite(ts) && (best == null || ts > best)) best = ts;
-    }
-    return best;
-  }, [sessions]);
-  const lastCheckinAt = useMemo(
+  // THE VIEWED DAY AS A SEQUENCE, not a value. Each readiness answer is its own
+  // row now (Checkin.reads) — "flat at 09:30" and "flat at 22:00" are two
+  // measurements of two different things, and the second is the one that should
+  // move training. A row from a database without the reads migration falls back
+  // to the single stored value, which is exactly what it used to be.
+  const dayReads = useMemo<PlacedRead[]>(() => {
+    const rows = (dayCheckin?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+    const raw = rows.length
+      ? rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) }))
+      : dayCheckin && typeof dayCheckin[QUICK_CHECKIN_METRIC] === "number" && feelingAt != null
+        ? [{ value: dayCheckin[QUICK_CHECKIN_METRIC]!, at: feelingAt }]
+        : [];
+    return placeReads(raw, sessionEnds);
+  }, [dayCheckin, feelingAt, sessionEnds]);
+  // The most recent readiness READ (not the row write): what the recovery
+  // schedule is measured from. Editing a day's note in the evening is not a
+  // statement about how the session drained.
+  const lastReadAt = useMemo(
     () =>
       checkins.reduce<number | null>((m, c) => {
-        const ts = Date.parse(c?.createdAt ?? c?.weekOf ?? "");
+        const reads = (c?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+        const ts = reads.length
+          ? Date.parse(reads[reads.length - 1]!.loggedAt)
+          : Date.parse(c?.createdAt ?? c?.weekOf ?? "");
         return Number.isFinite(ts) && (m == null || ts > m) ? ts : m;
       }, null),
     [checkins],
@@ -431,10 +488,11 @@ export default function AuroraHome() {
         fatigue: x.fatigue ?? null,
         feelLoggedAt: x.feelLoggedAt ?? null,
       })),
-      lastCheckinAt,
+      // The recovery read is answered by a READ, not by the row being touched.
+      lastCheckinAt: lastReadAt,
     });
     return sch.due.some((p) => p.kind === "recovery");
-  }, [sessions, lastCheckinAt]);
+  }, [sessions, lastReadAt]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
@@ -876,13 +934,13 @@ export default function AuroraHome() {
           <FeelingCard
             C={C}
             feeling={feeling}
-            hasCheckin={dayCheckin != null}
             dayMetrics={dayCheckin}
             daySessions={daySessions}
-            recoveryDue={recoveryDue}
+            recoveryDue={recoveryDue || readGateNow.wanted}
             loggedAt={feelingAt}
             lastSessionEnd={lastSessionEnd}
-            cooldownFrom={lastCheckinAt}
+            dayReads={dayReads}
+            gate={readGateNow}
             isToday={dayIsToday}
             isFuture={dayIsFuture}
             dayTs={railDay?.ts ?? null}
@@ -1167,17 +1225,20 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // check-in makes). Single-purpose: the done count + log action moved up into the
 // Also Today card. The picked face lights in its own semantic feeling colour.
 // Day-scoped via the week rail: a past day shows THAT day's feeling and a tap
-// back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
-// cooldown mirrors the server's — global across days (keyed on the last WRITE),
-// so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+// back-logs it (weekOf = that day); a future day is read-only.
+//
+// ASKING AGAIN IS NOT EDITING THE ANSWER. The card used to lock its faces the
+// moment the day's check-in was complete, and the only way past that was Edit —
+// which OVERWROTE the morning's answer. But "flat ninety minutes after squats"
+// and "flat fourteen hours later" are two measurements, and the second is the
+// one that should move training. So a new answer is APPENDED (each read is its
+// own row) and the faces reopen once the gate does: four hours after the last
+// read, or six hours after a session that read was taken in the shadow of,
+// whichever is later. See core/readiness-reads.ts.
+function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, dayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   /** The answer to THIS card's question, not a blend of the day's four. */
   feeling: ReadinessFeeling | null;
-  /** Whether the day has a check-in row at all — which is what the 6h cooldown
-   *  actually gates. Separate from `feeling`, which can be null on a day whose
-   *  other metrics were answered but whose readiness question wasn't. */
-  hasCheckin: boolean;
   /** The viewed day's stored metrics — which of the four are actually answered. */
   dayMetrics: Partial<CheckinMetrics> | null;
   /** The sessions trained that day — one effort question each. */
@@ -1188,7 +1249,10 @@ function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recovery
   loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
-  cooldownFrom: number | null;
+  /** Every readiness answer given on the VIEWED day, placed in time. */
+  dayReads: PlacedRead[];
+  /** Whether a NEW read may be logged right now, and why not. */
+  gate: ReadGate;
   isToday: boolean;
   isFuture: boolean;
   dayTs: number | null;
@@ -1209,46 +1273,45 @@ function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recovery
   // still said "0 / 4 answered", and — the one that actually costs an answer —
   // `startStep` opened the flow on the readiness question you had just
   // answered. Held per DAY so switching the rail can't carry it, and applied
-  // only until the stored row carries an answer of its own, at which point the
-  // server's value wins with no clean-up needed.
-  const [picked, setPicked] = useState<{ day: number | null; rating: number } | null>(null);
-  const pending = picked && picked.day === dayTs && quickCheckinFeeling(dayMetrics) == null ? picked.rating : null;
+  // only until the day carries MORE READS THAN IT DID AT THE TAP, at which
+  // point the server's value wins with no clean-up needed. Counting reads
+  // rather than asking "does the row have an answer yet" is what makes this
+  // work for the second and third read of a day, where it always did.
+  const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
+  const justPicked = picked != null && picked.day === dayTs;
+  const pending = justPicked && dayReads.length <= picked!.reads ? picked!.rating : null;
   const metrics = pending != null ? { ...dayMetrics, [QUICK_CHECKIN_METRIC]: pending } : dayMetrics;
-  const shownFeeling = pending != null ? checkinScaleFeeling(pending) : feeling;
+  // THE ANSWER THE DAY IS JUDGED ON — the latest read that isn't the session
+  // talking, not "whatever was written last". An athlete who logged a real
+  // recovery read in the evening, trained again late and tapped "wrecked"
+  // walking out keeps the evening's reading as the day's.
+  const shownFeeling = pending != null ? checkinScaleFeeling(pending) : (decisiveFeeling(dayReads) ?? feeling);
+  const decisive = decisiveRead(dayReads);
+  const trend = readTrend(dayReads);
   // What today's check-in actually carries. The one-tap face answers Energy;
   // until the follow-up runs, the other three are genuinely unknown and the
   // card says so instead of implying one tap was the full picture.
   const done = dayCompleteness(metrics, daySessions);
   const startStep = firstOutstandingIndex(metrics, daySessions);
-  // The 6h re-log window: while open, show "next in Xh Ym". The faces lock
-  // while cooling (the server would reject the write anyway) and on future days.
-  const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
-  const cooling = coolMs > 0;
-  // A day that ALREADY has a check-in can be re-tapped to adjust it — the server
-  // upserts the same day (cooldown-exempt). The 6h cooldown only locks STARTING
-  // a fresh check-in on a day that has none yet (a new-day create would 429).
-  // Keyed on the ROW existing, not on the readiness answer: a day whose sleep
-  // and mood are logged but whose readiness question isn't would otherwise lock
-  // the very question it is asking.
-  // The just-tapped row counts as a row: otherwise the faces could re-lock in
-  // the window between the write and the refetch that confirms it.
-  const blockingCooldown = cooling && !hasCheckin && pending == null;
-  // A COMPLETE check-in is not a live control either. The four faces stayed
-  // tappable over a finished day, so the one answer the athlete had already
-  // committed could be overwritten by a stray thumb — and the guided flow
-  // below it was busy muting the very same answer. Changing it is deliberate
-  // now: open the check-in and press Edit. Scoped to TODAY, because a past day
-  // has no follow-up sheet and this row is the only way to back-log it.
-  const settled = isToday && done.complete;
-  const locked = busy || isFuture || blockingCooldown || settled;
-  const coolMin = Math.ceil(coolMs / 60000);
+  // THE GATE, on today only. A past day is back-logged rather than re-read, so
+  // it stays tappable; a future day can't be felt at all. The just-tapped read
+  // counts as logged so the faces don't flicker back open in the window between
+  // the write and the refetch that confirms it.
+  const held = isToday && (!gate.open || justPicked);
+  const locked = busy || isFuture || held;
+  const coolMin = Number.isFinite(gate.msUntilOpen) ? Math.ceil(gate.msUntilOpen / 60000) : 0;
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
+  const gateNote = held ? READ_GATE_KEY[gate.reason] : null;
   // The clock's effect on the meaning of today's answer, from core so both
   // clients say the same thing. `low` is the two negative feelings — the only
   // ones whose reading genuinely turns on how long ago you trained.
   const ctxLow = shownFeeling === "flat" || shownFeeling === "wrecked";
-  const ctxNote = readinessNoteKey(readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // …read against the DECISIVE read's own clock, not the clock right now: the
+  // sentence describes the answer on the card ("hours after training and still
+  // flat"), and dating it to this instant would relabel a morning reading as an
+  // evening one just because the athlete opened the app again.
+  const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1272,7 +1335,7 @@ function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recovery
     setBusy(false);
     if (r.ok) {
       // Show the tap NOW; the refetch below confirms it a moment later.
-      setPicked({ day: dayTs, rating });
+      setPicked({ day: dayTs, rating, reads: dayReads.length });
       revalidate.recovery();
       // The cached check-in row drives this very card — drop it so the athlete's
       // own pick is never the thing that looks stale.
@@ -1280,8 +1343,9 @@ function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recovery
       onPicked();
       // …and go straight into the rest of the questions. Answering the headline
       // is the moment the athlete is most willing to answer more, and it's now
-      // the only way the other three ever get real values.
-      if (isToday) setFollowUpOpen(true);
+      // the only way the other three ever get real values. Only while something
+      // is still outstanding: a SECOND read of the day has nothing left to ask.
+      if (isToday && !done.complete) setFollowUpOpen(true);
     }
   };
   return (
@@ -1323,21 +1387,63 @@ function FeelingCard({ C, feeling, hasCheckin, dayMetrics, daySessions, recovery
         <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
       )}
 
-      {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
-          alone while cooling (it explains why the faces are locked on a day
-          without its own check-in). */}
-      {(shownFeeling && loggedAt != null) || blockingCooldown ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
-          {shownFeeling && loggedAt != null ? (
-            <Text style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-              {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${shownFeeling}`)}</Text>, {relativeTime(loggedAt)}
+      {/* THE DAY AS A SEQUENCE. One read is a line; two or more is a story, and
+          the story is the point — the drop (or the climb) between an answer
+          given in the gym and one given hours later is what measures this
+          athlete's own recovery. The decisive read is marked, because it is the
+          one training is prescribed off; the rest are kept, not overwritten. */}
+      {dayReads.length > 1 ? (
+        <View style={{ marginTop: 12, gap: 6 }}>
+          {dayReads.map((r, i) => {
+            const counts = decisive != null && r.at === decisive.at;
+            const accent = txt(C, C[READINESS_FACE[r.feeling].accent]);
+            return (
+              <View key={r.at} style={{ flexDirection: "row", alignItems: "center", gap: 10, opacity: counts ? 1 : 0.75 }}>
+                <Text style={{ minWidth: 46, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{sessionClockTime(new Date(r.at).toISOString())}</Text>
+                <Text style={{ fontFamily: counts ? F.bold : F.mono, fontSize: fs.caption, color: counts ? accent : C.ash }}>
+                  {t(`w.recovery.readiness.${r.feeling}`)}
+                </Text>
+                {r.hoursSinceSession != null ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>+{Math.round(r.hoursSinceSession)}h</Text>
+                ) : null}
+                {counts && i !== dayReads.length - 1 ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.readCounts")}</Text>
+                ) : null}
+              </View>
+            );
+          })}
+          {trend ? (
+            <Text style={{ marginTop: 4, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: trend.trend === "sinking" ? txt(C, C.amber) : C.ash }}>
+              {t(READ_TREND_KEY[trend.trend])}
             </Text>
           ) : null}
-          {blockingCooldown ? (
-            <View style={{ marginLeft: "auto", borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
+        </View>
+      ) : shownFeeling && loggedAt != null ? (
+        <Text style={{ marginTop: 12, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+          {t("w.home.today.feelLogged")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{t(`w.recovery.readiness.${shownFeeling}`)}</Text>, {relativeTime(loggedAt)}
+        </Text>
+      ) : null}
+
+      {/* WHY THE FACES ARE HELD, and when they open. Never a bare disabled row:
+          the athlete is being told the app is waiting for a reading worth
+          having, not that it has stopped listening. */}
+      {gateNote ? (
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 12 }}>
+          <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.ash }}>{t(gateNote)}</Text>
+          {gate.opensAt != null ? (
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
             </View>
           ) : null}
+        </View>
+      ) : null}
+
+      {/* …and when it IS open with a read already on record, say what a new tap
+          would do: add a reading, not replace one. */}
+      {isToday && !held && dayReads.length > 0 ? (
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.readAgain")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length} {t("w.home.today.readsToday")}</Text>
         </View>
       ) : null}
       {/* Once today's readiness is set, nudge the athlete to log the fuller

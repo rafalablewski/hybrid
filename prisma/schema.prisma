@@ -80,6 +80,7 @@ model User {
   talentProfile TalentProfile?
   riskOutcomes  RiskOutcome[]
   checkins      Checkin[]
+  checkinReads  CheckinRead[]
   // ---- Profile "Private" tab (owner-only self-tracking) ----
   bodyMetrics      BodyMetric[]
   journalEntries   JournalEntry[]
@@ -435,10 +436,52 @@ model Checkin {
   sharedWithCoach Boolean @default(false)
   createdAt    DateTime  @default(now())
 
+  /// Every readiness answer given on this day, oldest first — see CheckinRead.
+  reads        CheckinRead[]
+
   // Read as "where userId order by weekOf desc".
   @@index([userId, weekOf])
   // Coach views read a client's SHARED check-ins.
   @@index([userId, sharedWithCoach])
+}
+
+/// ONE ANSWER PER MOMENT, NOT ONE PER DAY.
+///
+/// Checkin holds one row per day, and "how ready do you feel?" lived in its
+/// `energy` column alone — so an athlete answering again hours later could only
+/// OVERWRITE the morning's answer, and the card locked the faces rather than let
+/// that happen. Both were wrong the same way: "flat ninety minutes after squats"
+/// and "flat fourteen hours later" are not one answer someone got wrong the
+/// first time. They are two measurements, and the second is the one that should
+/// move training — while the first is what makes the second interpretable (the
+/// drop between them, against the population decay curve, is a direct read of
+/// this athlete's own recovery rate).
+///
+/// So each answer is APPENDED here with its own clock, and the day's Checkin
+/// keeps the DECISIVE read (the latest one not taken in the shadow of a session)
+/// in `energy` — so every existing reader of that column keeps working and needs
+/// no migration. The maths lives in packages/core/src/readiness-reads.ts.
+model CheckinRead {
+  id        String   @id @default(cuid())
+  checkin   Checkin  @relation(fields: [checkinId], references: [id], onDelete: Cascade)
+  checkinId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  /// Which question this answers. "energy" is the readiness face on Today —
+  /// named for the Checkin column it lands in so the two can't drift.
+  metric    String   @default("energy")
+  /// 1–5 as answered (5 = primed).
+  value     Int
+  /// When it was answered. The whole point of the row.
+  loggedAt  DateTime @default(now())
+  /// Hours since the session that ended before it, stamped at write time from
+  /// the client's own session list. Null when the athlete hadn't trained, or
+  /// when no session carried a usable clock — never a guess.
+  sinceSessionH Float?
+
+  // Read as "this athlete's reads, newest first" and "this day's reads".
+  @@index([userId, loggedAt])
+  @@index([checkinId])
 }
 
 // ── Profile "Private" tab (owner-only; RLS in reference/sql-private-tab.sql) ──

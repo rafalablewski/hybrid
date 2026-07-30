@@ -4,7 +4,7 @@ import { e1rm, setsForVolume } from "./session";
 import { musclesFor, ALL_MUSCLES } from "./movements";
 import { VOLUME_LANDMARKS, weeklySetsByMuscle, type VolumeLandmark } from "./landmarks";
 import { sorenessFromCheckin } from "../checkin-scales";
-import { feelReading, hoursAfterSession, COST_HIGH, MIN_STRAIN_FATIGUE } from "../feel-timing";
+import { feelReading, hoursAfterSession, COST_HIGH, MIN_STRAIN_FATIGUE, READ_BOUNDS } from "../feel-timing";
 
 /**
  * ADAPTIVE RECOVERABLE VOLUME — the estimate that corrects the prior.
@@ -229,37 +229,85 @@ export function observeVolumeResponse(
   // Soreness and energy both answer "how spent are you"; they are put on ONE
   // spentness scale (5 = wrecked), placed in time against the last session, and
   // pooled with the session-side reports so a single threshold reads them all.
+  //
+  // ONE DAY, ONE VOTE. A day may carry SEVERAL readiness reads now — the card
+  // asks again once the session has drained, and the second answer is appended
+  // rather than overwriting the first (see readiness-reads.ts). Pooling the
+  // reports as they arrive would let a training day with three reads outvote a
+  // rest day with one in every weekly mean, and training days are exactly the
+  // days that read low: the estimator would find "overreaching" in the athlete's
+  // logging habits. So the reports are grouped by the DAY they cover first.
+  // Each day contributes one soreness value, one energy value and one unit of
+  // weight — the reads inside it share that unit while each keeps its own lag,
+  // so the extra reads sharpen the timing without inflating the sample count.
   const sorenessByWeek = new Map<number, number[]>();
   const energyByWeek = new Map<number, number[]>();
   const recoveryByWeek = new Map<number, FatigueSample[]>();
   const scale = (v: number | null | undefined): number | null =>
     typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5 ? v : null;
+
+  const byDay = new Map<string, RecoveryReport[]>();
   for (const r of opts.recovery ?? []) {
     const t = new Date(r.date).getTime();
     if (!Number.isFinite(t) || t > now) continue;
+    const d = new Date(t);
+    const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    byDay.set(key, [...(byDay.get(key) ?? []), r]);
+  }
+
+  for (const day of byDay.values()) {
+    const t = new Date(day[0]!.date).getTime();
     const w = Math.floor((now - t) / WEEK_MS);
     if (w >= weeks) continue;
+
+    // Each report placed against the session that preceded it, so a read taken
+    // in the gym and one taken that evening are told apart.
+    const placed = day
+      .map((r) => {
+        const writtenAt = r.loggedAt ? Date.parse(r.loggedAt) : t;
+        const at = Number.isFinite(writtenAt) ? writtenAt : t;
+        const prevEnd = lastEndBefore(at);
+        return { r, at, lag: prevEnd == null ? null : hoursAfterSession(prevEnd, at) };
+      })
+      .sort((a, b) => a.at - b.at);
+
     // The column stores freshness; the model wants soreness. Convert HERE, once.
-    const sore = sorenessFromCheckin(r.soreness);
-    if (sore !== null) sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), sore]);
-    const energy = scale(r.energy);
-    if (energy !== null) energyByWeek.set(w, [...(energyByWeek.get(w) ?? []), energy]);
+    // Averaged across the day's reports, which in practice means the one report
+    // that carries it — the extra reads answer readiness only.
+    const sores = placed.map((p) => sorenessFromCheckin(p.r.soreness)).filter((v): v is number => v !== null);
+    if (sores.length) sorenessByWeek.set(w, [...(sorenessByWeek.get(w) ?? []), sores.reduce((a, b) => a + b, 0) / sores.length]);
+
+    // THE DAY'S ENERGY IS ITS DECISIVE READ, not the mean of its reads. The
+    // latest read that isn't still describing the session is the athlete's
+    // actual state; averaging it with the answer they gave walking off the gym
+    // floor produces a number describing neither moment. Same rule as
+    // `decisiveRead` in readiness-reads.ts, applied to the same reads.
+    const withEnergy = placed.filter((p) => scale(p.r.energy) !== null);
+    const clean = withEnergy.filter((p) => p.lag == null || p.lag >= READ_BOUNDS.immediate);
+    const pool = clean.length ? clean : withEnergy;
+    const decisive = pool[pool.length - 1];
+    if (decisive) energyByWeek.set(w, [...(energyByWeek.get(w) ?? []), scale(decisive.r.energy)!]);
 
     // Both measures point the same way once inverted: high = spent.
-    const spentParts: number[] = [];
-    if (sore !== null) spentParts.push(sore);
-    if (energy !== null) spentParts.push(6 - energy);
-    if (!spentParts.length) continue;
-    const spent = spentParts.reduce((a, b) => a + b, 0) / spentParts.length;
-
-    const writtenAt = r.loggedAt ? Date.parse(r.loggedAt) : t;
-    const prevEnd = Number.isFinite(writtenAt) ? lastEndBefore(writtenAt) : null;
-    const lag = prevEnd == null ? null : hoursAfterSession(prevEnd, writtenAt);
-    const reading = feelReading(spent, lag);
-    if (!reading) continue;
+    const samples: FatigueSample[] = [];
+    for (const p of placed) {
+      const sore = sorenessFromCheckin(p.r.soreness);
+      const energy = scale(p.r.energy);
+      const spentParts: number[] = [];
+      if (sore !== null) spentParts.push(sore);
+      if (energy !== null) spentParts.push(6 - energy);
+      if (!spentParts.length) continue;
+      const spent = spentParts.reduce((a, b) => a + b, 0) / spentParts.length;
+      const reading = feelReading(spent, p.lag);
+      if (!reading) continue;
+      samples.push({ raw: reading.fatigue, cost: reading.cost, weight: reading.weight, timed: reading.hoursAfter != null });
+    }
+    if (!samples.length) continue;
+    // The day's single unit of weight, split across its reads.
+    const share = 1 / samples.length;
     recoveryByWeek.set(w, [
       ...(recoveryByWeek.get(w) ?? []),
-      { raw: reading.fatigue, cost: reading.cost, weight: reading.weight, timed: reading.hoursAfter != null },
+      ...samples.map((s) => ({ ...s, weight: s.weight * share })),
     ]);
   }
 
