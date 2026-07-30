@@ -138,6 +138,81 @@ describe("deviceComparisonRows", () => {
     expect(rows.find((r) => r.labelKey === "session.device.avgMets")!.device).toBe("9.8");
     expect(rows.some((r) => r.labelKey === "session.device.strokes")).toBe(false);
   });
+
+  it("reads a pool swim in the pool's units — metres and a /100m split", () => {
+    // The exact recording behind the bug report: 510 m in 19:41, which the
+    // watch's own summary calls 3'52"/100m. Rounded to 20 min it would read
+    // 3:55, so the pace row takes the measured seconds when they're there.
+    const swim: DeviceWorkout = {
+      ...watchTennis,
+      activityLabel: "Swimming",
+      distanceKm: 0.51,
+      durationMin: 20,
+      durationSec: 1181,
+      strokes: 453,
+    };
+    const rows = deviceComparisonRows({ device: swim, durationMin: 20, estimatedKcal: 160, distanceKm: 0.5 });
+    expect(rows.find((r) => r.labelKey === "session.device.distance")!.device).toBe("510 m");
+    const paceRow = rows.find((r) => r.labelKey === "session.pace")!;
+    expect(paceRow.device).toBe("3:52 /100m");
+    expect(paceRow.app).toBe("4:00 /100m");
+  });
+
+  it("falls back to whole minutes for a recording with no measured seconds", () => {
+    const swim: DeviceWorkout = { ...watchTennis, activityLabel: "Swimming", distanceKm: 0.51, durationMin: 20 };
+    const rows = deviceComparisonRows({ device: swim, durationMin: null, estimatedKcal: null });
+    expect(rows.find((r) => r.labelKey === "session.pace")!.device).toBe("3:55 /100m");
+  });
+
+  it("shows the measured duration on the device's own clock, the typed one in minutes", () => {
+    const swim: DeviceWorkout = { ...watchTennis, activityLabel: "Swimming", durationMin: 20, durationSec: 1181 };
+    const row = deviceComparisonRows({ device: swim, durationMin: 20, estimatedKcal: null }).find(
+      (r) => r.labelKey === "session.device.duration",
+    )!;
+    expect(row.device).toBe("19:41");
+    expect(row.app).toBe("20 min");
+  });
+
+  it("carries the hour on a long recording, and falls back to minutes without seconds", () => {
+    const long: DeviceWorkout = { ...watchTennis, durationMin: 94, durationSec: 5652 };
+    const withSec = deviceComparisonRows({ device: long, durationMin: null, estimatedKcal: null });
+    expect(withSec.find((r) => r.labelKey === "session.device.duration")!.device).toBe("1:34:12");
+    const noSec = deviceComparisonRows({ device: watchTennis, durationMin: null, estimatedKcal: null });
+    expect(noSec.find((r) => r.labelKey === "session.device.duration")!.device).toBe(`${watchTennis.durationMin} min`);
+  });
+
+  it("marks the app column's DERIVED figures as estimates — nothing measured them", () => {
+    const run: DeviceWorkout = { ...watchTennis, activityLabel: "Running", distanceKm: 10.2, durationMin: 55 };
+    const rows = deviceComparisonRows({ device: run, durationMin: 60, estimatedKcal: 600, distanceKm: 10 });
+    expect(rows.find((r) => r.labelKey === "session.pace")!.appEstimate).toBe(true);
+    expect(rows.find((r) => r.labelKey === "session.device.calories")!.appEstimate).toBe(true);
+    // What the athlete TYPED is a self-report, not a model — no "~" on it.
+    expect(rows.find((r) => r.labelKey === "session.device.duration")!.appEstimate).toBeFalsy();
+    expect(rows.find((r) => r.labelKey === "session.device.distance")!.appEstimate).toBeFalsy();
+  });
+
+  it("keeps km sports on the /km split", () => {
+    const row = deviceComparisonRows({
+      device: { ...watchTennis, activityLabel: "Cycling", distanceKm: 30, durationMin: 60, durationSec: 3600 },
+      durationMin: null,
+      estimatedKcal: null,
+    }).find((r) => r.labelKey === "session.pace")!;
+    expect(row.device).toBe("2:00 /km");
+  });
+});
+
+describe("sanitizeDeviceWorkout — measured seconds", () => {
+  it("keeps the second-accurate duration beside the whole minutes", () => {
+    const out = sanitizeDeviceWorkout({ ...watchTennis, durationSec: 1181.4 })!;
+    expect(out.durationSec).toBe(1181);
+    expect(out.durationMin).toBe(watchTennis.durationMin);
+  });
+
+  it("drops an out-of-range or absent seconds reading", () => {
+    expect(sanitizeDeviceWorkout({ ...watchTennis, durationSec: 0 })!.durationSec).toBeUndefined();
+    expect(sanitizeDeviceWorkout({ ...watchTennis, durationSec: "1181" })!.durationSec).toBeUndefined();
+    expect(sanitizeDeviceWorkout(watchTennis)!.durationSec).toBeUndefined();
+  });
 });
 
 describe("device names", () => {

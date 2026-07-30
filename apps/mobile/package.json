@@ -15,7 +15,7 @@
     "build:local": "eas build --local --profile production --platform ios --output ./build/hybrid.ipa",
     "update": "eas update --branch production --message \"$npm_config_message\"",
     "lint": "echo \"(mobile) no lint yet\" && exit 0",
-    "test": "echo \"(mobile) no tests yet\" && exit 0"
+    "test": "vitest run"
   },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.4.2",
@@ -64,6 +64,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "19.2.16",
     "babel-preset-expo": "~56.0.14",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
   }
 }

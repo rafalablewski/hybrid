@@ -23,6 +23,8 @@
 // apps/mobile/lib/healthkit.ts and only the phone can perform a match (web
 // renders the result and can unlink).
 
+import { sportDistanceUnit, sportPacePerMeters, displaySportDistance } from "./olympic-sports";
+
 /** A workout as read from the athlete's device, frozen at match time. Stored
  *  verbatim on Session.device — deliberately self-contained (label, not an HK
  *  enum; ISO strings, not Dates) so the web client renders it with no HealthKit
@@ -41,6 +43,12 @@ export interface DeviceWorkout {
   end: string;
   /** Measured moving time, whole minutes. */
   durationMin: number;
+  /** The SAME moving time to the second, when the device reports it. Kept
+   *  alongside `durationMin` (which every engine reads) purely so derived rates
+   *  match the device's own summary: a 510 m swim in 19:41 paces 3:52 /100m,
+   *  but rounded to 20 min it would read 3:55 — a visible disagreement on the
+   *  one panel whose job is to sit next to the watch. Display stays minutes. */
+  durationSec?: number;
   /** Measured active energy, kcal. */
   kcal?: number;
   /** Measured distance, km. */
@@ -161,6 +169,7 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
   if (!uuid || !label || !start || !end || durationMin == null) return null;
   if (Date.parse(end) < Date.parse(start)) return null;
 
+  const durationSec = boundedNum(o.durationSec, 1, 86400);
   const kcal = boundedNum(o.kcal, 1, 20000);
   const distanceKm = boundedNum(o.distanceKm, 0.01, 300);
   const avgHr = boundedNum(o.avgHr, 20, 260);
@@ -186,6 +195,7 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
     start,
     end,
     durationMin: Math.round(durationMin),
+    ...(durationSec != null ? { durationSec: Math.round(durationSec) } : {}),
     ...(kcal != null ? { kcal: Math.round(kcal) } : {}),
     ...(distanceKm != null ? { distanceKm: Math.round(distanceKm * 100) / 100 } : {}),
     ...(avgHr != null ? { avgHr: Math.round(avgHr) } : {}),
@@ -298,18 +308,40 @@ export function deviceComparisonRows(opts: {
   elevationM?: number | null;
 }): DeviceComparisonRow[] {
   const d = opts.device;
-  const km = (v: number) => (v < 1 ? `${Math.round(v * 1000)} m` : `${Math.round(v * 100) / 100} km`);
+  // Distance and pace read in the ACTIVITY's natural unit, so the panel speaks
+  // the same language as the watch beside it: a pool swim is "510 m" at
+  // "3:52 /100m", not "0.51 km" at "38:36 /km". The activity label is the
+  // device's own ("Swimming", "Rowing"); unknown labels fall back to km.
+  // Seconds → the clock the device itself shows: "19:41", "1:34:12" past the
+  // hour. Only the measured column ever earns this; a typed duration has no
+  // seconds to tell.
+  const clock = (seconds: number): string => {
+    const total = Math.round(seconds);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+    return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
+  };
+  const sport = d.activityLabel;
+  const metreSport = sportDistanceUnit(sport) === "m";
+  const km = (v: number) =>
+    metreSport ? `${displaySportDistance(v, sport)} m` : v < 1 ? `${Math.round(v * 1000)} m` : `${Math.round(v * 100) / 100} km`;
   // Each column derives pace from ITS OWN distance + time — never mixed.
-  const pace = (distKm?: number | null, min?: number | null): string | null => {
-    if (distKm == null || min == null || !(distKm > 0) || !(min > 0)) return null;
-    const sec = Math.round((min * 60) / distKm);
-    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} /km`;
+  const per = sportPacePerMeters(sport);
+  const pace = (distKm?: number | null, seconds?: number | null): string | null => {
+    if (distKm == null || seconds == null || !(distKm > 0) || !(seconds > 0)) return null;
+    const sec = Math.round((seconds * (per / 1000)) / distKm);
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} ${per === 1000 ? "/km" : `/${per}m`}`;
   };
   const rows: DeviceComparisonRow[] = [
     {
       labelKey: "session.device.duration",
       app: opts.durationMin != null && opts.durationMin > 0 ? `${opts.durationMin} min` : null,
-      device: `${d.durationMin} min`,
+      // The measured time to the second when the recording carries it: the
+      // watch's own summary reads 0:19:41, so printing "20 min" beside it
+      // invents a disagreement out of our own rounding.
+      device: d.durationSec != null ? clock(d.durationSec) : `${d.durationMin} min`,
     },
     {
       labelKey: "session.device.calories",
@@ -324,8 +356,12 @@ export function deviceComparisonRows(opts: {
     },
     {
       labelKey: "session.pace",
-      app: pace(opts.distanceKm, opts.durationMin),
-      device: pace(d.distanceKm, d.durationMin),
+      // Derived from two typed numbers, so it is a modelled figure exactly like
+      // the kcal above and wears the same "~". Nothing measured this.
+      app: pace(opts.distanceKm, opts.durationMin != null ? opts.durationMin * 60 : null),
+      appEstimate: true,
+      // To the second when the recording carries it (see `durationSec`).
+      device: pace(d.distanceKm, d.durationSec ?? d.durationMin * 60),
     },
     {
       labelKey: "session.device.avgHr",

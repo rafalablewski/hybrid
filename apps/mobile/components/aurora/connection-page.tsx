@@ -143,6 +143,9 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<"error" | "sync-failed" | "synced" | null>(null);
   const [written, setWritten] = useState(0);
+  // Sessions already matched to a watch workout whose stored read the sync
+  // re-took — only worth a line when it actually mended something.
+  const [repaired, setRepaired] = useState(0);
 
   useEffect(() => {
     healthKitConnected().then(setConnected);
@@ -172,6 +175,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
       return;
     }
     setWritten(r.written);
+    setRepaired(r.repaired);
     setNote("synced");
     setLastSync(new Date().toISOString());
     onChanged();
@@ -231,9 +235,16 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
         </>
       )}
       {note === "synced" ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>
-          {t("w.account.connections.hk-synced")} – {written} {t("w.account.connections.hk-samples")}
-        </Text>
+        <>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>
+            {t("w.account.connections.hk-synced")} – {written} {t("w.account.connections.hk-samples")}
+          </Text>
+          {repaired > 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
+              {repaired} {t("w.account.connections.hk-repaired")}
+            </Text>
+          ) : null}
+        </>
       ) : note === "error" ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: txt(C, C.red), marginTop: 8 }}>{t("w.account.connections.hk-error")}</Text>
       ) : note === "sync-failed" ? (
