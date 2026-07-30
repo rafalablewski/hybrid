@@ -39,6 +39,14 @@ const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
 const LENS_W = 60;
 const SLOT_H = 46;
 const TRAIN_D = 58;
+// MINI (small) geometry — once the bar has shrunk on scroll it goes ICON-ONLY:
+// the labels collapse away and every slot tightens to the glyph, exactly like
+// the native iOS 26 minimized tab bar. Label row height (10px glyph line + the
+// 2px gap under the icon) is what animates to 0.
+const MINI_LENS_W = 44;
+const MINI_SLOT_H = 34;
+const MINI_TRAIN_D = 46;
+const LABEL_H = 14;
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -73,6 +81,13 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const indRef = useRef<{ x: number; top: number } | null>(null);
   const indShownRef = useRef(false);
   const firstRef = useRef(true);
+  // MINI (icon-only) state — see the shrink-on-scroll effect below. Hysteresis
+  // keeps it from flickering at the threshold.
+  const [mini, setMini] = useState(false);
+  const miniRef = useRef(false);
+  const lensW = mini ? MINI_LENS_W : LENS_W;
+  const slotH = mini ? MINI_SLOT_H : SLOT_H;
+  const lastActiveRef = useRef<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -109,18 +124,28 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
         // cleanup, so without this a mid-stretch hop to Train left the hidden
         // indicator permanently elongated (review finding).
         indShownRef.current = false;
+        lastActiveRef.current = activeFlat;
         setIndShown(false);
         setStretch(1);
         return;
       }
-      const next = { x: el.offsetLeft + (el.offsetWidth - LENS_W) / 2, top: el.offsetTop + (el.offsetHeight - SLOT_H) / 2 };
+      // `top` is the button's own offset (never a measured height): the button
+      // box IS the slot and the lens matches its height, so the two align by
+      // construction — and it stays correct mid-transition while the slot is
+      // animating between the full and MINI heights.
+      const next = { x: el.offsetLeft + (el.offsetWidth - lensW) / 2, top: el.offsetTop };
       const prev = indRef.current;
       const wasShown = indShownRef.current;
+      // Only a genuine slot CHANGE travels. Re-placing because the bar went
+      // icon-only shifts x by the lens-width delta alone — that must resize in
+      // place, not fire the travel stretch.
+      const travelled = lastActiveRef.current !== activeFlat;
+      lastActiveRef.current = activeFlat;
       indRef.current = next;
       indShownRef.current = true;
       setInd(next);
       setIndShown(true);
-      if (!firstRef.current && !reducedNow && wasShown && prev && Math.abs(next.x - prev.x) > 1) {
+      if (!firstRef.current && !reducedNow && wasShown && travelled && prev && Math.abs(next.x - prev.x) > 1) {
         setStretch(Math.min(1 + Math.abs(next.x - prev.x) / 240, 1.9));
         stretchTimer = setTimeout(() => setStretch(1), 150);
       } else {
@@ -135,7 +160,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); if (stretchTimer) clearTimeout(stretchTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFlat]);
+  }, [activeFlat, mini]);
 
   // Shrink-on-scroll (the tabBarMinimizeBehavior feel): full size at the very
   // top, the bar scales down smoothly as the page scrolls. The whole split bar
@@ -144,6 +169,12 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   // (transform isn't in the bar's React-managed style, so it's never clobbered
   // on re-render); honours reduced motion; recomputed on screen change so a
   // short screen re-expands.
+  // Past the threshold the bar also goes ICON-ONLY (`mini`): the labels
+  // collapse away and the slots tighten, so the small bar is glyphs alone —
+  // the native minimized tab bar. That's a LAYOUT change (with its own CSS
+  // transition), so it's a hysteresis-guarded boolean rather than a continuous
+  // ramp, and the residual scale is gentler now that the geometry does most of
+  // the shrinking.
   useEffect(() => {
     const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
@@ -154,8 +185,10 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       const y = window.scrollY || 0;
       const p = reduce ? 0 : y <= 0 ? 0 : y >= 48 ? 1 : y / 48;
       bar.style.transformOrigin = "bottom center";
-      bar.style.transform = `scale(${1 - 0.16 * p})`;
+      bar.style.transform = `scale(${1 - 0.06 * p})`;
       bar.style.opacity = String(1 - 0.06 * p);
+      const wantMini = miniRef.current ? p > 0.25 : p > 0.6;
+      if (wantMini !== miniRef.current) { miniRef.current = wantMini; setMini(wantMini); }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -315,33 +348,33 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               <span
                 aria-hidden
                 style={{
-                  position: "absolute", left: 0, top: ind.top, width: LENS_W, height: SLOT_H, borderRadius: SLOT_H / 2,
+                  position: "absolute", left: 0, top: ind.top, width: lensW, height: slotH, borderRadius: slotH / 2,
                   background: "color-mix(in srgb, var(--color-chalk) 14%, transparent)",
                   border: `1px solid color-mix(in srgb, var(--color-chalk) 16%, transparent)`,
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)",
                   transformOrigin: "center",
                   transform: `translateX(${ind.x}px) scaleX(${stretch})`,
                   opacity: indShown ? 1 : 0,
-                  transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease",
+                  transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease, width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1), top .22s cubic-bezier(.4,0,.2,1)",
                   zIndex: 0, pointerEvents: "none",
                 }}
               />
             )}
             {/* Today · Explore · More · Profile */}
             {tabs.map((tab) => (
-              <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} onClick={() => go(tab.id)} />
+              <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} mini={mini} onClick={() => go(tab.id)} />
             ))}
-            <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} onClick={() => setMoreOpen((v) => !v)} />
-            <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} onClick={() => go("profile")} />
+            <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} mini={mini} onClick={() => setMoreOpen((v) => !v)} />
+            <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} mini={mini} onClick={() => go("profile")} />
           </div>
-          <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} onClick={() => go("train")} />
+          <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} mini={mini} reduced={reduced} onClick={() => go("train")} />
         </div>
       </div>
     </>
   );
 }
 
-function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; reduced: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
+function PillButton({ icon, label, active, reduced, mini, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; reduced: boolean; mini: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
   // Each item is icon + label (the iOS 26 TabView item), stacked TWICE: an ash
   // base and a chalk active overlay. zIndex 1 keeps the stack above the shared
   // sliding glass lens, which is drawn once in the bar, not per-button. The
@@ -355,15 +388,29 @@ function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon:
   // drifted (web stroked the bar at a 2.6 hairline, mobile at the design-kit 6);
   // 4.5 is the unified midpoint, a touch lighter than the kit default so the
   // glyphs sit comfortably beside a 10pt label on glass.
+  // When the bar is MINI (shrunk on scroll) the label row collapses to zero
+  // height and fades out, leaving the glyph alone — the icon-only small bar.
+  // The height is what animates (not `display`), so the slot morphs smoothly
+  // between the two sizes. The button keeps its aria-label either way, so the
+  // name never disappears for assistive tech.
   const item = (color: string) => (
-    <span style={{ display: "grid", justifyItems: "center", gap: 2 }}>
+    <span style={{ display: "grid", justifyItems: "center" }}>
       <AuroraIcon name={icon} size={21} strokeWidth={4} color={color} />
-      <span style={{ fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 600, lineHeight: 1, color, whiteSpace: "nowrap", maxWidth: LENS_W - 4, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+      <span
+        style={{
+          display: "block", overflow: "hidden",
+          height: mini ? 0 : LABEL_H, opacity: mini ? 0 : 1,
+          transition: reduced ? "none" : "height .22s cubic-bezier(.4,0,.2,1), opacity .16s ease",
+        }}
+      >
+        <span style={{ display: "block", paddingTop: 2, fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 600, lineHeight: "12px", color, whiteSpace: "nowrap", maxWidth: LENS_W - 4, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+      </span>
     </span>
   );
+  const trans = reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)";
   return (
-    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-      <span style={{ position: "relative", width: LENS_W, height: SLOT_H, display: "grid", placeItems: "center" }}>
+    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0, transition: trans }}>
+      <span style={{ position: "relative", width: mini ? MINI_LENS_W : LENS_W, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", transition: trans }}>
         {item(C("ash"))}
         <span
           aria-hidden
@@ -384,21 +431,24 @@ function PillButton({ icon, label, active, reduced, onClick, innerRef }: { icon:
  * The detached Train action — the standalone lime circle beside the capsule
  * (the iOS 26 accessory-button idiom), bar-height, with an inline dumbbell
  * glyph and a soft lime glow: the app's CTA identity in Apple's
- * prominent-button slot.
+ * prominent-button slot. Shrinks with the capsule when the bar goes MINI, so
+ * the circle keeps matching the bar height in both states.
  */
-function TrainFab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TrainFab({ label, active, mini, reduced, onClick }: { label: string; active: boolean; mini: boolean; reduced: boolean; onClick: () => void }) {
+  const d = mini ? MINI_TRAIN_D : TRAIN_D;
   return (
     <button
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
       style={{
-        width: TRAIN_D, height: TRAIN_D, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center",
+        width: d, height: d, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center",
         background: C("lime"), border: "none", cursor: "pointer",
+        transition: reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)",
         boxShadow: `0 8px 22px -6px color-mix(in srgb, var(--color-lime) 55%, transparent)${active ? `, 0 0 0 2px color-mix(in srgb, var(--color-lime) 40%, transparent)` : ""}`,
       }}
     >
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg viewBox="0 0 24 24" width={mini ? 22 : 26} height={mini ? 22 : 26} fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
       </svg>
     </button>
