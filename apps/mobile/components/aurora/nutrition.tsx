@@ -5,9 +5,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   todayNutrition,
   adaptiveTargets,
+  fuelToday,
+  nutritionHudSlots,
+  NUTRITION_HUD_BAR_H,
   estimateMaintenance,
   dailyNutrition,
   weightTrend,
@@ -60,6 +64,7 @@ import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import AuroraNutritionHud, { type NutritionHudBottoms } from "./nutrition-hud";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -768,6 +773,51 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
   const summary = useMemo(() => nutritionSummary(sig, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
+
+  // ── The sticky HUD ────────────────────────────────────────────────────────
+  // The one number you came for is what's LEFT, and it used to exist only at
+  // the top of the hub: scroll into the picker or the libraries to choose food
+  // and the budget was off screen. The rail keeps it there. It reads from
+  // fuelToday() — the SAME composition the hero ring draws, with the same opts
+  // as `targets` above — so the capsule and the ring cannot disagree.
+  const insets = useSafeAreaInsets();
+  const fuel = useMemo(() => fuelToday(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
+  const hudSlots = useMemo(() => nutritionHudSlots(fuel), [fuel]);
+  const [hudScrollY, setHudScrollY] = useState(0);
+  // onLayout reports a frame relative to its parent — both source cards are
+  // direct children of the scroll content, so y + height IS the content-space
+  // bottom web derives from getBoundingClientRect.
+  const [hudGeom, setHudGeom] = useState({ energyY: 0, energyH: 0, macroY: 0, macroH: 0 });
+  const measureHud = useCallback(
+    (patch: Partial<typeof hudGeom>) =>
+      setHudGeom((g) => {
+        const next = { ...g, ...patch };
+        return (Object.keys(patch) as (keyof typeof g)[]).every((k) => g[k] === next[k]) ? g : next;
+      }),
+    [],
+  );
+  const hudBottoms: NutritionHudBottoms = useMemo(
+    () => ({
+      energy: hudGeom.energyH ? hudGeom.energyY + hudGeom.energyH : null,
+      macros: hudGeom.macroH ? hudGeom.macroY + hudGeom.macroH : null,
+    }),
+    [hudGeom],
+  );
+  /** The hub measures its two cards; every sub-screen has no ring to scroll
+   *  past, so it pins from the first pixel and a tap goes back to the hub. */
+  const hud = useCallback(
+    (mode: "hub" | "always") => (
+      <AuroraNutritionHud
+        slots={hudSlots}
+        scrollY={hudScrollY}
+        bottoms={mode === "hub" ? hudBottoms : undefined}
+        always={mode === "always"}
+        topInset={insets.top}
+        onReveal={mode === "hub" ? undefined : () => setView("home")}
+      />
+    ),
+    [hudSlots, hudScrollY, hudBottoms, insets.top],
+  );
   const [greeting, setGreeting] = useState("");
   useEffect(() => { const h = new Date().getHours(); setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening")); }, [t]);
   const kcalRef = useRef<TextInput>(null);
@@ -1104,7 +1154,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
     const q = foodQuery.trim();
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
         {screenHead(
           <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
             <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
@@ -1410,7 +1460,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     // five-year-old transcription looked exactly as confident as this morning's.
     const fresh = verifiedFreshness(f);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
           icon: "back",
           right: (
@@ -1578,7 +1628,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   // something you could look at. This is the way in.
   if (view === "sources") {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
         {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 6 }}>{t("w.recovery.nutrition.verifiedIntro")}</Text>
         <View style={{ marginTop: 20 }}>
@@ -1612,7 +1662,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     const items = verifiedFoodsBySource(src.id);
     const checked = sourceCheckedOn(src.id);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
         {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
 
         <View style={{ marginTop: 6 }}>
@@ -1664,7 +1714,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   if (view === "recipes") {
     const list = filterRecipes(RECIPES, recipeFilter);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
           {RECIPE_FILTERS.map((rf) => (
@@ -1847,6 +1897,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
 
           {/* CALORIE RING — the hero. Calories LEFT is the number; the ring fills
               as the day is consumed. */}
+          <View onLayout={(e) => measureHud({ energyY: e.nativeEvent.layout.y, energyH: e.nativeEvent.layout.height })}>
           <ACard style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
             <View style={{ marginTop: 18 }}>
@@ -1865,8 +1916,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               </View>
             ) : null}
           </ACard>
+          </View>
 
           {/* Macros — their own card, hairline lines beneath the hero. */}
+          <View onLayout={(e) => measureHud({ macroY: e.nativeEvent.layout.y, macroH: e.nativeEvent.layout.height })}>
           <ACard style={{ marginTop: 12 }}>
             {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
               <View key={label} style={{ marginTop: i ? 18 : 0 }}>
@@ -1878,6 +1931,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
               </View>
             ))}
           </ACard>
+          </View>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
@@ -2403,7 +2457,24 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen
+      refreshing={refreshing}
+      onRefresh={load}
+      onScrollY={setHudScrollY}
+      /* THE STICKY HUD — what the hub leaves behind, and the only budget the
+         library screens ever have. Insights and Body are analysis screens with
+         their own charts, so they get none. With the signals load failed the
+         totals would read "nothing logged yet"; the rail must not repeat that
+         lie above the retry card. */
+      stickyTop={
+        (view === "home" ? !(signalsError && signals.length === 0) : view === "meals" || view === "foods" || view === "diary" || view === "log")
+          ? hud(view === "home" ? "hub" : "always")
+          : undefined
+      }
+      // The hub's rail is transient and overlays; a sub-screen's is permanent,
+      // so it takes its space rather than sitting on the back button.
+      stickyTopReserve={view === "meals" || view === "foods" || view === "diary" || view === "log" ? NUTRITION_HUD_BAR_H : 0}
+    >
       {body}
     </AuroraScreen>
   );

@@ -1,0 +1,1000 @@
+<title>Sticky nutrition summary — 5 ideas</title>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE CHROME — theme-aware. The phone screens below depict HYBRID's dark
+   Aurora surface, so their tokens are FIXED dark (a light-mode mockup of a
+   dark app would be a lie). Only the surrounding page flips.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root{
+  --pg:#f2f2ec; --pg2:#fbfbf8; --fg:#14160f; --fg2:#5f6357;
+  --line:rgba(20,22,15,.11); --line2:rgba(20,22,15,.2);
+  --accent:#55710a; --accent-soft:rgba(150,196,20,.16);
+  --shadow:0 30px 60px -34px rgba(20,22,15,.4);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --pg:#08090b; --pg2:#101210; --fg:#f2f4ec; --fg2:#8b9083;
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.17);
+    --accent:#c6f135; --accent-soft:rgba(198,241,53,.12);
+    --shadow:0 40px 80px -34px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="light"]{
+  --pg:#f2f2ec; --pg2:#fbfbf8; --fg:#14160f; --fg2:#5f6357;
+  --line:rgba(20,22,15,.11); --line2:rgba(20,22,15,.2);
+  --accent:#55710a; --accent-soft:rgba(150,196,20,.16);
+  --shadow:0 30px 60px -34px rgba(20,22,15,.4);
+}
+:root[data-theme="dark"]{
+  --pg:#08090b; --pg2:#101210; --fg:#f2f4ec; --fg2:#8b9083;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.17);
+  --accent:#c6f135; --accent-soft:rgba(198,241,53,.12);
+  --shadow:0 40px 80px -34px rgba(0,0,0,.85);
+}
+
+/* Aurora screen tokens — never themed. */
+.screen,.legend-chip{
+  --ink:#0a0b09; --ink2:#141613; --ink3:#1b1e19;
+  --chalk:#f4f6ef; --ash:#8a8f82; --ash2:#5f6459;
+  --sline:rgba(255,255,255,.075); --sline2:rgba(255,255,255,.14);
+  --lime:#c6f135; --blue:#5aa9ff; --amber:#ff9f4a; --violet:#b18cff; --red:#ff5a4d;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--pg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:44px 20px 96px;
+  font-variant-numeric:tabular-nums;
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.mono{font-family:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace}
+
+/* ── masthead ─────────────────────────────────────────────────────────── */
+.wrap{max-width:1240px;margin:0 auto}
+.head{max-width:800px;margin-bottom:14px}
+.kick{font:700 11px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.head h1{font-size:clamp(30px,4.4vw,46px);line-height:1.02;letter-spacing:-.035em;
+  font-weight:800;text-wrap:balance;margin-bottom:16px}
+.head h1 em{font-style:normal;color:var(--fg2)}
+.head p{color:var(--fg2);font-size:15.5px;line-height:1.62;max-width:65ch}
+.head p+p{margin-top:11px}
+.head b{color:var(--fg);font-weight:650}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 8px}
+.tag{font:600 11.5px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em;
+  color:var(--fg2);background:var(--pg2);border:1px solid var(--line);
+  padding:8px 12px;border-radius:999px}
+.tag b{color:var(--accent);font-weight:700}
+
+.rule{height:1px;background:var(--line);margin:34px 0 30px}
+
+/* ── the fixed scenario, stated once ──────────────────────────────────── */
+.scenario{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:8px}
+.legend-chip{background:var(--pg2);border:1px solid var(--line);border-radius:14px;
+  padding:11px 14px;min-width:132px}
+.legend-chip .l{font:700 9.5px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--fg2)}
+.legend-chip .v{font-size:23px;font-weight:800;letter-spacing:-.03em;margin-top:7px;line-height:1}
+.legend-chip .s{font:500 10.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--fg2);margin-top:6px}
+.legend-chip.k .v{color:var(--accent)}
+.legend-chip.p .v{color:#2f6fb5}.legend-chip.c .v{color:#a35c10}.legend-chip.f .v{color:#6d4bb8}
+@media (prefers-color-scheme:dark){
+  .legend-chip.p .v{color:var(--blue)}.legend-chip.c .v{color:var(--amber)}.legend-chip.f .v{color:var(--violet)}
+}
+:root[data-theme="dark"] .legend-chip.p .v{color:var(--blue)}
+:root[data-theme="dark"] .legend-chip.c .v{color:var(--amber)}
+:root[data-theme="dark"] .legend-chip.f .v{color:var(--violet)}
+:root[data-theme="light"] .legend-chip.p .v{color:#2f6fb5}
+:root[data-theme="light"] .legend-chip.c .v{color:#a35c10}
+:root[data-theme="light"] .legend-chip.f .v{color:#6d4bb8}
+
+/* ── gallery ──────────────────────────────────────────────────────────── */
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:56px 34px;align-items:start}
+.concept{display:flex;flex-direction:column;gap:18px;max-width:420px;width:100%;margin:0 auto}
+.cap .n{display:inline-flex;align-items:center;gap:9px;
+  font:700 11px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:11px}
+.cap .n i{width:21px;height:21px;border-radius:7px;background:var(--accent);
+  color:var(--pg);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11.5px}
+.cap h2{font-size:21.5px;font-weight:800;letter-spacing:-.025em;margin-bottom:7px;text-wrap:balance}
+.cap .say{color:var(--fg2);font-size:13.6px;line-height:1.58}
+.cap .say b{color:var(--fg);font-weight:650}
+.hint{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
+  font:600 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+  border-radius:999px;padding:6px 10px}
+.hint svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2}
+
+/* ── phone ────────────────────────────────────────────────────────────── */
+/* The screen is absolutely positioned so the frame's aspect-ratio always wins:
+   as a flex item, a phone with in-flow content would take its content height
+   as an automatic minimum and stretch to fit the whole list. */
+.phone{position:relative;width:100%;aspect-ratio:390/844;min-height:0;flex:none;border-radius:46px;
+  background:linear-gradient(160deg,#2a2e21,#0b0c09);box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.05)}
+.screen{position:absolute;inset:10px;border-radius:37px;overflow:hidden;
+  background:var(--ink);display:flex;flex-direction:column;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;color:var(--chalk)}
+.field{position:absolute;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(120% 40% at 50% -8%,rgba(198,241,53,.15),transparent 62%),
+  radial-gradient(90% 38% at 108% 3%,rgba(140,120,60,.09),transparent 55%)}
+.status{position:relative;z-index:4;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 25px 5px;font-size:13.5px;font-weight:700;flex:none}
+.status .r{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ash)}
+.bat{background:var(--lime);color:#0a0b09;font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px}
+
+/* the real scroll container — sticky children stick against THIS */
+.scroll{position:relative;z-index:2;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scroll::-webkit-scrollbar{display:none}
+.pad{padding:0 16px 130px}          /* 16px = AuroraScreen's gutter */
+.bleed{margin:0 -16px;padding:0 16px}/* the project's full-bleed idiom */
+
+.nav{position:absolute;z-index:6;left:14px;right:14px;bottom:13px;height:62px;border-radius:26px;
+  background:rgba(20,22,19,.66);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--sline2);display:flex;align-items:center;justify-content:space-around;
+  font:600 9.5px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.06em;color:var(--ash)}
+.nav .fab{width:46px;height:46px;border-radius:50%;background:var(--lime);
+  box-shadow:0 0 20px rgba(198,241,53,.5);display:grid;place-items:center;color:#0a0b09;
+  font-weight:800;font-size:13px;border:3px solid var(--ink)}
+.scrim{position:absolute;z-index:5;left:0;right:0;bottom:74px;height:40px;pointer-events:none;
+  background:linear-gradient(transparent,var(--ink))}
+
+/* ── screen atoms (shared by every mock) ──────────────────────────────── */
+.card{background:var(--ink2);border:1px solid var(--sline);border-radius:20px}
+.row{display:flex;align-items:center;gap:13px;background:var(--ink2);
+  border:1px solid var(--sline);border-radius:18px;padding:14px 15px;margin-top:10px}
+.row .ic{width:38px;height:38px;border-radius:12px;background:var(--ink);
+  border:1px solid var(--sline);display:grid;place-items:center;flex:none;font-size:16px}
+.row .t{font-size:15.5px;font-weight:750;letter-spacing:-.01em}
+.row .s{font:500 10.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ash);margin-top:4px}
+.row .rt{margin-left:auto;font:600 9.5px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);flex:none}
+.chev{width:14px;height:14px;stroke:var(--ash2);fill:none;stroke-width:2.2;flex:none}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;margin:24px 2px 12px}
+.sechead h3{font-size:18px;font-weight:800;letter-spacing:-.025em}
+.sechead a{font:600 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ash);text-decoration:none}
+.rail{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.rail::-webkit-scrollbar{display:none}
+.rcard{flex:none;width:154px;border:1px solid var(--sline);border-radius:20px;
+  background:var(--ink2);overflow:hidden}
+.rcard .hero{height:88px;display:grid;place-items:center;font-size:34px}
+.rcard .b{padding:11px 12px 13px}
+.rcard .b .t{font-size:13.5px;font-weight:750}
+.rcard .b .m{font:500 9.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ash);margin-top:5px}
+.rcard .b .k{font:600 10.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--lime);margin-top:7px}
+.mast{display:flex;align-items:center;gap:12px;padding-top:8px}
+.mast .back{width:40px;height:40px;border-radius:14px;border:1px solid var(--sline);
+  display:grid;place-items:center;flex:none}
+.mast .back svg{width:16px;height:16px;stroke:var(--chalk);fill:none;stroke-width:2.2}
+.mast .k{font:600 9px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ash);margin-bottom:4px}
+.mast h1{font-size:29px;font-weight:800;letter-spacing:-.035em}
+
+/* hero ring card (ideas 1, 2, 5) */
+.ringcard{padding:24px 0;display:flex;flex-direction:column;align-items:center;margin-top:16px}
+.ringcard .lab{font:600 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--lime)}
+.ring{position:relative;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring .ct{position:relative;text-align:center;line-height:1}
+.ring .big{font-weight:900;letter-spacing:-.04em;font-size:42px}
+.ring .sub{font:600 8.5px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ash);margin-top:7px}
+.fuelpill{display:inline-flex;align-items:center;gap:6px;margin-top:14px;
+  background:rgba(198,241,53,.13);border:1px solid rgba(198,241,53,.32);border-radius:999px;
+  padding:6px 12px;font:600 9.5px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--lime)}
+
+/* macro card */
+.macrocard{padding:16px;margin-top:12px;display:flex;flex-direction:column;gap:17px}
+.mline .top{display:flex;align-items:baseline;justify-content:space-between}
+.mline .nm{font:600 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.16em;text-transform:uppercase}
+.mline .vl{font:500 10px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ash)}
+.trk{height:4px;border-radius:99px;background:var(--ink);overflow:hidden;margin-top:8px}
+.trk i{display:block;height:100%;border-radius:99px}
+
+/* picker screen (ideas 3, 4) */
+.search{display:flex;align-items:center;gap:11px;background:var(--ink2);border:1px solid var(--sline);
+  border-radius:16px;padding:12px 14px;margin-top:14px;color:var(--ash);font-size:14.5px}
+.search svg{width:17px;height:17px;stroke:var(--ash);fill:none;stroke-width:2;flex:none}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:11px}
+.duo div{background:var(--ink2);border:1px solid var(--sline);border-radius:16px;padding:13px 8px;
+  text-align:center;font-size:13.5px;font-weight:650}
+.tabs{display:flex;background:var(--ink2);border:1px solid var(--sline);border-radius:14px;
+  padding:4px;gap:4px;margin-top:13px}
+.tabs span{flex:1;text-align:center;padding:9px 4px;border-radius:11px;font-size:12.5px;
+  font-weight:650;color:var(--ash)}
+.tabs span.on{background:var(--lime);color:#0a0b09;font-weight:750}
+.food{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--sline);
+  cursor:pointer;transition:background 140ms ease;border-radius:12px}
+.food .t{font-size:15px;font-weight:700}
+.food .s{font:500 10px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ash);margin-top:4px}
+.food .k{margin-left:auto;text-align:right;flex:none}
+.food .k b{font:700 12.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--chalk)}
+.food .k i{display:block;font:500 9px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  font-style:normal;color:var(--ash2);margin-top:5px;letter-spacing:.1em}
+.food .add{width:30px;height:30px;border-radius:99px;border:1.6px solid var(--lime);color:var(--lime);
+  display:grid;place-items:center;font-weight:800;font-size:15px;flex:none;margin-left:4px}
+.food.hot{background:rgba(198,241,53,.07)}
+.vf{display:inline-flex;align-items:center;gap:4px;font:700 9px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  color:var(--lime);border:1px solid rgba(198,241,53,.35);border-radius:999px;padding:3px 6px;margin-left:6px}
+
+/* ═══ THE HUD, five ways ═══════════════════════════════════════════════ */
+/* glass shared by every variant */
+.glass{background:rgba(10,11,9,.93);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--sline2)}
+
+/* ── 1 · residue rail: a ZERO-HEIGHT sticky, bar drawn absolutely over it */
+.c1 .hud{position:sticky;top:0;height:0;z-index:30;margin:0 -16px}
+.c1 .bar{position:absolute;top:0;left:0;right:0;min-height:46px;display:flex;align-items:center;
+  justify-content:center;gap:6px;padding:8px 16px 9px;opacity:0;transform:translateY(-7px);
+  transition:opacity 220ms cubic-bezier(.32,.72,0,1),transform 220ms cubic-bezier(.32,.72,0,1),
+    border-color 220ms ease}
+.c1 .hud.pin .bar{opacity:1;transform:none}
+.c1 .bar:not(.x){border-bottom-color:transparent}
+.c1 .cap2{display:inline-flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;
+  max-width:0;opacity:0;padding:5px 0;margin-left:-6px;border-radius:999px;
+  border:1px solid transparent;background:var(--ink2);
+  font:700 10.5px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.06em;
+  transform:scale(.68) translateY(-3px);transform-origin:50% 50%;
+  transition:max-width 260ms cubic-bezier(.22,1.4,.36,1),transform 260ms cubic-bezier(.22,1.4,.36,1),
+    padding 260ms cubic-bezier(.22,1.4,.36,1),margin 260ms cubic-bezier(.22,1.4,.36,1),
+    opacity 180ms ease,border-color 260ms ease}
+.c1 .cap2.on{max-width:150px;opacity:1;transform:none;padding:5px 11px;margin-left:0;border-color:var(--sline2)}
+.c1 .cap2 s{text-decoration:none;font-size:8.5px;letter-spacing:.14em;color:var(--ash);font-weight:600}
+.c1 .cap2.kcal{color:var(--lime);background:rgba(198,241,53,.12)}
+.c1 .cap2.kcal.on{border-color:rgba(198,241,53,.34)}
+.c1 .cap2.pr{color:var(--blue)}.c1 .cap2.cb{color:var(--amber)}.c1 .cap2.ft{color:var(--violet)}
+
+/* ── 2 · ring morph: ONE sticky node, sized by JS from scroll progress */
+.c2 .morph{position:sticky;top:0;z-index:30;margin:16px -16px 0;padding:0 16px;
+  height:198px;display:block;overflow:hidden}
+.c2 .plate{position:absolute;inset:0;border-radius:0 0 22px 22px;opacity:0;
+  background:rgba(10,11,9,.93);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--sline2)}
+.c2 .rest{position:absolute;inset:0;border:1px solid var(--sline);border-radius:20px;
+  background:var(--ink2);margin:0 16px}
+.c2 .lab2{position:absolute;left:0;right:0;top:22px;text-align:center;
+  font:600 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--lime)}
+.c2 .ring{position:absolute}
+.c2 .rnum{position:absolute;white-space:nowrap;font-weight:900;letter-spacing:-.04em;line-height:1}
+.c2 .rsub{position:absolute;white-space:nowrap;font:600 8.5px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.c2 .mini{position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  display:flex;gap:9px;opacity:0;align-items:center}
+.c2 .mini u{text-decoration:none;display:block;text-align:right}
+.c2 .mini u b{font:700 12px/1 "SF Mono",ui-monospace,Menlo,monospace}
+.c2 .mini u s{text-decoration:none;display:block;height:3px;border-radius:9px;margin-top:5px;
+  width:34px;background:rgba(255,255,255,.1);overflow:hidden}
+.c2 .mini u s i{display:block;height:100%;border-radius:9px}
+
+/* ── 3 · fuel strip: always on, no choreography */
+.c3 .hud{position:sticky;top:0;z-index:30;margin:0 -16px;padding:9px 16px 10px;
+  display:grid;grid-template-columns:auto repeat(4,1fr);gap:12px;align-items:end}
+.c3 .lw{writing-mode:vertical-rl;transform:rotate(180deg);font:700 8.5px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--ash);padding-bottom:3px}
+.c3 .col b{display:block;font:700 15px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+.c3 .col em{display:block;font-style:normal;font:600 8px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);margin-top:5px}
+.c3 .col s{text-decoration:none;display:block;height:3px;border-radius:9px;margin-top:7px;
+  background:rgba(255,255,255,.1);overflow:hidden}
+.c3 .col s i{display:block;height:100%;border-radius:9px}
+
+/* ── 4 · projection HUD: strip 3 + a ghost of the row under your finger */
+.c4 .hud{position:sticky;top:0;z-index:30;margin:0 -16px;padding:9px 16px 10px}
+.c4 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;align-items:end}
+.c4 .col b{display:block;font:700 15px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+.c4 .col u{text-decoration:none;display:block;font:700 10.5px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  color:var(--ash);margin-top:5px;opacity:0;transform:translateY(-3px);
+  transition:opacity 160ms ease,transform 160ms ease}
+.c4 .hud.live .col u{opacity:1;transform:none}
+.c4 .col em{display:block;font-style:normal;font:600 8px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);margin-top:5px}
+.c4 .col s{text-decoration:none;display:flex;height:3px;border-radius:9px;margin-top:7px;
+  background:rgba(255,255,255,.1);overflow:hidden}
+.c4 .col s i{display:block;height:100%}
+.c4 .col s i.g{background-image:repeating-linear-gradient(115deg,currentColor 0 2px,transparent 2px 4px);
+  width:0;transition:width 170ms cubic-bezier(.32,.72,0,1)}
+.c4 .whose{display:flex;align-items:center;gap:7px;margin-bottom:9px;min-height:11px;
+  font:600 9px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ash2);transition:color 170ms ease}
+.c4 .hud.live .whose{color:var(--lime)}
+.c4 .whose i{width:5px;height:5px;border-radius:99px;background:currentColor;flex:none;
+  opacity:0;transition:opacity 170ms ease}
+.c4 .hud.live .whose i{opacity:1}
+
+/* ── 5 · pull-down HUD: one line, or the whole panel */
+.c5 .hud{position:sticky;top:0;z-index:30;margin:0 -16px}
+.c5 .line{display:flex;align-items:center;gap:10px;padding:11px 16px;width:100%;
+  background:none;border:none;color:var(--chalk);font:inherit;cursor:pointer;text-align:left}
+.c5 .line b{font:700 13.5px/1 "SF Mono",ui-monospace,Menlo,monospace;color:var(--lime)}
+.c5 .line em{font-style:normal;font:600 9px/1 "SF Mono",ui-monospace,Menlo,monospace;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ash2)}
+.c5 .dash{margin-left:auto;display:flex;gap:5px;align-items:center}
+.c5 .dash s{text-decoration:none;display:block;width:20px;height:3px;border-radius:9px;
+  background:rgba(255,255,255,.12);overflow:hidden}
+.c5 .dash s i{display:block;height:100%;border-radius:9px}
+.c5 .caret{width:13px;height:13px;stroke:var(--ash);fill:none;stroke-width:2.4;
+  transition:transform 240ms cubic-bezier(.32,.72,0,1)}
+.c5 .hud.open .caret{transform:rotate(180deg)}
+.c5 .drawer{display:grid;grid-template-rows:0fr;transition:grid-template-rows 260ms cubic-bezier(.32,.72,0,1)}
+.c5 .hud.open .drawer{grid-template-rows:1fr}
+.c5 .drawer>div{overflow:hidden}
+.c5 .panel{padding:4px 16px 15px;display:flex;gap:15px;align-items:center}
+.c5 .panel .mm{flex:1;display:flex;flex-direction:column;gap:11px}
+.c5 .panel .mline .top{font-size:9.5px}
+.c5 .foot{padding:0 16px 13px;font:500 9.5px/1.5 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ash2)}
+
+/* ── spec table under each phone ──────────────────────────────────────── */
+.spec{display:grid;grid-template-columns:74px 1fr;gap:9px 14px;
+  border-top:1px solid var(--line);padding-top:16px;font-size:13px;line-height:1.55}
+.spec dt{font:700 9.5px/1.7 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg2)}
+.spec dd{color:var(--fg)}
+.spec dd code{font:600 11.5px/1.45 "SF Mono",ui-monospace,Menlo,monospace;
+  background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:1px 5px;
+  word-break:break-word}
+.spec dd.warn{color:var(--fg2)}
+.spec dd.warn b{color:var(--fg);font-weight:650}
+
+/* ── closing sections ─────────────────────────────────────────────────── */
+.panelbox{background:var(--pg2);border:1px solid var(--line);border-radius:22px;
+  padding:26px 26px 28px}
+.panelbox h2{font-size:23px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.panelbox>p{color:var(--fg2);font-size:14.5px;line-height:1.62;max-width:70ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:22px}
+.two h4{font:700 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.two ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+.two li{font-size:13.5px;line-height:1.55;color:var(--fg2);padding-left:15px;position:relative}
+.two li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:1.5px;background:var(--fg2)}
+.two li b{color:var(--fg);font-weight:650}
+.two li code{font:600 11.5px/1.4 "SF Mono",ui-monospace,Menlo,monospace;color:var(--accent);
+  background:var(--accent-soft);border-radius:5px;padding:1px 5px;word-break:break-word}
+.order{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+.step{display:flex;gap:14px;align-items:flex-start;background:var(--pg);
+  border:1px solid var(--line);border-radius:16px;padding:15px 17px}
+.step .w{font:700 10px/1 "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);flex:none;width:62px;padding-top:3px}
+.step p{font-size:13.5px;line-height:1.55;color:var(--fg2)}
+.step p b{color:var(--fg);font-weight:700}
+.note{margin-top:26px;padding-top:22px;border-top:1px solid var(--line);
+  color:var(--fg2);font-size:13px;line-height:1.6}
+.note b{color:var(--fg);font-weight:650}
+.note code{font:600 11.5px/1.4 "SF Mono",ui-monospace,Menlo,monospace;color:var(--accent);
+  background:var(--accent-soft);border-radius:5px;padding:1px 5px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:1ms !important;animation-duration:1ms !important}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <div class="kick mono">Nutrition — design study</div>
+    <h1>What's left, <em>while you're still looking for what to add.</em></h1>
+    <p>Right now the calorie ring answers <b>“how much is left?”</b> once, at the top of the
+      Nutrition hub — then you scroll past it into Diary, your meals, your products, the recipe
+      rail, or the food picker, and the answer is gone. You're choosing food with no budget on
+      screen. Five ways to keep the budget pinned to the top of every nutrition screen.</p>
+    <p>All five read from the same shared engine, so the bar can never disagree with the ring.
+      <b>Scroll inside the phones</b> — the mockups are live, the bars actually stick.</p>
+
+    <div class="tags">
+      <span class="tag mono">One core module — <b>nutrition-hud.ts</b></span>
+      <span class="tag mono">Feeds from <b>fuelToday()</b> (already ships)</span>
+      <span class="tag mono">Web <b>+</b> mobile in the same change</span>
+      <span class="tag mono">Precedent — <b>Today's pill rail</b></span>
+    </div>
+  </header>
+
+  <div class="rule"></div>
+
+  <div class="scenario" aria-label="The single scenario every mockup shows">
+    <div class="legend-chip k"><div class="l mono">Energy left</div><div class="v">1 156</div><div class="s mono">1 244 / 2 400 kcal</div></div>
+    <div class="legend-chip p"><div class="l mono">Protein left</div><div class="v">62 g</div><div class="s mono">103 / 165 g</div></div>
+    <div class="legend-chip c"><div class="l mono">Carbs left</div><div class="v">142 g</div><div class="s mono">118 / 260 g</div></div>
+    <div class="legend-chip f"><div class="l mono">Fat left</div><div class="v">38 g</div><div class="s mono">40 / 78 g</div></div>
+    <div class="legend-chip"><div class="l mono">Context</div><div class="v" style="font-size:15px;line-height:1.3;letter-spacing:-.01em">Trained today<br>+310 kcal fuel</div></div>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="gallery">
+
+    <!-- ═══════════ 1 · RESIDUE RAIL ═══════════════════════════════════ -->
+    <section class="concept c1">
+      <div class="cap">
+        <div class="n mono"><i>1</i>Residue rail</div>
+        <h2>The ring hands its number up as it leaves</h2>
+        <p class="say">Nothing at rest. The moment the calorie ring's bottom edge slides under the
+          top, a 46px glass rail fades in carrying <b>1 156 LEFT</b>. When the macro card follows,
+          three more capsules bloom in fixed order. Scroll back up and they retract in the order
+          they arrived. Each capsule is <b>the residue of a card you have already read</b> — which
+          is exactly the idiom Today already ships.</p>
+        <div class="hint mono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Scroll the phone</div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="field"></div>
+        <div class="status"><span>12:07</span><span class="r mono">HYBRID <b class="bat">17</b></span></div>
+        <div class="scroll" data-mock="1">
+          <div class="pad">
+            <!-- zero-height sticky: the list scrolls UNDER the blur -->
+            <div class="hud" id="c1hud">
+              <div class="bar glass">
+                <span class="cap2 kcal mono" data-pill="kcal">1 156 <s class="mono">LEFT</s></span>
+                <span class="cap2 pr mono" data-pill="protein">P 62<s class="mono">g</s></span>
+                <span class="cap2 cb mono" data-pill="carbs">C 142<s class="mono">g</s></span>
+                <span class="cap2 ft mono" data-pill="fat">F 38<s class="mono">g</s></span>
+              </div>
+            </div>
+
+            <div class="mast">
+              <div class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <div><div class="k mono">Good afternoon</div><h1>Nutrition</h1></div>
+            </div>
+
+            <div class="card ringcard" id="c1ring">
+              <div class="lab mono">Calories left</div>
+              <div class="ring" style="width:168px;height:168px;margin-top:16px">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="4"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#c6f135" stroke-width="4"
+                    stroke-linecap="round" stroke-dasharray="146.5 282.7"/>
+                </svg>
+                <div class="ct"><div class="big">1 156</div><div class="sub mono">1 244 / 2 400</div></div>
+              </div>
+              <div class="fuelpill mono">✦ +310 training fuel</div>
+            </div>
+
+            <div class="card macrocard" id="c1macro">
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--blue)">Protein</span><span class="vl mono">103 / 165 g</span></div><div class="trk"><i style="width:62%;background:var(--blue)"></i></div></div>
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--amber)">Carbs</span><span class="vl mono">118 / 260 g</span></div><div class="trk"><i style="width:45%;background:var(--amber)"></i></div></div>
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--violet)">Fat</span><span class="vl mono">40 / 78 g</span></div><div class="trk"><i style="width:51%;background:var(--violet)"></i></div></div>
+            </div>
+
+            <div class="sechead"><h3>Today's meals</h3><a class="mono" href="#" onclick="return false">Diary →</a></div>
+            <div class="row"><div class="ic">🌅</div><div><div class="t">Breakfast</div><div class="s mono">420 kcal</div></div><div class="add" style="margin-left:auto;width:30px;height:30px;border-radius:99px;border:1.6px solid var(--lime);color:var(--lime);display:grid;place-items:center;font-weight:800">+</div></div>
+            <div class="row"><div class="ic">☀️</div><div><div class="t">Lunch</div><div class="s mono">824 kcal</div></div><div class="add" style="margin-left:auto;width:30px;height:30px;border-radius:99px;border:1.6px solid var(--lime);color:var(--lime);display:grid;place-items:center;font-weight:800">+</div></div>
+            <div class="row"><div class="ic">🌙</div><div><div class="t">Dinner</div><div class="s mono">Add your first food</div></div><div class="add" style="margin-left:auto;width:30px;height:30px;border-radius:99px;border:1.6px solid var(--lime);color:var(--lime);display:grid;place-items:center;font-weight:800">+</div></div>
+
+            <div style="margin-top:24px"></div>
+            <div class="row"><div class="ic">📅</div><div><div class="t">Diary</div><div class="s mono">Recent days &amp; streak</div></div><svg class="chev" style="margin-left:auto" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">✦</div><div><div class="t">Insights</div><div class="s mono">Trends, adherence, macros</div></div><svg class="chev" style="margin-left:auto" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">🍲</div><div><div class="t">Your meals</div><div class="s mono">Your saved meals</div></div><span class="rt mono">Unlimited</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">🏪</div><div><div class="t">Your products</div><div class="s mono">Your custom foods</div></div><span class="rt mono">Unlimited</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+
+            <div class="sechead"><h3>Recipes</h3><a class="mono" href="#" onclick="return false">See all →</a></div>
+            <div class="rail bleed">
+              <div class="rcard"><div class="hero" style="background:linear-gradient(150deg,#4a4626,#1b1e19)">🍜</div><div class="b"><div class="t">Ramen</div><div class="m mono">Lunch – 15 min</div><div class="k mono">540 kcal</div></div></div>
+              <div class="rcard"><div class="hero" style="background:linear-gradient(150deg,#22423c,#1b1e19)">🥗</div><div class="b"><div class="t">Power Salad</div><div class="m mono">Lunch – 10 min</div><div class="k mono">380 kcal</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <nav class="nav mono"><span>Today</span><span>Explore</span><span>More</span><span>Profile</span><span class="fab">↑↓</span></nav>
+      </div></div>
+
+      <dl class="spec">
+        <dt>Design</dt><dd>Zero chrome at the top of the screen. Capture at <code>bottom − 46</code>, release 6px later so a finger resting on the threshold can't make it strobe. Tapping a capsule scrolls back to its source card.</dd>
+        <dt>Mechanics</dt><dd>A zero-height <code>position: sticky</code> wrapper with the bar drawn absolutely over it — the list scrolls under the blur instead of being pushed down by a bar that's empty most of the time.</dd>
+        <dt>Core</dt><dd><code>nutritionHudState(sources, scrollY, {prev})</code>, modelled on <code>today-rail.ts</code>. Web measures with <code>getBoundingClientRect</code>, mobile with <code>onLayout</code> — identical thresholds.</dd>
+        <dt>Cost</dt><dd>Low. The pattern, the curves and the hysteresis rule already exist and are already mirrored on both clients.</dd>
+        <dt>Risk</dt><dd class="warn">In the picker and the library screens there is <b>no ring to scroll past</b>, so those views must pass <code>bottom: 0</code> to force the bar captured from the first pixel. Miss that and the feature is absent exactly where it was asked for.</dd>
+      </dl>
+    </section>
+
+    <!-- ═══════════ 2 · RING MORPH ═════════════════════════════════════ -->
+    <section class="concept c2">
+      <div class="cap">
+        <div class="n mono"><i>2</i>Ring morph</div>
+        <h2>The hero doesn't leave — it shrinks</h2>
+        <p class="say">One element, two states, no pop-in. Over the first 190px of scroll the
+          152px ring travels to a 30px mini-ring pinned left, the 38pt number lands at 17pt beside
+          it, the card's border dissolves into the glass bar, and the three macro readouts rise in
+          from the right. The summary <b>travels</b> rather than being replaced, so you never lose
+          track of which number you were reading.</p>
+        <div class="hint mono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Scroll to morph it</div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="field"></div>
+        <div class="status"><span>12:07</span><span class="r mono">HYBRID <b class="bat">17</b></span></div>
+        <div class="scroll" data-mock="2">
+          <div class="pad">
+            <div class="mast">
+              <div class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <div><div class="k mono">Good afternoon</div><h1>Nutrition</h1></div>
+            </div>
+
+            <div id="c2anchor" style="height:0"></div>
+            <div class="morph" id="c2morph">
+              <div class="plate" id="c2plate"></div>
+              <div class="rest" id="c2rest"></div>
+              <div class="lab2 mono" id="c2lab">Calories left</div>
+              <div class="ring" id="c2ring">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="5"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#c6f135" stroke-width="5"
+                    stroke-linecap="round" stroke-dasharray="146.5 282.7"/>
+                </svg>
+              </div>
+              <div class="rnum" id="c2num">1 156</div>
+              <div class="rsub mono" id="c2sub">1 244 / 2 400 kcal</div>
+              <div class="mini" id="c2mini">
+                <u><b class="mono" style="color:var(--blue)">62g</b><s><i style="width:62%;background:var(--blue)"></i></s></u>
+                <u><b class="mono" style="color:var(--amber)">142g</b><s><i style="width:45%;background:var(--amber)"></i></s></u>
+                <u><b class="mono" style="color:var(--violet)">38g</b><s><i style="width:51%;background:var(--violet)"></i></s></u>
+              </div>
+            </div>
+
+            <div class="card macrocard" id="c2macro">
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--blue)">Protein</span><span class="vl mono">103 / 165 g</span></div><div class="trk"><i style="width:62%;background:var(--blue)"></i></div></div>
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--amber)">Carbs</span><span class="vl mono">118 / 260 g</span></div><div class="trk"><i style="width:45%;background:var(--amber)"></i></div></div>
+              <div class="mline"><div class="top"><span class="nm mono" style="color:var(--violet)">Fat</span><span class="vl mono">40 / 78 g</span></div><div class="trk"><i style="width:51%;background:var(--violet)"></i></div></div>
+            </div>
+
+            <div class="sechead"><h3>Today's meals</h3><a class="mono" href="#" onclick="return false">Diary →</a></div>
+            <div class="row"><div class="ic">🌅</div><div><div class="t">Breakfast</div><div class="s mono">420 kcal</div></div></div>
+            <div class="row"><div class="ic">☀️</div><div><div class="t">Lunch</div><div class="s mono">824 kcal</div></div></div>
+            <div class="row"><div class="ic">🌙</div><div><div class="t">Dinner</div><div class="s mono">Add your first food</div></div></div>
+            <div style="margin-top:24px"></div>
+            <div class="row"><div class="ic">📅</div><div><div class="t">Diary</div><div class="s mono">Recent days &amp; streak</div></div><svg class="chev" style="margin-left:auto" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">✦</div><div><div class="t">Insights</div><div class="s mono">Trends, adherence, macros</div></div><svg class="chev" style="margin-left:auto" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">🍲</div><div><div class="t">Your meals</div><div class="s mono">Your saved meals</div></div><span class="rt mono">Unlimited</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="row"><div class="ic">🏪</div><div><div class="t">Your products</div><div class="s mono">Your custom foods</div></div><span class="rt mono">Unlimited</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="sechead"><h3>Verified foods</h3><a class="mono" href="#" onclick="return false">See all →</a></div>
+            <div class="rail bleed">
+              <div class="rcard" style="width:186px"><div class="hero" style="height:64px;background:var(--ink3);font-size:19px;font-weight:800;color:#e8342a">MAX</div><div class="b"><div class="t">MAX Premium Burgers ✓</div><div class="m mono">3 items checked</div></div></div>
+              <div class="rcard" style="width:186px"><div class="hero" style="height:64px;background:var(--ink3);font-size:19px;font-weight:800;color:#0050aa">Lidl</div><div class="b"><div class="t">Lidl ✓</div><div class="m mono">1 item checked</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <nav class="nav mono"><span>Today</span><span>Explore</span><span>More</span><span>Profile</span><span class="fab">↑↓</span></nav>
+      </div></div>
+
+      <dl class="spec">
+        <dt>Design</dt><dd>A single scroll progress <code>p = clamp(y / 190, 0, 1)</code> drives every dimension. Nothing fades in; nothing is duplicated. The macro card below shows the same three numbers, so the rise-in reads as the card lending them upward.</dd>
+        <dt>Mechanics</dt><dd>Web: a sticky hero whose ring size, type size and positions are interpolated from <code>p</code>. Mobile: <code>Animated.event</code> on the ScrollView, <code>scrollEventThrottle={16}</code>.</dd>
+        <dt>Core</dt><dd>Only <code>hudMacros(fuelToday(…))</code> for the values — the interpolation curve is one shared constant (<code>HUD_MORPH_RANGE</code>) so both clients collapse over the same distance.</dd>
+        <dt>Cost</dt><dd>The highest of the five. It is a real motion piece, not a component.</dd>
+        <dt>Risk</dt><dd class="warn">The native driver can't animate <code>width</code> or <code>fontSize</code>, so mobile needs <code>scale</code> tricks or the JS driver — the same driver the Fabric entrance workaround already lives on. <b>Budget a low-end Android pass</b> before committing.</dd>
+      </dl>
+    </section>
+
+    <!-- ═══════════ 3 · FUEL STRIP ═════════════════════════════════════ -->
+    <section class="concept c3">
+      <div class="cap">
+        <div class="n mono"><i>3</i>Fuel strip</div>
+        <h2>Four columns, no choreography</h2>
+        <p class="say">The literal reading of the ask: a permanent 52px strip at the top of every
+          nutrition screen. Four numbers in tabular mono, and under each a 3px track where
+          <b>the unfilled part is what's left</b> — the budget is the negative space, so the graphic
+          and the number say the same thing. <b>LEFT</b> is set once, rotated on the edge, so the
+          word never repeats four times across a 390px screen.</p>
+        <div class="hint mono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Scroll — it never moves</div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="field"></div>
+        <div class="status"><span>12:07</span><span class="r mono">HYBRID <b class="bat">17</b></span></div>
+        <div class="scroll" data-mock="3">
+          <div class="pad">
+            <div class="hud glass">
+              <div class="lw mono">Left</div>
+              <div class="col"><b class="mono" style="color:var(--lime)">1 156</b><em class="mono">kcal</em><s><i style="width:52%;background:var(--lime)"></i></s></div>
+              <div class="col"><b class="mono" style="color:var(--blue)">62</b><em class="mono">Protein</em><s><i style="width:62%;background:var(--blue)"></i></s></div>
+              <div class="col"><b class="mono" style="color:var(--amber)">142</b><em class="mono">Carbs</em><s><i style="width:45%;background:var(--amber)"></i></s></div>
+              <div class="col"><b class="mono" style="color:var(--violet)">38</b><em class="mono">Fat</em><s><i style="width:51%;background:var(--violet)"></i></s></div>
+            </div>
+
+            <div class="mast" style="padding-top:14px">
+              <div class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <h1 style="font-size:22px;display:flex;align-items:center;gap:7px">Lunch <svg style="width:15px;height:15px;stroke:var(--chalk);fill:none;stroke-width:2.4" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></h1>
+            </div>
+
+            <div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Search a food or barcode</span></div>
+            <div class="duo"><div>⚡ Quick log</div><div>⊞ Create food</div></div>
+            <div class="tabs"><span class="on">Recent</span><span>Favourites</span><span>Meals</span><span>Mine</span></div>
+
+            <div style="margin-top:10px">
+              <div class="food"><div><div class="t">Skyr, plain</div><div class="s mono">170 g</div></div><div class="k"><b class="mono">106</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Chicken thigh, grilled</div><div class="s mono">150 g</div></div><div class="k"><b class="mono">293</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Jasmine rice, cooked</div><div class="s mono">200 g</div></div><div class="k"><b class="mono">260</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Premium Cheeseburger<span class="vf mono">✓</span></div><div class="s mono">MAX – 1 burger</div></div><div class="k"><b class="mono">540</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Olive oil</div><div class="s mono">1 tbsp</div></div><div class="k"><b class="mono">119</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Rye bread</div><div class="s mono">2 slices</div></div><div class="k"><b class="mono">168</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Cottage cheese</div><div class="s mono">200 g</div></div><div class="k"><b class="mono">196</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Banana</div><div class="s mono">1 medium</div></div><div class="k"><b class="mono">105</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Whey isolate</div><div class="s mono">1 scoop – 30 g</div></div><div class="k"><b class="mono">113</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Almonds</div><div class="s mono">30 g</div></div><div class="k"><b class="mono">174</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <nav class="nav mono"><span>Today</span><span>Explore</span><span>More</span><span>Profile</span><span class="fab">↑↓</span></nav>
+      </div></div>
+
+      <dl class="spec">
+        <dt>Design</dt><dd>Over budget flips the column: a leading minus, the number in <code>red</code>, and the track overfilling past its end cap. One state change, no new layout.</dd>
+        <dt>Mechanics</dt><dd>The simplest possible. Web: <code>position: sticky; top: 0</code> full-bleed via <code>margin: 0 calc(-1 * var(--page-pad-x))</code>. Mobile: <code>stickyHeaderIndices={[0]}</code> — no kit change at all. No scroll listener, no state machine.</dd>
+        <dt>Core</dt><dd><code>hudMacros(fuel)</code> only — four slots, each with <code>left</code>, <code>pct</code> and <code>over</code>. <code>fuelToday()</code> already exists in <code>engines/nutrition.ts</code>.</dd>
+        <dt>Cost</dt><dd>One pass. Ships in a single change on both clients.</dd>
+        <dt>Risk</dt><dd class="warn">It spends 52px on <b>every</b> nutrition screen, including the top of the hub where the ring already answers the question louder. Fix with one boolean — hide the strip while the ring is on screen — not with a state machine.</dd>
+      </dl>
+    </section>
+
+    <!-- ═══════════ 4 · PROJECTION HUD ═════════════════════════════════ -->
+    <section class="concept c4">
+      <div class="cap">
+        <div class="n mono"><i>4</i>Projection HUD</div>
+        <h2>What's left <em style="font-style:italic;color:inherit">if I add this</em></h2>
+        <p class="say">The strip, plus a ghost. The row under your finger pushes its macros up into
+          the bar: each number keeps its solid <b>left</b> value and grows a dimmed
+          <b>→ after</b> beneath it, while the track sprouts a hatched segment for the addition.
+          Anything that would break the budget goes red <b>before you commit</b>. This is the ask
+          taken to its conclusion: not just how much is left, but whether this food fits.</p>
+        <div class="hint mono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Hover or tap a food</div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="field"></div>
+        <div class="status"><span>12:07</span><span class="r mono">HYBRID <b class="bat">17</b></span></div>
+        <div class="scroll" data-mock="4">
+          <div class="pad">
+            <div class="hud glass" id="c4hud">
+              <div class="whose mono"><i></i><span id="c4whose">Left today</span></div>
+              <div class="grid">
+                <div class="col"><b class="mono" style="color:var(--lime)">1 156</b><u class="mono" data-g="kcal">→ 1 050</u><em class="mono">kcal</em><s><i style="width:52%;background:var(--lime)"></i><i class="g" style="color:var(--lime)" data-t="kcal"></i></s></div>
+                <div class="col"><b class="mono" style="color:var(--blue)">62</b><u class="mono" data-g="protein">→ 44</u><em class="mono">Protein</em><s><i style="width:62%;background:var(--blue)"></i><i class="g" style="color:var(--blue)" data-t="protein"></i></s></div>
+                <div class="col"><b class="mono" style="color:var(--amber)">142</b><u class="mono" data-g="carbs">→ 135</u><em class="mono">Carbs</em><s><i style="width:45%;background:var(--amber)"></i><i class="g" style="color:var(--amber)" data-t="carbs"></i></s></div>
+                <div class="col"><b class="mono" style="color:var(--violet)">38</b><u class="mono" data-g="fat">→ 38</u><em class="mono">Fat</em><s><i style="width:51%;background:var(--violet)"></i><i class="g" style="color:var(--violet)" data-t="fat"></i></s></div>
+              </div>
+            </div>
+
+            <div class="mast" style="padding-top:14px">
+              <div class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <h1 style="font-size:22px;display:flex;align-items:center;gap:7px">Dinner <svg style="width:15px;height:15px;stroke:var(--chalk);fill:none;stroke-width:2.4" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></h1>
+            </div>
+
+            <div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Search a food or barcode</span></div>
+            <div class="tabs"><span class="on">Recent</span><span>Favourites</span><span>Meals</span><span>Mine</span></div>
+
+            <div style="margin-top:10px" id="c4list">
+              <div class="food" data-k="106" data-p="18" data-c="7" data-f="0" data-n="Skyr, plain – 170 g"><div><div class="t">Skyr, plain</div><div class="s mono">170 g – 18 g protein</div></div><div class="k"><b class="mono">106</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="293" data-p="41" data-c="0" data-f="14" data-n="Chicken thigh – 150 g"><div><div class="t">Chicken thigh, grilled</div><div class="s mono">150 g – 41 g protein</div></div><div class="k"><b class="mono">293</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="260" data-p="5" data-c="57" data-f="1" data-n="Jasmine rice – 200 g"><div><div class="t">Jasmine rice, cooked</div><div class="s mono">200 g – 57 g carbs</div></div><div class="k"><b class="mono">260</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="540" data-p="29" data-c="41" data-f="27" data-n="Premium Cheeseburger – MAX"><div><div class="t">Premium Cheeseburger<span class="vf mono">✓</span></div><div class="s mono">MAX – 1 burger</div></div><div class="k"><b class="mono">540</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="119" data-p="0" data-c="0" data-f="14" data-n="Olive oil – 1 tbsp"><div><div class="t">Olive oil</div><div class="s mono">1 tbsp – 14 g fat</div></div><div class="k"><b class="mono">119</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="916" data-p="34" data-c="96" data-f="44" data-n="Carbonara, big plate"><div><div class="t">Carbonara, big plate</div><div class="s mono">Your meals – 44 g fat</div></div><div class="k"><b class="mono">916</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="113" data-p="25" data-c="2" data-f="1" data-n="Whey isolate – 30 g"><div><div class="t">Whey isolate</div><div class="s mono">1 scoop – 30 g</div></div><div class="k"><b class="mono">113</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="196" data-p="26" data-c="7" data-f="7" data-n="Cottage cheese – 200 g"><div><div class="t">Cottage cheese</div><div class="s mono">200 g – 26 g protein</div></div><div class="k"><b class="mono">196</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="174" data-p="6" data-c="6" data-f="15" data-n="Almonds – 30 g"><div><div class="t">Almonds</div><div class="s mono">30 g – 15 g fat</div></div><div class="k"><b class="mono">174</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food" data-k="105" data-p="1" data-c="27" data-f="0" data-n="Banana – 1 medium"><div><div class="t">Banana</div><div class="s mono">1 medium</div></div><div class="k"><b class="mono">105</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <nav class="nav mono"><span>Today</span><span>Explore</span><span>More</span><span>Profile</span><span class="fab">↑↓</span></nav>
+      </div></div>
+
+      <dl class="spec">
+        <dt>Design</dt><dd>Try <b>Carbonara</b> — the fat ghost goes red because its 44 g overruns the 38 g that's left. The bar names what it's projecting, so the ghost can never be mistaken for a logged total.</dd>
+        <dt>Mechanics</dt><dd>A <code>NutritionHudContext</code> at the nutrition root exposing <code>setPreview(macros | null)</code>. Food rows call it from <code>onHoverIn</code> / <code>onPressIn</code> (web also on focus) and clear on out, blur, scroll and unmount. The serving stepper in the food sheet feeds the same channel, so the ghost tracks the dial.</dd>
+        <dt>Core</dt><dd><code>hudProject(fuel, delta)</code> — pure and tested, so both clients ghost the same numbers and agree on what counts as a breach.</dd>
+        <dt>Cost</dt><dd>Idea 3 plus a context and one hook. Best shipped <b>as a phase 2 on top of idea 3</b>, not as a first cut.</dd>
+        <dt>Risk</dt><dd class="warn">Stale preview state is the whole risk: if it survives a scroll, a navigation or an unmount, <b>the bar lies about the day</b>. Clear on every one of those, and debounce press-in so a scroll-drag doesn't strobe ghosts down the list.</dd>
+      </dl>
+    </section>
+
+    <!-- ═══════════ 5 · PULL-DOWN HUD ══════════════════════════════════ -->
+    <section class="concept c5">
+      <div class="cap">
+        <div class="n mono"><i>5</i>Pull-down HUD</div>
+        <h2>One line, or the whole panel</h2>
+        <p class="say">At rest, the least chrome that answers the question: a 40px line reading
+          <b>1 156 kcal left</b> with three 2px macro dashes right-aligned — enough to know you're
+          fine, not enough to read the detail. Tap it and it expands in place into the mini ring,
+          the three macros in grams remaining, and the training-fuel line. Tap again, or scroll,
+          and it's a line once more. <b>The list never navigates away.</b></p>
+        <div class="hint mono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>Tap the bar</div>
+      </div>
+
+      <div class="phone"><div class="screen">
+        <div class="field"></div>
+        <div class="status"><span>12:07</span><span class="r mono">HYBRID <b class="bat">17</b></span></div>
+        <div class="scroll" data-mock="5">
+          <div class="pad">
+            <div class="hud glass" id="c5hud">
+              <button class="line" id="c5btn" type="button" aria-expanded="false" aria-controls="c5panel">
+                <b class="mono">1 156</b><em class="mono">kcal left</em>
+                <span class="dash">
+                  <s><i style="width:62%;background:var(--blue)"></i></s>
+                  <s><i style="width:45%;background:var(--amber)"></i></s>
+                  <s><i style="width:51%;background:var(--violet)"></i></s>
+                  <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+              </button>
+              <div class="drawer"><div><div id="c5panel" role="region" aria-label="Today's remaining macros">
+                <div class="panel">
+                  <div class="ring" style="width:64px;height:64px;flex:none">
+                    <svg viewBox="0 0 100 100" aria-hidden="true">
+                      <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
+                      <circle cx="50" cy="50" r="45" fill="none" stroke="#c6f135" stroke-width="7" stroke-linecap="round" stroke-dasharray="146.5 282.7"/>
+                    </svg>
+                    <div class="ct"><div class="big" style="font-size:15px">52<span style="font-size:9px">%</span></div></div>
+                  </div>
+                  <div class="mm">
+                    <div class="mline"><div class="top"><span class="nm mono" style="color:var(--blue)">Protein</span><span class="vl mono">62 g left</span></div><div class="trk"><i style="width:62%;background:var(--blue)"></i></div></div>
+                    <div class="mline"><div class="top"><span class="nm mono" style="color:var(--amber)">Carbs</span><span class="vl mono">142 g left</span></div><div class="trk"><i style="width:45%;background:var(--amber)"></i></div></div>
+                    <div class="mline"><div class="top"><span class="nm mono" style="color:var(--violet)">Fat</span><span class="vl mono">38 g left</span></div><div class="trk"><i style="width:51%;background:var(--violet)"></i></div></div>
+                  </div>
+                </div>
+                <div class="foot mono">Trained today — target includes +310 kcal of training fuel</div>
+              </div></div></div>
+            </div>
+
+            <div class="mast" style="padding-top:14px">
+              <div class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <h1 style="font-size:26px">Your products</h1>
+            </div>
+
+            <div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Search your products</span></div>
+
+            <div style="margin-top:10px">
+              <div class="food"><div><div class="t">Skyr, plain</div><div class="s mono">Arla – 170 g</div></div><div class="k"><b class="mono">106</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Protein pudding</div><div class="s mono">Own recipe – 1 cup</div></div><div class="k"><b class="mono">232</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Sourdough loaf</div><div class="s mono">Home bake – 1 slice</div></div><div class="k"><b class="mono">98</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Espresso, double</div><div class="s mono">60 ml</div></div><div class="k"><b class="mono">4</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Whey isolate</div><div class="s mono">1 scoop – 30 g</div></div><div class="k"><b class="mono">113</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Peanut butter</div><div class="s mono">1 tbsp</div></div><div class="k"><b class="mono">94</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Rye crispbread</div><div class="s mono">2 pieces</div></div><div class="k"><b class="mono">70</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Salmon fillet</div><div class="s mono">180 g</div></div><div class="k"><b class="mono">367</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+              <div class="food"><div><div class="t">Greek yoghurt 10%</div><div class="s mono">150 g</div></div><div class="k"><b class="mono">146</b><i class="mono">kcal</i></div><div class="add">+</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <nav class="nav mono"><span>Today</span><span>Explore</span><span>More</span><span>Profile</span><span class="fab">↑↓</span></nav>
+      </div></div>
+
+      <dl class="spec">
+        <dt>Design</dt><dd>Progressive disclosure: the glance costs 40px, the detail costs a tap. Collapses on scroll so it can never sit open covering a third of the list.</dd>
+        <dt>Mechanics</dt><dd>Web: a real <code>&lt;button aria-expanded&gt;</code> over a <code>grid-template-rows: 0fr → 1fr</code> drawer, which animates without a hard-coded height. Mobile: an <code>Animated</code> height or <code>LayoutAnimation</code>. Instant swap under <code>prefers-reduced-motion</code>.</dd>
+        <dt>Core</dt><dd><code>hudMacros(fuel)</code> for the line, and the panel reuses the existing hero-ring and macro-track components verbatim.</dd>
+        <dt>Cost</dt><dd>Low–moderate. The panel is composed of parts that already exist.</dd>
+        <dt>Risk</dt><dd class="warn">The tap target sits at the screen's top edge, where it competes with the back button and the iOS status-bar scroll-to-top. And a <b>drag</b>-to-open gesture would fight <code>AuroraScreen</code>'s pull-to-refresh — so tap only on mobile, and consider dropping the drag on web too for parity.</dd>
+      </dl>
+    </section>
+
+  </div><!-- /gallery -->
+
+  <div class="rule"></div>
+
+  <!-- ═══════════ shared groundwork ═════════════════════════════════════ -->
+  <section class="panelbox">
+    <h2>What all five share</h2>
+    <p>Whichever direction wins, the same groundwork lands first — and it lands in
+      <code style="font:600 12px/1.4 'SF Mono',monospace;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:1px 5px">packages/core</code>
+      so the two clients cannot drift.</p>
+
+    <div class="two">
+      <div>
+        <h4 class="mono">Core — one new module</h4>
+        <ul>
+          <li><b><code>packages/core/src/nutrition-hud.ts</code></b> — <code>NUTRITION_HUD_BAR_H</code>, <code>hudMacros(fuel)</code> returning four slots (<code>left</code>, <code>pct</code>, <code>over</code>), plus <code>nutritionHudState()</code> for idea 1 and <code>hudProject()</code> for idea 4.</li>
+          <li>It <b>composes <code>fuelToday()</code></b> from <code>engines/nutrition.ts</code>, which already backs Today's fuel widget and the hero ring. The bar therefore cannot disagree with the ring — the same targets, the same training-fuel adjustment, the same over-budget thresholds.</li>
+          <li><code>nutrition-hud.test.ts</code> alongside it: empty day, mid-day, exactly on target, over on one macro, over on energy, zero target.</li>
+          <li>Export from <code>packages/core/src/index.ts</code>.</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="mono">Clients — where it mounts</h4>
+        <ul>
+          <li>Both nutrition roots already compute <code>today</code> and <code>targets</code> once, above the view switch (<code>nutrition.tsx</code>) — so <b>one</b> <code>&lt;NutritionHud&gt;</code> rendered there covers the hub, the picker, the food page, your meals, your products, the verified-source pages and the recipe screens in a single insertion.</li>
+          <li><b>Web:</b> <code>position: sticky; top: 0; z-index: 30</code>, full-bleed with <code>margin: 0 calc(-1 * var(--page-pad-x, 16px))</code> and matching padding. Nutrition has no cover hero, so <code>top: 0</code> is clear of the <code>plans.tsx</code> sticky rail at <code>top: COVER_BAR</code>.</li>
+          <li><b>Mobile:</b> ideas 3 and 5 need nothing new — <code>stickyHeaderIndices={[0]}</code>. Ideas 1, 2 and 4 want an optional <code>stickyTop</code> slot on <code>AuroraScreen</code> so the bar draws <i>over</i> the ScrollView (the shape <code>aurora/today-rail.tsx</code> already uses), with <code>onScroll</code> merged into <code>useNavScrollProps()</code>.</li>
+          <li><b>Copy:</b> new keys under <code>w.recovery.nutrition.hud.*</code> in <code>packages/core/src/i18n-web/recovery.ts</code> — the parity test then forces both clients to carry them.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div style="height:22px"></div>
+
+  <!-- ═══════════ recommendation ════════════════════════════════════════ -->
+  <section class="panelbox">
+    <h2>Recommended order</h2>
+    <p>The ask is a utility, not a set piece — so ship the useful version first and spend the
+      motion budget only once it's proven.</p>
+
+    <div class="order">
+      <div class="step"><span class="w mono">First</span><p><b>Idea 3 — Fuel strip.</b> The whole ask, one pass, both clients, no new kit surface and no scroll listener. Gate it on one boolean so it stays out of the way while the hero ring is on screen.</p></div>
+      <div class="step"><span class="w mono">Then</span><p><b>Idea 4 — Projection HUD.</b> This is the part that actually changes decisions: “62 g protein left” is useful, “this burger leaves you 33 g over on fat” is why you opened the picker. It is idea 3 plus a context, so it slots straight on top.</p></div>
+      <div class="step"><span class="w mono">Instead of 3</span><p><b>Idea 1 — Residue rail</b>, if consistency with Today matters more than always-on availability. It costs about the same and reuses an idiom that already ships — but remember the sub-views have no ring to scroll past.</p></div>
+      <div class="step"><span class="w mono">Later</span><p><b>Idea 2 — Ring morph</b> as the polish pass once the strip has proven where the bar belongs. <b>Idea 5's</b> expansion is genuinely optional: Diary and Insights are already one tap away, so the drawer may be answering a question nobody is asking at the top of a food list.</p></div>
+    </div>
+
+    <div class="note">
+      <b>House rules these respect.</b> Full-bleed via negative gutter margins with matching internal
+      padding, so the bar reaches the true screen edge like every screen-level rail. No middot as a
+      separator anywhere in the copy — a spaced en dash where a string separator is unavoidable, real
+      layout everywhere else. No decorative dot before a label; the one dot in idea 4 is semantic
+      (it marks a live projection). And whichever lands,
+      <code>packages/core/src/capabilities.ts</code> gets a <code>nutrition-hud</code> entry in the
+      same change — <code>shipped</code> when both clients have it, or <code>planned</code> on the
+      side that lags, so a parity gap is never lost in prose.
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ── 1 · residue rail — capture/release with hysteresis ─────────────── */
+  (function(){
+    var sc = document.querySelector('[data-mock="1"]');
+    var hud = document.getElementById("c1hud");
+    if (!sc || !hud) return;
+    var bar = hud.querySelector(".bar");
+    var pills = {
+      kcal: hud.querySelector('[data-pill="kcal"]'),
+      protein: hud.querySelector('[data-pill="protein"]'),
+      carbs: hud.querySelector('[data-pill="carbs"]'),
+      fat: hud.querySelector('[data-pill="fat"]')
+    };
+    var ring = document.getElementById("c1ring"), macro = document.getElementById("c1macro");
+    var BAR = 46, HYST = 6, held = {}, frame = 0;
+    function bottomOf(el){ return el.offsetTop + el.offsetHeight; }
+    function capture(key, edge, y){
+      var on = held[key] ? y > edge - BAR - HYST : y > edge - BAR;
+      held[key] = on;
+      return on;
+    }
+    function measure(){
+      frame = 0;
+      var y = sc.scrollTop;
+      var k = capture("kcal", bottomOf(ring), y);
+      var m = capture("macro", bottomOf(macro), y);
+      pills.kcal.classList.toggle("on", k);
+      pills.protein.classList.toggle("on", m);
+      pills.carbs.classList.toggle("on", m);
+      pills.fat.classList.toggle("on", m);
+      var pinned = k || m;
+      hud.classList.toggle("pin", pinned);
+      bar.classList.toggle("x", pinned);
+    }
+    sc.addEventListener("scroll", function(){ if (!frame) frame = requestAnimationFrame(measure); }, {passive:true});
+    measure();
+  })();
+
+  /* ── 2 · ring morph — one node, sized from scroll progress ─────────── */
+  (function(){
+    var sc = document.querySelector('[data-mock="2"]');
+    var box = document.getElementById("c2morph");
+    if (!sc || !box) return;
+    var ring = document.getElementById("c2ring"), num = document.getElementById("c2num"),
+        sub = document.getElementById("c2sub"), lab = document.getElementById("c2lab"),
+        rest = document.getElementById("c2rest"), plate = document.getElementById("c2plate"),
+        mini = document.getElementById("c2mini");
+    var RANGE = 190, R0 = 152, R1 = 30, frame = 0;
+    var lerp = function(a,b,p){ return a + (b-a)*p; };
+    function apply(p){
+      var w = box.clientWidth;                       /* content width incl. bleed */
+      var rs = lerp(R0, R1, p);                      /* ring size */
+      var cx = w / 2;
+      ring.style.width = ring.style.height = rs + "px";
+      /* the stroke thickens as the ring shrinks so it stays legible at 30px */
+      Array.prototype.forEach.call(ring.querySelectorAll("circle"), function(c){
+        c.setAttribute("stroke-width", lerp(5, 12, p).toFixed(2));
+      });
+      ring.style.left = lerp(cx - R0/2, 16, p) + "px";
+      ring.style.top  = lerp(62, (52 - rs)/2 + 1, p) + "px";
+      /* type is centred on the ring at rest and set beside it once docked, so
+         both ends are measured rather than guessed */
+      num.style.fontSize = lerp(38, 17, p) + "px";
+      sub.style.opacity = String(lerp(1, .8, p));
+      var nw = num.offsetWidth, sw = sub.offsetWidth;
+      var dock = 16 + rs + 12;
+      num.style.left = lerp(cx - nw/2, dock, p) + "px";
+      num.style.top  = lerp(62 + R0/2 - 24, 12, p) + "px";
+      num.style.color = "#f4f6ef";
+      sub.style.left = lerp(cx - sw/2, dock, p) + "px";
+      sub.style.top  = lerp(62 + R0/2 + 20, 33, p) + "px";
+      lab.style.opacity = String(Math.max(0, 1 - p*2.6));
+      lab.style.transform = "translateY(" + lerp(0, -10, p) + "px)";
+      rest.style.opacity = String(Math.max(0, 1 - p*1.9));
+      plate.style.opacity = String(Math.max(0, (p - .35) / .65));
+      mini.style.opacity = String(Math.max(0, (p - .5) / .5));
+      mini.style.transform = "translateY(-50%) translateX(" + lerp(16, 0, Math.min(1, p*1.6)) + "px)";
+      box.style.height = lerp(198, 52, p) + "px";
+    }
+    /* a stuck element reports its SHIFTED offsetTop, so the static position is
+       read from a zero-height marker that never sticks */
+    var anchor = document.getElementById("c2anchor");
+    function measure(){
+      frame = 0;
+      var p = Math.max(0, Math.min(1, (sc.scrollTop - anchor.offsetTop - 16) / RANGE));
+      apply(reduced ? (p > .5 ? 1 : 0) : p);
+    }
+    sc.addEventListener("scroll", function(){ if (!frame) frame = requestAnimationFrame(measure); }, {passive:true});
+    window.addEventListener("resize", measure, {passive:true});
+    measure();
+  })();
+
+  /* ── 4 · projection HUD — ghost the row you're pointing at ─────────── */
+  (function(){
+    var sc = document.querySelector('[data-mock="4"]');
+    var hud = document.getElementById("c4hud"), list = document.getElementById("c4list");
+    if (!sc || !hud || !list) return;
+    var whose = document.getElementById("c4whose");
+    var LEFT = { kcal:1156, protein:62, carbs:142, fat:38 };
+    var TARGET = { kcal:2400, protein:165, carbs:260, fat:78 };
+    var COLOR = { kcal:"var(--lime)", protein:"var(--blue)", carbs:"var(--amber)", fat:"var(--violet)" };
+    var ghosts = {}, tracks = {};
+    ["kcal","protein","carbs","fat"].forEach(function(k){
+      ghosts[k] = hud.querySelector('[data-g="'+k+'"]');
+      tracks[k] = hud.querySelector('[data-t="'+k+'"]');
+    });
+    var hot = null;
+    function show(row){
+      if (hot === row) return;
+      if (hot) hot.classList.remove("hot");
+      hot = row; row.classList.add("hot");
+      whose.textContent = row.getAttribute("data-n");
+      var d = { kcal:+row.dataset.k, protein:+row.dataset.p, carbs:+row.dataset.c, fat:+row.dataset.f };
+      ["kcal","protein","carbs","fat"].forEach(function(k){
+        var after = LEFT[k] - d[k];
+        var over = after < 0;
+        ghosts[k].textContent = "→ " + (over ? "" : "") + Math.round(after) + (k === "kcal" ? "" : " g");
+        ghosts[k].style.color = over ? "var(--red)" : "var(--ash)";
+        var pct = Math.min(100 - (TARGET[k] - LEFT[k]) / TARGET[k] * 100, d[k] / TARGET[k] * 100);
+        tracks[k].style.width = Math.max(0, pct) + "%";
+        tracks[k].style.color = over ? "var(--red)" : COLOR[k];
+      });
+      hud.classList.add("live");
+    }
+    function clear(){
+      if (hot) hot.classList.remove("hot");
+      hot = null;
+      hud.classList.remove("live");
+      whose.textContent = "Left today";
+      ["kcal","protein","carbs","fat"].forEach(function(k){ tracks[k].style.width = "0%"; });
+    }
+    Array.prototype.forEach.call(list.querySelectorAll(".food"), function(row){
+      row.setAttribute("tabindex", "0");
+      row.addEventListener("mouseenter", function(){ show(row); });
+      row.addEventListener("focus", function(){ show(row); });
+      row.addEventListener("blur", clear);
+      row.addEventListener("touchstart", function(){ show(row); }, {passive:true});
+      row.addEventListener("click", function(){ show(row); });
+    });
+    list.addEventListener("mouseleave", clear);
+    sc.addEventListener("scroll", clear, {passive:true});
+    clear();
+  })();
+
+  /* ── 5 · pull-down HUD — tap to expand, scroll to collapse ─────────── */
+  (function(){
+    var sc = document.querySelector('[data-mock="5"]');
+    var hud = document.getElementById("c5hud"), btn = document.getElementById("c5btn");
+    if (!sc || !hud || !btn) return;
+    function set(open){
+      hud.classList.toggle("open", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    btn.addEventListener("click", function(){ set(!hud.classList.contains("open")); });
+    sc.addEventListener("scroll", function(){ if (hud.classList.contains("open")) set(false); }, {passive:true});
+  })();
+})();
+</script>

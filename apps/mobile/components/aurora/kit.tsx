@@ -102,6 +102,9 @@ export function AuroraScreen({
   padding = 16,
   refreshing,
   onRefresh,
+  stickyTop,
+  stickyTopReserve = 0,
+  onScrollY,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -109,6 +112,20 @@ export function AuroraScreen({
   padding?: number;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** A rail drawn OVER the scroll view at the screen's top edge — never in its
+   *  content, so nothing below it moves as the rail appears. The overlay is
+   *  laid out from this screen's border box, so it reaches up under the status
+   *  bar and the rail itself pads its content down by the safe-area inset (the
+   *  shape Today's pill rail already uses). Ignored when `scroll` is false. */
+  stickyTop?: ReactNode;
+  /** Space (dp) reserved at the top of the content for a `stickyTop` that is
+   *  ALWAYS visible. A transient rail overlays — that's the point of it — but a
+   *  permanent one would sit on the screen head and cover the back button, so
+   *  those screens push their content down by the bar's height instead. */
+  stickyTopReserve?: number;
+  /** Live scroll offset, for a `stickyTop` that captures on scroll. Chained
+   *  after the nav pill's own listener so the pill still hides on scroll. */
+  onScrollY?: (y: number) => void;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -125,8 +142,12 @@ export function AuroraScreen({
       // Clear the floating Aurora pill nav so the last content row never hides
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.
-      contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      contentContainerStyle={{ padding, paddingTop: padding + stickyTopReserve, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       {...navScroll}
+      // The nav pill owns its own scroll listener; chain ours after it rather
+      // than replacing it, so the pill still hides on scroll.
+      onScroll={onScrollY ? (e) => { navScroll.onScroll?.(e); onScrollY(e.nativeEvent.contentOffset.y); } : navScroll.onScroll}
+      scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
@@ -143,6 +164,7 @@ export function AuroraScreen({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, enterStyle]}>{body}</Animated.View>
       </KeyboardAvoidingView>
+      {scroll ? stickyTop : null}
     </SafeAreaView>
   );
 }
