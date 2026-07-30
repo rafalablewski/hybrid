@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  deviceMarkFor,
   deviceSourceLabel,
   rankDeviceWorkouts,
   type DeviceWorkout,
@@ -11,6 +12,7 @@ import {
 import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
+import { DeviceMark } from "./aurora/device-mark";
 import { F, fs } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
@@ -90,8 +92,9 @@ export function DeviceMatchSheet({
       `${w.durationMin} min`,
       ...(w.kcal != null ? [`${w.kcal} kcal`] : []),
       ...(w.avgHr != null ? [`♥ ${w.avgHr}`] : []),
-      // Always the resolved device name — never the raw stored string.
-      ...(deviceSourceLabel(w) ? [deviceSourceLabel(w)!] : []),
+      // The device's name only when it has no artwork — a card that carries the
+      // mark is already saying which device this came off.
+      ...(!deviceMarkFor(w.provider) && deviceSourceLabel(w) ? [deviceSourceLabel(w)!] : []),
     ].join(" – ");
   // The best card earns a richer second line — everything the recording holds.
   const metaFull = (w: DeviceWorkout) =>
@@ -112,7 +115,13 @@ export function DeviceMatchSheet({
         >
           <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>⌚ {t("session.device.pickTitle")}</Text>
+            {/* The lockup, never the accent — a manufacturer's mark reproduces
+                solid only (core/device-marks.ts). Only Apple's store can be read
+                here today, so the sheet is titled with Apple's own artwork. */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
+              <DeviceMark provider="apple" form="mark" height={14} on="dark" label="" />
+              <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{t("session.device.pickTitle")}</Text>
+            </View>
             {phase === "list" && (
               <Pressable onPress={() => void load()}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("session.device.refresh")}</Text>
@@ -157,9 +166,12 @@ export function DeviceMatchSheet({
                     }}
                   >
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                      <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
-                        {r.workout.activityLabel}
-                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1 }}>
+                        <DeviceMark provider={r.workout.provider} form="mark" height={best ? 15 : 11} on="dark" label={deviceSourceLabel(r.workout) ?? undefined} />
+                        <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                          {r.workout.activityLabel}
+                        </Text>
+                      </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
                           <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 1, color: C.onAccent, textTransform: "uppercase" }}>

@@ -408,6 +408,10 @@ const BASE: Record<Lang, Record<string, string>> = {
     "session.wrapped.device.bodyweight": "Add your bodyweight and we can estimate the calories for this session.",
     "session.device.matchCta": "Match the workout from your watch",
     "session.device.matchedChip": "Synced with your watch",
+    // Reads as the first half of a sentence the device's own lockup finishes:
+    // "Measured on [ WATCH]". Keep it a fragment — never repeat the device
+    // name in the copy, the artwork IS the name (see core/device-marks.ts).
+    "session.device.measuredOn": "Measured on",
     "session.device.panelTitle": "Your device's read",
     "session.device.lead": "Your device measured this one, so HYBRID counts its read. What you logged stays here beside it.",
     "session.device.appCol": "You logged",
@@ -964,6 +968,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "session.wrapped.device.bodyweight": "Dodaj swoją masę ciała, a oszacujemy kalorie tego treningu.",
     "session.device.matchCta": "Połącz z treningiem z zegarka",
     "session.device.matchedChip": "Zsynchronizowano z zegarkiem",
+    "session.device.measuredOn": "Zmierzone na",
     "session.device.panelTitle": "Odczyt z urządzenia",
     "session.device.lead": "Ten trening zmierzyło Twoje urządzenie, więc HYBRID liczy jego odczyt. To, co zapisano ręcznie, zostaje obok.",
     "session.device.appCol": "Zapisane",

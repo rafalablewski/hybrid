@@ -83,6 +83,7 @@ export * from "./session-celebration";
 export * from "./session-wrapped";
 export * from "./session-feel";
 export * from "./session-device";
+export * from "./device-marks";
 export * from "./device-truth";
 export * from "./energy";
 export * from "./session-signature";
