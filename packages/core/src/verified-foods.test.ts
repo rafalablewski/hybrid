@@ -186,7 +186,7 @@ describe("source marks", () => {
       .toMatch(/Max Burgers AB/);
   });
 
-  it("carries Lidl's roundel in its brand colours, self-contained and credited", () => {
+  it("carries Lidl's own roundel, self-contained and credited", () => {
     const m = sourceMark("lidl")!;
     expect(m.svg).toMatch(/^<svg/);
     expect(m.alt).toBe("Lidl");
@@ -194,12 +194,14 @@ describe("source marks", () => {
     // A SOLID badge, not knockouts: it carries its own ground, so it reads the
     // same on the AURORA charcoal card and the Kyoto Hour washi one.
     for (const hex of ["#0050AA", "#FFF000", "#E60A14"]) expect(m.svg).toContain(hex);
-    // The geometry is not ours, and the credit has to say so — including that
-    // CC0 waives copyright and NOT the trademark.
-    const credit = sourceMarkCredits().find((c) => c.sourceId === "lidl")!;
-    expect(credit.credit).toMatch(/simple-icons/);
-    expect(credit.credit).toMatch(/CC0/);
-    expect(credit.credit).toMatch(/trademark/);
+    // Sizes to whatever the renderer asks for: viewBox kept, width/height gone.
+    expect(m.svg).toContain('viewBox="0 0 60 60"');
+    expect(m.svg).not.toMatch(/\swidth="/);
+    // No PAINTED white anywhere. White paint is not a hole — the exporter's
+    // edge frame would have drawn a keyline around the badge on the charcoal
+    // card that the real logo does not have.
+    expect(m.svg).not.toMatch(/#fff\b|#ffffff/i);
+    expect(sourceMarkCredits().find((c) => c.sourceId === "lidl")!.credit).toMatch(/trademark/);
   });
 
   it("enumerates a credit for every mark it displays", () => {

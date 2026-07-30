@@ -37,33 +37,34 @@ export const MAX_MARK: SourceMark = {
 /**
  * Lidl (Lidl Stiftung & Co. KG) — the roundel.
  *
- * WHERE THE GEOMETRY CAME FROM. Not traced by us: it is the Lidl glyph from the
- * simple-icons project, whose artwork is released CC0-1.0. Every coordinate
- * below is that file's, unaltered — nothing here is a hand-drawn approximation
- * of a real brand mark, which reference/verified-source-marks.md rules out for
- * exactly the reason it should.
+ * The operator's OWN logo vector, supplied by the HYBRID team. Not our trace
+ * and not an approximation: the blue field, the yellow disc, the red keyline
+ * ring and the LIDL lettering with its red i-dot and red diamond are all the
+ * artwork's own coordinates, at the artwork's own colours.
  *
- * WHAT WE CHANGED, AND WHY. simple-icons ships one MONOCHROME path: the square
- * as a hairline frame, the circle as a ring, the wordmark as filled letters.
- * Rendered in a single colour it is not the mark an athlete recognises on a
- * bread bag — and a mark that isn't recognised at a glance is doing none of the
- * job the provenance card added it for. So the one path is split at its
- * subpath boundaries and each part takes its published brand colour — blue
- * #0050AA, yellow #FFF000, red #E60A14 — with the square filled rather than
- * outlined and the ring laid over the disc, which is the logo's real
- * construction. Coordinates untouched; only `fill` and `fill-rule` are ours.
+ * WHAT WE NORMALISED. Two things, both mechanical:
+ *   1. the hard-coded width/height are gone and the viewBox stays, so the mark
+ *      sizes to whatever the renderer asks for (the rule in
+ *      reference/verified-source-marks.md);
+ *   2. the exporter had wrapped the badge in a PAINTED WHITE 0.5-unit frame
+ *      and inset the blue field behind it. White paint is not a hole: on the
+ *      AURORA charcoal card that frame would have drawn a white keyline around
+ *      the badge that the real logo does not have. The frame is dropped and
+ *      the blue field runs full-bleed instead, which is what the logo is.
+ * No coordinate inside the badge was touched.
  *
  * Unlike MAX's, this mark is a SOLID BADGE rather than knockouts, so it carries
  * its own ground: it reads identically on the AURORA charcoal card and the
  * Kyoto Hour washi one without depending on either.
  */
 export const LIDL_MARK: SourceMark = {
-  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Lidl"><path fill="#0050AA" d="M0 0v24h24V0z"/><path fill="#FFF000" d="M11.998.834C5.83.834.83 5.834.83 12.002c0 6.168 5 11.168 11.168 11.168 6.167 0 11.167-5 11.168-11.166C23.165 5.837 18.166.837 12 .834z"/><path fill="#E60A14" fill-rule="evenodd" d="M11.998.834C5.83.834.83 5.834.83 12.002c0 6.168 5 11.168 11.168 11.168 6.167 0 11.167-5 11.168-11.166C23.165 5.837 18.166.837 12 .834zM12 1.543c5.777 0 10.46 4.682 10.46 10.459v.004c-.004 5.773-4.686 10.452-10.46 10.453-5.777 0-10.46-4.68-10.46-10.457C1.54 6.225 6.222 1.543 12 1.543z"/><path fill="#0050AA" fill-rule="evenodd" d="M9.229 7.85c-.645 0-1.166.521-1.166 1.166v.004c0 1.044 1.261 1.567 1.999.829.738-.738.215-2-.829-1.999zM2.73 10.059v.71h.551v2.465h-.55v.713h4.644v-.65l.537-.54 1.486 1.491-.55.547.357.36 2.973-2.977v-.713l-.826.83-1.848-1.848-2.129 2.133v-.576l-1.904 1.06V10.77h.549v-.711zM11.635 10.059v.71h.549v2.465h-.555v.713h3.129c2.325 0 2.355-3.888.008-3.888zM16.598 10.059v.71h.55v2.465h-.55v.713h4.648v-1.943l-1.906 1.06V10.77h.55v-.711zM14.168 11.269h.133c.687 0 .685 1.461.023 1.461h-.156v-1.46z"/></svg>`,
-  aspect: 1, // 24 / 24 — the roundel is square
+  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-label="Lidl"><path fill="#0050AA" d="M0 0h60v60H0z"/><path fill="#FFF000" d="M30 3.85C15.558 3.85 3.85 15.558 3.85 30S15.558 56.15 30 56.15c14.438 0 26.144-11.702 26.15-26.139v-.001c0-14.444-11.706-26.154-26.149-26.16z"/><path fill="#E60A14" d="m28.377 30.736-4.617-4.617-5.322 5.332v1.79l1.341-1.346 3.715 3.725-1.372 1.367.892.897 7.43-7.44V28.66l-2.066 2.077z"/><path fill="#0050AA" d="M6.824 25.148h8.223v1.774h-1.372v5.739l4.763-2.65v4.857H6.824v-1.784h1.377v-6.162H6.824zm34.67 0v1.774h1.377v6.162h-1.377v1.784h11.624v-4.857l-4.769 2.65v-5.739h1.377v-1.774z"/><path fill="#E60A14" d="M23.082 19.623a2.927 2.927 0 1 1-2.927 2.927v-.011.001a2.917 2.917 0 0 1 2.917-2.917h.011z"/><path fill="#E60A14" d="M30 2.087h-.005c-15.419 0-27.918 12.499-27.918 27.918s12.499 27.918 27.918 27.918c15.417 0 27.915-12.496 27.918-27.913C57.91 14.593 45.416 2.095 30.001 2.087zm0 54.068c-14.442 0-26.15-11.708-26.15-26.15S15.558 3.855 30 3.855s26.15 11.708 26.15 26.15v.011-.001c-.012 14.434-11.714 26.131-26.149 26.134z"/><path fill="#0050AA" d="M36.913 25.148h-7.826v1.774h1.372v6.162h-1.388v1.784h7.826c5.812 0 5.885-9.72.016-9.72"/><path fill="#FFF000" d="M35.812 31.826h-.391v-3.652h.329c1.717 0 1.717 3.652.063 3.652z"/></svg>`,
+  aspect: 1, // 60 / 60 — the roundel is square
   alt: "Lidl",
   credit:
-    "Lidl glyph from the simple-icons project (v16.27.1), released CC0-1.0. Geometry unaltered; " +
-    "split into its subpaths and filled in Lidl's published brand colours by the HYBRID team " +
-    "(2026-07-30). Lidl is a registered trademark of Lidl Stiftung & Co. KG; the CC0 waiver " +
-    "covers copyright only, so confirm trademark use with the operator before a public release.",
+    "Lidl's own logo vector, supplied by the HYBRID team (2026-07-30); normalised for the app " +
+    "(width/height dropped for the viewBox, the exporter's painted-white edge frame removed and " +
+    "the blue field run full-bleed) with no coordinate inside the badge altered. Lidl is a " +
+    "registered trademark of Lidl Stiftung & Co. KG; confirm redistribution terms with the " +
+    "operator before a public release.",
 };
