@@ -11,6 +11,13 @@ import { PROVIDER_DEVICE_KEYS } from "./session-device";
 import { colors } from "./theme/tokens";
 import { contrastRatio, WCAG } from "./contrast";
 
+// `noUncheckedIndexedAccess` makes every DEVICE_MARKS lookup optional — which
+// is the registry behaving correctly, since a caller may ask for a provider we
+// don't draw. These two are the fixtures the suite is written against, so assert
+// them once here rather than at each use.
+const APPLE = DEVICE_MARKS.apple!;
+const GARMIN = DEVICE_MARKS.garmin!;
+
 const every = (fn: (art: DeviceMarkArt, name: string) => void) => {
   for (const [provider, set] of Object.entries(DEVICE_MARKS)) {
     fn(set.lockup, `${provider}.lockup`);
@@ -20,8 +27,8 @@ const every = (fn: (art: DeviceMarkArt, name: string) => void) => {
 
 describe("deviceMarkFor", () => {
   it("resolves a provider case- and whitespace-insensitively", () => {
-    expect(deviceMarkFor("apple")).toBe(DEVICE_MARKS.apple.lockup);
-    expect(deviceMarkFor("  APPLE ")).toBe(DEVICE_MARKS.apple.lockup);
+    expect(deviceMarkFor("apple")).toBe(APPLE.lockup);
+    expect(deviceMarkFor("  APPLE ")).toBe(APPLE.lockup);
   });
 
   it("returns null for an unknown or missing provider, so callers can fall back to text", () => {
@@ -32,9 +39,9 @@ describe("deviceMarkFor", () => {
   });
 
   it("gives the compact mark when asked, and the lockup when there isn't one", () => {
-    expect(deviceMarkFor("apple", "mark")).toBe(DEVICE_MARKS.apple.mark);
+    expect(deviceMarkFor("apple", "mark")).toBe(APPLE.mark);
     // A silhouette provider ships one drawing — asking for `mark` still draws.
-    expect(deviceMarkFor("garmin", "mark")).toBe(DEVICE_MARKS.garmin.lockup);
+    expect(deviceMarkFor("garmin", "mark")).toBe(GARMIN.lockup);
   });
 
   it("draws every provider session-device.ts can name", () => {
@@ -91,11 +98,11 @@ describe("DEVICE_MARK_INK", () => {
 
 describe("deviceMarkWidth", () => {
   it("scales from the height so the aspect ratio survives any layout", () => {
-    const art = DEVICE_MARKS.apple.lockup;
+    const art = APPLE.lockup;
     expect(deviceMarkWidth(art, DEVICE_MARK_HEIGHT)).toBeCloseTo(art.width, 2);
     expect(deviceMarkWidth(art, 11)).toBeCloseTo((art.width * 11) / 100, 2);
     // The Apple Watch lockup is a wide horizontal shape; the mark is upright.
-    expect(deviceMarkWidth(DEVICE_MARKS.apple.lockup, 20)).toBeGreaterThan(80);
-    expect(deviceMarkWidth(DEVICE_MARKS.apple.mark!, 20)).toBeLessThan(20);
+    expect(deviceMarkWidth(APPLE.lockup, 20)).toBeGreaterThan(80);
+    expect(deviceMarkWidth(APPLE.mark!, 20)).toBeLessThan(20);
   });
 });
