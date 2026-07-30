@@ -1445,10 +1445,10 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
           </Pressable>
         ) : null}
 
+        {/* ONE name. The operator's own-language name is a search alias only —
+            printing it under the English name put a second name on screen for a
+            food we had already named, which read as clutter, not help. */}
         <Text style={{ fontFamily: F.black, fontSize: 32, letterSpacing: -0.9, lineHeight: 35, color: C.chalk, marginTop: 22 }}>{f.name}</Text>
-        {f.menuName ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.onTheMenu")} {f.menuName}</Text>
-        ) : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</Text>
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
@@ -1472,6 +1472,37 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
         <FactsPanel C={C} facts={f.facts} per100={p100} />
         {!p100 ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9, lineHeight: 15 }}>{t("w.recovery.nutrition.noServingWeight")}</Text>
+        ) : null}
+
+        {/* FROM THE PACK — what a shelf item declares beyond the numbers. A
+            restaurant dish publishes none of this, so the whole card is absent
+            rather than rendered empty. */}
+        {f.packSize || f.ingredients || f.mayContain ? (
+          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 17, marginTop: 18 }}>
+            {f.packSize ? (
+              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.packSize")}</Text>
+                <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{f.packSize}</Text>
+              </View>
+            ) : null}
+            {f.ingredients ? (
+              <View style={f.packSize ? { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: C.line } : null}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.ingredients")}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 22 }}>{f.ingredients}</Text>
+              </View>
+            ) : null}
+            {f.mayContain ? (
+              <View style={{ marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: C.line }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.mayContain")}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 22 }}>{f.mayContain}</Text>
+              </View>
+            ) : null}
+            {/* Say out loud that this is OUR translation of someone else's pack —
+                an allergen line is the last place to imply we quoted verbatim. */}
+            {f.nativeName && (f.ingredients || f.mayContain) ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 15, opacity: 0.85 }}>{t("w.recovery.nutrition.labelTranslated")}</Text>
+            ) : null}
+          </View>
         ) : null}
 
         {/* WHAT WE DID, AND WHEN. */}
@@ -1611,7 +1642,6 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{f.name}</Text>
                 <VerifiedMark C={C} size={12} />
               </View>
-              {f.menuName ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{f.menuName}</Text> : null}
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{f.facts.kcal} kcal  –  {f.servingLabel}</Text>
             </View>
             <IChevRight size={17} color={C.ash} />
