@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   fuelToday,
   fuelPlate,
+  fuelRail,
   mealPartEmoji,
   mealPartLabelFromKey,
   trainingEnergyOnDay,
@@ -14,8 +15,8 @@ import {
   type FuelToday,
   type FuelMacro,
   type FuelPlateGroup,
+  type FuelRailChip,
   type LoggedSession,
-  type MealPreset,
 } from "@hybrid/core";
 import { useSignals } from "@/lib/use-signals";
 import { useFoodLogs } from "@/lib/use-food-logs";
@@ -66,28 +67,27 @@ export default function AuroraFuel({
   const { logs } = useFoodLogs();
   const revalidate = useRevalidate();
   const full = isFullAccess(usePersona());
-  // One-tap preset logging: the chip being written (busy) and the one that just
-  // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
+  // One-tap logging: the chip being written (busy) and the one that just landed
+  // (its ✓ flash). Free users can't log from the rail — a tap opens the sheet
   // where the premium framing lives (parity with Nutrition's locked tiles).
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  const logPreset = async (p: MealPreset) => {
+  const logChip = async (chip: FuelRailChip) => {
     if (!full) return onOpen();
     if (busy) return;
-    setBusy(p.id);
+    setBusy(chip.id);
     setDone(null);
     try {
       // Route through the editable food-log (like the Nutrition screen) so the
-      // preset appears in the Diary as a named, editable/deletable entry AND the
-      // mirrored Signals the engines read. Attributed to its natural part of day.
-      const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
-      const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, source: p.id.split("-")[0] || "snack", kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 }) });
+      // meal appears in the Diary as a named, editable/deletable entry AND the
+      // mirrored Signals the engines read. Attributed to its own part of day.
+      const res = await fetch("/api/nutrition/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: chip.name, source: chip.source, kcal: chip.kcal, protein: chip.protein, carbs: chip.carbs, fat: chip.fat, qty: 1 }) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // Drops the signals the totals read AND the diary entries the plate lists.
       await revalidate.recovery();
-      setDone(p.id);
-      window.setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);
+      setDone(chip.id);
+      window.setTimeout(() => setDone((d) => (d === chip.id ? null : d)), 1600);
     } catch {
       onOpen(); // network/auth failure — fall back to the manual quick-add sheet
     } finally {
@@ -106,6 +106,14 @@ export default function AuroraFuel({
   // logged under one falls into "Other" and is labelled from its own key —
   // visible either way, which is the point of the summary.
   const plate = useMemo(() => fuelPlate(logs), [logs]);
+
+  // The rail: the meals this athlete actually eats, ranked from their own diary,
+  // with the canned presets behind them for a cold start. Built from what was
+  // eaten BEFORE today, so a tap can mark a chip but never move it.
+  const rail = useMemo(
+    () => fuelRail(logs, { presets: MEAL_PRESETS.map((p) => ({ id: p.id, name: presetShort(t(p.labelKey)), source: p.id.split("-")[0] || "snack", emoji: p.emoji, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat })) }),
+    [logs, t],
+  );
 
   const { state, targets, kcalLeft, kcalPct, proteinGap, trainingKcal, today, macros } = fuel;
   const nf = (n: number) => Math.round(n).toLocaleString();
@@ -212,23 +220,32 @@ export default function AuroraFuel({
         <span aria-hidden style={{ fontSize: 20, lineHeight: 1, color: C("ash") }}>＋</span>
         <span style={{ fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap", color: "var(--lime-text)" }}>{t("w.home.fuel.quickLog")}</span>
       </button>
-      {MEAL_PRESETS.map((p) => {
-        const isDone = done === p.id;
-        const isBusy = busy === p.id;
+      {rail.map((chip) => {
+        const isDone = done === chip.id;
+        const isBusy = busy === chip.id;
+        // ALREADY HAD IT — a quiet ✓ badge on the tile, never a disabled chip:
+        // a second helping is a real thing, so the mark reports the day rather
+        // than standing in the way of it.
+        const had = chip.loggedToday && !isDone;
         return (
           <button
-            key={p.id}
-            onClick={() => logPreset(p)}
+            key={chip.id}
+            onClick={() => logChip(chip)}
             disabled={isBusy}
-            aria-label={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+            aria-label={`${t("w.home.fuel.logMeal")} ${chip.name}${had ? ` — ${t("w.home.fuel.hadToday")}` : ""}`}
             style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink2"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, borderRadius: 14, padding: "9px 13px 9px 9px", cursor: isBusy ? "default" : "pointer", color: C("chalk"), opacity: isBusy ? 0.55 : 1, transition: "opacity .15s ease, background .2s ease, border-color .2s ease" }}
           >
-            <span style={{ width: 32, height: 32, borderRadius: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 20%, transparent)` : C("ink"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0, color: "var(--lime-text)" }}>
-              {isDone ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5 10 17.5 19.5 7" /></svg> : p.emoji}
+            <span style={{ position: "relative", width: 32, height: 32, borderRadius: 9, background: isDone ? `color-mix(in srgb, ${C("lime")} 20%, transparent)` : C("ink"), border: `1px solid ${isDone ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0, color: "var(--lime-text)" }}>
+              {isDone ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5 10 17.5 19.5 7" /></svg> : chip.emoji}
+              {had && (
+                <span aria-hidden style={{ position: "absolute", top: -5, right: -5, width: 15, height: 15, borderRadius: 999, background: C("lime"), border: `1.5px solid ${C("ink2")}`, display: "grid", placeItems: "center" }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5 10 17.5 19.5 7" /></svg>
+                </span>
+              )}
             </span>
             <span style={{ textAlign: "left" }}>
-              <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{presetShort(t(p.labelKey))}</span>
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: isDone ? "var(--lime-text)" : C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</span>
+              <span style={{ display: "block", fontWeight: 700, fontSize: 12.5, letterSpacing: "-.01em", whiteSpace: "nowrap", maxWidth: 148, overflow: "hidden", textOverflow: "ellipsis" }}>{chip.name}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, color: isDone ? "var(--lime-text)" : C("ash"), whiteSpace: "nowrap", marginTop: 1 }}>{isDone ? `+${chip.kcal} kcal ${t("w.home.fuel.logged")}` : `${chip.kcal} kcal – ${chip.protein}P`}</span>
             </span>
           </button>
         );

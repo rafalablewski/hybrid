@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay, fuelPlate, mealPartEmoji, mealPartLabelFromKey, DEFAULT_MEAL_PART_KEYS, type FuelLogRow } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay, fuelPlate, fuelRail, mealPartEmoji, mealPartLabelFromKey, DEFAULT_MEAL_PART_KEYS, type FuelLogRow } from "./nutrition";
 import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
@@ -495,5 +495,82 @@ describe("fuelPlate", () => {
     expect(mealPartEmoji("breakfast")).toBe("🍳");
     expect(mealPartEmoji("pre-workout")).toBe("🍴");
     expect(mealPartLabelFromKey("pre-workout")).toBe("Pre workout");
+  });
+});
+
+describe("fuelRail", () => {
+  var at = (h: number, dayOffset = 0) => new Date(2026, 6, 29 - dayOffset, h, 0, 0).toISOString();
+  const now = new Date(2026, 6, 29, 20, 0, 0).getTime();
+  const PRESETS = [
+    { id: "breakfast-oats-eggs", name: "Breakfast", source: "breakfast", emoji: "🍳", kcal: 520, protein: 32, carbs: 55, fat: 18 },
+    { id: "lunch-chicken-rice", name: "Lunch", source: "lunch", emoji: "🥗", kcal: 680, protein: 52, carbs: 78, fat: 16 },
+  ];
+  const log = (over: Partial<FuelLogRow>): FuelLogRow => ({
+    id: Math.random().toString(36).slice(2), name: "Skyr & granola", source: "breakfast",
+    kcal: 320, protein: 24, carbs: 38, fat: 6, qty: 1, ts: at(8), ...over,
+  });
+  const rail = (logs: FuelLogRow[]) => fuelRail(logs, { presets: PRESETS, now });
+
+  it("leads with the athlete's own items and keeps the presets behind them", () => {
+    const chips = rail([log({ ts: at(8, 1) })]); // yesterday's breakfast
+    expect(chips.map((c) => c.kind)).toEqual(["own", "preset", "preset"]);
+    expect(chips[0]!.name).toBe("Skyr & granola");
+    expect(chips[0]!.kcal).toBe(320); // per serving — a tap logs one of them
+    expect(chips[0]!.emoji).toBe("🍳"); // the glyph of the part it's eaten in
+  });
+
+  it("ranks by the DAYS an item was eaten on, not by how often in one sitting", () => {
+    const habit = [1, 2, 3, 4, 5].map((d) => log({ name: "Skyr & granola", ts: at(8, d) }));
+    const binge = [8, 9, 10, 11, 12, 13].map((h) => log({ name: "Pizza", source: "dinner", ts: at(h, 3) }));
+    const chips = rail([...habit, ...binge]);
+    expect(chips.filter((c) => c.kind === "own").map((c) => c.name)).toEqual(["Skyr & granola", "Pizza"]);
+  });
+
+  it("is fixed for the day — logging today marks the rail but never moves it", () => {
+    const base = [
+      ...[1, 2, 3].map((d) => log({ name: "Skyr & granola", ts: at(8, d) })),
+      ...[1, 2, 3, 4].map((d) => log({ name: "Rice & chicken", source: "lunch", ts: at(13, d) })),
+    ];
+    const before = rail(base).map((c) => c.id);
+    const after = rail([
+      ...base,
+      log({ name: "Skyr & granola", ts: at(8) }),
+      log({ name: "Skyr & granola", ts: at(9) }),
+      log({ name: "A brand new thing", source: "snack", ts: at(16) }),
+    ]);
+    expect(after.map((c) => c.id)).toEqual(before); // the tap can't move the chip it landed on
+    expect(after.find((c) => c.name === "Skyr & granola")!.loggedToday).toBe(true);
+    expect(after.find((c) => c.name === "Rice & chicken")!.loggedToday).toBe(false);
+  });
+
+  it("marks a preset whose part of the day already has something in it", () => {
+    const chips = rail([log({ name: "Skyr & granola", source: "breakfast", ts: at(8) })]);
+    const byName = Object.fromEntries(chips.map((c) => [c.name, c]));
+    expect(byName.Breakfast!.loggedToday).toBe(true);
+    expect(byName.Lunch!.loggedToday).toBe(false);
+  });
+
+  it("never lists the same meal twice — an own item matching a preset is dropped", () => {
+    const chips = rail([log({ name: "breakfast", source: "breakfast", ts: at(8, 2) })]);
+    expect(chips.filter((c) => c.kind === "own")).toHaveLength(0);
+  });
+
+  it("skips entries with no name, and offers the most recent portion", () => {
+    const chips = rail([
+      log({ name: "", source: "snack", ts: at(16, 1) }),
+      log({ name: null, source: "snack", ts: at(16, 2) }),
+      log({ name: "Skyr & granola", kcal: 320, ts: at(8, 2) }),
+      log({ name: "Skyr & granola", kcal: 480, protein: 36, ts: at(8, 1) }),
+    ]);
+    const own = chips.filter((c) => c.kind === "own");
+    expect(own).toHaveLength(1);
+    expect(own[0]!.kcal).toBe(480); // the corrected portion, not the first one
+  });
+
+  it("caps the athlete's own items and falls back to presets alone when cold", () => {
+    const many = ["A", "B", "C", "D", "E", "F"].map((n, i) => log({ name: n, ts: at(8, i + 1) }));
+    expect(rail(many).filter((c) => c.kind === "own")).toHaveLength(4);
+    expect(rail([]).map((c) => c.kind)).toEqual(["preset", "preset"]);
+    expect(fuelRail(undefined, { now })).toEqual([]);
   });
 });

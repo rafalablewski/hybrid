@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   fuelToday,
   fuelPlate,
+  fuelRail,
   mealPartEmoji,
   mealPartLabelFromKey,
   trainingEnergyOnDay,
@@ -15,8 +16,8 @@ import {
   type FuelToday,
   type FuelMacro,
   type FuelPlateGroup,
+  type FuelRailChip,
   type LoggedSession,
-  type MealPreset,
   type Signal,
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
@@ -53,27 +54,26 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
   const { data: logs = [] } = useFoodLogsQuery();
   const revalidate = useRevalidate();
   const full = isFullAccess(usePersona());
-  // One-tap preset logging: the chip being written (busy) and the one that just
-  // landed (its ✓ flash). Free users can't log presets — a tap opens the sheet
+  // One-tap logging: the chip being written (busy) and the one that just landed
+  // (its ✓ flash). Free users can't log from the rail — a tap opens the sheet
   // where the premium framing lives (parity with Nutrition's locked tiles).
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  const logPreset = async (p: MealPreset) => {
+  const logChip = async (chip: FuelRailChip) => {
     if (!full) return onOpen();
     if (busy) return;
-    setBusy(p.id);
+    setBusy(chip.id);
     setDone(null);
     // Route through the editable food-log (like the Nutrition screen) so the
-    // preset appears in the Diary as a named, editable/deletable entry AND the
-    // mirrored Signals the engines read. Attributed to its natural part of day.
-    const name = t(p.labelKey).split(/ [·–] /)[0] || t(p.labelKey);
-    const { ok } = await createFoodLog({ name, source: p.id.split("-")[0] || "snack", kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, qty: 1 });
+    // meal appears in the Diary as a named, editable/deletable entry AND the
+    // mirrored Signals the engines read. Attributed to its own part of day.
+    const { ok } = await createFoodLog({ name: chip.name, source: chip.source, kcal: chip.kcal, protein: chip.protein, carbs: chip.carbs, fat: chip.fat, qty: 1 });
     setBusy(null);
     if (!ok) return onOpen(); // failure — fall back to manual sheet
     revalidate.recovery();
-    setDone(p.id);
-    setTimeout(() => setDone((d) => (d === p.id ? null : d)), 1600);
+    setDone(chip.id);
+    setTimeout(() => setDone((d) => (d === chip.id ? null : d)), 1600);
   };
 
   const fuel = useMemo<FuelToday>(() => {
@@ -87,6 +87,14 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
   // logged under one falls into "Other" and is labelled from its own key —
   // visible either way, which is the point of the summary.
   const plate = useMemo(() => fuelPlate(logs), [logs]);
+
+  // The rail: the meals this athlete actually eats, ranked from their own diary,
+  // with the canned presets behind them for a cold start. Built from what was
+  // eaten BEFORE today, so a tap can mark a chip but never move it.
+  const rail = useMemo(
+    () => fuelRail(logs, { presets: MEAL_PRESETS.map((p) => ({ id: p.id, name: presetShort(t(p.labelKey)), source: p.id.split("-")[0] || "snack", emoji: p.emoji, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat })) }),
+    [logs, t],
+  );
 
   const { state, targets, kcalLeft, kcalPct, proteinGap, trainingKcal, today, macros } = fuel;
   const nf = (n: number) => Math.round(n).toLocaleString();
@@ -277,24 +285,33 @@ export default function AuroraFuel({ sessions, onOpen }: { sessions: LoggedSessi
         <Text style={{ fontSize: 20, color: C.ash, marginTop: -2 }}>＋</Text>
         <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: txt(C, C.lime) }}>{t("w.home.fuel.quickLog")}</Text>
       </Pressable>
-      {MEAL_PRESETS.map((p) => {
-        const isDone = done === p.id;
-        const isBusy = busy === p.id;
+      {rail.map((chip) => {
+        const isDone = done === chip.id;
+        const isBusy = busy === chip.id;
+        // ALREADY HAD IT — a quiet ✓ badge on the tile, never a disabled chip:
+        // a second helping is a real thing, so the mark reports the day rather
+        // than standing in the way of it.
+        const had = chip.loggedToday && !isDone;
         return (
           <Pressable
-            key={p.id}
-            onPress={() => logPreset(p)}
+            key={chip.id}
+            onPress={() => logChip(chip)}
             disabled={isBusy}
             accessibilityRole="button"
-            accessibilityLabel={`${t("w.home.fuel.logMeal")} ${presetShort(t(p.labelKey))}`}
+            accessibilityLabel={`${t("w.home.fuel.logMeal")} ${chip.name}${had ? ` — ${t("w.home.fuel.hadToday")}` : ""}`}
             style={{ flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.14) : C.ink2, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, borderRadius: 14, paddingVertical: 9, paddingLeft: 9, paddingRight: 13, opacity: isBusy ? 0.55 : 1 }}
           >
             <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: isDone ? withAlpha(C.lime, 0.2) : C.ink, borderWidth: 1, borderColor: isDone ? withAlpha(C.lime, 0.4) : C.line, alignItems: "center", justifyContent: "center" }}>
-              {isDone ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : <Text style={{ fontSize: 16 }}>{p.emoji}</Text>}
+              {isDone ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : <Text style={{ fontSize: 16 }}>{chip.emoji}</Text>}
+              {had ? (
+                <View style={{ position: "absolute", top: -5, right: -5, width: 15, height: 15, borderRadius: 999, backgroundColor: C.lime, borderWidth: 1.5, borderColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
+                  <AuroraIcon name="check" size={9} color={C.onAccent} />
+                </View>
+              ) : null}
             </View>
             <View>
-              <Text style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk }}>{presetShort(t(p.labelKey))}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: isDone ? txt(C, C.lime) : C.ash, marginTop: 1 }}>{isDone ? `+${p.kcal} kcal ${t("w.home.fuel.logged")}` : `${p.kcal} kcal – ${p.protein}P`}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: 12.5, letterSpacing: -0.1, color: C.chalk, maxWidth: 148 }}>{chip.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: isDone ? txt(C, C.lime) : C.ash, marginTop: 1 }}>{isDone ? `+${chip.kcal} kcal ${t("w.home.fuel.logged")}` : `${chip.kcal} kcal – ${chip.protein}P`}</Text>
             </View>
           </Pressable>
         );
