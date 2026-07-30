@@ -100,10 +100,20 @@ export function SessionEditSheet({
   };
   const label: CSSProperties = { ...mono, fontSize: 9, letterSpacing: 1, color: ASH, textTransform: "uppercase", display: "block", marginBottom: 5 };
 
-  const num = (cap: string, value: string, onChange: (v: string) => void) => (
+  // `cap` is omitted inside a set table, which captions its COLUMNS once —
+  // three identical LOAD/REPS/RPE rows down a bench-press block is noise. The
+  // aria-label carries the name a sighted user reads off the column head.
+  const num = (cap: string, value: string, onChange: (v: string) => void, showCap = true) => (
     <label key={cap} style={{ flex: 1, minWidth: 88 }}>
-      <span style={label}>{cap}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} inputMode="decimal" placeholder="—" style={field} />
+      {showCap && <span style={label}>{cap}</span>}
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        inputMode="decimal"
+        placeholder="—"
+        aria-label={cap}
+        style={field}
+      />
     </label>
   );
 
@@ -128,12 +138,20 @@ export function SessionEditSheet({
 
               {fields.sets ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {/* Column captions once, above the rows — the set-number
+                      column keeps its width so the grid stays square. */}
+                  <div style={{ display: "flex", gap: space.sm }} aria-hidden>
+                    <span style={{ width: 18 }} />
+                    <span style={{ ...label, flex: 1, minWidth: 88, marginBottom: 0 }}>{t("session.edit.load")} ({units})</span>
+                    <span style={{ ...label, flex: 1, minWidth: 88, marginBottom: 0 }}>{t("session.edit.reps")}</span>
+                    <span style={{ ...label, flex: 1, minWidth: 88, marginBottom: 0 }}>{t("session.edit.rpe")}</span>
+                  </div>
                   {b.sets.map((s, j) => (
-                    <div key={j} style={{ display: "flex", alignItems: "flex-end", gap: space.sm }}>
-                      <span style={{ ...mono, fontSize: fs.caption, color: ASH, width: 18, paddingBottom: 11 }}>{j + 1}</span>
-                      {num(`${t("session.edit.load")} (${units})`, s.load, (v) => setSet(i, j, { load: v }))}
-                      {num(t("session.edit.reps"), s.reps, (v) => setSet(i, j, { reps: v }))}
-                      {num(t("session.edit.rpe"), s.rpe, (v) => setSet(i, j, { rpe: v }))}
+                    <div key={j} style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+                      <span style={{ ...mono, fontSize: fs.caption, color: ASH, width: 18 }}>{j + 1}</span>
+                      {num(`${t("session.edit.load")} (${units})`, s.load, (v) => setSet(i, j, { load: v }), false)}
+                      {num(t("session.edit.reps"), s.reps, (v) => setSet(i, j, { reps: v }), false)}
+                      {num(t("session.edit.rpe"), s.rpe, (v) => setSet(i, j, { rpe: v }), false)}
                     </div>
                   ))}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>

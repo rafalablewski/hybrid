@@ -35,10 +35,12 @@ const fieldStyle = (C: Palette) =>
  * inside the sheet's render is a new type on every keystroke, which unmounts the
  * TextInput and drops the keyboard mid-edit.
  */
-function Num({ C, cap, value, onChange }: { C: Palette; cap: string; value: string; onChange: (v: string) => void }) {
+function Num({ C, cap, value, onChange }: { C: Palette; cap?: string; value: string; onChange: (v: string) => void }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={labelStyle(C)}>{cap}</Text>
+      {/* A set table captions its COLUMNS once and then omits `cap` — three
+          identical LOAD/REPS/RPE rows down a bench-press block is noise. */}
+      {cap ? <Text style={labelStyle(C)}>{cap}</Text> : null}
       <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="—" placeholderTextColor={C.ash} style={fieldStyle(C)} />
     </View>
   );
@@ -155,12 +157,20 @@ export function SessionEditSheet({
 
                     {fields.sets ? (
                       <View style={{ marginTop: 10 }}>
+                        {/* Column captions once, above the rows — the set number
+                            column keeps its width so the grid stays square. */}
+                        <View style={{ flexDirection: "row", gap: space.sm }}>
+                          <View style={{ width: 20 }} />
+                          <Text style={[label, { flex: 1 }]}>{t("session.edit.load")} ({units})</Text>
+                          <Text style={[label, { flex: 1 }]}>{t("session.edit.reps")}</Text>
+                          <Text style={[label, { flex: 1 }]}>{t("session.edit.rpe")}</Text>
+                        </View>
                         {b.sets.map((s, j) => (
-                          <View key={j} style={{ flexDirection: "row", alignItems: "flex-end", gap: space.sm, marginTop: j ? 8 : 0 }}>
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, width: 20, paddingBottom: 11 }}>{j + 1}</Text>
-                            <Num C={C} cap={`${t("session.edit.load")} (${units})`} value={s.load} onChange={(v) => setSet(i, j, { load: v })} />
-                            <Num C={C} cap={t("session.edit.reps")} value={s.reps} onChange={(v) => setSet(i, j, { reps: v })} />
-                            <Num C={C} cap={t("session.edit.rpe")} value={s.rpe} onChange={(v) => setSet(i, j, { rpe: v })} />
+                          <View key={j} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: j ? 8 : 0 }}>
+                            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, width: 20 }}>{j + 1}</Text>
+                            <Num C={C} value={s.load} onChange={(v) => setSet(i, j, { load: v })} />
+                            <Num C={C} value={s.reps} onChange={(v) => setSet(i, j, { reps: v })} />
+                            <Num C={C} value={s.rpe} onChange={(v) => setSet(i, j, { rpe: v })} />
                           </View>
                         ))}
                         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
