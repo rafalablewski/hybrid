@@ -71,6 +71,7 @@ export * from "./interval";
 export * from "./activity";
 export * from "./social";
 export * from "./stats";
+export * from "./week-verdict";
 export * from "./contrast";
 export * from "./premium-accent";
 export * from "./nav";

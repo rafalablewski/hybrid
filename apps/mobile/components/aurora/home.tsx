@@ -92,6 +92,7 @@ import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraWeekVerdict from "./week-verdict";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -948,6 +949,20 @@ export default function AuroraHome() {
             onPicked={checkinsRead.retry}
           />
         </View>
+
+        {/* ───── THIS WEEK — the verdict card. Sits directly under Readiness
+            because it is the same KIND of thing: a verdict with its working-out
+            shown. Replaces the Statistics and Analytics destinations on Today
+            (both are now promotedTo "today" in core nav.ts); the two rows under
+            it are the doors to everything past this week. ───── */}
+        <AuroraWeekVerdict
+          sessions={sessions}
+          units={units}
+          bw={bw}
+          showDeep={isAthlete}
+          onArchive={() => router.push("/statistics")}
+          onDeep={() => router.push("/analytics")}
+        />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —

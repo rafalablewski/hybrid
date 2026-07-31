@@ -83,6 +83,7 @@ import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraWeekVerdict from "./week-verdict";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
@@ -856,6 +857,20 @@ export default function AuroraToday({
           onPicked={loadFeeling}
         />
       </div>
+
+      {/* ───── THIS WEEK — the verdict card. Sits directly under Readiness
+          because it is the same KIND of thing: a verdict with its working-out
+          shown. Replaces the Statistics and Analytics destinations on Today
+          (both are now promotedTo "today" in core nav.ts); the two rows under it
+          are the doors to everything past this week. Mirrors mobile. ───── */}
+      <AuroraWeekVerdict
+        sessions={sessions}
+        units={units}
+        bw={bw}
+        showDeep={isAthlete}
+        onArchive={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))}
+        onDeep={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))}
+      />
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
           Explore-standard section head (bold display title); the ✦ stays — it's

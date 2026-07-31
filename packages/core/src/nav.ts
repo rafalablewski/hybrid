@@ -119,9 +119,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "sport", label: "Sport", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", group: "train", minPersona: "athlete" },
 
-  { id: "statistics", label: "Statistics", group: "analyze" },
+  // Statistics + Analytics are MERGED onto Today as the "This week" verdict
+  // card; the two rows under it are the doors back to this depth. Promoted,
+  // not deleted — the routes, icons, labels and gates all stay live.
+  { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "today" },
   { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
-  { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete" },
+  { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete", promotedTo: "today" },
   { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
   { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
   { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
