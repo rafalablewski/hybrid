@@ -62,7 +62,7 @@ export default function AuroraEnduranceLanes({
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono action right. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
         <Pressable
           onPress={() => setOrder(nextLaneOrder(order))}
@@ -77,8 +77,16 @@ export default function AuroraEnduranceLanes({
       </View>
 
       {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed. */}
-      <View style={{ flexDirection: "row", marginHorizontal: 2, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
+          sport. Same three figures the hub opens with, summed — on the same
+          card surface Readiness uses (ink2, hairline, radius 22) rather than a
+          bare hairline strip, which was the one un-carded block on Today. */}
+      <View
+        style={{
+          flexDirection: "row",
+          backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22,
+          paddingHorizontal: 16, paddingVertical: 15,
+        }}
+      >
         <Cell first label={t("endurance.efforts")} value={String(week.efforts)} />
         <Cell label="KM" value={String(week.distanceKm)} />
         <Cell label="H" value={String(Math.round(week.minutes / 6) / 10)} />
@@ -165,11 +173,11 @@ function Tile({ w, label, children }: { w: number; label: string; children: Reac
   );
 }
 
-/** One cell of the cross-sport totals strip. */
+/** One cell of the cross-sport totals card. */
 function Cell({ label, value, first }: { label: string; value: string; first?: boolean }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flex: 1, paddingVertical: 10, paddingLeft: first ? 0 : 12, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
+    <View style={{ flex: 1, paddingLeft: first ? 0 : 12, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 3, color: C.chalk }}>{value}</Text>
     </View>

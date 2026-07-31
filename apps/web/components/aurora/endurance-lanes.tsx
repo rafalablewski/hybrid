@@ -260,7 +260,7 @@ export default function AuroraEnduranceLanes({
   const week = laneWeekTotals(lanes);
 
   const cell = (label: string, value: string, first: boolean) => (
-    <div style={{ flex: 1, padding: first ? "10px 0" : "10px 0 10px 12px", borderLeft: first ? undefined : `1px solid ${C("line")}` }}>
+    <div style={{ flex: 1, paddingLeft: first ? undefined : 12, borderLeft: first ? undefined : `1px solid ${C("line")}` }}>
       <div style={kicker}>{label}</div>
       <div style={{ ...num, fontSize: fs.heading, fontWeight: 500, letterSpacing: "-.02em", marginTop: 3, color: C("chalk") }}>{value}</div>
     </div>
@@ -268,7 +268,7 @@ export default function AuroraEnduranceLanes({
 
   return (
     <div style={{ marginTop: 26 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
         <button
           onClick={() => setOrder(nextLaneOrder(order))}
@@ -284,8 +284,16 @@ export default function AuroraEnduranceLanes({
       </div>
 
       {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed. */}
-      <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, borderBottom: `1px solid ${C("line")}`, margin: "0 2px" }}>
+          sport. Same three figures the hub opens with, summed — on the same
+          card surface Readiness uses (ink2, hairline, radius 22) rather than a
+          bare hairline strip, which was the one un-carded block on Today. */}
+      <div
+        style={{
+          display: "flex",
+          background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22,
+          padding: "15px 16px",
+        }}
+      >
         {cell(t("endurance.efforts"), String(week.efforts), true)}
         {cell("KM", String(week.distanceKm), false)}
         {cell("H", String(Math.round(week.minutes / 6) / 10), false)}
