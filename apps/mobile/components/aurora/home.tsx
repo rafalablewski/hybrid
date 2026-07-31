@@ -36,6 +36,7 @@ import {
   readTrend,
   READ_GATE_KEY,
   READ_TREND_KEY,
+  MAX_READS_PER_DAY,
   type PlacedRead,
   type ReadGate,
   planSchedule,
@@ -1280,6 +1281,11 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // occupying the place where the card says what is happening NOW. It is
   // reference, not news, so it moves behind an ⓘ on the reading it describes.
   const [whyOpen, setWhyOpen] = useState(false);
+  // ONE NUMBER (design/readiness-one-number-states.html). The card leads with
+  // the reading that governs the day at display weight; the day's record lives
+  // behind a door, open on request. That is the concept's trade — a card you
+  // can read from across the room, with the story one tap away.
+  const [readsOpen, setReadsOpen] = useState(false);
   const justPicked = picked != null && picked.day === dayTs;
   const pending = justPicked && dayReads.length <= picked!.reads ? picked!.rating : null;
   const metrics = pending != null ? { ...dayMetrics, [QUICK_CHECKIN_METRIC]: pending } : dayMetrics;
@@ -1328,11 +1334,32 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // them is ever what the athlete needs at that moment, so only one renders:
   // what is holding the faces, then what a new tap would do, then what the
   // reading on record is worth.
-  const line = gateNote
-    ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+  // THE STAMP under the big value: when it was given, and how long after
+  // training that was — the fact that makes two identical answers different
+  // measurements. While the app is ASKING, it switches to "since" so the number
+  // stops claiming to be current the moment a current one is wanted.
+  const heroAt = decisive ?? dayReads[dayReads.length - 1] ?? null;
+  const heroClock = heroAt ? sessionClockTime(new Date(heroAt.at).toISOString()) : null;
+  const heroStamp = pending != null
+    ? sessionClockTime(new Date().toISOString())
+    : !heroAt
+    ? t("w.home.today.heroNotLogged")
     : inviting
-      ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
-      : null;
+      ? t("w.home.today.heroSince").replace("{t}", heroClock!)
+      : heroAt.hoursSinceSession != null
+        ? `${heroClock} — +${Math.round(heroAt.hoursSinceSession)}h ${t("w.home.today.heroAfterTraining")}`
+        : `${heroClock} — ${t("w.home.today.readNoSession")}`;
+  const line = whyOpen && ctxNote
+    ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
+    : gateNote
+      ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+      : inviting
+        ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+        : !shownFeeling && isToday
+          ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
+          : trend
+            ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
+            : null;
   const lineColor = line?.tone === "chalk" ? C.chalk : C.ash;
   // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
   // ask and the follow-up trigger. The ask wins whenever it is showing: it is
@@ -1377,13 +1404,26 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   return (
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
+        {/* The card ASKS until it has an answer, then REPORTS: once the hero
+            carries the reading, repeating the question above it is the same
+            sentence twice. */}
+        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>
+          {t(shownFeeling ? "w.home.today.glanceReadiness" : "w.recovery.readiness.title")}
+        </Text>
         {/* viewing another day — the date names the scope, no extra copy */}
         {/* Mono meta on the right, per the Explore SectionHead standard: the
             viewed date on another day, otherwise how long the faces are held.
             It used to be a pill sharing a row with the reason paragraph. */}
         {!isToday && dayLabel ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
+        ) : asking ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.lime) }}>
+            {t("session.feel.promptRecovery")}
+          </Text>
+        ) : gate.reason === "dayFull" && isToday ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>
+            {dayReads.length} / {MAX_READS_PER_DAY}
+          </Text>
         ) : held && gate.opensAt != null ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>
             {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
@@ -1395,13 +1435,43 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           app having forgotten — unless it says what this one is for. It is a
           different question: not "how hard was that" but "did you absorb it".
           See core/feel-schedule.ts. */}
-      {asking ? (
-        <View style={{ marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}3d` }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.promptRecovery")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 18, color: C.ash, marginTop: 5 }}>{t("session.feel.whyRecovery")}</Text>
-        </View>
+      {/* THE ONE NUMBER. The reading that governs the day, at display weight,
+          in its own semantic tone — the card's single focal element. An empty
+          day gets a light dash rather than a zero or a middling 3: there is no
+          reading yet, and inventing one is the failure this card exists to
+          avoid. The i sits with it because it explains THIS reading. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 11, marginTop: 15 }}>
+        <Text style={{
+          fontFamily: shownFeeling ? F.black : F.reg, fontSize: 46, lineHeight: 48, letterSpacing: shownFeeling ? -1.8 : -0.4,
+          color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : `${C.ash}8c`,
+        }}>
+          {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{heroStamp}</Text>
+        {shownFeeling && ctxNote && isToday ? (
+          <Pressable
+            onPress={() => setWhyOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: whyOpen }}
+            accessibilityLabel={t("w.home.today.readWhy")}
+            hitSlop={8}
+            style={{ width: 18, height: 18, borderRadius: 999, borderWidth: 1, borderColor: whyOpen ? C.ash : C.line, alignItems: "center", justifyContent: "center" }}
+          >
+            <AuroraIcon name="info" size={11} color={C.ash} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {line ? (
+        <Text style={{ marginTop: 10, fontFamily: line.sub ? F.bold : F.reg, fontSize: fs.body, lineHeight: 20, color: lineColor }}>
+          {t(line.key)}
+          {line.sub ? <Text style={{ fontFamily: F.reg, color: C.ash }}> {t(line.sub)}</Text> : null}
+        </Text>
       ) : null}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
+
+      <View style={{ height: 1, backgroundColor: C.line, marginTop: 15 }} />
+
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 13, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = selected === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
@@ -1414,13 +1484,6 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           );
         })}
       </View>
-      {line ? (
-        <Text style={{ marginTop: 12, fontFamily: line.sub ? F.bold : F.reg, fontSize: fs.body, lineHeight: 20, color: lineColor }}>
-          {t(line.key)}
-          {line.sub ? <Text style={{ fontFamily: F.reg, color: C.ash }}> {t(line.sub)}</Text> : null}
-        </Text>
-      ) : null}
-
       {/* THE DAY'S RECORD — kept, not a footnote.
           This used to be one grey line, "Logged Flat, 5h ago", which is what a
           value looks like when the app can only hold one. A day now holds a
@@ -1432,9 +1495,23 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           is prescribed off is marked; none of them is ever overwritten. */}
       {dayReads.length > 0 ? (
         <View style={{ marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
-            {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
-          </Text>
+          {/* THE DOOR. Shut by default — the hero is what the card is for, and a
+              list under it is the thing that made the card grow in the first
+              place. The count sits on the door so the day's shape is legible
+              without opening it. */}
+          <Pressable
+            onPress={() => setReadsOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: readsOpen }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
+              {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>
+            <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>{readsOpen ? "↓" : "→"}</Text>
+          </Pressable>
+          {readsOpen ? (
           <View style={{ gap: 9, marginTop: 11 }}>
             {dayReads.map((r) => {
               const governs = decisive != null && r.at === decisive.at;
@@ -1453,29 +1530,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                   <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
                     {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
                   </Text>
-                  {governs && ctxNote && isToday ? (
-                    <Pressable
-                      onPress={() => setWhyOpen((v) => !v)}
-                      accessibilityRole="button"
-                      accessibilityState={{ expanded: whyOpen }}
-                      accessibilityLabel={t("w.home.today.readWhy")}
-                      hitSlop={8}
-                      style={{ width: 18, height: 18, borderRadius: 999, borderWidth: 1, borderColor: whyOpen ? C.ash : C.line, alignItems: "center", justifyContent: "center" }}
-                    >
-                      <AuroraIcon name="info" size={11} color={C.ash} />
-                    </Pressable>
-                  ) : null}
                 </View>
               );
             })}
           </View>
-          {whyOpen && ctxNote ? (
-            <Text style={{ marginTop: 11, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
-          ) : null}
-          {trend ? (
-            <Text style={{ marginTop: 11, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: trend.trend === "sinking" ? txt(C, C.amber) : C.ash }}>
-              {t(READ_TREND_KEY[trend.trend])}
-            </Text>
           ) : null}
         </View>
       ) : null}
