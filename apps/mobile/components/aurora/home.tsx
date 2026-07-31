@@ -91,6 +91,7 @@ import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
+import AuroraEnduranceLanes from "./endurance-lanes";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -973,6 +974,15 @@ export default function AuroraHome() {
         <View style={{ gap: 10, marginTop: 10 }}>
           <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
+
+        {/* ───── ENDURANCE — sport lanes, the last block on Today. One
+            full-bleed rail per logged discipline carrying that sport's whole
+            read (efforts / distance / time, 8-week volume, pace trend, pace
+            zones, last effort). NOT gated on dayIsToday, unlike Fuel above: an
+            eight-week volume chart is not a property of the day you happen to
+            be scrubbed to. Renders nothing until there's endurance to show.
+            Mirrors web aurora/endurance-lanes.tsx. ───── */}
+        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
 
         </Animated.View>
       </ScrollView>

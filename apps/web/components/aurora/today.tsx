@@ -82,6 +82,7 @@ import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
+import AuroraEnduranceLanes from "./endurance-lanes";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
@@ -892,6 +893,14 @@ export default function AuroraToday({
       <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
         <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
+
+      {/* ───── ENDURANCE — sport lanes, the last block on Today. One full-bleed
+          rail per logged discipline carrying that sport's whole read (efforts /
+          distance / time, 8-week volume, pace trend, pace zones, last effort).
+          NOT gated on dayIsToday, unlike Fuel above: an eight-week volume chart
+          is not a property of the day you happen to be scrubbed to. Renders
+          nothing until there's endurance to show. Mirrors mobile. ───── */}
+      {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => (onNavigate ? onNavigate("endurance") : router.push("/endurance"))} />}
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>

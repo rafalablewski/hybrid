@@ -68,6 +68,17 @@ export interface NavItem {
    * retail user but shown to athlete/coach/admin.
    */
   minPersona?: Persona;
+  /**
+   * The screen this destination has been PROMOTED onto — set when its content
+   * now renders inline somewhere else (Endurance → the sport lanes at the bottom
+   * of Today). Menus drop these items so the same thing isn't offered twice.
+   *
+   * Deliberately NOT a delete: on web the nav id is also the screen id, so
+   * removing the entry would strand the screen. The route, icon, i18n label and
+   * persona gate all stay live, and `navVisibleTo` / `sanitizePersonaAccess`
+   * keep honouring it — only the menu listing goes.
+   */
+  promotedTo?: string;
 }
 
 /** Render order of the groups. */
@@ -115,7 +126,9 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
   { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
   { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
-  { id: "endurance", label: "Endurance", group: "analyze", minPersona: "athlete" },
+  // Promoted onto Today as the sport lanes (endurance-lanes.ts) — still routable
+  // from a lane's "See all", just no longer its own entry in More.
+  { id: "endurance", label: "Endurance", group: "analyze", minPersona: "athlete", promotedTo: "today" },
   { id: "forceplate", label: "Force plate", group: "analyze", minPersona: "athlete" },
   { id: "video", label: "Video", group: "analyze", minPersona: "athlete" },
   { id: "history", label: "History", group: "analyze" },
@@ -268,7 +281,9 @@ export function groupedNavWithLocks(
   persona: Persona,
   access?: PersonaAccess,
 ): { group: NavGroup; items: NavItemLocked[] }[] {
-  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access);
+  // Promoted destinations render inline on another screen, so listing them here
+  // too would offer the same thing twice. They stay routable — see NavItem.
+  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access).filter((x) => !x.item.promotedTo);
   return NAV_GROUP_ORDER.map((group) => ({ group, items: withLocks.filter((x) => x.item.group === group) })).filter(
     (g) => g.items.length > 0,
   );

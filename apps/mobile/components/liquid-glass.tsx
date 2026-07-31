@@ -69,7 +69,11 @@ const HREF: Record<string, Href> = {
   coach: "/coach",
   settings: "/settings",
 };
-const TILES = NAV_ITEMS.filter((i) => i.id in HREF);
+// `promotedTo` items render inline on another screen (Endurance is the sport
+// lanes at the bottom of Today), so they get no tile here either — the same
+// rule groupedNavWithLocks applies to the More springboard and the web menus.
+// The route itself stays live; this hub just doesn't offer it twice.
+const TILES = NAV_ITEMS.filter((i) => i.id in HREF && !i.promotedTo);
 
 /**
  * The central control-center menu: a floating glass orb (FAB) that blooms a
