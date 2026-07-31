@@ -93,6 +93,7 @@ import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict from "./week-verdict";
+import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -975,6 +976,17 @@ export default function AuroraHome() {
             until there's endurance to show. Mirrors web
             aurora/endurance-lanes.tsx. ───── */}
         {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
+
+        {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged
+            as `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES
+            deliberately excludes. It fed the week's sessions and hours and then
+            had nowhere to appear. Sits under Endurance because it is the same
+            question one step out: what else did you actually play. These sports
+            are TIMED, so a sport gets ONE tile rather than a rail — the block
+            spends its width on the NUMBER of sports, not the depth of each.
+            Renders nothing until a sport is logged. Mirrors web
+            aurora/other-sports.tsx. ───── */}
+        <AuroraOtherSports sessions={sessions} onOpen={() => router.push("/sport")} />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —

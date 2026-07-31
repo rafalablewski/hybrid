@@ -1,0 +1,140 @@
+import { describe, it, expect } from "vitest";
+import { otherSportLanes, sportWeekBars, otherSportTotals, OTHER_SPORT_WEEKS } from "./other-sports";
+import type { LoggedSession, SessionBlock } from "./engines/session";
+
+const NOW = Date.parse("2026-07-31T12:00:00.000Z");
+const DAY = 86_400_000;
+
+/** A session `daysAgo` back carrying one cardio block. */
+function sess(daysAgo: number, name: string, minutes: number, discipline?: string): LoggedSession {
+  const started = NOW - daysAgo * DAY;
+  const block = { kind: "cardio", name, minutes, ...(discipline ? { discipline } : {}) } as unknown as SessionBlock;
+  return {
+    id: `${name}-${daysAgo}`,
+    title: name,
+    startedAt: new Date(started).toISOString(),
+    completedAt: new Date(started + minutes * 60000).toISOString(),
+    blocks: [block],
+  } as LoggedSession;
+}
+
+describe("otherSportLanes", () => {
+  it("is empty when nothing but endurance is logged", () => {
+    const runs = [sess(1, "Run", 40, "running"), sess(3, "Swim", 30, "swimming")];
+    expect(otherSportLanes(runs, NOW)).toEqual([]);
+  });
+
+  it("gives every sport its OWN lane rather than one lane called Sport", () => {
+    // The whole point: these all carry discipline "sport", so grouping by the
+    // tag would flatten them into a single lane.
+    const lanes = otherSportLanes([
+      sess(1, "Tennis", 90, "sport"),
+      sess(4, "Squash", 45, "sport"),
+      sess(6, "Badminton", 60, "sport"),
+    ], NOW);
+    expect(lanes.map((l) => l.sport).sort()).toEqual(["Badminton", "Squash", "Tennis"]);
+  });
+
+  it("carries the catalog's icon and category", () => {
+    const [tennis] = otherSportLanes([sess(1, "Tennis", 90, "sport")], NOW);
+    expect(tennis!.icon).toBe("🎾");
+    expect(tennis!.category).toBe("Racket");
+  });
+
+  it("falls back to a generic marker for a sport that isn't in the catalog", () => {
+    const [made] = otherSportLanes([sess(1, "Kabaddi", 50, "sport")], NOW);
+    expect(made!.sport).toBe("Kabaddi");
+    expect(made!.icon).toBe("🎯");
+    expect(made!.category).toBeNull();
+  });
+
+  it("sums efforts and minutes, and remembers the most recent effort", () => {
+    const lanes = otherSportLanes([
+      sess(2, "Tennis", 90, "sport"),
+      sess(9, "Tennis", 60, "sport"),
+      sess(20, "Tennis", 75, "sport"),
+    ], NOW);
+    expect(lanes[0]!.efforts).toBe(3);
+    expect(lanes[0]!.minutes).toBe(225);
+    expect(lanes[0]!.lastAt).toBe(new Date(NOW - 2 * DAY).toISOString());
+  });
+
+  it("orders by efforts, breaking ties on RECENCY", () => {
+    // Two sports, two efforts each — squash was played more recently.
+    const lanes = otherSportLanes([
+      sess(10, "Tennis", 60, "sport"), sess(30, "Tennis", 60, "sport"),
+      sess(2, "Squash", 45, "sport"), sess(31, "Squash", 45, "sport"),
+    ], NOW);
+    expect(lanes.map((l) => l.sport)).toEqual(["Squash", "Tennis"]);
+  });
+
+  it("counts this week separately from the whole history", () => {
+    const lanes = otherSportLanes([
+      sess(2, "Tennis", 90, "sport"),   // this week
+      sess(40, "Tennis", 60, "sport"),  // long ago
+    ], NOW);
+    expect(lanes[0]!.efforts).toBe(2);
+    expect(lanes[0]!.thisWeek).toEqual({ efforts: 1, minutes: 90 });
+  });
+
+  it("buckets the last eight weeks oldest-first and drops older history from the chart only", () => {
+    const lanes = otherSportLanes([
+      sess(2, "Tennis", 90, "sport"),    // week index 7 (newest)
+      sess(16, "Tennis", 60, "sport"),   // 2 weeks ago → index 5
+      sess(400, "Tennis", 30, "sport"),  // far outside the window
+    ], NOW);
+    const w = lanes[0]!.weeks;
+    expect(w).toHaveLength(OTHER_SPORT_WEEKS);
+    expect(w[7]).toBe(90);
+    expect(w[5]).toBe(60);
+    expect(w.reduce((a, b) => a + b, 0)).toBe(150);
+    // The old session still counts in the totals — it just isn't charted.
+    expect(lanes[0]!.efforts).toBe(3);
+    expect(lanes[0]!.minutes).toBe(180);
+  });
+
+  it("classifies from the NAME when the block carries no discipline tag", () => {
+    // Blocks logged before the loggers stamped a discipline still land here.
+    const lanes = otherSportLanes([sess(1, "Tennis", 90)], NOW);
+    expect(lanes.map((l) => l.sport)).toEqual(["Tennis"]);
+  });
+
+  it("ignores strength blocks entirely", () => {
+    const lift = {
+      id: "l", title: "Push", startedAt: new Date(NOW - DAY).toISOString(), completedAt: null,
+      blocks: [{ kind: "strength", name: "Bench Press", sets: [{ load: 80, reps: 5 }] } as unknown as SessionBlock],
+    } as LoggedSession;
+    expect(otherSportLanes([lift], NOW)).toEqual([]);
+  });
+
+  it("tolerates a sport logged with no duration", () => {
+    const lanes = otherSportLanes([sess(1, "Squash", 0, "sport")], NOW);
+    expect(lanes[0]!.efforts).toBe(1);
+    expect(lanes[0]!.minutes).toBe(0);
+  });
+});
+
+describe("sportWeekBars", () => {
+  it("normalises against the lane's own busiest week", () => {
+    expect(sportWeekBars([0, 30, 60, 0])).toEqual([0, 0.5, 1, 0]);
+  });
+
+  it("is all-zero rather than NaN for a lane with no charted minutes", () => {
+    expect(sportWeekBars([0, 0, 0])).toEqual([0, 0, 0]);
+  });
+});
+
+describe("otherSportTotals", () => {
+  it("sums the block so the head doesn't make the athlete add up tiles", () => {
+    const lanes = otherSportLanes([
+      sess(1, "Tennis", 90, "sport"),
+      sess(3, "Squash", 45, "sport"),
+      sess(5, "Squash", 45, "sport"),
+    ], NOW);
+    expect(otherSportTotals(lanes)).toEqual({ sports: 2, efforts: 3, minutes: 180 });
+  });
+
+  it("is zero for no lanes", () => {
+    expect(otherSportTotals([])).toEqual({ sports: 0, efforts: 0, minutes: 0 });
+  });
+});

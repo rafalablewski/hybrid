@@ -84,6 +84,7 @@ import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict from "./week-verdict";
+import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
@@ -882,6 +883,16 @@ export default function AuroraToday({
           day you happen to be scrubbed to. Renders nothing until there's
           endurance to show. Mirrors mobile. ───── */}
       {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => (onNavigate ? onNavigate("endurance") : router.push("/endurance"))} />}
+
+      {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged as
+          `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES deliberately
+          excludes. It fed the week's sessions and hours and then had nowhere to
+          appear. Sits under Endurance because it is the same question one step
+          out: what else did you actually play. These sports are TIMED, so a
+          sport gets ONE tile rather than a rail — the block spends its width on
+          the NUMBER of sports, not the depth of each. Renders nothing until a
+          sport is logged. Mirrors mobile. ───── */}
+      <AuroraOtherSports sessions={sessions} onOpen={() => (onNavigate ? onNavigate("sport") : router.push("/sport"))} />
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
           Explore-standard section head (bold display title); the ✦ stays — it's
