@@ -1303,6 +1303,14 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
   const gateNote = held ? READ_GATE_KEY[gate.reason] : null;
+  // A NEW READ IS AN UNANSWERED QUESTION. Leaving the earlier answer lit once
+  // the gate opens invites the athlete to CORRECT it — the one thing this card
+  // is no longer for, and the exact confusion the old build created. The
+  // reading itself is not hidden: it stays on the record below, with its clock.
+  // The faces go blank because "how are you right now" genuinely has no answer
+  // yet, and a blank row of faces is the only honest way to ask it.
+  const inviting = isToday && gate.open && dayReads.length > 0 && !justPicked;
+  const selected = inviting ? null : shownFeeling;
   // The clock's effect on the meaning of today's answer, from core so both
   // clients say the same thing. `low` is the two negative feelings — the only
   // ones whose reading genuinely turns on how long ago you trained.
@@ -1368,7 +1376,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
       ) : null}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 2 }}>
         {READINESS_FEELINGS.map((key, i) => {
-          const on = shownFeeling === key;
+          const on = selected === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
             <Pressable key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
@@ -1438,13 +1446,14 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
         </View>
       ) : null}
 
-      {/* …and when it IS open with a read already on record, say what a new tap
-          would do: add a reading, not replace one. */}
-      {isToday && !held && dayReads.length > 0 ? (
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.readAgain")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length} {t(dayReads.length === 1 ? "w.home.today.readToday" : "w.home.today.readsToday")}</Text>
-        </View>
+      {/* THE ASK, once the faces are blank. It sits directly under them because
+          it explains why nothing is lit, and it answers the question that stops
+          people answering twice: no, you are not about to overwrite yourself. */}
+      {inviting ? (
+        <Text style={{ marginTop: 12, fontFamily: F.bold, fontSize: fs.body, lineHeight: 20, color: C.chalk }}>
+          {t("w.home.today.readInvite")}{" "}
+          <Text style={{ fontFamily: F.reg, color: C.ash }}>{t("w.home.today.readInviteSub")}</Text>
+        </Text>
       ) : null}
       {/* Once today's readiness is set, nudge the athlete to log the fuller
           picture — and run that guided check-in RIGHT HERE. The one-tap face is

@@ -1211,6 +1211,14 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
   const gateNote = held ? READ_GATE_KEY[gate.reason] : null;
+  // A NEW READ IS AN UNANSWERED QUESTION. Leaving the earlier answer lit once
+  // the gate opens invites the athlete to CORRECT it — the one thing this card
+  // is no longer for, and the exact confusion the old build created. The
+  // reading itself is not hidden: it stays on the record below, with its clock.
+  // The faces go blank because "how are you right now" genuinely has no answer
+  // yet, and a blank row of faces is the only honest way to ask it.
+  const inviting = isToday && gate.open && dayReads.length > 0 && !justPicked;
+  const selected = inviting ? null : shownFeeling;
   // The clock's effect on the meaning of today's answer, from core so both
   // clients say the same thing. `low` is the two negative feelings — the only
   // ones whose reading genuinely turns on how long ago you trained.
@@ -1281,7 +1289,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
       )}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0 2px" }}>
         {READINESS_FEELINGS.map((key, i) => {
-          const on = shownFeeling === key;
+          const on = selected === key;
           const at = `var(--${READINESS_FACE[key].accent}-text)`;
           return (
             <button key={key} onClick={() => pick(i + 2)} disabled={locked} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
@@ -1351,13 +1359,14 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
         </div>
       )}
 
-      {/* …and when it IS open with a read already on record, say what a new tap
-          would do: add a reading, not replace one. */}
-      {isToday && !held && dayReads.length > 0 && (
-        <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.home.today.readAgain")}</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length} {t(dayReads.length === 1 ? "w.home.today.readToday" : "w.home.today.readsToday")}</span>
-        </div>
+      {/* THE ASK, once the faces are blank. It sits directly under them because
+          it explains why nothing is lit, and it answers the question that stops
+          people answering twice: no, you are not about to overwrite yourself. */}
+      {inviting && (
+        <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: C("chalk"), fontWeight: 600 }}>
+          {t("w.home.today.readInvite")}{" "}
+          <span style={{ color: C("ash"), fontWeight: 400 }}>{t("w.home.today.readInviteSub")}</span>
+        </p>
       )}
       {/* THE FOLLOW-UP. Once the headline question is answered the card offers
           the rest — sleep, freshness, mood — in a pop-up rather than an inline
