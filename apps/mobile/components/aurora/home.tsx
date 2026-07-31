@@ -961,18 +961,19 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-            (coaches). Explore-standard section head — no marker dot. ───── */}
-        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
-        </View>
-        {/* FUEL — the nutrition summary widget (one calendar-style stateful
-            surface: empty → refuel / on-track / over → goal-hit, with a
-            persistent quick-log rail). Real today only; nutrition targets are
-            always today's. State + macros come from @hybrid/core fuelToday() so
-            web matches. Tapping opens the same quick-add sheet the rows use. */}
-        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-        <View style={{ gap: 10, marginTop: 10 }}>
-          <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
+            (coaches). No section head: "Recover & more" labelled a BUCKET, not
+            anything on the screen, and the Fuel widget already titles itself.
+            The 12 here plus Fuel's own 12 keeps the section break intact. ───── */}
+        <View style={{ marginTop: 12 }}>
+          {/* FUEL — the nutrition summary widget (one calendar-style stateful
+              surface: empty → refuel / on-track / over → goal-hit, with a
+              persistent quick-log rail). Real today only; nutrition targets are
+              always today's. State + macros come from @hybrid/core fuelToday() so
+              web matches. Tapping opens the same quick-add sheet the rows use. */}
+          {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+          <View style={{ gap: 10, marginTop: 10 }}>
+            <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
+          </View>
         </View>
 
         {/* ───── ENDURANCE — sport lanes, the last block on Today. One

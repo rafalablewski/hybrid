@@ -879,19 +879,20 @@ export default function AuroraToday({
       </div>
 
       {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-          (coaches). Explore-standard section head — no marker dot. ───── */}
-      <div style={{ margin: "26px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.recoverMore")}</span>
-      </div>
-      {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
-          empty → refuel / on-track / over → goal-hit, with a persistent quick-log
-          rail). Shows on the real today only; a scrubbed past/future day scopes
-          the cards above but nutrition targets are always today's. State + macros
-          come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
-          same quick-add sheet the coach/nutrition rows use. */}
-      {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-        <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
+          (coaches). No section head: "Recover & more" labelled a BUCKET, not
+          anything on the screen, and the Fuel widget already titles itself. The
+          12 here plus Fuel's own 12 keeps the section break intact. ───── */}
+      <div style={{ marginTop: 12 }}>
+        {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
+            empty → refuel / on-track / over → goal-hit, with a persistent quick-log
+            rail). Shows on the real today only; a scrubbed past/future day scopes
+            the cards above but nutrition targets are always today's. State + macros
+            come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
+            same quick-add sheet the coach/nutrition rows use. */}
+        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+          <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
+        </div>
       </div>
 
       {/* ───── ENDURANCE — sport lanes, the last block on Today. One full-bleed
