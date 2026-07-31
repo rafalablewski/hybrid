@@ -1443,7 +1443,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, loggedA
       {isToday && !held && dayReads.length > 0 ? (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.readAgain")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length} {t("w.home.today.readsToday")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length} {t(dayReads.length === 1 ? "w.home.today.readToday" : "w.home.today.readsToday")}</Text>
         </View>
       ) : null}
       {/* Once today's readiness is set, nudge the athlete to log the fuller

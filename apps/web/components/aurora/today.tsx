@@ -1356,7 +1356,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
       {isToday && !held && dayReads.length > 0 && (
         <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.home.today.readAgain")}</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length} {t("w.home.today.readsToday")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length} {t(dayReads.length === 1 ? "w.home.today.readToday" : "w.home.today.readsToday")}</span>
         </div>
       )}
       {/* THE FOLLOW-UP. Once the headline question is answered the card offers
