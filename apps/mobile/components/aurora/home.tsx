@@ -960,7 +960,7 @@ export default function AuroraHome() {
           units={units}
           bw={bw}
           showDeep={isAthlete}
-          onArchive={() => router.push("/statistics")}
+          onArchive={() => router.push("/history")}
           onDeep={() => router.push("/analytics")}
         />
 

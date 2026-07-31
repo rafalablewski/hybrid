@@ -57,13 +57,17 @@ const desc = (sessions: LoggedSession[]) =>
 // ============================================================
 
 /** The three switchable History layouts. */
-export type HistoryViewId = "agenda" | "weeks" | "timeline";
+export type HistoryViewId = "agenda" | "weeks" | "timeline" | "trend";
 
 /** Switcher entries, in display order. `labelKey` resolves via i18n `t()`. */
 export const HISTORY_VIEWS: ReadonlyArray<{ id: HistoryViewId; labelKey: string }> = [
   { id: "agenda", labelKey: "histview.agenda" },
   { id: "weeks", labelKey: "histview.weeks" },
   { id: "timeline", labelKey: "histview.timeline" },
+  // TREND — the retired Statistics screen, folded in as a fourth view. History
+  // already owned "everything past this week"; a separate destination charting
+  // the same sessions at a coarser grain was the same screen twice.
+  { id: "trend", labelKey: "histview.trend" },
 ];
 
 /** Normalize a persisted view id. Unknown values — including the retired

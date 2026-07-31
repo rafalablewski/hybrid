@@ -7,6 +7,8 @@ import {
   historyStream,
   upcomingPlanDays,
   weekChapters,
+  sessionBuckets,
+  weeklyRecap,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
   localDayKey,
@@ -19,6 +21,7 @@ import {
   type SessionHeadline,
   type WeightUnit,
   type BodyweightLookup,
+  type StatRange,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -26,7 +29,7 @@ import { fs, F } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
-// The three merged History × Calendar layouts (agenda / weeks / timeline)
+// The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
 // behind the History screen's view switcher — parity with
 // apps/web/components/aurora/history-views.tsx. All grouping math lives in
 // @hybrid/core (engines/history-views.ts); these components only render.
@@ -309,6 +312,87 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             </View>
           </View>
         ),
+      )}
+    </View>
+  );
+}
+
+// ── TREND ────────────────────────────────────────────────────────────────────
+// The retired Statistics screen, folded in as History's fourth view. History
+// already owned "everything past this week"; a separate destination charting
+// the same sessions at a coarser grain was the same screen twice, so its range
+// toggle, session-count chart and window totals live here now. Same engines
+// (sessionBuckets / weeklyRecap), so no number changed on the way over.
+
+const TREND_RANGES: { id: StatRange; key: string }[] = [
+  { id: "week", key: "w.analyze.stats.week" },
+  { id: "month", key: "w.analyze.stats.month" },
+  { id: "year", key: "w.analyze.stats.year" },
+];
+
+export function TrendView({ ctx }: { ctx: ViewCtx }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const [range, setRange] = useState<StatRange>("week");
+  const buckets = useMemo(() => sessionBuckets(ctx.sessions, range), [ctx.sessions, range]);
+  const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
+  const hasData = ctx.sessions.length > 0;
+  const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
+
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 16 } as const;
+  const Mini = ({ label, value }: { label: string; value: string }) => (
+    <View style={{ ...cardStyle, flex: 1, padding: 14 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 4, color: C.chalk }}>{value}</Text>
+    </View>
+  );
+
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 3 }}>
+        {TREND_RANGES.map((rg) => {
+          const on = range === rg.id;
+          return (
+            <Pressable
+              key={rg.id}
+              onPress={() => setRange(rg.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={{ flex: 1, paddingVertical: 7, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
+                {t(rg.key)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={cardStyle}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.stats.sessions")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+            {buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 14, gap: 6 }}>
+          {buckets.buckets.map((b, i) => (
+            <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
+              <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{b.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
+        <Mini label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} />
+        <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
+      </View>
+
+      {!hasData && (
+        <Text style={{ fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 6, lineHeight: 20 }}>{t("w.analyze.stats.empty")}</Text>
       )}
     </View>
   );

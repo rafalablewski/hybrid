@@ -10,6 +10,8 @@ import {
   historyStream,
   upcomingPlanDays,
   weekChapters,
+  sessionBuckets,
+  weeklyRecap,
   HISTORY_VIEWS,
   WEEKDAY_LABEL_KEYS,
   localDayKey,
@@ -22,11 +24,12 @@ import {
   type SessionHeadline,
   type WeightUnit,
   type BodyweightLookup,
+  type StatRange,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
-// The three merged History × Calendar layouts (agenda / weeks / timeline)
+// The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
 // behind the History screen's view switcher. All grouping math lives in
 // @hybrid/core (engines/history-views.ts); these components only render.
 // Session cards use the "headline number" treatment: one large figure
@@ -307,6 +310,84 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             </div>
           </div>
         ),
+      )}
+    </div>
+  );
+}
+
+// ── TREND ────────────────────────────────────────────────────────────────────
+// The retired Statistics screen, folded in as History's fourth view. History
+// already owned "everything past this week"; a separate destination charting
+// the same sessions at a coarser grain was the same screen twice, so its range
+// toggle, session-count chart and window totals live here now. Same engines
+// (sessionBuckets / weeklyRecap), so no number changed on the way over.
+
+const TREND_RANGES: { id: StatRange; key: string }[] = [
+  { id: "week", key: "w.analyze.stats.week" },
+  { id: "month", key: "w.analyze.stats.month" },
+  { id: "year", key: "w.analyze.stats.year" },
+];
+
+export function TrendView({ ctx }: { ctx: ViewCtx }) {
+  const { t } = useLang();
+  const [range, setRange] = useState<StatRange>("week");
+  const buckets = useMemo(() => sessionBuckets(ctx.sessions, range), [ctx.sessions, range]);
+  const recap = useMemo(() => weeklyRecap(ctx.sessions, Date.now(), ctx.bw), [ctx.sessions, ctx.bw]);
+  const hasData = ctx.sessions.length > 0;
+  const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
+
+  const mini = (label: string, value: string) => (
+    <div style={{ ...card, flex: 1, padding: 14 }}>
+      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3 }}>
+        {TREND_RANGES.map((rg) => {
+          const on = range === rg.id;
+          return (
+            <button
+              key={rg.id}
+              onClick={() => setRange(rg.id)}
+              aria-pressed={on}
+              style={{
+                flex: 1, padding: "7px 0", borderRadius: 999, border: "none", cursor: "pointer",
+                fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase",
+                background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash"),
+              }}
+            >
+              {t(rg.key)}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.analyze.stats.sessions")}</span>
+          <span style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash") }}>{buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 14, gap: 6 }}>
+          {buckets.buckets.map((b, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: space.xs }}>
+              <div style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, background: i === buckets.peakIndex ? C("lime") : C("line") }} />
+              <span style={{ fontFamily: MONO, fontSize: 9, color: C("ash") }}>{b.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        {mini(t("w.analyze.stats.activeDays"), hasData ? String(buckets.activeDays) : "—")}
+        {mini(t("w.analyze.stats.distance"), hasData ? `${recap.distanceKm.toFixed(1)} km` : "—")}
+        {mini(t("w.analyze.stats.minutes"), hasData ? String(Math.round(recap.minutes)) : "—")}
+      </div>
+
+      {!hasData && (
+        <p style={{ fontSize: fs.body, color: C("ash"), textAlign: "center", margin: "6px 0 0", lineHeight: 1.5 }}>{t("w.analyze.stats.empty")}</p>
       )}
     </div>
   );

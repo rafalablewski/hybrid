@@ -868,7 +868,7 @@ export default function AuroraToday({
         units={units}
         bw={bw}
         showDeep={isAthlete}
-        onArchive={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))}
+        onArchive={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
         onDeep={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))}
       />
 

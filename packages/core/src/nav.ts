@@ -119,10 +119,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "sport", label: "Sport", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", group: "train", minPersona: "athlete" },
 
-  // Statistics + Analytics are MERGED onto Today as the "This week" verdict
-  // card; the two rows under it are the doors back to this depth. Promoted,
-  // not deleted — the routes, icons, labels and gates all stay live.
-  { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "today" },
+  // Statistics is folded into HISTORY as its "trend" view — History already
+  // owned everything past this week, and a second destination charting the same
+  // sessions at a coarser grain was the same screen twice. Analytics is merged
+  // onto Today as the "This week" verdict card. Promoted, not deleted — the
+  // routes, icons, labels and gates all stay live.
+  { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "history" },
   { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete", promotedTo: "today" },
   { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
