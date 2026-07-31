@@ -43,7 +43,6 @@ import { fs, space,
   READ_TREND_KEY,
   type PlacedRead,
   type ReadGate,
-  relativeTime,
   planSchedule,
   masthead,
   alsoTodayCopy,
@@ -845,7 +844,6 @@ export default function AuroraToday({
           dayMetrics={dayCheckin}
           daySessions={daySessions}
           recoveryDue={recoveryDue != null || readGateNow.wanted}
-          loggedAt={feelingAt}
           lastSessionEnd={lastSessionEnd}
           dayReads={dayReads}
           gate={readGateNow}
@@ -1144,7 +1142,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // own row) and the faces reopen once the gate does: four hours after the last
 // read, or six hours after a session that read was taken in the shadow of,
 // whichever is later. See core/readiness-reads.ts.
-function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, dayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessionEnd, dayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   /** The answer to THIS card's question, not a blend of the day's four. */
   feeling: ReadinessFeeling | null;
   /** The viewed day's stored metrics — which of the four are actually answered. */
@@ -1154,7 +1152,6 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
   /** True when the delayed recovery read on the last session has come due —
    *  the card leads with WHY it is asking again rather than repeating itself. */
   recoveryDue: boolean;
-  loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
   /** Every readiness answer given on the VIEWED day, placed in time. */
@@ -1308,41 +1305,54 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, loggedAt, 
         <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: ctxLow ? "var(--amber-text)" : C("ash") }}>{t(ctxNote)}</p>
       )}
 
-      {/* THE DAY AS A SEQUENCE. One read is a line; two or more is a story, and
-          the story is the point — the drop (or the climb) between an answer
-          given in the gym and one given hours later is what measures this
-          athlete's own recovery. The decisive read is marked, because it is the
-          one training is prescribed off; the rest are kept, not overwritten. */}
-      {dayReads.length > 1 ? (
-        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-          {dayReads.map((r, i) => {
-            const isLast = i === dayReads.length - 1;
-            const counts = r === decisive;
-            return (
-              <div key={r.at} style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: counts ? C("chalk") : C("ash"), opacity: counts ? 1 : 0.75 }}>
-                <span style={{ minWidth: 44 }}>{sessionClockTime(new Date(r.at).toISOString())}</span>
-                <span style={{ fontWeight: counts ? 700 : 400, color: counts ? `var(--${READINESS_FACE[r.feeling].accent}-text)` : "inherit" }}>
-                  {t(`w.recovery.readiness.${r.feeling}`)}
-                </span>
-                {r.hoursSinceSession != null && (
-                  <span style={{ fontSize: fs.micro, color: C("ash") }}>+{Math.round(r.hoursSinceSession)}h</span>
-                )}
-                {counts && !isLast && <span style={{ fontSize: fs.micro, color: "var(--lime-text)" }}>{t("w.home.today.readCounts")}</span>}
-              </div>
-            );
-          })}
+      {/* THE DAY'S RECORD — kept, not a footnote.
+          This used to be one grey line, "Logged Flat, 5h ago", which is what a
+          value looks like when the app can only hold one. A day now holds a
+          SEQUENCE, and the sequence is the interesting part: the drop (or the
+          climb) between an answer given in the gym and one given hours later is
+          what measures this athlete's own recovery. So the readings get a place
+          of their own — each with the face it was given as, the clock time it
+          was given at, and how long after training that was. The one training
+          is prescribed off is marked; none of them is ever overwritten. */}
+      {dayReads.length > 0 && (
+        <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+            {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 11 }}>
+            {dayReads.map((r) => {
+              const counts = dayReads.length > 1 && decisive != null && r.at === decisive.at;
+              const at = `var(--${READINESS_FACE[r.feeling].accent}-text)`;
+              return (
+                <div key={r.at} style={{ display: "flex", alignItems: "center", gap: 10, opacity: counts || dayReads.length === 1 ? 1 : 0.72 }}>
+                  <ReadinessFace feeling={r.feeling} size={20} />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>
+                    {sessionClockTime(new Date(r.at).toISOString())}
+                  </span>
+                  <span style={{ fontSize: fs.caption, fontWeight: 700, color: counts ? at : C("chalk") }}>
+                    {t(`w.recovery.readiness.${r.feeling}`)}
+                  </span>
+                  {/* How long after training it was given — the thing that makes
+                      two identical answers different measurements. Reads with no
+                      session behind them say so rather than showing a lag of 0. */}
+                  <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap" }}>
+                    {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
+                  </span>
+                  {counts && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)", whiteSpace: "nowrap" }}>
+                      {t("w.home.today.readCounts")}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
           {trend && (
-            <p style={{ margin: "4px 0 0", fontSize: fs.caption, lineHeight: 1.5, color: trend.trend === "sinking" ? "var(--amber-text)" : C("ash") }}>
+            <p style={{ margin: "11px 0 0", fontSize: fs.caption, lineHeight: 1.5, color: trend.trend === "sinking" ? "var(--amber-text)" : C("ash") }}>
               {t(READ_TREND_KEY[trend.trend])}
             </p>
           )}
         </div>
-      ) : (
-        shownFeeling && loggedAt != null && (
-          <div style={{ marginTop: 12, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-            {t("w.home.today.feelLogged")} <b style={{ color: C("chalk"), fontWeight: 700 }}>{t(`w.recovery.readiness.${shownFeeling}`)}</b>, {relativeTime(loggedAt)}
-          </div>
-        )
       )}
 
       {/* WHY THE FACES ARE HELD, and when they open. Never a bare disabled row:
