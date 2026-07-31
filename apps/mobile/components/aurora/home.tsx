@@ -92,6 +92,8 @@ import FetchError from "./fetch-error";
 import AuroraNutrition from "./nutrition";
 import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraWeekVerdict from "./week-verdict";
+import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -949,6 +951,43 @@ export default function AuroraHome() {
           />
         </View>
 
+        {/* ───── THIS WEEK — the verdict card. Sits directly under Readiness
+            because it is the same KIND of thing: a verdict with its working-out
+            shown. Replaces the Statistics and Analytics destinations on Today
+            (both are now promotedTo "today" in core nav.ts); the two rows under
+            it are the doors to everything past this week. ───── */}
+        <AuroraWeekVerdict
+          sessions={sessions}
+          units={units}
+          bw={bw}
+          showDeep={isAthlete}
+          onArchive={() => router.push("/history")}
+          onDeep={() => router.push("/analytics")}
+        />
+
+        {/* ───── ENDURANCE — sport lanes, directly under This week because the
+            card's KM column is the headline these rails break down: the total
+            and its per-sport detail now read as one thought instead of sitting
+            at opposite ends of the scroll. One full-bleed rail per logged
+            discipline carrying that sport's whole read (efforts / distance /
+            time, 8-week volume, pace trend, pace zones, last effort). NOT gated
+            on dayIsToday, unlike Fuel below: an eight-week volume chart is not a
+            property of the day you happen to be scrubbed to. Renders nothing
+            until there's endurance to show. Mirrors web
+            aurora/endurance-lanes.tsx. ───── */}
+        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
+
+        {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged
+            as `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES
+            deliberately excludes. It fed the week's sessions and hours and then
+            had nowhere to appear. Sits under Endurance because it is the same
+            question one step out: what else did you actually play. These sports
+            are TIMED, so a sport gets ONE tile rather than a rail — the block
+            spends its width on the NUMBER of sports, not the depth of each.
+            Renders nothing until a sport is logged. Mirrors web
+            aurora/other-sports.tsx. ───── */}
+        <AuroraOtherSports sessions={sessions} onOpen={() => router.push("/sport")} />
+
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
             it's the semantic premium signifier, not a decorative marker. ───── */}
@@ -961,28 +1000,20 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-            (coaches). Explore-standard section head — no marker dot. ───── */}
-        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.recoverMore")}</Text>
+            (coaches). No section head: "Recover & more" labelled a BUCKET, not
+            anything on the screen, and the Fuel widget already titles itself.
+            The 12 here plus Fuel's own 12 keeps the section break intact. ───── */}
+        <View style={{ marginTop: 12 }}>
+          {/* FUEL — the nutrition summary widget (one calendar-style stateful
+              surface: empty → refuel / on-track / over → goal-hit, with a
+              persistent quick-log rail). Real today only; nutrition targets are
+              always today's. State + macros come from @hybrid/core fuelToday() so
+              web matches. Tapping opens the same quick-add sheet the rows use. */}
+          {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
+          <View style={{ gap: 10, marginTop: 10 }}>
+            <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
+          </View>
         </View>
-        {/* FUEL — the nutrition summary widget (one calendar-style stateful
-            surface: empty → refuel / on-track / over → goal-hit, with a
-            persistent quick-log rail). Real today only; nutrition targets are
-            always today's. State + macros come from @hybrid/core fuelToday() so
-            web matches. Tapping opens the same quick-add sheet the rows use. */}
-        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-        <View style={{ gap: 10, marginTop: 10 }}>
-          <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
-        </View>
-
-        {/* ───── ENDURANCE — sport lanes, the last block on Today. One
-            full-bleed rail per logged discipline carrying that sport's whole
-            read (efforts / distance / time, 8-week volume, pace trend, pace
-            zones, last effort). NOT gated on dayIsToday, unlike Fuel above: an
-            eight-week volume chart is not a property of the day you happen to
-            be scrubbed to. Renders nothing until there's endurance to show.
-            Mirrors web aurora/endurance-lanes.tsx. ───── */}
-        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
 
         </Animated.View>
       </ScrollView>

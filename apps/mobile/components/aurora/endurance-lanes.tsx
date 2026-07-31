@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import {
-  enduranceLanes, orderLanes, nextLaneOrder, laneWeekTotals, zonePercents,
+  enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
@@ -13,8 +13,8 @@ import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS } from "./kit";
 
 /**
- * SPORT LANES — the Endurance block at the bottom of Today, the TWIN of
- * components/aurora/endurance-lanes.tsx on web.
+ * SPORT LANES — the Endurance block on Today, directly under the "This week"
+ * card, the TWIN of components/aurora/endurance-lanes.tsx on web.
  *
  * The hub moved out of More and onto Today, and inverted while it did: instead
  * of one discipline behind a picker, EVERY logged discipline gets a lane, and a
@@ -22,11 +22,21 @@ import { RADIUS } from "./kit";
  * distance / time, eight-week volume, pace trend, pace zones, last effort.
  *
  * Adding a metric widens a rail; it never lengthens the block. That is the only
- * reason the whole endurance read fits under Nutrition without Today growing a
- * second screen. Three lanes render, the rest sit behind the expander.
+ * reason the whole endurance read fits inline without Today growing a second
+ * screen — and why it can now sit high on the scroll, under the week it
+ * details, rather than being exiled to the foot of it. Three lanes render, the
+ * rest sit behind the expander.
  *
  * Every number comes from @hybrid/core endurance-lanes.ts — lane order, the
  * cap, the zone rounding, the "faster is up" rule — so web can't drift.
+ *
+ * The block used to OPEN with a cross-sport totals card (efforts / km / h for
+ * the week). It is gone: the "This week" card higher up Today already states
+ * the week, and two totals cards on one screen counting different populations
+ * under near-identical labels — "5 sessions, 3.2 h" over "3 efforts, 0.9 h" —
+ * is a misreading waiting to happen. The week's distance moved into that card
+ * as its own column; per-sport figures stay in the lanes, where the lane names
+ * the scope.
  */
 
 const ORDER_KEY: Record<LaneOrder, string> = {
@@ -57,12 +67,11 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
-  const week = laneWeekTotals(lanes);
 
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono action right. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
         <Pressable
           onPress={() => setOrder(nextLaneOrder(order))}
@@ -74,14 +83,6 @@ export default function AuroraEnduranceLanes({
             {t(ORDER_KEY[order])} ↓
           </Text>
         </Pressable>
-      </View>
-
-      {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed. */}
-      <View style={{ flexDirection: "row", marginHorizontal: 2, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
-        <Cell first label={t("endurance.efforts")} value={String(week.efforts)} />
-        <Cell label="KM" value={String(week.distanceKm)} />
-        <Cell label="H" value={String(Math.round(week.minutes / 6) / 10)} />
       </View>
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
@@ -161,17 +162,6 @@ function Tile({ w, label, children }: { w: number; label: string; children: Reac
     >
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       {children}
-    </View>
-  );
-}
-
-/** One cell of the cross-sport totals strip. */
-function Cell({ label, value, first }: { label: string; value: string; first?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ flex: 1, paddingVertical: 10, paddingLeft: first ? 0 : 12, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 3, color: C.chalk }}>{value}</Text>
     </View>
   );
 }

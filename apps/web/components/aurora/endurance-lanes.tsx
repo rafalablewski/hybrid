@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  enduranceLanes, orderLanes, nextLaneOrder, laneWeekTotals, zonePercents,
+  enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
@@ -11,8 +11,8 @@ import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 /**
- * SPORT LANES — the Endurance block at the bottom of Today (web), the TWIN of
- * components/aurora/endurance-lanes.tsx on mobile.
+ * SPORT LANES — the Endurance block on Today (web), directly under the "This
+ * week" card, the TWIN of components/aurora/endurance-lanes.tsx on mobile.
  *
  * The hub moved out of More and onto Today, and inverted while it did: instead
  * of one discipline behind a picker, EVERY logged discipline gets a lane, and a
@@ -20,13 +20,23 @@ import { useLang } from "@/lib/i18n";
  * distance / time, eight-week volume, pace trend, pace zones, last effort.
  *
  * Adding a metric widens a rail; it never lengthens the block. That is the only
- * reason the whole endurance read fits under Nutrition without Today growing a
- * second screen. Three lanes render, the rest sit behind the expander.
+ * reason the whole endurance read fits inline without Today growing a second
+ * screen — and why it can now sit high on the scroll, under the week it
+ * details, rather than being exiled to the foot of it. Three lanes render, the
+ * rest sit behind the expander.
  *
  * Every number comes from @hybrid/core endurance-lanes.ts — lane order, the
  * cap, the zone rounding, the "faster is up" rule — so mobile can't drift. The
  * charts are hand-rolled SVG rather than recharts: these are 40px sparklines,
  * and Today should not pull a chart library into its first paint.
+ *
+ * The block used to OPEN with a cross-sport totals card (efforts / km / h for
+ * the week). It is gone: the "This week" card higher up Today already states
+ * the week, and two totals cards on one screen counting different populations
+ * under near-identical labels — "5 sessions, 3.2 h" over "3 efforts, 0.9 h" —
+ * is a misreading waiting to happen. The week's distance moved into that card
+ * as its own column; per-sport figures stay in the lanes, where the lane names
+ * the scope.
  */
 
 const C = (v: string) => `var(--color-${v})`;
@@ -257,18 +267,10 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
-  const week = laneWeekTotals(lanes);
-
-  const cell = (label: string, value: string, first: boolean) => (
-    <div style={{ flex: 1, padding: first ? "10px 0" : "10px 0 10px 12px", borderLeft: first ? undefined : `1px solid ${C("line")}` }}>
-      <div style={kicker}>{label}</div>
-      <div style={{ ...num, fontSize: fs.heading, fontWeight: 500, letterSpacing: "-.02em", marginTop: 3, color: C("chalk") }}>{value}</div>
-    </div>
-  );
 
   return (
     <div style={{ marginTop: 26 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
         <button
           onClick={() => setOrder(nextLaneOrder(order))}
@@ -281,14 +283,6 @@ export default function AuroraEnduranceLanes({
         >
           {t(ORDER_KEY[order])} ↓
         </button>
-      </div>
-
-      {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed. */}
-      <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, borderBottom: `1px solid ${C("line")}`, margin: "0 2px" }}>
-        {cell(t("endurance.efforts"), String(week.efforts), true)}
-        {cell("KM", String(week.distanceKm), false)}
-        {cell("H", String(Math.round(week.minutes / 6) / 10), false)}
       </div>
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}

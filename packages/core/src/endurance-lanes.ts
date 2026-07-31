@@ -179,28 +179,12 @@ export function nextLaneOrder(order: LaneOrder): LaneOrder {
   return LANE_ORDERS[(i + 1) % LANE_ORDERS.length]!;
 }
 
-export interface LaneWeekTotals {
-  efforts: number;
-  distanceKm: number;
-  minutes: number;
-}
-
-/**
- * This week across EVERY lane — the one number a stack of lanes can't give you,
- * and the reason the block opens with a totals strip. A hybrid athlete's week is
- * the sum of their sports, not their biggest one.
- */
-export function laneWeekTotals(lanes: EnduranceLane[]): LaneWeekTotals {
-  let efforts = 0;
-  let distanceKm = 0;
-  let minutes = 0;
-  for (const l of lanes) {
-    efforts += l.thisWeek.efforts;
-    distanceKm += l.thisWeek.km;
-    minutes += l.thisWeek.minutes;
-  }
-  return { efforts, distanceKm: Math.round(distanceKm * 10) / 10, minutes: Math.round(minutes) };
-}
+// RETIRED: laneWeekTotals() summed this week across every lane, for the totals
+// strip the block used to open with. That strip is gone — the "This week" card
+// higher up Today states the week for ALL training, and a second cross-sport
+// total beside it counted a different population under a near-identical label.
+// The week's distance now rides in that card (week-verdict.ts); per-sport
+// figures stay on each lane, where the lane names the scope.
 
 export interface ZonePercents {
   easy: number;

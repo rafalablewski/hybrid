@@ -7,7 +7,7 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
-import { ViewSwitcher, AgendaView, WeeksView, TimelineView, type ViewCtx } from "./history-views";
+import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
 import FetchError from "./fetch-error";
 import type { ComponentType } from "react";
 
@@ -17,6 +17,7 @@ const VIEW_COMPONENTS: Record<HistoryViewId, ComponentType<{ ctx: ViewCtx }>> = 
   agenda: AgendaView,
   weeks: WeeksView,
   timeline: TimelineView,
+  trend: TrendView,
 };
 
 const VIEW_KEY = "hybrid.historyView";
