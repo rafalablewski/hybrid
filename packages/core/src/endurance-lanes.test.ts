@@ -3,7 +3,6 @@ import {
   enduranceLanes,
   orderLanes,
   nextLaneOrder,
-  laneWeekTotals,
   zonePercents,
   paceDelta,
   formatPaceDelta,
@@ -135,18 +134,6 @@ describe("orderLanes", () => {
 
   it("caps at three lanes before the expander", () => {
     expect(LANE_CAP).toBe(3);
-  });
-});
-
-describe("laneWeekTotals", () => {
-  it("sums this week across every sport", () => {
-    const lanes = enduranceLanes(SESSIONS, { now: NOW });
-    // current week: 8 km run, 42 km ride, 1.8 km swim
-    expect(laneWeekTotals(lanes)).toEqual({ efforts: 3, distanceKm: 51.8, minutes: 160 });
-  });
-
-  it("is zero for no lanes", () => {
-    expect(laneWeekTotals([])).toEqual({ efforts: 0, distanceKm: 0, minutes: 0 });
   });
 });
 

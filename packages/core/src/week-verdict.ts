@@ -4,8 +4,16 @@
  * Statistics and Analytics used to be two destinations answering overlapping
  * questions. This replaces the pair on Today with ONE read: a sentence naming
  * the metric that moved, its four-week baseline as the working-out, and the
- * three figures the sentence is drawn from. The deep screens stay reachable —
- * this is the glance, not the archive.
+ * figures the sentence is drawn from. The deep screens stay reachable — this is
+ * the glance, not the archive.
+ *
+ * It is also the ONLY weekly-totals card on Today. The Endurance block used to
+ * open with a cross-sport strip of its own — efforts / km / h for the SAME week
+ * — which put two "this week" cards on one screen counting different
+ * populations under near-identical labels: "5 sessions, 3.2 h" above "3 efforts,
+ * 0.9 h", with nothing on either saying which was which. That strip is gone and
+ * its distance moved here, so the week is stated once. Per-sport figures still
+ * live inside each lane, where the scope is named by the lane itself.
  *
  * Pure, so web and mobile say the SAME sentence about the same week. Nothing
  * here formats: the caller renders `value` / `baseline` through its own unit
@@ -28,8 +36,9 @@ import { deviceTrueSessions } from "./device-truth";
 
 const WEEK = 7 * 86_400_000;
 
-/** The three figures the card carries, in render order. */
-export const VERDICT_METRICS = ["tonnage", "sessions", "hours"] as const;
+/** The figures the card can carry, in render order. Distance only appears for
+ *  an athlete who actually logs endurance — see `weekVerdict`. */
+export const VERDICT_METRICS = ["tonnage", "sessions", "hours", "distance"] as const;
 export type VerdictMetric = (typeof VERDICT_METRICS)[number];
 
 export type VerdictDirection = "up" | "down" | "flat";
@@ -42,14 +51,19 @@ export const MIN_BASELINE_WEEKS = 2;
 
 export interface VerdictFigure {
   metric: VerdictMetric;
-  /** Canonical unit: tonnage = kg, sessions = count, hours = MINUTES. */
+  /** Canonical unit: tonnage = kg, sessions = count, hours = MINUTES,
+   *  distance = KM. */
   value: number;
   /** Four-week average in the same unit (0 when there is no history). */
   baseline: number;
 }
 
 export interface WeekVerdict {
-  /** Always three, always in VERDICT_METRICS order — the card's bottom half. */
+  /** The card's bottom half, in VERDICT_METRICS order. Tonnage, session count
+   *  and training time are always present; DISTANCE joins them only when the
+   *  athlete has endurance in the window or in the baseline, so a pure lifter
+   *  never carries a column of zeroes and a runner never loses their headline
+   *  number. */
   figures: VerdictFigure[];
   /** The metric the sentence is about; null when flat or cold. */
   metric: VerdictMetric | null;
@@ -66,25 +80,31 @@ interface Totals {
   tonnage: number;
   sessions: number;
   hours: number; // minutes
+  distance: number; // km
 }
 
 const ms = (iso: string) => new Date(iso).getTime();
 
-/** Sum the three metrics over [from, to). Device-measured sessions win, the
- *  same rule weeklyRecap follows, so a watch-recorded workout isn't counted
- *  twice or from the weaker source. */
+/** Sum every metric over [from, to). Device-measured sessions win, the same
+ *  rule weeklyRecap follows, so a watch-recorded workout isn't counted twice or
+ *  from the weaker source — and cardio distance comes from the same block field
+ *  the endurance lanes read, so the two can't disagree about a kilometre. */
 function totalsIn(sessions: LoggedSession[], from: number, to: number, bw?: BodyweightInput): Totals {
   let tonnage = 0;
   let count = 0;
   let minutes = 0;
+  let distance = 0;
   for (const s of sessions) {
     const t = ms(s.startedAt);
     if (!Number.isFinite(t) || t < from || t >= to) continue;
     count += 1;
     tonnage += sessionVolume(s.blocks, false, bwAt(bw, s.startedAt));
     if (s.completedAt) minutes += Math.max(0, Math.round((ms(s.completedAt) - t) / 60000));
+    for (const b of s.blocks) {
+      if (b.kind === "cardio" && b.distance && b.distance > 0) distance += b.distance;
+    }
   }
-  return { tonnage, sessions: count, hours: minutes };
+  return { tonnage, sessions: count, hours: minutes, distance };
 }
 
 /**
@@ -102,11 +122,11 @@ export function weekVerdict(sessions: LoggedSession[], now = Date.now(), bw?: Bo
   const baselineWeeks = priors.filter((p) => p.sessions > 0).length;
 
   const mean = (pick: (t: Totals) => number) => priors.reduce((n, p) => n + pick(p), 0) / priors.length;
-  const figures: VerdictFigure[] = VERDICT_METRICS.map((metric) => ({
-    metric,
-    value: current[metric],
-    baseline: mean((t) => t[metric]),
-  }));
+  const figures: VerdictFigure[] = VERDICT_METRICS
+    .map((metric) => ({ metric, value: current[metric], baseline: mean((t) => t[metric]) }))
+    // A pure lifter shouldn't carry an empty distance column; a runner who took
+    // this week off should still see theirs, which is why the baseline counts.
+    .filter((f) => f.metric !== "distance" || f.value > 0 || f.baseline > 0);
 
   const cold = baselineWeeks < MIN_BASELINE_WEEKS;
   if (cold) return { figures, metric: null, direction: "flat", deltaPct: 0, cold: true, baselineWeeks };
@@ -134,11 +154,17 @@ export function weekVerdict(sessions: LoggedSession[], now = Date.now(), bw?: Bo
 
 /** i18n key for the metric's name INSIDE the sentence ("your tonnage is …"). */
 export const verdictMetricKey = (m: VerdictMetric) =>
-  ({ tonnage: "w.home.week.mTonnage", sessions: "w.home.week.mSessions", hours: "w.home.week.mHours" })[m];
+  ({
+    tonnage: "w.home.week.mTonnage", sessions: "w.home.week.mSessions",
+    hours: "w.home.week.mHours", distance: "w.home.week.mDistance",
+  })[m];
 
 /** i18n key for the metric's column label under the hairline. */
 export const verdictLabelKey = (m: VerdictMetric) =>
-  ({ tonnage: "w.home.week.lTonnage", sessions: "w.home.week.lSessions", hours: "w.home.week.lHours" })[m];
+  ({
+    tonnage: "w.home.week.lTonnage", sessions: "w.home.week.lSessions",
+    hours: "w.home.week.lHours", distance: "w.home.week.lDistance",
+  })[m];
 
 /** i18n key for the sentence itself, given the verdict's state. */
 export function verdictLeadKey(v: WeekVerdict): string {

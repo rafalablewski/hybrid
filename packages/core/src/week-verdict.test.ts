@@ -19,6 +19,13 @@ function s(daysAgo: number, kg: number, minutes = 60): LoggedSession {
   } as LoggedSession;
 }
 
+/** One cardio session `daysAgo` back covering `km`. */
+const run = (daysAgo: number, km: number): LoggedSession => ({
+  ...s(daysAgo, 0),
+  id: `r${daysAgo}`,
+  blocks: [{ kind: "cardio", name: "Run", discipline: "running", minutes: 30, distance: km } as SessionBlock],
+});
+
 /** Four prior weeks each carrying one session of `kg`, so the baseline is `kg`. */
 const fourFlatWeeks = (kg: number) => [s(9, kg), s(16, kg), s(23, kg), s(30, kg)];
 
@@ -28,7 +35,8 @@ describe("weekVerdict", () => {
     expect(v.cold).toBe(true);
     expect(v.metric).toBeNull();
     expect(v.direction).toBe("flat");
-    expect(v.figures.map((f) => f.metric)).toEqual([...VERDICT_METRICS]);
+    // No endurance anywhere → no distance column for a pure lifter.
+    expect(v.figures.map((f) => f.metric)).toEqual(["tonnage", "sessions", "hours"]);
     expect(v.figures.every((f) => f.value === 0 && f.baseline === 0)).toBe(true);
   });
 
@@ -103,6 +111,39 @@ describe("weekVerdict", () => {
     const v = weekVerdict([s(2, 5000), s(3, 5000), s(4, 5000), cardio(9), cardio(16)], NOW);
     expect(Number.isFinite(v.deltaPct)).toBe(true);
     expect(v.metric).toBe("sessions");
+  });
+
+  it("only carries a distance column for an athlete who logs endurance", () => {
+    const lifter = weekVerdict([s(2, 10_000), ...fourFlatWeeks(10_000)], NOW);
+    expect(lifter.figures.some((f) => f.metric === "distance")).toBe(false);
+
+    const hybrid = weekVerdict([s(2, 10_000), run(3, 8), ...fourFlatWeeks(10_000)], NOW);
+    const dist = hybrid.figures.find((f) => f.metric === "distance");
+    expect(dist?.value).toBe(8);
+    // Order is VERDICT_METRICS order — distance sits last.
+    expect(hybrid.figures.map((f) => f.metric)).toEqual([...VERDICT_METRICS]);
+  });
+
+  it("lets distance carry the verdict when it is the metric that moved", () => {
+    // Same session count, same time on feet, 8 km instead of the usual 20 —
+    // only the distance moved, so only distance has a sentence to offer.
+    const v = weekVerdict([run(2, 8), run(9, 20), run(16, 20), run(23, 20), run(30, 20)], NOW);
+    expect(v.metric).toBe("distance");
+    expect(v.direction).toBe("down");
+    expect(v.deltaPct).toBe(-60);
+  });
+
+  it("keeps the distance column for a runner who took this week off", () => {
+    // Ran the four prior weeks, nothing this week — the column has to survive,
+    // or the week they most need to see is the week the number disappears.
+    const v = weekVerdict([run(9, 20), run(16, 20), run(23, 20), run(30, 20)], NOW);
+    const dist = v.figures.find((f) => f.metric === "distance");
+    expect(dist?.value).toBe(0);
+    expect(dist?.baseline).toBe(20);
+    // Sessions and distance are BOTH −100%; VERDICT_METRICS order breaks the
+    // tie, and "your session count" is the truer sentence for a week off.
+    expect(v.metric).toBe("sessions");
+    expect(v.deltaPct).toBe(-100);
   });
 
   it("is stable across the window edges — a session exactly a week old is prior", () => {

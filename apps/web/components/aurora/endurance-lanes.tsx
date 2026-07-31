@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  enduranceLanes, orderLanes, nextLaneOrder, laneWeekTotals, zonePercents,
+  enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
@@ -27,6 +27,14 @@ import { useLang } from "@/lib/i18n";
  * cap, the zone rounding, the "faster is up" rule — so mobile can't drift. The
  * charts are hand-rolled SVG rather than recharts: these are 40px sparklines,
  * and Today should not pull a chart library into its first paint.
+ *
+ * The block used to OPEN with a cross-sport totals card (efforts / km / h for
+ * the week). It is gone: the "This week" card higher up Today already states
+ * the week, and two totals cards on one screen counting different populations
+ * under near-identical labels — "5 sessions, 3.2 h" over "3 efforts, 0.9 h" —
+ * is a misreading waiting to happen. The week's distance moved into that card
+ * as its own column; per-sport figures stay in the lanes, where the lane names
+ * the scope.
  */
 
 const C = (v: string) => `var(--color-${v})`;
@@ -257,14 +265,6 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
-  const week = laneWeekTotals(lanes);
-
-  const cell = (label: string, value: string, first: boolean) => (
-    <div style={{ flex: 1, paddingLeft: first ? undefined : 12, borderLeft: first ? undefined : `1px solid ${C("line")}` }}>
-      <div style={kicker}>{label}</div>
-      <div style={{ ...num, fontSize: fs.heading, fontWeight: 500, letterSpacing: "-.02em", marginTop: 3, color: C("chalk") }}>{value}</div>
-    </div>
-  );
 
   return (
     <div style={{ marginTop: 26 }}>
@@ -281,22 +281,6 @@ export default function AuroraEnduranceLanes({
         >
           {t(ORDER_KEY[order])} ↓
         </button>
-      </div>
-
-      {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed — on the same
-          card surface Readiness uses (ink2, hairline, radius 22) rather than a
-          bare hairline strip, which was the one un-carded block on Today. */}
-      <div
-        style={{
-          display: "flex",
-          background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22,
-          padding: "15px 16px",
-        }}
-      >
-        {cell(t("endurance.efforts"), String(week.efforts), true)}
-        {cell("KM", String(week.distanceKm), false)}
-        {cell("H", String(Math.round(week.minutes / 6) / 10), false)}
       </div>
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}

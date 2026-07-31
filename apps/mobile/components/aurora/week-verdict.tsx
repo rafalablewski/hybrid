@@ -15,8 +15,15 @@ import { fs, F, serifIf } from "../../lib/ui";
  * Statistics and Analytics were two destinations answering the same question at
  * different depths. This is what replaced them on Today: a SENTENCE naming the
  * metric that moved, the four-week baseline as its working-out, and — under a
- * hairline — the three figures the sentence was drawn from. Verdict on top,
- * receipts beneath, the same shape the Fuel card uses.
+ * hairline — the figures the sentence was drawn from. Verdict on top, receipts
+ * beneath, the same shape the Fuel card uses.
+ *
+ * It is the ONLY weekly-totals card on Today: the Endurance block's own
+ * cross-sport strip (efforts / km / h for the same week) was retired into this
+ * one, because two "this week" cards counting different populations under
+ * near-identical labels is a misreading waiting to happen. Distance therefore
+ * appears here as a fourth column — but only for an athlete who logs endurance,
+ * so a pure lifter never carries an empty one.
  *
  * The named metric leads the figure row and carries the delta's colour, so the
  * claim and the number are visibly the same thing rather than two assertions
@@ -100,7 +107,8 @@ export default function AuroraWeekVerdict({
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
       : metric === "hours" ? String(Math.round(value / 6) / 10)
-        : String(Math.round(value));
+        : metric === "distance" ? String(Math.round(value * 10) / 10)
+          : String(Math.round(value));
 
   const tone = v.direction === "down" ? C.red : v.direction === "up" ? C.lime : C.ash;
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
@@ -111,7 +119,13 @@ export default function AuroraWeekVerdict({
         .replace("{b}", fmt(named.metric, named.baseline))
     : t(verdictWhyKey(v));
 
-  // Named metric first — the sentence's subject shouldn't be the third column.
+  // Four columns only ever appear for a hybrid athlete (tonnage + distance);
+  // at that width the figures need a size down to stay on one line.
+  const wide = v.figures.length > 3;
+  const figSize = wide ? 17 : fs.heading;
+  const gutter = wide ? 9 : 12;
+
+  // Named metric first — the sentence's subject shouldn't be the last column.
   const ordered = v.metric
     ? [...v.figures].sort((a, b) => (a.metric === v.metric ? -1 : b.metric === v.metric ? 1 : 0))
     : v.figures;
@@ -150,12 +164,12 @@ export default function AuroraWeekVerdict({
             return (
               <View
                 key={f.metric}
-                style={{ flex: 1, paddingLeft: i === 0 ? 0 : 12, borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: C.line }}
+                style={{ flex: 1, paddingLeft: i === 0 ? 0 : gutter, borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: C.line }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: isNamed ? txt(C, tone) : C.ash }}>
                   {t(verdictLabelKey(f.metric))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 3, color: isNamed ? txt(C, tone) : C.chalk }}>
+                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.4, marginTop: 3, color: isNamed ? txt(C, tone) : C.chalk }}>
                   {fmt(f.metric, f.value)}
                 </Text>
               </View>

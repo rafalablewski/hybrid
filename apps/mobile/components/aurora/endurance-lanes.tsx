@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import {
-  enduranceLanes, orderLanes, nextLaneOrder, laneWeekTotals, zonePercents,
+  enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
@@ -27,6 +27,14 @@ import { RADIUS } from "./kit";
  *
  * Every number comes from @hybrid/core endurance-lanes.ts — lane order, the
  * cap, the zone rounding, the "faster is up" rule — so web can't drift.
+ *
+ * The block used to OPEN with a cross-sport totals card (efforts / km / h for
+ * the week). It is gone: the "This week" card higher up Today already states
+ * the week, and two totals cards on one screen counting different populations
+ * under near-identical labels — "5 sessions, 3.2 h" over "3 efforts, 0.9 h" —
+ * is a misreading waiting to happen. The week's distance moved into that card
+ * as its own column; per-sport figures stay in the lanes, where the lane names
+ * the scope.
  */
 
 const ORDER_KEY: Record<LaneOrder, string> = {
@@ -57,7 +65,6 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
-  const week = laneWeekTotals(lanes);
 
   return (
     <View style={{ marginTop: 24 }}>
@@ -74,22 +81,6 @@ export default function AuroraEnduranceLanes({
             {t(ORDER_KEY[order])} ↓
           </Text>
         </Pressable>
-      </View>
-
-      {/* The one number a stack of lanes can't give you: the week across every
-          sport. Same three figures the hub opens with, summed — on the same
-          card surface Readiness uses (ink2, hairline, radius 22) rather than a
-          bare hairline strip, which was the one un-carded block on Today. */}
-      <View
-        style={{
-          flexDirection: "row",
-          backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22,
-          paddingHorizontal: 16, paddingVertical: 15,
-        }}
-      >
-        <Cell first label={t("endurance.efforts")} value={String(week.efforts)} />
-        <Cell label="KM" value={String(week.distanceKm)} />
-        <Cell label="H" value={String(Math.round(week.minutes / 6) / 10)} />
       </View>
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
@@ -169,17 +160,6 @@ function Tile({ w, label, children }: { w: number; label: string; children: Reac
     >
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       {children}
-    </View>
-  );
-}
-
-/** One cell of the cross-sport totals card. */
-function Cell({ label, value, first }: { label: string; value: string; first?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ flex: 1, paddingLeft: first ? 0 : 12, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 3, color: C.chalk }}>{value}</Text>
     </View>
   );
 }
