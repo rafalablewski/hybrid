@@ -119,7 +119,7 @@ export default function AuroraRunTrack() {
 
       <APill label={saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")} onPress={save} disabled={saving} />
 
-      <Pressable onPress={() => router.push("/(tabs)/endurance")} style={{ paddingVertical: 16, alignItems: "center" }}>
+      <Pressable onPress={() => router.push("/endurance")} style={{ paddingVertical: 16, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.seeAnalytics")}</Text>
       </Pressable>
       <View style={{ height: 16 }} />

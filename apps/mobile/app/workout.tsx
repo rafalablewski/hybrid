@@ -2051,7 +2051,7 @@ function Summary({
                 glyph="→"
                 label={t("summary.orbAnalysis")}
                 a11y={t("summary.seeAnalysis")}
-                onPress={() => router.replace("/(tabs)/history")}
+                onPress={() => router.replace("/history")}
               />
             </View>
             {routineOpen && <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} startOpen />}

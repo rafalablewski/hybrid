@@ -238,3 +238,14 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   coaches: "store",
   myprofile: "user-circle",
 };
+
+/**
+ * The Train glyph — a dumbbell, drawn in the same 72×72 stroke box as the kit
+ * icons so it carries identical optical weight beside village/globe/grid in the
+ * bottom nav.
+ *
+ * Deliberately NOT a member of `AuroraIconName`: that union is mirrored one-to-
+ * one by the mobile PNG map (apps/mobile/assets/icons/*.png), and this glyph is
+ * rendered inline as a vector by both nav components, so it needs no asset.
+ */
+export const AURORA_TRAIN_GLYPH = "M12 27v18M21 21v30M51 21v30M60 27v18M21 36h30";

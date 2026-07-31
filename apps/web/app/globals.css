@@ -324,6 +324,88 @@ html {
 }
 [data-template="aurora"] .cmd-hub { border-radius: 34px; }
 
+/* ---- AURORA bottom-nav glass -------------------------------------------
+   The ONE Liquid Glass surface in Aurora (the cards above are deliberately
+   solid). Liquid Glass is a nearly CLEAR body whose identity lives at the rim,
+   so this material is a light film under a modest blur, plus three edge layers:
+     ::before  a specular arc — bright at the top-left, gone by 40% around
+     ::after   a refraction band — the last few px sample a magnified, saturated
+               backdrop, so content visibly BENDS at the edge
+     inset lip the dark bottom edge that makes glass read as thick, not printed
+   The previous bar was a 40% ink film under blur(24): the frosted-glass recipe
+   from iOS 7-18, opaque enough that nothing behind it survived, so the edge had
+   nothing left to bend. Numbers live in AURORA_NAV_MATERIAL (@hybrid/core) and
+   are shared with the mobile fallback bar so the clients cannot drift. */
+.aurora-navglass { --nav-lip: rgba(0, 0, 0, 0.42); }
+[data-theme="light"] .aurora-navglass { --nav-lip: rgba(20, 30, 15, 0.2); }
+
+.aurora-navglass {
+  position: relative;
+  background: rgba(var(--glass-rgb), 0.06);
+  -webkit-backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
+  backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
+  box-shadow:
+    0 14px 34px -8px rgba(0, 0, 0, 0.5),
+    0 3px 8px -2px rgba(0, 0, 0, 0.32),
+    inset 0 1px 1px rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 var(--nav-lip);
+}
+/* On a light ground the film needs more body to stay legible. */
+[data-theme="light"] .aurora-navglass {
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 14px 32px -10px rgba(20, 30, 15, 0.28),
+    0 3px 8px -2px rgba(20, 30, 15, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 var(--nav-lip);
+}
+
+.aurora-navglass::before,
+.aurora-navglass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+/* the specular arc */
+.aurora-navglass::before {
+  padding: 1.2px;
+  background: conic-gradient(
+    from 210deg,
+    var(--rim-hi) 0deg,
+    rgba(var(--glass-rgb), 0.16) 46deg,
+    transparent 130deg,
+    transparent 250deg,
+    rgba(var(--glass-rgb), 0.16) 316deg,
+    var(--rim-hi) 360deg
+  );
+}
+/* the refraction band */
+.aurora-navglass::after {
+  padding: 9px;
+  -webkit-backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
+  backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
+  transform: scale(1.055);
+}
+/* Reduced transparency and no-backdrop-filter both fall back to a solid bar:
+   nav must never render as an invisible surface. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .aurora-navglass { background: rgba(var(--glass-base), 0.94); }
+  .aurora-navglass::after { display: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .aurora-navglass {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(var(--glass-base), 0.97) !important;
+  }
+  .aurora-navglass::after { display: none !important; }
+}
+
 /* Admin data tables → stacked cards on phones (≤640px). Each row becomes a
    bordered card and every cell turns into a label/value line (the label comes
    from the cell's data-label), so the wide operator tables stop forcing a
