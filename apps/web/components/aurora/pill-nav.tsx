@@ -2,7 +2,21 @@
 
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fs, space, groupedNavWithLocks, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
+import {
+  fs,
+  space,
+  groupedNavWithLocks,
+  sanitizePersonaAccess,
+  AURORA_NAV_ICONS,
+  AURORA_NAV_TABS,
+  AURORA_NAV_GEOMETRY,
+  AURORA_NAV_MATERIAL,
+  AURORA_TRAIN_GLYPH,
+  formatSessionElapsed,
+  FUNNEL,
+  type AuroraIconName,
+} from "@hybrid/core";
+import { loadWorkoutDraft, type WorkoutDraft } from "@/lib/workout-draft";
 import { usePersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useFlags } from "@/lib/use-flags";
@@ -13,40 +27,39 @@ import { useDialog } from "@/lib/use-dialog";
 import { AuroraIcon } from "./icons";
 
 /**
- * AURORA pill nav (web) — the floating bottom bar in the iOS 26 SwiftUI
- * TabView anatomy, the web twin of the mobile Aurora bar: the four side tabs
- * (icon + label) live inside a Liquid Glass capsule and Train floats BESIDE it
- * as a detached circular action (Apple's split tab bar — the tab group + the
- * standalone accessory), replacing the old centre FAB that punched through the
- * bar. On web it COEXISTS with the left sidebar (the sidebar is the full nav;
- * this is quick-access to the five funnel destinations). Self-gates to Aurora
- * (renders null in Classic). Glyphs are the uploaded design-kit line icons
- * only. "More" opens a sheet with the full persona-filtered nav.
+ * AURORA pill nav (web) — the floating bottom bar, the web twin of the mobile
+ * Aurora bar. FIVE tabs (icon + label) inside a single Liquid Glass capsule,
+ * with a session accessory riding above it when a workout is in progress.
+ *
+ * Anatomy follows Apple's tab-bar guidance instead of approximating it. Two
+ * corrections from the previous build, both recorded in @hybrid/core's
+ * AURORA_NAV_TABS:
+ *  - Tab bars carry NAVIGATION; "avoid placing screen-specific actions in the
+ *    tab bar". Train is a destination (it opens the Train launcher, which is
+ *    what the old circle did too), so it is simply a tab.
+ *  - A circle DETACHED beside an iOS 26 tab bar is the SEARCH role — it morphs
+ *    into a search field on tap. The old lime Train circle sat in that slot and
+ *    read as search to anyone fluent in the platform. The slot is now unused
+ *    and stays free for real search.
+ * Persistent session state lives in the accessory above the bar (the system's
+ * mini-player slot), never as a tab.
+ *
+ * On web it COEXISTS with the left sidebar (the sidebar is the full nav; this
+ * is quick-access to the funnel destinations). Self-gates to Aurora (renders
+ * null in Classic). Glyphs are the design-kit line icons, plus the shared
+ * inline dumbbell for Train. "More" opens a sheet with the full persona-
+ * filtered nav.
  */
-// PRIMARY tabs sit to the LEFT inside the capsule; More · Profile sit to the
-// right. The bar reads Today · Explore · More · Profile — [Train]. Explore
-// opens the social/discovery surface (the Feed screen); Profile returns to the
-// bar (it also lives in the Today header). Plans/History/Cockpit stay
-// reachable from the More sheet.
-const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
-  { id: "today", icon: "village", label: "Today" },
-  { id: "explore", icon: "globe", label: "Explore" },
-];
+// The bar reads Today, Explore, Train, More, Profile — five, which is Apple's
+// ceiling for iPhone. Explore opens the social/discovery surface (the Feed);
+// Profile also lives in the Today header. Plans/History/Cockpit stay reachable
+// from the More sheet.
+const TABS = AURORA_NAV_TABS;
 
-// iOS 26 tab-bar geometry (matching the mobile bar): each slot is icon +
-// label, the selection lens is a capsule covering both, and the detached Train
-// circle matches the bar's full height.
-const LENS_W = 60;
-const SLOT_H = 46;
-const TRAIN_D = 58;
-// MINI (small) geometry — once the bar has shrunk on scroll it goes ICON-ONLY:
-// the labels collapse away and every slot tightens to the glyph, exactly like
-// the native iOS 26 minimized tab bar. Label row height (10px glyph line + the
-// 2px gap under the icon) is what animates to 0.
-const MINI_LENS_W = 44;
-const MINI_SLOT_H = 34;
-const MINI_TRAIN_D = 46;
-const LABEL_H = 14;
+// Geometry + material are shared with mobile via @hybrid/core so the two
+// clients cannot drift (they previously hard-coded their own copies).
+const { slotH: SLOT_H, lensW: LENS_W, padV: PAD_V, padH: PAD_H, miniSlotH: MINI_SLOT_H, miniLensW: MINI_LENS_W, labelH: LABEL_H, accessoryGap: ACC_GAP } = AURORA_NAV_GEOMETRY;
+const M = AURORA_NAV_MATERIAL;
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -62,21 +75,24 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const closeMore = () => { setMoreOpen(false); setQuery(""); };
   const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
 
-  // Sliding selection indicator (the iOS 26 glass lens): a single translucent
-  // highlight that SPRINGS to the active flat slot and STRETCHES mid-travel
-  // (scaled by travel DISTANCE, like Instagram's blob), instead of a static
-  // per-tab background. barRef is the capsule (the offset parent); flatRefs
-  // holds the four flat buttons; wrapRef is the whole split bar (capsule +
-  // Train circle) for the shrink-on-scroll. The detached Train circle is
-  // excluded (it has its own glow) — while Train is active the indicator FADES
-  // OUT IN PLACE but stays mounted, so re-entering a side tab travels/fades
-  // instead of popping.
+  // Sliding selection indicator (the glass lens): a single translucent highlight
+  // that SPRINGS to the active slot and STRETCHES mid-travel (scaled by travel
+  // DISTANCE) instead of a static per-tab background. barRef is the capsule (the
+  // offset parent); flatRefs holds the five tab buttons; wrapRef is the whole
+  // stack (accessory + capsule) for the shrink-on-scroll. All five destinations
+  // are slots now, so the lens has no hidden state — it only fades out on a
+  // screen that isn't on the bar at all, staying MOUNTED so the next selection
+  // travels instead of popping in.
   const wrapRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const flatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [ind, setInd] = useState<{ x: number; top: number } | null>(null);
   const [indShown, setIndShown] = useState(false);
   const [stretch, setStretch] = useState(1);
+  // Counter-squash across the travel axis. Stretching alone reads as a blob
+  // smearing; a real liquid lens also thins as it elongates, which is what
+  // makes an identical duration feel snappy rather than floaty.
+  const [squash, setSquash] = useState(1);
   const [reduced, setReduced] = useState(false);
   const indRef = useRef<{ x: number; top: number } | null>(null);
   const indShownRef = useRef(false);
@@ -97,16 +113,19 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // Which of the four flat slots is lit: Today/Explore/Profile by route, "more"
-  // when its sheet is open or the active screen isn't a bar slot. Train (the
-  // centre FAB) maps to none → the indicator fades out while Train is active.
-  const flatSlotIds = new Set<string>([...PRIMARY.map((tb) => tb.id), "train", "log", "profile"]);
-  const moreLit = moreOpen || (activeId != null && !flatSlotIds.has(activeId));
+  // Which of the five slots is lit. Train is a real slot now (it was the
+  // detached circle, which mapped to none and made the lens fade out), so every
+  // bar destination lights one — the lens no longer has a hidden state.
+  // "more" lights when its sheet is open or the active screen isn't a bar slot.
+  const slotIds = new Set<string>([...TABS.map((tb) => tb.id), "log"]);
+  const moreLit = moreOpen || (activeId != null && !slotIds.has(activeId));
   const activeFlat = moreLit
     ? "more"
-    : activeId === "today" || activeId === "explore" || activeId === "profile"
-      ? activeId
-      : null;
+    : activeId === "log"
+      ? "train"
+      : activeId != null && slotIds.has(activeId)
+        ? activeId
+        : null;
 
   // Reposition the indicator whenever the active slot changes (and on resize).
   // On the first paint it snaps into place; after that it springs, stretching
@@ -127,6 +146,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
         lastActiveRef.current = activeFlat;
         setIndShown(false);
         setStretch(1);
+        setSquash(1);
         return;
       }
       // `top` is the button's own offset (never a measured height): the button
@@ -146,12 +166,15 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       setInd(next);
       setIndShown(true);
       if (!firstRef.current && !reducedNow && wasShown && travelled && prev && Math.abs(next.x - prev.x) > 1) {
-        setStretch(Math.min(1 + Math.abs(next.x - prev.x) / 240, 1.9));
-        stretchTimer = setTimeout(() => setStretch(1), 150);
+        const dist = Math.abs(next.x - prev.x);
+        setStretch(Math.min(1 + dist / 240, 1.9));
+        setSquash(Math.max(1 - dist / 900, 0.86));
+        stretchTimer = setTimeout(() => { setStretch(1); setSquash(1); }, 150);
       } else {
         // Any non-travelling placement (first paint, resize, reduced motion,
-        // reappearing after Train) settles at rest width.
+        // reappearing after a non-slot screen) settles at rest width.
         setStretch(1);
+        setSquash(1);
       }
       firstRef.current = false;
     };
@@ -196,6 +219,25 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     return () => { window.removeEventListener("scroll", onScroll); if (raf) cancelAnimationFrame(raf); };
   }, [activeId]);
 
+  // SESSION ACCESSORY — an in-progress workout rides ABOVE the capsule, in the
+  // tab-bar accessory slot (the system home for players and active orders),
+  // never as a tab. Re-read on every screen change plus cross-tab writes; the
+  // clock only ticks while a draft actually exists.
+  const [draft, setDraft] = useState<WorkoutDraft | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    const sync = () => setDraft(loadWorkoutDraft());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("focus", sync);
+    return () => { window.removeEventListener("storage", sync); window.removeEventListener("focus", sync); };
+  }, [activeId]);
+  useEffect(() => {
+    if (!draft) return;
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [draft]);
+
   if (!aurora) return null;
 
   const initials = ((session?.name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
@@ -205,14 +247,9 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
   const go = (id: string) => { closeMore(); onSelect(id); };
 
-  const tabs = PRIMARY;
-  // "More" lights only when the active screen isn't one of the bar slots
-  // (Today, Explore/feed, Train/log, Profile) and the sheet isn't explicitly
-  // open. Profile is now a bar slot (right of More); everything else (Plans,
-  // History, Cockpit, …) lives in the More sheet, so landing on those lights
-  // "More".
-  const barIds = new Set<string>([...tabs.map((t) => t.id), "train", "log", "profile"]);
-  const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
+  // The accessory is redundant once you're already in the Train launcher or the
+  // live logger, so it stands down there.
+  const showAccessory = draft != null && activeId !== "train" && activeId !== "log";
   // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒) here rather
   // than hidden, so the whole toolkit is visible; a locked tile upsells.
   const groups = groupedNavWithLocks(persona, access)
@@ -330,59 +367,102 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       )}
 
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 18px 18px", pointerEvents: "none" }}>
-        {/* The iOS 26 split bar: [glass capsule with the four tabs] + [detached
-            Train circle], shrinking together on scroll. */}
-        <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, width: "100%", maxWidth: 460 }}>
-          {/* The Liquid Glass capsule — a clearer, brighter frost than the old
-              tinted pill (the page genuinely fizzes through, like the native
-              iOS 26 TabView material), with a hairline edge + top rim light. */}
-          <div ref={barRef} style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", background: "color-mix(in srgb, var(--color-ink2) 40%, transparent)", backdropFilter: "blur(24px) saturate(1.5)", WebkitBackdropFilter: "blur(24px) saturate(1.5)", border: `1px solid color-mix(in srgb, var(--color-chalk) 14%, transparent)`, borderRadius: 999, padding: "6px 8px", boxShadow: "0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.16)" }}>
-            {/* The single sliding highlight — a translucent glass lens (not an
-                opaque pill: the active glyph stays chalk over it, like the
-                native glass selection) that springs between flat slots
-                (transform), stretching mid-travel (scaleX, distance-scaled) for
-                the liquid feel; sits behind the icons (zIndex 0). While Train
-                is active it fades out in place (opacity) but stays MOUNTED, so
-                the next selection travels instead of popping in. */}
+        {/* The bar stack: [session accessory] over [glass capsule with the five
+            tabs], shrinking together on scroll. */}
+        <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: ACC_GAP, width: "100%", maxWidth: 480 }}>
+          {showAccessory && draft && (
+            <SessionAccessory draft={draft} nowTs={nowTs} reduced={reduced} onResume={() => go("train")} resumeLabel={t("common.resume") === "common.resume" ? "Resume" : t("common.resume")} />
+          )}
+          {/* The Liquid Glass capsule. The material lives in globals.css as
+              .aurora-navglass — a nearly clear body under a modest blur, a
+              specular rim arc, a refraction band at the edge and a dark bottom
+              lip. The old inline recipe (40% ink film under blur(24) with a
+              uniform hairline) was frosted glass, not Liquid Glass. */}
+          <div ref={barRef} className="aurora-navglass" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: 999, padding: `${PAD_V}px ${PAD_H}px` }}>
+            {/* The single sliding highlight — a LIFTED lens: thinner glass than
+                the capsule carrying it (clearer + brighter), with its own drop
+                shadow onto the bar surface and a specular arc on top, so the
+                selection reads as a lens rather than a stroked outline. It
+                springs between slots (transform), stretching along travel and
+                counter-squashing across it (distance-scaled) for the liquid
+                feel, and sits behind the glyphs. */}
             {ind && (
               <span
                 aria-hidden
                 style={{
                   position: "absolute", left: 0, top: ind.top, width: lensW, height: slotH, borderRadius: slotH / 2,
-                  background: "color-mix(in srgb, var(--color-chalk) 14%, transparent)",
-                  border: `1px solid color-mix(in srgb, var(--color-chalk) 16%, transparent)`,
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)",
+                  background: `rgba(var(--glass-rgb), ${M.lensOpacity})`,
+                  backdropFilter: `blur(${M.lensBlur}px) brightness(${M.lensBrightness})`,
+                  WebkitBackdropFilter: `blur(${M.lensBlur}px) brightness(${M.lensBrightness})`,
+                  border: `1px solid rgba(var(--glass-rgb), .24)`,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,.30), 0 3px 9px -1px rgba(0,0,0,.34)",
                   transformOrigin: "center",
-                  transform: `translateX(${ind.x}px) scaleX(${stretch})`,
+                  transform: `translateX(${ind.x}px) scaleX(${stretch}) scaleY(${squash})`,
                   opacity: indShown ? 1 : 0,
                   transition: reduced ? "none" : "transform .34s cubic-bezier(.32,1.36,.44,1), opacity .18s ease, width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1), top .22s cubic-bezier(.4,0,.2,1)",
-                  zIndex: 0, pointerEvents: "none",
+                  zIndex: 1, pointerEvents: "none",
                 }}
               />
             )}
-            {/* Today · Explore · More · Profile */}
-            {tabs.map((tab) => (
-              <PillButton key={tab.id} innerRef={(el) => { flatRefs.current[tab.id] = el; }} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} reduced={reduced} mini={mini} onClick={() => go(tab.id)} />
+            {/* Today, Explore, Train, More, Profile */}
+            {TABS.map((tab) => (
+              <PillButton
+                key={tab.id}
+                innerRef={(el) => { flatRefs.current[tab.id] = el; }}
+                glyph={tab.glyph}
+                label={label(tab.id, tab.label)}
+                active={activeFlat === tab.id}
+                reduced={reduced}
+                mini={mini}
+                onClick={() => (tab.id === "more" ? setMoreOpen((v) => !v) : go(tab.id))}
+              />
             ))}
-            <PillButton innerRef={(el) => { flatRefs.current.more = el; }} icon="grid" label={t("nav.more")} active={moreActive} reduced={reduced} mini={mini} onClick={() => setMoreOpen((v) => !v)} />
-            <PillButton innerRef={(el) => { flatRefs.current.profile = el; }} icon="user-circle" label={t("nav.profile")} active={activeId === "profile"} reduced={reduced} mini={mini} onClick={() => go("profile")} />
           </div>
-          <TrainFab label={label("log", "Train")} active={activeId === "train" || activeId === "log"} mini={mini} reduced={reduced} onClick={() => go("train")} />
         </div>
       </div>
     </>
   );
 }
 
-function PillButton({ icon, label, active, reduced, mini, onClick, innerRef }: { icon: AuroraIconName; label: string; active: boolean; reduced: boolean; mini: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
-  // Each item is icon + label (the iOS 26 TabView item), stacked TWICE: an ash
-  // base and a chalk active overlay. zIndex 1 keeps the stack above the shared
-  // sliding glass lens, which is drawn once in the bar, not per-button. The
+/**
+ * The SESSION ACCESSORY — an in-progress workout, shown above the capsule in
+ * the tab-bar accessory slot (Apple's home for players and active orders, the
+ * mini-player idiom). This is where persistent state belongs; a tab bar carries
+ * navigation, so "start training" is content-layer and live-session status is
+ * accessory-layer. The lime dot is a semantic status indicator, not decoration.
+ */
+function SessionAccessory({ draft, nowTs, reduced, onResume, resumeLabel }: { draft: WorkoutDraft; nowTs: number; reduced: boolean; onResume: () => void; resumeLabel: string }) {
+  return (
+    <button
+      onClick={onResume}
+      className="aurora-navglass"
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        width: "100%", height: AURORA_NAV_GEOMETRY.accessoryH,
+        padding: `0 ${PAD_H + 4}px`, borderRadius: 999, cursor: "pointer",
+        textAlign: "left", font: "inherit",
+        transition: reduced ? "none" : "opacity .2s ease",
+      }}
+    >
+      <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, flexShrink: 0, background: C("lime"), boxShadow: `0 0 8px ${C("lime")}` }} />
+      <span style={{ minWidth: 0, flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.note, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{draft.title}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{formatSessionElapsed(draft.startedAt, nowTs)}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("lime"), flexShrink: 0 }}>{resumeLabel}</span>
+    </button>
+  );
+}
+
+function PillButton({ glyph, label, active, reduced, mini, onClick, innerRef }: { glyph: AuroraIconName | "train"; label: string; active: boolean; reduced: boolean; mini: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
+  // Each item is icon + label (the tab-bar item), stacked TWICE: an ash base and
+  // a LIME active overlay. zIndex 2 keeps the stack above the shared sliding
+  // glass lens (zIndex 1), which is drawn once in the bar, not per-button. The
   // active tint is a CROSSFADE synced to the lens's arrival — the incoming
   // glyph waits a beat (~.1s delay) so it lands WITH the sliding lens; an
-  // instant flip reads as "icon changed, pill lagging" (the Instagram-audit
-  // finding). Outgoing fades back immediately. Over the translucent lens the
-  // active glyph stays bright (chalk), never inverting to dark-on-glass.
+  // instant flip reads as "icon changed, pill lagging".
+  // The active colour is the brand tint, not chalk: chalk-against-ash at an
+  // identical stroke weight is a Material tell, where iOS moves the selected
+  // item to a true tint (it also swaps to a filled symbol, which this kit —
+  // line icons only, per the project rule — expresses as tint alone).
   // Glyph weight 4.5 (viewBox units, ~1.3px at 21) — the shared NAV-BAR weight,
   // matching mobile's AuroraSvgIcon in global-nav. Before this the clients
   // drifted (web stroked the bar at a 2.6 hairline, mobile at the design-kit 6);
@@ -393,9 +473,18 @@ function PillButton({ icon, label, active, reduced, mini, onClick, innerRef }: {
   // The height is what animates (not `display`), so the slot morphs smoothly
   // between the two sizes. The button keeps its aria-label either way, so the
   // name never disappears for assistive tech.
+  // Train's dumbbell is the one glyph outside the kit's PNG-mirrored union, so
+  // it is stroked inline from the shared path data (same 72 viewBox, same
+  // weight) rather than going through AuroraIcon.
   const item = (color: string) => (
     <span style={{ display: "grid", justifyItems: "center" }}>
-      <AuroraIcon name={icon} size={21} strokeWidth={4} color={color} />
+      {glyph === "train" ? (
+        <svg width={21} height={21} viewBox="0 0 72 72" fill="none" aria-hidden>
+          <path d={AURORA_TRAIN_GLYPH} stroke={color} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <AuroraIcon name={glyph} size={21} strokeWidth={4} color={color} />
+      )}
       <span
         style={{
           display: "block", overflow: "hidden",
@@ -409,7 +498,7 @@ function PillButton({ icon, label, active, reduced, mini, onClick, innerRef }: {
   );
   const trans = reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)";
   return (
-    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 1, flex: 1, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0, transition: trans }}>
+    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 2, flex: 1, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0, transition: trans }}>
       <span style={{ position: "relative", width: mini ? MINI_LENS_W : LENS_W, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", transition: trans }}>
         {item(C("ash"))}
         <span
@@ -420,37 +509,9 @@ function PillButton({ icon, label, active, reduced, mini, onClick, innerRef }: {
             transition: reduced ? "none" : active ? "opacity .2s ease .1s" : "opacity .12s ease",
           }}
         >
-          {item(C("chalk"))}
+          {item(C("lime"))}
         </span>
       </span>
-    </button>
-  );
-}
-
-/**
- * The detached Train action — the standalone lime circle beside the capsule
- * (the iOS 26 accessory-button idiom), bar-height, with an inline dumbbell
- * glyph and a soft lime glow: the app's CTA identity in Apple's
- * prominent-button slot. Shrinks with the capsule when the bar goes MINI, so
- * the circle keeps matching the bar height in both states.
- */
-function TrainFab({ label, active, mini, reduced, onClick }: { label: string; active: boolean; mini: boolean; reduced: boolean; onClick: () => void }) {
-  const d = mini ? MINI_TRAIN_D : TRAIN_D;
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      aria-pressed={active}
-      style={{
-        width: d, height: d, flexShrink: 0, borderRadius: "50%", display: "grid", placeItems: "center",
-        background: C("lime"), border: "none", cursor: "pointer",
-        transition: reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)",
-        boxShadow: `0 8px 22px -6px color-mix(in srgb, var(--color-lime) 55%, transparent)${active ? `, 0 0 0 2px color-mix(in srgb, var(--color-lime) 40%, transparent)` : ""}`,
-      }}
-    >
-      <svg viewBox="0 0 24 24" width={mini ? 22 : 26} height={mini ? 22 : 26} fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
-      </svg>
     </button>
   );
 }
