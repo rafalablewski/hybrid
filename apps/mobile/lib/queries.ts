@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog } from "@hybrid/core";
-import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises } from "./api";
+import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
 // match conceptually so the same mutation→invalidate discipline applies. These
@@ -15,6 +15,7 @@ export const qk = {
   macrocycle: ["macrocycle"] as const,
   checkins: ["checkins"] as const,
   exercises: ["exercises"] as const,
+  foodLogs: ["foodLogs"] as const,
 };
 
 /**
@@ -104,6 +105,15 @@ export function useSignalsQuery() {
   return useQuery({ queryKey: qk.signals, queryFn: () => querySignals() });
 }
 
+/** The athlete's logged food/meal entries (FoodLog rows plus the Signal-derived
+ *  ones) — the same payload the Nutrition Diary lists. Today's Fuel widget reads
+ *  it to show WHAT was eaten alongside the macros. Soft: the fetcher returns []
+ *  rather than throwing, since a missing plate must never fail the Today screen.
+ *  Mirrors web's useFoodLogs(). */
+export function useFoodLogsQuery() {
+  return useQuery({ queryKey: qk.foodLogs, queryFn: fetchFoodLogs });
+}
+
 /** The enrolled macrocycle (season), from the shared cache. A null result means
  *  genuinely NOT enrolled — which is only a meaningful reading once `ready`. */
 export function useMacrocycleQuery() {
@@ -168,6 +178,7 @@ export function useRefreshAll() {
   return useCallback(() => {
     void qc.invalidateQueries({ queryKey: qk.sessions });
     void qc.invalidateQueries({ queryKey: qk.signals });
+    void qc.invalidateQueries({ queryKey: qk.foodLogs });
     void qc.invalidateQueries({ queryKey: qk.macrocycle });
     void qc.invalidateQueries({ queryKey: qk.checkins });
   }, [qc]);
@@ -188,8 +199,12 @@ export function useRevalidate() {
   return {
     /** A logged / edited / archived workout changed the session list. */
     sessions: () => qc.invalidateQueries({ queryKey: qk.sessions }),
-    /** A check-in / weigh-in / nutrition log wrote recovery + body-mass signals. */
-    recovery: () => qc.invalidateQueries({ queryKey: qk.signals }),
+    /** A check-in / weigh-in / nutrition log wrote recovery + body-mass signals.
+     *  A nutrition log also changed the diary ENTRIES Today's Fuel plate reads. */
+    recovery: () => Promise.all([
+      qc.invalidateQueries({ queryKey: qk.signals }),
+      qc.invalidateQueries({ queryKey: qk.foodLogs }),
+    ]),
     /** Enrolling in or leaving a plan changed the season. */
     macrocycle: () => qc.invalidateQueries({ queryKey: qk.macrocycle }),
     /** A readiness face was saved — today's feeling drives the prescription. */
@@ -199,6 +214,7 @@ export function useRevalidate() {
     all: () => {
       qc.invalidateQueries({ queryKey: qk.sessions });
       qc.invalidateQueries({ queryKey: qk.signals });
+      qc.invalidateQueries({ queryKey: qk.foodLogs });
       qc.invalidateQueries({ queryKey: qk.macrocycle });
       qc.invalidateQueries({ queryKey: qk.checkins });
     },

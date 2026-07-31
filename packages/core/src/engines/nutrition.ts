@@ -10,7 +10,7 @@
  */
 
 import type { Signal } from "./signals";
-import { localDayKey, localTodayKey } from "../day-key";
+import { localDayKey, localTodayKey, dayKeyDiff } from "../day-key";
 import { type NutritionFacts, scaleFacts, unknown } from "../food-facts";
 
 const DAY = 86_400_000;
@@ -725,4 +725,318 @@ export function parseDerivedEntryId(id: string): string[] | null {
     .map((x) => x.trim())
     .filter((x) => x.length > 0 && /^[A-Za-z0-9_-]+$/.test(x));
   return ids.length > 0 && ids.length <= MAX_DERIVED_SIGNALS ? ids : null;
+}
+
+// ── Today's plate — WHAT was eaten, not only how much ───────────────────────
+//
+// The Fuel widget answered "how much energy and protein so far", never "what
+// did I actually eat". Answering the second meant leaving Today and digging
+// into Nutrition → Diary, which is exactly the dig a summary exists to save.
+// fuelPlate folds the day's logged entries (the SAME rows the Diary lists —
+// FoodLog rows and the Signal-derived ones alike) into one compact reading:
+// the items, grouped by part of the day, in the parts' own order.
+//
+// Pure, so web + mobile render the same groups (parity rule). Labels stay with
+// the clients — a part's name is i18n, not data.
+
+/** A logged food/meal as GET /api/nutrition/log returns it. Macros are PER
+ *  SERVING — `qty` scales them (a derived entry is always qty 1). */
+export interface FuelLogRow {
+  id: string;
+  /** empty/absent on an entry logged before the FoodLog table stored names */
+  name?: string | null;
+  subname?: string | null;
+  /** the part of the day it was attributed to (Signal.source) */
+  source: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  qty: number;
+  ts: string | Date;
+  derived?: boolean;
+}
+
+/** One logged item, macros already scaled by its serving count. */
+export interface FuelPlateItem {
+  id: string;
+  /** "" when the entry carries no stored name — the client labels those. */
+  name: string;
+  source: string;
+  kcal: number;
+  protein: number;
+  qty: number;
+  ts: string;
+}
+
+/** The day's items under one part of the day. */
+export interface FuelPlateGroup {
+  /** a part-of-day key, or FUEL_PLATE_OTHER for a source that isn't a part */
+  key: string;
+  items: FuelPlateItem[];
+  /** the named items, in the order they were logged — the row's line */
+  names: string[];
+  /** how many items in the group carry no name (pre-FoodLog entries) */
+  unnamed: number;
+  kcal: number;
+  protein: number;
+}
+
+export interface FuelPlate {
+  /** every item logged that day, oldest first (the day read as a story) */
+  items: FuelPlateItem[];
+  groups: FuelPlateGroup[];
+  count: number;
+  kcal: number;
+  protein: number;
+}
+
+/** The group a log lands in when its source isn't a part of the day (a quick
+ *  log, a food-search hit) — mirrors the Diary's "Other" group. */
+export const FUEL_PLATE_OTHER = "other";
+
+const MEAL_PART_EMOJI: Record<string, string> = {
+  breakfast: "🍳",
+  lunch: "🥗",
+  dinner: "🍽️",
+  snack: "🥤",
+};
+
+/** The glyph for a part of the day — the SAME emoji its quick-log preset uses,
+ *  so a meal reads identically on the rail and in the day's summary. A custom
+ *  part (or "other") gets the neutral cutlery mark. */
+export function mealPartEmoji(key: string): string {
+  return MEAL_PART_EMOJI[key] ?? "🍴";
+}
+
+/** A readable label for a CUSTOM part key ("pre-workout" → "Pre-workout"), for
+ *  surfaces that render a log's part without having loaded the athlete's
+ *  nutrition prefs (where the authored label lives). */
+export function mealPartLabelFromKey(key: string): string {
+  const words = key.replace(/[-_]+/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : key;
+}
+
+const plateNum = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 0);
+
+/**
+ * The day's logged items, grouped by part of the day.
+ *
+ * `logs` is the diary payload (any span — only the requested day is kept).
+ * `parts` is the athlete's ordered part keys when known (built-ins + their
+ * custom parts); anything logged under another source groups under
+ * FUEL_PLATE_OTHER, so nothing eaten is ever invisible.
+ */
+export function fuelPlate(
+  logs: FuelLogRow[] | undefined,
+  opts: { now?: number; day?: string; parts?: readonly string[] } = {},
+): FuelPlate {
+  const wanted = opts.day ?? localTodayKey(opts.now ?? Date.now());
+  const order = opts.parts?.length ? opts.parts : DEFAULT_MEAL_PART_KEYS;
+
+  const items: FuelPlateItem[] = [];
+  for (const l of logs ?? []) {
+    if (!l || !l.id) continue;
+    const ts = typeof l.ts === "string" ? l.ts : l.ts instanceof Date ? l.ts.toISOString() : "";
+    if (!ts || dayKey(ts) !== wanted) continue;
+    const qty = plateNum(l.qty) || 1;
+    items.push({
+      id: l.id,
+      name: (l.name ?? "").trim(),
+      source: typeof l.source === "string" ? l.source : "",
+      kcal: Math.round(plateNum(l.kcal) * qty),
+      protein: Math.round(plateNum(l.protein) * qty),
+      qty,
+      ts,
+    });
+  }
+  items.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+
+  // One group per part that actually has items, in the parts' own order, with
+  // "Other" always last — the Diary's ordering, so the two never disagree.
+  const known = new Set(order);
+  const byKey = new Map<string, FuelPlateGroup>();
+  for (const it of items) {
+    const key = known.has(it.source) ? it.source : FUEL_PLATE_OTHER;
+    let g = byKey.get(key);
+    if (!g) { g = { key, items: [], names: [], unnamed: 0, kcal: 0, protein: 0 }; byKey.set(key, g); }
+    g.items.push(it);
+    if (it.name) g.names.push(it.name); else g.unnamed += 1;
+    g.kcal += it.kcal;
+    g.protein += it.protein;
+  }
+  const groups: FuelPlateGroup[] = [];
+  for (const key of order) { const g = byKey.get(key); if (g) groups.push(g); }
+  const other = byKey.get(FUEL_PLATE_OTHER);
+  if (other) groups.push(other);
+
+  return {
+    items,
+    groups,
+    count: items.length,
+    kcal: items.reduce((s, i) => s + i.kcal, 0),
+    protein: items.reduce((s, i) => s + i.protein, 0),
+  };
+}
+
+// ── The quick-log rail — the meals THIS athlete actually eats ───────────────
+//
+// The rail shipped stocked with four canned presets ("Breakfast — oats & eggs,
+// 520 kcal"), which is nobody's actual breakfast. fuelRail ranks the athlete's
+// OWN logged items to the front of it, so one tap re-logs the thing they really
+// eat, and the presets stay behind them as the cold-start fallback.
+//
+// TWO PROPERTIES THE RANKING HAS TO HAVE:
+//  1. It models a HABIT, not a burst — so an item scores by the DISTINCT DAYS it
+//     was logged on, decayed by how long ago each was. Eating the same lunch on
+//     five days beats eating one thing five times in one sitting.
+//  2. It is FIXED FOR THE WHOLE DAY. The rail is built from what was eaten
+//     BEFORE today; today is only ever a MARK on it (loggedToday). That single
+//     rule is what stops the rail re-ordering under the finger that just tapped
+//     it — a naive "most recent first" rail throws the chip you just pressed
+//     across the screen while its ✓ is still showing. The cost is that a food's
+//     first-ever log doesn't reach the rail until tomorrow, which is the right
+//     trade: you have just eaten it, so it is the one thing you don't need
+//     offered back.
+
+/** A preset the client has already resolved to display text (labels are i18n,
+ *  which is the client's business, not the engine's). */
+export interface FuelRailPreset {
+  id: string;
+  name: string;
+  /** the part of the day it logs to */
+  source: string;
+  emoji: string;
+  kcal: number;
+  protein: number; // g
+  carbs: number; // g
+  fat: number; // g
+}
+
+/** One chip on the rail. Macros are PER SERVING — a tap logs one of them. */
+export interface FuelRailChip {
+  id: string;
+  /** `own` = something this athlete has logged before; `preset` = the fallback */
+  kind: "own" | "preset";
+  name: string;
+  source: string;
+  emoji: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  /** an own item logged again today, or a preset whose part of the day already
+   *  has something in it — marked on the chip, never used to rank it */
+  loggedToday: boolean;
+}
+
+/** How fast an old meal fades: a day's worth of evidence is worth half as much
+ *  a fortnight later. Long enough that a weekly meal survives, short enough that
+ *  a phase you've moved on from drops off. */
+const RAIL_HALF_LIFE_DAYS = 14;
+/** How many of the athlete's own items lead the rail before the presets. */
+const RAIL_OWN_MAX = 4;
+
+const railKey = (name: string, source: string): string => `${name.trim().toLowerCase()}|${source}`;
+
+/**
+ * The rail's chips: the athlete's own most-eaten items first (deduped against
+ * the presets, so one meal never appears twice), then the presets themselves.
+ * `presets` come in already translated — pass [] for a rail of own items alone.
+ */
+export function fuelRail(
+  logs: FuelLogRow[] | undefined,
+  opts: { presets?: FuelRailPreset[]; now?: number; ownMax?: number } = {},
+): FuelRailChip[] {
+  const now = opts.now ?? Date.now();
+  const today = localTodayKey(now);
+  const presets = opts.presets ?? [];
+  const ownMax = Math.max(0, opts.ownMax ?? RAIL_OWN_MAX);
+  const presetKeys = new Set(presets.map((p) => railKey(p.name, p.source)));
+
+  type Cand = {
+    key: string; name: string; source: string;
+    kcal: number; protein: number; carbs: number; fat: number;
+    lastTs: number; days: Set<string>;
+  };
+  const cands = new Map<string, Cand>();
+  const partsToday = new Set<string>(); // parts of the day already eaten in
+  const keysToday = new Set<string>(); // items already eaten today
+
+  for (const l of logs ?? []) {
+    if (!l || !l.id) continue;
+    const name = (l.name ?? "").trim();
+    const source = typeof l.source === "string" ? l.source : "";
+    const ts = typeof l.ts === "string" ? l.ts : l.ts instanceof Date ? l.ts.toISOString() : "";
+    if (!ts) continue;
+    const at = Date.parse(ts);
+    if (!Number.isFinite(at)) continue;
+    const day = dayKey(ts);
+    // An entry logged before names were stored can be counted for the day's
+    // plate but can't lead a rail — a chip reading "Logged item" re-logs
+    // nothing anyone recognises.
+    const key = name ? railKey(name, source) : "";
+
+    if (day === today) {
+      partsToday.add(source);
+      if (key) keysToday.add(key);
+      continue; // today marks the rail; it never builds or re-orders it
+    }
+    if (!key) continue;
+
+    let c = cands.get(key);
+    if (!c) {
+      c = { key, name, source, kcal: 0, protein: 0, carbs: 0, fat: 0, lastTs: -Infinity, days: new Set() };
+      cands.set(key, c);
+    }
+    c.days.add(day);
+    // The MOST RECENT serving defines what re-logging it means — if the portion
+    // was corrected last time, the rail should offer the corrected one.
+    if (at >= c.lastTs) {
+      c.lastTs = at;
+      c.kcal = Math.round(plateNum(l.kcal));
+      c.protein = Math.round(plateNum(l.protein));
+      c.carbs = Math.round(plateNum(l.carbs));
+      c.fat = Math.round(plateNum(l.fat));
+    }
+  }
+
+  const scored = [...cands.values()]
+    .filter((c) => !presetKeys.has(c.key))
+    .filter((c) => c.kcal > 0 || c.protein > 0 || c.carbs > 0 || c.fat > 0)
+    .map((c) => {
+      let score = 0;
+      for (const d of c.days) score += Math.pow(0.5, Math.max(0, dayKeyDiff(d, today)) / RAIL_HALF_LIFE_DAYS);
+      return { c, score };
+    })
+    .sort((a, b) => (b.score - a.score) || (b.c.lastTs - a.c.lastTs))
+    .slice(0, ownMax);
+
+  const own: FuelRailChip[] = scored.map(({ c }) => ({
+    id: `own:${c.key}`,
+    kind: "own",
+    name: c.name,
+    source: c.source,
+    emoji: mealPartEmoji(c.source),
+    kcal: c.kcal,
+    protein: c.protein,
+    carbs: c.carbs,
+    fat: c.fat,
+    loggedToday: keysToday.has(c.key),
+  }));
+
+  const fallback: FuelRailChip[] = presets.map((p) => ({
+    id: `preset:${p.id}`,
+    kind: "preset",
+    name: p.name,
+    source: p.source,
+    emoji: p.emoji,
+    kcal: p.kcal,
+    protein: p.protein,
+    carbs: p.carbs,
+    fat: p.fat,
+    loggedToday: partsToday.has(p.source),
+  }));
+
+  return [...own, ...fallback];
 }
