@@ -1,0 +1,324 @@
+<title>One Number — the card across a day</title>
+<style>
+  :root {
+    --ink: #0c0d0c; --ink2: #141614; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --blue: #6cb6bd; --amber: #d0cd94; --red: #e58a5c;
+
+    --pg: #101210; --pg2: #171a17; --pg-line: #262a26;
+    --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-on: #0c0d0c;
+
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Archivo, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-on: #f6f7f2; }
+  }
+  :root[data-theme="dark"] { --pg: #101210; --pg2: #171a17; --pg-line: #262a26; --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-on: #0c0d0c; }
+  :root[data-theme="light"] { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-on: #f6f7f2; }
+
+  body { background: var(--pg); color: var(--pg-text); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) clamp(52px, 8vw, 90px); }
+  h1 { margin: 14px 0 0; font-size: clamp(28px, 4.2vw, 44px); font-weight: 800; letter-spacing: -.028em; line-height: 1.05; text-wrap: balance; }
+  h2.sec { margin: 0; font-size: clamp(20px, 2.4vw, 26px); font-weight: 800; letter-spacing: -.022em; }
+  .kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--pg-mute); }
+  .lede { margin: 16px 0 0; max-width: 66ch; color: var(--pg-mute); font-size: clamp(15px, 1.4vw, 17px); }
+  .lede b { color: var(--pg-text); font-weight: 600; }
+  :focus-visible { outline: 2px solid var(--pg-accent); outline-offset: 3px; border-radius: 3px; }
+
+  .controls { margin-top: clamp(26px, 4vw, 40px); display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; justify-content: space-between; }
+  .scrub { flex: 1 1 440px; min-width: 0; }
+  .rail { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .rail::before { content: ""; position: absolute; left: 6%; right: 6%; top: 13px; height: 1px; background: var(--pg-line); }
+  .stop { position: relative; background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--pg-mute); font-family: var(--mono); }
+  .stop .dot { width: 27px; height: 27px; border-radius: 50%; border: 1px solid var(--pg-line); background: var(--pg); display: grid; place-items: center; font-size: 10px; transition: background .18s, border-color .18s, color .18s; }
+  .stop .tm { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stop .lb { font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase; text-align: center; line-height: 1.3; }
+  .stop[aria-pressed="true"] { color: var(--pg-text); }
+  .stop[aria-pressed="true"] .dot { background: var(--pg-accent); border-color: var(--pg-accent); color: var(--pg-on); }
+  .stop:hover .dot { border-color: var(--pg-accent); }
+
+  .toggle { display: inline-flex; border: 1px solid var(--pg-line); border-radius: 3px; overflow: hidden; background: var(--pg2); }
+  .toggle button { background: none; border: 0; cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; padding: 10px 14px; color: var(--pg-mute); }
+  .toggle button[aria-pressed="true"] { background: var(--pg-accent); color: var(--pg-on); font-weight: 700; }
+
+  .stage { margin-top: clamp(24px, 4vw, 38px); display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: clamp(22px, 3vw, 44px); align-items: start; }
+  @media (max-width: 880px) { .stage { grid-template-columns: 1fr; } }
+
+  .phone { background: #000; border: 1px solid var(--pg-line); border-radius: 38px; padding: 11px; box-shadow: 0 30px 70px -40px rgba(0,0,0,.85); }
+  .screen { background: var(--ink); border-radius: 28px; padding: 16px 16px 22px; }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 11px; color: var(--chalk); padding: 4px 6px 12px; font-variant-numeric: tabular-nums; }
+  .statusbar .d { display: flex; gap: 3px; }
+  .statusbar .d i { width: 3px; height: 3px; border-radius: 50%; background: var(--ash); display: block; }
+
+  /* ── the One Number card ──────────────────────────────── */
+  .fcard { border: 1px solid var(--line); border-radius: 22px; padding: 18px; background: var(--ink2); }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .head .t { font-size: 18px; font-weight: 700; letter-spacing: -.01em; color: var(--chalk); }
+  .head .m { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+  .head .m.ask { color: var(--lime); }
+
+  .hero { margin-top: 15px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .hero .big { font-weight: 800; font-size: 48px; line-height: .96; letter-spacing: -.04em; color: var(--v); font-variant-numeric: tabular-nums; }
+  .hero .big.muted { color: color-mix(in srgb, var(--ash) 55%, transparent); font-weight: 300; letter-spacing: -.01em; }
+  .hero .stamp { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+  .sub { margin: 9px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ash); }
+  .sub b { color: var(--chalk); font-weight: 600; }
+  .sub.amber { color: var(--amber); }
+
+  .hr { height: 1px; background: var(--line); margin: 15px 0 0; }
+  .picker { display: flex; justify-content: space-between; gap: 6px; margin-top: 13px; }
+  .p { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 8px 0; border-radius: 14px; border: 1px solid transparent; }
+  .p .nm { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .p.on { background: color-mix(in srgb, var(--fa) 12%, transparent); border-color: color-mix(in srgb, var(--fa) 40%, transparent); }
+  .p.on .nm { color: var(--fa); }
+  .picker.held .p { opacity: .42; }
+  .asklabel { margin-top: 12px; font-size: 13.5px; font-weight: 600; color: var(--chalk); }
+  .asklabel span { font-weight: 400; color: var(--ash); }
+
+  .door { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
+  .door .dl { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+  .door .dn { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ash); }
+  .door .dr { margin-left: auto; font-family: var(--mono); font-size: 15px; color: var(--ash); }
+
+  /* ── annotations ─────────────────────────────────────── */
+  .notes { display: flex; flex-direction: column; gap: 13px; }
+  .npanel { border: 1px solid var(--pg-line); border-radius: 4px; background: var(--pg2); }
+  .npanel h3 { margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--pg-mute); font-weight: 500; padding: 11px 14px; border-bottom: 1px solid var(--pg-line); display: flex; justify-content: space-between; gap: 12px; }
+  .npanel .b { padding: 13px 14px 15px; font-size: 13.5px; line-height: 1.6; color: var(--pg-mute); }
+  .npanel .b b { color: var(--pg-text); font-weight: 600; }
+  .npanel .b + .b { padding-top: 0; }
+
+  /* ── edge states ─────────────────────────────────────── */
+  .edges { margin-top: clamp(40px, 6vw, 68px); }
+  .egrid { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: clamp(20px, 2.6vw, 32px); align-items: start; }
+  .edge > .eh { display: flex; align-items: baseline; gap: 9px; border-top: 1px solid var(--pg-line); padding-top: 12px; }
+  .edge .en { font-family: var(--mono); font-size: 10.5px; color: var(--pg-mute); }
+  .edge h4 { margin: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -.012em; }
+  .edge p { margin: 7px 0 0; font-size: 13px; line-height: 1.55; color: var(--pg-mute); }
+  .edge .mock { margin-top: 13px; background: var(--ink); border: 1px solid var(--pg-line); border-radius: 22px; padding: 12px; }
+
+  footer { margin-top: clamp(38px, 6vw, 64px); border-top: 1px solid var(--pg-line); padding-top: 20px; font-family: var(--mono); font-size: 11.5px; color: var(--pg-mute); line-height: 1.7; }
+</style>
+
+<div class="wrap">
+  <span class="kicker">HYBRID — concept 02, in every state</span>
+  <h1>One Number, across a day.</h1>
+  <p class="lede">
+    The chosen concept, put through the states it actually has to survive. Same day as before: trained
+    <b>08:00–09:00</b>, logged <b>Flat</b> at 10:00, logged <b>Good</b> at 20:00. The hero switch is the open
+    question — is the number the <b>answer</b> you gave, or the <b>load</b> it buys you today?
+  </p>
+
+  <div class="controls">
+    <div class="scrub">
+      <div class="kicker" style="margin-bottom:10px">Scrub the day</div>
+      <div class="rail" id="rail" role="group" aria-label="Time of day"></div>
+    </div>
+    <div>
+      <div class="kicker" style="margin-bottom:10px">Hero</div>
+      <div class="toggle" id="hero" role="group" aria-label="What the big number shows">
+        <button type="button" data-hero="word" aria-pressed="true">The answer</button>
+        <button type="button" data-hero="load" aria-pressed="false">The load</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span id="clock">10:00</span><span class="d"><i></i><i></i><i></i></span></div>
+        <div class="fcard" id="card"></div>
+      </div>
+    </div>
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <section class="edges">
+    <h2 class="sec">The states that decide it</h2>
+    <p class="lede" style="margin-top:10px">
+      A hero readout is easy on the happy path. These are the four days that break it — each is a real state the
+      engine produces, not a hypothetical.
+    </p>
+    <div class="egrid" id="egrid"></div>
+  </section>
+
+  <footer>
+    Faces use the shipped SVG paths. Load figures are READINESS_LOAD_FACTOR (primed 1.05, good 1.00, flat 0.94,
+    wrecked 0.85). Gate times and lags from the live engine. Concept only — nothing here is built.
+  </footer>
+</div>
+
+<script>
+  const F = {
+    wrecked: { e: "M16.4 15.2 L11 17.6 M23.6 15.2 L29 17.6", m: "M13.5 27.6 Q20 22.4 26.5 27.6", c: "var(--red)", n: "Wrecked", load: 85 },
+    flat: { e: "M11 16.4 L15.6 16.4 M24.4 16.4 L29 16.4", m: "M14 25 L26 25", c: "var(--amber)", n: "Flat", load: 94 },
+    good: { e: "M11 16.4 L15.6 16.4 M24.4 16.4 L29 16.4", m: "M13.5 23 Q20 28.4 26.5 23", c: "var(--blue)", n: "Good", load: 100 },
+    primed: { e: "M10.6 17.2 Q13.6 14.4 16.6 17.2 M23.4 17.2 Q26.4 14.4 29.4 17.2", m: "M12.5 22.5 Q20 30 27.5 22.5", c: "var(--lime)", n: "Primed", load: 105 },
+  };
+  const ORDER = ["wrecked", "flat", "good", "primed"];
+  const face = (k, s, tone) => `<svg width="${s}" height="${s}" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <path d="${F[k].e}" stroke="${tone || F[k].c}" stroke-width="2" stroke-linecap="round"/>
+    <path d="${F[k].m}" stroke="${tone || F[k].c}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  const picker = (sel, held) => `<div class="picker${held ? " held" : ""}">${ORDER.map((k) => `
+    <div class="p${k === sel ? " on" : ""}" style="--fa:${F[k].c}">${face(k, 28)}<span class="nm">${F[k].n}</span></div>`).join("")}</div>`;
+
+  // The hero. `word` shows the answer that governs the day; `load` shows what
+  // that answer buys — the multiplier the prescription actually applies.
+  const hero = (feeling, stamp, mode) => {
+    if (!feeling) return `<div class="hero" style="--v:var(--ash)"><span class="big muted">—</span><span class="stamp">${stamp}</span></div>`;
+    const big = mode === "load" ? `${F[feeling].load}%` : F[feeling].n;
+    return `<div class="hero" style="--v:${F[feeling].c}"><span class="big">${big}</span><span class="stamp">${stamp}</span></div>`;
+  };
+
+  const door = (n) => `<div class="door"><span class="dl">Today's readings</span><span class="dn">${n}</span><span class="dr">→</span></div>`;
+
+  const STOPS = [
+    {
+      time: "09:15", label: "Nothing yet", mark: "·",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span></div>
+        ${hero(null, "Not logged today", m)}
+        <p class="sub">Answer once and today's session scales to it.</p>
+        <div class="hr"></div>
+        ${picker(null, false)}`,
+      notes: [
+        ["The empty hero", "A readout with nothing in it is the hardest state for this concept, and the honest answer is a <b>dash</b> — not a zero, not a middling 3. The sub-line carries the ask, and the picker sits at full strength because it is the only thing to do here."],
+        ["On the load hero", "It shows the dash too. There is no multiplier until there is an answer, and printing <b>100%</b> would be the app inventing a reading — the exact failure this whole change was about."],
+      ],
+    },
+    {
+      time: "10:00", label: "First read", mark: "1",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span></div>
+        ${hero("flat", "10:00 — +1h after training", m)}
+        <p class="sub amber">The session talking. It scales today, and the evening read can still supersede it.</p>
+        <div class="hr"></div>
+        ${picker("flat", false)}
+        ${door(1)}`,
+      notes: [
+        ["A confounded hero", "This is the concept's real risk: a giant <b>Flat</b> an hour after squats reads like a verdict on the athlete, when it is a verdict on the squats. The amber sub-line has to do the work the old paragraph did — which is why the word hero needs it and the load hero mostly doesn't."],
+        ["Why it still shows", "Because it is still what governs: with one read on record, the engine prescribes off it (0.94x). Hiding the number while acting on it would be the card lying by omission."],
+      ],
+    },
+    {
+      time: "13:30", label: "Held", mark: "◦",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m">Next in 1h 30m</span></div>
+        ${hero("flat", "10:00 — +1h after training", m)}
+        <p class="sub">Your session is still draining — a read now would rate the workout, not your recovery.</p>
+        <div class="hr"></div>
+        ${picker("flat", true)}
+        ${door(1)}`,
+      notes: [
+        ["The gate, without a pill", "The countdown is the head's mono meta and the picker simply dims. No badge, no lock icon — the state is legible from the two things that changed."],
+        ["The hero holds still", "Nothing about the day's reading changed at 13:30, so nothing in the hero moves. A card that animates when no data arrived is a card that cried wolf."],
+      ],
+    },
+    {
+      time: "15:00", label: "Asking", mark: "2",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m ask">How are you now?</span></div>
+        ${hero("flat", "Since 10:00", m)}
+        <p class="sub">The session has had time to drain. This is the read that changes your training.</p>
+        <div class="hr"></div>
+        ${picker(null, false)}
+        <p class="asklabel">Answer for right now. <span>Your earlier reading is kept, not replaced.</span></p>
+        ${door(1)}`,
+      notes: [
+        ["The hero becomes history", "Its stamp switches from a lag to <b>Since 10:00</b> — the number stops claiming to be current the moment the app starts asking for a current one. Same pixels, different tense."],
+        ["The ask is a kicker, not a box", "In One Number the hero already owns the top of the card, so the lime tinted panel would be a second hero. The ask rides in the head's meta slot instead, where it is the only coloured thing on screen."],
+      ],
+    },
+    {
+      time: "20:00", label: "Second read", mark: "✓",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m">Next in 3h 48m</span></div>
+        ${hero("good", "20:00 — +11h after training", m)}
+        <p class="sub"><b>Up from Flat.</b> You came back over the day — that session was absorbed.</p>
+        <div class="hr"></div>
+        ${picker("good", true)}
+        ${door(2)}`,
+      notes: [
+        ["The payoff", "This is the state the concept is best at: one glance says <b>Good</b>, the stamp says when, the sub says which way the day moved. The pair that produced it is one tap away rather than stacked underneath."],
+        ["Word vs load", "Flip the hero. <b>100%</b> tells you what today costs; <b>Good</b> tells you what you said. My read: the load hero is stronger on training days and empty on rest days, and the word never goes stale — so the word is the safer default, with the load as the stamp."],
+      ],
+    },
+  ];
+
+  const EDGES = [
+    {
+      n: "A", name: "Rest day", why: "No session behind the reading, so there is no lag to print and no session to blame. The stamp says so rather than showing +0h.",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span></div>
+        ${hero("primed", "08:40 — no session today", m)}
+        <p class="sub">Nothing to recover from; this is a read on you.</p>
+        <div class="hr"></div>${picker("primed", true)}${door(1)}`,
+    },
+    {
+      n: "B", name: "Three readings", why: "The hero shows the one that governs; the day's shape goes in the sub-line as a run, which is the only place a sequence can live once the record is behind a door.",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m">Next in 2h 10m</span></div>
+        ${hero("good", "21:00 — +12h after training", m)}
+        <p class="sub">Wrecked → Flat → <b>Good</b> over the day.</p>
+        <div class="hr"></div>${picker("good", true)}${door(3)}`,
+    },
+    {
+      n: "C", name: "Day full", why: "Four readings is the cap. The meta says so instead of a countdown, because nothing but tomorrow will open it.",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m">4 of 4 today</span></div>
+        ${hero("flat", "22:10 — +13h after training", m)}
+        <p class="sub">Enough readings for one day. Back tomorrow.</p>
+        <div class="hr"></div>${picker("flat", true)}${door(4)}`,
+    },
+    {
+      n: "D", name: "Still sinking", why: "The day that should worry you. Same layout, and the sub-line is the only thing that turns — no alarm colours on the hero, which stays the feeling's own tone.",
+      card: (m) => `
+        <div class="head"><span class="t">Readiness</span><span class="m">Next in 3h 20m</span></div>
+        ${hero("wrecked", "20:00 — +11h after training", m)}
+        <p class="sub amber">Down from Flat. Eleven hours on and still dropping — this is the read that lowers your ceiling.</p>
+        <div class="hr"></div>${picker("wrecked", true)}${door(2)}`,
+    },
+  ];
+
+  let stop = 4, mode = "word";
+
+  function render() {
+    const s = STOPS[stop];
+    document.getElementById("clock").textContent = s.time;
+    document.getElementById("card").innerHTML = s.card(mode);
+    document.getElementById("notes").innerHTML = s.notes
+      .map(([h, b]) => `<div class="npanel"><h3><span>${h}</span></h3><div class="b">${b}</div></div>`)
+      .join("");
+    document.getElementById("egrid").innerHTML = EDGES.map((e) => `
+      <section class="edge">
+        <div class="eh"><span class="en">${e.n}</span><h4>${e.name}</h4></div>
+        <p>${e.why}</p>
+        <div class="mock"><div class="fcard">${e.card(mode)}</div></div>
+      </section>`).join("");
+  }
+
+  const rail = document.getElementById("rail");
+  rail.innerHTML = STOPS.map((s, i) => `
+    <button type="button" class="stop" data-i="${i}" aria-pressed="${i === stop}">
+      <span class="dot">${s.mark}</span><span class="tm">${s.time}</span><span class="lb">${s.label}</span>
+    </button>`).join("");
+  rail.addEventListener("click", (ev) => {
+    const b = ev.target.closest(".stop");
+    if (!b) return;
+    stop = Number(b.dataset.i);
+    rail.querySelectorAll(".stop").forEach((x) => x.setAttribute("aria-pressed", String(Number(x.dataset.i) === stop)));
+    render();
+  });
+
+  const heroEl = document.getElementById("hero");
+  heroEl.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    mode = b.dataset.hero;
+    heroEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.hero === mode)));
+    render();
+  });
+
+  render();
+</script>

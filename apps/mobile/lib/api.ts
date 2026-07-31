@@ -788,6 +788,15 @@ export type Checkin = {
   repliedAt: string | null;
   sharedWithCoach?: boolean;
   createdAt: string;
+  /**
+   * Every readiness answer given on this day, oldest first. `energy` above is
+   * the DECISIVE one (the latest not taken minutes after training); these are
+   * what make it interpretable — "flat at 09:30" and "flat at 22:00" are two
+   * measurements, not one corrected. Absent on a database that hasn't run
+   * reference/sql-checkin-reads.sql, which every consumer treats as "one read,
+   * the stored value". See core/readiness-reads.ts.
+   */
+  reads?: { metric: string; value: number; loggedAt: string; sinceSessionH?: number | null }[];
 };
 
 export async function fetchCheckins(): Promise<Checkin[]> {

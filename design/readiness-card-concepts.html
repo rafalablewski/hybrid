@@ -1,0 +1,263 @@
+<title>Readiness card — six redesign concepts</title>
+<style>
+  :root {
+    /* HYBRID brand tokens — packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --blue: #6cb6bd; --amber: #d0cd94; --red: #e58a5c;
+
+    --pg: #101210; --pg2: #171a17; --pg-line: #262a26;
+    --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-on: #0c0d0c;
+
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Archivo, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-on: #f6f7f2; }
+  }
+  :root[data-theme="dark"] { --pg: #101210; --pg2: #171a17; --pg-line: #262a26; --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-on: #0c0d0c; }
+  :root[data-theme="light"] { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-on: #f6f7f2; }
+
+  body { background: var(--pg); color: var(--pg-text); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) clamp(56px, 9vw, 96px); }
+  h1 { margin: 14px 0 0; font-size: clamp(28px, 4.2vw, 44px); font-weight: 800; letter-spacing: -.028em; line-height: 1.05; text-wrap: balance; }
+  .kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--pg-mute); }
+  .lede { margin: 16px 0 0; max-width: 66ch; color: var(--pg-mute); font-size: clamp(15px, 1.4vw, 17px); }
+  .lede b { color: var(--pg-text); font-weight: 600; }
+
+  .grid { margin-top: clamp(30px, 5vw, 52px); display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: clamp(24px, 3vw, 40px); align-items: start; }
+
+  .concept > .ch { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--pg-line); padding-top: 14px; }
+  .concept .no { font-family: var(--mono); font-size: 11px; color: var(--pg-mute); font-variant-numeric: tabular-nums; }
+  .concept h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+  .concept .thesis { margin: 9px 0 0; font-size: 14.5px; color: var(--pg-mute); }
+  .concept .thesis b { color: var(--pg-text); font-weight: 600; }
+  .verdict { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .verdict div { font-family: var(--mono); font-size: 11.5px; line-height: 1.5; color: var(--pg-mute); display: flex; gap: 8px; }
+  .verdict div i { font-style: normal; flex-shrink: 0; width: 34px; letter-spacing: .08em; text-transform: uppercase; font-size: 9.5px; padding-top: 2px; }
+  .verdict .for i { color: var(--pg-accent); }
+  .verdict .cost i { color: #b8552a; }
+  @media (prefers-color-scheme: dark) { .verdict .cost i { color: var(--red); } }
+  :root[data-theme="dark"] .verdict .cost i { color: var(--red); }
+
+  /* ── the card mocks — Aurora, always dark (the product's own skin) ── */
+  .mock { margin-top: 16px; background: var(--ink); border: 1px solid var(--pg-line); border-radius: 26px; padding: 14px; }
+  .fcard { border: 1px solid var(--line); border-radius: 22px; padding: 17px; background: var(--ink2); }
+  .fcard .head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .fcard h3 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.01em; color: var(--chalk); }
+  .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+  .rowlbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+
+  .faces { display: flex; justify-content: space-between; gap: 6px; margin-top: 15px; }
+  .f { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 9px 0; border-radius: 15px; border: 1px solid transparent; }
+  .f .nm { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .f.on { background: color-mix(in srgb, var(--fa) 12%, transparent); border-color: color-mix(in srgb, var(--fa) 40%, transparent); }
+  .f.on .nm { color: var(--fa); }
+  .facesRow { display: flex; gap: 14px; margin-top: 14px; }
+  .facesRow .fmini { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+  .hr { height: 1px; background: var(--line); margin: 15px 0 13px; }
+  .txt { font-size: 13px; line-height: 1.5; color: var(--ash); }
+  .txt.chalk { color: var(--chalk); font-weight: 600; }
+
+  /* 01 spine */
+  .spine { position: relative; margin-top: 14px; padding-left: 26px; display: flex; flex-direction: column; gap: 16px; }
+  .spine::before { content: ""; position: absolute; left: 9px; top: 10px; bottom: 26px; width: 1px; background: color-mix(in srgb, var(--ash) 45%, transparent); }
+  .node { position: relative; }
+  .node .dot { position: absolute; left: -26px; top: 0; width: 19px; height: 19px; border-radius: 999px; background: var(--ink2); display: grid; place-items: center; }
+  .node .tm { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+  .node .val { font-size: 13px; font-weight: 700; color: var(--chalk); margin-top: 1px; }
+  .node.past .val { font-weight: 400; color: var(--ash); }
+  .node .sub { font-family: var(--mono); font-size: 10px; color: var(--ash); margin-top: 2px; }
+
+  /* 02 one number */
+  .readout { margin-top: 14px; display: flex; align-items: baseline; gap: 12px; }
+  .readout .big { font-family: var(--sans); font-weight: 800; font-size: 46px; letter-spacing: -.035em; line-height: 1; color: var(--blue); }
+  .readout .since { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+
+  /* 03 the drain */
+  .curve { margin-top: 14px; }
+  .curve svg { display: block; width: 100%; height: 96px; overflow: visible; }
+  .axis { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9.5px; color: var(--ash); margin-top: 5px; }
+
+  /* 04 two slots */
+  .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .slot { border: 1px solid var(--line); border-radius: 14px; padding: 12px; min-height: 96px; display: flex; flex-direction: column; gap: 7px; }
+  .slot.open { border-color: color-mix(in srgb, var(--lime) 40%, transparent); background: color-mix(in srgb, var(--lime) 7%, transparent); }
+  .slot .sl { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); }
+  .slot.open .sl { color: var(--lime); }
+  .slot .sv { font-size: 14px; font-weight: 700; color: var(--chalk); }
+  .slot .st { font-family: var(--mono); font-size: 10px; color: var(--ash); margin-top: auto; }
+
+  /* 05 ledger */
+  .ledger { margin-top: 13px; display: flex; flex-direction: column; }
+  .lrow { display: flex; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-family: var(--mono); font-size: 12px; color: var(--ash); }
+  .lrow:last-child { border-bottom: 0; }
+  .lrow .lv { font-size: 12.5px; letter-spacing: .02em; }
+  .lrow.now .lv { color: var(--chalk); font-weight: 700; }
+  .lrow .ll { margin-left: auto; font-size: 10px; }
+
+  /* 06 ask only */
+  .door { display: flex; align-items: center; gap: 10px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line); }
+  .door .dl { font-family: var(--mono); font-size: 11px; color: var(--ash); }
+  .door .dr { margin-left: auto; font-family: var(--mono); font-size: 15px; color: var(--ash); }
+
+  footer { margin-top: clamp(38px, 6vw, 68px); border-top: 1px solid var(--pg-line); padding-top: 20px; font-family: var(--mono); font-size: 11.5px; color: var(--pg-mute); line-height: 1.7; }
+</style>
+
+<div class="wrap">
+  <span class="kicker">HYBRID — design exploration</span>
+  <h1>Six ways the readiness card could work.</h1>
+  <p class="lede">
+    Concepts only — none of these is built. The <b>shipped</b> card (r4) is the four faces, one state line, and a
+    readings record. Each concept below keeps every behaviour the engine needs — a gate, a record that never
+    overwrites, a governing read — and spends the card's space differently. All are drawn in the Aurora system on
+    the same day: trained 08:00–09:00, logged <b>Flat</b> at 10:00, logged <b>Good</b> at 20:00.
+  </p>
+
+  <p class="lede" style="margin-top:14px">
+    <b>If we change one thing:</b> 03 <b>The Drain</b> is the only concept that earns its space by teaching
+    something — it shows why a later answer counts more instead of asserting it, and it is not copyable without
+    the model underneath. 05 <b>The Ledger</b> is the safe reduction if the card simply needs to be quieter.
+  </p>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Faces use the shipped SVG paths (apps/web/components/aurora/readiness-face.tsx). Tokens from
+    packages/core/src/theme/tokens.ts. Convention follows design/*.html — render standalone concepts, pick one,
+    record the choice in capabilities.ts.
+  </footer>
+</div>
+
+<script>
+  const F = {
+    wrecked: { e: "M16.4 15.2 L11 17.6 M23.6 15.2 L29 17.6", m: "M13.5 27.6 Q20 22.4 26.5 27.6", c: "var(--red)", n: "Wrecked" },
+    flat: { e: "M11 16.4 L15.6 16.4 M24.4 16.4 L29 16.4", m: "M14 25 L26 25", c: "var(--amber)", n: "Flat" },
+    good: { e: "M11 16.4 L15.6 16.4 M24.4 16.4 L29 16.4", m: "M13.5 23 Q20 28.4 26.5 23", c: "var(--blue)", n: "Good" },
+    primed: { e: "M10.6 17.2 Q13.6 14.4 16.6 17.2 M23.4 17.2 Q26.4 14.4 29.4 17.2", m: "M12.5 22.5 Q20 30 27.5 22.5", c: "var(--lime)", n: "Primed" },
+  };
+  const ORDER = ["wrecked", "flat", "good", "primed"];
+  const face = (k, s, tone) => `<svg width="${s}" height="${s}" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <path d="${F[k].e}" stroke="${tone || F[k].c}" stroke-width="2" stroke-linecap="round"/>
+    <path d="${F[k].m}" stroke="${tone || F[k].c}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  const picker = (sel) => `<div class="faces">${ORDER.map((k) => `
+    <div class="f${k === sel ? " on" : ""}" style="--fa:${F[k].c}">${face(k, 32)}<span class="nm">${F[k].n}</span></div>`).join("")}</div>`;
+
+  // The population decay curve the engine actually runs on, for concept 03.
+  const residual = (h) => 0.35 + 0.65 * Math.exp(-h / 6);
+  const curvePath = (w, hgt) => {
+    const pts = [];
+    for (let h = 0; h <= 24; h += 0.5) pts.push([(h / 24) * w, hgt - ((residual(h) - 0.35) / 0.65) * hgt]);
+    return "M" + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L");
+  };
+  const plot = (h, w, hgt) => [(h / 24) * w, hgt - ((residual(h) - 0.35) / 0.65) * hgt];
+
+  const CONCEPTS = [
+    {
+      no: "01", name: "The Spine",
+      thesis: "Each reading is a <b>node on a vertical spine</b>, so the day reads top-to-bottom as a story. The picker sits at the foot of it — answering adds the next node.",
+      pros: "The gap between two answers becomes physical distance, which is exactly what the clearance maths measures.",
+      cons: "The tallest of the six. On a day with one reading the spine is a stick with a dot on it.",
+      card: () => `
+        <div class="head"><h3>How ready do you feel?</h3></div>
+        <div class="spine">
+          <div class="node past"><span class="dot">${face("flat", 19, "var(--ash)")}</span>
+            <div class="tm">10:00</div><div class="val">Flat</div><div class="sub">+1h after training</div></div>
+          <div class="node"><span class="dot">${face("good", 19)}</span>
+            <div class="tm">20:00</div><div class="val">Good</div><div class="sub">+11h — governs today</div></div>
+        </div>
+        <div class="hr"></div>
+        <div class="rowlbl">Add the next</div>
+        ${picker(null)}`,
+    },
+    {
+      no: "02", name: "One Number",
+      thesis: "The Builder's readout, applied here: the day's <b>governing answer at display weight</b>, with everything else demoted to a hairline. You read the card in a glance from across the room.",
+      pros: "Fastest glance value of the six, and it matches a pattern the app already ships (builder-one-number).",
+      cons: "The word is not a number — it can't grow the way minutes do. The record needs a door.",
+      card: () => `
+        <div class="head"><h3>Readiness</h3><span class="meta">Next in 3h 48m</span></div>
+        <div class="readout"><span class="big">Good</span><span class="since">20:00 — +11h</span></div>
+        <div class="txt" style="margin-top:10px">Two readings today, up from Flat.</div>
+        <div class="hr"></div>
+        <div class="facesRow">${ORDER.map((k) => `<span class="fmini">${face(k, 24, k === "good" ? null : "var(--ash)")}</span>`).join("")}</div>`,
+    },
+    {
+      no: "03", name: "The Drain",
+      thesis: "Draw the <b>decay curve the engine actually runs on</b> and plot the readings on it. The card stops asserting that a later answer counts more and simply shows why.",
+      pros: "Teaches the model in one glance, and no competitor can copy it without having the model. Unique to this app.",
+      cons: "Needs one first-run explanation. Meaningless on a rest day, when there is no curve to sit on.",
+      card: () => {
+        const W = 268, H = 76;
+        const [x1, y1] = plot(1, W, H), [x2, y2] = plot(11, W, H);
+        return `
+        <div class="head"><h3>How ready do you feel?</h3><span class="meta">Next in 3h 48m</span></div>
+        <div class="curve">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Fatigue decay curve with today's two readings">
+            <path d="${curvePath(W, H)}" stroke="var(--line)" stroke-width="1.5" fill="none"/>
+            <circle cx="${x1}" cy="${y1}" r="4" fill="var(--ash)"/>
+            <circle cx="${x2}" cy="${y2}" r="5" fill="var(--blue)"/>
+          </svg>
+          <div class="axis"><span>SESSION</span><span>+6h</span><span>+12h</span><span>+24h</span></div>
+        </div>
+        <div class="txt" style="margin-top:11px"><span style="color:var(--chalk);font-weight:600">Good at +11h.</span> Most of the session should have drained by now — and it had.</div>
+        <div class="hr"></div>
+        ${picker(null)}`;
+      },
+    },
+    {
+      no: "04", name: "Two Slots",
+      thesis: "The engine's real unit is a <b>pair</b>: one reading while the session is present, one once it has drained. So the card is two slots, and an empty slot is the ask.",
+      pros: "Makes the gate self-evident — you can see which half of the pair is missing, with no countdown to explain.",
+      cons: "Rigid. A day with three readings has nowhere to put the third, and a rest day has no first slot.",
+      card: () => `
+        <div class="head"><h3>Today's pair</h3><span class="meta">1 of 2</span></div>
+        <div class="slots">
+          <div class="slot"><span class="sl">In the gym</span>${face("flat", 26, "var(--ash)")}
+            <span class="sv" style="color:var(--ash);font-weight:400">Flat</span><span class="st">10:00 — +1h</span></div>
+          <div class="slot open"><span class="sl">Since then</span>
+            <span class="sv" style="color:var(--chalk)">Open now</span>
+            <span class="st" style="margin-top:auto">The read that counts</span></div>
+        </div>
+        <div class="hr"></div>
+        ${picker(null)}`,
+    },
+    {
+      no: "05", name: "The Ledger",
+      thesis: "Strip the record to <b>type alone</b> — no faces below the picker, just a tight mono ledger. The four faces stay the card's only graphic, so they carry all the weight.",
+      pros: "The calmest and shortest. Scales to four readings without growing, and reads like the log it is.",
+      cons: "Loses the face-recognition speed in the record; the day's shape has to be read rather than seen.",
+      card: () => `
+        <div class="head"><h3>How ready do you feel?</h3><span class="meta">Next in 3h 48m</span></div>
+        ${picker("good")}
+        <div class="hr"></div>
+        <div class="rowlbl">Today's readings</div>
+        <div class="ledger">
+          <div class="lrow"><span>10:00</span><span class="lv">Flat</span><span class="ll">+1h</span></div>
+          <div class="lrow now"><span>20:00</span><span class="lv">Good</span><span class="ll">+11h</span></div>
+        </div>`,
+    },
+    {
+      no: "06", name: "Ask Only",
+      thesis: "Today is a page of small cards, and this one has grown. Cut it to <b>the question and the faces</b>; the record, the trend and the explanation live one tap away.",
+      pros: "Smallest footprint on a crowded screen, and the card can never grow again — new detail goes behind the door.",
+      cons: "The day's story is out of sight, so the second reading loses the thing that motivates it.",
+      card: () => `
+        <div class="head"><h3>How ready do you feel?</h3><span class="meta">Next in 3h 48m</span></div>
+        ${picker("good")}
+        <div class="door"><span class="dl">Today's readings</span><span class="meta">2</span><span class="dr">→</span></div>`,
+    },
+  ];
+
+  document.getElementById("grid").innerHTML = CONCEPTS.map((c) => `
+    <section class="concept">
+      <div class="ch"><span class="no">${c.no}</span><h2>${c.name}</h2></div>
+      <p class="thesis">${c.thesis}</p>
+      <div class="mock"><div class="fcard">${c.card()}</div></div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>${c.pros}</span></div>
+        <div class="cost"><i>Cost</i><span>${c.cons}</span></div>
+      </div>
+    </section>`).join("");
+</script>

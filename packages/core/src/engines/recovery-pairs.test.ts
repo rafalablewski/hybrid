@@ -13,6 +13,7 @@ import {
 } from "../feel-timing";
 import { athleteLandmarks } from "./landmark-resolve";
 import { checkinFromSoreness } from "../checkin-scales";
+import { READINESS_PAIR_WEIGHT } from "../readiness-reads";
 
 const H = 3_600_000;
 const NOW = Date.parse("2026-07-28T20:00:00Z");
@@ -229,5 +230,52 @@ describe("clearance reaches the landmarks", () => {
       expect(l.mavLow).toBeLessThanOrEqual(l.mavHigh);
       expect(l.mavHigh).toBeLessThanOrEqual(l.mrv);
     }
+  });
+});
+
+describe("a day's own two reads, when there is no post-workout answer", () => {
+  // The athlete skipped the finish card entirely — no `fatigue`, no
+  // `feelLoggedAt`. Before a day could hold more than one read this session
+  // produced nothing at all: one answer, and if it landed in the gym there was
+  // nothing to pair it with.
+  const noFinishCard = sess({ fatigue: null, feelLoggedAt: null });
+  const end = Date.parse(noFinishCard.completedAt!);
+
+  const reads = (...rest: { h: number; energy: number }[]): RecoveryReport[] =>
+    rest.map((r) => ({
+      date: new Date(end).toISOString(),
+      energy: r.energy,
+      loggedAt: new Date(end + r.h * H).toISOString(),
+    }));
+
+  it("pairs the in-the-gym read with the evening one", () => {
+    const pairs = pairReads([noFinishCard], reads({ h: 1, energy: 2 }, { h: 14, energy: 2 }), { now: NOW });
+    expect(pairs).toHaveLength(1);
+    // Still as wrecked fourteen hours on as one hour on: slower than the curve.
+    expect(pairs[0]!.curve.clearance).toBe("slow");
+  });
+
+  it("counts for less than a direct session report", () => {
+    const pairs = pairReads([noFinishCard], reads({ h: 1, energy: 2 }, { h: 14, energy: 2 }), { now: NOW });
+    expect(pairs[0]!.curve.weight).toBeLessThanOrEqual(READINESS_PAIR_WEIGHT);
+  });
+
+  it("refuses to build one out of a single read", () => {
+    expect(pairReads([noFinishCard], reads({ h: 1, energy: 2 }), { now: NOW })).toEqual([]);
+  });
+
+  it("will not treat a read taken hours later as the immediate side", () => {
+    // Nothing inside the immediate window, so there is no anchor — and inventing
+    // one out of the 8h read would compare two late reads across a curve that
+    // has already flattened.
+    expect(pairReads([noFinishCard], reads({ h: 8, energy: 2 }, { h: 20, energy: 2 }), { now: NOW })).toEqual([]);
+  });
+
+  it("still prefers the session's own answer when there is one", () => {
+    const withCard = sess({ fatigue: 4, feelLoggedAt: new Date(end + 0.5 * H).toISOString() });
+    const pairs = pairReads([withCard], reads({ h: 1, energy: 2 }, { h: 14, energy: 2 }), { now: NOW });
+    expect(pairs).toHaveLength(1);
+    // Full weight: this pair is anchored on the direct report, not on a read.
+    expect(pairs[0]!.curve.weight).toBeGreaterThan(READINESS_PAIR_WEIGHT);
   });
 });

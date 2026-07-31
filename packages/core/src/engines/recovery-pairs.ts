@@ -7,9 +7,11 @@ import {
   recoveryCurve,
   recoveryIndex,
   MIN_PAIR_GAP_H,
+  READ_BOUNDS,
   type RecoveryCurve,
   type RecoveryIndex,
 } from "../feel-timing";
+import { readPairCurve } from "../readiness-reads";
 import { RECOVERY_WINDOW_H } from "../feel-schedule";
 
 /**
@@ -96,18 +98,45 @@ export function pairReads(
 
   for (const { s, end } of ends) {
     if (end < since || end > now) continue;
-    if (typeof s.fatigue !== "number") continue;
-    const immediateLag = hoursAfterSession(s.completedAt ?? s.startedAt, s.feelLoggedAt);
-    // No timestamp means no anchor: the whole point of the pair is the gap.
-    if (immediateLag == null) continue;
-    const immediate = feelReading(s.fatigue, immediateLag);
-    if (!immediate) continue;
 
     // The next session to start, if any — the pair may not reach past it.
     const nextEnd = endTimes.find((t) => t > end) ?? Infinity;
 
+    // THE IMMEDIATE SIDE, preferred from the session's own answer.
+    let immediateLag = typeof s.fatigue === "number"
+      ? hoursAfterSession(s.completedAt ?? s.startedAt, s.feelLoggedAt)
+      : null;
+    let immediate = immediateLag == null || typeof s.fatigue !== "number" ? null : feelReading(s.fatigue, immediateLag);
+    // …or, failing that, from a CHECK-IN READ taken while the session was still
+    // present. Before the day could hold more than one read this branch was
+    // unreachable — a day had one answer, and if it landed in the gym there was
+    // nothing left to pair it with. Now an athlete who skips the post-workout
+    // card but taps the readiness faces twice still measures their own
+    // clearance. It is the same instrument on the same curve, so it is the same
+    // ratio — carried at a discount, because a readiness answer also carries
+    // sleep and the rest of the day with it (READINESS_PAIR_WEIGHT).
+    let fromReads = false;
+    let afterAt = end;
+    if (!immediate) {
+      for (const r of reads) {
+        if (r.at <= end) continue;
+        if (r.at >= nextEnd) break;
+        const lag = hoursAfterSession(end, r.at);
+        if (lag == null) continue;
+        if (lag >= READ_BOUNDS.immediate) break; // reads are ordered: nothing earlier remains
+        const reading = feelReading(r.spent!, lag);
+        if (!reading) break;
+        immediate = reading;
+        immediateLag = lag;
+        fromReads = true;
+        afterAt = r.at;
+        break;
+      }
+    }
+    if (!immediate || immediateLag == null) continue;
+
     for (const r of reads) {
-      if (r.at <= end) continue;
+      if (r.at <= afterAt) continue;
       const lag = hoursAfterSession(end, r.at);
       if (lag == null) continue;
       if (lag > RECOVERY_WINDOW_H) break; // reads are ordered; nothing later qualifies
@@ -116,7 +145,7 @@ export function pairReads(
       if (r.at >= nextEnd) break;
 
       const later = feelReading(r.spent!, lag);
-      const curve = recoveryCurve(immediate, later);
+      const curve = fromReads ? readPairCurve(immediate, later) : recoveryCurve(immediate, later);
       if (curve) {
         out.push({ sessionId: s.id, sessionTitle: s.title, at: new Date(end).toISOString(), curve });
       }

@@ -86,6 +86,53 @@ describe("observing the response to volume", () => {
     expect(rows[0]!.energy).toBeNull();
   });
 
+  it("gives a day ONE vote however many times the athlete checked in", () => {
+    // The card asks again once a session has drained, so a training day can
+    // carry several reads. A day must not outvote a rest day by being logged
+    // more often — training days are exactly the days that read low, so read
+    // frequency would otherwise look like overreaching.
+    const once = observeVolumeResponse([legs(1, 5, 100)], {
+      now: NOW,
+      weeks: 2,
+      recovery: [
+        { date: daysAgo(1), energy: 2, loggedAt: daysAgo(1) },
+        { date: daysAgo(3), energy: 5, loggedAt: daysAgo(3) },
+      ],
+    }).get("quads")![0]!;
+    const thrice = observeVolumeResponse([legs(1, 5, 100)], {
+      now: NOW,
+      weeks: 2,
+      recovery: [
+        { date: daysAgo(1), energy: 2, loggedAt: daysAgo(1) },
+        { date: daysAgo(1), energy: 2, loggedAt: daysAgo(1) },
+        { date: daysAgo(1), energy: 2, loggedAt: daysAgo(1) },
+        { date: daysAgo(3), energy: 5, loggedAt: daysAgo(3) },
+      ],
+    }).get("quads")![0]!;
+    expect(thrice.energy).toBe(once.energy);
+    expect(thrice.recoveryCost).toBe(once.recoveryCost);
+  });
+
+  it("takes the day's DECISIVE read, not the mean of its reads", () => {
+    // Trained at 08:00. Tapped "wrecked" an hour later — the session talking —
+    // then "good" that evening. The day's energy is the evening read; averaging
+    // the two would describe neither moment.
+    const trainedAt = new Date(NOW - 1.5 * 86_400_000).toISOString(); // 00:00, 1.5d ago
+    const end = Date.parse(trainedAt);
+    const rows = observeVolumeResponse(
+      [{ id: "s", title: "Legs", startedAt: trainedAt, completedAt: trainedAt, blocks: [] }],
+      {
+        now: NOW,
+        weeks: 2,
+        recovery: [
+          { date: new Date(end).toISOString(), energy: 2, loggedAt: new Date(end + 3_600_000).toISOString() },
+          { date: new Date(end).toISOString(), energy: 4, loggedAt: new Date(end + 14 * 3_600_000).toISOString() },
+        ],
+      },
+    ).get("quads")!;
+    expect(rows[0]!.energy).toBe(4);
+  });
+
   it("leaves the recovery fields null when nobody checked in", () => {
     const rows = observeVolumeResponse([legs(1, 5, 100)], { now: NOW, weeks: 2 }).get("quads")!;
     expect(rows[0]!.soreness).toBeNull();

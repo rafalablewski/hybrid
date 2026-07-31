@@ -34,8 +34,16 @@ import { fs, space,
   readinessContext,
   readinessNoteKey,
   hoursSince,
-  checkinCooldownRemainingMs,
-  relativeTime,
+  readGate,
+  placeReads,
+  decisiveFeeling,
+  decisiveRead,
+  readTrend,
+  READ_GATE_KEY,
+  READ_TREND_KEY,
+  MAX_READS_PER_DAY,
+  type PlacedRead,
+  type ReadGate,
   planSchedule,
   masthead,
   alsoTodayCopy,
@@ -350,13 +358,34 @@ export default function AuroraToday({
     }
     return best;
   }, [sessions]);
-  // The most recent check-in WRITE anywhere (createdAt, not the day it covers)
-  // — mirrors the server's global 6h re-log cooldown, which also holds when
-  // back-logging a feeling for a past day.
-  const lastCheckinAt = useMemo(
+  // Every session end, for placing a read against the training before it.
+  const sessionEnds = useMemo(
+    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
+    [sessions],
+  );
+  // THE VIEWED DAY AS A SEQUENCE, not a value. Each readiness answer is its own
+  // row now (Checkin.reads) — "flat at 09:30" and "flat at 22:00" are two
+  // measurements of two different things, and the second is the one that should
+  // move training. A row from a database that hasn't run the reads migration
+  // falls back to the single stored value, which is exactly what it used to be.
+  const dayReads = useMemo<PlacedRead[]>(() => {
+    const rows = (dayCheckin?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+    const raw = rows.length
+      ? rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) }))
+      : dayCheckin && typeof dayCheckin[QUICK_CHECKIN_METRIC] === "number" && feelingAt != null
+        ? [{ value: dayCheckin[QUICK_CHECKIN_METRIC]!, at: feelingAt }]
+        : [];
+    return placeReads(raw, sessionEnds);
+  }, [dayCheckin, feelingAt, sessionEnds]);
+  // The most recent readiness READ (not the row write): what the re-log gate and
+  // the recovery schedule are both measured from.
+  const lastReadAt = useMemo(
     () =>
       checkins.reduce<number | null>((m, c) => {
-        const ts = Date.parse(c?.createdAt ?? c?.weekOf ?? "");
+        const reads = (c?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+        const ts = reads.length
+          ? Date.parse(reads[reads.length - 1]!.loggedAt)
+          : Date.parse(c?.createdAt ?? c?.weekOf ?? "");
         return Number.isFinite(ts) && (m == null || ts > m) ? ts : m;
       }, null),
     [checkins],
@@ -377,10 +406,40 @@ export default function AuroraToday({
         fatigue: x.fatigue ?? null,
         feelLoggedAt: x.feelLoggedAt ?? null,
       })),
-      lastCheckinAt,
+      // The recovery read is answered by a READ, not by the row being touched:
+      // editing the day's note in the evening is not a statement about how the
+      // session drained.
+      lastCheckinAt: lastReadAt,
     });
     return sch.due.find((p) => p.kind === "recovery") ?? null;
-  }, [sessions, lastCheckinAt]);
+  }, [sessions, lastReadAt]);
+
+  // MAY THE ATHLETE LOG A NEW READ. Two clocks — four hours since the last read,
+  // and six hours since a session that read was taken in the shadow of — and the
+  // later one wins. Today only: a past day carries no live session and is
+  // back-logged, not re-read. See core/readiness-reads.ts.
+  const todayCheckin = useMemo(
+    () => checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null,
+    [checkins, today],
+  );
+  const todayReads = useMemo<PlacedRead[]>(() => {
+    const rows = (todayCheckin?.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
+    const raw = rows.length
+      ? rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) }))
+      : todayCheckin && typeof todayCheckin[QUICK_CHECKIN_METRIC] === "number"
+        ? [{ value: todayCheckin[QUICK_CHECKIN_METRIC]!, at: Date.parse(todayCheckin.createdAt ?? todayCheckin.weekOf) }]
+        : [];
+    return placeReads(raw, sessionEnds);
+  }, [todayCheckin, sessionEnds]);
+  const readGateNow = useMemo<ReadGate>(
+    () =>
+      readGate({
+        lastReadAt: todayReads.length ? todayReads[todayReads.length - 1]!.at : null,
+        lastSessionEnd,
+        readsToday: todayReads.length,
+      }),
+    [todayReads, lastSessionEnd],
+  );
 
   // TODAY's readiness feeling (independent of which day the rail has selected)
   // — feeds the prescription so the one-tap check-in mechanically scales the
@@ -398,9 +457,15 @@ export default function AuroraToday({
   // Subjective readiness is the answer to the readiness question; the pill and
   // the load nudge both quote it back ("you're feeling flat today"), so it has
   // to be what the athlete actually said.
+  //
+  // …and when the day carries more than one answer, it is the DECISIVE one —
+  // the latest read not taken minutes after training. Prescribing off the tap
+  // an athlete makes walking out of the gym would deload them for the crime of
+  // having trained hard; prescribing off the read they gave hours later is the
+  // whole reason the second read exists. See core/readiness-reads.ts.
   const todayFeeling = useMemo(
-    () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
-    [checkins, today],
+    () => decisiveFeeling(todayReads) ?? quickCheckinFeeling(todayCheckin),
+    [todayReads, todayCheckin],
   );
   const rx = useMemo(
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: intake.experience, equipment: intake.equipment, subjectiveReadiness: todayFeeling ?? undefined }),
@@ -777,13 +842,12 @@ export default function AuroraToday({
       <div ref={railFeelingCard}>
         <FeelingCard
           feeling={feeling}
-          hasCheckin={dayCheckin != null}
           dayMetrics={dayCheckin}
           daySessions={daySessions}
-          recoveryDue={recoveryDue != null}
-          loggedAt={feelingAt}
+          recoveryDue={recoveryDue != null || readGateNow.wanted}
           lastSessionEnd={lastSessionEnd}
-          cooldownFrom={lastCheckinAt}
+          dayReads={dayReads}
+          gate={readGateNow}
           isToday={dayIsToday}
           isFuture={dayIsFuture}
           dayTs={railDay?.ts ?? null}
@@ -1069,16 +1133,19 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
 // full check-in makes). Single-purpose: the done count + log action moved up into
 // the Also Today card. The picked face lights in its own semantic feeling colour.
 // Day-scoped via the week rail: a past day shows THAT day's feeling and a tap
-// back-logs it (weekOf = that day); a future day is read-only. The 6h re-log
-// cooldown mirrors the server's — global across days (keyed on the last WRITE),
-// so `cooldownFrom` is the newest check-in's createdAt, not the viewed day's.
-function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue, loggedAt, lastSessionEnd, cooldownFrom, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+// back-logs it (weekOf = that day); a future day is read-only.
+//
+// ASKING AGAIN IS NOT EDITING THE ANSWER. The card used to lock its faces the
+// moment the day's check-in was complete, and the only way past that was Edit —
+// which OVERWROTE the morning's answer. But "flat ninety minutes after squats"
+// and "flat fourteen hours later" are two measurements, and the second is the
+// one that should move training. So a new answer is APPENDED (each read is its
+// own row) and the faces reopen once the gate does: four hours after the last
+// read, or six hours after a session that read was taken in the shadow of,
+// whichever is later. See core/readiness-reads.ts.
+function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessionEnd, dayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   /** The answer to THIS card's question, not a blend of the day's four. */
   feeling: ReadinessFeeling | null;
-  /** Whether the day has a check-in row at all — which is what the 6h cooldown
-   *  actually gates. Separate from `feeling`, which can be null on a day whose
-   *  other metrics were answered but whose readiness question wasn't. */
-  hasCheckin: boolean;
   /** The viewed day's stored metrics — which of the four are actually answered. */
   dayMetrics: Partial<CheckinMetrics> | null;
   /** The sessions trained that day — one effort question each. */
@@ -1086,10 +1153,12 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
   /** True when the delayed recovery read on the last session has come due —
    *  the card leads with WHY it is asking again rather than repeating itself. */
   recoveryDue: boolean;
-  loggedAt: number | null;
   /** When the athlete last finished training — the lens for today's answer. */
   lastSessionEnd: number | null;
-  cooldownFrom: number | null;
+  /** Every readiness answer given on the VIEWED day, placed in time. */
+  dayReads: PlacedRead[];
+  /** Whether a NEW read may be logged right now, and why not. */
+  gate: ReadGate;
   isToday: boolean;
   isFuture: boolean;
   dayTs: number | null;
@@ -1110,46 +1179,100 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
   // still said "0 / 4 answered", and — the one that actually costs an answer —
   // `startStep` opened the flow on the readiness question you had just
   // answered. Held per DAY so switching the rail can't carry it, and applied
-  // only until the stored row carries an answer of its own, at which point the
-  // server's value wins with no clean-up needed.
-  const [picked, setPicked] = useState<{ day: number | null; rating: number } | null>(null);
-  const pending = picked && picked.day === dayTs && quickCheckinFeeling(dayMetrics) == null ? picked.rating : null;
+  // only until the day carries MORE READS THAN IT DID AT THE TAP, at which
+  // point the server's value wins with no clean-up needed. Counting reads
+  // rather than asking "does the row have an answer yet" is what makes this
+  // work for the second and third read of a day, where it always did.
+  const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
+  // WHAT THE READING IS WORTH, ON REQUEST. This sentence used to sit under the
+  // faces on every render — an explanation the athlete has read a hundred times,
+  // occupying the place where the card says what is happening NOW. It is
+  // reference, not news, so it moves behind an ⓘ on the reading it describes.
+  const [whyOpen, setWhyOpen] = useState(false);
+  // ONE NUMBER (design/readiness-one-number-states.html). The card leads with
+  // the reading that governs the day at display weight; the day's record lives
+  // behind a door, open on request. That is the concept's trade — a card you
+  // can read from across the room, with the story one tap away.
+  const [readsOpen, setReadsOpen] = useState(false);
+  const justPicked = picked != null && picked.day === dayTs;
+  const pending = justPicked && dayReads.length <= picked!.reads ? picked!.rating : null;
   const metrics = pending != null ? { ...dayMetrics, [QUICK_CHECKIN_METRIC]: pending } : dayMetrics;
-  const shownFeeling = pending != null ? checkinScaleFeeling(pending) : feeling;
+  // THE ANSWER THE DAY IS JUDGED ON — the latest read that isn't the session
+  // talking, not "whatever was written last". An athlete who logged a real
+  // recovery read in the evening, trained again late and tapped "wrecked"
+  // walking out keeps the evening's reading as the day's.
+  const shownFeeling = pending != null ? checkinScaleFeeling(pending) : (decisiveFeeling(dayReads) ?? feeling);
+  const decisive = decisiveRead(dayReads);
+  const trend = readTrend(dayReads);
   // What today's check-in actually carries. The one-tap face answers Energy;
   // until the follow-up runs, the other three are genuinely unknown and the
   // card says so instead of implying one tap was the full picture.
   const done = dayCompleteness(metrics, daySessions);
   const startStep = firstOutstandingIndex(metrics, daySessions);
-  // The 6h re-log window: while it's open, show "next in Xh Ym". The faces lock
-  // while cooling (the server would reject the write anyway) and on future days.
-  const coolMs = cooldownFrom != null ? checkinCooldownRemainingMs(cooldownFrom) : 0;
-  const cooling = coolMs > 0;
-  // A day that ALREADY has a check-in can be re-tapped to adjust it — the server
-  // upserts the same day (cooldown-exempt). The 6h cooldown only locks STARTING
-  // a fresh check-in on a day that has none yet (a new-day create would 429).
-  // Keyed on the ROW existing, not on the readiness answer: a day whose sleep
-  // and mood are logged but whose readiness question isn't would otherwise lock
-  // the very question it is asking.
-  // The just-tapped row counts as a row: otherwise the faces could re-lock in
-  // the window between the write and the refetch that confirms it.
-  const blockingCooldown = cooling && !hasCheckin && pending == null;
-  // A COMPLETE check-in is not a live control either. The four faces stayed
-  // tappable over a finished day, so the one answer the athlete had already
-  // committed could be overwritten by a stray thumb — and the guided flow
-  // below it was busy muting the very same answer. Changing it is deliberate
-  // now: open the check-in and press Edit. Scoped to TODAY, because a past day
-  // has no follow-up sheet and this row is the only way to back-log it.
-  const settled = isToday && done.complete;
-  const locked = busy || isFuture || blockingCooldown || settled;
-  const coolMin = Math.ceil(coolMs / 60000);
+  // THE GATE, on today only. A past day is back-logged rather than re-read, so
+  // it stays tappable; a future day can't be felt at all. The just-tapped read
+  // counts as logged (`pending`) so the faces don't flicker back open in the
+  // window between the write and the refetch that confirms it.
+  const held = isToday && (!gate.open || justPicked);
+  const locked = busy || isFuture || held;
+  const coolMin = Number.isFinite(gate.msUntilOpen) ? Math.ceil(gate.msUntilOpen / 60000) : 0;
   const coolH = Math.floor(coolMin / 60);
   const coolM = coolMin % 60;
+  const gateNote = held ? READ_GATE_KEY[gate.reason] : null;
+  // A NEW READ IS AN UNANSWERED QUESTION. Leaving the earlier answer lit once
+  // the gate opens invites the athlete to CORRECT it — the one thing this card
+  // is no longer for, and the exact confusion the old build created. The
+  // reading itself is not hidden: it stays on the record below, with its clock.
+  // The faces go blank because "how are you right now" genuinely has no answer
+  // yet, and a blank row of faces is the only honest way to ask it.
+  const inviting = isToday && gate.open && dayReads.length > 0 && !justPicked;
+  const selected = inviting ? null : shownFeeling;
   // The clock's effect on the meaning of today's answer, from core so both
   // clients say the same thing. `low` is the two negative feelings — the only
   // ones whose reading genuinely turns on how long ago you trained.
   const ctxLow = shownFeeling === "flat" || shownFeeling === "wrecked";
-  const ctxNote = readinessNoteKey(readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // …read against the DECISIVE read's own clock, not the clock right now: the
+  // sentence describes the answer on the card ("hours after training and still
+  // flat"), and dating it to this instant would relabel a morning reading as an
+  // evening one just because the athlete opened the app again.
+  const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // ONE LINE OF MEANING, not four stacked greys. A context note, an invitation,
+  // a gate reason and a countdown chip were all queueing under the faces — the
+  // triple narration the Builder critique killed, in a smaller box. Only one of
+  // them is ever what the athlete needs at that moment, so only one renders:
+  // what is holding the faces, then what a new tap would do, then what the
+  // reading on record is worth.
+  // THE STAMP under the big value: when it was given, and how long after
+  // training that was — the fact that makes two identical answers different
+  // measurements. While the app is ASKING, it switches to "since" so the number
+  // stops claiming to be current the moment a current one is wanted.
+  const heroAt = decisive ?? dayReads[dayReads.length - 1] ?? null;
+  const heroClock = heroAt ? sessionClockTime(new Date(heroAt.at).toISOString()) : null;
+  const heroStamp = pending != null
+    ? sessionClockTime(new Date().toISOString())
+    : !heroAt
+    ? t("w.home.today.heroNotLogged")
+    : inviting
+      ? t("w.home.today.heroSince").replace("{t}", heroClock!)
+      : heroAt.hoursSinceSession != null
+        ? `${heroClock} — +${Math.round(heroAt.hoursSinceSession)}h ${t("w.home.today.heroAfterTraining")}`
+        : `${heroClock} — ${t("w.home.today.readNoSession")}`;
+  const line = whyOpen && ctxNote
+    ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
+    : gateNote
+      ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+      : inviting
+        ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+        : !shownFeeling && isToday
+          ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
+          : trend
+            ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
+            : null;
+  const lineColor = line?.tone === "chalk" ? C("chalk") : C("ash");
+  // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
+  // ask and the follow-up trigger. The ask wins whenever it is showing: it is
+  // the app asking for something, and the follow-up is a door that can wait.
+  const asking = isToday && recoveryDue;
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1172,7 +1295,7 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
       });
       if (res.ok) {
         // Show the tap NOW; the refetch below confirms it a moment later.
-        setPicked({ day: dayTs, rating });
+        setPicked({ day: dayTs, rating, reads: dayReads.length });
         // The cached check-in row drives this very card — drop it so the
         // athlete's own pick is never the thing that looks stale.
         revalidate.checkins();
@@ -1180,7 +1303,10 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
         // …and go straight into the rest of the questions. Answering the
         // headline is the moment the athlete is most willing to answer more,
         // and it's now the only way the other three ever get real values.
-        if (isToday) setFollowUpOpen(true);
+        // Only while something is still outstanding: a SECOND read of the day
+        // has nothing left to ask, and opening an all-answered wizard on top of
+        // it would read as the app having forgotten the first pass.
+        if (isToday && !done.complete) setFollowUpOpen(true);
       }
     } catch {
       // a failed tap simply doesn't set — the athlete can tap again
@@ -1191,24 +1317,75 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{t("w.recovery.readiness.title")}</div>
+        {/* The card ASKS until it has an answer, then REPORTS: once the hero
+            carries the reading, repeating the question above it is the same
+            sentence twice. */}
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>
+          {t(shownFeeling ? "w.home.today.glanceReadiness" : "w.recovery.readiness.title")}
+        </div>
         {/* viewing another day — the date names the scope, no extra copy */}
-        {!isToday && dayLabel && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dayLabel}</span>}
+        {/* Mono meta on the right, per the Explore SectionHead standard: the
+            viewed date on another day, otherwise how long the faces are held.
+            It used to be a pill sharing a row with the reason paragraph. */}
+        {!isToday && dayLabel ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dayLabel}</span>
+        ) : asking ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+            {t("session.feel.promptRecovery")}
+          </span>
+        ) : gate.reason === "dayFull" && isToday ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
+            {dayReads.length} / {MAX_READS_PER_DAY}
+          </span>
+        ) : held && gate.opensAt != null ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
+            {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
+          </span>
+        ) : null}
       </div>
       {/* THE SECOND ASK, NAMED. An athlete who already answered at the end of
           their session and is asked again a few hours later will read it as the
           app having forgotten — unless it says what this one is for. It is a
           different question: not "how hard was that" but "did you absorb it".
           See core/feel-schedule.ts. */}
-      {isToday && recoveryDue && (
-        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 14, background: `color-mix(in srgb, var(--lime-text) 8%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 24%, transparent)` }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("session.feel.promptRecovery")}</div>
-          <p style={{ margin: "5px 0 0", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>{t("session.feel.whyRecovery")}</p>
-        </div>
+      {/* THE ONE NUMBER. The reading that governs the day, at display weight,
+          in its own semantic tone — the card's single focal element. An empty
+          day gets a light dash rather than a zero or a middling 3: there is no
+          reading yet, and inventing one is the failure this card exists to
+          avoid. The ⓘ sits with it because it explains THIS reading. */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 11, flexWrap: "wrap", marginTop: 15 }}>
+        <span style={{
+          fontFamily: "var(--font-heading)", fontWeight: shownFeeling ? 800 : 300, fontSize: 46, lineHeight: .96,
+          letterSpacing: shownFeeling ? "-.04em" : "-.01em",
+          color: shownFeeling ? `var(--${READINESS_FACE[shownFeeling].accent}-text)` : `color-mix(in srgb, ${C("ash")} 55%, transparent)`,
+        }}>
+          {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{heroStamp}</span>
+        {shownFeeling && ctxNote && isToday && (
+          <button
+            onClick={() => setWhyOpen((v) => !v)}
+            aria-expanded={whyOpen}
+            aria-label={t("w.home.today.readWhy")}
+            style={{ display: "grid", placeItems: "center", width: 18, height: 18, flexShrink: 0, borderRadius: 999, border: `1px solid ${whyOpen ? C("ash") : C("line")}`, background: "none", cursor: "pointer", color: C("ash"), padding: 0 }}
+          >
+            <AuroraIcon name="info" size={11} color={C("ash")} />
+          </button>
+        )}
+      </div>
+
+      {line && (
+        <p style={{ margin: "10px 0 0", fontSize: fs.body, lineHeight: 1.5, color: lineColor, fontWeight: line.sub ? 600 : 400 }}>
+          {t(line.key)}
+          {line.sub && <span style={{ color: C("ash"), fontWeight: 400 }}> {t(line.sub)}</span>}
+        </p>
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "16px 0 2px" }}>
+
+      <div style={{ height: 1, background: C("line"), margin: "15px 0 0" }} />
+
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "13px 0 2px" }}>
         {READINESS_FEELINGS.map((key, i) => {
-          const on = shownFeeling === key;
+          const on = selected === key;
           const at = `var(--${READINESS_FACE[key].accent}-text)`;
           return (
             <button key={key} onClick={() => pick(i + 2)} disabled={locked} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
@@ -1219,31 +1396,59 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
           );
         })}
       </div>
-      {/* WHAT THIS ANSWER IS WORTH. The same tap means different things an hour
-          after training and a day after it, so the card says which reading it
-          is looking at instead of leaving the athlete to guess (and instead of
-          the app quietly treating the two as the same number). */}
-      {isToday && shownFeeling && ctxNote && (
-        <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: ctxLow ? "var(--amber-text)" : C("ash") }}>{t(ctxNote)}</p>
-      )}
-
-      {/* the day's logged feeling + the re-log cooldown chip. The chip also shows
-          alone while cooling (it explains why the faces are locked on a day
-          without its own check-in). */}
-      {((shownFeeling && loggedAt != null) || blockingCooldown) && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-          {shownFeeling && loggedAt != null && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-              {t("w.home.today.feelLogged")} <b style={{ color: C("chalk"), fontWeight: 700 }}>{t(`w.recovery.readiness.${shownFeeling}`)}</b>, {relativeTime(loggedAt)}
+      {/* THE DAY'S RECORD — kept, not a footnote.
+          This used to be one grey line, "Logged Flat, 5h ago", which is what a
+          value looks like when the app can only hold one. A day now holds a
+          SEQUENCE, and the sequence is the interesting part: the drop (or the
+          climb) between an answer given in the gym and one given hours later is
+          what measures this athlete's own recovery. So the readings get a place
+          of their own — each with the face it was given as, the clock time it
+          was given at, and how long after training that was. The one training
+          is prescribed off is marked; none of them is ever overwritten. */}
+      {dayReads.length > 0 && (
+        <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+          {/* THE DOOR. Shut by default — the hero is what the card is for, and a
+              list under it is the thing that made the card grow in the first
+              place. The count sits on the door so the day's shape is legible
+              without opening it. */}
+          <button
+            onClick={() => setReadsOpen((v) => !v)}
+            aria-expanded={readsOpen}
+            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+          >
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+              {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </span>
-          )}
-          {blockingCooldown && (
-            <span style={{ marginLeft: "auto", flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 10px" }}>
-              {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
-            </span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length}</span>
+            <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.note, color: C("ash"), transform: readsOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}>→</span>
+          </button>
+          {readsOpen && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 11 }}>
+            {dayReads.map((r) => {
+              const governs = decisive != null && r.at === decisive.at;
+              return (
+                <div key={r.at} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ReadinessFace feeling={r.feeling} size={20} tone={governs ? undefined : C("ash")} />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>
+                    {sessionClockTime(new Date(r.at).toISOString())}
+                  </span>
+                  <span style={{ fontSize: fs.caption, fontWeight: governs ? 700 : 400, color: governs ? C("chalk") : C("ash") }}>
+                    {t(`w.recovery.readiness.${r.feeling}`)}
+                  </span>
+                  {/* How long after training it was given — the thing that makes
+                      two identical answers different measurements. Reads with no
+                      session behind them say so rather than showing a lag of 0. */}
+                  <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap" }}>
+                    {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
           )}
         </div>
       )}
+
       {/* THE FOLLOW-UP. Once the headline question is answered the card offers
           the rest — sleep, freshness, mood — in a pop-up rather than an inline
           expansion, so the card stays one readable row of faces and the three
@@ -1254,7 +1459,7 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
         <>
           <button
             onClick={() => setFollowUpOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >
             <span style={{ flex: 1 }}>
               <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>
@@ -1275,7 +1480,7 @@ function FeelingCard({ feeling, hasCheckin, dayMetrics, daySessions, recoveryDue
                 />
               ))}
             </span>
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete ? C("ash") : "var(--lime-text)" }}>→</span>
+            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete || asking ? C("ash") : "var(--lime-text)" }}>→</span>
           </button>
 
           <Sheet
