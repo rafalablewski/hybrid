@@ -1275,6 +1275,11 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // rather than asking "does the row have an answer yet" is what makes this
   // work for the second and third read of a day, where it always did.
   const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
+  // WHAT THE READING IS WORTH, ON REQUEST. This sentence used to sit under the
+  // faces on every render — an explanation the athlete has read a hundred times,
+  // occupying the place where the card says what is happening NOW. It is
+  // reference, not news, so it moves behind an ⓘ on the reading it describes.
+  const [whyOpen, setWhyOpen] = useState(false);
   const justPicked = picked != null && picked.day === dayTs;
   const pending = justPicked && dayReads.length <= picked!.reads ? picked!.rating : null;
   const metrics = pending != null ? { ...dayMetrics, [QUICK_CHECKIN_METRIC]: pending } : dayMetrics;
@@ -1327,10 +1332,8 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
     : inviting
       ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
-      : isToday && shownFeeling && ctxNote
-        ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
-        : null;
-  const lineColor = line?.tone === "amber" ? txt(C, C.amber) : line?.tone === "chalk" ? C.chalk : C.ash;
+      : null;
+  const lineColor = line?.tone === "chalk" ? C.chalk : C.ash;
   // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
   // ask and the follow-up trigger. The ask wins whenever it is showing: it is
   // the app asking for something, and the follow-up is a door that can wait.
@@ -1450,10 +1453,25 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                   <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
                     {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
                   </Text>
+                  {governs && ctxNote && isToday ? (
+                    <Pressable
+                      onPress={() => setWhyOpen((v) => !v)}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: whyOpen }}
+                      accessibilityLabel={t("w.home.today.readWhy")}
+                      hitSlop={8}
+                      style={{ width: 18, height: 18, borderRadius: 999, borderWidth: 1, borderColor: whyOpen ? C.ash : C.line, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <AuroraIcon name="info" size={11} color={C.ash} />
+                    </Pressable>
+                  ) : null}
                 </View>
               );
             })}
           </View>
+          {whyOpen && ctxNote ? (
+            <Text style={{ marginTop: 11, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
+          ) : null}
           {trend ? (
             <Text style={{ marginTop: 11, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: trend.trend === "sinking" ? txt(C, C.amber) : C.ash }}>
               {t(READ_TREND_KEY[trend.trend])}
