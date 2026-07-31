@@ -3,6 +3,7 @@ import {
   NAV_ITEMS,
   navForPersona,
   navForPersonaWithLocks,
+  groupedNavWithLocks,
   navVisibleTo,
   resolvePersona,
   sanitizePersonaAccess,
@@ -224,6 +225,36 @@ describe("analytics scopes", () => {
     for (const scope of analyticsScopesFor("admin")) {
       expect(analyticsScopeLabelKey(scope)).toBe(`analytics.scope.${scope}`);
       expect(analyticsScopePrivacyKey(scope)).toBe(`analytics.privacy.${scope}`);
+    }
+  });
+});
+
+describe("promoted destinations", () => {
+  const ids = (persona: "athlete" | "admin") =>
+    groupedNavWithLocks(persona).flatMap((g) => g.items.map((x) => x.item.id));
+
+  it("keeps a promoted item out of every menu group", () => {
+    // Endurance now renders inline as the sport lanes at the bottom of Today,
+    // so offering it in More as well would be the same thing twice.
+    expect(ids("athlete")).not.toContain("endurance");
+    expect(ids("admin")).not.toContain("endurance");
+  });
+
+  it("leaves the route, the gate and the registry entry intact", () => {
+    // Not a delete: on web the nav id is also the screen id, so the screen has
+    // to stay reachable — and its persona gate has to keep meaning something.
+    const item = NAV_ITEMS.find((i) => i.id === "endurance");
+    expect(item?.promotedTo).toBe("today");
+    expect(navVisibleTo("athlete", "endurance")).toBe(true);
+    expect(navVisibleTo("casual", "endurance")).toBe(false);
+    expect(sanitizePersonaAccess({ endurance: "casual" })).toEqual({ endurance: "casual" });
+  });
+
+  it("drops nothing else from the menus", () => {
+    const listed = ids("admin");
+    for (const item of NAV_ITEMS) {
+      if (item.promotedTo) continue;
+      expect(listed).toContain(item.id);
     }
   });
 });

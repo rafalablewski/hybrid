@@ -36,6 +36,7 @@ export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
 export * from "./endurance";
+export * from "./endurance-lanes";
 export * from "./bodyweight";
 export * from "./body-progress";
 export * from "./food-facts";
