@@ -964,6 +964,18 @@ export default function AuroraHome() {
           onDeep={() => router.push("/analytics")}
         />
 
+        {/* ───── ENDURANCE — sport lanes, directly under This week because the
+            card's KM column is the headline these rails break down: the total
+            and its per-sport detail now read as one thought instead of sitting
+            at opposite ends of the scroll. One full-bleed rail per logged
+            discipline carrying that sport's whole read (efforts / distance /
+            time, 8-week volume, pace trend, pace zones, last effort). NOT gated
+            on dayIsToday, unlike Fuel below: an eight-week volume chart is not a
+            property of the day you happen to be scrubbed to. Renders nothing
+            until there's endurance to show. Mirrors web
+            aurora/endurance-lanes.tsx. ───── */}
+        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
+
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
             it's the semantic premium signifier, not a decorative marker. ───── */}
@@ -990,15 +1002,6 @@ export default function AuroraHome() {
             <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
           </View>
         </View>
-
-        {/* ───── ENDURANCE — sport lanes, the last block on Today. One
-            full-bleed rail per logged discipline carrying that sport's whole
-            read (efforts / distance / time, 8-week volume, pace trend, pace
-            zones, last effort). NOT gated on dayIsToday, unlike Fuel above: an
-            eight-week volume chart is not a property of the day you happen to
-            be scrubbed to. Renders nothing until there's endurance to show.
-            Mirrors web aurora/endurance-lanes.tsx. ───── */}
-        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
 
         </Animated.View>
       </ScrollView>

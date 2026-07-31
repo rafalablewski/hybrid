@@ -11,8 +11,8 @@ import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 /**
- * SPORT LANES — the Endurance block at the bottom of Today (web), the TWIN of
- * components/aurora/endurance-lanes.tsx on mobile.
+ * SPORT LANES — the Endurance block on Today (web), directly under the "This
+ * week" card, the TWIN of components/aurora/endurance-lanes.tsx on mobile.
  *
  * The hub moved out of More and onto Today, and inverted while it did: instead
  * of one discipline behind a picker, EVERY logged discipline gets a lane, and a
@@ -20,8 +20,10 @@ import { useLang } from "@/lib/i18n";
  * distance / time, eight-week volume, pace trend, pace zones, last effort.
  *
  * Adding a metric widens a rail; it never lengthens the block. That is the only
- * reason the whole endurance read fits under Nutrition without Today growing a
- * second screen. Three lanes render, the rest sit behind the expander.
+ * reason the whole endurance read fits inline without Today growing a second
+ * screen — and why it can now sit high on the scroll, under the week it
+ * details, rather than being exiled to the foot of it. Three lanes render, the
+ * rest sit behind the expander.
  *
  * Every number comes from @hybrid/core endurance-lanes.ts — lane order, the
  * cap, the zone rounding, the "faster is up" rule — so mobile can't drift. The
