@@ -77,10 +77,14 @@ function Face({ color, mouth }: { color: string; mouth: ReadinessMouth }) {
  * the Readiness picker (scale 1) and the Today glance strip (scaled down) so
  * both render the identical face. Mirrors the web <ReadinessFace> SVG.
  */
-export default function ReadinessFace({ feeling, scale = 1 }: { feeling: ReadinessFeeling; scale?: number }) {
+export default function ReadinessFace({ feeling, scale = 1, tone }: { feeling: ReadinessFeeling; scale?: number; tone?: string }) {
   const { palette: C } = useTheme();
   const { mouth, accent } = READINESS_FACE[feeling];
-  const color = txt(C, C[accent]);
+  // `tone` draws the face in a neutral (or any) colour instead of its semantic
+  // accent — for clusters where the one-accent discipline says the hue may
+  // appear only once (the readings record marks the governing read that way).
+  // The EXPRESSION survives it: it is carried by the stroke, not the tint.
+  const color = tone ?? txt(C, C[accent]);
   const face = <Face color={color} mouth={mouth} />;
   if (scale === 1) return face;
   // transform:scale is visual only — the layout box stays 34×34 — so wrap it in

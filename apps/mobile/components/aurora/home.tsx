@@ -1317,6 +1317,24 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // flat"), and dating it to this instant would relabel a morning reading as an
   // evening one just because the athlete opened the app again.
   const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // ONE LINE OF MEANING, not four stacked greys. A context note, an invitation,
+  // a gate reason and a countdown chip were all queueing under the faces — the
+  // triple narration the Builder critique killed, in a smaller box. Only one of
+  // them is ever what the athlete needs at that moment, so only one renders:
+  // what is holding the faces, then what a new tap would do, then what the
+  // reading on record is worth.
+  const line = gateNote
+    ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+    : inviting
+      ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+      : isToday && shownFeeling && ctxNote
+        ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
+        : null;
+  const lineColor = line?.tone === "amber" ? txt(C, C.amber) : line?.tone === "chalk" ? C.chalk : C.ash;
+  // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
+  // ask and the follow-up trigger. The ask wins whenever it is showing: it is
+  // the app asking for something, and the follow-up is a door that can wait.
+  const asking = isToday && recoveryDue;
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1358,14 +1376,23 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.2, color: C.chalk }}>{t("w.recovery.readiness.title")}</Text>
         {/* viewing another day — the date names the scope, no extra copy */}
-        {!isToday && dayLabel ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text> : null}
+        {/* Mono meta on the right, per the Explore SectionHead standard: the
+            viewed date on another day, otherwise how long the faces are held.
+            It used to be a pill sharing a row with the reason paragraph. */}
+        {!isToday && dayLabel ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
+        ) : held && gate.opensAt != null ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>
+            {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
+          </Text>
+        ) : null}
       </View>
       {/* THE SECOND ASK, NAMED. An athlete who already answered at the end of
           their session and is asked again a few hours later will read it as the
           app having forgotten — unless it says what this one is for. It is a
           different question: not "how hard was that" but "did you absorb it".
           See core/feel-schedule.ts. */}
-      {isToday && recoveryDue ? (
+      {asking ? (
         <View style={{ marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}3d` }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.promptRecovery")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 18, color: C.ash, marginTop: 5 }}>{t("session.feel.whyRecovery")}</Text>
@@ -1384,13 +1411,12 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           );
         })}
       </View>
-      {/* WHAT THIS ANSWER IS WORTH. The same tap means different things an hour
-          after training and a day after it, so the card says which reading it
-          is looking at instead of leaving the athlete to guess (and instead of
-          the app quietly treating the two as the same number). */}
-      {isToday && shownFeeling && ctxNote && (
-        <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 20, color: ctxLow ? txt(C, C.amber) : C.ash }}>{t(ctxNote)}</Text>
-      )}
+      {line ? (
+        <Text style={{ marginTop: 12, fontFamily: line.sub ? F.bold : F.reg, fontSize: fs.body, lineHeight: 20, color: lineColor }}>
+          {t(line.key)}
+          {line.sub ? <Text style={{ fontFamily: F.reg, color: C.ash }}> {t(line.sub)}</Text> : null}
+        </Text>
+      ) : null}
 
       {/* THE DAY'S RECORD — kept, not a footnote.
           This used to be one grey line, "Logged Flat, 5h ago", which is what a
@@ -1408,15 +1434,14 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           </Text>
           <View style={{ gap: 9, marginTop: 11 }}>
             {dayReads.map((r) => {
-              const counts = dayReads.length > 1 && decisive != null && r.at === decisive.at;
-              const accent = txt(C, C[READINESS_FACE[r.feeling].accent]);
+              const governs = decisive != null && r.at === decisive.at;
               return (
-                <View key={r.at} style={{ flexDirection: "row", alignItems: "center", gap: 10, opacity: counts || dayReads.length === 1 ? 1 : 0.72 }}>
-                  <ReadinessFace feeling={r.feeling} scale={0.59} />
+                <View key={r.at} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <ReadinessFace feeling={r.feeling} scale={0.59} tone={governs ? undefined : C.ash} />
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
                     {sessionClockTime(new Date(r.at).toISOString())}
                   </Text>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: counts ? accent : C.chalk }}>
+                  <Text style={{ fontFamily: governs ? F.bold : F.reg, fontSize: fs.caption, color: governs ? C.chalk : C.ash }}>
                     {t(`w.recovery.readiness.${r.feeling}`)}
                   </Text>
                   {/* How long after training it was given — the thing that makes
@@ -1425,11 +1450,6 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                   <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
                     {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
                   </Text>
-                  {counts ? (
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.lime) }}>
-                      {t("w.home.today.readCounts")}
-                    </Text>
-                  ) : null}
                 </View>
               );
             })}
@@ -1442,29 +1462,6 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
         </View>
       ) : null}
 
-      {/* WHY THE FACES ARE HELD, and when they open. Never a bare disabled row:
-          the athlete is being told the app is waiting for a reading worth
-          having, not that it has stopped listening. */}
-      {gateNote ? (
-        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 12 }}>
-          <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.ash }}>{t(gateNote)}</Text>
-          {gate.opensAt != null ? (
-            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.feelNextIn")} {coolH}h {coolM}m</Text>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-
-      {/* THE ASK, once the faces are blank. It sits directly under them because
-          it explains why nothing is lit, and it answers the question that stops
-          people answering twice: no, you are not about to overwrite yourself. */}
-      {inviting ? (
-        <Text style={{ marginTop: 12, fontFamily: F.bold, fontSize: fs.body, lineHeight: 20, color: C.chalk }}>
-          {t("w.home.today.readInvite")}{" "}
-          <Text style={{ fontFamily: F.reg, color: C.ash }}>{t("w.home.today.readInviteSub")}</Text>
-        </Text>
-      ) : null}
       {/* Once today's readiness is set, nudge the athlete to log the fuller
           picture — and run that guided check-in RIGHT HERE. The one-tap face is
           step 1 (Energy); the expansion walks the remaining four cards (Sleep,
@@ -1477,7 +1474,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: done.complete ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete ? C.line : `${txt(C, C.lime)}42` }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
           >
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
@@ -1498,7 +1495,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                 />
               ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete ? C.ash : txt(C, C.lime) }}>→</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete || asking ? C.ash : txt(C, C.lime) }}>→</Text>
           </Pressable>
           {followUpOpen ? (
             <Sheet

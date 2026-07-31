@@ -30,9 +30,13 @@ const MOUTH: Record<ReadinessMouth, string> = {
  * and the Today glance strip so both render the identical face; mirrors the
  * mobile plain-View ReadinessFace.
  */
-export default function ReadinessFace({ feeling, size = 34 }: { feeling: ReadinessFeeling; size?: number }) {
+export default function ReadinessFace({ feeling, size = 34, tone }: { feeling: ReadinessFeeling; size?: number; tone?: string }) {
   const { mouth, accent } = READINESS_FACE[feeling];
-  const color = AT(accent);
+  // `tone` draws the face in a neutral (or any) colour instead of its semantic
+  // accent — for clusters where the one-accent discipline says the hue may
+  // appear only once (the readings record marks the governing read that way).
+  // The EXPRESSION survives it: it is carried by the stroke, not the tint.
+  const color = tone ?? AT(accent);
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden style={{ flexShrink: 0 }}>
       <path d={EYES[mouth]} stroke={color} strokeWidth={2} strokeLinecap="round" fill="none" />

@@ -1225,6 +1225,24 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
   // flat"), and dating it to this instant would relabel a morning reading as an
   // evening one just because the athlete opened the app again.
   const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // ONE LINE OF MEANING, not four stacked greys. A context note, an invitation,
+  // a gate reason and a countdown chip were all queueing under the faces — the
+  // triple narration the Builder critique killed, in a smaller box. Only one of
+  // them is ever what the athlete needs at that moment, so only one renders:
+  // what is holding the faces, then what a new tap would do, then what the
+  // reading on record is worth.
+  const line = gateNote
+    ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+    : inviting
+      ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+      : isToday && shownFeeling && ctxNote
+        ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
+        : null;
+  const lineColor = line?.tone === "amber" ? "var(--amber-text)" : line?.tone === "chalk" ? C("chalk") : C("ash");
+  // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
+  // ask and the follow-up trigger. The ask wins whenever it is showing: it is
+  // the app asking for something, and the follow-up is a door that can wait.
+  const asking = isToday && recoveryDue;
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1271,14 +1289,23 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{t("w.recovery.readiness.title")}</div>
         {/* viewing another day — the date names the scope, no extra copy */}
-        {!isToday && dayLabel && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dayLabel}</span>}
+        {/* Mono meta on the right, per the Explore SectionHead standard: the
+            viewed date on another day, otherwise how long the faces are held.
+            It used to be a pill sharing a row with the reason paragraph. */}
+        {!isToday && dayLabel ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dayLabel}</span>
+        ) : held && gate.opensAt != null ? (
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
+            {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
+          </span>
+        ) : null}
       </div>
       {/* THE SECOND ASK, NAMED. An athlete who already answered at the end of
           their session and is asked again a few hours later will read it as the
           app having forgotten — unless it says what this one is for. It is a
           different question: not "how hard was that" but "did you absorb it".
           See core/feel-schedule.ts. */}
-      {isToday && recoveryDue && (
+      {asking && (
         <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 14, background: `color-mix(in srgb, var(--lime-text) 8%, transparent)`, border: `1px solid color-mix(in srgb, var(--lime-text) 24%, transparent)` }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("session.feel.promptRecovery")}</div>
           <p style={{ margin: "5px 0 0", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>{t("session.feel.whyRecovery")}</p>
@@ -1297,12 +1324,11 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           );
         })}
       </div>
-      {/* WHAT THIS ANSWER IS WORTH. The same tap means different things an hour
-          after training and a day after it, so the card says which reading it
-          is looking at instead of leaving the athlete to guess (and instead of
-          the app quietly treating the two as the same number). */}
-      {isToday && shownFeeling && ctxNote && (
-        <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: ctxLow ? "var(--amber-text)" : C("ash") }}>{t(ctxNote)}</p>
+      {line && (
+        <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: lineColor, fontWeight: line.sub ? 600 : 400 }}>
+          {t(line.key)}
+          {line.sub && <span style={{ color: C("ash"), fontWeight: 400 }}> {t(line.sub)}</span>}
+        </p>
       )}
 
       {/* THE DAY'S RECORD — kept, not a footnote.
@@ -1321,15 +1347,14 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 11 }}>
             {dayReads.map((r) => {
-              const counts = dayReads.length > 1 && decisive != null && r.at === decisive.at;
-              const at = `var(--${READINESS_FACE[r.feeling].accent}-text)`;
+              const governs = decisive != null && r.at === decisive.at;
               return (
-                <div key={r.at} style={{ display: "flex", alignItems: "center", gap: 10, opacity: counts || dayReads.length === 1 ? 1 : 0.72 }}>
-                  <ReadinessFace feeling={r.feeling} size={20} />
+                <div key={r.at} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ReadinessFace feeling={r.feeling} size={20} tone={governs ? undefined : C("ash")} />
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>
                     {sessionClockTime(new Date(r.at).toISOString())}
                   </span>
-                  <span style={{ fontSize: fs.caption, fontWeight: 700, color: counts ? at : C("chalk") }}>
+                  <span style={{ fontSize: fs.caption, fontWeight: governs ? 700 : 400, color: governs ? C("chalk") : C("ash") }}>
                     {t(`w.recovery.readiness.${r.feeling}`)}
                   </span>
                   {/* How long after training it was given — the thing that makes
@@ -1338,11 +1363,6 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
                   <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap" }}>
                     {r.hoursSinceSession != null ? `+${Math.round(r.hoursSinceSession)}h` : t("w.home.today.readNoSession")}
                   </span>
-                  {counts && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)", whiteSpace: "nowrap" }}>
-                      {t("w.home.today.readCounts")}
-                    </span>
-                  )}
                 </div>
               );
             })}
@@ -1355,29 +1375,6 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         </div>
       )}
 
-      {/* WHY THE FACES ARE HELD, and when they open. Never a bare disabled row:
-          the athlete is being told the app is waiting for a reading worth
-          having, not that it has stopped listening. */}
-      {gateNote && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 12 }}>
-          <p style={{ margin: 0, flex: 1, fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>{t(gateNote)}</p>
-          {gate.opensAt != null && (
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 10px" }}>
-              {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* THE ASK, once the faces are blank. It sits directly under them because
-          it explains why nothing is lit, and it answers the question that stops
-          people answering twice: no, you are not about to overwrite yourself. */}
-      {inviting && (
-        <p style={{ margin: "12px 0 0", fontSize: fs.body, lineHeight: 1.5, color: C("chalk"), fontWeight: 600 }}>
-          {t("w.home.today.readInvite")}{" "}
-          <span style={{ color: C("ash"), fontWeight: 400 }}>{t("w.home.today.readInviteSub")}</span>
-        </p>
-      )}
       {/* THE FOLLOW-UP. Once the headline question is answered the card offers
           the rest — sleep, freshness, mood — in a pop-up rather than an inline
           expansion, so the card stays one readable row of faces and the three
@@ -1388,7 +1385,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         <>
           <button
             onClick={() => setFollowUpOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >
             <span style={{ flex: 1 }}>
               <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>
@@ -1409,7 +1406,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
                 />
               ))}
             </span>
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete ? C("ash") : "var(--lime-text)" }}>→</span>
+            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete || asking ? C("ash") : "var(--lime-text)" }}>→</span>
           </button>
 
           <Sheet
