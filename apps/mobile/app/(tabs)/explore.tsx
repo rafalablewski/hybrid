@@ -1,4 +1,4 @@
-import AuroraExplore from "../components/aurora/explore";
+import AuroraExplore from "../../components/aurora/explore";
 
 /** Explore — the discovery surface (search · coaches · plans · community). */
 export default function Explore() {

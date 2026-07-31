@@ -713,7 +713,7 @@ export default function AuroraHome() {
                 sessions={sessions}
                 maxes={planMaxes}
                 onStart={(blocks, title) => startPlanDay(blocks, title)}
-                onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+                onNavigate={(screen) => { if (screen === "history") router.push("/history"); }}
                 onSelectDay={setRailDay}
                 resetToken={railResetToken}
                 onWeekRowLayout={(bottom) => measureRail({ weekBottom: bottom })}
@@ -731,7 +731,7 @@ export default function AuroraHome() {
               <AuroraLogbookRail
                 sessions={sessions}
                 onLog={() => router.push("/workout?source=empty")}
-                onNavigate={(screen) => { if (screen === "history") router.push("/(tabs)/history"); }}
+                onNavigate={(screen) => { if (screen === "history") router.push("/history"); }}
                 onSelectDay={setRailDay}
                 resetToken={railResetToken}
                 onWeekRowLayout={(bottom) => measureRail({ weekBottom: bottom })}
@@ -755,7 +755,7 @@ export default function AuroraHome() {
               style={{ marginHorizontal: -16 }}
               contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}
             >
-              <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+              <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <StructureCard C={C} width={structW} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.logbook.slimLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
               {/* The fourth path — always present (like the other three). With no
@@ -777,7 +777,7 @@ export default function AuroraHome() {
              and IS the start — no separate Start pill. Mirrors web today.tsx. */
           <View style={{ marginTop: 16 }}>
             <View style={{ gap: space.sm }}>
-              <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/(tabs)/plans")} />
+              <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
               <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
               <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
               <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
@@ -955,8 +955,8 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
-          <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/performance") : goUpgrade("today-cockpit"))} />
-          <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
+          <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))} />
+          <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/sport") : goUpgrade("today-sport"))} />
         </View>
 
         {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
@@ -989,7 +989,7 @@ export default function AuroraHome() {
         feeling={todayFeeling}
         topInset={insets.top}
         onOpenMonth={() => router.push("/calendar")}
-        onOpenDone={() => (hasData ? router.push("/(tabs)/history") : router.push("/workout?source=empty"))}
+        onOpenDone={() => (hasData ? router.push("/history") : router.push("/workout?source=empty"))}
         onOpenCheckin={() => router.push("/checkin")}
       />
 

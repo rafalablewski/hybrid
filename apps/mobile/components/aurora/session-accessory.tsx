@@ -1,0 +1,113 @@
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { View, Text, Pressable } from "react-native";
+import { useRouter, usePathname } from "expo-router";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { formatSessionElapsed } from "@hybrid/core";
+import { loadDraft, type Draft } from "../../lib/draft";
+import { useTheme } from "../../lib/theme";
+import { fs, F } from "../../lib/ui";
+
+/**
+ * THE SESSION ACCESSORY — a workout in progress, in the system tab-bar
+ * accessory (iOS 26+): Apple's home for players and active orders, the
+ * mini-player slot. Persistent STATE belongs here; the tab bar itself carries
+ * navigation only, which is why "start training" is a tab and "you are 24
+ * minutes into Lower body A" is this.
+ *
+ * WHY THE MODULE-LEVEL STORE: the accessory's children are rendered TWICE, once
+ * per placement (`regular` above the bar, `inline` beside the minimized bar),
+ * with only one visible at a time. Per-component state would give the two
+ * copies separate drafts and separate clocks, so they would disagree the moment
+ * the bar minimized. The draft and the tick therefore live outside the
+ * component and both copies subscribe to them.
+ */
+
+type Snapshot = { draft: Draft | null; now: number };
+let snapshot: Snapshot = { draft: null, now: Date.now() };
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const l of listeners) l();
+}
+function setSnapshot(next: Partial<Snapshot>) {
+  const merged = { ...snapshot, ...next };
+  // Cheap identity guard: re-emitting an unchanged snapshot would re-render
+  // both copies every second even with no draft on screen.
+  if (merged.draft === snapshot.draft && merged.now === snapshot.now) return;
+  snapshot = merged;
+  emit();
+}
+function subscribe(fn: () => void) {
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
+}
+function getSnapshot() {
+  return snapshot;
+}
+
+/** Re-read the persisted draft. Called on mount and on every route change. */
+export async function refreshSessionAccessory(): Promise<void> {
+  const d = await loadDraft().catch(() => null);
+  // Compare by identity of the underlying values, not the object: loadDraft
+  // parses fresh JSON each call, so a naive assignment would re-render forever.
+  const same = (a: Draft | null, b: Draft | null) =>
+    a === b || (a != null && b != null && a.title === b.title && a.startedAt === b.startedAt);
+  if (!same(d, snapshot.draft)) setSnapshot({ draft: d });
+}
+
+export default function SessionAccessory() {
+  const { palette: C } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  const placement = NativeTabs.BottomAccessory.usePlacement();
+  const { draft, now } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const [ticking, setTicking] = useState(false);
+
+  // Re-read whenever the route changes — this component lives in the tab
+  // layout, so it stays mounted across tab switches and pushes.
+  useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
+
+  // One shared clock for both copies, running only while a draft exists.
+  useEffect(() => {
+    setTicking(draft != null);
+    if (!draft) return;
+    const id = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
+    return () => clearInterval(id);
+  }, [draft]);
+  void ticking;
+
+  if (!draft) return null;
+
+  const elapsed = formatSessionElapsed(draft.startedAt, now);
+
+  // The minimized bar leaves room for a glance, not a sentence: inline drops
+  // the title and the call to action and keeps the live clock.
+  if (placement === "inline") {
+    return (
+      <Pressable
+        onPress={() => router.navigate("/(tabs)/log")}
+        accessibilityRole="button"
+        accessibilityLabel={`${draft.title} — ${elapsed}`}
+        style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 }}
+      >
+        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{elapsed}</Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => router.navigate("/(tabs)/log")}
+      accessibilityRole="button"
+      accessibilityLabel={`${draft.title} — ${elapsed}`}
+      style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}
+    >
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime }} />
+      <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>
+        {draft.title}
+      </Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{elapsed}</Text>
+    </Pressable>
+  );
+}

@@ -1,78 +1,108 @@
-import { Tabs, Redirect } from "expo-router";
-import { Text, View, type ColorValue } from "react-native";
-import { navVisibleTo, type AuroraIconName } from "@hybrid/core";
+import { Redirect } from "expo-router";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { AURORA_NAV_TABS } from "@hybrid/core";
 import { useSession } from "../../lib/session";
-import { usePersona } from "../../lib/persona";
-import { useNavAccess } from "../../lib/access";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
-import { useTemplate } from "../../lib/template";
-import { fs, F } from "../../lib/ui";
-import { CommandMenu, GlassTabBarBackground } from "../../components/liquid-glass";
-import { AuroraIcon } from "../../components/aurora/icons";
+import { F } from "../../lib/ui";
+import SessionAccessory from "../../components/aurora/session-accessory";
 
-const glyphIcon = (glyph: string) => ({ color }: { color: ColorValue }) =>
-  <Text style={{ color, fontSize: fs.subtitle }}>{glyph}</Text>;
-const auroraTabIcon = (name: AuroraIconName) => ({ color }: { color: ColorValue }) =>
-  <AuroraIcon name={name} size={23} color={color} />;
-// Aurora swaps the bar's glyphs for the uploaded line-icon set.
-const icon = (glyph: string, aurora: boolean, name: AuroraIconName) =>
-  aurora ? auroraTabIcon(name) : glyphIcon(glyph);
+/**
+ * THE BOTTOM NAV — the real system tab bar.
+ *
+ * This is a native UITabBarController on iOS (BottomNavigationView on Android)
+ * via expo-router's native tabs, which means Liquid Glass on iOS 26 is
+ * INHERITED, not reconstructed: the material, its refraction and adaptive
+ * contrast, the selection treatment, the minimize-on-scroll behaviour, the
+ * scroll-edge transition, Dynamic Type, Reduce Transparency and double-tap-to-
+ * pop-to-root are all the system's, not ours. It replaces the hand-built
+ * floating capsule (components/aurora/global-nav.tsx), which was a custom bar
+ * wearing the system material — close, but never 1:1.
+ *
+ * WHAT THIS CHANGED, deliberately, because 1:1 means the platform's rules win:
+ *  - The bar no longer appears on pushed sub-pages (Statistics, Settings,
+ *    Periodize, …). A native tab bar is hidden by a stack pushed above it; the
+ *    old bar was mounted at the ROOT specifically to defeat that. This is the
+ *    system behaviour, so it is now ours.
+ *  - Tab glyphs are SF Symbols, not the Aurora design-kit line icons. Native
+ *    tab bars take SF Symbols or image resources, never React components. The
+ *    kit PNGs are passed as `src` so Android keeps the house style.
+ *  - Every route that is NOT one of the five tabs moved OUT of this directory
+ *    into the root stack: a native tab bar renders every route in its folder,
+ *    and marking one `hidden` makes it un-navigable (it throws when focused).
+ *
+ * The five destinations and their order come from @hybrid/core AURORA_NAV_TABS,
+ * the same table the web pill nav reads, so the two clients stay in step on
+ * WHAT the bar contains even though only web still controls how it looks.
+ *
+ * The separated circular slot beside the bar is Apple's SEARCH role
+ * (`role="search"` on a trigger) and is deliberately left unused — it is
+ * reserved for real cross-app search, never for a training action.
+ */
+
+// SF Symbols per tab, with the filled variant for the selected state — the
+// symbol swap iOS does natively and which the line-icon kit could only ever
+// approximate with a colour change. `src` is the Android/fallback image, taken
+// from the existing kit PNGs so the house style survives off-iOS.
+// Not annotated on purpose: letting the literals flow means TypeScript checks
+// every symbol name against expo-router's SF Symbols union, so a typo or a
+// symbol that doesn't exist is a build error rather than a blank tab on device
+// — which matters when the sandbox can't render the bar to look at it.
+const ICONS = {
+  today: { sf: { default: "house", selected: "house.fill" }, src: require("../../assets/icons/village.png") },
+  explore: { sf: { default: "globe", selected: "globe.americas.fill" }, src: require("../../assets/icons/globe.png") },
+  train: { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") },
+  more: { sf: { default: "square.grid.2x2", selected: "square.grid.2x2.fill" }, src: require("../../assets/icons/grid.png") },
+  profile: { sf: { default: "person.crop.circle", selected: "person.crop.circle.fill" }, src: require("../../assets/icons/user-circle.png") },
+} as const;
+
+// Route name inside this directory, per tab id.
+const ROUTE: Record<string, string> = {
+  today: "index",
+  explore: "explore",
+  train: "log",
+  more: "more",
+  profile: "you",
+};
 
 export default function TabsLayout() {
   const { session, ready } = useSession();
   const { t } = useLang();
   const { palette } = useTheme();
-  // Performance (the merged ex-Cockpit hub) is a real tab only for athlete+
-  // (the freemium upgrade is sold on the single Unlock Full page, not as a
-  // locked tab). Casual keeps a clean bar.
-  const persona = usePersona();
-  const access = useNavAccess();
-  const aurora = useTemplate().template === "aurora";
-  const showPerformance = navVisibleTo(persona, "performance", access);
+
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
 
+  const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
+
   return (
-    <View style={{ flex: 1, backgroundColor: palette.ink }}>
-      <Tabs
-        // Aurora's bottom nav is the GLOBAL floating pill bar (rendered once at
-        // the root so it shows on every screen — see components/aurora/global-nav),
-        // so the per-Tabs bar is suppressed here; classic keeps its glass bar.
-        tabBar={aurora ? () => null : undefined}
-        screenOptions={{
-          headerShown: false,
-          tabBarBackground: () => <GlassTabBarBackground />,
-          tabBarStyle: { backgroundColor: "transparent", borderTopColor: palette.line },
-          tabBarActiveTintColor: palette.lime,
-          tabBarInactiveTintColor: palette.ash,
-          tabBarLabelStyle: { fontFamily: F.mono, fontSize: fs.nano },
-        }}
-      >
-        {/* The funnel: see today → train → review. Everything else lives under More.
-            Performance sits next to Today for the athlete persona; hidden for
-            casual (whose upgrade path is the single Unlock Full page). */}
-        <Tabs.Screen name="index" options={{ title: t("nav.dashboard"), tabBarIcon: icon("◆", aurora, "play") }} />
-        <Tabs.Screen name="performance" options={{ title: t("nav.performance"), tabBarIcon: icon("◈", aurora, "arrow-up"), href: showPerformance ? undefined : null }} />
-        <Tabs.Screen name="log" options={{ title: t("nav.train"), tabBarIcon: icon("▶", aurora, "add") }} />
-        <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣", aurora, "calendar") }} />
-        <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯", aurora, "settings") }} />
+    <NativeTabs
+      // The brand tint is the ONE piece of styling worth keeping: iOS puts the
+      // app's colour on the selected item and leaves the rest to the material.
+      // No backgroundColor and no blurEffect override — on iOS 26 that would
+      // opt the bar OUT of Liquid Glass and back into a flat fill, which is the
+      // exact mistake the old bar made.
+      tintColor={palette.lime}
+      labelStyle={{ fontFamily: F.semi }}
+      // The system minimize-on-scroll, replacing ~150 lines of hand-built
+      // collapse ramp, hysteresis and icon-only relayout across both clients.
+      minimizeBehavior="onScrollDown"
+      // iPad and macOS get the sidebar layout for free.
+      sidebarAdaptable
+    >
+      {/* A workout in progress lives in the system accessory — the mini-player
+          slot above the bar. iOS 26+ only; older iOS and Android simply don't
+          render it, which is the correct degradation for a system affordance. */}
+      <NativeTabs.BottomAccessory>
+        <SessionAccessory />
+      </NativeTabs.BottomAccessory>
 
-        {/* "You" (profile) — Aurora surfaces it as the 5th nav item via the global
-            pill bar (router-driven, ignores href); classic keeps it reachable but
-            hidden from its 5-tab bar to avoid clutter. */}
-        <Tabs.Screen name="you" options={{ href: aurora ? undefined : null }} />
-
-        {/* Reachable from More / deep links, hidden from the bar to cut clutter. */}
-        <Tabs.Screen name="plans" options={{ href: null }} />
-        <Tabs.Screen name="sport" options={{ href: null }} />
-        <Tabs.Screen name="velocity" options={{ href: null }} />
-        <Tabs.Screen name="endurance" options={{ href: null }} />
-        <Tabs.Screen name="coach" options={{ href: null }} />
-      </Tabs>
-      {/* The floating "jump to" command orb is a classic-only flourish; Aurora's
-          bespoke pill bar replaces it. */}
-      {!aurora && <CommandMenu />}
-    </View>
+      {AURORA_NAV_TABS.map((tab) => (
+        <NativeTabs.Trigger key={tab.id} name={ROUTE[tab.id]}>
+          <NativeTabs.Trigger.Icon sf={ICONS[tab.id]!.sf} src={ICONS[tab.id]!.src} />
+          <NativeTabs.Trigger.Label>{label(tab.id, tab.label)}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      ))}
+    </NativeTabs>
   );
 }

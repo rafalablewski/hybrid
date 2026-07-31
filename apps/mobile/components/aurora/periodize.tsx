@@ -44,7 +44,7 @@ export default function AuroraPeriodize() {
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
             {loaded ? t("w.train.periodize.emptyBodyMobile") : t("w.train.periodize.loadingSeason")}
           </Text>
-          <APill label={t("w.train.periodize.browsePlans")} onPress={() => router.push("/(tabs)/plans")} style={{ marginTop: 16 }} />
+          <APill label={t("w.train.periodize.browsePlans")} onPress={() => router.push("/plans")} style={{ marginTop: 16 }} />
         </ACard>
       </AuroraScreen>
     );

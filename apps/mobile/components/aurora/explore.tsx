@@ -76,10 +76,10 @@ export default function AuroraExplore() {
 
       {/* PLANS — Cover Flow: three featured covers, then the rest as a full-bleed
           micro-rail. Tap-through to the full Plans screen. */}
-      <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} onAction={() => router.push("/(tabs)/plans")} />
+      <SectionHead C={C} scheme={scheme} title={t("w.explore.plans")} onAction={() => router.push("/plans")} />
       <View style={{ gap: 12 }}>
         {featured.map((p) => (
-          <PlanCover key={p.plan.id} p={p} scheme={scheme} shadow={cardShadow} onOpen={() => router.push("/(tabs)/plans")} />
+          <PlanCover key={p.plan.id} p={p} scheme={scheme} shadow={cardShadow} onOpen={() => router.push("/plans")} />
         ))}
       </View>
       {more.length > 0 && (
@@ -95,7 +95,7 @@ export default function AuroraExplore() {
           contentContainerStyle={{ gap: 10, paddingHorizontal: SCREEN_PAD, paddingVertical: 6 }}
         >
           {more.map((p) => (
-            <PlanMini key={p.plan.id} p={p} C={C} shadow={cardShadow} onOpen={() => router.push("/(tabs)/plans")} />
+            <PlanMini key={p.plan.id} p={p} C={C} shadow={cardShadow} onOpen={() => router.push("/plans")} />
           ))}
         </ScrollView>
       )}
