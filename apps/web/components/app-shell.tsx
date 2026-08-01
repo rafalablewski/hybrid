@@ -61,10 +61,8 @@ const AuroraPerformance = dynamic(() => import("./aurora/performance"), { ssr: f
 const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
-const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
 const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
-const AuroraTrends = dynamic(() => import("./aurora/trends"), { ssr: false });
 import { FIRST_RUN_TOUR } from "./tour";
 const Tour = dynamic(() => import("./tour"), { ssr: false });
 import AuroraToday from "./aurora/today";
@@ -805,7 +803,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
         )}
 
         {screen === "profile" && (
@@ -818,11 +816,15 @@ export default function AppShell() {
           />
         )}
 
-        {/* The merged Performance page (ex-Cockpit + the analyze Performance
-            screen). BOTH ids resolve here so ⌘K entries, saved deep links and
-            every existing setScreen("cockpit") caller keep working. */}
-        {(screen === "performance" || screen === "cockpit") && (
-          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+        {/* The unified Performance page — ex-Cockpit, the analyze Performance
+            screen, and now Volume + Trends folded in as sections of it (see the
+            `performance-unified` capability). ALL FOUR ids resolve here so ⌘K
+            entries, saved deep links and every existing setScreen("cockpit") /
+            ("volume") / ("trends") caller keeps working; the nav entries for
+            volume + trends are promotedTo "performance", so the menus stop
+            offering the same content twice. */}
+        {(screen === "performance" || screen === "cockpit" || screen === "volume" || screen === "trends") && (
+          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onOpenExercise={openExercisePage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
@@ -833,13 +835,9 @@ export default function AppShell() {
 
         {screen === "endurance" && <AuroraEndurance sessions={sessions} />}
 
-        {screen === "volume" && <AuroraVolume sessions={sessions} />}
-
         {screen === "exercises" && <AuroraExercises sessions={sessions} onOpen={openExercisePage} />}
 
         {screen === "exercise" && exerciseFocus && <AuroraExercisePage sessions={sessions} name={exerciseFocus} onBack={() => setScreen(exerciseReturn)} />}
-
-        {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercisePage} onOpenVolume={() => setScreen("volume")} />}
 
         {screen === "forceplate" && <AuroraForcePlate />}
 

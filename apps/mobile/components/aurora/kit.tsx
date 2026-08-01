@@ -105,6 +105,7 @@ export function AuroraScreen({
   stickyTop,
   stickyTopReserve = 0,
   onScrollY,
+  top,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -112,6 +113,12 @@ export function AuroraScreen({
   padding?: number;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** Content rendered ABOVE the screen's own body, inside the same scroller —
+   *  the slot Today's hub uses to hand a screen its profile header + tab pills
+   *  when the screen is showing as one of Today's tabs rather than as its own
+   *  destination. Unlike `stickyTop` this is ordinary content: it scrolls away
+   *  with everything else, and it reserves no space when absent. */
+  top?: ReactNode;
   /** A rail drawn OVER the scroll view at the screen's top edge — never in its
    *  content, so nothing below it moves as the rail appears. The overlay is
    *  laid out from this screen's border box, so it reaches up under the status
@@ -151,10 +158,11 @@ export function AuroraScreen({
       keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
+      {top}
       {children}
     </ScrollView>
   ) : (
-    <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{children}</View>
+    <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{top}{children}</View>
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>

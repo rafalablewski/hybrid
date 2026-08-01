@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -20,6 +20,8 @@ import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
+import AuroraVolume from "./volume";
+import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
@@ -39,17 +41,17 @@ const acwrColor = (b: AcwrBand, C: Palette): string =>
  *  columns, readiness + nudge) → the 14-day trajectory → injury risk (summary
  *  card with the per-tissue probability table as a disclosure) → this week →
  *  breakdown → horizon → goal + season → return-to-play. */
-export default function AuroraPerformance() {
+export default function AuroraPerformance({ top }: { top?: ReactNode }) {
   const persona = usePersona();
   const { entitlement } = useSession();
   const router = useRouter();
   if (persona === "casual") {
-    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} />;
+    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} top={top} />;
   }
-  return <Full />;
+  return <Full top={top} />;
 }
 
-function Full() {
+function Full({ top }: { top?: ReactNode }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -155,14 +157,14 @@ function Full() {
   const maxBar = 96;
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
       {/* 1 · CONTEXT RAIL — a LIVING MASTHEAD in Today's idiom (mono season
           caption, one oversized editorial headline, a warm sub) + sliding pills.
           Deliberately the same masthead anatomy as the home tab so the two
           screens read as siblings: Today answers "what do I do?", this page
           answers "how am I doing?". */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
           {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
         </Text>
@@ -439,7 +441,23 @@ function Full() {
       {/* 6 · BREAKDOWN — disciplines, tabbed */}
       {hasData && <Breakdown C={C} scheme={scheme} state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} onOpen={(h) => router.push(h)} />}
 
-      {/* 7 · HORIZON — Sport S&C · Velocity · Endurance · AI Coach */}
+      {/* 7 · VOLUME — this week's hard sets against the athlete's own
+          MEV/MAV/MRV: the hero shape, the block ramp, the week's prescription,
+          the per-muscle rails (each carrying its own eight-week history),
+          whose numbers these are, and the band glossary. Was its own screen
+          until the Performance page absorbed it; nothing was dropped on the way
+          over except the SECOND copy of the muscle breakdown, which Trends used
+          to draw off the same volumeStatus(). See `performance-unified`. */}
+      <View style={{ marginTop: 14 }}><AuroraVolume unified /></View>
+
+      {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
+          sortable exercise-analytics table. Its muscle-breakdown card and its
+          add/ease-off advice line are gone: both were the same engines
+          (volumeStatus / volumeAdvice) the Volume sections above already state,
+          in more detail and with the landmarks attached. */}
+      <View style={{ marginTop: 14 }}><AuroraTrends unified /></View>
+
+      {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
       <ACard style={{ marginTop: 14 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
@@ -811,13 +829,13 @@ const TEASE: { key: string }[] = [
   { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
-function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
+function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; top?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <AuroraScreen>
+    <AuroraScreen top={top}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
       </View>
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>

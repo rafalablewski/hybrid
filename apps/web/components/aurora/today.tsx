@@ -50,6 +50,7 @@ import { fs, space,
   READINESS_FACE,
   logbookWeek,
   todayDoneState,
+  type TodayTabId,
   type ReadinessFeeling,
   type SemanticRole,
   type LoggedSession,
@@ -85,9 +86,14 @@ import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
+import { TodayTabs } from "./today-tabs";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
 const AuroraCheckins = dynamic(() => import("./checkins"), { ssr: false });
+// THE HUB's other two tabs. Lazy for the same reason: an athlete who only ever
+// opens the daily loop should never pay for recharts or the social feed.
+const AuroraPerformance = dynamic(() => import("./performance"), { ssr: false });
+const SocialFeed = dynamic(() => import("../social-feed"), { ssr: false });
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
@@ -118,9 +124,13 @@ export default function AuroraToday({
   onOpenSession,
   onOpenExercise,
   onSaved,
+  onEnrolled,
   fetchError = false,
   onRetry,
   loading = false,
+  sessionsReady = true,
+  macroReady = true,
+  macroSettled = true,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -141,6 +151,9 @@ export default function AuroraToday({
   onOpenExercise?: (name: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
+  /** The athlete enrolled in a season from the hub's Performance tab — the
+   *  shell refetches the macrocycle and returns them to the daily loop. */
+  onEnrolled?: () => void;
   /** True when the sessions fetch FAILED (offline / 500) — with no cached data
    *  the daily-loop hero shows a retry card instead of the first-run chooser,
    *  so a dropped network never masquerades as "looks like a new athlete". */
@@ -151,12 +164,25 @@ export default function AuroraToday({
    *  suppresses the cold-start chooser so an already-enrolled athlete never
    *  sees the first-run-chooser flash before their plan resolves. */
   loading?: boolean;
+  /** SAFE CACHE gates, threaded straight through to the hub's Performance tab
+   *  so it can still tell "no training history" from "we haven't asked yet"
+   *  when it renders here instead of as its own screen. */
+  sessionsReady?: boolean;
+  macroReady?: boolean;
+  macroSettled?: boolean;
 }) {
   const router = useRouter();
   const { t } = useLang();
   const { session } = useSession();
   const name = session?.name ?? "Athlete";
   const isAthlete = usePersona() !== "casual";
+
+  // THE HUB — which of Today's three top-level views is showing (see
+  // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
+  // home and its job is "what do I do today?", so every visit opens on the
+  // daily loop rather than wherever the athlete last wandered.
+  const [tab, setTab] = useState<TodayTabId>("dashboard");
+  const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -501,9 +527,13 @@ export default function AuroraToday({
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
 
-  return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>
-      {/* HEADER — profile · HYBRID wordmark · bell */}
+  // The shell every hub tab wears: the profile header, then the three pills.
+  // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
+  // a second copy of it — they differ only in what hangs below the pills.
+  const shell = { maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" } as const;
+  const hubHeader = (
+    <>
+      {/* HEADER — profile, HYBRID wordmark, bell */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button
           onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
@@ -539,6 +569,57 @@ export default function AuroraToday({
           </button>
         </div>
       </div>
+
+      {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
+          profile row and above the calendar. Today is the athlete's home, and
+          these three are what a home holds: the day's plan, the numbers behind
+          it, and the people around it. Registry shared with mobile
+          (@hybrid/core today-tabs.ts). */}
+      <TodayTabs value={tab} onChange={selectTab} />
+    </>
+  );
+
+  // ── THE OTHER TWO TABS ────────────────────────────────────────────────────
+  // Early-return rather than wrapping the 800-line daily loop in a conditional:
+  // every hook above has already run (order is stable), and the dashboard body
+  // below stays exactly as it was.
+  if (tab === "performance") {
+    // ONE page — the command centre, this week's volume and the eight-week
+    // trend in a single scroll. AuroraPerformance owns that composition, so
+    // there is nothing to switch between here.
+    return (
+      <div style={shell}>
+        {hubHeader}
+        <div style={{ marginTop: 16 }}>
+          <AuroraPerformance
+            sessions={sessions}
+            bio={bio}
+            macro={macro}
+            currentWeek={currentWeek}
+            sessionsReady={sessionsReady}
+            macroReady={macroReady}
+            macroSettled={macroSettled}
+            setScreen={(s) => (onNavigate ? onNavigate(s) : router.push(`/${s}`))}
+            onOpenExercise={onOpenExercise}
+            onEnrolled={() => { onEnrolled?.(); setTab("dashboard"); }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (tab === "feed") {
+    return (
+      <div style={shell}>
+        {hubHeader}
+        <div style={{ marginTop: 16 }}><SocialFeed /></div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={shell}>
+      {hubHeader}
 
       {/* THE STICKY PILL RAIL — what Today leaves behind once the masthead and
           the logbook have scrolled away. Zero-height in the flow: the bar is

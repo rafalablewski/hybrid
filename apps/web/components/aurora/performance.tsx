@@ -19,6 +19,8 @@ import { useToday } from "@/lib/use-today";
 import { useIsMobile } from "@/lib/use-media-query";
 import AuroraOnboarding from "./onboarding";
 import RtpPanel from "../rtp-panel";
+import AuroraVolume from "./volume";
+import AuroraTrends from "./trends";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
@@ -103,7 +105,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
  *  probability table as a disclosure) → this week → breakdown → horizon →
  *  goal + season → return-to-play. Same live engines as before. */
 export default function AuroraPerformance({
-  sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled,
+  sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled, onOpenExercise,
   sessionsReady = true, macroReady = true, macroSettled = true,
 }: {
   sessions: LoggedSession[];
@@ -112,6 +114,8 @@ export default function AuroraPerformance({
   currentWeek?: number;
   setScreen: (id: string) => void;
   onEnrolled: () => void;
+  /** Open ONE movement's stats page — the exercise-analytics table's rows. */
+  onOpenExercise?: (name: string) => void;
   /** SAFE CACHE (lib/read.ts): whether the shell's sessions / macrocycle reads
    *  have a real server answer yet. Without these the page cannot tell "no
    *  training history" from "we haven't asked", and states the zero-case as
@@ -476,7 +480,24 @@ export default function AuroraPerformance({
         {/* 6 · BREAKDOWN — disciplines, tabbed */}
         {hasData && <Breakdown state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} setScreen={setScreen} />}
 
-        {/* 7 · HORIZON — Sport S&C · Velocity · Endurance · AI Coach, quick rails out */}
+        {/* 7 · VOLUME — this week's hard sets against the athlete's own
+            MEV/MAV/MRV: the hero shape, the block ramp, the week's
+            prescription, the per-muscle rails (each carrying its own eight-week
+            history), whose numbers these are, and the band glossary. Was its
+            own screen until the Performance page absorbed it; nothing was
+            dropped on the way over except the SECOND copy of the muscle
+            breakdown, which Trends used to draw off the same volumeStatus().
+            See the `performance-unified` capability. */}
+        <AuroraVolume sessions={sessions} unified />
+
+        {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and
+            the sortable exercise-analytics table. Its muscle-breakdown card and
+            its add/ease-off advice line are gone: both were the same engines
+            (volumeStatus / volumeAdvice) the Volume sections above already
+            state, in more detail and with the landmarks attached. */}
+        <AuroraTrends sessions={sessions} onOpenExercise={onOpenExercise} unified />
+
+        {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach: quick rails out */}
         <div style={CARD}>
           <SHead title={t("w.home.cockpit.horizon")} />
           <Mod label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
@@ -486,7 +507,7 @@ export default function AuroraPerformance({
           <Mod label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onClick={() => setScreen("aicoach")} last />
         </div>
 
-        {/* 8 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
+        {/* 10 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
             reflows to a single column on very narrow viewports. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
           {/* widget 1 — goal */}
@@ -524,7 +545,7 @@ export default function AuroraPerformance({
         </div>
         {setupOpen && <div style={CARD}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
 
-        {/* 9 · RETURN-TO-PLAY — gated protocols (from the retired analyze screen).
+        {/* 11 · RETURN-TO-PLAY — gated protocols (from the retired analyze screen).
             Bottom placement matches its cadence: empty most days; when a tissue is
             flagged above, the protocol you open lands on the same page. */}
         <RtpPanel />

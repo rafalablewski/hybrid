@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import {
-  volumeStatus, athleteLandmarks,
+  volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
@@ -48,7 +48,14 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * own edits, and hands back the provenance so this screen never presents a
  * population average as a personal fact.
  */
-export default function AuroraVolume() {
+export default function AuroraVolume({ top, unified = false }: {
+  top?: ReactNode;
+  /** True when these sections render INSIDE the unified Performance page
+   *  (aurora/performance.tsx) rather than as their own screen: no AuroraScreen
+   *  wrapper (the page owns the scroller) and the page title demotes to a
+   *  section head. Every section, control and number is otherwise identical. */
+  unified?: boolean;
+}) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
@@ -187,6 +194,16 @@ export default function AuroraVolume() {
   );
   const summary = useMemo(() => volumeSummary(rows), [rows]);
   const ranked = useMemo(() => sortByUrgency(rows), [rows]);
+  // EIGHT-WEEK HISTORY, per muscle. This is the chart Trends used to hang off a
+  // second set of muscle chips — the same weeklyMuscleSets() engine, over the
+  // same muscles, drawn twice on two screens. It belongs on the row that names
+  // the muscle: "18 sets" and "and it has been climbing for a month" are one
+  // thought, and the athlete no longer picks a muscle in two places.
+  const history = useMemo(() => {
+    const out = {} as Record<MuscleGroup, number[]>;
+    for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
+    return out;
+  }, [rows, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<MuscleGroup | null>(null);
@@ -238,10 +255,10 @@ export default function AuroraVolume() {
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={refetch}>
+  const body = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && !unified && <ABack />}
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
         <Pressable
           onPress={toggleEditing}
@@ -337,7 +354,7 @@ export default function AuroraVolume() {
             {ranked.map((r) => (
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
-                target={targetFor(r.muscle)}
+                target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
                 expanded={editing || open === r.muscle} editing={editing}
                 zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
@@ -375,6 +392,15 @@ export default function AuroraVolume() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text>
         </Pressable>
       )}
+    </>
+  );
+
+  // Inside the unified Performance page the host owns the scroller, the safe
+  // area and the pull-to-refresh — wrapping again would nest two ScrollViews.
+  if (unified) return body;
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={refetch} top={top}>
+      {body}
     </AuroraScreen>
   );
 }
@@ -757,10 +783,12 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
 
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, color, target, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
+function MuscleRow({ s, label, color, target, history, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
   s: MuscleVolumeStatus; label: string; color: string; expanded: boolean; editing: boolean;
   /** This week's block target, when volume is being periodized. */
   target: BlockMuscleTarget | null;
+  /** Weekly hard sets for THIS muscle over the last eight weeks, oldest first. */
+  history: number[];
   /** The band spotlighted across the whole list, if any. */
   zone: VolumeBandKey | null;
   /** True on the row whose scale was tapped — it carries the definition. */
@@ -861,6 +889,7 @@ function MuscleRow({ s, label, color, target, expanded, editing, zone, showGloss
             </Text>
           )}
           <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
+          <MuscleHistory sets={history} />
         </View>
       )}
       {expanded && editing && (
@@ -881,6 +910,30 @@ function MuscleRow({ s, label, color, target, expanded, editing, zone, showGloss
           ))}
         </View>
       )}
+    </View>
+  );
+}
+
+/** Eight weeks of this muscle's hard sets, oldest to newest — the last column
+ *  lit, since "this week" is the number stated above the rail. Silent when the
+ *  muscle has never been trained: an empty row of stubs would state a history
+ *  that doesn't exist. Mirrors web volume.tsx. */
+function MuscleHistory({ sets }: { sets: number[] }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  if (sets.length === 0 || sets.every((n) => n === 0)) return null;
+  const mx = Math.max(...sets, 1);
+  // Geometry, radius, gap and colour are LIFTED VERBATIM from the chart this
+  // replaces (the focus-muscle chart on the old Trends screen). Moving an
+  // element must not restyle it.
+  return (
+    <View>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
+        {sets.map((n, i) => (
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
+        ))}
+      </View>
     </View>
   );
 }

@@ -50,6 +50,7 @@ import {
   type ReadinessFeeling,
   logbookWeek,
   todayDoneState,
+  type TodayTabId,
   sessionsOnDay,
   sessionMeta,
   type LoggedSession,
@@ -96,6 +97,12 @@ import AuroraCheckin from "./checkin";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import AuroraTodayRail, { type TodayRailBottoms } from "./today-rail";
+import { TodayTabs } from "./today-tabs";
+// THE HUB's other two tabs — the same full screens their own routes render,
+// handed Today's header + pills through the `top` slot so the chrome above
+// them never changes as the athlete switches tab.
+import AuroraPerformance from "./performance";
+import FeedView from "../feed-view";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -151,6 +158,12 @@ export default function AuroraHome() {
   const sessionsError = sessionsRead.failed;
   const planId = macroRead.data?.planId ?? null;
   const planStartedAt = macroRead.data?.planStartedAt ?? null;
+  // THE HUB — which of Today's three top-level views is showing (see
+  // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
+  // home and its job is "what do I do today?", so every visit opens on the
+  // daily loop rather than wherever the athlete last wandered.
+  const [tab, setTab] = useState<TodayTabId>("dashboard");
+  const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
@@ -581,6 +594,73 @@ export default function AuroraHome() {
     AsyncStorage.setItem("hybrid.tourSeen", "1").catch(() => {});
   };
 
+  // The chrome every hub tab wears: the profile header, then the three pills.
+  // Hoisted so the other two tabs render the SAME header without a second copy
+  // of it — they hand it to their screen through AuroraScreen's `top` slot, so
+  // the pills sit in exactly the same place on all three tabs.
+  const hubHeader = (
+    <>
+      {/* TODAY HEADER (step-1 redesign) — profile, HYBRID wordmark, bell.
+          Replaces the old greeting + search/bell row: the brand sits centre
+          with a lime accent rule, the avatar opens the profile, the bell
+          carries a live activity count. */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        {/* profile — avatar opens the You / account tab */}
+        <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
+          {/* live dot */}
+          <View style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime, borderWidth: 2.5, borderColor: C.ink }} />
+        </Pressable>
+        {/* centred wordmark + lime accent rule */}
+        <View style={{ alignItems: "center", gap: 5 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
+            HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
+          </Text>
+          <View style={{ width: 26, height: 3, borderRadius: 2, backgroundColor: C.lime }} />
+        </View>
+        {/* right group — the day-streak pill (moved up here so the greeting
+            line breathes) + the notifications bell */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {acc.streak.current > 0 && (
+            // SPECTRUM: the streak wears the warm terracotta accent (Connect),
+            // pairing with the 🔥 and keeping chartreuse for the primary action.
+            <Pressable onPress={() => setDoneOpen(true)} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, height: 42, justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="bell" size={20} color={C.ash} />
+            {notifCount > 0 && (
+              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </View>
+
+      {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
+          profile row and above the calendar. Today is the athlete's home, and
+          these three are what a home holds: the day's plan, the numbers behind
+          it, and the people around it. Registry shared with web
+          (@hybrid/core today-tabs.ts). */}
+      <TodayTabs value={tab} onChange={selectTab} />
+    </>
+  );
+
+  // ── THE OTHER TWO TABS ────────────────────────────────────────────────────
+  // Each is the SAME screen its own route renders, handed the hub chrome
+  // through `top` so it keeps owning its scroller, its pull-to-refresh and its
+  // safe area — nesting them inside Today's own ScrollView would have doubled
+  // both. Early-return rather than wrapping the daily loop in a conditional:
+  // every hook above has already run, and the dashboard body stays untouched.
+  // ONE page — the command centre, this week's volume and the eight-week trend
+  // in a single scroll. AuroraPerformance owns that composition, so there is
+  // nothing to switch between here.
+  if (tab === "performance") return <AuroraPerformance top={hubHeader} />;
+
+  if (tab === "feed") return <FeedView top={hubHeader} />;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
       {/* Ambient Aurora gradient backdrop — Today owns its own shell (custom
@@ -601,44 +681,7 @@ export default function AuroraHome() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}
       >
         <Animated.View style={enterStyle} onLayout={(e) => measureRail({ origin: e.nativeEvent.layout.y })}>
-        {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
-            Replaces the old greeting + search/bell row: the brand sits centre
-            with a lime accent rule, the avatar opens the profile, the bell
-            carries a live activity count. */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          {/* profile — avatar opens the You / account tab */}
-          <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
-            {/* live dot */}
-            <View style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime, borderWidth: 2.5, borderColor: C.ink }} />
-          </Pressable>
-          {/* centred wordmark + lime accent rule */}
-          <View style={{ alignItems: "center", gap: 5 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
-              HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
-            </Text>
-            <View style={{ width: 26, height: 3, borderRadius: 2, backgroundColor: C.lime }} />
-          </View>
-          {/* right group — the day-streak pill (moved up here so the greeting
-              line breathes) + the notifications bell */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {acc.streak.current > 0 && (
-              // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-              // pairing with the 🔥 and keeping chartreuse for the primary action.
-              <Pressable onPress={() => setDoneOpen(true)} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, height: 42, justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
-              </Pressable>
-            )}
-            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="bell" size={20} color={C.ash} />
-              {notifCount > 0 && (
-                <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
-                </View>
-              )}
-            </Pressable>
-          </View>
-        </View>
+        {hubHeader}
 
         {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
             chooser's "Free", or the scrub-distance tag), ONE big headline, and
