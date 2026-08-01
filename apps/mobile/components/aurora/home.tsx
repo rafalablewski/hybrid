@@ -729,6 +729,15 @@ export default function AuroraHome() {
           )}
         </View>
 
+        {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
+            path to one) and, below it, what was actually done. First of the
+            FOUR themed clusters the whole dashboard scroll is organised into
+            (Train / Recover / Progress / Explore) — each opens with a
+            GroupMark, the quiet wayfinding tier above the blocks' own heads,
+            so the page reads as four thoughts instead of nine competing
+            cards. Mirrors web today.tsx. ═════ */}
+        <GroupMark C={C} label={t("w.home.group.train")} />
+
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
             eyebrow: the screen is already today's training and the plan names
             itself — the interface shouldn't narrate what the athlete can see.
@@ -922,18 +931,6 @@ export default function AuroraHome() {
           </ACard>
         )}
 
-        {/* EXERCISES — the favourites widget rail (free for everyone):
-            swipeable full-bleed cards, one favourite per purpose, stock-ticker
-            deltas; tap opens that movement's own stats page. Hidden until
-            there's history — an empty rail would just be chrome. */}
-        {sessions.length > 0 && (
-          <ExerciseWidgetRail
-            sessions={sessions}
-            onOpen={(name) => router.push(`/exercise?name=${encodeURIComponent(name)}`)}
-            onAll={() => router.push("/exercises")}
-          />
-        )}
-
         {/* DONE TODAY — every session logged on the VIEWED day, one row each:
             the plan's workout (wearing a Plan tag, lime tile) AND the off-plan
             extras (teal tile — quick sport logs, freestyle sessions). The card
@@ -963,6 +960,11 @@ export default function AuroraHome() {
           />
         )}
 
+        {/* ═════ GROUP: RECOVER — how the body is answering. The daily
+            check-in ritual: readiness reads, the follow-up questions, the
+            day's record. Mirrors web today.tsx. ═════ */}
+        <GroupMark C={C} label={t("w.home.group.recover")} />
+
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
             four faces set the day's readiness inline (one tap, no sheet) —
             nothing else; the done count + log action live on the Also Today card
@@ -986,8 +988,13 @@ export default function AuroraHome() {
           />
         </View>
 
-        {/* ───── THIS WEEK — the verdict card. Sits directly under Readiness
-            because it is the same KIND of thing: a verdict with its working-out
+        {/* ═════ GROUP: PROGRESS — where the training is going. The week's
+            verdict, the favourite movements' deltas, then each sport's own
+            read: every retrospective block on Today, in one cluster, widest
+            first. Mirrors web today.tsx. ═════ */}
+        <GroupMark C={C} label={t("w.home.group.progress")} />
+
+        {/* ───── THIS WEEK — the verdict card. A verdict with its working-out
             shown. Replaces the Statistics and Analytics destinations on Today
             (both are now promotedTo "today" in core nav.ts); the two rows under
             it are the doors to everything past this week. ───── */}
@@ -1000,6 +1007,21 @@ export default function AuroraHome() {
           onDeep={() => router.push("/analytics")}
           onSession={(id) => router.push(`/session/${id}`)}
         />
+
+        {/* EXERCISES — the favourites widget rail (free for everyone):
+            swipeable full-bleed cards, one favourite per purpose, stock-ticker
+            deltas; tap opens that movement's own stats page. Hidden until
+            there's history — an empty rail would just be chrome. Lives in the
+            PROGRESS cluster (it is per-movement trend, not part of the day's
+            job): directly under This week, whose lifting columns these cards
+            break down per movement. Mirrors web today.tsx. */}
+        {sessions.length > 0 && (
+          <ExerciseWidgetRail
+            sessions={sessions}
+            onOpen={(name) => router.push(`/exercise?name=${encodeURIComponent(name)}`)}
+            onAll={() => router.push("/exercises")}
+          />
+        )}
 
         {/* ───── ENDURANCE — sport lanes, directly under This week because the
             card's KM column is the headline these rails break down: the total
@@ -1024,10 +1046,15 @@ export default function AuroraHome() {
             aurora/other-sports.tsx. ───── */}
         <AuroraOtherSports sessions={sessions} onOpen={() => router.push("/sport")} />
 
+        {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and
+            the coach marketplace. The label the old Explore tab left behind.
+            Mirrors web today.tsx. ═════ */}
+        <GroupMark C={C} label={t("w.home.group.explore")} />
+
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
             it's the semantic premium signifier, not a decorative marker. ───── */}
-        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+        <View style={{ marginTop: 22, marginBottom: 12, marginHorizontal: 2 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
@@ -1129,6 +1156,24 @@ export default function AuroraHome() {
   );
 }
 
+
+/** GROUP MARKER — the wayfinding tier ABOVE the blocks' own heads. Today's
+ *  dashboard scroll is organised into four themed clusters
+ *  (Train / Recover / Progress / Explore); each opens with this quiet
+ *  mono-uppercase label and a hairline running to the margin, so the taxonomy
+ *  is scannable without stacking a second bold title over any card. The
+ *  largest whitespace on the page sits ABOVE the marker — the space does the
+ *  grouping, the label only names it. Not a decorative dot-before-a-heading
+ *  (banned); the rule is a trailing divider. Mirrors web (aurora/today.tsx
+ *  GroupMark). */
+function GroupMark({ C, label }: { C: P; label: string }) {
+  return (
+    <View accessibilityRole="header" style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 32, marginHorizontal: 2 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.8, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+    </View>
+  );
+}
 
 // One row of the first-session chooser (#3): a tappable option with a title, a
 // one-line sub, and a Free/Full badge.

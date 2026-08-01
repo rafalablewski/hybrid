@@ -148,6 +148,14 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deloaded to {pct}%, −1 set — you're wrecked today",
     "w.home.today.rxWreckedBw": "Dropped a set — you're wrecked today",
     "w.home.today.goFull": "Go Full",
+    // ── Today's group markers — the four themed clusters the dashboard scroll
+    // is organised into (Train / Recover / Progress / Explore). Rendered as a
+    // quiet mono-uppercase wayfinding tier ABOVE the blocks' own heads; shared
+    // by web today.tsx and mobile home.tsx so the taxonomy can't drift.
+    "w.home.group.train": "Train",
+    "w.home.group.recover": "Recover",
+    "w.home.group.progress": "Progress",
+    "w.home.group.explore": "Explore",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; vsAvg takes {v} = this
     // week's value and {b} = the four-week average, both already unit-formatted.
@@ -886,6 +894,10 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload do {pct}%, −1 seria — dziś jesteś wykończony",
     "w.home.today.rxWreckedBw": "Odjęto serię — dziś jesteś wykończony",
     "w.home.today.goFull": "Przejdź na Full",
+    "w.home.group.train": "Trening",
+    "w.home.group.recover": "Regeneracja",
+    "w.home.group.progress": "Postępy",
+    "w.home.group.explore": "Odkrywaj",
     "w.home.week.title": "Ten tydzień",
     "w.home.other.title": "Inne sporty",
     "w.home.other.efforts": "Wyjścia",
@@ -1604,6 +1616,10 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload auf {pct}%, −1 Satz — du bist heute erschöpft",
     "w.home.today.rxWreckedBw": "Ein Satz weniger — du bist heute erschöpft",
     "w.home.today.goFull": "Auf Full",
+    "w.home.group.train": "Training",
+    "w.home.group.recover": "Erholung",
+    "w.home.group.progress": "Fortschritt",
+    "w.home.group.explore": "Entdecken",
     "w.home.week.title": "Diese Woche",
     "w.home.other.title": "Andere Sportarten",
     "w.home.other.efforts": "Einheiten",

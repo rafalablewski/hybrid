@@ -102,11 +102,13 @@ const readyColor = (v: number) => roleColor(readinessRole(v));
 
 /**
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do
- * I feel, what's my circle up to?" and walks the athlete through it top to
- * bottom: Train (today's session + AI coach note) → Recover/Feel (a slim
- * on-track strip + the check-in widget) → Plan (this week) → Connect (coaches
- * + friends' feed). Fuelling is NOT on this screen — it has its own Nutrition
- * destination. The strategic/analytical layer — Performance
+ * I feel, where is it going?" and walks the athlete through it top to bottom in
+ * FOUR NAMED CLUSTERS, each opened by a GroupMark (the quiet mono wayfinding
+ * tier): TRAIN (the scheduled session/hero + what was actually done) →
+ * RECOVER (the check-in ritual) → PROGRESS (this week's verdict, the
+ * favourite-movement deltas, endurance lanes, other sports) → EXPLORE (Go Full
+ * + the coach marketplace). Fuelling is NOT on this screen — it has its own
+ * Nutrition destination. The strategic/analytical layer — Performance
  * Twin (HPI), readiness & injury risk, the season timeline and the weekly recap —
  * lives on the COCKPIT now (athlete command center), so the two screens no longer
  * duplicate each other. Casual users get the same lean daily loop. Mirrored on
@@ -676,6 +678,14 @@ export default function AuroraToday({
         )}
       </div>
 
+      {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
+          path to one) and, below it, what was actually done. First of the FOUR
+          themed clusters the whole dashboard scroll is organised into
+          (Train / Recover / Progress / Explore) — each opens with a GroupMark,
+          the quiet wayfinding tier above the blocks' own heads, so the page
+          reads as four thoughts instead of nine competing cards. ═════ */}
+      <GroupMark label={t("w.home.group.train")} />
+
       {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
           eyebrow: the screen is already today's training and the plan names
           itself — the interface shouldn't narrate what the athlete can see.
@@ -877,14 +887,6 @@ export default function AuroraToday({
         </div>
       )}
 
-      {/* EXERCISES — the favourites widget rail (free for everyone): swipeable
-          full-bleed cards, one favourite per purpose, stock-ticker deltas; tap
-          opens that movement's own stats page. Hidden until there's history —
-          an empty rail would just be chrome. */}
-      {onOpenExercise && sessions.length > 0 && (
-        <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
-      )}
-
       {/* DONE TODAY — every session logged on the VIEWED day, one row each: the
           plan's workout (wearing a Plan tag, lime tile) AND the off-plan extras
           (teal tile — quick sport logs, freestyle sessions). The card above is
@@ -912,6 +914,10 @@ export default function AuroraToday({
         />
       )}
 
+      {/* ═════ GROUP: RECOVER — how the body is answering. The daily check-in
+          ritual: readiness reads, the follow-up questions, the day's record. ═════ */}
+      <GroupMark label={t("w.home.group.recover")} />
+
       {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The four
           faces set the day's readiness inline (one tap, no sheet) — nothing else;
           the done count + log action live on the Also Today card above. Follows
@@ -934,8 +940,12 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── THIS WEEK — the verdict card. Sits directly under Readiness
-          because it is the same KIND of thing: a verdict with its working-out
+      {/* ═════ GROUP: PROGRESS — where the training is going. The week's
+          verdict, the favourite movements' deltas, then each sport's own read:
+          every retrospective block on Today, in one cluster, widest first. ═════ */}
+      <GroupMark label={t("w.home.group.progress")} />
+
+      {/* ───── THIS WEEK — the verdict card. A verdict with its working-out
           shown. Replaces the Statistics and Analytics destinations on Today
           (both are now promotedTo "today" in core nav.ts); the two rows under it
           are the doors to everything past this week. Mirrors mobile. ───── */}
@@ -948,6 +958,18 @@ export default function AuroraToday({
         onDeep={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))}
         onSession={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
       />
+
+      {/* EXERCISES — the favourites widget rail (free for everyone): swipeable
+          full-bleed cards, one favourite per purpose, stock-ticker deltas; tap
+          opens that movement's own stats page. Hidden until there's history —
+          an empty rail would just be chrome. Lives in the PROGRESS cluster
+          (it is per-movement trend, not part of the day's job): directly under
+          This week, whose lifting columns these cards break down per movement. */}
+      {onOpenExercise && sessions.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
+        </div>
+      )}
 
       {/* ───── ENDURANCE — sport lanes, directly under This week because the
           card's KM column is the headline these rails break down: the total and
@@ -970,10 +992,14 @@ export default function AuroraToday({
           sport is logged. Mirrors mobile. ───── */}
       <AuroraOtherSports sessions={sessions} onOpen={() => (onNavigate ? onNavigate("sport") : router.push("/sport"))} />
 
+      {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and the
+          coach marketplace. The label the old Explore tab left behind. ═════ */}
+      <GroupMark label={t("w.home.group.explore")} />
+
       {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
           Explore-standard section head (bold display title); the ✦ stays — it's
           the semantic premium signifier, not a decorative marker. ───── */}
-      <div style={{ margin: "26px 2px 12px" }}>
+      <div style={{ margin: "22px 2px 12px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}><span style={{ color: "var(--premium-accent-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1053,6 +1079,25 @@ export default function AuroraToday({
         )}
         <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>📅 {t("w.home.today.doneCalendar")}</button>
       </Sheet>
+    </div>
+  );
+}
+
+/** GROUP MARKER — the wayfinding tier ABOVE the blocks' own heads. Today's
+ *  dashboard scroll is organised into four themed clusters
+ *  (Train / Recover / Progress / Explore); each opens with this quiet
+ *  mono-uppercase label and a hairline running to the margin, so the taxonomy
+ *  is scannable without stacking a second bold title over any card. The
+ *  largest whitespace on the page sits ABOVE the marker — the space does the
+ *  grouping, the label only names it. Not a decorative dot-before-a-heading
+ *  (banned); the rule is a trailing divider, the editorial idiom the
+ *  FeelingCard already uses inside its card. Mirrored on mobile
+ *  (aurora/home.tsx GroupMark). */
+function GroupMark({ label }: { label: string }) {
+  return (
+    <div role="heading" aria-level={2} style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 2px 0" }}>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
+      <span aria-hidden style={{ flex: 1, height: 1, background: C("line") }} />
     </div>
   );
 }
