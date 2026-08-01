@@ -53,6 +53,7 @@ export * from "./exercise-animation";
 export * from "./exercise-anatomy";
 export * from "./body-map";
 export * from "./exercise-widget";
+export * from "./history-strip";
 export * from "./capabilities";
 export * from "./rpe";
 export * from "./agents";

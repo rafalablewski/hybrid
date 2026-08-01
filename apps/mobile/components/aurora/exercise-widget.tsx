@@ -1,8 +1,8 @@
 import { useMemo, useRef } from "react";
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
-import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
+  exerciseStripBars,
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
@@ -11,6 +11,7 @@ import {
   type LoggedSession,
   type WeightUnit,
 } from "@hybrid/core";
+import HistoryStrip from "./history-strip";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
@@ -39,35 +40,6 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
     <Text style={{ fontFamily: F.monoBold, fontSize: size, color: improving ? txt(C, C.lime) : txt(C, C.red) }}>
       {improving ? "▲" : "▼"} {Math.abs(deltaPct)}%
     </Text>
-  );
-}
-
-/** Full-bleed sparkline — the card's material, not an illustration in it. */
-function Spark({ values, stroke, reversed, id }: { values: number[]; stroke: string; reversed?: boolean; id: string }) {
-  const W = 340, H = 92, T = 10;
-  const n = values.length;
-  if (n < 2) return null;
-  let lo = Math.min(...values), hi = Math.max(...values);
-  const pad = (hi - lo) * 0.18 || 1;
-  lo -= pad; hi += pad;
-  const X = (i: number) => (i / (n - 1)) * W;
-  const Y = (v: number) => {
-    const f = (v - lo) / (hi - lo);
-    return reversed ? T + f * (H - T) : H - f * (H - T);
-  };
-  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${X(i)},${Y(v)}`).join(" ");
-  return (
-    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
-      <Defs>
-        <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={stroke} stopOpacity={0.22} />
-          <Stop offset="1" stopColor={stroke} stopOpacity={0} />
-        </LinearGradient>
-      </Defs>
-      <Path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${id})`} />
-      <Path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
-      <Circle cx={X(n - 1) - 4} cy={Y(values[n - 1]!)} r={3.5} fill={stroke} />
-    </Svg>
   );
 }
 
@@ -103,14 +75,11 @@ export default function ExerciseWidgetRail({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const { width } = useWindowDimensions();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
   // One ref per card's headline figure — only the tapped card is ever measured.
   const heroRefs = useRef<Record<string, Text | null>>({});
   const armHero = useSharedElementSource();
   if (cards.length === 0) return null;
-
-  const cardW = Math.min(340, Math.round(width * 0.78));
 
   return (
     <View style={{ marginTop: 24 }}>
@@ -127,19 +96,22 @@ export default function ExerciseWidgetRail({
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
           gutter pull the scroll clip to the true screen edge, with matching
-          internal padding so resting cards stay on the column. */}
+          internal padding so resting cards stay on the column. Cards wear the
+          cluster's ONE TILE SKELETON (consistency wave 2): name row → figure →
+          chart zone → footer meta, radius 16, the shared HistoryStrip as the
+          chart. The 340×200 sparkline hero retired with it — the rail lost
+          theatre and the cluster gained a single voice. Mirrors web. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={cardW + 12}
         decelerationRate="fast"
         style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}
+        contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: 16 }}
       >
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = kindStroke(C, card.kind);
-          const heroStyle = { fontFamily: F.black, fontSize: 34, letterSpacing: -0.5, color: C.chalk } as const;
+          const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk } as const;
           return (
             <Pressable
               key={card.name}
@@ -153,32 +125,38 @@ export default function ExerciseWidgetRail({
               }}
               accessibilityRole="button"
               accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
-              style={{ width: cardW, height: 200, overflow: "hidden", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}
+              style={{
+                width: 200, minHeight: 132, gap: 7,
+                backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
+                paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
+              }}
             >
-              <View style={{ position: "absolute", top: 16, left: 18, right: 18, zIndex: 2 }}>
-                <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{card.name}</Text>
-                  <TickerDelta deltaPct={card.deltaPct} improving={card.improving} />
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 8 }}>
-                  <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>{h.u}</Text>
-                </View>
-                <Text style={{ marginTop: 6, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
-                  {t(KIND_KEY[card.kind])} – {h.label}
-                </Text>
+              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
               </View>
-              <Spark values={card.spark} stroke={stroke} reversed={card.metric === "pace"} id={`exw-${card.name.replace(/\W/g, "")}`} />
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+                <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.u}</Text>
+              </View>
+              <View style={{ marginTop: "auto" }}>
+                <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
+                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{h.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
+              </View>
             </Pressable>
           );
         })}
+        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
         <Pressable
           onPress={onAll}
           accessibilityRole="button"
-          style={{ width: Math.round(cardW * 0.5), height: 200, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.card, paddingHorizontal: 14 }}
+          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
-          <Text style={{ fontSize: 22, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 17 }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 16 }}>{t("w.home.exw.allCard")}</Text>
         </Pressable>
       </ScrollView>
     </View>

@@ -7,6 +7,7 @@ import {
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import HistoryStrip from "./history-strip";
 
 /**
  * OTHER SPORTS — the block directly under Endurance on Today (web), the TWIN of
@@ -136,19 +137,11 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
         <span style={kicker}>{t("w.home.other.efforts")}</span>
       </span>
 
-      {/* Eight weeks of frequency. Violet is the app's non-endurance channel —
-          teal already means cardio on the lanes directly above this block. */}
-      <span style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 26, marginTop: "auto" }} aria-hidden>
-        {bars.map((h, i) => (
-          <span
-            key={i}
-            style={{
-              flex: 1, display: "block", borderRadius: 2,
-              height: Math.max(3, Math.round(h * 26)),
-              background: i === bars.length - 1 ? C("violet") : `color-mix(in srgb, ${C("violet")} 34%, transparent)`,
-            }}
-          />
-        ))}
+      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
+          is the app's non-endurance channel — teal already means cardio on the
+          lanes directly above this block. */}
+      <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
+        <HistoryStrip bars={bars} color={C("violet")} />
       </span>
 
       <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 9.5, color: C("ash") }}>

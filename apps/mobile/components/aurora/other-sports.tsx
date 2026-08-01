@@ -8,6 +8,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS } from "./kit";
+import HistoryStrip from "./history-strip";
 
 /**
  * OTHER SPORTS — the block directly under Endurance on Today, the TWIN of
@@ -126,19 +127,11 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
         </Text>
       </View>
 
-      {/* Eight weeks of frequency. Violet is the app's non-endurance channel —
-          teal already means cardio on the lanes directly above this block. */}
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 26, marginTop: "auto" }}>
-        {bars.map((h, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1, borderRadius: 2,
-              height: Math.max(3, Math.round(h * 26)),
-              backgroundColor: i === bars.length - 1 ? C.violet : `${C.violet}55`,
-            }}
-          />
-        ))}
+      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
+          is the app's non-endurance channel — teal already means cardio on the
+          lanes directly above this block. */}
+      <View style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={bars} color={C.violet} />
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
