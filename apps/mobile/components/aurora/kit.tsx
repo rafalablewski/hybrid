@@ -19,7 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf, useEntrance } from "../../lib/ui";
+import { fs, space, F, serifIf, useEntrance, HubDissolve } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -143,6 +143,13 @@ export function AuroraScreen({
   // Shared hook (lib/ui) so this and Today can't drift, and so the JS-driver fix
   // for the Fabric blank-screen strand lives in exactly one place.
   const enterStyle = useEntrance();
+  // AS A HUB TAB (`top` provided — Today handing over its header + pills): the
+  // whole-screen entrance would replay over the chrome on every pill tap,
+  // making the "stable" header jump. So the chrome renders plainly and only
+  // the CONTENT below it dissolves in (lib/ui useHubDissolve — the flying lens
+  // owns the motion; web twin is the data-nav-kind="hub" view transition).
+  const hub = top != null;
+  const inner = hub ? <HubDissolve active>{children}</HubDissolve> : children;
   const body = scroll ? (
     <ScrollView
       // Clear the floating Aurora pill nav so the last content row never hides
@@ -158,10 +165,10 @@ export function AuroraScreen({
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
       {top}
-      {children}
+      {inner}
     </ScrollView>
   ) : (
-    <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{top}{children}</View>
+    <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{top}{inner}</View>
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
@@ -169,7 +176,7 @@ export function AuroraScreen({
       {/* Lift fields above the keyboard so low inputs / submit buttons (login,
           builder, check-in, nutrition…) aren't hidden when it opens. */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Animated.View style={[{ flex: 1 }, enterStyle]}>{body}</Animated.View>
+        <Animated.View style={[{ flex: 1 }, hub ? null : enterStyle]}>{body}</Animated.View>
       </KeyboardAvoidingView>
       {scroll ? stickyTop : null}
     </SafeAreaView>

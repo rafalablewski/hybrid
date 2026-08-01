@@ -26,6 +26,35 @@ import { hasArmedSharedElement, releaseSharedElements } from "./shared-element";
  * substitutes a short cross-dissolve for the positional keyframes, because a
  * user with Reduce Motion on still needs to perceive that the screen changed.
  */
+/**
+ * The Today-hub switch (Dashboard / Performance / Feed) — a move INSIDE one
+ * screen, so it must not replay a screen transition. The hub pills' flying
+ * lens (liquid-seg) is the element in flight, and per the shared-element rule
+ * it OWNS the motion: the content behind it cross-dissolves while the hub
+ * chrome (profile row + pills) holds perfectly still. Published as
+ * `data-nav-kind="hub"`; globals.css scopes the chrome's
+ * `view-transition-name` to that attribute, so an ordinary navigation still
+ * captures the Today surface whole. Mobile twin: `useHubDissolve` (lib/ui) +
+ * the LiquidSeg flight memory.
+ */
+export function runHubTransition(apply: () => void): void {
+  const doc = typeof document !== "undefined" ? document.documentElement : null;
+  const start = doc
+    ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }).startViewTransition
+    : undefined;
+  if (!doc || typeof start !== "function") {
+    apply();
+    return;
+  }
+  doc.dataset.navKind = "hub";
+  doc.dataset.navDir = "none";
+  // Synchronous for the same reason as below: the browser snapshots around the
+  // callback, so a batched React update would be captured as "nothing changed".
+  start.call(document, () => {
+    flushSync(apply);
+  });
+}
+
 export function useScreenTransition(
   current: string,
   apply: Dispatch<SetStateAction<string>>,

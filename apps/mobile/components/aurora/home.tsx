@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -71,7 +71,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, serifIf, startGlow, useEntrance } from "../../lib/ui";
+import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";
@@ -164,6 +164,11 @@ export default function AuroraHome() {
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
   const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
+  // Whether this visit has LEFT the dashboard: the dashboard body replays the
+  // hub dissolve only when it comes BACK from Performance/Feed — on the first
+  // entry the whole-screen entrance owns the motion and must not be doubled.
+  const awayFromDashboard = useRef(false);
+  if (tab !== "dashboard") awayFromDashboard.current = true;
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
@@ -382,11 +387,12 @@ export default function AuroraHome() {
   const [railScrollY, setRailScrollY] = useState(0);
   const [railGeom, setRailGeom] = useState({
     origin: 0, // the entrance wrapper, within the scroll content
-    blockY: 0, // the rail block, within the wrapper
+    bodyY: 0, // the hub-dissolve body wrapper, within the entrance wrapper
+    blockY: 0, // the rail block, within the body wrapper
     cardY: 0, // the week-rail card, within the block
     cardH: 0,
     weekBottom: null as number | null, // the week strip's bottom, within the card
-    feelY: 0, // the check-in card, within the wrapper
+    feelY: 0, // the check-in card, within the body wrapper
     feelH: 0,
   });
   const measureRail = useCallback(
@@ -398,12 +404,12 @@ export default function AuroraHome() {
     [],
   );
   const railBottoms: TodayRailBottoms = useMemo(() => {
-    const { origin, blockY, cardY, cardH, weekBottom, feelY, feelH } = railGeom;
-    const cardTop = origin + blockY + cardY;
+    const { origin, bodyY, blockY, cardY, cardH, weekBottom, feelY, feelH } = railGeom;
+    const cardTop = origin + bodyY + blockY + cardY;
     return {
       date: weekBottom == null ? null : cardTop + weekBottom,
       done: cardH ? cardTop + cardH : null,
-      ready: feelH ? origin + feelY + feelH : null,
+      ready: feelH ? origin + bodyY + feelY + feelH : null,
     };
   }, [railGeom]);
   // The same seven days the week strip draws, so the capsule's dot track and
@@ -681,6 +687,15 @@ export default function AuroraHome() {
       >
         <Animated.View style={enterStyle} onLayout={(e) => measureRail({ origin: e.nativeEvent.layout.y })}>
         {hubHeader}
+
+        {/* Coming BACK from Performance/Feed, the dashboard body dissolves in
+            under the still chrome — the same hub move those tabs play
+            (lib/ui HubDissolve). Inert on the first entry, where the
+            whole-screen entrance above already owns the motion. The wrapper's
+            own offset feeds the rail geometry (bodyY) because the measured
+            blocks below now report layout.y against it, not the entrance
+            wrapper. */}
+        <HubDissolve active={awayFromDashboard.current} onLayout={(e) => measureRail({ bodyY: e.nativeEvent.layout.y })}>
 
         {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
             chooser's "Free", or the scrub-distance tag), ONE big headline, and
@@ -1090,6 +1105,7 @@ export default function AuroraHome() {
         </View>
         <CoachRail onOpen={() => router.push("/coaches")} headerless bleed seeMore />
 
+        </HubDissolve>
         </Animated.View>
       </ScrollView>
 

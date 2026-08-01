@@ -11,6 +11,7 @@ import {
   Easing,
   KeyboardAvoidingView,
   Platform,
+  type LayoutChangeEvent,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -121,6 +122,49 @@ export function useEntrance() {
           },
     [enter, reducedMotion],
   );
+}
+
+// THE HUB DISSOLVE — what a screen's CONTENT does when it shows as one of
+// Today's hub tabs (Dashboard / Performance / Feed). The hub chrome above it
+// (profile row + pills) holds perfectly still and the pills' flying lens owns
+// the motion, so the content cross-dissolves underneath instead of replaying
+// the whole-screen entrance — the same "shared element in flight" rule the web
+// twin applies (globals.css THE TODAY HUB, data-nav-kind="hub"). Runs on focus
+// like useEntrance (a hub tab mounts fresh on every switch, and re-fires when
+// the Today tab regains focus). Reduce Motion keeps the dissolve at the
+// substitution duration — never an instant cut. JS driver for the same Fabric
+// race documented on useEntrance.
+export function useHubDissolve(active: boolean) {
+  const fade = useRef(new Animated.Value(active ? 0 : 1)).current;
+  const reducedMotion = useReducedMotion();
+  useFocusEffect(
+    useCallback(() => {
+      if (!active) return;
+      fade.setValue(0);
+      const anim = Animated.timing(fade, {
+        toValue: 1,
+        duration: reducedMotion ? durations.reduced : durations.dissolve,
+        // easings.fade — the app's crossfade curve (@hybrid/core motion.ts).
+        easing: reducedMotion ? Easing.linear : Easing.bezier(0.2, 0.7, 0.3, 1),
+        useNativeDriver: false,
+      });
+      anim.start();
+      return () => anim.stop();
+    }, [fade, reducedMotion, active]),
+  );
+  return useMemo(() => ({ opacity: fade }), [fade]);
+}
+
+/** The wrapper form of useHubDissolve, for callers that switch the hub body in
+ *  and out of the tree (home.tsx's dashboard) — remounting replays the fade.
+ *  `active: false` renders plainly (the first entry into Today already has the
+ *  whole-screen entrance; stacking a second fade on it would double up).
+ *  `onLayout` is forwarded because the wrapper is a real view: children that
+ *  report layout.y now measure against IT, so a caller doing scroll geometry
+ *  needs the wrapper's own offset to keep its sums honest. */
+export function HubDissolve({ active, children, onLayout }: { active: boolean; children: ReactNode; onLayout?: (e: LayoutChangeEvent) => void }) {
+  const fade = useHubDissolve(active);
+  return <Animated.View style={active ? fade : undefined} onLayout={onLayout}>{children}</Animated.View>;
 }
 
 /**

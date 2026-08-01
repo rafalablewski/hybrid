@@ -65,6 +65,16 @@ describe("globals.css motion tokens", () => {
     expect(css).toMatch(/::view-transition-group\(hybrid-exercise-hero\)[\s\S]{0,240}var\(--d-zoom\)/);
   });
 
+  it("holds the hub chrome still while the hub content dissolves", () => {
+    // The Today-hub switch (data-nav-kind="hub") lifts the profile row + pills
+    // into their own group; the flying lens owns the motion, so the content
+    // behind it cross-dissolves. The chrome's name must be SCOPED to the hub
+    // attribute, or ordinary screen transitions would capture Today in pieces.
+    expect(css).toContain('html[data-nav-kind="hub"] .motion-hub-chrome { view-transition-name: hybrid-hub-chrome; }');
+    expect(css).toMatch(/html\[data-nav-kind="hub"\]::view-transition-old\(hybrid-hub-chrome\)\s*{\s*animation:\s*none/);
+    expect(css).toMatch(/html\[data-nav-kind="hub"\]::view-transition-new\(hybrid-screen\)\s*{\s*animation:\s*motionDissolveIn/);
+  });
+
   it("keeps the sidebar and header still — only the screen travels", () => {
     expect(css).toContain(".motion-screen { view-transition-name: hybrid-screen; }");
     // The default root cross-fade must be suppressed or the whole document

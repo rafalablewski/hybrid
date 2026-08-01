@@ -54,6 +54,9 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
       onSelect={(i) => onChange(TODAY_TABS[i]!.id)}
       segHeight={36}
       pad={4}
+      // The hub swaps the whole screen tree on selection, remounting this
+      // control mid-move — the flight memory keeps the lens in the air.
+      flightKey="today-hub"
       trackStyle={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
     />
   );

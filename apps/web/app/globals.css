@@ -666,6 +666,19 @@ html[data-nav-kind="pop"]::view-transition-new(hybrid-screen) { animation: motio
 html[data-nav-kind="replace"]::view-transition-old(hybrid-screen) { animation: motionDissolveOut var(--d-dissolve) var(--e-fade) both; }
 html[data-nav-kind="replace"]::view-transition-new(hybrid-screen) { animation: motionDissolveIn  var(--d-dissolve) var(--e-fade) both; }
 
+/* THE TODAY HUB — Dashboard / Performance / Feed swap INSIDE the Today screen
+   (aurora/today.tsx selectTab → runHubTransition). The pills' flying lens is
+   the element in flight, so it owns the motion: the hub chrome (profile row +
+   pills, .motion-hub-chrome) is lifted into its own group and held perfectly
+   still, while the rest of the surface cross-dissolves underneath. The
+   chrome's name exists ONLY during a hub move, so an ordinary navigation
+   still captures the Today surface whole. */
+html[data-nav-kind="hub"] .motion-hub-chrome { view-transition-name: hybrid-hub-chrome; }
+html[data-nav-kind="hub"]::view-transition-old(hybrid-hub-chrome) { animation: none; opacity: 0; }
+html[data-nav-kind="hub"]::view-transition-new(hybrid-hub-chrome) { animation: none; }
+html[data-nav-kind="hub"]::view-transition-old(hybrid-screen) { animation: motionDissolveOut var(--d-dissolve) var(--e-fade) both; }
+html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motionDissolveIn  var(--d-dissolve) var(--e-fade) both; }
+
 /* ── MASTHEAD COMPRESSION ────────────────────────────────────────────
    The screen's big title shrinks and a frosted header resolves in above it as a
    CONTINUOUS function of scroll offset — not a stepped swap at a threshold,

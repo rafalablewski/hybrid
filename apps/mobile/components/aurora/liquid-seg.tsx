@@ -49,6 +49,15 @@ export type LiquidSegItem = {
 const GROW_Y = 7;
 const GROW_X = 16;
 
+// FLIGHT MEMORY — geometry a control leaves behind for a remounting twin.
+// Today's hub tabs swap the whole screen tree on every selection, so the
+// switcher itself unmounts and remounts mid-move; without this the pill would
+// vanish for the first layout frame and then materialise in its new slot
+// instead of flying. A control with a `flightKey` records its index + width
+// here, and the twin that mounts an instant later takes off from the recorded
+// slot — glassy, in flight — exactly as if it had never remounted.
+const FLIGHT_MEMORY = new Map<string, { index: number; trackW: number }>();
+
 export function LiquidSeg({
   items,
   index,
@@ -56,6 +65,7 @@ export function LiquidSeg({
   segHeight = 36,
   pad = 4,
   trackStyle,
+  flightKey,
 }: {
   items: LiquidSegItem[];
   index: number;
@@ -63,18 +73,28 @@ export function LiquidSeg({
   segHeight?: number;
   pad?: number;
   trackStyle?: ViewStyle;
+  /** Share pill geometry across remounts (see FLIGHT_MEMORY). Pass one stable
+   *  name per control identity — the Today hub uses "today-hub". */
+  flightKey?: string;
 }) {
   const { palette: C, scheme } = useTheme();
   const nativeGlass = LIQUID_GLASS_SUPPORTED;
   const reduced = useReducedMotion();
 
-  const [trackW, setTrackW] = useState(0);
+  // What the previous mount of this control (same flightKey) left behind —
+  // read once, at first render, before this instance starts writing.
+  const memory = useRef(flightKey ? FLIGHT_MEMORY.get(flightKey) : undefined).current;
+  const [trackW, setTrackW] = useState(memory?.trackW ?? 0);
   const thumbW = trackW > 0 ? (trackW - 2 * pad) / items.length : 0;
   /** The segment the lens is over mid-drag; null when idle (selection rules). */
   const [under, setUnder] = useState<number | null>(null);
 
-  const x = useRef(new Animated.Value(0)).current;
-  const lift = useRef(new Animated.Value(0)).current;
+  // A remount mid-move takes off from the remembered slot, already glassy;
+  // otherwise the pill starts wherever the first layout places it.
+  const inFlight = !reduced && memory != null && memory.trackW > 0 && memory.index !== index;
+  const memThumbW = memory && memory.trackW > 0 ? (memory.trackW - 2 * pad) / items.length : 0;
+  const x = useRef(new Animated.Value(inFlight ? memory!.index * memThumbW : 0)).current;
+  const lift = useRef(new Animated.Value(inFlight ? 1 : 0)).current;
 
   // Mutable mirrors for the PanResponder (created once, reads fresh values).
   const geo = useRef({ trackX: 0, trackW: 0, thumbW: 0, index: 0, dragX: 0 });
@@ -105,7 +125,14 @@ export function LiquidSeg({
   const placed = useRef(false);
   useEffect(() => {
     if (thumbW <= 0) return;
+    if (flightKey) FLIGHT_MEMORY.set(flightKey, { index, trackW });
     const to = index * thumbW;
+    if (!placed.current && inFlight) {
+      // Remounted mid-move (see FLIGHT_MEMORY): finish the flight, don't snap.
+      placed.current = true;
+      springX(to, true);
+      return;
+    }
     if (!placed.current || reduced) {
       placed.current = true;
       x.setValue(to);

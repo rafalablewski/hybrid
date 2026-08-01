@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable, TextInput, Alert, FlatList, RefreshControl } from "react-native";
-import { Screen, Card, Loading, F, useScreenBottomPad } from "../lib/ui";
+import { View, Text, Pressable, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
+import { Screen, Card, Loading, F, useScreenBottomPad, useHubDissolve } from "../lib/ui";
 import { ABack } from "./aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -69,9 +69,19 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const padBottom = useScreenBottomPad();
   const navScroll = useNavScrollProps();
 
+  // AS A HUB TAB (`top` provided — Today handing over its header + pills): the
+  // chrome renders plainly so it holds still across the switch, and the feed's
+  // own content dissolves in beneath it (lib/ui useHubDissolve — the pills'
+  // flying lens owns the motion). The list is virtualized, so the fade rides
+  // on the header block and on each card rather than one wrapper.
+  const hub = top != null;
+  const hubFade = useHubDissolve(hub);
+  const fade = hub ? hubFade : undefined;
+
   const header = (
     <>
       {top}
+      <Animated.View style={fade}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, marginTop: top ? 16 : 0 }}>
         {!top && <ABack />}
         <View>
@@ -88,10 +98,12 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
         </View>
       </Card>
+      </Animated.View>
     </>
   );
 
   const renderItem = ({ item }: { item: FeedItemView }) => (
+    <Animated.View style={fade}>
     <Card>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Pressable onPress={() => setDrawer(item.author.handle)}><Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={42} /></Pressable>
@@ -122,6 +134,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       </View>
       {open === item.id && <Comments item={item} />}
     </Card>
+    </Animated.View>
   );
 
   return (
@@ -133,7 +146,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={header}
-        ListEmptyComponent={feed === null ? <Loading /> : <Empty title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />}
+        ListEmptyComponent={<Animated.View style={fade}>{feed === null ? <Loading /> : <Empty title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />}</Animated.View>}
         {...navScroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

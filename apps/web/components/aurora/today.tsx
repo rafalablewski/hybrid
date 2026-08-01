@@ -61,6 +61,7 @@ import { fs, space,
   type LogbookDay,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
+import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
 import { useRevalidate } from "@/lib/use-invalidate";
@@ -185,7 +186,10 @@ export default function AuroraToday({
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
-  const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
+  // The switch runs as a hub transition (lib/use-screen-transition): the pills'
+  // flying lens owns the motion and the content cross-dissolves beneath it,
+  // instead of the old hard cut.
+  const selectTab = useCallback((id: TodayTabId) => { runHubTransition(() => setTab(id)); track("today_tab", { tab: id }); }, []);
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -534,7 +538,10 @@ export default function AuroraToday({
   // a second copy of it — they differ only in what hangs below the pills.
   const shell = { maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" } as const;
   const hubHeader = (
-    <>
+    // `motion-hub-chrome`: during a hub switch (data-nav-kind="hub") this block
+    // is lifted into its own view-transition group and held perfectly still —
+    // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
+    <div className="motion-hub-chrome">
       {/* HEADER — profile, HYBRID wordmark, bell */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button
@@ -578,7 +585,7 @@ export default function AuroraToday({
           it, and the people around it. Registry shared with mobile
           (@hybrid/core today-tabs.ts). */}
       <TodayTabs value={tab} onChange={selectTab} />
-    </>
+    </div>
   );
 
   // ── THE OTHER TWO TABS ────────────────────────────────────────────────────
@@ -603,7 +610,7 @@ export default function AuroraToday({
             macroSettled={macroSettled}
             setScreen={(s) => (onNavigate ? onNavigate(s) : router.push(`/${s}`))}
             onOpenExercise={onOpenExercise}
-            onEnrolled={() => { onEnrolled?.(); setTab("dashboard"); }}
+            onEnrolled={() => { onEnrolled?.(); runHubTransition(() => setTab("dashboard")); }}
           />
         </div>
       </div>
