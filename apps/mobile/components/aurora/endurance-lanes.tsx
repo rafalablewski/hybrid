@@ -11,6 +11,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS } from "./kit";
+import HistoryStrip from "./history-strip";
 
 /**
  * SPORT LANES — the Endurance block on Today, directly under the "This week"
@@ -156,9 +157,11 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
   );
 }
 
-/** One rail tile. Fixed width, shared minimum height so a rail's cards sit on
- *  one baseline however differently they're filled. */
-function Tile({ w, label, children }: { w: number; label: string; children: React.ReactNode }) {
+/** One rail tile — the cluster's shared skeleton (name row → figure → chart →
+ *  footer). Fixed width, shared minimum height so a rail's cards sit on one
+ *  baseline however differently they're filled. `right` rides the name row
+ *  (a delta, a qualifier) — the same slot the exercises tiles use. */
+function Tile({ w, label, right, children }: { w: number; label: string; right?: React.ReactNode; children: React.ReactNode }) {
   const { palette: C } = useTheme();
   return (
     <View
@@ -168,7 +171,10 @@ function Tile({ w, label, children }: { w: number; label: string; children: Reac
         paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+        {right}
+      </View>
       {children}
     </View>
   );
@@ -201,29 +207,28 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
 function VolumeTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const bars = volumeBars(lane.weeks);
+  // The tile skeleton (wave 2): label row → this week's km as the FIGURE →
+  // the shared HistoryStrip as the chart → the window as the footer. The old
+  // 46px one-off bar block is retired for the cluster's one chart language.
   return (
     <Tile w={178} label={t("w.home.exw.volume")}>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, height: 46, marginTop: "auto" }}>
-        {bars.map((h, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1, height: Math.max(3, h * 46), borderTopLeftRadius: 3, borderTopRightRadius: 3,
-              backgroundColor: i === bars.length - 1 ? C.blue : `${C.blue}57`,
-            }}
-          />
-        ))}
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk }}>{lane.thisWeek.km}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>km</Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-        {lane.thisWeek.km} km {t("w.home.end.thisWeek").toLowerCase()}
-      </Text>
+      <View style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} />
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }
 
 const TREND_W = 176 - 24; // tile width less its horizontal padding
-const TREND_H = 38;
+// The strip's shared 24px chart zone — the line is the one honest exception
+// to the bar strip (pace is a level over time, not a quantity per week), and
+// it draws at the strip's own height so even the exception aligns (wave 2).
+const TREND_H = 24;
 
 function TrendTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
@@ -231,11 +236,22 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
   const pts = paceTrendPoints(lane.paceTrend);
   const delta = paceDelta(lane.paceTrend);
   // 0 → top of the box, so the fastest week sits highest on every discipline.
-  const xy = pts.map((p, i) => [(i / (pts.length - 1)) * TREND_W, 4 + p * (TREND_H - 8)] as const);
+  const xy = pts.map((p, i) => [(i / (pts.length - 1)) * TREND_W, 3 + p * (TREND_H - 6)] as const);
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const end = xy[xy.length - 1]!;
   return (
-    <Tile w={176} label={t("session.paceTrend")}>
+    <Tile
+      w={176}
+      label={t("session.paceTrend")}
+      right={delta ? (
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, color: txt(C, delta.faster ? C.lime : C.red) }}>
+          {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
+        </Text>
+      ) : undefined}
+    >
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk }}>
+        {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
+      </Text>
       <View style={{ marginTop: "auto" }}>
         <Svg width={TREND_W} height={TREND_H}>
           <Defs>
@@ -249,16 +265,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           <Circle cx={end[0]} cy={end[1]} r={2.4} fill={C.blue} stroke={C.ink2} strokeWidth={1.4} />
         </Svg>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}>
-          {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
-        </Text>
-        {delta && (
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, color: txt(C, delta.faster ? C.lime : C.red) }}>
-            {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
-          </Text>
-        )}
-      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }

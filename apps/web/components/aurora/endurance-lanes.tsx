@@ -9,6 +9,7 @@ import {
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import HistoryStrip from "./history-strip";
 
 /**
  * SPORT LANES — the Endurance block on Today (web), directly under the "This
@@ -53,9 +54,11 @@ const kicker: CSSProperties = {
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
 
-/** One rail tile. Fixed width, shared minimum height so a rail's cards sit on
- *  one baseline however differently they're filled. */
-function Tile({ w, label, children }: { w: number; label: string; children: ReactNode }) {
+/** One rail tile — the cluster's shared skeleton (name row → figure → chart →
+ *  footer). Fixed width, shared minimum height so a rail's cards sit on one
+ *  baseline however differently they're filled. `right` rides the name row
+ *  (a delta, a qualifier) — the same slot the exercises tiles use. */
+function Tile({ w, label, right, children }: { w: number; label: string; right?: ReactNode; children: ReactNode }) {
   return (
     <div
       style={{
@@ -65,7 +68,10 @@ function Tile({ w, label, children }: { w: number; label: string; children: Reac
         boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
       }}
     >
-      <span style={kicker}>{label}</span>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+        <span style={kicker}>{label}</span>
+        {right}
+      </div>
       {children}
     </div>
   );
@@ -92,24 +98,19 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
 }
 
 function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }) {
-  const bars = volumeBars(lane.weeks);
+  // The tile skeleton (wave 2): label row → this week's km as the FIGURE →
+  // the shared HistoryStrip as the chart → the window as the footer. The old
+  // 46px one-off bar block is retired for the cluster's one chart language.
   return (
     <Tile w={178} label={t("w.home.exw.volume")}>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 46, marginTop: "auto" }} aria-hidden>
-        {bars.map((h, i) => (
-          <span
-            key={i}
-            style={{
-              flex: 1, display: "block", borderRadius: "3px 3px 0 0",
-              height: Math.max(3, Math.round(h * 46)),
-              background: i === bars.length - 1 ? C("blue") : `color-mix(in srgb, ${C("blue")} 34%, transparent)`,
-            }}
-          />
-        ))}
+      <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
+        {lane.thisWeek.km}
+        <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>km</span>
       </div>
-      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>
-        {lane.thisWeek.km} km {t("w.home.end.thisWeek").toLowerCase()}
-      </span>
+      <div style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={volumeBars(lane.weeks)} color={C("blue")} />
+      </div>
+      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }
@@ -118,23 +119,39 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
   const pts = paceTrendPoints(lane.paceTrend);
   const delta = paceDelta(lane.paceTrend);
   const id = `lane-trend-${lane.discipline}`;
+  // The tile skeleton (wave 2): label row carries the delta, the current pace
+  // is the FIGURE, and the line — the one honest exception to the bar strip
+  // (pace is a level over time, not a quantity per week) — draws in the
+  // strip's own 24px chart zone so even the exception aligns.
   // 0 → top of the box, so the fastest week sits highest on every discipline.
-  const xy = pts.map((p, i) => [(i / (pts.length - 1)) * 100, 4 + p * 30] as const);
+  const H = 24;
+  const xy = pts.map((p, i) => [(i / (pts.length - 1)) * 100, 3 + p * (H - 6)] as const);
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const end = xy[xy.length - 1]!;
   return (
-    <Tile w={176} label={t("session.paceTrend")}>
+    <Tile
+      w={176}
+      label={t("session.paceTrend")}
+      right={delta ? (
+        <span style={{ ...num, fontSize: 9.5, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
+          {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
+        </span>
+      ) : undefined}
+    >
+      <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk"), whiteSpace: "nowrap" }}>
+        {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
+      </div>
       {/* Colours go through `style`, NOT presentation attributes: a var() in
           stroke="…" / stop-color="…" does not resolve (it computes to none /
           black), which is the same trap lib/ui.tsx flags for recharts. */}
-      <svg viewBox="0 0 100 38" preserveAspectRatio="none" style={{ width: "100%", height: 38, marginTop: "auto", overflow: "visible" }} aria-hidden>
+      <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: H, marginTop: "auto", overflow: "visible" }} aria-hidden>
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" style={{ stopColor: C("blue"), stopOpacity: 0.22 }} />
             <stop offset="100%" style={{ stopColor: C("blue"), stopOpacity: 0 }} />
           </linearGradient>
         </defs>
-        <polygon points={`0,38 ${line} 100,38`} fill={`url(#${id})`} />
+        <polygon points={`0,${H} ${line} 100,${H}`} fill={`url(#${id})`} />
         <polyline
           points={line} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round"
           vectorEffect="non-scaling-stroke" style={{ fill: "none", stroke: C("blue") }}
@@ -144,16 +161,7 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
           style={{ fill: C("blue"), stroke: C("ink2") }}
         />
       </svg>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <span style={{ ...num, fontSize: fs.bodyLg, fontWeight: 500, color: C("chalk"), whiteSpace: "nowrap" }}>
-          {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
-        </span>
-        {delta && (
-          <span style={{ ...num, fontSize: 9.5, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
-            {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
-          </span>
-        )}
-      </div>
+      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }

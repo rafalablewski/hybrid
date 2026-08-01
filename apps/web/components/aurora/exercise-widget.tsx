@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRef } from "react";
 import {
   SHARED_ELEMENTS,
+  exerciseStripBars,
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
@@ -13,6 +14,7 @@ import {
   type LoggedSession,
   type WeightUnit,
 } from "@hybrid/core";
+import HistoryStrip from "./history-strip";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
@@ -48,40 +50,6 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
     <span style={{ fontFamily: "var(--font-mono)", fontSize: size, fontWeight: 700, color: improving ? "var(--lime-text)" : "var(--red-text)", whiteSpace: "nowrap" }}>
       {improving ? "▲" : "▼"} {Math.abs(deltaPct)}%
     </span>
-  );
-}
-
-/** Full-bleed sparkline — the card's material, not an illustration in it.
- *  Hand-rolled SVG mirroring the mobile Spark EXACTLY (same 340×92 path math,
- *  the domain padded 18% so a flat/zero baseline floats INSIDE the card, round
- *  joins + caps, an end dot). The previous recharts version pinned the series
- *  minimum to the card's bottom border — the half-clipped stroke read as a
- *  broken card edge and the area wash as a torn gradient on the washi theme. */
-function Spark({ values, stroke, reversed, id }: { values: number[]; stroke: string; reversed?: boolean; id: string }) {
-  const W = 340, H = 92, T = 10;
-  const n = values.length;
-  if (n < 2) return null;
-  let lo = Math.min(...values), hi = Math.max(...values);
-  const pad = (hi - lo) * 0.18 || 1;
-  lo -= pad; hi += pad;
-  const X = (i: number) => (i / (n - 1)) * W;
-  const Y = (v: number) => {
-    const f = (v - lo) / (hi - lo);
-    return reversed ? T + f * (H - T) : H - f * (H - T);
-  };
-  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${X(i)},${Y(v)}`).join(" ");
-  return (
-    <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "block" }}>
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
-          <stop offset="100%" stopColor={stroke} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${id})`} />
-      <path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={X(n - 1) - 4} cy={Y(values[n - 1]!)} r={3.5} fill={stroke} />
-    </svg>
   );
 }
 
@@ -133,9 +101,12 @@ export default function ExerciseWidgetRail({
         </button>
       </div>
       {/* Full-bleed rail: negative margins the width of the shell gutter
-          (--page-pad-x) pull the scroll clip to the true screen edge; the
-          centre-snap then centres cards on the physical screen. */}
-      <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "4px var(--page-pad-x, 16px) 6px" }}>
+          (--page-pad-x) pull the scroll clip to the true screen edge. Cards
+          wear the cluster's ONE TILE SKELETON (consistency wave 2): name row →
+          figure → chart zone → footer meta, radius 16, the shared HistoryStrip
+          as the chart. The 340×200 radius-28 sparkline hero retired with it —
+          the rail lost theatre and the cluster gained a single voice. */}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollSnapType: "x proximity", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "2px var(--page-pad-x, 16px) 6px" }}>
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = kindStroke(theme, card.kind);
@@ -156,41 +127,42 @@ export default function ExerciseWidgetRail({
               }}
               aria-label={`${card.name} — ${h.v} ${h.u}`}
               style={{
-                flex: "0 0 min(86%, 340px)", scrollSnapAlign: "center", cursor: "pointer", textAlign: "left",
-                position: "relative", height: 200, overflow: "hidden", padding: 0,
-                background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,
-                boxShadow: "var(--shadow-card)", color: C("chalk"), fontFamily: "var(--font-display)",
+                flex: "0 0 200px", scrollSnapAlign: "start", cursor: "pointer", textAlign: "left",
+                minHeight: 132, display: "flex", flexDirection: "column", gap: 7,
+                background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
+                boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+                color: C("chalk"), fontFamily: "var(--font-display)",
               }}
             >
-              <div style={{ position: "absolute", inset: "16px 18px auto 18px", zIndex: 2 }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                  <span style={{ fontSize: fs.bodyLg, fontWeight: 600 }}>{card.name}</span>
-                  <TickerDelta deltaPct={card.deltaPct} improving={card.improving} />
-                </div>
-                <div data-shared-hero style={{ marginTop: 8, fontSize: 34, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1, width: "fit-content" }}>
-                  {h.v}
-                  <span style={{ fontSize: fs.bodyLg, fontWeight: 500, color: C("ash"), marginLeft: 5 }}>{h.u}</span>
-                </div>
-                <div style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
-                  {t(KIND_KEY[card.kind])} – {h.label}
-                </div>
-              </div>
-              <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 92 }}>
-                <Spark values={card.spark} stroke={stroke} reversed={card.metric === "pace"} id={`exw-${card.name.replace(/\W/g, "")}`} />
-              </div>
+              <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, width: "100%" }}>
+                <span style={{ fontWeight: 700, fontSize: fs.body, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.name}</span>
+                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
+              </span>
+              <span data-shared-hero style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, width: "fit-content" }}>
+                {h.v}
+                <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>{h.u}</span>
+              </span>
+              <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
+                <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
+              </span>
+              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash") }}>
+                <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.label}</span>
+                <span style={{ whiteSpace: "nowrap" }}>{t(KIND_KEY[card.kind])}</span>
+              </span>
             </button>
           );
         })}
+        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
         <button
           onClick={onAll}
           style={{
-            flex: "0 0 40%", scrollSnapAlign: "center", cursor: "pointer",
+            flex: "0 0 132px", scrollSnapAlign: "start", cursor: "pointer",
             display: "grid", placeItems: "center", alignContent: "center", gap: 8,
-            background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 28,
-            fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.6, minHeight: 200,
+            background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 16,
+            fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.6, minHeight: 132,
           }}
         >
-          <span style={{ fontSize: 22, color: C("ash") }}>＋</span>
+          <span style={{ fontSize: 18, color: C("ash") }}>＋</span>
           <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.allCard")}</span>
         </button>
       </div>
