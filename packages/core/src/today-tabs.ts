@@ -16,17 +16,24 @@
  *
  * The registry lives here so web (aurora/today-tabs.tsx) and mobile
  * (aurora/today-tabs.tsx) render the SAME three tabs, in the same order, under
- * the same labels — the ids and labelKeys cannot drift between the clients.
- * Labels reuse the existing shared `nav.*` strings rather than minting a second
- * copy of "Performance" / "Volume" / "Trends" / "Feed" / "Dashboard".
+ * the same marks — the ids, glyphs and labelKeys cannot drift between the
+ * clients. Labels reuse the existing shared `nav.*` strings rather than minting
+ * a second copy of "Performance" / "Volume" / "Trends" / "Feed" / "Dashboard".
+ *
+ * The pills SHOW the glyph, not the label. Three words of three very different
+ * lengths in three equal segments never look centred as a set; three marks of
+ * matched optical weight do. The label is still what the tab is CALLED — it
+ * stays the accessible name (and the web tooltip), so nothing is lost to
+ * screen readers, voice control or translation.
  */
+import type { HubGlyphName } from "./theme/icons";
 
 export type TodayTabId = "dashboard" | "performance" | "feed";
 
-export const TODAY_TABS: ReadonlyArray<{ id: TodayTabId; labelKey: string }> = [
-  { id: "dashboard", labelKey: "nav.dashboard" },
-  { id: "performance", labelKey: "nav.performance" },
-  { id: "feed", labelKey: "nav.feed" },
+export const TODAY_TABS: ReadonlyArray<{ id: TodayTabId; labelKey: string; glyph: HubGlyphName }> = [
+  { id: "dashboard", labelKey: "nav.dashboard", glyph: "dashboard" },
+  { id: "performance", labelKey: "nav.performance", glyph: "performance" },
+  { id: "feed", labelKey: "nav.feed", glyph: "feed" },
 ];
 
 /** Normalize a tab id from a link, a restored value or an unknown source.

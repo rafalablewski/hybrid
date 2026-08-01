@@ -186,6 +186,48 @@ export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
 };
 
 /**
+ * TODAY HUB glyphs — the marks on Today's three pills (see today-tabs.ts).
+ *
+ * The pills carry GLYPHS, not words: "Dashboard", "Performance" and "Feed" are
+ * three very different lengths, so as text in three equal segments they sit
+ * visibly off-centre from one another and the control reads as misaligned.
+ * Three marks of matched optical weight do not have that problem, and the words
+ * survive as each tab's accessible name (labelKey) rather than disappearing.
+ *
+ * Purpose-built for the same reason NUTRITION_GLYPHS above is: the design kit
+ * is a generic UI set with no chart or community mark (its own comment says so),
+ * and the alternative — an emoji — would be the one place in the app that breaks
+ * the monoline voice AND would render as a different picture on every platform.
+ * Same 72×72 stroke convention as AURORA_ICON_PATHS, so they carry identical
+ * weight beside the kit icons; no PNG needed, since both clients draw these as
+ * true vectors (inline <svg> on web, react-native-svg on mobile).
+ */
+export type HubGlyphName = "dashboard" | "performance" | "feed";
+
+export const HUB_GLYPHS: Record<HubGlyphName, string[]> = {
+  // DASHBOARD — a bento: one tall panel and two stacked beside it. The literal
+  // shape of the daily loop (the plan hero, then the smaller cards under it),
+  // and distinct from the kit's plain 2×2 `grid`, which means "all apps".
+  dashboard: [
+    "M12 16a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v40a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z",
+    "M42 16a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H46a4 4 0 0 1-4-4z",
+    "M42 46a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H46a4 4 0 0 1-4-4z",
+  ],
+  // PERFORMANCE — three rising bars on a baseline. The kit has no chart glyph;
+  // `arrow-up` (what the nav borrows for every trend metric) reads as "upload"
+  // once it sits beside a bento and a pair of figures.
+  performance: ["M12 58H60", "M23 58V40", "M36 58V28", "M49 58V14"],
+  // FEED — two figures, the second half-behind the first. People, not posts:
+  // the tab is who you follow, and a card stack would only repeat the bento.
+  feed: [
+    "M50 31a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z",
+    "M46 40c8 0 14 5 14 14",
+    "M30 35a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19Z",
+    "M13 59c0-10 7.5-16 17-16s17 6 17 16",
+  ],
+};
+
+/**
  * AURORA nav glyphs — maps EVERY NAV_ITEMS id to a design-kit line icon (icons1/
  * 2/3), so the Aurora nav uses ONLY the uploaded icon set — never a unicode or
  * emoji glyph. The kit is a generic UI set with no fitness/chart glyphs, so a

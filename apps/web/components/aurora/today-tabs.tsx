@@ -1,10 +1,23 @@
 "use client";
 
-import { fs, PERFORMANCE_VIEWS, TODAY_TABS, type PerformanceViewId, type TodayTabId } from "@hybrid/core";
+import { fs, HUB_GLYPHS, PERFORMANCE_VIEWS, TODAY_TABS, type HubGlyphName, type PerformanceViewId, type TodayTabId } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
+
+/** One Today-hub mark. Same 72×72 stroke box and weight as AuroraIcon, so the
+ *  pills sit in the app's one monoline icon voice. Decorative here — the button
+ *  carries the tab's real name as its accessible label. */
+function HubGlyph({ name, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; size?: number; strokeWidth?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 72 72" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      {HUB_GLYPHS[name].map((d, i) => (
+        <path key={i} d={d} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      ))}
+    </svg>
+  );
+}
 
 /**
  * TODAY HUB switchers (web) — the pill row that turns Today into a hub, plus
@@ -16,11 +29,18 @@ const MONO = "var(--font-mono)";
  *  - TodayTabs is a PRIMARY segmented control: three equal full-width segments
  *    in one capsule, the active one filled chartreuse. It sits directly under
  *    the profile header, above the calendar, and it is the first thing on the
- *    screen after the brand — so it has to read as "where am I", loudly.
+ *    screen after the brand — so it has to read as "where am I", loudly. Each
+ *    segment carries a GLYPH, never its word: "Dashboard", "Performance" and
+ *    "Feed" are three very different lengths, and three unequal words in three
+ *    equal segments read as a control that is out of alignment with itself.
+ *    Marks of matched weight centre in their thirds and stay centred in every
+ *    language. The word is still the button's accessible name and its tooltip.
  *  - PerformanceViews is the SECONDARY chip rail already established by
  *    History's view switcher: small mono chips, hugging their labels, full
- *    bleed to the screen edge. A second row of big pills would flatten the
- *    hierarchy and leave the athlete unsure which row nests inside which.
+ *    bleed to the screen edge. These three words are close in length and the
+ *    chips size to their content, so text is right here — and it keeps the two
+ *    levels telling apart at a glance. A second row of big pills would flatten
+ *    the hierarchy and leave the athlete unsure which row nests inside which.
  */
 export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (id: TodayTabId) => void }) {
   const { t } = useLang();
@@ -32,11 +52,14 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
     >
       {TODAY_TABS.map((tab) => {
         const on = tab.id === value;
+        const label = t(tab.labelKey);
         return (
           <button
             key={tab.id}
             role="tab"
             aria-selected={on}
+            aria-label={label}
+            title={label}
             onClick={() => onChange(tab.id)}
             style={{
               flex: 1,
@@ -44,16 +67,14 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
               borderRadius: 999,
               border: "none",
               cursor: "pointer",
-              fontFamily: MONO,
-              fontSize: fs.caption,
-              letterSpacing: ".04em",
-              fontWeight: on ? 700 : 400,
+              display: "grid",
+              placeItems: "center",
               color: on ? "var(--on-accent)" : C("ash"),
               background: on ? C("lime") : "transparent",
               transition: "background .18s ease, color .18s ease",
             }}
           >
-            {t(tab.labelKey)}
+            <HubGlyph name={tab.glyph} />
           </button>
         );
       })}
