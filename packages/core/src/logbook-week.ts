@@ -116,6 +116,7 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   let allSec = true;
   let tonnageKg = 0;
   let sets = 0;
+  let strengthSets = 0;
   let distanceKm = 0;
   let elevationM = 0;
   // The day counts as measured when ANY of its sessions was matched to a device
@@ -131,6 +132,7 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     }
     tonnageKg += r.tonnageKg;
     sets += r.sets;
+    strengthSets += r.strengthSets;
     distanceKm += r.distanceKm;
     elevationM += r.elevationM;
     measured = measured || r.measured;
@@ -141,6 +143,7 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     durationSec: hasDuration && allSec && durationSec > 0 ? durationSec : null,
     tonnageKg,
     sets,
+    strengthSets,
     distanceKm: Math.round(distanceKm * 1000) / 1000,
     elevationM: Math.round(elevationM),
     measured,
