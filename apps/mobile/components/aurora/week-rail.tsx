@@ -6,6 +6,9 @@ import {
   doneReceipt,
   doneReceiptStats,
   stripWeekdayPrefix,
+  dayStamp,
+  dayStampText,
+  streak,
   type DoneReceipt,
   type LoggedSession,
   type SessionBlock,
@@ -137,6 +140,10 @@ export default function AuroraWeekRail({
     return doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
   }, [schedule, selectedIndex, sessions, bw]);
 
+  // The athlete's current run — what the done-today card's corner reports in
+  // place of a date the week strip has already shown (see core day-stamp.ts).
+  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
 
@@ -195,6 +202,7 @@ export default function AuroraWeekRail({
         day={sel}
         receipt={receipt}
         units={units}
+        streakDays={streakDays}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -293,13 +301,15 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
   );
 }
 
-function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: ScheduledDay;
   /** the fulfilled day's summary (null when the logged session isn't loaded). */
   receipt: DoneReceipt | null;
   units: WeightUnit;
+  /** the athlete's current day-streak, for the done-today stamp. */
+  streakDays: number;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -308,7 +318,14 @@ function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, 
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // The corner stamp — how far this day sits from now, never a second copy of
+  // the chip above it or of the headline beside it (core day-stamp.ts). Null
+  // when the card has already said it; the absolute date past the near window.
+  const stamp = dayStampText(
+    dayStamp({ dateKey: day.dateKey, done: day.status === "done", streakDays }),
+    t,
+    `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`,
+  );
   // Group the day into sessions so a multi-session day (AM + PM, or several
   // untimed trainings) draws one tab per session — the title stays welded to its
   // own lifts. Single-session days fall back to the day's flat rows/blocks.
@@ -373,7 +390,7 @@ function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, 
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
             </Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+          {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
           {stripWeekdayPrefix(day.title)}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
@@ -404,7 +421,7 @@ function DayDetail({ C, scheme, day, receipt, units, onStart, onSkip, onUnskip, 
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{day.title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+        {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
 
       {/* a short state note only where it carries meaning (moved / missed / skipped) */}

@@ -20,6 +20,7 @@ export * from "./feel-timing";
 export * from "./feel-schedule";
 export * from "./readiness-reads";
 export * from "./day-key";
+export * from "./day-stamp";
 export * from "./masthead";
 export * from "./motion";
 export * from "./engines";
