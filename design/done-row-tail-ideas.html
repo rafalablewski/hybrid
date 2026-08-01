@@ -1,0 +1,465 @@
+<title>The done row's tail — what replaces 21:33</title>
+<style>
+  :root{
+    /* product tokens (packages/core brand) — the cards are the app, unchanged in both themes */
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --clay:#e08a5f;
+
+    /* page chrome — theme-aware */
+    --page:#070806;
+    --page-fg:#eef0e9;
+    --page-dim:#8b8f86;
+    --page-faint:#5f6459;
+    --page-rule:#1e211d;
+    --page-accent:#c6f84f;
+    --page-chip:rgba(198,248,79,.13);
+
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --page:#f2f3ee; --page-fg:#15170f; --page-dim:#5c6154; --page-faint:#8e9285;
+      --page-rule:#dcdfd3; --page-accent:#54700f; --page-chip:rgba(84,112,15,.11);
+    }
+  }
+  :root[data-theme="light"]{
+    --page:#f2f3ee; --page-fg:#15170f; --page-dim:#5c6154; --page-faint:#8e9285;
+    --page-rule:#dcdfd3; --page-accent:#54700f; --page-chip:rgba(84,112,15,.11);
+  }
+  :root[data-theme="dark"]{
+    --page:#070806; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5f6459;
+    --page-rule:#1e211d; --page-accent:#c6f84f; --page-chip:rgba(198,248,79,.13);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page); color:var(--page-fg);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    padding:56px 20px 96px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:64px}
+
+  /* ── header ─────────────────────────────────────────────── */
+  .head{display:flex;flex-direction:column;gap:18px;max-width:70ch}
+  .eyebrow{
+    font:600 11px/1 var(--mono); letter-spacing:.22em; text-transform:uppercase;
+    color:var(--page-accent); margin:0;
+  }
+  h1{
+    margin:0; font-size:clamp(29px,4.6vw,44px); line-height:1.03;
+    letter-spacing:-.035em; font-weight:800; text-wrap:balance;
+  }
+  h1 em{font-style:normal;color:var(--page-dim)}
+  .lede{margin:0;font-size:16px;line-height:1.65;color:var(--page-dim)}
+  .lede strong{color:var(--page-fg);font-weight:600}
+  .lede code{font-family:var(--mono);font-size:.9em;color:var(--page-fg)}
+
+  /* ── section furniture ──────────────────────────────────── */
+  section{display:flex;flex-direction:column;gap:26px}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+    border-top:1px solid var(--page-rule);padding-top:16px;flex-wrap:wrap}
+  .sechead h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .sechead p{margin:0;font:500 11px/1 var(--mono);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--page-faint)}
+
+  /* ── the product card (always dark — it IS the app) ─────── */
+  .pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:start}
+  .slot{display:flex;flex-direction:column;gap:12px}
+  .slotlab{display:flex;align-items:center;gap:9px;font:600 10.5px/1 var(--mono);
+    letter-spacing:.18em;text-transform:uppercase;color:var(--page-faint)}
+  .slotlab b{color:var(--page-fg);font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.was{background:var(--clay)}
+  .dot.is{background:var(--lime)}
+
+  .card{
+    background:var(--ink2); border:1px solid var(--line); border-radius:22px;
+    padding:18px; color:var(--chalk); font-family:var(--sans);
+  }
+  .strip{display:flex;align-items:center;gap:16px;padding:6px 0 4px}
+  .strip .num{
+    font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.9;
+    font-variant-numeric:tabular-nums;flex:none;
+  }
+  .strip .lab{flex:1;min-width:0;font:400 10px/1 var(--mono);
+    letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+  .strip .arw{font-family:var(--mono);font-size:16px;color:rgba(139,143,134,.6);flex:none}
+
+  .rows{margin-top:14px;display:flex;flex-direction:column;gap:4px}
+  .row{display:flex;align-items:center;gap:12px;padding:8px 0}
+  .tile{
+    width:40px;height:40px;border-radius:13px;flex:none;
+    display:grid;place-items:center;font-size:18px;
+    background:rgba(96,165,250,.16);
+  }
+  .tile.plan{background:rgba(198,248,79,.16)}
+  .tile.ghost{background:transparent;border:1px dashed rgba(139,143,134,.4);
+    color:var(--ash);font-size:17px}
+  .rtx{flex:1;min-width:0}
+  .rtt{display:block;font-weight:700;font-size:14px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .rtm{
+    display:block;font-family:var(--mono);font-size:12px;color:var(--ash);
+    margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-variant-numeric:tabular-nums;
+  }
+  .cta{font:600 12px/1 var(--mono);color:var(--lime)}
+  .strike{color:var(--clay);text-decoration:line-through;text-decoration-thickness:1px}
+  .tail{color:var(--chalk)}
+  .note{
+    margin:0;font:500 11.5px/1.6 var(--mono);color:var(--page-faint);
+    padding-left:13px;border-left:2px solid var(--page-rule);
+  }
+  .note b{color:var(--clay);font-weight:600}
+
+  /* ── candidates ─────────────────────────────────────────── */
+  .grid{display:flex;flex-direction:column;gap:16px}
+  .idea{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,392px);
+    gap:8px 34px;align-items:start;
+    border:1px solid var(--page-rule);border-radius:20px;padding:22px 24px;
+  }
+  .idea.pick{border-color:color-mix(in srgb,var(--page-accent) 46%,transparent)}
+  .ihead{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .rank{
+    font:700 11px/1 var(--mono);letter-spacing:.04em;color:var(--page-faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .idea h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em}
+  .flag{
+    font:700 9.5px/1 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+    color:var(--page-accent);background:var(--page-chip);
+    padding:5px 8px;border-radius:6px;
+  }
+  .ibody{grid-column:1;display:flex;flex-direction:column;gap:12px;margin-top:11px}
+  .ibody p{margin:0;font-size:14px;line-height:1.6;color:var(--page-dim);max-width:56ch}
+  .ibody p strong{color:var(--page-fg);font-weight:600}
+  .facts{display:flex;flex-direction:column;gap:7px;margin:2px 0 0;padding:0;list-style:none}
+  .facts li{display:flex;gap:10px;font:500 11.5px/1.55 var(--mono);color:var(--page-faint)}
+  .facts li span{flex:none;width:56px;color:var(--page-dim);text-transform:uppercase;letter-spacing:.1em;font-size:10px;padding-top:1px}
+  .facts li code{font-family:var(--mono);color:var(--page-dim)}
+  .demo{
+    grid-column:2;grid-row:1 / span 2;
+    background:var(--ink2);border:1px solid var(--line);border-radius:18px;
+    padding:8px 16px;color:var(--chalk);
+  }
+  .demo .row{padding:9px 0}
+  .demo .row + .row{border-top:1px solid rgba(36,39,36,.85)}
+  .quiet{color:var(--ash2)}
+
+  @media (max-width:780px){
+    .idea{grid-template-columns:minmax(0,1fr)}
+    .demo{grid-column:1;grid-row:auto;margin-top:6px}
+  }
+
+  /* ── closing ────────────────────────────────────────────── */
+  .close{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;align-items:start}
+  .close p{margin:0;font-size:14px;line-height:1.65;color:var(--page-dim);max-width:56ch}
+  .close p strong{color:var(--page-fg);font-weight:600}
+  .files{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;
+    font:500 11.5px/1.5 var(--mono);color:var(--page-faint)}
+  .files b{color:var(--page-dim);font-weight:600}
+
+  @media (prefers-reduced-motion: no-preference){
+    .idea,.slot,.head{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+    .idea:nth-child(2){animation-delay:.04s}
+    .idea:nth-child(3){animation-delay:.08s}
+    .idea:nth-child(4){animation-delay:.12s}
+    .idea:nth-child(5){animation-delay:.16s}
+    @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">Today → Done today → the session row</p>
+    <h1>The row's tail said <em>21:33</em>. That was the save time, not the swim.</h1>
+    <p class="lede">
+      For a quick-logged sport, <code>startedAt</code> is stamped the moment the record is written — so
+      the trailing clock read as <strong>when you trained</strong> while carrying <strong>when you typed</strong>.
+      It's now deleted on both clients. Below: the shipped change, then five candidates for the space it left.
+    </p>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>Shipped</h2>
+      <p>web today.tsx – mobile home.tsx</p>
+    </div>
+
+    <div class="pair">
+      <div class="slot">
+        <p class="slotlab"><i class="dot was"></i> Was</p>
+        <div class="card">
+          <div class="strip">
+            <span class="num">1</span>
+            <span class="lab">Done today</span>
+            <span class="arw">→</span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="tile">🏊</span>
+              <span class="rtx">
+                <span class="rtt">Swimming</span>
+                <span class="rtm">0.2 km – 10 min<span class="strike"> – 21:33</span></span>
+              </span>
+            </div>
+            <div class="row">
+              <span class="tile ghost">＋</span>
+              <span class="cta">Log another sport</span>
+            </div>
+          </div>
+        </div>
+        <p class="note"><b>21:33</b> is the moment Save was tapped. It sits under a swim, describing the database.</p>
+      </div>
+
+      <div class="slot">
+        <p class="slotlab"><i class="dot is"></i> Is</p>
+        <div class="card">
+          <div class="strip">
+            <span class="num">1</span>
+            <span class="lab">Done today</span>
+            <span class="arw">→</span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="tile">🏊</span>
+              <span class="rtx">
+                <span class="rtt">Swimming</span>
+                <span class="rtm">0.2 km – 10 min</span>
+              </span>
+            </div>
+            <div class="row">
+              <span class="tile ghost">＋</span>
+              <span class="cta">Log another sport</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">The row states what was done. Nothing else claims to be true of it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>Five candidates for the tail</h2>
+      <p>Ranked by what they'd earn the space</p>
+    </div>
+
+    <div class="grid">
+
+      <article class="idea pick">
+        <div class="ihead">
+          <span class="rank">1</span>
+          <h3>Pace — the quality of the effort</h3>
+          <span class="flag">My pick</span>
+        </div>
+        <div class="ibody">
+          <p>
+            Distance and duration say <strong>how much</strong>. Pace is the one figure that separates
+            a hard session from a slow one — and it's already implied by the two numbers sitting there.
+          </p>
+          <ul class="facts">
+            <li><span>Source</span><code>sessionCardioSummary()</code> — pure arithmetic, no new data</li>
+            <li><span>Cost</span>a per-sport unit map (/100 m, /km, km/h)</li>
+            <li><span>Catch</span>strength rows keep tonnage + block names, unchanged</li>
+          </ul>
+        </div>
+        <div class="demo">
+          <div class="row">
+            <span class="tile">🏊</span>
+            <span class="rtx"><span class="rtt">Swimming</span>
+            <span class="rtm">0.2 km – 10 min<span class="tail"> – 3:20 /100 m</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile">🏃</span>
+            <span class="rtx"><span class="rtt">Easy run</span>
+            <span class="rtm">8.4 km – 44 min<span class="tail"> – 5:12 /km</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile plan">🏋️</span>
+            <span class="rtx"><span class="rtt">Lower A</span>
+            <span class="rtm">7.4 t – Back Squat – RDL <span class="quiet">(unchanged)</span></span></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">2</span>
+          <h3>Load contributed to the day</h3>
+        </div>
+        <div class="ibody">
+          <p>
+            Puts the row in the same currency the rest of the app thinks in, and quietly teaches
+            that a ten-minute swim is a <strong>small dose</strong> — the number that actually moves
+            tomorrow's readiness.
+          </p>
+          <ul class="facts">
+            <li><span>Source</span><code>sessionLoad()</code> — engines/load.ts, already shipped</li>
+            <li><span>Cost</span>trivial</li>
+            <li><span>Catch</span>an unexplained unit; needs a legend behind the → sheet</li>
+          </ul>
+        </div>
+        <div class="demo">
+          <div class="row">
+            <span class="tile">🏊</span>
+            <span class="rtx"><span class="rtt">Swimming</span>
+            <span class="rtm">0.2 km – 10 min<span class="tail"> – 14 load</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile plan">🏋️</span>
+            <span class="rtx"><span class="rtt">Lower A</span>
+            <span class="rtm">7.4 t – Back Squat<span class="tail"> – 86 load</span></span></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">3</span>
+          <h3>How it felt</h3>
+        </div>
+        <div class="ibody">
+          <p>
+            The subjective half of the record — and the only thing on the row a watch can't measure.
+            When it's unlogged the line simply ends early, which is its own <strong>nudge to answer</strong>.
+          </p>
+          <ul class="facts">
+            <li><span>Source</span><code>session.feel</code> → <code>sessionRpe()</code>, session-feel.ts</li>
+            <li><span>Cost</span>a feel → word map (Easy / Solid / Hard / Wrecked)</li>
+            <li><span>Catch</span>frequently absent, so the row's shape varies</li>
+          </ul>
+        </div>
+        <div class="demo">
+          <div class="row">
+            <span class="tile">🏊</span>
+            <span class="rtx"><span class="rtt">Swimming</span>
+            <span class="rtm">0.2 km – 10 min<span class="tail"> – Easy</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile plan">🏋️</span>
+            <span class="rtx"><span class="rtt">Lower A</span>
+            <span class="rtm">7.4 t – Back Squat<span class="tail"> – Hard</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile">🎾</span>
+            <span class="rtx"><span class="rtt">Tennis</span>
+            <span class="rtm">75 min <span class="quiet">— not rated yet</span></span></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">4</span>
+          <h3>Where it lands this week</h3>
+        </div>
+        <div class="ibody">
+          <p>
+            Turns an isolated entry into a running total, so each row answers
+            <strong>“does this add up to anything”</strong> rather than standing alone.
+          </p>
+          <ul class="facts">
+            <li><span>Source</span>week totals already computed for the This-week card</li>
+            <li><span>Cost</span>low — thread the week aggregate into the row</li>
+            <li><span>Catch</span>says what the card one screen up already says</li>
+          </ul>
+        </div>
+        <div class="demo">
+          <div class="row">
+            <span class="tile">🏊</span>
+            <span class="rtx"><span class="rtt">Swimming</span>
+            <span class="rtm">0.2 km – 10 min<span class="tail"> – 3rd swim this week</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile">🏃</span>
+            <span class="rtx"><span class="rtt">Easy run</span>
+            <span class="rtm">8.4 km – 44 min<span class="tail"> – 22.6 km this week</span></span></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">5</span>
+          <h3>Against your own bar</h3>
+        </div>
+        <div class="ibody">
+          <p>
+            Shown <strong>only</strong> when a session clears a bar; otherwise the line stays bare.
+            Sparse by design — most rows say nothing, so the ones that speak are worth reading.
+          </p>
+          <ul class="facts">
+            <li><span>Source</span>per-sport history scan (exercise analytics)</li>
+            <li><span>Cost</span>highest here — needs a bar worth crossing per sport</li>
+            <li><span>Catch</span>silent on most rows; can't be the only plan</li>
+          </ul>
+        </div>
+        <div class="demo">
+          <div class="row">
+            <span class="tile">🏊</span>
+            <span class="rtx"><span class="rtt">Swimming</span>
+            <span class="rtm">0.2 km – 10 min</span></span>
+          </div>
+          <div class="row">
+            <span class="tile">🚴</span>
+            <span class="rtx"><span class="rtt">Ride</span>
+            <span class="rtm">62 km – 2h 08<span class="tail"> – longest ride in 3 weeks</span></span></span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>If you want a hedge</h2>
+      <p>1 always – 5 when it fires</p>
+    </div>
+    <div class="close">
+      <div class="slot">
+        <div class="card">
+          <div class="strip">
+            <span class="num">2</span>
+            <span class="lab">Done today</span>
+            <span class="arw">→</span>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <span class="tile">🏊</span>
+              <span class="rtx"><span class="rtt">Swimming</span>
+              <span class="rtm">0.2 km – 10 min<span class="tail"> – 3:20 /100 m</span></span></span>
+            </div>
+            <div class="row">
+              <span class="tile">🚴</span>
+              <span class="rtx"><span class="rtt">Ride</span>
+              <span class="rtm">62 km – 2h 08<span class="tail"> – longest ride in 3 weeks</span></span></span>
+            </div>
+            <div class="row">
+              <span class="tile ghost">＋</span>
+              <span class="cta">Log another sport</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slot">
+        <p>
+          Pace is the <strong>default tail</strong> — earned, cheap, true of every cardio row.
+          The milestone <strong>replaces</strong> it on the rare row that clears a bar, so the
+          exceptional line is the one that looks different.
+        </p>
+        <ul class="files">
+          <li><b>web</b> apps/web/components/aurora/today.tsx — AlsoTodayCard</li>
+          <li><b>mobile</b> apps/mobile/components/aurora/home.tsx — twin</li>
+          <li><b>shared</b> packages/core/src/engines/session.ts — sessionMeta's tail belongs here</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
