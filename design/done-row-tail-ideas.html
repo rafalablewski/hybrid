@@ -246,7 +246,7 @@
   <section>
     <div class="sechead">
       <h2>Five candidates for the tail</h2>
-      <p>Ranked by what they'd earn the space</p>
+      <p>Picked: 1 — pace, now live on both clients</p>
     </div>
 
     <div class="grid">
@@ -255,7 +255,7 @@
         <div class="ihead">
           <span class="rank">1</span>
           <h3>Pace — the quality of the effort</h3>
-          <span class="flag">My pick</span>
+          <span class="flag">Shipped</span>
         </div>
         <div class="ibody">
           <p>
@@ -263,21 +263,26 @@
             a hard session from a slow one — and it's already implied by the two numbers sitting there.
           </p>
           <ul class="facts">
-            <li><span>Source</span><code>sessionCardioSummary()</code> — pure arithmetic, no new data</li>
-            <li><span>Cost</span>a per-sport unit map (/100 m, /km, km/h)</li>
-            <li><span>Catch</span>strength rows keep tonnage + block names, unchanged</li>
+            <li><span>Source</span><code>sessionCardioTotals()</code> — secPerKm, no new data</li>
+            <li><span>Unit</span><code>formatSportPace()</code> — the sport's own split</li>
+            <li><span>Silent</span>timed sports, unclocked distances, mixed splits</li>
           </ul>
         </div>
         <div class="demo">
           <div class="row">
             <span class="tile">🏊</span>
             <span class="rtx"><span class="rtt">Swimming</span>
-            <span class="rtm">0.2 km – 10 min<span class="tail"> – 3:20 /100 m</span></span></span>
+            <span class="rtm">0.2 km – 10 min<span class="tail"> – 5:00 /100m</span></span></span>
           </div>
           <div class="row">
             <span class="tile">🏃</span>
             <span class="rtx"><span class="rtt">Easy run</span>
-            <span class="rtm">8.4 km – 44 min<span class="tail"> – 5:12 /km</span></span></span>
+            <span class="rtm">8.4 km – 44 min<span class="tail"> – 5:14 /km</span></span></span>
+          </div>
+          <div class="row">
+            <span class="tile">🎾</span>
+            <span class="rtx"><span class="rtt">Tennis</span>
+            <span class="rtm">75 min <span class="quiet">— nothing to pace</span></span></span>
           </div>
           <div class="row">
             <span class="tile plan">🏋️</span>
@@ -433,7 +438,7 @@
             <div class="row">
               <span class="tile">🏊</span>
               <span class="rtx"><span class="rtt">Swimming</span>
-              <span class="rtm">0.2 km – 10 min<span class="tail"> – 3:20 /100 m</span></span></span>
+              <span class="rtm">0.2 km – 10 min<span class="tail"> – 5:00 /100m</span></span></span>
             </div>
             <div class="row">
               <span class="tile">🚴</span>
@@ -454,9 +459,9 @@
           exceptional line is the one that looks different.
         </p>
         <ul class="files">
-          <li><b>web</b> apps/web/components/aurora/today.tsx — AlsoTodayCard</li>
-          <li><b>mobile</b> apps/mobile/components/aurora/home.tsx — twin</li>
-          <li><b>shared</b> packages/core/src/engines/session.ts — sessionMeta's tail belongs here</li>
+          <li><b>shared</b> core/engines/session.ts — sessionMeta + sessionPaceTail</li>
+          <li><b>web</b> aurora/today.tsx — imports it, local copy deleted</li>
+          <li><b>mobile</b> aurora/home.tsx — imports it, local copy deleted</li>
         </ul>
       </div>
     </div>

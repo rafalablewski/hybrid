@@ -3,7 +3,7 @@ import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
-import { fmtWeight, type WeightUnit } from "../units";
+import { fmtWeight, fmtTonnage, type WeightUnit } from "../units";
 import type { DeviceWorkout } from "../session-device";
 import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
 
@@ -630,6 +630,69 @@ export function sessionCardioTotals(blocks: SessionBlock[]): {
  */
 export function sessionCardioSummary(session: LoggedSession): ReturnType<typeof sessionCardioTotals> {
   return sessionCardioTotals(deviceTrueSession(session).blocks);
+}
+
+/**
+ * The one-line meta under a session's title in a list row (Today's Done-Today
+ * card on both clients). Sport-adaptive, so a run reads as distance/time/pace
+ * and a lift as tonnage + what was trained — never the gym Sets/Volume framing
+ * on a swim.
+ *
+ *   cardio    "8.4 km – 44 min – 5:14 /km"
+ *   swim      "0.2 km – 10 min – 5:00 /100m"
+ *   timed     "75 min"           (a sport that tracks no distance)
+ *   strength  "7.4 t – Back Squat – Romanian Deadlift"
+ *
+ * WHY IT LIVES IN CORE. It was hand-written twice — once in web today.tsx, once
+ * in mobile home.tsx — as the same function, which is exactly how two clients
+ * come to disagree about what a row says. One source, both callers.
+ *
+ * THE TAIL IS PACE, NOT A CLOCK TIME. This line used to end with the session's
+ * startedAt ("… – 21:33"), which reads as when you trained but, for a
+ * quick-logged sport, is stamped when the record is SAVED. Pace replaces it:
+ * distance and duration say how much, pace is the only figure here that says
+ * how hard, and it costs no new data — it's already implied by the two numbers
+ * beside it.
+ */
+export function sessionMeta(session: LoggedSession, units: WeightUnit = "kg", bodyweightKg?: number | null): string {
+  if (sessionShape(session) !== "strength") {
+    // Measured where a device recorded it (see device-truth.ts).
+    const ct = sessionCardioSummary(session);
+    const parts: string[] = [];
+    // Aggregate distance stays in KILOMETRES even for metre sports — per-effort
+    // distances render in the sport's own unit, totals never do (olympic-sports.ts).
+    if (ct.distanceKm) parts.push(`${ct.distanceKm.toFixed(1)} km`);
+    if (ct.minutes) parts.push(`${ct.minutes} min`);
+    const pace = sessionPaceTail(session, ct.secPerKm);
+    if (pace) parts.push(pace);
+    if (parts.length) return parts.join(" – ");
+    return session.blocks.map((b) => b.name).join(" – ");
+  }
+  const vol = sessionVolume(session.blocks, false, bodyweightKg);
+  const names = session.blocks.map((b) => b.name).join(" – ");
+  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
+}
+
+/**
+ * The session's overall pace, labelled in its sport's split ("/km", "/100m",
+ * "/500m") — or null when one number can't honestly describe the session.
+ *
+ * `secPerKm` from sessionCardioTotals is DISTANCE-WEIGHTED across every cardio
+ * block, so a session that mixes sports with different splits (a swim and a run
+ * in one log) would render one figure under one sport's label while describing
+ * both. Those get no tail at all: the row's distance and duration are still
+ * true, and a wrong pace is worse than no pace — which is the whole reason the
+ * clock time came off this line.
+ */
+function sessionPaceTail(session: LoggedSession, secPerKm: number | null): string | null {
+  if (secPerKm == null) return null;
+  const moving = deviceTrueSession(session).blocks.filter(
+    (b): b is CardioBlock => isCardio(b) && !!b.distance && b.distance > 0,
+  );
+  if (!moving.length) return null;
+  const splits = new Set(moving.map((b) => sportPacePerMeters(b.name ?? "")));
+  if (splits.size > 1) return null;
+  return formatSportPace(secPerKm, moving[0]!.name);
 }
 
 /**

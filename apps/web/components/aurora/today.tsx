@@ -12,10 +12,7 @@ import { fs, space,
   personalTrainingLog,
   velocityProfiles,
   sessionsOnDay,
-  sessionShape,
-  sessionCardioSummary,
-  sessionVolume,
-  fmtTonnage,
+  sessionMeta,
   FUNNEL,
   ROLE_COLOR,
   readinessRole,
@@ -1053,22 +1050,9 @@ function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; 
 }
 
 
-// One-line meta for a session logged today — sport-adaptive so a run/match reads
-// as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
-  if (sessionShape(s) !== "strength") {
-    // Measured where a device recorded it (see core/device-truth.ts).
-    const ct = sessionCardioSummary(s);
-    const p: string[] = [];
-    if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
-    if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" – ");
-    return s.blocks.map((b) => b.name).join(" – ");
-  }
-  const vol = sessionVolume(s.blocks, false, bw);
-  const names = s.blocks.map((b) => b.name).join(" – ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
-}
+// The row's meta line (sport-adaptive: distance/time/pace, or tonnage + lifts)
+// now lives in core/engines/session.ts — it was this exact function twice, once
+// here and once in mobile home.tsx, which is how two clients drift.
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.

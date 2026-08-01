@@ -51,10 +51,7 @@ import {
   logbookWeek,
   todayDoneState,
   sessionsOnDay,
-  sessionShape,
-  sessionCardioSummary,
-  sessionVolume,
-  fmtTonnage,
+  sessionMeta,
   type LoggedSession,
   type SessionBlock,
   type Experience,
@@ -1144,22 +1141,9 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
   );
 }
 
-// One-line meta for a session logged today — sport-adaptive so a run/match reads
-// as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
-  if (sessionShape(s) !== "strength") {
-    // Measured where a device recorded it (see core/device-truth.ts).
-    const ct = sessionCardioSummary(s);
-    const p: string[] = [];
-    if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
-    if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" – ");
-    return s.blocks.map((b) => b.name).join(" – ");
-  }
-  const vol = sessionVolume(s.blocks, false, bw);
-  const names = s.blocks.map((b) => b.name).join(" – ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
-}
+// The row's meta line (sport-adaptive: distance/time/pace, or tonnage + lifts)
+// now lives in core/engines/session.ts — it was this exact function twice, once
+// here and once in web today.tsx, which is how two clients drift.
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
