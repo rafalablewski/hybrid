@@ -89,8 +89,6 @@ import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
-import AuroraNutrition from "./nutrition";
-import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
@@ -177,10 +175,9 @@ export default function AuroraHome() {
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  // TIER-3 quick actions, now slide-up sheets (not full-screen routes): the
-  // nutrition tracker and Follow-a-coach. (Readiness is now set inline on the
-  // feeling card, so it no longer opens a sheet.)
-  const [nutritionOpen, setNutritionOpen] = useState(false);
+  // TIER-3 quick action, now a slide-up sheet (not a full-screen route):
+  // Follow-a-coach. (Readiness is now set inline on the feeling card, so it no
+  // longer opens a sheet.)
   const [coachOpen, setCoachOpen] = useState(false);
   // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
   // routine (favourites rail + shuffle-able rest). `routines` stays null until the
@@ -971,9 +968,9 @@ export default function AuroraHome() {
             at opposite ends of the scroll. One full-bleed rail per logged
             discipline carrying that sport's whole read (efforts / distance /
             time, 8-week volume, pace trend, pace zones, last effort). NOT gated
-            on dayIsToday, unlike Fuel below: an eight-week volume chart is not a
-            property of the day you happen to be scrubbed to. Renders nothing
-            until there's endurance to show. Mirrors web
+            on dayIsToday: an eight-week volume chart is not a property of the
+            day you happen to be scrubbed to. Renders nothing until there's
+            endurance to show. Mirrors web
             aurora/endurance-lanes.tsx. ───── */}
         {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
 
@@ -999,20 +996,12 @@ export default function AuroraHome() {
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-            (coaches). No section head: "Recover & more" labelled a BUCKET, not
-            anything on the screen, and the Fuel widget already titles itself.
-            The 12 here plus Fuel's own 12 keeps the section break intact. ───── */}
-        <View style={{ marginTop: 12 }}>
-          {/* FUEL — the nutrition summary widget (one calendar-style stateful
-              surface: empty → refuel / on-track / over → goal-hit, with a
-              persistent quick-log rail). Real today only; nutrition targets are
-              always today's. State + macros come from @hybrid/core fuelToday() so
-              web matches. Tapping opens the same quick-add sheet the rows use. */}
-          {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-          <View style={{ gap: 10, marginTop: 10 }}>
-            <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
-          </View>
+        {/* ───── MORE — the deferred row (coaches). No section head: it labelled
+            a BUCKET, not anything on the screen. Nutrition is NOT summarised
+            here: Today is the training loop, and fuelling has its own
+            destination. Mirrors web. ───── */}
+        <View style={{ gap: 10, marginTop: 22 }}>
+          <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
         </View>
 
         </Animated.View>
@@ -1039,15 +1028,6 @@ export default function AuroraHome() {
         <View style={{ marginTop: 14 }}>
           <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
         </View>
-      </Sheet>
-
-      {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
-      <Sheet visible={nutritionOpen} onClose={() => setNutritionOpen(false)}>
-        <AuroraNutrition
-          compact
-          onNavigateFull={() => { setNutritionOpen(false); router.push("/nutrition"); }}
-          onUpgrade={() => { setNutritionOpen(false); goUpgrade("today-nutrition-sheet"); }}
-        />
       </Sheet>
 
       {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
@@ -1237,7 +1217,7 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
 }
 
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface
-// (Nutrition, Coaches) as an "airy band": a roomy tap-target on the real palette
+// (Coaches) as an "airy band": a roomy tap-target on the real palette
 // surface (ink2 + hairline), with a crafted icon tile drawn on the darker ink so
 // it lifts off the row, a display title and a mono descriptor. Same material
 // vocabulary as the cards above it, just laid out with more air.
