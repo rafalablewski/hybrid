@@ -76,24 +76,29 @@ export default function AuroraOtherSports({
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 2 }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} onOpen={onOpen} />)}
+        {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card
+            idiom): rails end in a ghost tile, full-width blocks end in a door
+            row — the cluster's one "see more" rule. The old full-width "+N"
+            outline button below the rail is retired; its count lives here.
+            Mirrors web other-sports.tsx. */}
+        {rest > 0 && (
+          <Pressable
+            onPress={() => setExpanded(!expanded)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded }}
+            style={{
+              width: 110, minHeight: TILE_H, alignItems: "center", justifyContent: "center", gap: 8,
+              borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}66`, borderRadius: 16,
+              paddingHorizontal: 10,
+            }}
+          >
+            <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 16 }}>
+              {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
+            </Text>
+          </Pressable>
+        )}
       </ScrollView>
-
-      {rest > 0 && (
-        <Pressable
-          onPress={() => setExpanded(!expanded)}
-          accessibilityRole="button"
-          style={{
-            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 14, paddingVertical: 11,
-            borderWidth: 1, borderColor: C.line, borderRadius: 14,
-          }}
-        >
-          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>
-            {expanded ? t("w.home.other.fewer") : t("w.home.other.all")}
-          </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{expanded ? "−" : "+"}{rest}</Text>
-        </Pressable>
-      )}
     </View>
   );
 }
